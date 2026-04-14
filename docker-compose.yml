@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app  # <-- ESTO es lo que sube los cambios al instante
+    environment:
+      - FLASK_DEBUG=1 # Activa debug/autoreload en Flask 3

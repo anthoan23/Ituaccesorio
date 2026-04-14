@@ -1,0 +1,12 @@
+//Comando para construir y levantar el servidor (Tambien sirve para actualizar)
+
+docker-compose up --build
+
+//Si ya esta el contenedor echo y quieres levantarlo 
+
+docker-compose up
+
+//Si quiere si quieres apagar el contenedor
+
+docker-compose stop
+
