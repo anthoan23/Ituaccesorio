@@ -10,3 +10,11 @@ docker-compose up
 
 docker-compose stop
 
+//librerias para conectar con la bd 
+
+mysql-connector-python <-- es mas paracedio a lo que emos usado pero hay que hacerlo todo a mano 
+Cómo funciona: Escribes las consultas como strings: cursor.execute("SELECT * FROM usuarios").
+
+Flask-SQLAlchemy <-- este nos vita las inyecciones sql y nos maneja las conexiones a la bd de manera automatica
+Cómo funciona: Tratas a las tablas como clases de Python
+ y a las filas como objetos. En lugar de escribir SQL, haces algo como Usuario.query.all().
