@@ -1,1 +1,9 @@
-
+FLASK_DEBUG=1
+DB_HOST1=db1
+DB_PORT=3306
+DB_NAME1=ituaccesoriobd
+DB_HOST2=db2
+DB_NAME2=seguridad
+DB_USER=user_flask
+DB_PASSWORD=password_seguro
+MYSQL_ROOT_PASSWORD=root_password_maestra

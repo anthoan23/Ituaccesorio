@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Página no encontrada</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			--bg-1: #f6f2e8;
+			--bg-2: #d7e4f4;
+			--surface: #ffffffdd;
+			--ink: #1a2433;
+			--muted: #5a6577;
+			--brand: #0e7c86;
+			--brand-dark: #0b5f66;
+			--line: #dce4ef;
+			--shadow: 0 24px 60px rgba(12, 25, 41, 0.14);
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: grid;
+			place-items: center;
+			font-family: "Manrope", sans-serif;
+			background:
+				radial-gradient(circle at 12% 20%, #fff7db 0%, transparent 35%),
+				radial-gradient(circle at 90% 82%, #cde7e7 0%, transparent 34%),
+				linear-gradient(135deg, var(--bg-1), var(--bg-2));
+			color: var(--ink);
+			padding: 1.25rem;
+		}
+
+		.card {
+			width: min(720px, 100%);
+			background: var(--surface);
+			backdrop-filter: blur(6px);
+			border: 1px solid #ffffff;
+			border-radius: 24px;
+			box-shadow: var(--shadow);
+			padding: clamp(1.4rem, 4vw, 2.4rem);
+			text-align: center;
+		}
+
+		.code {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.4rem 0.75rem;
+			border-radius: 999px;
+			background: #eef5ff;
+			border: 1px solid #c9d8ec;
+			font-family: "Space Grotesk", sans-serif;
+			font-weight: 700;
+			letter-spacing: 0.08em;
+			color: #1b3a66;
+			margin-bottom: 1rem;
+		}
+
+		h1 {
+			margin: 0;
+			font-family: "Space Grotesk", sans-serif;
+			font-size: clamp(2rem, 6vw, 4rem);
+			letter-spacing: -0.04em;
+		}
+
+		p {
+			margin: 0.8rem auto 0;
+			max-width: 42rem;
+			font-size: 1.05rem;
+			line-height: 1.6;
+			color: var(--muted);
+		}
+
+		.actions {
+			margin-top: 1.5rem;
+			display: flex;
+			justify-content: center;
+			flex-wrap: wrap;
+			gap: 0.75rem;
+		}
+
+		.actions a {
+			text-decoration: none;
+			padding: 0.8rem 1.1rem;
+			border-radius: 12px;
+			font-family: "Space Grotesk", sans-serif;
+			font-weight: 700;
+			transition: transform 0.15s ease, filter 0.2s ease;
+		}
+
+		.primary {
+			color: #fff;
+			background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+		}
+
+		.secondary {
+			color: #1b3a66;
+			background: #eef5ff;
+			border: 1px solid #b7c8dd;
+		}
+
+		.actions a:hover {
+			transform: translateY(-1px);
+			filter: brightness(1.03);
+		}
+	</style>
+</head>
+<body>
+	<main class="card">
+		<div class="code">404</div>
+		<h1>Página no encontrada</h1>
+		<p>La dirección que escribiste no existe en este sistema. Revisa la URL o vuelve al inicio para continuar navegando.</p>
+		<div class="actions">
+			<a class="primary" href="/">Ir al inicio</a>
+			<a class="secondary" href="/telefonos">Ver teléfonos</a>
+		</div>
+	</main>
+</body>
+</html>

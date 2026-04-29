@@ -1,10 +1,69 @@
-version: '3.8'
 services:
   web:
     build: .
     ports:
       - "5000:5000"
     volumes:
-      - .:/app  # <-- ESTO es lo que sube los cambios al instante
+      - .:/app  # <-- Sube los cambios al instante (Hot Reload)
+    env_file:
+      - .env
     environment:
-      - FLASK_DEBUG=1 # Activa debug/autoreload en Flask 3
+      - FLASK_DEBUG=${FLASK_DEBUG:-1}
+      - DB_HOST1=db1
+      - DB_HOST2=db2
+      - DB_PORT=3306
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME1=${DB_NAME1}
+      - DB_NAME2=${DB_NAME2}
+    depends_on:
+      db1:
+        condition: service_healthy
+      db2:
+        condition: service_healthy
+
+  db1:
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${DB_NAME1}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db1_data:/var/lib/mysql
+      - ./bd/ituaccesoriobd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+  db2:
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${DB_NAME2}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3308:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db2_data:/var/lib/mysql
+      - ./bd/seguridad.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+volumes:
+  db1_data:
+  db2_data:

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>Prueba DBs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prueba.css') }}">
+</head>
+<body>
+    <main class="layout">
+        <header class="hero">
+            <h1>Prueba de Conexión a Dos BDs</h1>
+            <p>Se muestran los resultados provenientes de BD1 y BD2.</p>
+            <div class="hero__actions">
+                <button type="button" class="hero-action hero-action--client" data-form-target="cliente">Agregar cliente</button>
+                <button type="button" class="hero-action hero-action--module" data-form-target="modulo">Agregar modulo</button>
+            </div>
+        </header>
+
+        <section id="form-cliente" class="form-panel" aria-hidden="true">
+            <div class="form-panel__header">
+                <div>
+                    <h2>Registrar cliente</h2>
+                    <p>Completa los datos para guardar un nuevo cliente.</p>
+                </div>
+                <button type="button" class="form-panel__close" data-form-close="cliente">Cerrar</button>
+            </div>
+            <form class="data-form" autocomplete="off">
+                <div class="data-form__grid">
+                    <label>
+                        <span>ID</span>
+                        <input type="number" name="id_cliente" placeholder="1">
+                    </label>
+                    <label>
+                        <span>Nombre</span>
+                        <input type="text" name="nombre_cliente" placeholder="María">
+                    </label>
+                    <label>
+                        <span>Apellido</span>
+                        <input type="text" name="apellido_cliente" placeholder="González">
+                    </label>
+                    <label>
+                        <span>Celular</span>
+                        <input type="text" name="celular_cliente" placeholder="04141234567">
+                    </label>
+                    <label>
+                        <span>Correo</span>
+                        <input type="email" name="correo_cliente" placeholder="correo@ejemplo.com">
+                    </label>
+                    <label class="data-form__full">
+                        <span>Dirección</span>
+                        <input type="text" name="direccion_cliente" placeholder="Calle 1, Ciudad">
+                    </label>
+                    <label class="data-form__full">
+                        <span>Tipo</span>
+                        <input type="text" name="tipo_cliente" placeholder="Regular">
+                    </label>
+                </div>
+                <button type="submit" class="data-form__submit">Registrar</button>
+            </form>
+        </section>
+
+        <section id="form-modulo" class="form-panel" aria-hidden="true">
+            <div class="form-panel__header">
+                <div>
+                    <h2>Registrar módulo</h2>
+                    <p>Ingresa la información del módulo para guardarlo.</p>
+                </div>
+                <button type="button" class="form-panel__close" data-form-close="modulo">Cerrar</button>
+            </div>
+            <form class="data-form" autocomplete="off">
+                <div class="data-form__grid">
+                    <label class="data-form__full">
+                        <span>Nombre</span>
+                        <input type="text" name="nombre_modulo" placeholder="Inventario">
+                    </label>
+                    <label class="data-form__full">
+                        <span>Descripción</span>
+                        <input type="text" name="descripcion_modulo" placeholder="Gestión de inventario">
+                    </label>
+                </div>
+                <button type="submit" class="data-form__submit">Registrar</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <h2>Resultados BD1</h2>
+                <span id="contador-bd1" class="panel__count">0 registros</span>
+            </div>
+            <p class="panel__hint">Datos leídos desde la primera base de datos.</p>
+            <ul id="lista-prueba-bd1" class="lista-prueba"></ul>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <h2>Resultados BD2</h2>
+                <span id="contador-bd2" class="panel__count">0 registros</span>
+            </div>
+            <p class="panel__hint">Datos leídos desde la segunda base de datos.</p>
+            <ul id="lista-prueba-bd2" class="lista-prueba"></ul>
+        </section>
+    </main>
+
+
+</body>
+<script src="{{ url_for('static', filename='js/prueba.js') }}"></script>
+</html>

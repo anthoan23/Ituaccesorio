@@ -1,0 +1,100 @@
+:root {
+	--bg-1: #f8efe2;
+	--bg-2: #e2ecff;
+	--surface: #ffffff;
+	--surface-soft: #f6f9ff;
+	--ink: #1a2238;
+	--muted: #596379;
+	--line: #d7e0ef;
+	--accent: #007f73;
+	--accent-2: #00a3b0;
+	--shadow: 0 18px 45px rgba(19, 34, 58, 0.14);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	font-family: "Outfit", sans-serif;
+	color: var(--ink);
+	background:
+		radial-gradient(circle at 14% 16%, #fff6d8 0%, transparent 38%),
+		radial-gradient(circle at 90% 82%, #d7f3ef 0%, transparent 34%),
+		linear-gradient(135deg, var(--bg-1), var(--bg-2));
+	padding: 1.4rem;
+}
+
+.layout {
+	width: min(980px, 100%);
+	margin: 0 auto;
+}
+
+.hero {
+	background: var(--surface);
+	border: 1px solid #ffffff;
+	border-radius: 20px;
+	box-shadow: var(--shadow);
+	padding: 1.4rem 1.5rem;
+}
+
+.hero h1 {
+	margin: 0;
+	font-family: "Space Grotesk", sans-serif;
+	font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+	letter-spacing: -0.03em;
+}
+
+.hero p {
+	margin: 0.45rem 0 0;
+	color: var(--muted);
+	font-size: 1rem;
+}
+
+.panel {
+	margin-top: 1rem;
+	background: var(--surface);
+	border: 1px solid #ffffff;
+	border-radius: 20px;
+	box-shadow: var(--shadow);
+	padding: 1.1rem;
+}
+
+.panel h2 {
+	margin: 0 0 0.8rem;
+	font-size: 1.1rem;
+	font-family: "Space Grotesk", sans-serif;
+}
+
+.lista-telefonos {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.65rem;
+}
+
+.lista-telefonos li {
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--surface-soft);
+	padding: 0.72rem 0.8rem;
+	font-size: 0.96rem;
+}
+
+.lista-telefonos li strong {
+	color: var(--accent);
+}
+
+@media (max-width: 640px) {
+	body {
+		padding: 1rem;
+	}
+
+	.hero,
+	.panel {
+		border-radius: 14px;
+	}
+}
