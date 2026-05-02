@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -10,16 +10,123 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
 <body>
-    <main class="panel" data-api-clientes="/clientes">
-        <section class="hero">
-            <h1>Ituaccesorio</h1>
-            <p>{{ mensaje }}</p>
-            <div class="acciones">
-                <a class="btn-link" href="{{ url_for('prueba.pagina_prueba') }}">Ir a pruebas</a>
+    <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
+
+    <header class="topbar">
+        <div class="topbar__left">
+            <label class="hamburger" for="nav-toggle" aria-label="Abrir menú" role="button" tabindex="0">
+                <span class="hamburger__icon" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            </label>
+
+            <a class="brand" href="/" aria-label="Ir al inicio">
+                <img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
+            </a>
+        </div>
+
+        <div class="topbar__right">
+            <button class="icon-btn" type="button" aria-label="Notificaciones">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z" fill="currentColor"/>
+                </svg>
+            </button>
+
+            <div class="user">
+                <span class="user__avatar" aria-hidden="true"></span>
+                <div class="user__meta">
+                    <strong class="user__name">JUAN CHACÓN</strong>
+                    <span class="user__role">Administrador</span>
+                </div>
             </div>
+        </div>
+    </header>
+
+    <label class="backdrop" for="nav-toggle" aria-label="Cerrar menú"></label>
+
+    <aside class="drawer" aria-label="Menú lateral">
+        <div class="drawer__header">
+            
+            <span class="drawer__title">Menú</span>
+        </div>
+
+        <nav class="drawer__nav">
+            <a class="drawer__link is-active" href="/">Dashboard</a>
+            <a class="drawer__link" href="{{ url_for('prueba.pagina_prueba') }}">Prueba DBs</a>
+            <a class="drawer__link" href="{{ url_for('telefonos.pagina_telefonos') }}">Teléfonos</a>
+            <a class="drawer__link" href="/api/prueba" target="_blank" rel="noopener">API Prueba (JSON)</a>
+            <a class="drawer__link" href="/api/telefonos" target="_blank" rel="noopener">API Teléfonos (JSON)</a>
+        </nav>
+    </aside>
+
+    <main class="page">
+        <section class="dashboard" aria-label="Panel principal">
+            <article class="card card--stat" aria-label="Ventas hoy">
+                <h2 class="card__title">Ventas Hoy</h2>
+                <p class="card__value">$1,525<span class="card__value-dec">.00</span></p>
+                <a class="card__action" href="#" aria-label="Mostrar historial reciente">Mostrar Historial Reciente</a>
+            </article>
+
+            <article class="card card--orders" aria-label="Órdenes de servicio">
+                <h2 class="card__title">Ordenes de Servicio Abiertas</h2>
+                <div class="pill">Todos</div>
+            </article>
+
+            <article class="card card--highlight" aria-label="Ingresos semanales vs gastos">
+                <h2 class="card__title">Ingresos Semanales vs Gastos</h2>
+                <!-- <div class="placeholder" aria-hidden="true"></div> -->
+            </article>
+
+            <article class="card card--technicians" aria-label="Técnicos disponibles">
+                <h2 class="card__title">Técnicos Disponibles</h2>
+                <!-- <div class="placeholder" aria-hidden="true"></div> -->
+            </article>
+
+            <article class="card card--products" aria-label="Top productos">
+                <h2 class="card__title">Top Productos</h2>
+                <!-- <div class="placeholder placeholder--soft" aria-hidden="true"></div> -->
+            </article>
+
+            <article class="card card--activity" aria-label="Actividad reciente">
+                <div class="card__header">
+                    <h2 class="card__title">Actividad Reciente</h2>
+                </div>
+
+                <div class="activity">
+                    <div class="activity__item">
+                        <span class="activity__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/></svg>
+                        </span>
+                        <div class="activity__content">
+                            <p class="activity__text"><strong>Cliente [3221]</strong> Creó orden #3036, compra de cargador para iPhone</p>
+                            <span class="activity__time">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11h5v-2h-4V6h-2v7Z" fill="currentColor"/></svg>
+                                hace 12 horas
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="activity__divider" aria-hidden="true"></div>
+
+                    <div class="activity__item">
+                        <span class="activity__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/></svg>
+                        </span>
+                        <div class="activity__content">
+                            <p class="activity__text"><strong>Técnico [Jorge]</strong> Completó reparación del teléfono #[220]</p>
+                            <span class="activity__time">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11h5v-2h-4V6h-2v7Z" fill="currentColor"/></svg>
+                                hace 7 horas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </article>
         </section>
 
+        <p class="footer-hint">{{ mensaje }}</p>
     </main>
-    
 </body>
 </html>

@@ -2,6 +2,7 @@ from flask import Flask, render_template
 import os
 from app.controllers.home_controller import home_blueprint
 from app.controllers.prueba import prueba_blueprint
+from app.controllers.telefonos import telefonos_blueprint
 
 
 
@@ -15,6 +16,7 @@ app = Flask(
 # Registramos el controlador
 app.register_blueprint(home_blueprint)
 app.register_blueprint(prueba_blueprint)
+app.register_blueprint(telefonos_blueprint)
 
 
 
