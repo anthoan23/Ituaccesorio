@@ -72,22 +72,166 @@
 
             <article class="card card--orders" aria-label="Órdenes de servicio">
                 <h2 class="card__title">Ordenes de Servicio Abiertas</h2>
-                <div class="pill">Todos</div>
+                <div class="orders">
+                    <div class="orders__count" aria-label="Órdenes abiertas">15</div>
+                    <div class="orders__label">Filtra por estatus</div>
+                    <div class="chips" role="list" aria-label="Estatus">
+                        <span class="chip chip--active" role="listitem">Todos</span>
+                        <span class="chip" role="listitem">Estatus</span>
+                        <span class="chip" role="listitem">Cerradas</span>
+                        <span class="chip" role="listitem">Pendientes</span>
+                    </div>
+                </div>
             </article>
 
+// ESTADISTICAS ESTATICAS SOLO PARA MOSTRAR EL DISEÑO DE LA PAGINA PRINCIPAL, LOS DATOS SE PUEDEN CAMBIAR POR CUALQUIER OTRO DATO ESTATICO, NO HAY PROBLEMA
+            
             <article class="card card--highlight" aria-label="Ingresos semanales vs gastos">
-                <h2 class="card__title">Ingresos Semanales vs Gastos</h2>
-                <!-- <div class="placeholder" aria-hidden="true"></div> -->
+                <h2 class="card__title">Ingresos Semanales vs. Gastos</h2>
+
+                <div class="chart" aria-label="Gráfico estático">
+                    <div class="chart__y" aria-hidden="true">
+                        <span>$4,000</span>
+                        <span>$3,000</span>
+                        <span>$2,000</span>
+                        <span>$1,000</span>
+                        <span>0</span>
+                    </div>
+
+                    <div class="chart__plot">
+                        <svg class="chart__svg" viewBox="0 0 600 260" preserveAspectRatio="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="fillYellow" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0" stop-color="#f3c500" stop-opacity="0.35" />
+                                    <stop offset="1" stop-color="#f3c500" stop-opacity="0" />
+                                </linearGradient>
+                                <linearGradient id="fillGray" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0" stop-color="#111111" stop-opacity="0.14" />
+                                    <stop offset="1" stop-color="#111111" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+
+                            <g stroke="rgba(0,0,0,0.12)" stroke-width="1">
+                                <line x1="0" y1="20" x2="600" y2="20" />
+                                <line x1="0" y1="80" x2="600" y2="80" />
+                                <line x1="0" y1="140" x2="600" y2="140" />
+                                <line x1="0" y1="200" x2="600" y2="200" />
+                                <line x1="0" y1="250" x2="600" y2="250" />
+                            </g>
+
+                            <path d="M 0 210 C 70 190, 85 160, 120 150 C 160 135, 200 105, 240 120 C 280 135, 300 165, 340 155 C 380 145, 400 120, 440 115 C 480 110, 520 130, 600 160" fill="none" stroke="rgba(17,17,17,0.35)" stroke-width="4" stroke-linecap="round" />
+                            <path d="M 0 210 C 70 190, 85 160, 120 150 C 160 135, 200 105, 240 120 C 280 135, 300 165, 340 155 C 380 145, 400 120, 440 115 C 480 110, 520 130, 600 160 L 600 260 L 0 260 Z" fill="url(#fillGray)" />
+
+                            <path d="M 0 235 C 80 210, 100 185, 150 165 C 200 145, 235 105, 280 120 C 330 136, 350 170, 390 130 C 430 90, 450 35, 500 70 C 540 95, 520 155, 600 80" fill="none" stroke="#f3c500" stroke-width="5" stroke-linecap="round" />
+                            <path d="M 0 235 C 80 210, 100 185, 150 165 C 200 145, 235 105, 280 120 C 330 136, 350 170, 390 130 C 430 90, 450 35, 500 70 C 540 95, 520 155, 600 80 L 600 260 L 0 260 Z" fill="url(#fillYellow)" />
+                        </svg>
+
+                        <div class="chart__x" aria-hidden="true">
+                            <span>Mon</span>
+                            <span>Mar</span>
+                            <span>Mar</span>
+                            <span>Mar</span>
+                            <span>Jun</span>
+                            <span>Jul</span>
+                            <span>Sep</span>
+                        </div>
+                    </div>
+                </div>
             </article>
 
             <article class="card card--technicians" aria-label="Técnicos disponibles">
                 <h2 class="card__title">Técnicos Disponibles</h2>
-                <!-- <div class="placeholder" aria-hidden="true"></div> -->
+                <div class="tech-panel" role="group" aria-label="Lista de técnicos">
+                    <ul class="tech-list">
+                        <li class="tech-item">
+                            <span class="tech-item__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                            <span class="tech-item__name">Cliente [N]</span>
+                            <span class="tech-item__status tech-item__status--ok" aria-label="Disponible">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                        </li>
+
+                        <li class="tech-item">
+                            <span class="tech-item__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                            <span class="tech-item__name">Técnico [Y]</span>
+                            <span class="tech-item__status tech-item__status--warn" aria-label="Ocupado">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                        </li>
+
+                        <li class="tech-item">
+                            <span class="tech-item__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                            <span class="tech-item__name">Técnico [Z]</span>
+                            <span class="tech-item__status tech-item__status--ok" aria-label="Disponible">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
             </article>
+
+// AQUI SOLO HAY DATOS ESTATICOS, NO HAY INTERACCION CON DB, SOLO ES PARA MOSTRAR EL DISEÑO DE LA PAGINA PRINCIPAL, LOS DATOS SE PUEDEN CAMBIAR POR CUALQUIER OTRO DATO ESTATICO, NO HAY PROBLEMA
 
             <article class="card card--products" aria-label="Top productos">
                 <h2 class="card__title">Top Productos</h2>
-                <!-- <div class="placeholder placeholder--soft" aria-hidden="true"></div> -->
+                <div class="products" aria-label="Lista de productos (estática)">
+                    <div class="product" role="group" aria-label="Top Producto 1">
+                        <div class="product__thumb" aria-hidden="true"></div>
+                        <div class="product__meta">
+                            <div class="product__row">
+                                <strong class="product__name">Top Producto #1</strong>
+                                <span class="product__price">$10.00</span>
+                            </div>
+                            <div class="bar" aria-hidden="true">
+                                <div class="bar__fill" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product" role="group" aria-label="Top Producto 2">
+                        <div class="product__thumb product__thumb--alt" aria-hidden="true"></div>
+                        <div class="product__meta">
+                            <div class="product__row">
+                                <strong class="product__name">Top Producto #2</strong>
+                                <span class="product__price">$5.00</span>
+                            </div>
+                            <div class="bar" aria-hidden="true">
+                                <div class="bar__fill" style="width: 64%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product" role="group" aria-label="Top Producto 3">
+                        <div class="product__thumb product__thumb--soft" aria-hidden="true"></div>
+                        <div class="product__meta">
+                            <div class="product__row">
+                                <strong class="product__name">Top Producto #3</strong>
+                                <span class="product__price">$2.50</span>
+                            </div>
+                            <div class="bar" aria-hidden="true">
+                                <div class="bar__fill" style="width: 48%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </article>
 
             <article class="card card--activity" aria-label="Actividad reciente">
