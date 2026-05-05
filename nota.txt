@@ -14,4 +14,7 @@ docker-compose stop
 
 pip install mysql-connector-python -----------------------------
 
+Flask_talisman:
+Es la parte de seguridad y es muy estricta cambia el protocolo a https y no permite ejecutar codigo desde el html
+
 

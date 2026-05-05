@@ -29,6 +29,7 @@
                 <button type="button" class="form-panel__close" data-form-close="cliente">Cerrar</button>
             </div>
             <form class="data-form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="data-form__grid">
                     <label>
                         <span>ID</span>
@@ -72,6 +73,7 @@
                 <button type="button" class="form-panel__close" data-form-close="modulo">Cerrar</button>
             </div>
             <form class="data-form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="data-form__grid">
                     <label class="data-form__full">
                         <span>Nombre</span>

@@ -18,6 +18,7 @@ const modoEdicion = {
     cliente: null,
     modulo: null,
 };
+const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
 document.querySelectorAll("[data-form-target]").forEach(button => {
     button.addEventListener("click", () => {
@@ -80,6 +81,7 @@ function enviarFormulario(tipo, formulario, endpoint, modo = "crear") {
         method: modo === "editar" ? "PUT" : "POST",
         headers: {
             "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
         },
         body: JSON.stringify(payload),
     })
@@ -270,7 +272,12 @@ function eliminarRegistro(origen, registro) {
         ? `/api/prueba/cliente/${id}`
         : `/api/prueba/modulo/${id}`;
 
-    fetch(endpoint, { method: "DELETE" })
+    fetch(endpoint, {
+        method: "DELETE",
+        headers: {
+            "X-CSRFToken": csrfToken,
+        },
+    })
         .then(async response => {
             const data = await response.json().catch(() => ({}));
             return { response, data };

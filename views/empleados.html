@@ -125,6 +125,7 @@
                 </div>
 
                 <form id="form-empleado" class="form" autocomplete="off">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="form__grid">
                         <label>
                             <span>Cédula</span>

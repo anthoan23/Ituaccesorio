@@ -1,4 +1,5 @@
 FLASK_DEBUG=1
+SECRET_KEY=pon_aqui_una_clave_larga_y_aleatoria
 DB_HOST1=db1
 DB_PORT=3306
 DB_NAME1=ituaccesoriobd

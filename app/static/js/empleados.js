@@ -26,6 +26,7 @@ let paginaActual = 1;
 const tamPagina = 6;
 
 let modoEdicion = null;
+const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
 iniciar();
 
@@ -264,7 +265,10 @@ function onSubmit(event) {
 
     fetch(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+        },
         body: JSON.stringify(payload),
     })
         .then(async r => {
@@ -289,7 +293,12 @@ function onSubmit(event) {
 function eliminarEmpleado(cedula) {
     if (!Number.isFinite(cedula)) return;
 
-    fetch(`/api/empleados/${cedula}`, { method: "DELETE" })
+    fetch(`/api/empleados/${cedula}`, {
+        method: "DELETE",
+        headers: {
+            "X-CSRFToken": csrfToken,
+        },
+    })
         .then(async r => {
             const data = await r.json().catch(() => ({}));
             return { r, data };
