@@ -584,6 +584,18 @@ body {
     background: rgba(0, 0, 0, 0.78);
 }
 
+.bar__fill--78 {
+    width: 78%;
+}
+
+.bar__fill--64 {
+    width: 64%;
+}
+
+.bar__fill--48 {
+    width: 48%;
+}
+
 .placeholder {
     margin-top: 0.9rem;
     height: 100%;
