@@ -27,7 +27,14 @@ app.config.update(
     SESSION_COOKIE_SECURE=False    # Déjalo en False por ahora para Docker/Local
 )
 
-talisman = Talisman(app)
+csp = {
+    'default-src': ["'self'"],
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    'style-src-elem': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    'font-src': ["'self'", 'https://fonts.gstatic.com'],
+}
+
+talisman = Talisman(app, content_security_policy=csp)
 csrf = SeaSurf(app)
 # Registramos el controlador
 app.register_blueprint(home_blueprint)
