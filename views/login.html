@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Iniciar sesión | Ituaccesorio</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+	<main class="auth-shell">
+		<section class="auth-card" aria-label="Formulario de inicio de sesión">
+			<div class="auth-card__brand">
+				<img class="auth-card__logo" src="{{ url_for('static', filename='img/LOGO TRAZO.png') }}" alt="Ituaccesorio">
+				<p class="auth-card__eyebrow">Acceso al sistema</p>
+			</div>
+
+			<h1 class="auth-card__title">Bienvenido de nuevo</h1>
+			<p class="auth-card__subtitle">Ingresa tus credenciales para continuar.</p>
+
+			<form class="auth-form" id="login-form" method="post" action="">
+				<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+				<label class="field">
+					<span class="field__label">Usuario</span>
+					<input class="field__input" id="login-nombre" type="text" name="nombre" autocomplete="username" placeholder="Tu usuario" required>
+				</label>
+
+				<label class="field">
+					<span class="field__label">Contraseña</span>
+					<input class="field__input" id="login-password" type="password" name="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+				</label>
+
+				<button class="auth-form__submit" type="submit">Entrar</button>
+			</form>
+		</section>
+	</main>
+	<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
