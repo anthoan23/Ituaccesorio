@@ -1,14 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Iniciar sesión | Ituaccesorio</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
-</head>
-<body>
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Iniciar sesión | Ituaccesorio{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
 	<main class="auth-shell">
 		<section class="auth-card" aria-label="Formulario de inicio de sesión">
 			<div class="auth-card__brand">
@@ -35,6 +35,9 @@
 			</form>
 		</section>
 	</main>
+		</main>
+{% endblock %}
+
+{% block scripts %}
 	<script src="{{ url_for('static', filename='js/login.js') }}"></script>
-</body>
-</html>
+{% endblock %}

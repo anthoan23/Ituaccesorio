@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for
 from app.models.usuarios import Usuarios
 
 login_blueprint = Blueprint("login", __name__)
@@ -35,10 +35,18 @@ def validar_login():
             session["usuario_nombre"] = usuario.get("nombre")
             session["cedula_personal"] = usuario.get("cedula_personal")
             session["rol_id"] = usuario.get("rol_id")
+            session["nombre_rol"] = usuario.get("nombre_rol")
             return jsonify({"success": True, "message": "Inicio de sesión exitoso."})
         else:
             return jsonify({"success": False, "error": "Credenciales inválidas."}), 401
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400   
+
+
+
+@login_blueprint.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect(url_for('home.home'))
 
 

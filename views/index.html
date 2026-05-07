@@ -1,15 +1,12 @@
-<html>
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Ituaccesorio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-</head>
-<body>
-    {% include 'components/layout/navbar.html' %}
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Inicio{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
     <main class="page">
         <section class="dashboard" aria-label="Panel principal">
             <article class="card card--stat" aria-label="Ventas hoy">
@@ -215,6 +212,4 @@
             </article>
         </section>
     </main>
-	
-</body>
-</html>
+{% endblock %}

@@ -23,13 +23,19 @@
 			</svg>
 		</button>
 
+		{% if session.get('autenticado') %}
 		<div class="user">
 			<span class="user__avatar" aria-hidden="true"></span>
 			<div class="user__meta">
-				<strong class="user__name">JUAN CHACÓN</strong>
-				<span class="user__role">Administrador</span>
+				<strong class="user__name">{{ session.get('usuario_nombre') }}</strong>
+				<span class="user__role">{{ session.get('nombre_rol') }}</span>
 			</div>
 		</div>
+		{% else %}
+		<div class="user user--guest">
+			<a class="btn btn--yellow" href="{{ url_for('login.pagina_login') }}">Iniciar sesión</a>
+		</div>
+		{% endif %}
 	</div>
 </header>
 
@@ -48,4 +54,13 @@
 		<a class="drawer__link" href="/api/prueba" target="_blank" rel="noopener">API Prueba (JSON)</a>
 		<a class="drawer__link" href="/api/telefonos" target="_blank" rel="noopener">API Teléfonos (JSON)</a>
 	</nav>
+	
+	<div class="drawer__footer">
+		{% if session.get('autenticado') %}
+			<form action="{{ url_for('login.logout') }}" method="GET">
+				<button class="drawer__logout btn btn--ghost" type="submit">Cerrar sesión</button>
+			</form>
+		{% endif %}
+	</div>
+
 </aside>

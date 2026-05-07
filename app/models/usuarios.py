@@ -7,7 +7,13 @@ class Usuarios(conectar):
         if db:
             cursor = db.cursor(dictionary=True)
             try:
-                cursor.execute("SELECT * FROM usuario WHERE nombre = %s AND password = %s", (nombre, password))
+                cursor.execute(
+                    "SELECT usuario.*, rol.nombre AS nombre_rol"
+                    " FROM usuario"
+                    " JOIN rol ON usuario.rol_id = rol.id"
+                    " WHERE usuario.nombre = %s AND usuario.password = %s",
+                    (nombre, password)
+                )
                 resultados = cursor.fetchall()
                 return resultados
             finally:
