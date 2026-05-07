@@ -5,7 +5,10 @@ prueba_blueprint = Blueprint("prueba", __name__)
 @prueba_blueprint.route("/prueba", methods=["GET"])
 def pagina_prueba():
     return render_template(
-        "prueba.html"
+        "prueba.html",
+        show_navbar=True,
+        show_notifications=True,
+        active_page="prueba",
     )
 
 

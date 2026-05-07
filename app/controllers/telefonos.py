@@ -7,7 +7,10 @@ telefonos_blueprint = Blueprint("telefonos", __name__)
 @telefonos_blueprint.route("/telefonos", methods=["GET"])
 def pagina_telefonos():
 	return render_template(
-		"telefonos.html"
+        "telefonos.html",
+        show_navbar=True,
+        show_notifications=True,
+        active_page="telefonos",
 	)
 
 @telefonos_blueprint.route("/api/telefonos", methods=["GET"])

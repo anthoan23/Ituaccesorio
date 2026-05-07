@@ -1,0 +1,51 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+<input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
+
+<header class="topbar">
+	<div class="topbar__left">
+		<label class="hamburger" for="nav-toggle" aria-label="Abrir menú" role="button" tabindex="0">
+			<span class="hamburger__icon" aria-hidden="true">
+				<span></span>
+				<span></span>
+				<span></span>
+			</span>
+		</label>
+
+		<a class="brand" href="/" aria-label="Ir al inicio">
+			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
+		</a>
+	</div>
+
+	<div class="topbar__right">
+		<button class="icon-btn" type="button" aria-label="Notificaciones">
+			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+				<path d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z" fill="currentColor"/>
+			</svg>
+		</button>
+
+		<div class="user">
+			<span class="user__avatar" aria-hidden="true"></span>
+			<div class="user__meta">
+				<strong class="user__name">JUAN CHACÓN</strong>
+				<span class="user__role">Administrador</span>
+			</div>
+		</div>
+	</div>
+</header>
+
+<label class="backdrop" for="nav-toggle" aria-label="Cerrar menú"></label>
+
+<aside class="drawer" aria-label="Menú lateral">
+	<div class="drawer__header">
+		<span class="drawer__title">Menú</span>
+	</div>
+
+	<nav class="drawer__nav">
+		<a class="drawer__link is-active" href="/">Dashboard</a>
+		<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+		<a class="drawer__link" href="{{ url_for('prueba.pagina_prueba') }}">Prueba DBs</a>
+		<a class="drawer__link" href="{{ url_for('telefonos.pagina_telefonos') }}">Teléfonos</a>
+		<a class="drawer__link" href="/api/prueba" target="_blank" rel="noopener">API Prueba (JSON)</a>
+		<a class="drawer__link" href="/api/telefonos" target="_blank" rel="noopener">API Teléfonos (JSON)</a>
+	</nav>
+</aside>

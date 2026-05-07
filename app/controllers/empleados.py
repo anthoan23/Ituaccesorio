@@ -7,7 +7,12 @@ empleados_blueprint = Blueprint("empleados", __name__)
 
 @empleados_blueprint.route("/empleados", methods=["GET"])
 def pagina_empleados():
-    return render_template("empleados.html")
+    return render_template(
+        "empleados.html",
+        show_navbar=True,
+        show_notifications=False,
+        active_page="empleados",
+    )
 
 
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
