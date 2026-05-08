@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, g, request
 import os
 from flask_talisman import Talisman
 from dotenv import load_dotenv
@@ -8,6 +8,8 @@ from app.controllers.prueba import prueba_blueprint
 from app.controllers.telefonos import telefonos_blueprint
 from app.controllers.empleados import empleados_blueprint
 from app.controllers.login import login_blueprint
+from app.utils.jwt_utils import decode_token
+from types import SimpleNamespace
 
 
 load_dotenv()
@@ -43,6 +45,22 @@ app.register_blueprint(prueba_blueprint)
 app.register_blueprint(telefonos_blueprint)
 app.register_blueprint(empleados_blueprint)
 app.register_blueprint(login_blueprint)
+
+
+@app.before_request
+def load_user_from_jwt():
+    token = request.cookies.get('access_token')
+    if not token:
+        auth = request.headers.get('Authorization', '')
+        if auth.startswith('Bearer '):
+            token = auth.split(' ', 1)[1].strip()
+
+    payload = decode_token(token)
+    if payload:
+        # convert dict to object for template attribute access
+        g.user = SimpleNamespace(**payload)
+    else:
+        g.user = None
 
 
 

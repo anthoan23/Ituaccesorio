@@ -23,12 +23,12 @@
 			</svg>
 		</button>
 
-		{% if session.get('autenticado') %}
+		{% if g.user %}
 		<div class="user">
 			<span class="user__avatar" aria-hidden="true"></span>
 			<div class="user__meta">
-				<strong class="user__name">{{ session.get('usuario_nombre') }}</strong>
-				<span class="user__role">{{ session.get('nombre_rol') }}</span>
+				<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
+				<span class="user__role">{{ g.user.nombre_rol }}</span>
 			</div>
 		</div>
 		{% else %}
@@ -56,7 +56,7 @@
 	</nav>
 	
 	<div class="drawer__footer">
-		{% if session.get('autenticado') %}
+		{% if g.user %}
 			<form action="{{ url_for('login.logout') }}" method="GET">
 				<button class="drawer__logout btn btn--ghost" type="submit">Cerrar sesión</button>
 			</form>

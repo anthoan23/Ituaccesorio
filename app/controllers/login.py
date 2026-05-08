@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request, session, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, make_response
 from app.models.usuarios import Usuarios
+from app.utils.jwt_utils import create_token
 
 login_blueprint = Blueprint("login", __name__)
 @login_blueprint.route("/login", methods=["GET"])
@@ -29,14 +30,18 @@ def validar_login():
         resultados = modelo.validar(nombre, password)
         if resultados:
             usuario = resultados[0]
-            session.clear()
-            session["autenticado"] = True
-            session["usuario_id"] = usuario.get("id")
-            session["usuario_nombre"] = usuario.get("nombre")
-            session["cedula_personal"] = usuario.get("cedula_personal")
-            session["rol_id"] = usuario.get("rol_id")
-            session["nombre_rol"] = usuario.get("nombre_rol")
-            return jsonify({"success": True, "message": "Inicio de sesión exitoso."})
+            # Create JWT payload
+            payload = {
+                "usuario_id": usuario.get("id"),
+                "usuario_nombre": usuario.get("nombre"),
+                "cedula_personal": usuario.get("cedula_personal"),
+                "rol_id": usuario.get("rol_id"),
+                "nombre_rol": usuario.get("nombre_rol"),
+            }
+            token = create_token(payload)
+            resp = make_response(jsonify({"success": True, "message": "Inicio de sesión exitoso."}))
+            resp.set_cookie('access_token', token, httponly=True, samesite='Lax', secure=False, path='/')
+            return resp
         else:
             return jsonify({"success": False, "error": "Credenciales inválidas."}), 401
     except Exception as error:
@@ -46,7 +51,8 @@ def validar_login():
 
 @login_blueprint.route('/logout', methods=['GET'])
 def logout():
-    session.clear()
-    return redirect(url_for('home.home'))
+    resp = redirect(url_for('home.home'))
+    resp.set_cookie('access_token', '', expires=0, path='/')
+    return resp
 
 
