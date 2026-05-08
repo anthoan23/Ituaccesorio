@@ -1,22 +1,28 @@
-<!doctype html>
-<html lang="es">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Página no encontrada</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Página no encontrada | Ituaccesorio{% endblock %}
+
+{% block head_extra %}
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/404.css') }}">
-</head>
-<body>
-	<main class="card">
-		<div class="code">404</div>
-		<h1>Página no encontrada</h1>
-		<p>La dirección que escribiste no existe en este sistema. Revisa la URL o vuelve al inicio para continuar navegando.</p>
-		<div class="actions">
-			<a class="primary" href="/">Ir al inicio</a>
-		</div>
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+	<main class="auth-shell">
+		<section class="auth-card error-card" aria-label="Página no encontrada">
+			<div class="auth-card__brand">
+				<img class="auth-card__logo" src="{{ url_for('static', filename='img/LOGO TRAZO.png') }}" alt="Ituaccesorio">
+				<p class="auth-card__eyebrow">Error 404</p>
+			</div>
+
+			<h1 class="auth-card__title">Página no encontrada</h1>
+			<p class="auth-card__subtitle">La dirección que escribiste no existe en este sistema. Revisa la URL o vuelve al inicio para continuar navegando.</p>
+
+			<div class="actions">
+				<a class="primary" href="/">Ir al inicio</a>
+				
+			</div>
+		</section>
 	</main>
-</body>
-</html>
+{% endblock %}
