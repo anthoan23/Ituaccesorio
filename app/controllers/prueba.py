@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, render_template, request
 from app.models.prueba import Prueba_bd
+from app.utils.decorators import jwt_required
 
 prueba_blueprint = Blueprint("prueba", __name__)
 @prueba_blueprint.route("/prueba", methods=["GET"])
+@jwt_required
 def pagina_prueba():
     return render_template(
         "prueba.html",
@@ -13,6 +15,7 @@ def pagina_prueba():
 
 
 @prueba_blueprint.route("/api/prueba", methods=["GET"])
+@jwt_required
 def obtener_prueba_json():
     modelo = Prueba_bd()
     resultados_bd1 = modelo.prueba_consultar_bd1() or []
@@ -25,6 +28,7 @@ def obtener_prueba_json():
 
 
 @prueba_blueprint.route("/api/prueba/cliente", methods=["POST"])
+@jwt_required
 def agregar_cliente():
     datos = request.get_json(silent=True) or {}
     modelo = Prueba_bd()
@@ -49,6 +53,7 @@ def agregar_cliente():
 
 
 @prueba_blueprint.route("/api/prueba/modulo", methods=["POST"])
+@jwt_required
 def agregar_modulo():
     datos = request.get_json(silent=True) or {}
     modelo = Prueba_bd()
@@ -64,6 +69,7 @@ def agregar_modulo():
 
 
 @prueba_blueprint.route("/api/prueba/cliente/<int:id_cliente>", methods=["PUT"])
+@jwt_required
 def editar_cliente(id_cliente):
     datos = request.get_json(silent=True) or {}
     modelo = Prueba_bd()
@@ -84,6 +90,7 @@ def editar_cliente(id_cliente):
 
 
 @prueba_blueprint.route("/api/prueba/cliente/<int:id_cliente>", methods=["DELETE"])
+@jwt_required
 def eliminar_cliente(id_cliente):
     modelo = Prueba_bd()
 
@@ -95,6 +102,7 @@ def eliminar_cliente(id_cliente):
 
 
 @prueba_blueprint.route("/api/prueba/modulo/<int:id_modulo>", methods=["PUT"])
+@jwt_required
 def editar_modulo(id_modulo):
     datos = request.get_json(silent=True) or {}
     modelo = Prueba_bd()
@@ -111,6 +119,7 @@ def editar_modulo(id_modulo):
 
 
 @prueba_blueprint.route("/api/prueba/modulo/<int:id_modulo>", methods=["DELETE"])
+@jwt_required
 def eliminar_modulo(id_modulo):
     modelo = Prueba_bd()
 

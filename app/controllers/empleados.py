@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, Response
+from app.utils.decorators import jwt_required
 
 from app.models.empleados import Empleados
 
@@ -6,6 +7,7 @@ empleados_blueprint = Blueprint("empleados", __name__)
 
 
 @empleados_blueprint.route("/empleados", methods=["GET"])
+@jwt_required
 def pagina_empleados():
     return render_template(
         "empleados.html",
@@ -16,6 +18,7 @@ def pagina_empleados():
 
 
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
+@jwt_required
 def api_listar_empleados():
     modelo = Empleados()
     empleados = modelo.listar_empleados() or []
@@ -23,6 +26,7 @@ def api_listar_empleados():
 
 
 @empleados_blueprint.route("/api/empleados/recientes", methods=["GET"])
+@jwt_required
 def api_empleados_recientes():
     limite = request.args.get("limit", default=5, type=int)
     limite = max(1, min(limite or 5, 20))
@@ -42,6 +46,7 @@ def api_empleados_recientes():
 
 
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
+@jwt_required
 def api_crear_empleado():
     datos = request.get_json(silent=True) or {}
     modelo = Empleados()
@@ -67,6 +72,7 @@ def api_crear_empleado():
 
 
 @empleados_blueprint.route("/api/empleados/<int:cedula>", methods=["PUT"])
+@jwt_required
 def api_actualizar_empleado(cedula: int):
     datos = request.get_json(silent=True) or {}
     modelo = Empleados()
@@ -87,6 +93,7 @@ def api_actualizar_empleado(cedula: int):
 
 
 @empleados_blueprint.route("/api/empleados/<int:cedula>", methods=["DELETE"])
+@jwt_required
 def api_eliminar_empleado(cedula: int):
     modelo = Empleados()
 
@@ -98,6 +105,7 @@ def api_eliminar_empleado(cedula: int):
 
 
 @empleados_blueprint.route("/api/empleados/reporte", methods=["GET"])
+@jwt_required
 def api_reporte_empleados():
     modelo = Empleados()
     filas = modelo.listar_empleados() or []
