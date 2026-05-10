@@ -62,3 +62,64 @@ def api_agregar_empleado():
         return jsonify({"success": False, "error": mensaje or "No se pudo agregar el empleado."}), 400
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
+    
+    
+@empleados_blueprint.route("/api/cargos", methods=["POST"])
+@jwt_required
+def api_agregar_cargo():
+    datos = request.get_json(silent=True) or {}
+
+    cargo = str(datos.get("cargo", "")).strip()
+
+    if not cargo:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "El nombre del cargo es obligatorio.",
+                }
+            ),
+            400,
+        )
+
+    modelo = Empleados()
+
+    try:
+        mensaje = modelo.agregar_cargo(cargo=cargo)
+
+        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
+            return jsonify({"success": True, "message": mensaje}), 201
+
+        return jsonify({"success": False, "error": mensaje or "No se pudo agregar el cargo."}), 400
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 500
+
+@empleados_blueprint.route("/api/especialidades", methods=["POST"])
+@jwt_required
+def api_agregar_especialidad():
+    datos = request.get_json(silent=True) or {}
+
+    especialidad = str(datos.get("especialidad", "")).strip()
+
+    if not especialidad:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "El nombre de la especialidad es obligatorio.",
+                }
+            ),
+            400,
+        )
+
+    modelo = Empleados()
+
+    try:
+        mensaje = modelo.agregar_especialidad(especialidad=especialidad)
+
+        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
+            return jsonify({"success": True, "message": mensaje}), 201
+
+        return jsonify({"success": False, "error": mensaje or "No se pudo agregar la especialidad."}), 400
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 500

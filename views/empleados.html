@@ -338,6 +338,50 @@
             </div>
         </section>
 
+        <!-- Modal para Registrar Cargo -->
+        <section id="modal-cargo" class="modal" aria-hidden="true" style="display:none;">
+            <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-cargo-title">
+                <div class="modal__header">
+                    <h3 id="modal-cargo-title" class="modal__title">Registrar cargo</h3>
+                    <button id="modal-cargo-cerrar" class="modal__close" type="button" aria-label="Cerrar">×</button>
+                </div>
+
+                <form id="form-cargo" class="form" autocomplete="off">
+                    <div class="form__grid">
+                        <label class="form__full">
+                            <span>Nombre del cargo</span>
+                            <input name="cargo_nombre" type="text" placeholder="Ej. Administración" required>
+                        </label>
+                    </div>
+                    <div class="form__actions">
+                        <button class="btn btn--yellow" type="submit">Guardar cargo</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Modal para Registrar Especialidad -->
+        <section id="modal-especialidad" class="modal" aria-hidden="true" style="display:none;">
+            <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-especialidad-title">
+                <div class="modal__header">
+                    <h3 id="modal-especialidad-title" class="modal__title">Registrar especialidad</h3>
+                    <button id="modal-especialidad-cerrar" class="modal__close" type="button" aria-label="Cerrar">×</button>
+                </div>
+
+                <form id="form-especialidad" class="form" autocomplete="off">
+                    <div class="form__grid">
+                        <label class="form__full">
+                            <span>Nombre de la especialidad</span>
+                            <input name="especialidad_nombre" type="text" placeholder="Ej. Pantallas" required>
+                        </label>
+                    </div>
+                    <div class="form__actions">
+                        <button class="btn btn--yellow" type="submit">Guardar especialidad</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
         <div id="toast" class="toast" role="status" aria-live="polite"></div>
         </main>
 {% endblock %}
