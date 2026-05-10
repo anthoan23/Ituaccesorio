@@ -1,352 +1,166 @@
-const tabla = document.getElementById("tabla-empleados");
-const listaLogs = document.getElementById("lista-logs");
+(() => {
+    const modal = document.getElementById('modal');
+    const modalDialog = modal && modal.querySelector('.modal__dialog');
+    const modalTitle = document.getElementById('modal-title');
+    const modalClose = document.getElementById('modal-cerrar');
+    const btnRegistrar = document.getElementById('btn-registrar');
+    const btnRegistrarCargo = document.getElementById('btn-registrar-cargo');
+    const btnRegistrarEspecialidad = document.getElementById('btn-registrar-especialidad');
+    const form = document.getElementById('form-empleado');
+    const toast = document.getElementById('toast');
 
-const modal = document.getElementById("modal");
-const modalCerrar = document.getElementById("modal-cerrar");
-const form = document.getElementById("form-empleado");
-const btnCancelar = document.getElementById("btn-cancelar");
-const btnRegistrar = document.getElementById("btn-registrar");
-
-const btnBusqueda = document.getElementById("btn-busqueda");
-const panelFiltros = document.getElementById("panel-filtros");
-const btnAplicar = document.getElementById("btn-aplicar");
-const btnLimpiar = document.getElementById("btn-limpiar");
-
-const fCedula = document.getElementById("f-cedula");
-
-const btnReporte = document.getElementById("btn-reporte");
-
-const pagerPages = document.getElementById("pager-pages");
-const pagerButtons = document.querySelectorAll(".pager__btn");
-
-const toast = document.getElementById("toast");
-
-let empleados = [];
-let paginaActual = 1;
-const tamPagina = 6;
-
-let modoEdicion = null;
-const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
-
-iniciar();
-
-function iniciar() {
-    btnRegistrar?.addEventListener("click", () => abrirModal());
-    modalCerrar?.addEventListener("click", cerrarModal);
-    btnCancelar?.addEventListener("click", cerrarModal);
-
-    modal?.addEventListener("click", event => {
-        if (event.target === modal) {
-            cerrarModal();
-        }
-    });
-
-    form?.addEventListener("submit", onSubmit);
-
-    btnBusqueda?.addEventListener("click", () => {
-        const abierto = !panelFiltros.hidden;
-        panelFiltros.hidden = abierto;
-    });
-
-    btnAplicar?.addEventListener("click", () => {
-        paginaActual = 1;
-        renderTabla();
-    });
-
-    btnLimpiar?.addEventListener("click", () => {
-        if (fCedula) {
-            fCedula.value = "";
-        }
-        paginaActual = 1;
-        renderTabla();
-    });
-
-    btnReporte?.addEventListener("click", () => {
-        window.open("/api/empleados/reporte", "_blank", "noopener");
-    });
-
-    pagerButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (btn.dataset.page === "prev") {
-                paginaActual = Math.max(1, paginaActual - 1);
-            } else {
-                paginaActual = Math.min(getTotalPaginas(), paginaActual + 1);
-            }
-            renderTabla();
-        });
-    });
-
-    recargar();
-}
-
-function recargar() {
-    Promise.all([cargarEmpleados(), cargarRecientes()]).catch(() => {
-        mostrarToast("No se pudieron cargar los datos.");
-    });
-}
-
-function cargarEmpleados() {
-    return fetch("/api/empleados")
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                throw new Error(data.error || "Error");
-            }
-            empleados = Array.isArray(data.empleados) ? data.empleados : [];
-            paginaActual = 1;
-            renderTabla();
-        });
-}
-
-function cargarRecientes() {
-    return fetch("/api/empleados/recientes?limit=5")
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                throw new Error(data.error || "Error");
-            }
-            renderLogs(Array.isArray(data.logs) ? data.logs : []);
-        });
-}
-
-function getFiltrados() {
-    const cedula = (fCedula?.value || "").trim();
-
-    return empleados.filter(e => {
-        const matchCedula = !cedula || String(e.cedula).includes(cedula);
-        return matchCedula;
-    });
-}
-
-function getTotalPaginas() {
-    const total = getFiltrados().length;
-    return Math.max(1, Math.ceil(total / tamPagina));
-}
-
-function renderTabla() {
-    if (!tabla) return;
-
-    const filtrados = getFiltrados();
-    const totalPaginas = Math.max(1, Math.ceil(filtrados.length / tamPagina));
-    paginaActual = Math.min(paginaActual, totalPaginas);
-
-    const start = (paginaActual - 1) * tamPagina;
-    const pageItems = filtrados.slice(start, start + tamPagina);
-
-    pagerPages.textContent = `${paginaActual} | ${totalPaginas}`;
-
-    if (pageItems.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="4">No hay empleados para mostrar.</td></tr>`;
-        return;
-    }
-
-    tabla.innerHTML = pageItems.map(renderFila).join("");
-
-    tabla.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const action = btn.dataset.action;
-            const cedula = Number(btn.dataset.cedula);
-            const empleado = empleados.find(e => Number(e.cedula) === cedula);
-
-            if (action === "edit") {
-                abrirModal(empleado);
-                return;
-            }
-
-            if (action === "delete") {
-                eliminarEmpleado(cedula);
-            }
-        });
-    });
-}
-
-function renderFila(e) {
-    const nombre = `${e.nombre || ""} ${e.apellido || ""}`.trim();
-    return `
-        <tr>
-            <td>${escapeHtml(String(e.cedula ?? ""))}</td>
-            <td>${escapeHtml(nombre || "—")}</td>
-            <td>${escapeHtml(String(e.rol || "—"))}</td>
-            <td class="table__actions">
-                <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit" data-cedula="${escapeHtml(String(e.cedula))}" aria-label="Editar">
-                        ${iconPencil()}
-                    </button>
-                    <button class="icon-action" type="button" data-action="delete" data-cedula="${escapeHtml(String(e.cedula))}" aria-label="Eliminar">
-                        ${iconTrash()}
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `;
-}
-
-function renderLogs(logs) {
-    if (!listaLogs) return;
-
-    if (!Array.isArray(logs) || logs.length === 0) {
-        listaLogs.innerHTML = "<li><span class='log__avatar' aria-hidden='true'></span><div><p class='log__line'>Sin registros recientes</p><div class='log__meta'>Aún no hay actividad.</div></div></li>";
-        return;
-    }
-
-    listaLogs.innerHTML = logs.map(l => {
-        return `
-            <li>
-                <span class="log__avatar" aria-hidden="true"></span>
-                <div>
-                    <p class="log__line">${escapeHtml(l.linea || "")}</p>
-                    <div class="log__meta">${escapeHtml(l.meta || "")}</div>
-                </div>
-            </li>
-        `;
-    }).join("");
-}
-
-function abrirModal(empleado = null) {
     if (!modal || !form) return;
 
-    modoEdicion = empleado ? Number(empleado.cedula) : null;
-
-    const title = document.getElementById("modal-title");
-    if (title) {
-        title.textContent = modoEdicion ? "Editar empleado" : "Registrar empleado";
-    }
-
-    form.reset();
-
-    const cedulaInput = form.querySelector("input[name='cedula']");
-    if (cedulaInput) {
-        cedulaInput.disabled = Boolean(modoEdicion);
-    }
-
-    if (empleado) {
-        form.cedula.value = empleado.cedula ?? "";
-        form.nombre.value = empleado.nombre ?? "";
-        form.apellido.value = empleado.apellido ?? "";
-        const celularRaw = String(empleado.celular ?? "").replace(/\s|-/g, "");
-        const prefijo = celularRaw.length >= 4 ? celularRaw.slice(0, 4) : "0414";
-        const resto = celularRaw.length >= 4 ? celularRaw.slice(4) : celularRaw;
-        if (form.celular_prefijo) {
-            form.celular_prefijo.value = prefijo;
+    function openModal(kind = 'empleado') {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        if (modalTitle) {
+            if (kind === 'empleado') modalTitle.textContent = 'Registrar empleado';
+            else if (kind === 'cargo') modalTitle.textContent = 'Registrar cargo';
+            else if (kind === 'especialidad') modalTitle.textContent = 'Registrar especialidad';
         }
-        if (form.celular_numero) {
-            form.celular_numero.value = resto;
-        }
-        form.correo.value = empleado.correo ?? "";
-        form.direccion.value = empleado.direccion ?? "";
-        form.rol.value = empleado.rol ?? "";
+        form.dataset.kind = kind;
+        // focus first input if exists
+        const first = form.querySelector('input, select, textarea, button');
+        if (first) first.focus();
     }
 
-    modal.classList.add("is-open");
-    modal.setAttribute("aria-hidden", "false");
-}
+    function closeModal() {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        form.reset();
+        delete form.dataset.kind;
+    }
 
-function cerrarModal() {
-    if (!modal) return;
-    modal.classList.remove("is-open");
-    modal.setAttribute("aria-hidden", "true");
-    modoEdicion = null;
-}
+    function showToast(text) {
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.add('is-show');
+        setTimeout(() => toast.classList.remove('is-show'), 2200);
+    }
 
-function onSubmit(event) {
-    event.preventDefault();
+    function obtenerCsrfToken() {
+        const csrfInput = form.querySelector('input[name="_csrf_token"]');
+        return csrfInput ? csrfInput.value : '';
+    }
 
-    const payload = Object.fromEntries(new FormData(form).entries());
-    payload.cedula = payload.cedula ? Number(payload.cedula) : payload.cedula;
+    // Button handlers
+    btnRegistrar && btnRegistrar.addEventListener('click', () => openModal('empleado'));
+    btnRegistrarCargo && btnRegistrarCargo.addEventListener('click', () => openModal('cargo'));
+    btnRegistrarEspecialidad && btnRegistrarEspecialidad.addEventListener('click', () => openModal('especialidad'));
 
-    const prefijo = (payload.celular_prefijo || "").trim();
-    const numero = (payload.celular_numero || "").trim();
-    payload.celular = numero ? `${prefijo}${numero}` : "";
-    delete payload.celular_prefijo;
-    delete payload.celular_numero;
+    // Close handlers
+    modalClose && modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+    });
 
-    const endpoint = modoEdicion ? `/api/empleados/${modoEdicion}` : "/api/empleados";
-    const method = modoEdicion ? "PUT" : "POST";
+    // Submit handler
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kind = form.dataset.kind || 'registro';
 
-    fetch(endpoint, {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(payload),
-    })
-        .then(async r => {
-            const data = await r.json().catch(() => ({}));
-            return { r, data };
-        })
-        .then(({ r, data }) => {
-            if (!r.ok || !data.success) {
-                mostrarToast(data.error || "No se pudo guardar.");
+        // Los formularios de cargo/especialidad no tienen endpoint en backend todavía.
+        if (kind !== 'empleado') {
+            showToast(`${kind.charAt(0).toUpperCase() + kind.slice(1)} guardado`);
+            closeModal();
+            return;
+        }
+
+        const cedula = (form.querySelector('input[name="id"]')?.value || '').trim();
+        const nombre = (form.querySelector('input[name="nombre"]')?.value || '').trim();
+        const apellido = (form.querySelector('input[name="apellido"]')?.value || '').trim();
+        const celularPrefijo = (form.querySelector('select[name="celular_prefijo"]')?.value || '').trim();
+        const celularNumero = (form.querySelector('input[name="celular_numero"]')?.value || '').trim();
+        const correo = (form.querySelector('input[name="correo"]')?.value || '').trim();
+        const direccion = (form.querySelector('input[name="direccion"]')?.value || '').trim();
+        const celular = `${celularPrefijo}${celularNumero}`;
+
+        if (!cedula || !nombre || !apellido || !celular || !correo || !direccion) {
+            showToast('Todos los campos son obligatorios');
+            return;
+        }
+
+        const payload = {
+            cedula,
+            nombre,
+            apellido,
+            celular,
+            correo,
+            direccion,
+        };
+
+        try {
+            const csrfToken = obtenerCsrfToken();
+            const response = await fetch('/api/empleados', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.success) {
+                showToast(data.message || 'Empleado agregado exitosamente');
+                closeModal();
+                await cargarEmpleados();
                 return;
             }
 
-            mostrarToast(modoEdicion ? "Empleado actualizado" : "Empleado registrado");
-            cerrarModal();
-            recargar();
-        })
-        .catch(() => {
-            mostrarToast("Error guardando empleado");
-        });
-}
+            showToast(data.error || 'No se pudo agregar el empleado');
+        } catch (error) {
+            console.error(error);
+            showToast('Error de conexión al guardar empleado');
+        }
+    });
 
-function eliminarEmpleado(cedula) {
-    if (!Number.isFinite(cedula)) return;
+        // Cargar lista de empleados desde el controlador
+        async function cargarEmpleados() {
+            const tbody = document.getElementById('tabla-empleados');
+            if (!tbody) return;
+            try {
+                const res = await fetch('/api/empleados', { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('Error al obtener empleados');
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if (!Array.isArray(data) || data.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="4" style="text-align:center; font-weight:700; color: #6a6a6a;">No hay empleados registrados</td>`;
+                    tbody.appendChild(tr);
+                    return;
+                }
 
-    fetch(`/api/empleados/${cedula}`, {
-        method: "DELETE",
-        headers: {
-            "X-CSRFToken": csrfToken,
-        },
-    })
-        .then(async r => {
-            const data = await r.json().catch(() => ({}));
-            return { r, data };
-        })
-        .then(({ r, data }) => {
-            if (!r.ok || !data.success) {
-                mostrarToast(data.error || "No se pudo eliminar.");
-                return;
+                data.forEach(emp => {
+                    const tr = document.createElement('tr');
+                    const cedula = emp.cedula ?? emp.ID_em ?? '';
+                    const nombre = (emp.nombre || '') + (emp.apellido ? ' ' + emp.apellido : '');
+                    const rol = emp.rol ?? '';
+                    tr.innerHTML = `
+                        <td>${cedula}</td>
+                        <td>${nombre}</td>
+                        <td>${rol}</td>
+                        <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar" data-id="${cedula}">✎</button><button class="icon-action" type="button" aria-label="Eliminar" data-id="${cedula}">🗑</button></div></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
             }
+        }
 
-            mostrarToast("Empleado eliminado");
-            recargar();
-        })
-        .catch(() => {
-            mostrarToast("Error eliminando empleado");
-        });
-}
+        // Cargar al inicio
+        cargarEmpleados();
 
-function mostrarToast(texto) {
-    if (!toast) return;
+})();
 
-    toast.textContent = texto;
-    toast.classList.add("is-show");
-    window.clearTimeout(mostrarToast._t);
-    mostrarToast._t = window.setTimeout(() => toast.classList.remove("is-show"), 2200);
-}
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function iconPencil() {
-    return `
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.83H5v-.92l9.06-9.06.92.92-9.06 9.06ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/>
-        </svg>
-    `;
-}
-
-function iconTrash() {
-    return `
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z"/>
-        </svg>
-    `;
-}
