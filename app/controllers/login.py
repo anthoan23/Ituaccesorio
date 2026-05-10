@@ -3,10 +3,18 @@ from app.models.usuarios import Usuarios
 from app.utils.jwt_utils import create_token
 
 login_blueprint = Blueprint("login", __name__)
+
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
     return render_template(
         "login.html"
+    )
+
+
+@login_blueprint.route("/login-phone", methods=["GET"])
+def pagina_login_phone_mock():
+    return render_template(
+        "login_phone.html"
     )
 
 @login_blueprint.route("/api/consultar/login", methods=["GET"])

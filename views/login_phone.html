@@ -1,0 +1,64 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Login (Mock) | Ituaccesorio{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login_phone.css') }}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+	<main class="login-phone">
+		<section class="login-phone__info" aria-label="Información adicional sobre el login">
+			<img src="{{ url_for('static', filename='img/LOGO COMPLETO.png') }}" alt="Ituaccesorio">
+			<!-- <h2 class="login-phone__subtitle">¡Bienvenido a Ituaccesorio!</h2> -->
+		</section>
+		<section class="login-phone__layout" aria-label="Login maquetado (mock)">
+			<section class="phone" aria-label="Login dentro de teléfono">
+				<div class="phone__device is-lit">
+					<div class="phone__notch" aria-hidden="true">
+						<span class="phone__notch-camera"></span>
+					</div>
+
+					<div class="phone__screen">
+						<div class="phone__content" aria-label="Contenido del login">
+							<div class="phone__top">
+								<!-- <img class="phone__logo" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Ituaccesorio"> -->
+								<h1 class="phone__title">BIENVENIDO</h1>
+							</div>
+
+							<form class="phone__form" action="" method="post" autocomplete="on">
+								<label class="pfield">
+									<span class="pfield__icon" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+											<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
+										</svg>
+									</span>
+									<input class="pfield__input" type="text" name="usuario" autocomplete="username" placeholder="Email / Usuario" required>
+								</label>
+
+								<label class="pfield">
+									<span class="pfield__icon" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+											<path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4Zm7 13H7v-9h10Z" fill="currentColor"/>
+										</svg>
+									</span>
+									<input class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+								</label>
+
+								<button class="phone__button" type="submit">INICIAR SESIÓN</button>
+
+								<div class="phone__links" aria-label="Acciones adicionales">
+									<a class="phone__link" href="#">¿Olvidaste tu Contraseña?</a>
+									<a class="phone__link" href="#">Crear una Cuenta Nueva</a>
+								</div>
+							</form>
+						</div>
+
+					</div>
+				</div>
+			</section>
+		</section>
+	</main>
+{% endblock %}
