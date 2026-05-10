@@ -2,6 +2,25 @@ from app.models.database import conectar
 
 class Usuarios(conectar):
 
+    def consultar_usuario(self):
+        db = self.conexion2()
+        if db:
+            cursor = db.cursor(dictionary=True)
+            try:
+                cursor.execute(
+                    "SELECT usuario.*, rol.nombre AS nombre_rol"
+                    " FROM usuario"
+                    " JOIN rol ON usuario.rol_id = rol.id"
+                    " ORDER BY usuario.id DESC"
+                )
+                resultados = cursor.fetchall()
+                return resultados
+            finally:
+                cursor.close()
+                db.close()
+        else:
+            return None
+
     def validar(self, nombre, password):
         db = self.conexion2()
         if db:
