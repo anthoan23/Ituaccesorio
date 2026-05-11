@@ -1,0 +1,241 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Productos{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/productos.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="products-hero" aria-label="Encabezado de productos">
+    <div class="products-hero__copy">
+      <h1 class="products-hero__title">Product Catalog Master List</h1>
+      <p class="products-hero__subtitle">Lista maquetada de productos del sistema (CRUD en el siguiente paso).</p>
+    </div>
+
+    <div class="products-hero__actions" aria-label="Acciones">
+      <button class="btn btn--yellow" type="button">
+        <span class="btn__icon" aria-hidden="true">+</span>
+        Nuevo producto
+      </button>
+      <button class="btn btn--ghost" type="button">Reportes</button>
+      <button class="btn btn--ghost" type="button">Filtros</button>
+    </div>
+  </header>
+
+  <section class="products-grid" aria-label="Catálogo de productos">
+    <article class="card card--table" aria-label="Listado de productos">
+      <div class="table__header">
+        <h2 class="card__title">Productos</h2>
+        <div class="pager" aria-label="Paginación">
+          <button class="pager__btn" type="button" aria-label="Anterior">‹</button>
+          <span class="pager__pages">1 | 2 | 3</span>
+          <button class="pager__btn" type="button" aria-label="Siguiente">›</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Tabla de productos">
+        <table class="table products-table">
+          <thead>
+            <tr>
+              <th class="col-image">Imagen</th>
+              <th>Nombre / SKU</th>
+              <th>Descripción</th>
+              <th>Categoría</th>
+              <th>Estado</th>
+              <th class="table__actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="product-thumb" aria-hidden="true"></span>
+              </td>
+              <td>
+                <div class="product-meta">
+                  <strong class="product-name">Pantalla A52</strong>
+                  <span class="product-sku">SKU: REP001</span>
+                </div>
+              </td>
+              <td>OLED Panel, 6.5”</td>
+              <td><span class="chip">Screens</span></td>
+              <td>
+                <span class="status status--ready"><span class="status__dot" aria-hidden="true"></span>Ready for upload</span>
+              </td>
+              <td class="table__actions">
+                <div class="row-actions" aria-label="Acciones del producto">
+                  <button class="icon-action" type="button" aria-label="Editar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Duplicar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td><span class="product-thumb product-thumb--alt" aria-hidden="true"></span></td>
+              <td>
+                <div class="product-meta">
+                  <strong class="product-name">Cargador Rápido</strong>
+                  <span class="product-sku">SKU: ACC001</span>
+                </div>
+              </td>
+              <td>Cargador rápido, 6.5”</td>
+              <td><span class="chip">Repairs</span></td>
+              <td><span class="status status--upload"><span class="status__dot" aria-hidden="true"></span>In upload</span></td>
+              <td class="table__actions">
+                <div class="row-actions">
+                  <button class="icon-action" type="button" aria-label="Editar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Duplicar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td><span class="product-thumb product-thumb--soft" aria-hidden="true"></span></td>
+              <td>
+                <div class="product-meta">
+                  <strong class="product-name">Batería Battery A</strong>
+                  <span class="product-sku">SKU: REP001</span>
+                </div>
+              </td>
+              <td>Batería, 7.5”</td>
+              <td><span class="chip">Accessories</span></td>
+              <td><span class="status status--review"><span class="status__dot" aria-hidden="true"></span>In revision</span></td>
+              <td class="table__actions">
+                <div class="row-actions">
+                  <button class="icon-action" type="button" aria-label="Editar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Duplicar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td><span class="product-thumb" aria-hidden="true"></span></td>
+              <td>
+                <div class="product-meta">
+                  <strong class="product-name">Cable Cable</strong>
+                  <span class="product-sku">SKU: CAR001</span>
+                </div>
+              </td>
+              <td>Cable, 6.5”</td>
+              <td><span class="chip">Repairs</span></td>
+              <td><span class="status status--archived"><span class="status__dot" aria-hidden="true"></span>Archived</span></td>
+              <td class="table__actions">
+                <div class="row-actions">
+                  <button class="icon-action" type="button" aria-label="Editar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Duplicar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 13H13v6h-2v-6H5v-2h6V5h2v6h6v2Z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="icon-action" type="button" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="card filters-panel" aria-label="Filtros de catálogo">
+      <h2 class="card__title">Catalog Filters &amp; Category Search</h2>
+
+      <div class="filters-panel__section" aria-label="Categoría y jerarquía">
+        <h3 class="filters-panel__title">Category &amp; Hierarchy</h3>
+        <label class="field">
+          <span class="field__label">Categoría</span>
+          <select aria-label="Categoría">
+            <option>All Categories</option>
+            <option>Screens</option>
+            <option>Accessories</option>
+            <option>Repairs</option>
+          </select>
+        </label>
+
+        <div class="tree" aria-label="Jerarquía (estática)">
+          <details open>
+            <summary>Hierarchy</summary>
+            <ul>
+              <li>Cargadores</li>
+              <li>Baterías</li>
+              <li>Repairs</li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
+      <div class="filters-panel__section" aria-label="Estado">
+        <h3 class="filters-panel__title">Status</h3>
+        <div class="filters-panel__row">
+          <label class="field">
+            <span class="field__label">Estado</span>
+            <select aria-label="Estado">
+              <option>All</option>
+              <option>Ready for upload</option>
+              <option>In upload</option>
+              <option>In revision</option>
+              <option>Archived</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Visibilidad</span>
+            <select aria-label="Visibilidad">
+              <option>Active</option>
+              <option>Archived</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="filters-panel__section" aria-label="Fecha">
+        <h3 class="filters-panel__title">Date Added</h3>
+        <div class="filters-panel__row">
+          <label class="field">
+            <span class="field__label">Desde</span>
+            <input type="date" aria-label="Desde">
+          </label>
+          <label class="field">
+            <span class="field__label">Hasta</span>
+            <input type="date" aria-label="Hasta">
+          </label>
+        </div>
+      </div>
+
+      <div class="filters-panel__section" aria-label="Búsqueda">
+        <h3 class="filters-panel__title">Search</h3>
+        <label class="field">
+          <span class="field__label">Texto</span>
+          <input type="search" placeholder="Text Search" aria-label="Buscar">
+        </label>
+        <div class="filters-panel__actions">
+          <button class="btn btn--yellow" type="button">Aplicar</button>
+          <button class="btn btn--ghost" type="button">Limpiar</button>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+{% endblock %}
