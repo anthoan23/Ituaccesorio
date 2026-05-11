@@ -47,11 +47,10 @@
 	</div>
 
 	<nav class="drawer__nav">
-		<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-		<a class="drawer__link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-		<a class="drawer__link {% if active_page == 'prueba' %}is-active{% endif %}" href="{{ url_for('prueba.pagina_prueba') }}">Prueba DBs</a>
-		<a class="drawer__link {% if active_page == 'telefonos' %}is-active{% endif %}" href="{{ url_for('telefonos.pagina_telefonos') }}">Telefonos</a>
-		<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+		<a class="drawer__link is-active" href="/">Dashboard</a>
+		<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+		<a class="drawer__link" href="{{ url_for('prueba.pagina_prueba') }}">Prueba DBs</a>
+		<a class="drawer__link" href="{{ url_for('telefonos.pagina_telefonos') }}">Teléfonos</a>
 		<a class="drawer__link" href="/api/prueba" target="_blank" rel="noopener">API Prueba (JSON)</a>
 		<a class="drawer__link" href="/api/telefonos" target="_blank" rel="noopener">API Telefonos (JSON)</a>
 	</nav>
