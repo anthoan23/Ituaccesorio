@@ -1,0 +1,81 @@
+.tradein-page {
+  max-width: 1080px;
+  margin: 110px auto 40px;
+  padding: 0 20px;
+  color: #f4f6fa;
+}
+
+.tradein-header h1 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.7rem, 2.8vw, 2.3rem);
+}
+
+.tradein-header p {
+  margin: 8px 0 0;
+  color: #c7cbd4;
+}
+
+.tradein-card {
+  margin-top: 20px;
+  border: 1px solid #2d3342;
+  border-radius: 14px;
+  background: #151a26;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.tradein-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #2d3342;
+}
+
+.tradein-card__head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tradein-card__head small {
+  color: #9ca3b8;
+}
+
+.tradein-table-wrap {
+  overflow-x: auto;
+}
+
+.tradein-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.tradein-table th,
+.tradein-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #242b3a;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.tradein-table th {
+  color: #8f99b3;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tradein-empty {
+  text-align: center;
+  color: #9ca3b8;
+}
+
+@media (max-width: 720px) {
+  .tradein-page {
+    margin-top: 96px;
+    padding: 0 14px;
+  }
+}
