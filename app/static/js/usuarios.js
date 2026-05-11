@@ -19,6 +19,20 @@ const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
 const selectPermisoRol = formPermiso?.querySelector("select[name='rol_id']");
 const selectPermisoModulo = formPermiso?.querySelector("select[name='modulo_id']");
 
+const adminModals = {
+    usuarios: document.getElementById("modal-admin-usuarios"),
+    roles: document.getElementById("modal-admin-roles"),
+    modulos: document.getElementById("modal-admin-modulos"),
+};
+
+const adminButtons = {
+    usuarios: document.getElementById("btn-admin-usuarios"),
+    roles: document.getElementById("btn-admin-roles"),
+    modulos: document.getElementById("btn-admin-modulos"),
+};
+
+let activeAdminKey = null;
+
 const state = {
     usuarios: [],
     roles: [],
@@ -35,6 +49,8 @@ function iniciar() {
     formRol?.addEventListener("submit", onRolSubmit);
     formModulo?.addEventListener("submit", onModuloSubmit);
     formPermiso?.addEventListener("submit", onPermisoSubmit);
+
+    setupAdminToggles();
 
     document.querySelectorAll("[data-reset-form]").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -55,6 +71,81 @@ function iniciar() {
     });
 
     cargarTodo();
+}
+
+function setupAdminToggles() {
+    Object.keys(adminButtons).forEach(key => {
+        const btn = adminButtons[key];
+        const modal = adminModals[key];
+        if (!btn || !modal) return;
+
+        btn.addEventListener("click", () => {
+            const isOpen = !modal.hidden;
+            if (isOpen) {
+                closeAdminModal(key);
+                return;
+            }
+            openAdminModal(key);
+        });
+    });
+
+    document.querySelectorAll("[data-modal-close]").forEach(el => {
+        el.addEventListener("click", () => {
+            const key = String(el.dataset.modalClose || "");
+            if (!key) return;
+            closeAdminModal(key);
+        });
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        if (!activeAdminKey) return;
+        closeAdminModal(activeAdminKey);
+    });
+}
+
+function openAdminModal(key) {
+    Object.keys(adminModals).forEach(otherKey => {
+        if (otherKey !== key) closeAdminModal(otherKey);
+    });
+
+    const modal = adminModals[key];
+    const btn = adminButtons[key];
+
+    if (modal) modal.hidden = false;
+    activeAdminKey = key;
+    document.body.classList.add("modal-open");
+
+    if (btn) {
+        btn.setAttribute("aria-expanded", "true");
+        btn.classList.remove("btn--ghost");
+        btn.classList.add("btn--primary");
+    }
+
+    const dialog = modal?.querySelector(".modal__dialog");
+    if (dialog && typeof dialog.focus === "function") {
+        dialog.focus();
+    }
+}
+
+function closeAdminModal(key) {
+    const modal = adminModals[key];
+    const btn = adminButtons[key];
+    if (modal) modal.hidden = true;
+    if (btn) {
+        btn.setAttribute("aria-expanded", "false");
+        btn.classList.remove("btn--primary");
+        btn.classList.add("btn--ghost");
+    }
+
+    if (activeAdminKey === key) {
+        activeAdminKey = null;
+    }
+
+    const anyOpen = Object.keys(adminModals).some(k => adminModals[k] && !adminModals[k].hidden);
+    if (!anyOpen) {
+        document.body.classList.remove("modal-open");
+    }
 }
 
 async function cargarTodo() {
@@ -225,12 +316,15 @@ function bindTableActions(table, items, type) {
 
             if (action === `edit-${type}`) {
                 if (type === "usuario") {
+                    openAdminModal("usuarios");
                     llenarFormularioUsuario(item);
                 }
                 if (type === "rol") {
+                    openAdminModal("roles");
                     llenarFormularioRol(item);
                 }
                 if (type === "modulo") {
+                    openAdminModal("modulos");
                     llenarFormularioModulo(item);
                 }
                 return;

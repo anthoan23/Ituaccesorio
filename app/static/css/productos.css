@@ -93,6 +93,51 @@ body {
 	align-items: start;
 }
 
+.products-grid__full {
+	grid-column: 1 / -1;
+}
+
+.is-hidden {
+	display: none;
+}
+
+.modal {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	padding: 1.1rem;
+}
+
+.modal.is-hidden {
+	display: none;
+}
+
+.modal__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.modal__panel {
+	position: relative;
+	width: min(860px, 100%);
+	max-height: min(82vh, 820px);
+	overflow: auto;
+}
+
+/* En el modal, los botones ghost deben verse sobre fondo blanco */
+.modal .btn--ghost {
+	color: rgba(18, 18, 18, 0.88);
+	border: 1px solid rgba(17, 24, 39, 0.14);
+	background: transparent;
+}
+
+.modal .btn--ghost:hover {
+	background: rgba(17, 24, 39, 0.04);
+}
+
 .table__header {
 	display: flex;
 	align-items: center;
@@ -317,7 +362,8 @@ body {
 }
 
 input,
-select {
+select,
+textarea {
 	width: 100%;
 	border: 1px solid rgba(17, 24, 39, 0.14);
 	border-radius: 12px;
@@ -328,8 +374,13 @@ select {
 	background: #ffffff;
 }
 
+textarea {
+	resize: vertical;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
 	border-color: rgba(243, 197, 0, 0.7);
 	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
 }
