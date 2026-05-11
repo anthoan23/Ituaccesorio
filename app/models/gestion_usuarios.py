@@ -35,32 +35,48 @@ class GestionUsuarios(conectar):
             SELECT
                 u.id,
                 u.nombre,
-                u.cedula_personal,
+                u.cedula AS cedula_personal,
                 u.rol_id,
                 r.nombre AS rol_nombre,
+                u.activo,
                 u.fecha_creacion,
                 u.foto_perfil
             FROM usuario u
             INNER JOIN rol r ON r.id = u.rol_id
-            ORDER BY u.id DESC
+            ORDER BY u.fecha_creacion DESC, u.id DESC
             """
         )
 
     def crear_usuario(self, nombre, cedula_personal, password, rol_id, foto_perfil=None):
-        return self._ejecutar(
-            """
-            INSERT INTO usuario (nombre, cedula_personal, password, rol_id, foto_perfil)
-            VALUES (%s, %s, %s, %s, %s)
-            """,
-            (nombre, cedula_personal, password, rol_id, foto_perfil),
-        )
+        db = self.conexion2()
+        if not db:
+            return None
+
+        cursor = db.cursor()
+        try:
+            cursor.callproc(
+                "sp_registrar_usuario_con_prefijo",
+                [nombre, cedula_personal, password, rol_id, foto_perfil],
+            )
+
+            for resultado in cursor.stored_results():
+                fila = resultado.fetchone()
+                if fila:
+                    if isinstance(fila, dict):
+                        return fila.get("id_generado")
+                    return fila[0]
+
+            return None
+        finally:
+            cursor.close()
+            db.close()
 
     def actualizar_usuario(self, usuario_id, nombre, cedula_personal, rol_id, foto_perfil=None):
         return self._ejecutar(
             """
             UPDATE usuario
             SET nombre = %s,
-                cedula_personal = %s,
+                cedula = %s,
                 rol_id = %s,
                 foto_perfil = %s
             WHERE id = %s
@@ -73,7 +89,7 @@ class GestionUsuarios(conectar):
             """
             UPDATE usuario
             SET nombre = %s,
-                cedula_personal = %s,
+                cedula = %s,
                 password = %s,
                 rol_id = %s,
                 foto_perfil = %s
@@ -141,6 +157,7 @@ class GestionUsuarios(conectar):
                 r.nombre AS rol_nombre,
                 p.modulo_id,
                 m.nombre AS modulo_nombre,
+                p.consultar,
                 p.registrar,
                 p.modificar,
                 p.eliminar

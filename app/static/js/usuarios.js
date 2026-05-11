@@ -220,8 +220,8 @@ function bindTableActions(table, items, type) {
     table.querySelectorAll("button[data-action]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const action = btn.dataset.action;
-            const id = Number(btn.dataset.id);
-            const item = items.find(entry => Number(entry.id) === id);
+            const id = String(btn.dataset.id || "");
+            const item = items.find(entry => String(entry.id) === id);
 
             if (action === `edit-${type}`) {
                 if (type === "usuario") {

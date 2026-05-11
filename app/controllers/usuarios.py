@@ -61,7 +61,7 @@ def crear_usuario():
         return _respuesta_error(str(error))
 
 
-@usuarios_blueprint.route("/api/usuarios/<int:usuario_id>", methods=["PUT"])
+@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
 @jwt_required
 def actualizar_usuario(usuario_id):
     datos = request.get_json(silent=True) or {}
@@ -98,7 +98,7 @@ def actualizar_usuario(usuario_id):
         return _respuesta_error(str(error))
 
 
-@usuarios_blueprint.route("/api/usuarios/<int:usuario_id>", methods=["DELETE"])
+@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
 @jwt_required
 def eliminar_usuario(usuario_id):
     modelo = GestionUsuarios()

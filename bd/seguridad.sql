@@ -161,6 +161,35 @@ LOCK TABLES `usuario` WRITE;
 INSERT INTO `usuario` VALUES ('USR-0001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02',NULL,'2026-05-10 03:05:13');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Procedure structure for procedure `sp_registrar_usuario_con_prefijo`
+--
+
+DROP PROCEDURE IF EXISTS `sp_registrar_usuario_con_prefijo`;
+DELIMITER $$
+CREATE DEFINER=`root`@`%` PROCEDURE `sp_registrar_usuario_con_prefijo`(
+  IN p_nombre VARCHAR(50),
+  IN p_cedula INT,
+  IN p_password VARCHAR(255),
+  IN p_rol_id INT,
+  IN p_foto_perfil VARCHAR(100)
+)
+BEGIN
+  DECLARE v_count INT;
+  DECLARE v_nuevo_id VARCHAR(20);
+  DECLARE v_prefijo VARCHAR(5) DEFAULT 'USR-';
+
+  SELECT COUNT(*) + 1 INTO v_count FROM usuario;
+
+  SET v_nuevo_id = CONCAT(v_prefijo, LPAD(v_count, 5, '0'));
+
+  INSERT INTO usuario (id, nombre, cedula, password, rol_id, activo, foto_perfil)
+  VALUES (v_nuevo_id, p_nombre, p_cedula, p_password, p_rol_id, 1, p_foto_perfil);
+
+  SELECT v_nuevo_id AS id_generado;
+END$$
+DELIMITER ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
