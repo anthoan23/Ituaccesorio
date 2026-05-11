@@ -9,6 +9,7 @@ from app.controllers.telefonos import telefonos_blueprint
 from app.controllers.empleados import empleados_blueprint
 from app.controllers.productos import productos_blueprint
 from app.controllers.login import login_blueprint
+from app.controllers.usuarios import usuarios_blueprint
 from app.utils.jwt_utils import decode_token
 from types import SimpleNamespace
 
@@ -37,14 +38,14 @@ csp = {
 
 talisman = Talisman(app, content_security_policy=csp)
 csrf = SeaSurf(app)
-# Registramos el controlador
+# Aqui se debe registrar el controlador
 app.register_blueprint(home_blueprint)
 app.register_blueprint(prueba_blueprint)
 app.register_blueprint(telefonos_blueprint)
 app.register_blueprint(empleados_blueprint)
 app.register_blueprint(productos_blueprint)
 app.register_blueprint(login_blueprint)
-
+app.register_blueprint(usuarios_blueprint)
 
 @app.before_request
 def load_user_from_jwt():
