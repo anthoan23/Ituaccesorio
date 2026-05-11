@@ -10,14 +10,13 @@
 <main class="page">
   <header class="products-hero" aria-label="Encabezado de productos">
     <div class="products-hero__copy">
-      <h1 class="products-hero__title">Product Catalog Master List</h1>
-      <p class="products-hero__subtitle">Lista maquetada de productos del sistema (CRUD en el siguiente paso).</p>
+      <h1 class="products-hero__title">Productos</h1>
     </div>
 
     <div class="products-hero__actions" aria-label="Acciones">
-      <button class="btn btn--yellow" type="button">
+      <button id="btn-registrar-producto" class="btn btn--yellow" type="button" aria-expanded="false" aria-controls="modal-registro-producto">
         <span class="btn__icon" aria-hidden="true">+</span>
-        Nuevo producto
+        Registrar producto
       </button>
       <button class="btn btn--ghost" type="button">Reportes</button>
       <button class="btn btn--ghost" type="button">Filtros</button>
@@ -40,7 +39,7 @@
           <thead>
             <tr>
               <th class="col-image">Imagen</th>
-              <th>Nombre / SKU</th>
+              <th>Nombre / Código</th>
               <th>Descripción</th>
               <th>Categoría</th>
               <th>Estado</th>
@@ -55,13 +54,13 @@
               <td>
                 <div class="product-meta">
                   <strong class="product-name">Pantalla A52</strong>
-                  <span class="product-sku">SKU: REP001</span>
+                  <span class="product-sku">Código: REP001</span>
                 </div>
               </td>
-              <td>OLED Panel, 6.5”</td>
-              <td><span class="chip">Screens</span></td>
+              <td>Panel OLED, 6.5”</td>
+              <td><span class="chip">telefonos</span></td>
               <td>
-                <span class="status status--ready"><span class="status__dot" aria-hidden="true"></span>Ready for upload</span>
+                <span class="status status--ready"><span class="status__dot" aria-hidden="true"></span>Listo para subir</span>
               </td>
               <td class="table__actions">
                 <div class="row-actions" aria-label="Acciones del producto">
@@ -83,12 +82,12 @@
               <td>
                 <div class="product-meta">
                   <strong class="product-name">Cargador Rápido</strong>
-                  <span class="product-sku">SKU: ACC001</span>
+                  <span class="product-sku">Código: ACC001</span>
                 </div>
               </td>
               <td>Cargador rápido, 6.5”</td>
-              <td><span class="chip">Repairs</span></td>
-              <td><span class="status status--upload"><span class="status__dot" aria-hidden="true"></span>In upload</span></td>
+              <td><span class="chip">Cargador</span></td>
+              <td><span class="status status--upload"><span class="status__dot" aria-hidden="true"></span>En carga</span></td>
               <td class="table__actions">
                 <div class="row-actions">
                   <button class="icon-action" type="button" aria-label="Editar">
@@ -108,13 +107,13 @@
               <td><span class="product-thumb product-thumb--soft" aria-hidden="true"></span></td>
               <td>
                 <div class="product-meta">
-                  <strong class="product-name">Batería Battery A</strong>
-                  <span class="product-sku">SKU: REP001</span>
+                  <strong class="product-name">Batería A</strong>
+                  <span class="product-sku">Código: REP001</span>
                 </div>
               </td>
               <td>Batería, 7.5”</td>
-              <td><span class="chip">Accessories</span></td>
-              <td><span class="status status--review"><span class="status__dot" aria-hidden="true"></span>In revision</span></td>
+              <td><span class="chip">telefonos</span></td>
+              <td><span class="status status--review"><span class="status__dot" aria-hidden="true"></span>En revisión</span></td>
               <td class="table__actions">
                 <div class="row-actions">
                   <button class="icon-action" type="button" aria-label="Editar">
@@ -135,12 +134,12 @@
               <td>
                 <div class="product-meta">
                   <strong class="product-name">Cable Cable</strong>
-                  <span class="product-sku">SKU: CAR001</span>
+                  <span class="product-sku">Código: CAR001</span>
                 </div>
               </td>
               <td>Cable, 6.5”</td>
-              <td><span class="chip">Repairs</span></td>
-              <td><span class="status status--archived"><span class="status__dot" aria-hidden="true"></span>Archived</span></td>
+              <td><span class="chip">cables</span></td>
+              <td><span class="status status--archived"><span class="status__dot" aria-hidden="true"></span>Archivado</span></td>
               <td class="table__actions">
                 <div class="row-actions">
                   <button class="icon-action" type="button" aria-label="Editar">
@@ -161,57 +160,47 @@
     </article>
 
     <aside class="card filters-panel" aria-label="Filtros de catálogo">
-      <h2 class="card__title">Catalog Filters &amp; Category Search</h2>
+      <h2 class="card__title">Filtros del catálogo y búsqueda por categoría</h2>
 
-      <div class="filters-panel__section" aria-label="Categoría y jerarquía">
-        <h3 class="filters-panel__title">Category &amp; Hierarchy</h3>
+      <div class="filters-panel__section" aria-label="Categorías">
+        <h3 class="filters-panel__title">Categorías</h3>
         <label class="field">
           <span class="field__label">Categoría</span>
-          <select aria-label="Categoría">
-            <option>All Categories</option>
-            <option>Screens</option>
-            <option>Accessories</option>
-            <option>Repairs</option>
+          <select aria-label="Categoría" data-categories-select="true">
+            <option>Todas las categorías</option>
           </select>
         </label>
 
-        <div class="tree" aria-label="Jerarquía (estática)">
-          <details open>
-            <summary>Hierarchy</summary>
-            <ul>
-              <li>Cargadores</li>
-              <li>Baterías</li>
-              <li>Repairs</li>
-            </ul>
-          </details>
+        <div class="filters-panel__actions" aria-label="Acciones de categorías">
+          <button id="btn-agregar-categoria" class="btn btn--yellow" type="button">Agregar categoría</button>
         </div>
       </div>
 
       <div class="filters-panel__section" aria-label="Estado">
-        <h3 class="filters-panel__title">Status</h3>
+        <h3 class="filters-panel__title">Estado</h3>
         <div class="filters-panel__row">
           <label class="field">
             <span class="field__label">Estado</span>
             <select aria-label="Estado">
-              <option>All</option>
-              <option>Ready for upload</option>
-              <option>In upload</option>
-              <option>In revision</option>
-              <option>Archived</option>
+              <option>Todos</option>
+              <option>Listo para subir</option>
+              <option>En carga</option>
+              <option>En revisión</option>
+              <option>Archivado</option>
             </select>
           </label>
           <label class="field">
             <span class="field__label">Visibilidad</span>
             <select aria-label="Visibilidad">
-              <option>Active</option>
-              <option>Archived</option>
+              <option>Activo</option>
+              <option>Archivado</option>
             </select>
           </label>
         </div>
       </div>
 
       <div class="filters-panel__section" aria-label="Fecha">
-        <h3 class="filters-panel__title">Date Added</h3>
+        <h3 class="filters-panel__title">Fecha de alta</h3>
         <div class="filters-panel__row">
           <label class="field">
             <span class="field__label">Desde</span>
@@ -225,10 +214,10 @@
       </div>
 
       <div class="filters-panel__section" aria-label="Búsqueda">
-        <h3 class="filters-panel__title">Search</h3>
+        <h3 class="filters-panel__title">Búsqueda</h3>
         <label class="field">
           <span class="field__label">Texto</span>
-          <input type="search" placeholder="Text Search" aria-label="Buscar">
+          <input type="search" placeholder="Buscar texto" aria-label="Buscar">
         </label>
         <div class="filters-panel__actions">
           <button class="btn btn--yellow" type="button">Aplicar</button>
@@ -237,5 +226,111 @@
       </div>
     </aside>
   </section>
+
+  <div id="modal-registro-producto" class="modal is-hidden" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
+    <div class="modal__panel card" role="dialog" aria-modal="true" aria-label="Registrar producto">
+      <h2 class="card__title">Registrar producto</h2>
+
+      <div class="filters-panel__section" aria-label="Datos del producto">
+        <form action="#" method="post" autocomplete="off" enctype="multipart/form-data">
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">Nombre</span>
+              <input type="text" name="nombre" placeholder="Ej: Cargador rápido" aria-label="Nombre" required>
+            </label>
+            <label class="field">
+              <span class="field__label">Código</span>
+              <input type="text" name="codigo" placeholder="Ej: ACC001" aria-label="Código" required>
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="field__label">Descripción</span>
+            <textarea name="descripcion" rows="3" placeholder="Descripción del producto" aria-label="Descripción" required></textarea>
+          </label>
+
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">Categoría</span>
+              <select name="categoria" aria-label="Categoría" required data-categories-select="true">
+                <option value="">Selecciona una categoría</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field__label">Estado</span>
+              <select name="estado" aria-label="Estado" required>
+                <option>Listo para subir</option>
+                <option>En carga</option>
+                <option>En revisión</option>
+                <option>Archivado</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filters-panel__actions" aria-label="Acciones de categorías">
+            <button id="btn-agregar-categoria-modal" class="btn btn--ghost" type="button">Agregar categoría</button>
+          </div>
+
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">Precio (USD)</span>
+              <input id="precio-usd" type="number" inputmode="decimal" name="precio_usd" min="0" step="0.01" placeholder="0.00" aria-label="Precio en dólares" required>
+            </label>
+            <label class="field">
+              <span class="field__label">Precio (Bs)</span>
+              <input id="precio-bs" type="number" inputmode="decimal" name="precio_bs" min="0" step="0.01" placeholder="0.00" aria-label="Precio en bolívares" readonly>
+            </label>
+            <label class="field">
+              <span class="field__label">Stock</span>
+              <input type="number" name="stock" min="0" step="1" placeholder="0" aria-label="Stock" required>
+            </label>
+          </div>
+
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">URL de imagen</span>
+              <input type="url" name="imagen_url" placeholder="https://..." aria-label="URL de imagen">
+            </label>
+            <label class="field">
+              <span class="field__label">Subir imagen</span>
+              <input type="file" name="imagen_archivo" accept="image/*" aria-label="Subir imagen desde la PC">
+            </label>
+          </div>
+
+          <div class="filters-panel__actions" aria-label="Acciones del formulario">
+            <button class="btn btn--yellow" type="button" aria-label="Guardar (estático)">Guardar</button>
+            <button id="btn-cancelar-producto" class="btn btn--ghost" type="button">Cancelar</button>
+            <button class="btn btn--ghost" type="reset">Limpiar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-categoria" class="modal is-hidden" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
+    <div class="modal__panel card" role="dialog" aria-modal="true" aria-label="Registrar categoría">
+      <h2 class="card__title">Registrar categoría</h2>
+
+      <div class="filters-panel__section" aria-label="Formulario de categoría">
+        <form id="form-categoria" action="#" method="post" autocomplete="off">
+          <label class="field">
+            <span class="field__label">Nombre de categoría</span>
+            <input id="categoria-nombre" type="text" name="categoria" placeholder="Ej: cargador, telefonos, forros" aria-label="Nombre de categoría" required>
+          </label>
+
+          <div class="filters-panel__actions" aria-label="Acciones de categoría">
+            <button class="btn btn--yellow" type="submit">Guardar</button>
+            <button id="btn-cancelar-categoria" class="btn btn--ghost" type="button">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+  <script defer src="{{ url_for('static', filename='js/productos.js') }}"></script>
 {% endblock %}
