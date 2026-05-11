@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Empleados{% endblock %}
 
@@ -7,383 +8,157 @@
 {% endblock %}
 
 {% block content %}
-    <main class="page">
-        <section class="grid">
-            <article class="card card--register" aria-label="Registrar empleado">
-                <div class="card__header card__header--stacked">
-                    <h2 class="card__title">Registrar empleado</h2>
-                    <p class="card__lead">Abre el formulario para crear un nuevo empleado y mantener el control del personal.</p>
-                </div>
-
-                <div class="quick">
-                    <button id="btn-registrar" class="btn btn--dark" type="button">
-                        <span class="btn__icon" aria-hidden="true">+</span>
-                        Registrar empleado
-                    </button>
-                    <div class="quick__row">
-                        <button id="btn-registrar-cargo" class="btn btn--dark" type="button">Registrar cargos</button>
-                        <button id="btn-registrar-especialidad" class="btn btn--dark" type="button">Registrar especialidades</button>
-                    </div>
-                </div>
-            </article>
-
-            <article class="card card--list" aria-label="Cargos registrados">
-                <div class="card__header card__header--compact">
-                    <h2 class="card__title">Cargos registrados</h2>
-                    <span class="card__badge">6</span>
-                </div>
-
-                <ul class="cargo-list" aria-label="Lista de cargos registrados">
-                    <li class="cargo-item" style="--accent: #ef4444;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Gerencia</strong>
-                            <p>Supervisa el equipo, define prioridades y controla resultados.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #2563eb;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Administración</strong>
-                            <p>Gestiona documentos, pagos, registros y control interno.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #f59e0b;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Ventas</strong>
-                            <p>Atiende clientes, cotiza productos y apoya el cierre comercial.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #10b981;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Soporte técnico</strong>
-                            <p>Diagnostica fallas, resuelve incidencias y da seguimiento técnico.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #8b5cf6;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Repuestos</strong>
-                            <p>Controla inventario, disponibilidad y entrega de piezas.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #06b6d4;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Atención al cliente</strong>
-                            <p>Recibe solicitudes, orienta al usuario y organiza el flujo de servicio.</p>
-                        </div>
-                    </li>
-                </ul>
-            </article>
-
-            <article class="card card--list card--list-wide" aria-label="Especialidades registradas">
-                <div class="card__header card__header--compact">
-                    <h2 class="card__title">Especialidades registradas</h2>
-                    <span class="card__badge">6</span>
-                </div>
-
-                <ul class="cargo-list" aria-label="Lista de especialidades registradas">
-                    <li class="cargo-item" style="--accent: #ef4444;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Pantallas</strong>
-                            <p>Reemplazo y reparación de cristales y táctiles.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #f59e0b;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Baterías</strong>
-                            <p>Diagnóstico de salud y sustitución de baterías.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #2563eb;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Software</strong>
-                            <p>Instalación, actualizado y recuperación de sistemas.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #10b981;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Placas</strong>
-                            <p>Reparación y sustitución de componentes en placa madre.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #8b5cf6;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Accesorios</strong>
-                            <p>Instalación y verificación de accesorios y periféricos.</p>
-                        </div>
-                    </li>
-                    <li class="cargo-item" style="--accent: #06b6d4;">
-                        <span class="cargo-item__dot" aria-hidden="true"></span>
-                        <div class="cargo-item__body">
-                            <strong>Diagnóstico</strong>
-                            <p>Evaluación completa para identificar fallas y reparaciones.</p>
-                        </div>
-                    </li>
-                </ul>
-            </article>
-
-            <article class="card card--table" aria-label="Empleados registrados">
-                <div class="table__header">
-                    <h2 class="card__title">Empleados registrados</h2>
-                    <div class="pager" aria-label="Paginación">
-                        <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
-                        <span id="pager-pages" class="pager__pages">1</span>
-                        <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
-                    </div>
-                </div>
-
-                <div class="table-wrap">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Cédula</th>
-                                <th>Nombre</th>
-                                <th>Cargo</th>
-                                <th class="table__actions">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-empleados">
-                            <tr>
-                                <td>14588732</td>
-                                <td>Juan Pérez</td>
-                                <td>Administración</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>15890213</td>
-                                <td>María Gómez</td>
-                                <td>Ventas</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>16774011</td>
-                                <td>Carlos Ramírez</td>
-                                <td>Soporte técnico</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>17330984</td>
-                                <td>Ana Rodríguez</td>
-                                <td>Administración</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>18221456</td>
-                                <td>Luis Torres</td>
-                                <td>Gerencia</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>19304561</td>
-                                <td>Valeria Castillo</td>
-                                <td>Atención al cliente</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>20449872</td>
-                                <td>José Hernández</td>
-                                <td>Repuestos</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>21476093</td>
-                                <td>Daniela Moreno</td>
-                                <td>Ventas</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>22568144</td>
-                                <td>Pedro Silva</td>
-                                <td>Soporte técnico</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>23670415</td>
-                                <td>Lucía Ortega</td>
-                                <td>Administración</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>24783590</td>
-                                <td>Andrés León</td>
-                                <td>Gerencia</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>25896031</td>
-                                <td>Camila Ruiz</td>
-                                <td>Atención al cliente</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>26908372</td>
-                                <td>Ricardo Peña</td>
-                                <td>Repuestos</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>27019485</td>
-                                <td>Sofía Vega</td>
-                                <td>Ventas</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>28120596</td>
-                                <td>Fernando Castro</td>
-                                <td>Soporte técnico</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>29231607</td>
-                                <td>Paola Jiménez</td>
-                                <td>Administración</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>30342718</td>
-                                <td>Diego Molina</td>
-                                <td>Gerencia</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>31453829</td>
-                                <td>Elena Navarro</td>
-                                <td>Atención al cliente</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>32564930</td>
-                                <td>Héctor Ramos</td>
-                                <td>Repuestos</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>33675041</td>
-                                <td>Gabriela Flores</td>
-                                <td>Soporte técnico</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                            <tr>
-                                <td>34786152</td>
-                                <td>Marco Suárez</td>
-                                <td>Ventas</td>
-                                <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar">✎</button><button class="icon-action" type="button" aria-label="Eliminar">🗑</button></div></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </article>
-        </section>
-
-        <section id="modal" class="modal" aria-hidden="true">
-            <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-                <div class="modal__header">
-                    <h3 id="modal-title" class="modal__title">Registrar empleado</h3>
-                    <button id="modal-cerrar" class="modal__close" type="button" aria-label="Cerrar">×</button>
-                </div>
-
-                <form id="form-empleado" class="form" autocomplete="off">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    <div class="form__grid">
-                        <label>
-                            <span>ID</span>
-                            <input name="id" type="text" placeholder="123" aria-label="ID">
-                        </label>
-                        <label>
-                            <span>Nombre</span>
-                            <input name="nombre" type="text" placeholder="Juan" required>
-                        </label>
-                        <label>
-                            <span>Apellido</span>
-                            <input name="apellido" type="text" placeholder="Chacón" required>
-                        </label>
-                        <label>
-                            <span>Celular</span>
-                            <div class="phone">
-                                <select name="celular_prefijo" aria-label="Prefijo">
-                                    <option value="0414">0414</option>
-                                    <option value="0424">0424</option>
-                                    <option value="0412">0412</option>
-                                    <option value="0422">0422</option>
-                                    <option value="0416">0416</option>
-                                    <option value="0426">0426</option>
-                                </select>
-                                <input name="celular_numero" type="text" inputmode="numeric" placeholder="0000000" required>
-                            </div>
-                        </label>
-                        <label class="form__full">
-                            <span>Correo</span>
-                            <input name="correo" type="email" placeholder="correo@ejemplo.com">
-                        </label>
-                        <label class="form__full">
-                            <span>Dirección</span>
-                            <input name="direccion" type="text" placeholder="Calle..., Ciudad">
-                        </label>
-                    </div>
-
-                    <div class="form__actions">
-                        <button id="btn-guardar" class="btn btn--yellow" type="submit">Guardar</button>
-                       
-                    </div>
-                </form>
+  <main class="page">
+    <section class="grid" aria-label="Tablas principales">
+      <article class="card card--table" aria-label="Empleados registrados">
+        <div class="table__header">
+          <button class="table__register-btn" type="button" data-open-modal="modal-empleado">Registrar empleado</button>
+          <div class="table__header-row">
+            <h2 class="card__title">Empleados registrados</h2>
+            <div class="pager" aria-label="Paginación">
+              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
+              <span id="pager-pages" class="pager__pages">1</span>
+              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
             </div>
-        </section>
+          </div>
+        </div>
 
-        <!-- Modal para Registrar Cargo -->
-        <section id="modal-cargo" class="modal" aria-hidden="true" style="display:none;">
-            <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-cargo-title">
-                <div class="modal__header">
-                    <h3 id="modal-cargo-title" class="modal__title">Registrar cargo</h3>
-                    <button id="modal-cargo-cerrar" class="modal__close" type="button" aria-label="Cerrar">×</button>
-                </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cédula</th>
+                <th>Nombre</th>
+                <th>Cargo</th>
+                <th class="table__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-empleados"></tbody>
+          </table>
+        </div>
+      </article>
 
-                <form id="form-cargo" class="form" autocomplete="off">
-                    <div class="form__grid">
-                        <label class="form__full">
-                            <span>Nombre del cargo</span>
-                            <input name="cargo_nombre" type="text" placeholder="Ej. Administración" required>
-                        </label>
-                    </div>
-                    <div class="form__actions">
-                        <button class="btn btn--yellow" type="submit">Guardar cargo</button>
-                    </div>
-                </form>
+      <article class="card card--table" aria-label="Cargos registrados">
+        <div class="table__header">
+          <button class="table__register-btn" type="button" data-open-modal="modal-cargo">Registrar cargo</button>
+          <div class="table__header-row">
+            <h2 class="card__title">Cargos registrados</h2>
+            <div class="pager" aria-label="Paginación">
+              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
+              <span class="pager__pages">1</span>
+              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
             </div>
-        </section>
+          </div>
+        </div>
 
-        <!-- Modal para Registrar Especialidad -->
-        <section id="modal-especialidad" class="modal" aria-hidden="true" style="display:none;">
-            <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-especialidad-title">
-                <div class="modal__header">
-                    <h3 id="modal-especialidad-title" class="modal__title">Registrar especialidad</h3>
-                    <button id="modal-especialidad-cerrar" class="modal__close" type="button" aria-label="Cerrar">×</button>
-                </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-cargos"></tbody>
+          </table>
+        </div>
+      </article>
 
-                <form id="form-especialidad" class="form" autocomplete="off">
-                    <div class="form__grid">
-                        <label class="form__full">
-                            <span>Nombre de la especialidad</span>
-                            <input name="especialidad_nombre" type="text" placeholder="Ej. Pantallas" required>
-                        </label>
-                    </div>
-                    <div class="form__actions">
-                        <button class="btn btn--yellow" type="submit">Guardar especialidad</button>
-                    </div>
-                </form>
+      <article class="card card--table" aria-label="Especialidades registradas">
+        <div class="table__header">
+          <button class="table__register-btn" type="button" data-open-modal="modal-especialidad">Registrar especialidad</button>
+          <div class="table__header-row">
+            <h2 class="card__title">Especialidades registradas</h2>
+            <div class="pager" aria-label="Paginación">
+              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
+              <span class="pager__pages">1</span>
+              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
             </div>
-        </section>
+          </div>
+        </div>
 
-        <div id="toast" class="toast" role="status" aria-live="polite"></div>
-        </main>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-especialidades"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    {% call modal('modal-empleado', 'Registrar empleado') %}
+      <form id="form-empleado" class="ui-form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <div class="ui-form__grid">
+          <label class="ui-field">
+            <span>Cédula</span>
+            <input name="cedula" type="text" required>
+          </label>
+          <label class="ui-field">
+            <span>Nombre</span>
+            <input name="nombre" type="text" required>
+          </label>
+          <label class="ui-field">
+            <span>Apellido</span>
+            <input name="apellido" type="text" required>
+          </label>
+          <label class="ui-field">
+            <span>Celular</span>
+            <input name="celular" type="text" required>
+          </label>
+          <label class="ui-field ui-field--full">
+            <span>Correo</span>
+            <input name="correo" type="email" required>
+          </label>
+          <label class="ui-field ui-field--full">
+            <span>Dirección</span>
+            <input name="direccion" type="text" required>
+          </label>
+        </div>
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Guardar empleado</button>
+        </div>
+      </form>
+    {% endcall %}
+
+    {% call modal('modal-cargo', 'Registrar cargo', 'sm') %}
+      <form id="form-cargo" class="ui-form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <div class="ui-form__grid ui-form__grid--one">
+          <label class="ui-field">
+            <span>Nombre del cargo</span>
+            <input name="cargo" type="text" required>
+          </label>
+        </div>
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Guardar cargo</button>
+        </div>
+      </form>
+    {% endcall %}
+
+    {% call modal('modal-especialidad', 'Registrar especialidad', 'sm') %}
+      <form id="form-especialidad" class="ui-form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <div class="ui-form__grid ui-form__grid--one">
+          <label class="ui-field">
+            <span>Nombre de la especialidad</span>
+            <input name="especialidad" type="text" required>
+          </label>
+        </div>
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Guardar especialidad</button>
+        </div>
+      </form>
+    {% endcall %}
+  </main>
 {% endblock %}
 
 {% block scripts %}

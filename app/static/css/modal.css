@@ -1,0 +1,151 @@
+.ui-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.ui-modal[hidden] {
+    display: none;
+}
+
+.ui-modal__dialog {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    background: #ffffff;
+    color: #121212;
+    border-radius: 18px;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    box-shadow: 0 24px 65px rgba(0, 0, 0, 0.32);
+}
+
+.ui-modal__dialog--sm {
+    width: min(420px, 100%);
+}
+
+.ui-modal__dialog--lg {
+    width: min(760px, 100%);
+}
+
+.ui-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1rem 0.8rem;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+}
+
+.ui-modal__title {
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.ui-modal__close {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    background: #ffffff;
+    color: #111111;
+    cursor: pointer;
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.ui-modal__body {
+    padding: 1rem;
+}
+
+.ui-form {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.ui-form__grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ui-form__grid--one {
+    grid-template-columns: 1fr;
+}
+
+.ui-field {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.ui-field--full {
+    grid-column: 1 / -1;
+}
+
+.ui-field > span {
+    font-size: 0.8rem;
+    color: #666b74;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.ui-field input,
+.ui-field select,
+.ui-field textarea {
+    width: 100%;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    font: inherit;
+}
+
+.ui-field input:focus,
+.ui-field select:focus,
+.ui-field textarea:focus {
+    outline: 3px solid rgba(243, 197, 0, 0.25);
+    border-color: rgba(243, 197, 0, 0.7);
+}
+
+.ui-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.2rem;
+}
+
+.ui-btn {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.72rem 1rem;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+}
+
+.ui-btn--primary {
+    color: #111111;
+    background: linear-gradient(180deg, #f3c500, #f8dd69);
+}
+
+.ui-btn--ghost {
+    background: transparent;
+    color: #121212;
+    border: 1px solid rgba(17, 24, 39, 0.15);
+}
+
+body.ui-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 640px) {
+    .ui-form__grid {
+        grid-template-columns: 1fr;
+    }
+}

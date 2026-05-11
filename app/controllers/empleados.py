@@ -20,6 +20,19 @@ def api_listar_empleados():
     resultado = empleados.listar_empleados()
     return jsonify(resultado)
 
+@empleados_blueprint.route("/api/cargos", methods=["GET"])
+@jwt_required
+def api_listar_cargos():
+    empleados = Empleados()
+    resultado = empleados.listar_cargos()
+    return jsonify(resultado)
+
+@empleados_blueprint.route("/api/especialidades", methods=["GET"])
+@jwt_required
+def api_listar_especialidades():
+    empleados = Empleados()
+    resultado = empleados.listar_especialidades()
+    return jsonify(resultado)
 
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
 @jwt_required

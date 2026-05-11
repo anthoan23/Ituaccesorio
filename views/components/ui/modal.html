@@ -1,0 +1,13 @@
+{% macro modal(id, title, size='md') -%}
+<div id="{{ id }}" class="ui-modal" data-modal hidden>
+  <div class="ui-modal__dialog ui-modal__dialog--{{ size }}" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-title">
+    <header class="ui-modal__header">
+      <h3 id="{{ id }}-title" class="ui-modal__title">{{ title }}</h3>
+      <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
+    </header>
+    <div class="ui-modal__body">
+      {{ caller() if caller else '' }}
+    </div>
+  </div>
+</div>
+{%- endmacro %}

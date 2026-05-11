@@ -1,281 +1,237 @@
-(() => {
-    const modalEmpleado = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalClose = document.getElementById('modal-cerrar');
-    const btnRegistrar = document.getElementById('btn-registrar');
-    const btnRegistrarCargo = document.getElementById('btn-registrar-cargo');
-    const btnRegistrarEspecialidad = document.getElementById('btn-registrar-especialidad');
+const tablaEmpleados = document.getElementById("tabla-empleados");
+const tablaCargos = document.getElementById("tabla-cargos");
+const tablaEspecialidades = document.getElementById("tabla-especialidades");
+const formEmpleado = document.getElementById("form-empleado");
+const formCargo = document.getElementById("form-cargo");
+const formEspecialidad = document.getElementById("form-especialidad");
 
-    const modalCargo = document.getElementById('modal-cargo');
-    const modalEspecialidad = document.getElementById('modal-especialidad');
-    const modalCargoClose = document.getElementById('modal-cargo-cerrar');
-    const modalEspecialidadClose = document.getElementById('modal-especialidad-cerrar');
+const state = {
+    empleados: [],
+    cargos: [],
+    especialidades: [],
+};
 
-    const formEmpleado = document.getElementById('form-empleado');
-    const formCargo = document.getElementById('form-cargo');
-    const formEspecialidad = document.getElementById('form-especialidad');
-    const toast = document.getElementById('toast');
+const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
-    if (!modalEmpleado || !formEmpleado) return;
+iniciar();
 
-    function showToast(text) {
-        if (!toast) return;
-        toast.textContent = text;
-        toast.classList.add('is-show');
-        setTimeout(() => toast.classList.remove('is-show'), 2200);
+function iniciar() {
+    formEmpleado?.addEventListener("submit", registrarEmpleado);
+    formCargo?.addEventListener("submit", registrarCargo);
+    formEspecialidad?.addEventListener("submit", registrarEspecialidad);
+    cargarTodo();
+}
+
+async function registrarEmpleado(event) {
+    event.preventDefault();
+
+    const payload = {
+        cedula: formEmpleado?.cedula?.value?.trim() || "",
+        nombre: formEmpleado?.nombre?.value?.trim() || "",
+        apellido: formEmpleado?.apellido?.value?.trim() || "",
+        celular: formEmpleado?.celular?.value?.trim() || "",
+        correo: formEmpleado?.correo?.value?.trim() || "",
+        direccion: formEmpleado?.direccion?.value?.trim() || "",
+    };
+
+    try {
+        await fetchJson("/api/empleados", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+
+        formEmpleado?.reset();
+        cerrarModalDeFormulario(formEmpleado);
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo registrar el empleado.", true);
+    }
+}
+
+async function registrarCargo(event) {
+    event.preventDefault();
+
+    const payload = {
+        cargo: formCargo?.cargo?.value?.trim() || "",
+    };
+
+    try {
+        await fetchJson("/api/cargos", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+
+        formCargo?.reset();
+        cerrarModalDeFormulario(formCargo);
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo registrar el cargo.", true);
+    }
+}
+
+async function registrarEspecialidad(event) {
+    event.preventDefault();
+
+    const payload = {
+        especialidad: formEspecialidad?.especialidad?.value?.trim() || "",
+    };
+
+    try {
+        await fetchJson("/api/especialidades", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+
+        formEspecialidad?.reset();
+        cerrarModalDeFormulario(formEspecialidad);
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo registrar la especialidad.", true);
+    }
+}
+
+function cerrarModalDeFormulario(form) {
+    const modal = form?.closest("[data-modal]");
+    if (!modal) return;
+
+    if (window.UiModal && typeof window.UiModal.closeById === "function") {
+        window.UiModal.closeById(modal.id);
+        return;
     }
 
-    function openEmpleadoModal() {
-        modalEmpleado.classList.add('is-open');
-        modalEmpleado.setAttribute('aria-hidden', 'false');
-        if (modalTitle) modalTitle.textContent = 'Registrar empleado';
-        document.body.style.overflow = 'hidden';
+    modal.setAttribute("hidden", "");
+    modal.setAttribute("aria-hidden", "true");
+}
 
-        const first = formEmpleado.querySelector('input, select, textarea, button');
-        if (first) first.focus();
+async function cargarTodo() {
+    try {
+        const [empleados, cargos, especialidades] = await Promise.all([
+            fetchJson('/api/empleados'),
+            fetchJson('/api/cargos'),
+            fetchJson('/api/especialidades'),
+        ]);
+
+        state.empleados = Array.isArray(empleados) ? empleados : (empleados.empleados || []);
+        state.cargos = Array.isArray(cargos) ? cargos : (cargos.cargos || []);
+        state.especialidades = Array.isArray(especialidades) ? especialidades : (especialidades.especialidades || []);
+
+        renderTodo();
+    } catch (error) {
+        mostrarToast(error.message || 'No se pudieron cargar los datos.', true);
+    }
+}
+
+function renderTodo() {
+    renderEmpleados();
+    renderCargos();
+    renderEspecialidades();
+}
+
+function renderEmpleados() {
+    if (!tablaEmpleados) return;
+
+    if (!state.empleados.length) {
+        tablaEmpleados.innerHTML = emptyRow(4, 'No hay empleados registrados.');
+        return;
     }
 
-    function closeEmpleadoModal() {
-        modalEmpleado.classList.remove('is-open');
-        modalEmpleado.setAttribute('aria-hidden', 'true');
-        formEmpleado.reset();
-        syncBodyScroll();
+    tablaEmpleados.innerHTML = state.empleados.map(emp => `
+        <tr>
+            <td>${escapeHtml(emp.cedula || '')}</td>
+            <td>${escapeHtml(((emp.nombre || '') + ' ' + (emp.apellido || '')).trim())}</td>
+            <td>${escapeHtml(emp.cargo_nombre || '—')}</td>
+            <td class="table__actions">
+                <div class="row-actions">
+                    <button class="icon-action" type="button">Ver</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderCargos() {
+    if (!tablaCargos) return;
+
+    if (!state.cargos.length) {
+        tablaCargos.innerHTML = emptyRow(2, 'No hay cargos creados.');
+        return;
     }
 
-    function openSimpleModal(modalEl) {
-        if (!modalEl) return;
-        modalEl.setAttribute('aria-hidden', 'false');
-        modalEl.style.display = 'block';
-        document.body.style.overflow = 'hidden';
+    tablaCargos.innerHTML = state.cargos.map(c => `
+        <tr>
+            <td>${escapeHtml(String(c.id || ''))}</td>
+            <td>${escapeHtml(c.nombre || '')}</td>
+        </tr>
+    `).join('');
+}
 
-        const firstInput = modalEl.querySelector('input, select, textarea, button');
-        if (firstInput) firstInput.focus();
+function renderEspecialidades() {
+    if (!tablaEspecialidades) return;
+
+    if (!state.especialidades.length) {
+        tablaEspecialidades.innerHTML = emptyRow(2, 'No hay especialidades creadas.');
+        return;
     }
 
-    function closeSimpleModal(modalEl) {
-        if (!modalEl) return;
-        modalEl.setAttribute('aria-hidden', 'true');
-        modalEl.style.display = 'none';
-        syncBodyScroll();
-    }
+    tablaEspecialidades.innerHTML = state.especialidades.map(e => `
+        <tr>
+            <td>${escapeHtml(String(e.id || ''))}</td>
+            <td>${escapeHtml(e.nombre || '')}</td>
+        </tr>
+    `).join('');
+}
 
-    function syncBodyScroll() {
-        const empleadoOpen = modalEmpleado.classList.contains('is-open');
-        const cargoOpen = modalCargo && modalCargo.getAttribute('aria-hidden') === 'false';
-        const especialidadOpen = modalEspecialidad && modalEspecialidad.getAttribute('aria-hidden') === 'false';
-        document.body.style.overflow = empleadoOpen || cargoOpen || especialidadOpen ? 'hidden' : '';
-    }
+async function fetchJson(url, options = {}) {
+    const authToken = getAuthToken();
 
-    function obtenerCsrfToken() {
-        const csrfInput = formEmpleado.querySelector('input[name="_csrf_token"]');
-        return csrfInput ? csrfInput.value : '';
-    }
-
-    // Abrir modales
-    btnRegistrar && btnRegistrar.addEventListener('click', openEmpleadoModal);
-    btnRegistrarCargo && btnRegistrarCargo.addEventListener('click', () => openSimpleModal(modalCargo));
-    btnRegistrarEspecialidad && btnRegistrarEspecialidad.addEventListener('click', () => openSimpleModal(modalEspecialidad));
-
-    // Cerrar modal empleado
-    modalClose && modalClose.addEventListener('click', closeEmpleadoModal);
-    modalEmpleado.addEventListener('click', (e) => {
-        if (e.target === modalEmpleado) closeEmpleadoModal();
+    const response = await fetch(url, {
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+            ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+        },
+        credentials: "same-origin",
+        ...options,
     });
 
-    // Cerrar modal cargo
-    modalCargoClose && modalCargoClose.addEventListener('click', () => closeSimpleModal(modalCargo));
-    modalCargo && modalCargo.addEventListener('click', (e) => {
-        if (e.target === modalCargo) closeSimpleModal(modalCargo);
-    });
+    const data = await response.json().catch(() => ({}));
 
-    // Cerrar modal especialidad
-    modalEspecialidadClose && modalEspecialidadClose.addEventListener('click', () => closeSimpleModal(modalEspecialidad));
-    modalEspecialidad && modalEspecialidad.addEventListener('click', (e) => {
-        if (e.target === modalEspecialidad) closeSimpleModal(modalEspecialidad);
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key !== 'Escape') return;
-        if (modalEmpleado.classList.contains('is-open')) {
-            closeEmpleadoModal();
-            return;
-        }
-        if (modalCargo && modalCargo.getAttribute('aria-hidden') === 'false') {
-            closeSimpleModal(modalCargo);
-            return;
-        }
-        if (modalEspecialidad && modalEspecialidad.getAttribute('aria-hidden') === 'false') {
-            closeSimpleModal(modalEspecialidad);
-        }
-    });
-
-    // Submit modal cargo
-    formCargo && formCargo.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const cargo = formCargo.cargo_nombre.value.trim();
-        if (!cargo) {
-            formCargo.cargo_nombre.focus();
-            return;
-        }
-
-        fetch('/api/cargos', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                ...(obtenerCsrfToken() ? { 'X-CSRFToken': obtenerCsrfToken() } : {}),
-            },
-            body: JSON.stringify({ cargo }),
-        })
-            .then(async (response) => ({ response, data: await response.json().catch(() => ({})) }))
-            .then(({ response, data }) => {
-                if (response.ok && data.success) {
-                    showToast(data.message || `Cargo "${cargo}" guardado`);
-                    closeSimpleModal(modalCargo);
-                    formCargo.reset();
-                    return;
-                }
-                showToast(data.error || 'No se pudo agregar el cargo');
-            })
-            .catch((error) => {
-                console.error(error);
-                showToast('Error de conexion al guardar cargo');
-            });
-    });
-
-    // Submit modal especialidad
-    formEspecialidad && formEspecialidad.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const especialidad = formEspecialidad.especialidad_nombre.value.trim();
-        if (!especialidad) {
-            formEspecialidad.especialidad_nombre.focus();
-            return;
-        }
-
-        fetch('/api/especialidades', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                ...(obtenerCsrfToken() ? { 'X-CSRFToken': obtenerCsrfToken() } : {}),
-            },
-            body: JSON.stringify({ especialidad }),
-        })
-            .then(async (response) => ({ response, data: await response.json().catch(() => ({})) }))
-            .then(({ response, data }) => {
-                if (response.ok && data.success) {
-                    showToast(data.message || `Especialidad "${especialidad}" guardada`);
-                    closeSimpleModal(modalEspecialidad);
-                    formEspecialidad.reset();
-                    return;
-                }
-                showToast(data.error || 'No se pudo agregar la especialidad');
-            })
-            .catch((error) => {
-                console.error(error);
-                showToast('Error de conexion al guardar especialidad');
-            });
-    });
-
-    // Submit modal empleado
-    formEmpleado.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const cedula = (formEmpleado.querySelector('input[name="id"]')?.value || '').trim();
-        const nombre = (formEmpleado.querySelector('input[name="nombre"]')?.value || '').trim();
-        const apellido = (formEmpleado.querySelector('input[name="apellido"]')?.value || '').trim();
-        const celularPrefijo = (formEmpleado.querySelector('select[name="celular_prefijo"]')?.value || '').trim();
-        const celularNumero = (formEmpleado.querySelector('input[name="celular_numero"]')?.value || '').trim();
-        const correo = (formEmpleado.querySelector('input[name="correo"]')?.value || '').trim();
-        const direccion = (formEmpleado.querySelector('input[name="direccion"]')?.value || '').trim();
-        const celular = `${celularPrefijo}${celularNumero}`;
-
-        if (!cedula || !nombre || !apellido || !celular || !correo || !direccion) {
-            showToast('Todos los campos son obligatorios');
-            return;
-        }
-
-        const payload = {
-            cedula,
-            nombre,
-            apellido,
-            celular,
-            correo,
-            direccion,
-        };
-
-        try {
-            const csrfToken = obtenerCsrfToken();
-            const response = await fetch('/api/empleados', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
-                },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await response.json().catch(() => ({}));
-
-            if (response.ok && data.success) {
-                showToast(data.message || 'Empleado agregado exitosamente');
-                closeEmpleadoModal();
-                await cargarEmpleados();
-                return;
-            }
-
-            showToast(data.error || 'No se pudo agregar el empleado');
-        } catch (error) {
-            console.error(error);
-            showToast('Error de conexion al guardar empleado');
-        }
-    });
-
-    // Cargar lista de empleados desde el controlador
-    async function cargarEmpleados() {
-        const tbody = document.getElementById('tabla-empleados');
-        if (!tbody) return;
-
-        try {
-            const res = await fetch('/api/empleados', { credentials: 'same-origin' });
-            if (!res.ok) throw new Error('Error al obtener empleados');
-
-            const data = await res.json();
-            tbody.innerHTML = '';
-
-            if (!Array.isArray(data) || data.length === 0) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="4" style="text-align:center; font-weight:700; color: #6a6a6a;">No hay empleados registrados</td>';
-                tbody.appendChild(tr);
-                return;
-            }
-
-            data.forEach((emp) => {
-                const tr = document.createElement('tr');
-                const cedula = emp.cedula ?? emp.ID_em ?? '';
-                const nombreCompleto = (emp.nombre || '') + (emp.apellido ? ` ${emp.apellido}` : '');
-                const rol = emp.rol ?? '';
-
-                tr.innerHTML = `
-                    <td>${cedula}</td>
-                    <td>${nombreCompleto}</td>
-                    <td>${rol}</td>
-                    <td class="table__actions"><div class="row-actions"><button class="icon-action" type="button" aria-label="Editar" data-id="${cedula}">✎</button><button class="icon-action" type="button" aria-label="Eliminar" data-id="${cedula}">🗑</button></div></td>
-                `;
-
-                tbody.appendChild(tr);
-            });
-        } catch (err) {
-            console.error(err);
-        }
+    if (!response.ok || data.success === false) {
+        throw new Error(data.error || 'No se pudo completar la operacion.');
     }
 
-    // Cargar al inicio
-    cargarEmpleados();
-})();
+    return data;
+}
 
+function mostrarToast(message, isError = false) {
+    // minimal toast fallback: console + alert for errors
+    if (isError) {
+        console.error(message);
+    } else {
+        console.log(message);
+    }
+}
 
+function getAuthToken() {
+    const fromLocal = window.localStorage ? window.localStorage.getItem("access_token") : "";
+    if (fromLocal) return fromLocal;
+
+    const fromSession = window.sessionStorage ? window.sessionStorage.getItem("access_token") : "";
+    if (fromSession) return fromSession;
+
+    return "";
+}
+
+function emptyRow(colspan, text) {
+    return `<tr><td colspan="${colspan}">${escapeHtml(text)}</td></tr>`;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}

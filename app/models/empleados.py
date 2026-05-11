@@ -30,6 +30,48 @@ class Empleados(conectar):
         finally:
             cursor.close()
             db.close()
+    
+    def listar_cargos(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    ID_cargo AS id,
+                    N_cargo AS nombre
+                FROM cargo
+                ORDER BY ID_cargo ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
+    def listar_especialidades(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    ID_especialidad AS id,
+                    N_especialidad AS nombre
+                FROM especialidad
+                ORDER BY ID_especialidad ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
 
     def agregar_empleado(
         self,
