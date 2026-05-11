@@ -12,7 +12,6 @@
         <div class="hero__copy">
             <p class="eyebrow">Seguridad y acceso</p>
             <h1>Gestion de usuarios, roles, permisos y modulos</h1>
-            <p class="hero__text">Administra cuentas, define roles y controla el acceso por modulo desde una sola pantalla.</p>
         </div>
 
         <div class="stats" aria-label="Resumen general">
@@ -36,167 +35,89 @@
     </section>
 
     <section class="board">
-        <article class="panel panel--form">
+        <article class="panel--full panel--admin">
             <div class="panel__header">
                 <div>
-                    <p class="panel__eyebrow">Usuarios</p>
-                    <h2 class="panel__title">Crear o editar usuario</h2>
+                    <h2 class="panel__title">Gestionar registros</h2>
                 </div>
             </div>
 
-            <form id="form-usuario" class="form" autocomplete="off">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="id">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Nombre completo" required>
-                </label>
-                <label>
-                    <span>Cedula personal</span>
-                    <input name="cedula_personal" type="number" placeholder="32014015" required>
-                </label>
-                <label>
-                    <span>Contrasena</span>
-                    <input name="password" type="password" placeholder="Dejar vacio para no cambiar" required>
-                </label>
-                <label>
-                    <span>Rol</span>
-                    <select name="rol_id" required></select>
-                </label>
-                <label>
-                    <span>Foto de perfil</span>
-                    <input name="foto_perfil" type="text" placeholder="/static/img/perfil.png">
-                </label>
-                <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar usuario</button>
-                    <button class="btn btn--ghost" type="button" data-reset-form="usuario">Limpiar</button>
-                </div>
-            </form>
-        </article>
-
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Usuarios existentes</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Cedula</th>
-                            <th>Rol</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-usuarios"></tbody>
-                </table>
+            <div class="admin-toolbar" role="group" aria-label="Administrar registros">
+                <button id="btn-admin-usuarios" class="btn btn--ghost" type="button" data-admin-target="usuarios" aria-controls="modal-admin-usuarios" aria-expanded="false">Administrar usuarios</button>
+                <button id="btn-admin-roles" class="btn btn--ghost" type="button" data-admin-target="roles" aria-controls="modal-admin-roles" aria-expanded="false">Administrar roles</button>
+                <button id="btn-admin-modulos" class="btn btn--ghost" type="button" data-admin-target="modulos" aria-controls="modal-admin-modulos" aria-expanded="false">Administrar modulos</button>
             </div>
         </article>
 
-        <article class="panel panel--form">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Roles</p>
-                    <h2 class="panel__title">Administrar roles</h2>
+        <div class="tables-grid" aria-label="Tablas de usuarios, roles y modulos">
+            <article class="panel panel--table panel--compact">
+                <div class="panel__header">
+                    <div>
+                        <h2 class="panel__title">Usuarios existentes</h2>
+                    </div>
                 </div>
-            </div>
+                <div class="table-wrap table-wrap--compact">
+                    <table class="table table--compact">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Cedula</th>
+                                <th>Rol</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-usuarios"></tbody>
+                    </table>
+                </div>
+            </article>
 
-            <form id="form-rol" class="form" autocomplete="off">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="id">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Administrador" required>
-                </label>
-                <label>
-                    <span>Descripcion</span>
-                    <textarea name="descripcion" rows="3" placeholder="Descripcion del rol"></textarea>
-                </label>
-                <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar rol</button>
-                    <button class="btn btn--ghost" type="button" data-reset-form="rol">Limpiar</button>
+            <article class="panel panel--table panel--compact">
+                <div class="panel__header">
+                    <div>
+                        <h2 class="panel__title">Roles creados</h2>
+                    </div>
                 </div>
-            </form>
-        </article>
+                <div class="table-wrap table-wrap--compact">
+                    <table class="table table--compact">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripcion</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-roles"></tbody>
+                    </table>
+                </div>
+            </article>
 
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Roles creados</h2>
+            <article class="panel panel--table panel--compact">
+                <div class="panel__header">
+                    <div>
+                        <h2 class="panel__title">Modulos creados</h2>
+                    </div>
                 </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripcion</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-roles"></tbody>
-                </table>
-            </div>
-        </article>
-
-        <article class="panel panel--form">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Modulos</p>
-                    <h2 class="panel__title">Administrar modulos</h2>
+                <div class="table-wrap table-wrap--compact">
+                    <table class="table table--compact">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripcion</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-modulos"></tbody>
+                    </table>
                 </div>
-            </div>
-
-            <form id="form-modulo" class="form" autocomplete="off">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="id">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Nombre del modulo" required>
-                </label>
-                <label>
-                    <span>Descripcion</span>
-                    <textarea name="descripcion" rows="3" placeholder="Descripcion del modulo"></textarea>
-                </label>
-                <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar modulo</button>
-                    <button class="btn btn--ghost" type="button" data-reset-form="modulo">Limpiar</button>
-                </div>
-            </form>
-        </article>
-
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Modulos creados</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripcion</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-modulos"></tbody>
-                </table>
-            </div>
-        </article>
+            </article>
+        </div>
 
         <article class="panel panel--full">
             <div class="panel__header">
                 <div>
-                    <p class="panel__eyebrow">Permisos</p>
                     <h2 class="panel__title">Asignar permisos por rol y modulo</h2>
                 </div>
             </div>
@@ -246,6 +167,108 @@
             </div>
         </article>
     </section>
+
+    <div id="modal-admin-usuarios" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="usuarios" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-usuarios-title" tabindex="-1">
+            <div class="panel__header">
+                <div>
+                    <p class="panel__eyebrow">Usuarios</p>
+                    <h2 id="modal-usuarios-title" class="panel__title">Crear o editar usuario</h2>
+                </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="usuarios">Cerrar</button>
+            </div>
+
+            <form id="form-usuario" class="form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id">
+                <label>
+                    <span>Nombre</span>
+                    <input name="nombre" type="text" placeholder="Nombre completo" required>
+                </label>
+                <label>
+                    <span>Cedula personal</span>
+                    <input name="cedula_personal" type="number" placeholder="32014015" required>
+                </label>
+                <label>
+                    <span>Contrasena</span>
+                    <input name="password" type="password" placeholder="Dejar vacio para no cambiar" required>
+                </label>
+                <label>
+                    <span>Rol</span>
+                    <select name="rol_id" required></select>
+                </label>
+                <label>
+                    <span>Foto de perfil</span>
+                    <input name="foto_perfil" type="text" placeholder="/static/img/perfil.png">
+                </label>
+                <div class="form__actions">
+                    <button class="btn btn--primary" type="submit">Guardar usuario</button>
+                    <button class="btn btn--ghost" type="button" data-reset-form="usuario">Limpiar</button>
+                </div>
+            </form>
+        </article>
+    </div>
+
+    <div id="modal-admin-roles" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="roles" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-roles-title" tabindex="-1">
+            <div class="panel__header">
+                <div>
+                    <p class="panel__eyebrow">Roles</p>
+                    <h2 id="modal-roles-title" class="panel__title">Administrar roles</h2>
+                </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="roles">Cerrar</button>
+            </div>
+
+            <form id="form-rol" class="form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id">
+                <label>
+                    <span>Nombre</span>
+                    <input name="nombre" type="text" placeholder="Administrador" required>
+                </label>
+                <label>
+                    <span>Descripcion</span>
+                    <textarea name="descripcion" rows="3" placeholder="Descripcion del rol"></textarea>
+                </label>
+                <div class="form__actions">
+                    <button class="btn btn--primary" type="submit">Guardar rol</button>
+                    <button class="btn btn--ghost" type="button" data-reset-form="rol">Limpiar</button>
+                </div>
+            </form>
+        </article>
+    </div>
+
+    <div id="modal-admin-modulos" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="modulos" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-modulos-title" tabindex="-1">
+            <div class="panel__header">
+                <div>
+                    <p class="panel__eyebrow">Modulos</p>
+                    <h2 id="modal-modulos-title" class="panel__title">Administrar modulos</h2>
+                </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="modulos">Cerrar</button>
+            </div>
+
+            <form id="form-modulo" class="form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id">
+                <label>
+                    <span>Nombre</span>
+                    <input name="nombre" type="text" placeholder="Nombre del modulo" required>
+                </label>
+                <label>
+                    <span>Descripcion</span>
+                    <textarea name="descripcion" rows="3" placeholder="Descripcion del modulo"></textarea>
+                </label>
+                <div class="form__actions">
+                    <button class="btn btn--primary" type="submit">Guardar modulo</button>
+                    <button class="btn btn--ghost" type="button" data-reset-form="modulo">Limpiar</button>
+                </div>
+            </form>
+        </article>
+    </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </main>
