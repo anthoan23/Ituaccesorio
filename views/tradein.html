@@ -1,0 +1,47 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Trade-in{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tradein.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="tradein-page" aria-label="Modulo Trade-in">
+  <header class="tradein-header">
+    <h1>Trade-in</h1>
+    <p>Base del modulo para gestionar equipos recibidos por intercambio.</p>
+  </header>
+
+  <article class="tradein-card" aria-label="Listado de trade-ins">
+    <div class="tradein-card__head">
+      <h2>Registros</h2>
+      <small id="tradein-count">0 elementos</small>
+    </div>
+
+    <div class="tradein-table-wrap">
+      <table class="tradein-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Empleado</th>
+            <th>Cliente</th>
+            <th>Producto</th>
+            <th>Cotizacion</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tradein-body">
+          <tr>
+            <td colspan="6" class="tradein-empty">Cargando datos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/tradein.js') }}"></script>
+{% endblock %}

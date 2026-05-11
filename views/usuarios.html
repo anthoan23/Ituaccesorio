@@ -12,7 +12,6 @@
         <div class="hero__copy">
             <p class="eyebrow">Seguridad y acceso</p>
             <h1>Gestion de usuarios, roles, permisos y modulos</h1>
-            <p class="hero__text">Administra cuentas, define roles y controla el acceso por modulo desde una sola pantalla.</p>
         </div>
 
         <div class="stats" aria-label="Resumen general">
@@ -36,12 +35,159 @@
     </section>
 
     <section class="board">
-        <article class="panel panel--form">
+        <article class="panel--full panel--admin">
+            <div class="panel__header">
+                <div>
+                    <!-- <p class="panel__eyebrow">Administracion</p>
+                    <h2 class="panel__title">Gestionar registros</h2> 
+                    
+                    No me convence esa verga-->
+                </div>
+            </div>
+
+            <div class="admin-toolbar" role="group" aria-label="Administrar registros">
+                <button id="btn-admin-usuarios" class="btn btn--ghost" type="button" data-admin-target="usuarios" aria-controls="modal-admin-usuarios" aria-expanded="false">Administrar usuarios</button>
+                <button id="btn-admin-roles" class="btn btn--ghost" type="button" data-admin-target="roles" aria-controls="modal-admin-roles" aria-expanded="false">Administrar roles</button>
+                <button id="btn-admin-modulos" class="btn btn--ghost" type="button" data-admin-target="modulos" aria-controls="modal-admin-modulos" aria-expanded="false">Administrar modulos</button>
+            </div>
+        </article>
+
+        <article class="panel panel--full panel--tabs" aria-label="Tablas por pestañas">
+            <div class="tabs" role="tablist" aria-label="Pestañas de seguridad">
+                <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-panel-usuarios" id="tab-usuarios" data-table-tab="usuarios">Usuarios</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-roles" id="tab-roles" data-table-tab="roles">Roles</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-modulos" id="tab-modulos" data-table-tab="modulos">Modulos</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-permisos" id="tab-permisos" data-table-tab="permisos">Permisos</button>
+            </div>
+
+            <section id="tab-panel-usuarios" class="tab-panel" role="tabpanel" aria-labelledby="tab-usuarios" data-table-panel="usuarios">
+                <div class="table__header">
+                    <h2 class="panel__title">Usuarios existentes</h2>
+                </div>
+                <div class="table-wrap" role="region" aria-label="Tabla de usuarios">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Cedula</th>
+                                <th>Rol</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-usuarios"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tab-panel-roles" class="tab-panel" role="tabpanel" aria-labelledby="tab-roles" data-table-panel="roles" hidden>
+                <div class="table__header">
+                    <h2 class="panel__title">Roles creados</h2>
+                </div>
+                <div class="table-wrap" role="region" aria-label="Tabla de roles">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripcion</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-roles"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tab-panel-modulos" class="tab-panel" role="tabpanel" aria-labelledby="tab-modulos" data-table-panel="modulos" hidden>
+                <div class="table__header">
+                    <h2 class="panel__title">Modulos creados</h2>
+                </div>
+                <div class="table-wrap" role="region" aria-label="Tabla de modulos">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripcion</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-modulos"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tab-panel-permisos" class="tab-panel" role="tabpanel" aria-labelledby="tab-permisos" data-table-panel="permisos" hidden>
+                <div class="table__header">
+                    <h2 class="panel__title">Permisos</h2>
+                </div>
+
+                <div class="permiso-controls" aria-label="Formulario de permisos">
+                    <form id="form-permiso" class="form form--permiso" autocomplete="off">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="permiso-controls__row">
+                            <label>
+                                <span>Rol</span>
+                                <select name="rol_id" required></select>
+                            </label>
+                            <label>
+                                <span>Modulo</span>
+                                <select name="modulo_id" required></select>
+                            </label>
+                        </div>
+
+                        <div class="permiso-flags" aria-label="Permisos">
+                            <label class="check">
+                                <span>Registrar</span>
+                                <input name="registrar" type="checkbox">
+                            </label>
+                            <label class="check">
+                                <span>Modificar</span>
+                                <input name="modificar" type="checkbox">
+                            </label>
+                            <label class="check">
+                                <span>Eliminar</span>
+                                <input name="eliminar" type="checkbox">
+                            </label>
+                        </div>
+
+                        <div class="form__actions permiso-actions">
+                            <button class="btn btn--primary" type="submit">Guardar permiso</button>
+                            <button class="btn btn--ghost" type="button" data-reset-form="permiso">Limpiar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-wrap table-wrap--margin" role="region" aria-label="Tabla de permisos">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Rol</th>
+                                <th>Modulo</th>
+                                <th>Registrar</th>
+                                <th>Modificar</th>
+                                <th>Eliminar</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-permisos"></tbody>
+                    </table>
+                </div>
+            </section>
+        </article>
+    </section>
+
+    <div id="modal-admin-usuarios" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="usuarios" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-usuarios-title" tabindex="-1">
             <div class="panel__header">
                 <div>
                     <p class="panel__eyebrow">Usuarios</p>
-                    <h2 class="panel__title">Crear o editar usuario</h2>
+                    <h2 id="modal-usuarios-title" class="panel__title">Crear o editar usuario</h2>
                 </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="usuarios">Cerrar</button>
             </div>
 
             <form id="form-usuario" class="form" autocomplete="off">
@@ -73,36 +219,17 @@
                 </div>
             </form>
         </article>
+    </div>
 
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Usuarios existentes</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Cedula</th>
-                            <th>Rol</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-usuarios"></tbody>
-                </table>
-            </div>
-        </article>
-
-        <article class="panel panel--form">
+    <div id="modal-admin-roles" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="roles" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-roles-title" tabindex="-1">
             <div class="panel__header">
                 <div>
                     <p class="panel__eyebrow">Roles</p>
-                    <h2 class="panel__title">Administrar roles</h2>
+                    <h2 id="modal-roles-title" class="panel__title">Administrar roles</h2>
                 </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="roles">Cerrar</button>
             </div>
 
             <form id="form-rol" class="form" autocomplete="off">
@@ -122,35 +249,17 @@
                 </div>
             </form>
         </article>
+    </div>
 
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Roles creados</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripcion</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-roles"></tbody>
-                </table>
-            </div>
-        </article>
-
-        <article class="panel panel--form">
+    <div id="modal-admin-modulos" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="modulos" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-modulos-title" tabindex="-1">
             <div class="panel__header">
                 <div>
                     <p class="panel__eyebrow">Modulos</p>
-                    <h2 class="panel__title">Administrar modulos</h2>
+                    <h2 id="modal-modulos-title" class="panel__title">Administrar modulos</h2>
                 </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="modulos">Cerrar</button>
             </div>
 
             <form id="form-modulo" class="form" autocomplete="off">
@@ -170,82 +279,7 @@
                 </div>
             </form>
         </article>
-
-        <article class="panel panel--table">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Listado</p>
-                    <h2 class="panel__title">Modulos creados</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripcion</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-modulos"></tbody>
-                </table>
-            </div>
-        </article>
-
-        <article class="panel panel--full">
-            <div class="panel__header">
-                <div>
-                    <p class="panel__eyebrow">Permisos</p>
-                    <h2 class="panel__title">Asignar permisos por rol y modulo</h2>
-                </div>
-            </div>
-
-            <form id="form-permiso" class="form form--inline" autocomplete="off">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <label>
-                    <span>Rol</span>
-                    <select name="rol_id" required></select>
-                </label>
-                <label>
-                    <span>Modulo</span>
-                    <select name="modulo_id" required></select>
-                </label>
-                <label class="check">
-                    <span>Registrar</span>
-                    <input name="registrar" type="checkbox">
-                </label>
-                <label class="check">
-                    <span>Modificar</span>
-                    <input name="modificar" type="checkbox">
-                </label>
-                <label class="check">
-                    <span>Eliminar</span>
-                    <input name="eliminar" type="checkbox">
-                </label>
-                <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar permiso</button>
-                    <button class="btn btn--ghost" type="button" data-reset-form="permiso">Limpiar</button>
-                </div>
-            </form>
-
-            <div class="table-wrap table-wrap--margin">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Rol</th>
-                            <th>Modulo</th>
-                            <th>Registrar</th>
-                            <th>Modificar</th>
-                            <th>Eliminar</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-permisos"></tbody>
-                </table>
-            </div>
-        </article>
-    </section>
+    </div>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </main>

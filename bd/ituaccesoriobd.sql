@@ -1,5 +1,7 @@
 ﻿
 
+SET FOREIGN_KEY_CHECKS=0;
+
 
 DROP TABLE IF EXISTS `capacitacion`;
 CREATE TABLE `capacitacion` (
@@ -593,5 +595,7 @@ CREATE TABLE `venta` (
 
 LOCK TABLES `venta` WRITE;
 UNLOCK TABLES;
+
+SET FOREIGN_KEY_CHECKS=1;
 
 
