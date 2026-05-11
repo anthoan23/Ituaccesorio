@@ -133,6 +133,69 @@ body {
     grid-column: 1 / -1;
 }
 
+.tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    border-bottom: 1px solid var(--line);
+    margin: -0.2rem 2rem 1rem;
+    padding: 0.2rem;
+    overflow: auto;
+}
+
+.tab {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    color: var(--muted);
+    padding: 0.9rem 1.05rem;
+    border-radius: 16px;
+    position: relative;
+    white-space: nowrap;
+    font-size: 1rem;
+}
+
+.tab:hover {
+    background: rgba(17, 24, 39, 0.04);
+    color: var(--ink);
+}
+
+.tab.is-active {
+    color: var(--ink);
+}
+
+.tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: -0.2rem;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+}
+
+.tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+}
+
+.tab-panel {
+    padding-top: 0.2rem;
+}
+
+.table__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+}
+
 .admin-toolbar {
     display: flex;
     gap: 0.65rem;

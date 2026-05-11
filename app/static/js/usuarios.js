@@ -19,6 +19,10 @@ const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
 const selectPermisoRol = formPermiso?.querySelector("select[name='rol_id']");
 const selectPermisoModulo = formPermiso?.querySelector("select[name='modulo_id']");
 
+const tableTabButtons = Array.from(document.querySelectorAll("[data-table-tab]"));
+const tableTabPanels = Array.from(document.querySelectorAll("[data-table-panel]"));
+let activeTableTabKey = tableTabButtons.find(btn => btn.getAttribute("aria-selected") === "true")?.dataset.tableTab || "usuarios";
+
 const adminModals = {
     usuarios: document.getElementById("modal-admin-usuarios"),
     roles: document.getElementById("modal-admin-roles"),
@@ -50,6 +54,9 @@ function iniciar() {
     formModulo?.addEventListener("submit", onModuloSubmit);
     formPermiso?.addEventListener("submit", onPermisoSubmit);
 
+    setupTableTabs();
+    setActiveTableTab(activeTableTabKey);
+
     setupAdminToggles();
 
     document.querySelectorAll("[data-reset-form]").forEach(btn => {
@@ -73,6 +80,50 @@ function iniciar() {
     cargarTodo();
 }
 
+function setupTableTabs() {
+    tableTabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const key = String(btn.dataset.tableTab || "");
+            if (!key) return;
+            setActiveTableTab(key);
+        });
+    });
+}
+
+function setActiveTableTab(key) {
+    activeTableTabKey = key;
+
+    tableTabButtons.forEach(btn => {
+        const isActive = String(btn.dataset.tableTab || "") === key;
+        btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        btn.classList.toggle("is-active", isActive);
+        if (isActive) {
+            btn.tabIndex = 0;
+        } else {
+            btn.tabIndex = -1;
+        }
+    });
+
+    tableTabPanels.forEach(panel => {
+        const panelKey = String(panel.dataset.tablePanel || "");
+        panel.hidden = panelKey !== key;
+    });
+
+    syncAdminButtonsWithTab();
+}
+
+function syncAdminButtonsWithTab() {
+    Object.keys(adminButtons).forEach(key => {
+        const btn = adminButtons[key];
+        if (!btn) return;
+
+        const isActive = key === activeTableTabKey;
+        btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+        btn.classList.toggle("btn--primary", isActive);
+        btn.classList.toggle("btn--ghost", !isActive);
+    });
+}
+
 function setupAdminToggles() {
     Object.keys(adminButtons).forEach(key => {
         const btn = adminButtons[key];
@@ -80,12 +131,17 @@ function setupAdminToggles() {
         if (!btn || !modal) return;
 
         btn.addEventListener("click", () => {
+            if (activeTableTabKey !== key) {
+                setActiveTableTab(key);
+                return;
+            }
+
             const isOpen = !modal.hidden;
             if (isOpen) {
                 closeAdminModal(key);
-                return;
+            } else {
+                openAdminModal(key);
             }
-            openAdminModal(key);
         });
     });
 
@@ -118,8 +174,6 @@ function openAdminModal(key) {
 
     if (btn) {
         btn.setAttribute("aria-expanded", "true");
-        btn.classList.remove("btn--ghost");
-        btn.classList.add("btn--primary");
     }
 
     const dialog = modal?.querySelector(".modal__dialog");
@@ -134,8 +188,6 @@ function closeAdminModal(key) {
     if (modal) modal.hidden = true;
     if (btn) {
         btn.setAttribute("aria-expanded", "false");
-        btn.classList.remove("btn--primary");
-        btn.classList.add("btn--ghost");
     }
 
     if (activeAdminKey === key) {
@@ -316,14 +368,17 @@ function bindTableActions(table, items, type) {
 
             if (action === `edit-${type}`) {
                 if (type === "usuario") {
+                    setActiveTableTab("usuarios");
                     openAdminModal("usuarios");
                     llenarFormularioUsuario(item);
                 }
                 if (type === "rol") {
+                    setActiveTableTab("roles");
                     openAdminModal("roles");
                     llenarFormularioRol(item);
                 }
                 if (type === "modulo") {
+                    setActiveTableTab("modulos");
                     openAdminModal("modulos");
                     llenarFormularioModulo(item);
                 }
@@ -357,11 +412,13 @@ function bindPermisoActions() {
             const permiso = state.permisos.find(item => Number(item.rol_id) === rolId && Number(item.modulo_id) === moduloId);
 
             if (action === "edit-permiso") {
+                setActiveTableTab("permisos");
                 llenarFormularioPermiso(permiso);
                 return;
             }
 
             if (action === "delete-permiso") {
+                setActiveTableTab("permisos");
                 const confirmado = confirm("Eliminar este permiso?");
                 if (!confirmado) return;
 
