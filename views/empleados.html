@@ -57,6 +57,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th class="table__actions">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-cargos"></tbody>
@@ -83,6 +84,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th class="table__actions">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-especialidades"></tbody>
@@ -94,6 +96,7 @@
     {% call modal('modal-empleado', 'Registrar empleado') %}
       <form id="form-empleado" class="ui-form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id_viejo" value="">
         <div class="ui-form__grid">
           <label class="ui-field">
             <span>Cédula</span>
@@ -130,6 +133,7 @@
     {% call modal('modal-cargo', 'Registrar cargo', 'sm') %}
       <form id="form-cargo" class="ui-form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id_viejo" value="">
         <div class="ui-form__grid ui-form__grid--one">
           <label class="ui-field">
             <span>Nombre del cargo</span>
@@ -146,6 +150,7 @@
     {% call modal('modal-especialidad', 'Registrar especialidad', 'sm') %}
       <form id="form-especialidad" class="ui-form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id_viejo" value="">
         <div class="ui-form__grid ui-form__grid--one">
           <label class="ui-field">
             <span>Nombre de la especialidad</span>
@@ -157,6 +162,15 @@
           <button type="submit" class="ui-btn ui-btn--primary">Guardar especialidad</button>
         </div>
       </form>
+    {% endcall %}
+    {% call modal('modal-delete', 'Confirmar eliminación', 'sm') %}
+      <div class="ui-form__grid ui-form__grid--one">
+        <p id="delete-message">¿Seguro que desea eliminar este registro?</p>
+      </div>
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button id="delete-confirm-btn" type="button" class="ui-btn ui-btn--danger">Eliminar</button>
+      </div>
     {% endcall %}
   </main>
 {% endblock %}
