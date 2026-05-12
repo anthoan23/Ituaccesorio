@@ -123,6 +123,9 @@ document.addEventListener('click', function (e) {
         const empleado = state.empleados.find(e => String(e.cedula) === String(id));
         if (!empleado) return;
 
+        if (formEmpleado.id_cargo) {
+            formEmpleado.id_cargo.value = empleado.id_cargo ? String(empleado.id_cargo) : '';
+        }
         formEmpleado.cedula.value = empleado.cedula || '';
         formEmpleado.nombre.value = empleado.nombre || '';
         formEmpleado.apellido.value = empleado.apellido || '';
@@ -212,6 +215,7 @@ async function registrarEmpleado(event) {
 
     const payload = {
         cedula: formEmpleado?.cedula?.value?.trim() || "",
+        id_cargo: formEmpleado?.id_cargo?.value?.trim() || "",
         nombre: formEmpleado?.nombre?.value?.trim() || "",
         apellido: formEmpleado?.apellido?.value?.trim() || "",
         celular: formEmpleado?.celular?.value?.trim() || "",
@@ -339,10 +343,27 @@ async function cargarTodo() {
         state.cargos = Array.isArray(cargos) ? cargos : (cargos.cargos || []);
         state.especialidades = Array.isArray(especialidades) ? especialidades : (especialidades.especialidades || []);
 
+        renderCargoOptions();
         renderTodo();
     } catch (error) {
         mostrarToast(error.message || 'No se pudieron cargar los datos.', true);
     }
+}
+
+function renderCargoOptions() {
+    if (!formEmpleado?.id_cargo) return;
+
+    const options = ['<option value="">Seleccione un cargo</option>']
+        .concat(
+            state.cargos.map(cargo => {
+                const value = escapeHtml(String(cargo.id || ''));
+                const label = escapeHtml(cargo.nombre || '');
+                return `<option value="${value}">${label}</option>`;
+            })
+        )
+        .join('');
+
+    formEmpleado.id_cargo.innerHTML = options;
 }
 
 function renderTodo() {

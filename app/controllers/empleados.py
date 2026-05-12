@@ -40,13 +40,14 @@ def api_agregar_empleado():
     datos = request.get_json(silent=True) or {}
 
     cedula = str(datos.get("cedula", "")).strip()
+    cargo_id = str(datos.get("id_cargo", "")).strip()
     nombre = str(datos.get("nombre", "")).strip()
     apellido = str(datos.get("apellido", "")).strip()
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
 
-    if not all([cedula, nombre, apellido, celular, correo, direccion]):
+    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
         return (
             jsonify(
                 {
@@ -62,6 +63,7 @@ def api_agregar_empleado():
     try:
         mensaje = modelo.agregar_empleado(
             cedula=cedula,
+            cargo_id=cargo_id,
             nombre=nombre,
             apellido=apellido,
             celular=celular,
@@ -188,13 +190,14 @@ def api_actualizar_empleado(id_empleado):
     datos = request.get_json(silent=True) or {}
 
     cedula = str(datos.get("cedula", "")).strip()
+    cargo_id = str(datos.get("id_cargo", "")).strip()
     nombre = str(datos.get("nombre", "")).strip()
     apellido = str(datos.get("apellido", "")).strip()
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
 
-    if not all([cedula, nombre, apellido, celular, correo, direccion]):
+    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
         return (
             jsonify(
                 {
@@ -210,6 +213,7 @@ def api_actualizar_empleado(id_empleado):
     try:
         mensaje = modelo.actualizar_empleado(
             id_empleado=id_empleado,
+            cargo_id=cargo_id,
             nombre=nombre,
             apellido=apellido,
             celular=celular,

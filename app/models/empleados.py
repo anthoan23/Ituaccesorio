@@ -16,12 +16,15 @@ class Empleados(conectar):
                 """
                 SELECT
                     ID_em AS cedula,
+                    e.ID_cargo AS id_cargo,
                     Nombre_em AS nombre,
                     Apellido_em AS apellido,
                     Celular_em AS celular,
                     Correo_em AS correo,
-                    Direccion_em AS direccion
-                FROM empleado
+                    Direccion_em AS direccion,
+                    c.N_cargo AS cargo_nombre
+                FROM empleado e
+                JOIN cargo c ON e.ID_cargo = c.ID_cargo
                 ORDER BY ID_em ASC
                 """
             )
@@ -75,6 +78,7 @@ class Empleados(conectar):
     def agregar_empleado(
         self,
         cedula: str,
+        cargo_id: str,
         nombre: str,
         apellido: str,
         celular: str,
@@ -95,10 +99,10 @@ class Empleados(conectar):
         try:
             cursor.execute(
                 """
-                INSERT INTO empleado (ID_em, Nombre_em, Apellido_em, Celular_em, Correo_em, Direccion_em)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO empleado (ID_em, ID_cargo, Nombre_em, Apellido_em, Celular_em, Correo_em, Direccion_em)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (cedula, nombre, apellido, celular, correo, direccion),
+                (cedula, cargo_id, nombre, apellido, celular, correo, direccion),
             )
             db.commit()
             mensaje = "Empleado agregado exitosamente."
@@ -258,6 +262,7 @@ class Empleados(conectar):
     def actualizar_empleado(
         self,
         id_empleado: str,
+        cargo_id: str,
         nombre: str,
         apellido: str,
         celular: str,
@@ -277,10 +282,10 @@ class Empleados(conectar):
             cursor.execute(
                 """
                 UPDATE empleado
-                SET ID_em = %s, Nombre_em = %s, Apellido_em = %s, Celular_em = %s, Correo_em = %s, Direccion_em = %s
+                SET ID_em = %s, ID_cargo = %s, Nombre_em = %s, Apellido_em = %s, Celular_em = %s, Correo_em = %s, Direccion_em = %s
                 WHERE ID_em = %s
                 """,
-                (id_empleado, nombre, apellido, celular, correo, direccion, id_empleado),
+                (id_empleado, cargo_id, nombre, apellido, celular, correo, direccion, id_empleado),
             )
             db.commit()
             return "Empleado actualizado exitosamente."
@@ -362,6 +367,8 @@ class Empleados(conectar):
     def verificar_cargo(self, cargo: str) -> bool:
         db = self.conexion1()
         if not db:
+            return False
+        if cargo == "Tecnico":
             return False
 
         cursor = db.cursor()
