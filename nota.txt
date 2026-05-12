@@ -10,6 +10,10 @@ docker-compose up
 
 docker-compose stop
 
+//Para eliminar los volumenes 
+
+docker-compose down -v
+
 //librerias para conectar con la bd 
 
 pip install mysql-connector-python -----------------------------
