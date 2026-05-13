@@ -98,7 +98,7 @@ body {
 }
 
 .is-hidden {
-	display: none;
+	display: none !important;
 }
 
 .modal {
@@ -147,13 +147,14 @@ body {
 }
 
 .table-wrap {
-	overflow: auto;
+	overflow: hidden;
 }
 
 .table {
 	width: 100%;
 	border-collapse: collapse;
-	min-width: 900px;
+	min-width: 0;
+	table-layout: fixed;
 }
 
 .table th,
@@ -170,12 +171,13 @@ body {
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	font-weight: 900;
-	white-space: nowrap;
+	white-space: normal;
 }
 
 .table td {
 	font-weight: 700;
 	color: var(--ink);
+	overflow-wrap: anywhere;
 }
 
 .col-image {
