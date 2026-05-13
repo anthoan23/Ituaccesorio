@@ -12,6 +12,7 @@ from app.controllers.login import login_blueprint
 from app.controllers.usuarios import usuarios_blueprint
 from app.controllers.productos import productos_blueprint
 from app.controllers.bitacora import bitacora_blueprint
+from app.controllers.taller import taller_blueprint
 from app.utils.jwt_utils import decode_token
 from types import SimpleNamespace
 
@@ -50,6 +51,7 @@ app.register_blueprint(login_blueprint)
 app.register_blueprint(usuarios_blueprint)
 app.register_blueprint(productos_blueprint)
 app.register_blueprint(bitacora_blueprint)
+app.register_blueprint(taller_blueprint)
 
 @app.before_request
 def load_user_from_jwt():

@@ -114,7 +114,7 @@ CREATE TABLE `clase_producto` (
 
 LOCK TABLES `clase_producto` WRITE;
 /*!40000 ALTER TABLE `clase_producto` DISABLE KEYS */;
-INSERT INTO `clase_producto` VALUES (1,'Telefonos',1),(2,'Tablets',2),(3,'Accesorios de Audio',3),(4,'Cargadores',4),(5,'Fundas y Protectores',5),(6,'Cables',6),(7,'Baterias',7),(8,'Repuestos Internos',8),(9,'Herramientas',9),(10,'Smartwatches',10);
+INSERT INTO `clase_producto` VALUES (1,'Telefonos',3),(2,'Tablets',3),(3,'Accesorios de Audio',1),(4,'Cargadores',1),(5,'Fundas y Protectores',1),(6,'Cables',1),(7,'Baterias',2),(8,'Repuestos Internos',2),(9,'Herramientas',2),(10,'Smartwatches',3);
 /*!40000 ALTER TABLE `clase_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -593,6 +593,11 @@ CREATE TABLE `orden_e` (
   `Patron` int DEFAULT NULL,
   `Clave` varchar(60) DEFAULT NULL,
   `Costo_reparacion` int DEFAULT NULL,
+  `Fecha_e` date DEFAULT NULL,
+  `Fecha_s` date DEFAULT NULL,
+  `Nota` varchar(300) DEFAULT NULL,
+  `Reparacion` varchar(300) DEFAULT NULL,
+  `Revision` varchar(300) DEFAULT NULL,
   PRIMARY KEY (`ID_orden_e`),
   KEY `ID_modelo` (`ID_modelo`),
   KEY `ID_c` (`ID_c`),
@@ -607,7 +612,7 @@ CREATE TABLE `orden_e` (
 
 LOCK TABLES `orden_e` WRITE;
 /*!40000 ALTER TABLE `orden_e` DISABLE KEYS */;
-INSERT INTO `orden_e` VALUES (1,1,1,'Pendiente','Pantalla rota por caida',1234,'0000',250000),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000),(3,3,3,'Completado','Bateria no dura',9012,'2222',80000),(4,6,4,'Pendiente','Camara no funciona',3456,'3333',150000),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000),(6,9,6,'Pendiente','No enciende',1122,'5555',180000),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000),(9,5,9,'Pendiente','Problemas de WiFi',7788,'8888',100000),(10,8,10,'Completado','Puerto de carga suelto',9900,'9999',80000),(11,10,11,'Pendiente','Fallo en lector huella',1212,'1010',95000),(12,12,12,'En Proceso','Camara frontal pixeleada',3434,'1212',110000);
+INSERT INTO `orden_e` VALUES (1,1,1,'Pendiente','Pantalla rota por caida',1234,'0000',250000,NULL,NULL,NULL,NULL,NULL),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000,NULL,NULL,NULL,NULL,NULL),(3,3,3,'Completado','Bateria no dura',9012,'2222',80000,NULL,NULL,NULL,NULL,NULL),(4,6,4,'Pendiente','Camara no funciona',3456,'3333',150000,NULL,NULL,NULL,NULL,NULL),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000,NULL,NULL,NULL,NULL,NULL),(6,9,6,'Pendiente','No enciende',1122,'5555',180000,NULL,NULL,NULL,NULL,NULL),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000,NULL,NULL,NULL,NULL,NULL),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000,NULL,NULL,NULL,NULL,NULL),(9,5,9,'Pendiente','Problemas de WiFi',7788,'8888',100000,NULL,NULL,NULL,NULL,NULL),(10,8,10,'Completado','Puerto de carga suelto',9900,'9999',80000,NULL,NULL,NULL,NULL,NULL),(11,10,11,'Pendiente','Fallo en lector huella',1212,'1010',95000,NULL,NULL,NULL,NULL,NULL),(12,12,12,'En Proceso','Camara frontal pixeleada',3434,'1212',110000,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `orden_e` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1017,4 +1022,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-13 12:41:03
+-- Dump completed on 2026-05-13 19:43:02
