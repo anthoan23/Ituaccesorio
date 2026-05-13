@@ -7,38 +7,113 @@
 {% endblock %}
 
 {% block content %}
-<section class="tradein-page" aria-label="Modulo Trade-in">
-  <header class="tradein-header">
-    <h1>Trade-in</h1>
-    <p>Base del modulo para gestionar equipos recibidos por intercambio.</p>
+<section class="tradein-page" aria-label="Cotización de Trade-in">
+  <header class="tradein-hero">
+    <div>
+      <p class="tradein-hero__eyebrow">Cotización en línea</p>
+      <h1>Calcula el valor estimado de tu equipo usado</h1>
+      <p class="tradein-hero__copy">Selecciona el modelo, valida si está liberado y marca las fallas para obtener una estimación inmediata.</p>
+    </div>
+    <div class="tradein-hero__badge">
+      <span>Sin registro formal</span>
+      <strong>Solo consulta</strong>
+    </div>
   </header>
 
-  <article class="tradein-card" aria-label="Listado de trade-ins">
-    <div class="tradein-card__head">
-      <h2>Registros</h2>
-      <small id="tradein-count">0 elementos</small>
-    </div>
+  <section class="tradein-layout">
+    <article class="tradein-card tradein-card--form" aria-label="Formulario de cotización">
+      <div class="tradein-card__head">
+        <h2>Datos del equipo</h2>
+        <small>La cotización se calcula en tiempo real y se expresa en dólares</small>
+      </div>
 
-    <div class="tradein-table-wrap">
-      <table class="tradein-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Empleado</th>
-            <th>Cliente</th>
-            <th>Producto</th>
-            <th>Cotizacion</th>
-            <th>Fecha</th>
-          </tr>
-        </thead>
-        <tbody id="tradein-body">
-          <tr>
-            <td colspan="6" class="tradein-empty">Cargando datos...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </article>
+      <form class="tradein-form" id="tradein-form">
+        <input type="hidden" id="tradein-csrf-token" value="{{ csrf_token() }}">
+
+        <label class="tradein-field">
+          <span class="tradein-field__label">Equipo</span>
+          <select class="tradein-field__input" id="tradein-equipo" name="id_producto" required>
+            <option value="">Selecciona un equipo</option>
+            {% for equipo in equipos %}
+              <option value="{{ equipo.ID_producto }}">
+                {{ equipo.N_modelo }}{% if equipo.Costo_venta is not none %} - Base ${{ equipo.Costo_venta }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <fieldset class="tradein-fieldset">
+          <legend class="tradein-field__label">Liberación del equipo</legend>
+          <div class="tradein-choice-group">
+            <label class="tradein-choice">
+              <input type="radio" name="liberado" value="si" checked>
+              <span>Sí, está liberado</span>
+            </label>
+            <label class="tradein-choice">
+              <input type="radio" name="liberado" value="no">
+              <span>No, está bloqueado</span>
+            </label>
+          </div>
+          <p class="tradein-alert" id="tradein-liberacion-alerta" role="alert" hidden>
+            Lo sentimos, el equipo debe estar liberado para calificar
+          </p>
+        </fieldset>
+
+        <fieldset class="tradein-fieldset">
+          <legend class="tradein-field__label">Fallas técnicas</legend>
+          <div class="tradein-fallas">
+            {% for falla in fallas %}
+              <label class="tradein-check">
+                <input type="checkbox" name="fallas" value="{{ falla.clave }}">
+                <span>{{ falla.etiqueta }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <button class="tradein-submit" id="tradein-submit" type="submit">Cotizar</button>
+      </form>
+    </article>
+
+    <article class="tradein-card tradein-card--result" aria-label="Resultado de la cotización">
+      <div class="tradein-card__head">
+        <h2>Resultado estimado</h2>
+        <small>Se actualiza al enviar el formulario</small>
+      </div>
+
+      <div class="tradein-result" id="tradein-resultado">
+        <div class="tradein-result__price-wrap">
+          <span class="tradein-result__label">Monto estimado (USD)</span>
+          <strong class="tradein-result__price" id="tradein-monto">$0.00</strong>
+        </div>
+
+        <div class="tradein-result__grid">
+          <div>
+            <span>Precio base (USD)</span>
+            <strong id="tradein-base">$0.00</strong>
+          </div>
+          <div>
+            <span>Deducción repuestos (USD)</span>
+            <strong id="tradein-deduccion">$0.00</strong>
+          </div>
+        </div>
+
+        <div class="tradein-result__section">
+          <span class="tradein-result__section-title">Detalle de fallas</span>
+          <ul class="tradein-list" id="tradein-detalles">
+            <li>No hay fallas seleccionadas.</li>
+          </ul>
+        </div>
+
+        <div class="tradein-result__section">
+          <span class="tradein-result__section-title">Mensajes</span>
+          <div class="tradein-result__messages" id="tradein-mensajes">
+            Presiona “Cotizar” para ver la estimación.
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
 </section>
 {% endblock %}
 
