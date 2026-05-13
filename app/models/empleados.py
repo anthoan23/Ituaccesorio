@@ -15,17 +15,22 @@ class Empleados(conectar):
             cursor.execute(
                 """
                 SELECT
-                    ID_em AS cedula,
+                    e.ID_em AS cedula,
                     e.ID_cargo AS id_cargo,
-                    Nombre_em AS nombre,
-                    Apellido_em AS apellido,
-                    Celular_em AS celular,
-                    Correo_em AS correo,
-                    Direccion_em AS direccion,
-                    c.N_cargo AS cargo_nombre
+                    e.Nombre_em AS nombre,
+                    e.Apellido_em AS apellido,
+                    e.Celular_em AS celular,
+                    e.Correo_em AS correo,
+                    e.Direccion_em AS direccion,
+                    c.N_cargo AS cargo_nombre,
+                    GROUP_CONCAT(DISTINCT esp.ID_especialidad) AS especialidades_ids,
+                    GROUP_CONCAT(DISTINCT esp.N_especialidad) AS especialidades_nombres
                 FROM empleado e
                 JOIN cargo c ON e.ID_cargo = c.ID_cargo
-                ORDER BY ID_em ASC
+                LEFT JOIN capacitacion cap ON e.ID_em = cap.ID_em
+                LEFT JOIN especialidad esp ON cap.ID_especialidad = esp.ID_especialidad
+                GROUP BY e.ID_em
+                ORDER BY e.ID_em ASC
                 """
             )
             return cursor.fetchall()
@@ -84,6 +89,7 @@ class Empleados(conectar):
         celular: str,
         correo: str,
         direccion: str,
+        especialidades: list | None = None,
     ) -> bool:
         # Solo insertar si el empleado NO existe
         if self.verificar_empleado(cedula):
@@ -104,6 +110,19 @@ class Empleados(conectar):
                 """,
                 (cedula, cargo_id, nombre, apellido, celular, correo, direccion),
             )
+
+            # insert especialidades associations if provided
+            if especialidades:
+                for esp_id in especialidades:
+                    try:
+                        cursor.execute(
+                            "INSERT INTO capacitacion (ID_especialidad, ID_em) VALUES (%s, %s)",
+                            (esp_id, cedula),
+                        )
+                    except Exception:
+                        # skip individual inserts but continue
+                        pass
+
             db.commit()
             mensaje = "Empleado agregado exitosamente."
             return mensaje
@@ -207,6 +226,9 @@ class Empleados(conectar):
         # verificar existencia (aceptamos id o nombre en la función verificar)
         if not self.verificar_cargo(n_cargo):
             return f"El cargo con identificador {n_cargo} no existe."
+        
+        if n_cargo == "Tecnico":
+            return False
 
         db = self.conexion1()
         if not db:
@@ -268,6 +290,7 @@ class Empleados(conectar):
         celular: str,
         correo: str,
         direccion: str,
+        especialidades: list | None = None,
     ) -> str:
         # verificar existencia del registro original
         if not self.verificar_empleado(id_empleado):
@@ -287,6 +310,25 @@ class Empleados(conectar):
                 """,
                 (id_empleado, cargo_id, nombre, apellido, celular, correo, direccion, id_empleado),
             )
+            # update specialties associations if provided
+            if especialidades is not None:
+                try:
+                    cursor.execute(
+                        "DELETE FROM capacitacion WHERE ID_em = %s",
+                        (id_empleado,),
+                    )
+                except Exception:
+                    pass
+
+                for esp_id in especialidades:
+                    try:
+                        cursor.execute(
+                            "INSERT INTO capacitacion (ID_especialidad, ID_em) VALUES (%s, %s)",
+                            (esp_id, id_empleado),
+                        )
+                    except Exception:
+                        pass
+
             db.commit()
             return "Empleado actualizado exitosamente."
         except Exception as e:
@@ -301,6 +343,9 @@ class Empleados(conectar):
         # verificar existencia
         if not self.verificar_cargo(cargo_v):
             return f"El cargo con identificador {cargo_v} no existe."
+        
+        if cargo_v == "Tecnico":
+            return False
 
         db = self.conexion1()
         if not db:
@@ -367,8 +412,6 @@ class Empleados(conectar):
     def verificar_cargo(self, cargo: str) -> bool:
         db = self.conexion1()
         if not db:
-            return False
-        if cargo == "Tecnico":
             return False
 
         cursor = db.cursor()

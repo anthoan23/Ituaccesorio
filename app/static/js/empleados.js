@@ -9,14 +9,23 @@ const state = {
     empleados: [],
     cargos: [],
     especialidades: [],
+    selectedEspecialidades: [],
 };
 
 const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
+const selectEspecialidad = document.getElementById('select-especialidad');
+const selectedEspecialidadesInput = document.getElementById('input-especialidades');
 
 iniciar();
 
 function iniciar() {
     formEmpleado?.addEventListener("submit", registrarEmpleado);
+    selectEspecialidad?.addEventListener('change', function (e) {
+        const val = e.target.value;
+        if (!val) return;
+        addEspecialidadById(val);
+        e.target.value = '';
+    });
     formCargo?.addEventListener("submit", registrarCargo);
     formEspecialidad?.addEventListener("submit", registrarEspecialidad);
     cargarTodo();
@@ -138,6 +147,16 @@ document.addEventListener('click', function (e) {
         const hidEmp = formEmpleado.querySelector('input[name="id_viejo"]');
         if (hidEmp) hidEmp.value = empleado.cedula || '';
 
+        // prefill especialidades for editing
+        state.selectedEspecialidades = [];
+        if (empleado.especialidades_ids) {
+            const ids = String(empleado.especialidades_ids).split(',').map(s => s.trim()).filter(Boolean);
+            ids.forEach(i => addEspecialidadById(i));
+        } else {
+            renderSelectedEspecialidades();
+            renderEspecialidadOptions();
+        }
+
         openModalById('modal-empleado');
     }
 
@@ -221,6 +240,7 @@ async function registrarEmpleado(event) {
         celular: formEmpleado?.celular?.value?.trim() || "",
         correo: formEmpleado?.correo?.value?.trim() || "",
         direccion: formEmpleado?.direccion?.value?.trim() || "",
+        especialidades: Array.from(state.selectedEspecialidades || []),
     };
 
     try {
@@ -344,6 +364,7 @@ async function cargarTodo() {
         state.especialidades = Array.isArray(especialidades) ? especialidades : (especialidades.especialidades || []);
 
         renderCargoOptions();
+        renderEspecialidadOptions();
         renderTodo();
     } catch (error) {
         mostrarToast(error.message || 'No se pudieron cargar los datos.', true);
@@ -366,6 +387,69 @@ function renderCargoOptions() {
     formEmpleado.id_cargo.innerHTML = options;
 }
 
+function renderEspecialidadOptions() {
+    const select = document.getElementById('select-especialidad');
+    if (!select) return;
+
+    const selected = new Set(state.selectedEspecialidades.map(String));
+
+    const options = ['<option value="">Seleccione una especialidad</option>']
+        .concat(
+            state.especialidades
+                .filter(e => !selected.has(String(e.id)))
+                .map(e => `<option value="${escapeHtml(String(e.id))}">${escapeHtml(e.nombre || '')}</option>`)
+        ).join('');
+
+    select.innerHTML = options;
+    if (selectedEspecialidadesInput) selectedEspecialidadesInput.value = JSON.stringify(state.selectedEspecialidades);
+}
+
+function addEspecialidadById(id) {
+    if (!id) return;
+    id = String(id);
+    if (state.selectedEspecialidades.map(String).includes(id)) return;
+    // verify exists in state.especialidades
+    const found = state.especialidades.find(e => String(e.id) === id);
+    if (!found) return;
+    state.selectedEspecialidades.push(id);
+    renderSelectedEspecialidades();
+    renderEspecialidadOptions();
+}
+
+function removeEspecialidadById(id) {
+    id = String(id);
+    state.selectedEspecialidades = state.selectedEspecialidades.filter(s => String(s) !== id);
+    renderSelectedEspecialidades();
+    renderEspecialidadOptions();
+}
+
+// delegated click for removing especialidad chips
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action="remove-especialidad"]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    removeEspecialidadById(id);
+});
+
+function renderSelectedEspecialidades() {
+    const container = document.getElementById('selected-especialidades');
+    if (!container) return;
+    if (!state.selectedEspecialidades.length) {
+        container.innerHTML = '';
+        if (selectedEspecialidadesInput) selectedEspecialidadesInput.value = JSON.stringify([]);
+        return;
+    }
+
+    const items = state.selectedEspecialidades.map(id => {
+        const e = state.especialidades.find(x => String(x.id) === String(id)) || { id, nombre: id };
+        return `<span class="chip">${escapeHtml(e.nombre||'')} <button type="button" data-action="remove-especialidad" data-id="${escapeHtml(String(e.id))}" aria-label="Quitar" class="chip-remove">×</button></span>`;
+    }).join(' ');
+
+    container.innerHTML = items;
+    if (selectedEspecialidadesInput) selectedEspecialidadesInput.value = JSON.stringify(state.selectedEspecialidades);
+}
+
 function renderTodo() {
     renderEmpleados();
     renderCargos();
@@ -381,7 +465,7 @@ function renderEmpleados() {
     }
 
     tablaEmpleados.innerHTML = state.empleados.map(emp => `
-        <tr>
+        <tr data-especialidades="${escapeHtml(emp.especialidades_ids || '')}">
             <td>${escapeHtml(emp.cedula || '')}</td>
             <td>${escapeHtml(((emp.nombre || '') + ' ' + (emp.apellido || '')).trim())}</td>
             <td>${escapeHtml(emp.cargo_nombre || '—')}</td>

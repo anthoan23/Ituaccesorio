@@ -109,6 +109,14 @@
             </select>
           </label>
           <label class="ui-field">
+            <span>Especialidades</span>
+            <select name="id_especialidad" id="select-especialidad">
+              <option value="">Seleccione una especialidad</option>
+            </select>
+            <div id="selected-especialidades" class="selected-list" aria-live="polite"></div>
+            <input type="hidden" name="especialidades" id="input-especialidades" value="[]">
+          </label>
+          <label class="ui-field">
             <span>Nombre</span>
             <input name="nombre" type="text" required>
           </label>

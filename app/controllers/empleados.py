@@ -46,6 +46,16 @@ def api_agregar_empleado():
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
+    # especialidades may be sent as a list of ids
+    especialidades = datos.get('especialidades') or []
+    if isinstance(especialidades, str):
+        try:
+            # try parsing JSON list
+            import json
+            especialidades = json.loads(especialidades)
+        except Exception:
+            # comma separated
+            especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
 
     if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
         return (
@@ -69,6 +79,7 @@ def api_agregar_empleado():
             celular=celular,
             correo=correo,
             direccion=direccion,
+            especialidades=especialidades,
         )
 
         if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
@@ -196,6 +207,13 @@ def api_actualizar_empleado(id_empleado):
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
+    especialidades = datos.get('especialidades') or []
+    if isinstance(especialidades, str):
+        try:
+            import json
+            especialidades = json.loads(especialidades)
+        except Exception:
+            especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
 
     if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
         return (
@@ -219,6 +237,7 @@ def api_actualizar_empleado(id_empleado):
             celular=celular,
             correo=correo,
             direccion=direccion,
+            especialidades=especialidades,
         )
 
         if isinstance(mensaje, str) and "actualizado" in mensaje.lower():
