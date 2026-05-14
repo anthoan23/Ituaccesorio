@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Taller{% endblock %}
 
@@ -8,6 +9,7 @@
 
 {% block content %}
 	<main class="page">
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 		<header class="taller-hero">
 			<h1 class="taller-hero__title">Taller</h1>
 			<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
@@ -38,13 +40,11 @@
 						<thead>
 							<tr>
 								<th>ID orden</th>
-								<th>Modelo equipo</th>
-								<th>Descripción cliente</th>
 								<th>Estado</th>
+								<th>Modelo</th>
+								<th>Descripción cliente</th>
 								<th>Fecha ingreso</th>
-								<th>Revisión</th>
-								<th>Reparación</th>
-								<th class="table__actions">Acciones</th>
+								<th class="table__actions">Acción</th>
 							</tr>
 						</thead>
 						<tbody id="tabla-ordenes-servicio"></tbody>
@@ -53,43 +53,24 @@
 			</article>
 		</section>
 
-		<section class="content vista-2" aria-label="Formulario de orden de servicio" hidden>
-			<article class="card card--form" aria-label="Formulario de orden de servicio">
+		<section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
+			<article class="card card--form" aria-label="Detalle del dispositivo">
 				<div class="form__header">
-					<h2 class="card__title">Formulario de orden de servicio</h2>
-					<p class="form__subtitle">Registra una nueva orden desde esta segunda vista.</p>
+					<h2 class="card__title">Detalle del dispositivo seleccionado</h2>
+					<p class="form__subtitle" id="detalle-orden-subtitle">Selecciona una orden para ver toda su información.</p>
 				</div>
-
-				<form class="service-form" autocomplete="off">
-					<div class="service-form__grid">
-						<label class="field">
-							<span>Cliente</span>
-							<input name="cliente" type="text" placeholder="Nombre del cliente" required>
-						</label>
-						<label class="field">
-							<span>Vehículo</span>
-							<input name="vehiculo" type="text" placeholder="Placa o modelo" required>
-						</label>
-						<label class="field">
-							<span>Estado</span>
-							<select name="estado" required>
-								<option value="">Seleccione un estado</option>
-								<option value="pendiente">Pendiente</option>
-								<option value="proceso">En proceso</option>
-								<option value="finalizada">Finalizada</option>
-							</select>
-						</label>
-						<label class="field field--full">
-							<span>Descripción</span>
-							<textarea name="descripcion" rows="4" placeholder="Detalle del trabajo a realizar" required></textarea>
-						</label>
+				<div class="device-detail" id="detalle-dispositivo">
+					<!-- Order info -->
+					<div id="order-info" class="device-detail__grid">
+						<p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>
 					</div>
 
-					<div class="service-form__actions">
-						<button type="button" class="form-btn form-btn--ghost">Cancelar</button>
-						<button type="submit" class="form-btn form-btn--primary">Guardar orden</button>
-					</div>
-				</form>
+					<!-- Photos -->
+					<div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
+
+					<!-- Tests -->
+					<div id="order-tests" class="device-tests"></div>
+				</div>
 			</article>
 		</section>
 
@@ -163,4 +144,8 @@
 {% block scripts %}
 	<script src="{{ url_for('static', filename='js/taller.js') }}"></script>
 {% endblock %}
+
+{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
+<div id="modal-test-body"></div>
+{% endcall %}
 
