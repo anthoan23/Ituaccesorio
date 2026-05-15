@@ -6,8 +6,9 @@ login_blueprint = Blueprint("login", __name__)
 
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
+    # Servir la vista de login para teléfono en la ruta /login
     return render_template(
-        "login.html"
+        "login_phone.html"
     )
 
 

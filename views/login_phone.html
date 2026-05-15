@@ -28,14 +28,15 @@
 								<h1 class="phone__title">BIENVENIDO</h1>
 							</div>
 
-							<form class="phone__form" action="" method="post" autocomplete="on">
+							<form id="login-form" class="phone__form" action="" method="post" autocomplete="on">
+								<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
 								<label class="pfield">
 									<span class="pfield__icon" aria-hidden="true">
 										<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
 											<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
 										</svg>
 									</span>
-									<input class="pfield__input" type="text" name="usuario" autocomplete="username" placeholder="Email / Usuario" required>
+									<input id="login-nombre" class="pfield__input" type="text" name="nombre" autocomplete="username" placeholder="Email / Usuario" required>
 								</label>
 
 								<label class="pfield">
@@ -44,7 +45,7 @@
 											<path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4Zm7 13H7v-9h10Z" fill="currentColor"/>
 										</svg>
 									</span>
-									<input class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+									<input id="login-password" class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
 								</label>
 
 								<button class="phone__button" type="submit">INICIAR SESIÓN</button>
@@ -61,4 +62,7 @@
 			</section>
 		</section>
 	</main>
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
 {% endblock %}
