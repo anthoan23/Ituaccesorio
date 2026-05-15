@@ -1,10 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
 	const viewButtons = Array.from(document.querySelectorAll("[data-view-target]"));
-	const viewPanels = Array.from(document.querySelectorAll(".content.vista-1, .content.vista-2, .content.vista-3, .content.vista-4"));
+		const viewPanels = Array.from(document.querySelectorAll(".content.vista-1, .content.vista-2, .content.vista-3, .content.vista-4"));
 	const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
+	const tablaReparacionesAsignadas = document.getElementById("tabla-reparaciones-asignadas");
 	const paginasOrdenes = document.querySelector(".pager__pages");
 	const detalleDispositivo = document.getElementById("detalle-dispositivo");
 	const detalleOrdenSubtitle = document.getElementById("detalle-orden-subtitle");
+	const breadcrumbSection = document.getElementById("breadcrumb-section");
+	const breadcrumbSeparator = document.getElementById("breadcrumb-separator");
 	const orderInfo = document.getElementById('order-info');
 	const orderPhotos = document.getElementById('order-photos');
 	const orderTests = document.getElementById('order-tests');
@@ -76,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		ordenesCargadas = Array.isArray(ordenes) ? ordenes : [];
 
 		if (!Array.isArray(ordenes) || ordenes.length === 0) {
-			tablaOrdenes.innerHTML = '<tr><td colspan="6">No hay órdenes registradas.</td></tr>';
+			tablaOrdenes.innerHTML = '<tr><td colspan="8">No hay órdenes registradas.</td></tr>';
 			if (paginasOrdenes) {
 				paginasOrdenes.textContent = "0";
 			}
@@ -87,21 +90,70 @@ document.addEventListener("DOMContentLoaded", () => {
 			<tr>
 				<td>${escapeHtml(orden.ID_orden)}</td>
 				<td>${escapeHtml(orden.Estado)}</td>
-				<td>${escapeHtml(orden.Modelo)}</td>
+				<td>${escapeHtml(orden.ID_c ?? orden.ID_cliente ?? '')}</td>
+				<td>${escapeHtml(((orden.Nombre_cliente ?? orden.Nombre_c ?? '') + ' ' + (orden.Apellido_cliente ?? orden.Apellido_c ?? '')).trim())}</td>
+				<td>${escapeHtml(orden.Modelo ?? orden.N_modelo ?? '')}</td>
 				<td>${escapeHtml(orden.Des_cliente)}</td>
 				<td>${escapeHtml(formatFecha(orden.Fecha_e))}</td>
 				<td class="table__actions">
 					<div class="row-actions">
 						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.ID_orden)}">Ver</button>
-						<button type="button" class="table-action" data-accion="revisar" data-id="${escapeHtml(orden.ID_orden)}">Revisar</button>
-						<button type="button" class="table-action table-action--accent" data-accion="reparar" data-id="${escapeHtml(orden.ID_orden)}">Reparar</button>
+						<button type="button" class="table-action" data-accion="tomar" data-id="${escapeHtml(orden.ID_orden)}">Tomar orden</button>
 					</div>
 				</td>
 			</tr>
 		`).join("");
 
-		if (paginasOrdenes) {
+			if (paginasOrdenes) {
 			paginasOrdenes.textContent = String(ordenes.length);
+		}
+	};
+
+		const renderReparacionesAsignadas = (ordenes) => {
+			if (!tablaReparacionesAsignadas) {
+				return;
+			}
+
+			if (!Array.isArray(ordenes) || ordenes.length === 0) {
+				tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">Sin reparaciones asignadas por ahora.</td></tr>';
+				return;
+			}
+
+			tablaReparacionesAsignadas.innerHTML = ordenes.map((orden) => `
+				<tr>
+					<td>${escapeHtml(orden.ID_orden)}</td>
+					<td>${escapeHtml(orden.N_modelo ?? orden.Modelo ?? '')}</td>
+					<td class="table__actions">
+						<div class="row-actions">
+							<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.ID_orden)}">Ver</button>
+							<button type="button" class="table-action" data-accion="revisar" data-id="${escapeHtml(orden.ID_orden)}">Revisar</button>
+							<button type="button" class="table-action table-action--accent" data-accion="reparar" data-id="${escapeHtml(orden.ID_orden)}">Reparar</button>
+						</div>
+					</td>
+				</tr>
+			`).join("");
+		};
+
+	const tomarOrden = async (idOrden) => {
+		try {
+			const response = await fetch(`/api/taller/asignar/${encodeURIComponent(idOrden)}/1004/estado`, {
+				method: "POST",
+				cache: "no-store",
+				headers: {
+					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+				},
+				credentials: "same-origin",
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}`);
+			}
+
+			await cargarOrdenes();
+			await cargarReparacionesAsignadas();
+			await cargarDetalleOrden(idOrden, "vista-3");
+		} catch (error) {
+			console.error("Error tomando la orden:", error);
 		}
 	};
 
@@ -113,23 +165,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		const ordenSeleccionada = ordenesCargadas.find((orden) => String(orden.ID_orden) === String(idOrden));
 		if (!ordenSeleccionada) {
-			console.log("No se encontró la orden seleccionada", idOrden);
 			return;
 		}
 
-		if (accion === "revisar") {
-			renderDetalleOrden(ordenSeleccionada, accion);
-			activateView("vista-3");
+		if (accion === "tomar" || accion === "revisar") {
+			tomarOrden(idOrden);
 			return;
 		}
 
 		if (accion === "reparar") {
 			renderDetalleOrden(ordenSeleccionada, accion);
-			activateView("vista-2");
+			activateView("vista-4");
 			return;
 		}
 
-		console.log("Acción no reconocida para la orden", idOrden);
+		return;
 	};
 
 	const cargarOrdenes = async () => {
@@ -149,7 +199,26 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
-	const cargarDetalleOrden = async (idOrden) => {
+	const cargarReparacionesAsignadas = async () => {
+		if (!tablaReparacionesAsignadas) {
+			return;
+		}
+
+		try {
+			const response = await fetch("/api/taller/reparaciones-asignadas", { cache: "no-store" });
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}`);
+			}
+
+			const data = await response.json();
+			renderReparacionesAsignadas(Array.isArray(data) ? data : data.ordenes);
+		} catch (error) {
+			console.error("Error cargando reparaciones asignadas:", error);
+			tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">No se pudieron cargar las reparaciones asignadas.</td></tr>';
+		}
+	};
+
+	const cargarDetalleOrden = async (idOrden, desiredView = 'vista-2') => {
 		try {
 			const getAuthToken = () => {
 				const fromLocal = window.localStorage ? window.localStorage.getItem('access_token') : '';
@@ -161,7 +230,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			const authToken = getAuthToken();
 
-			console.log('cargarDetalleOrden: llamando endpoint detalle, authToken present?', !!authToken);
 			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(idOrden)}`, {
 				method: 'POST',
 				cache: 'no-store',
@@ -246,8 +314,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			}
 
-			// show view
-			activateView('vista-2');
+			// show view requested by caller
+			activateView(desiredView);
 		} catch (error) {
 			console.error('Error cargando detalle de orden:', error);
 			if (detalleDispositivo) {
@@ -257,9 +325,25 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const activateView = (targetClass) => {
+		const breadcrumbLabels = {
+			'vista-2': 'Informacion de la orden',
+			'vista-3': 'Revision',
+			'vista-4': 'Reparacion',
+		};
+		const showBreadcrumbSuffix = ['vista-2', 'vista-3', 'vista-4'].includes(targetClass);
+
 		viewPanels.forEach((panel) => {
 			panel.hidden = !panel.classList.contains(targetClass);
 		});
+
+		if (breadcrumbSeparator) {
+			breadcrumbSeparator.hidden = !showBreadcrumbSuffix;
+		}
+
+		if (breadcrumbSection) {
+			breadcrumbSection.hidden = !showBreadcrumbSuffix;
+			breadcrumbSection.textContent = showBreadcrumbSuffix ? breadcrumbLabels[targetClass] || '' : '';
+		}
 
 		viewButtons.forEach((button) => {
 			const isActive = button.dataset.viewTarget === targetClass;
@@ -285,6 +369,37 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
+	if (tablaReparacionesAsignadas) {
+		tablaReparacionesAsignadas.addEventListener("click", (event) => {
+			const button = event.target.closest("button[data-accion]");
+			if (!button) return;
+
+			const accion = button.dataset.accion;
+			const id = button.dataset.id;
+
+			if (accion === 'ver') {
+				cargarDetalleOrden(id, 'vista-2');
+				return;
+			}
+
+			if (accion === 'tomar') {
+				tomarOrden(id);
+				return;
+			}
+
+			if (accion === 'revisar') {
+				cargarDetalleOrden(id, 'vista-3');
+				return;
+			}
+
+			if (accion === 'reparar') {
+				cargarDetalleOrden(id, 'vista-4');
+				return;
+			}
+		});
+	}
+
 	activateView("vista-1");
 	cargarOrdenes();
+	cargarReparacionesAsignadas();
 });
