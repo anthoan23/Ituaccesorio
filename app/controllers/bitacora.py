@@ -58,3 +58,11 @@ def registrar_bitacora_api():
     )
     estado = 200 if resultado.get("success") else 500
     return jsonify(resultado), estado
+
+
+@bitacora_blueprint.route("/api/bitacora/list", methods=["GET"])
+@jwt_required
+def api_listar_bitacora():
+    modelo = Bitacora()
+    registros = modelo.listar_recientes(1000)
+    return jsonify(registros), 200
