@@ -1,0 +1,40 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Bitacora{% endblock %}
+
+{% block content %}
+<section style="padding: 1.5rem;">
+  <h1 style="margin-bottom: 1rem;">Bitacora del sistema</h1>
+
+  {% if registros and registros|length > 0 %}
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">ID</th>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Usuario</th>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Modulo</th>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Accion</th>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Descripcion</th>
+            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in registros %}
+            <tr>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.id }}</td>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.usuario_id }}</td>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.modulo_id }}</td>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.accion }}</td>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.descripcion }}</td>
+              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.fecha_hora }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>No hay registros en la bitacora.</p>
+  {% endif %}
+</section>
+{% endblock %}
