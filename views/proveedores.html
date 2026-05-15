@@ -1,0 +1,360 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Proveedores{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/proveedores.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="providers-hero" aria-label="Encabezado de proveedores">
+    <div class="providers-hero__copy">
+      <h1 class="providers-hero__title">Proveedores</h1>
+    </div>
+
+    <div class="providers-hero__actions" aria-label="Acciones">
+      <button class="btn btn--yellow" type="button" data-open-modal="modal-proveedor-crear">
+        <span class="btn__icon" aria-hidden="true">+</span>
+        Registrar proveedor
+      </button>
+      <button class="btn btn--ghost" type="button" disabled aria-disabled="true">Reportes</button>
+    </div>
+  </header>
+
+  <section class="providers-grid" aria-label="Gestión de proveedores">
+    <article class="card card--table" aria-label="Listado de proveedores">
+      <div class="table__header">
+        <h2 class="card__title">Proveedores</h2>
+        <div class="pager" aria-label="Paginación (pendiente)">
+          <button class="pager__btn" type="button" aria-label="Anterior" disabled aria-disabled="true">‹</button>
+          <span class="pager__pages">1</span>
+          <button class="pager__btn" type="button" aria-label="Siguiente" disabled aria-disabled="true">›</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Tabla de proveedores">
+        <table class="table providers-table">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th>Proveedor</th>
+              <th class="col-tipo">Tipo</th>
+              <th class="col-tel">Teléfono</th>
+              <th>Dirección</th>
+              <th class="table__actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-proveedores"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="card filters-panel" aria-label="Búsqueda">
+      <h2 class="card__title">Búsqueda</h2>
+
+      <div class="filters-panel__section" aria-label="Buscar proveedor">
+        <h3 class="filters-panel__title">Buscar por ID o proveedor</h3>
+        <label class="field">
+          <span class="field__label">Texto</span>
+          <input id="f-texto" type="search" placeholder="Ej: 1 o TechImport" aria-label="Buscar proveedor">
+        </label>
+        <div class="filters-panel__actions">
+          <button id="btn-aplicar" class="btn btn--yellow" type="button">Aplicar</button>
+          <button id="btn-limpiar" class="btn btn--ghost" type="button">Limpiar</button>
+        </div>
+      </div>
+
+      <p class="helper" aria-label="Nota">Tip: escribe parte del nombre para filtrar.</p>
+    </aside>
+  </section>
+
+  <div id="modal-proveedor-crear" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-crear-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-crear-title" class="ui-modal__title">Registrar proveedor</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <form id="form-proveedor-crear" class="ui-form" action="#" method="post" autocomplete="off">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+          <div class="ui-form__grid">
+            <label class="ui-field">
+              <span>Cédula/RIF del Proveedor</span>
+              <input id="c-id" name="id" type="number" inputmode="numeric" min="1" step="1" placeholder="(Opcional) Ej: 11">
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Proveedor</span>
+              <input id="c-nombre" name="nombre" type="text" placeholder="Ej: TechImport SRL" required>
+            </label>
+
+            <label class="ui-field">
+              <span>Tipo</span>
+              <select id="c-tipo" name="tipo" aria-label="Tipo">
+                <option value="">(Opcional) Selecciona</option>
+                <option value="Nacional">Nacional</option>
+                <option value="Internacional">Internacional</option>
+              </select>
+            </label>
+
+            <label class="ui-field">
+              <span>Teléfono</span>
+              <input id="c-celular" name="celular" type="tel" placeholder="Ej: 0412-1234567">
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Correo</span>
+              <input id="c-correo" name="correo" type="email" placeholder="Ej: ventas@proveedor.com">
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Dirección</span>
+              <textarea id="c-direccion" name="direccion" rows="3" placeholder="Ej: Zona Franca, Caracas"></textarea>
+            </label>
+
+            <label class="ui-field">
+              <span>Límite de crédito</span>
+              <input id="c-limite" name="limite_credito" type="number" inputmode="numeric" min="0" step="1" placeholder="Ej: 50000000">
+            </label>
+          </div>
+
+          <h3 class="section-title">Productos iniciales del proveedor</h3>
+          <div class="modal-toolbar" aria-label="Acciones de productos iniciales">
+            <button id="btn-c-abrir-producto" class="btn btn--yellow btn--sm" type="button" data-open-modal="modal-proveedor-agregar-producto-crear">
+              Agregar producto
+            </button>
+            <span class="helper helper--inline">Opcional: puedes registrar uno o varios modelos con costo.</span>
+          </div>
+
+          <div class="table-wrap" role="region" aria-label="Tabla de productos iniciales del proveedor">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Marca</th>
+                  <th>Clase</th>
+                  <th class="col-cost">Costo</th>
+                  <th class="table__actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-proveedor-productos-crear"></tbody>
+            </table>
+          </div>
+
+          <div class="ui-form__actions">
+            <button class="ui-btn ui-btn--primary" type="submit">Guardar</button>
+            <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-proveedor-editar" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-editar-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-editar-title" class="ui-modal__title">Modificar proveedor</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <form id="form-proveedor-editar" class="ui-form" action="#" method="post" autocomplete="off">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+          <input id="e-id-hidden" type="hidden" name="id" value="">
+
+          <div class="ui-form__grid">
+            <label class="ui-field">
+              <span>ID proveedor</span>
+              <input id="e-id" name="id_readonly" type="number" inputmode="numeric" placeholder="Ej: 1" disabled>
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Proveedor</span>
+              <input id="e-nombre" name="nombre" type="text" placeholder="Ej: TechImport SRL" required>
+            </label>
+
+            <label class="ui-field">
+              <span>Tipo</span>
+              <select id="e-tipo" name="tipo" aria-label="Tipo">
+                <option value="">(Opcional) Selecciona</option>
+                <option value="Nacional">Nacional</option>
+                <option value="Internacional">Internacional</option>
+              </select>
+            </label>
+
+            <label class="ui-field">
+              <span>Teléfono</span>
+              <input id="e-celular" name="celular" type="tel" placeholder="Ej: 0412-1234567">
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Correo</span>
+              <input id="e-correo" name="correo" type="email" placeholder="Ej: ventas@proveedor.com">
+            </label>
+
+            <label class="ui-field ui-field--full">
+              <span>Dirección</span>
+              <textarea id="e-direccion" name="direccion" rows="3" placeholder="Ej: Zona Franca, Caracas"></textarea>
+            </label>
+
+            <label class="ui-field">
+              <span>Límite de crédito</span>
+              <input id="e-limite" name="limite_credito" type="number" inputmode="numeric" min="0" step="1" placeholder="Ej: 50000000">
+            </label>
+          </div>
+
+          <h3 class="section-title">Productos del proveedor</h3>
+          <div class="modal-toolbar" aria-label="Acciones de productos del proveedor">
+            <button class="btn btn--yellow btn--sm" type="button" data-open-modal="modal-proveedor-agregar-producto">
+              Agregar producto
+            </button>
+            <span class="helper helper--inline">Se guardan al cambiar el costo.</span>
+          </div>
+
+          <div class="table-wrap" role="region" aria-label="Tabla de productos del proveedor">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Marca</th>
+                  <th>Clase</th>
+                  <th class="col-cost">Costo</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-proveedor-productos"></tbody>
+            </table>
+          </div>
+
+          <div class="ui-form__actions">
+            <button class="ui-btn ui-btn--primary" type="submit">Guardar cambios</button>
+            <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-proveedor-agregar-producto" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-agregar-producto-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-agregar-producto-title" class="ui-modal__title">Agregar producto</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <form id="form-proveedor-agregar-producto" class="ui-form" action="#" method="post" autocomplete="off">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+          <input id="ap-proveedor-id" type="hidden" name="id_proveedor" value="">
+
+          <div class="ui-form__grid ui-form__grid--one">
+            <label class="ui-field">
+              <span>Producto (modelo)</span>
+              <select id="ap-id-modelo" name="id_modelo" aria-label="Producto"></select>
+            </label>
+
+            <label class="ui-field">
+              <span>Costo</span>
+              <input id="ap-costo" name="costo" type="number" inputmode="numeric" min="0" step="1" placeholder="Ej: 550000" required>
+            </label>
+          </div>
+
+          <div class="ui-form__actions">
+            <button class="ui-btn ui-btn--primary" type="submit">Agregar</button>
+            <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-proveedor-agregar-producto-crear" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-agregar-producto-crear-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-agregar-producto-crear-title" class="ui-modal__title">Agregar producto inicial</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <form id="form-proveedor-agregar-producto-crear" class="ui-form" action="#" method="post" autocomplete="off">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+          <div class="ui-form__grid ui-form__grid--one">
+            <label class="ui-field">
+              <span>Producto (modelo)</span>
+              <select id="cp-id-modelo" name="id_modelo" aria-label="Producto"></select>
+            </label>
+
+            <label class="ui-field">
+              <span>Costo</span>
+              <input id="cp-costo" name="costo" type="number" inputmode="numeric" min="0" step="1" placeholder="Ej: 550000" required>
+            </label>
+          </div>
+
+          <div class="ui-form__actions">
+            <button class="ui-btn ui-btn--primary" type="submit">Agregar</button>
+            <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-proveedor-ver" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-ver-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-ver-title" class="ui-modal__title">Consultar proveedor</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <div class="detail-grid" aria-label="Detalle de proveedor">
+          <div class="detail-item"><span class="detail-label">ID</span><span id="v-id" class="detail-value"></span></div>
+          <div class="detail-item"><span class="detail-label">Proveedor</span><span id="v-nombre" class="detail-value"></span></div>
+          <div class="detail-item"><span class="detail-label">Tipo</span><span id="v-tipo" class="detail-value"></span></div>
+          <div class="detail-item"><span class="detail-label">Teléfono</span><span id="v-celular" class="detail-value"></span></div>
+          <div class="detail-item"><span class="detail-label">Correo</span><span id="v-correo" class="detail-value"></span></div>
+          <div class="detail-item"><span class="detail-label">Límite crédito</span><span id="v-limite" class="detail-value"></span></div>
+          <div class="detail-item detail-item--full"><span class="detail-label">Dirección</span><span id="v-direccion" class="detail-value"></span></div>
+        </div>
+
+        <h3 class="section-title">Productos que provee</h3>
+        <div class="table-wrap" role="region" aria-label="Productos del proveedor">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>Clase</th>
+                <th class="col-cost">Costo</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-proveedor-productos-ver"></tbody>
+          </table>
+        </div>
+
+        <div class="ui-form__actions">
+          <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-proveedor-eliminar" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-eliminar-title">
+      <div class="ui-modal__header">
+        <h2 id="proveedor-eliminar-title" class="ui-modal__title">Eliminar proveedor</h2>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <p class="confirm-text">¿Seguro que deseas eliminar este proveedor? Esta acción no se puede deshacer.</p>
+        <div class="ui-form__actions">
+          <button id="btn-confirmar-eliminar" class="ui-btn ui-btn--primary" type="button">Confirmar eliminación</button>
+          <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+  <script defer src="{{ url_for('static', filename='js/proveedores.js') }}"></script>
+{% endblock %}
