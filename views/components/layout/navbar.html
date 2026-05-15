@@ -52,6 +52,7 @@
 		<a class="drawer__link" href="{{ url_for('telefonos.pagina_telefonos') }}">Teléfonos</a>
 		<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 		<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+		<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
 		<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 	</nav>
 	

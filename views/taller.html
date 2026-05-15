@@ -1,0 +1,151 @@
+{% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
+
+{% block title %}Ituaccesorio - Taller{% endblock %}
+
+{% block head_extra %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/taller.css') }}">
+{% endblock %}
+
+{% block content %}
+	<main class="page">
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+		<header class="taller-hero">
+			<h1 class="taller-hero__title">Taller</h1>
+			<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
+		</header>
+
+		<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+			<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Vista 1</button>
+			<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Vista 2</button>
+			<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Vista 3</button>
+			<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Vista 4</button>
+		</nav>
+
+		<section class="content vista-1" aria-label="Ordenes de servicio">
+			<article class="card card--table" aria-label="Ordenes de servicio">
+				<div class="table__header">
+					<div class="table__header-row">
+						<h2 class="card__title">Ordenes de servicio</h2>
+						<div class="pager" aria-label="Paginación">
+							<button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
+							<span class="pager__pages">1</span>
+							<button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Estado</th>
+								<th>Modelo</th>
+								<th>Descripción cliente</th>
+								<th>Fecha ingreso</th>
+								<th class="table__actions">Acción</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-ordenes-servicio"></tbody>
+					</table>
+				</div>
+			</article>
+		</section>
+
+		<section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
+			<article class="card card--form" aria-label="Detalle del dispositivo">
+				<div class="form__header">
+					<h2 class="card__title">Detalle del dispositivo seleccionado</h2>
+					<p class="form__subtitle" id="detalle-orden-subtitle">Selecciona una orden para ver toda su información.</p>
+				</div>
+				<div class="device-detail" id="detalle-dispositivo">
+					<!-- Order info -->
+					<div id="order-info" class="device-detail__grid">
+						<p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>
+					</div>
+
+					<!-- Photos -->
+					<div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
+
+					<!-- Tests -->
+					<div id="order-tests" class="device-tests"></div>
+				</div>
+			</article>
+		</section>
+
+		<section class="content vista-3" aria-label="Formulario de seguimiento" hidden>
+			<article class="card card--form" aria-label="Formulario de seguimiento">
+				<div class="form__header">
+					<h2 class="card__title">Formulario de seguimiento</h2>
+					<p class="form__subtitle">Usa esta tercera vista para actualizar el avance de una orden.</p>
+				</div>
+
+				<form class="service-form" autocomplete="off">
+					<div class="service-form__grid">
+						<label class="field">
+							<span>Número de orden</span>
+							<input name="numero_orden" type="text" placeholder="Ej: OS-001" required>
+						</label>
+						<label class="field">
+							<span>Técnico</span>
+							<input name="tecnico" type="text" placeholder="Nombre del técnico" required>
+						</label>
+						<label class="field">
+							<span>Prioridad</span>
+							<select name="prioridad" required>
+								<option value="">Seleccione una prioridad</option>
+								<option value="baja">Baja</option>
+								<option value="media">Media</option>
+								<option value="alta">Alta</option>
+							</select>
+						</label>
+						<label class="field field--full">
+							<span>Observaciones</span>
+							<textarea name="observaciones" rows="4" placeholder="Notas adicionales del seguimiento" required></textarea>
+						</label>
+					</div>
+
+					<div class="service-form__actions">
+						<button type="button" class="form-btn form-btn--ghost">Cancelar</button>
+						<button type="submit" class="form-btn form-btn--primary">Guardar seguimiento</button>
+					</div>
+				</form>
+			</article>
+		</section>
+
+		<section class="content vista-4" aria-label="Historial de reparaciones" hidden>
+			<article class="card card--table" aria-label="Historial de reparaciones">
+				<div class="table__header">
+					<div class="table__header-row">
+						<h2 class="card__title">Historial de reparaciones</h2>
+					</div>
+				</div>
+
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Fecha</th>
+								<th>Tarea</th>
+								<th>Técnico</th>
+								<th class="table__actions">Acciones</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-historial"></tbody>
+					</table>
+				</div>
+			</article>
+		</section>
+	</main>
+{% endblock %}
+
+{% block scripts %}
+	<script src="{{ url_for('static', filename='js/taller.js') }}"></script>
+{% endblock %}
+
+{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
+<div id="modal-test-body"></div>
+{% endcall %}
+
