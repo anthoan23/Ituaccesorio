@@ -333,7 +333,7 @@
             <td>${modelo}</td>
             <td>${marca}</td>
             <td>${clase}</td>
-            <td class="col-cost">${formatMoney(costo)}</td>
+            <td class="col-cost">${formatMoney(costo)} $</td>
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones">
                 <button class="icon-action icon-action--danger" type="button" data-action="quitar-producto-crear" data-id-modelo="${idModelo}" aria-label="Quitar">${iconTrash()}</button>
@@ -368,7 +368,7 @@
             <td>${modelo}</td>
             <td>${marca}</td>
             <td>${clase}</td>
-            <td class="col-cost">${formatMoney(costo)}</td>
+            <td class="col-cost">${formatMoney(costo)} $</td>
           </tr>`;
       })
       .join('');
