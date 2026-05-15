@@ -12,14 +12,17 @@
 		</label>
 
 		<a class="brand" href="/" aria-label="Ir al inicio">
-			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
+			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}"
+				alt="Ituaccesorio">
 		</a>
 	</div>
 
 	<div class="topbar__right">
 		<button class="icon-btn" type="button" aria-label="Notificaciones">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z" fill="currentColor"/>
+				<path
+					d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
+					fill="currentColor" />
 			</svg>
 		</button>
 
@@ -49,20 +52,29 @@
 	<nav class="drawer__nav">
 		<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
 		<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-		<a class="drawer__link" href="{{ url_for('prueba.pagina_prueba') }}">Prueba DBs</a>
-		<a class="drawer__link" href="{{ url_for('telefonos.pagina_telefonos') }}">Teléfonos</a>
 		<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+<<<<<<< HEAD
 		<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
 		<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
 		<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
 		<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+=======
+		<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}"
+			href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+		<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}"
+			href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+		<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}"
+			href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+		<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}"
+			href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+>>>>>>> e42dde1293ca13efdac3a2cc9c2f1ba59b674dea
 	</nav>
-	
+
 	<div class="drawer__footer">
 		{% if g.user %}
-			<form action="{{ url_for('login.logout') }}" method="GET">
-				<button class="drawer__logout btn btn--ghost" type="submit">Cerrar sesión</button>
-			</form>
+		<form action="{{ url_for('login.logout') }}" method="GET">
+			<button class="drawer__logout btn btn--ghost" type="submit">Cerrar sesión</button>
+		</form>
 		{% endif %}
 	</div>
 

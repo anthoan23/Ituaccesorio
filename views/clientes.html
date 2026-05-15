@@ -1,0 +1,102 @@
+{% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
+
+{% block title %}Ituaccesorio - Clientes{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clientes.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page clientes-page">
+    <section class="hero">
+        <div class="hero__copy">
+            <p class="eyebrow">Gestión de clientes</p>
+            <h1>Administración de clientes</h1>
+        </div>
+
+        <div class="stats" aria-label="Resumen de clientes">
+            <article class="stat-card">
+                <span class="stat-card__label">Clientes registrados</span>
+                <strong id="stat-clientes" class="stat-card__value">0</strong>
+            </article>
+        </div>
+    </section>
+
+    <section class="board">
+        <article class="panel panel--full">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title">Clientes existentes</h2>
+                </div>
+                <button id="btn-nuevo-cliente" class="btn btn--primary" type="button"
+                    data-open-modal="modal-cliente">Nuevo cliente</button>
+            </div>
+
+            <div class="table-wrap" role="region" aria-label="Tabla de clientes">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Celular</th>
+                            <th>Correo</th>
+                            <th>Dirección</th>
+                            <th>Tipo</th>
+                            <th class="table__actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-clientes"></tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    {% call modal('modal-cliente', 'Registrar cliente') %}
+    <form id="form-cliente" class="form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="">
+        <label>
+            <span>Nombre</span>
+            <input name="nombre" type="text" placeholder="Maria" required>
+        </label>
+        <label>
+            <span>Apellido</span>
+            <input name="apellido" type="text" placeholder="Gonzalez" required>
+        </label>
+        <label>
+            <span>Celular</span>
+            <input name="celular" type="text" placeholder="04141234567" required>
+        </label>
+        <label>
+            <span>Correo</span>
+            <input name="correo" type="email" placeholder="cliente@example.com">
+        </label>
+        <label>
+            <span>Dirección</span>
+            <input name="direccion" type="text" placeholder="Calle 1, Ciudad">
+        </label>
+        <label>
+            <span>Tipo de cliente</span>
+            <select name="tipo">
+                <option value="">Seleccione tipo</option>
+                <option value="Regular">Regular</option>
+                <option value="Premium">Premium</option>
+                <option value="Mayorista">Mayorista</option>
+            </select>
+        </label>
+        <div class="form__actions">
+            <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+            <button type="submit" class="btn btn--primary">Guardar cliente</button>
+        </div>
+    </form>
+    {% endcall %}
+
+    <div id="toast-mensaje" class="toast" aria-live="polite"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/clientes.js') }}"></script>
+{% endblock %}

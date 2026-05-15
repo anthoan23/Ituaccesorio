@@ -5,42 +5,69 @@
 
 {% block head_extra %}
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/taller.css') }}">
+
 {% endblock %}
 
 {% block content %}
 	<main class="page">
-		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-		<header class="taller-hero">
-			<h1 class="taller-hero__title">Taller</h1>
-			<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
-		</header>
-
-		<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-			<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Vista 1</button>
-			<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Vista 2</button>
-			<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Vista 3</button>
-			<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Vista 4</button>
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<ol class="breadcrumb__list">
+				<li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+				<li aria-current="page"><button class="breadcrumb__current" type="button" data-view-target="vista-1">Taller</button><span class="breadcrumb__separator" id="breadcrumb-separator">/</span><span class="breadcrumb__section" id="breadcrumb-section"></span></li>
+			</ol>
 		</nav>
+		
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+		<div class="taller-top-grid">
+			<header class="taller-hero">
+				<h1 class="taller-hero__title">Taller</h1>
+				<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
+			</header>
 
-		<section class="content vista-1" aria-label="Ordenes de servicio">
-			<article class="card card--table" aria-label="Ordenes de servicio">
+			<article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
 				<div class="table__header">
 					<div class="table__header-row">
-						<h2 class="card__title">Ordenes de servicio</h2>
-						<div class="pager" aria-label="Paginación">
-							<button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
-							<span class="pager__pages">1</span>
-							<button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
-						</div>
+						<h2 class="card__title">Reparaciones asignadas</h2>
 					</div>
 				</div>
 
+				<div class="table-wrap">
+					<table class="table table--compact">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Modelo</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-reparaciones-asignadas">
+							<tr>
+								<td colspan="3">Sin reparaciones asignadas por ahora.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</article>
+		</div>
+
+	
+
+		<section class="content vista-1" aria-label="Ordenes de servicio">
+
+			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+					<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Ordenes de servicio</button>
+			</nav>
+			<article class="card card--table" aria-label="Ordenes de servicio">
+				
+		
 				<div class="table-wrap">
 					<table class="table">
 						<thead>
 							<tr>
 								<th>ID orden</th>
 								<th>Estado</th>
+								<th>ID cliente</th>
+								<th>Nombre cliente</th>
 								<th>Modelo</th>
 								<th>Descripción cliente</th>
 								<th>Fecha ingreso</th>
@@ -54,6 +81,11 @@
 		</section>
 
 		<section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
+			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
+			</nav>
 			<article class="card card--form" aria-label="Detalle del dispositivo">
 				<div class="form__header">
 					<h2 class="card__title">Detalle del dispositivo seleccionado</h2>
@@ -70,11 +102,19 @@
 
 					<!-- Tests -->
 					<div id="order-tests" class="device-tests"></div>
+
+					<!-- People -->
+					<div id="order-people" class="device-people" aria-live="polite"></div>
 				</div>
 			</article>
 		</section>
 
 		<section class="content vista-3" aria-label="Formulario de seguimiento" hidden>
+			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
+			</nav>
 			<article class="card card--form" aria-label="Formulario de seguimiento">
 				<div class="form__header">
 					<h2 class="card__title">Formulario de seguimiento</h2>
@@ -115,6 +155,11 @@
 		</section>
 
 		<section class="content vista-4" aria-label="Historial de reparaciones" hidden>
+			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
+			</nav>
 			<article class="card card--table" aria-label="Historial de reparaciones">
 				<div class="table__header">
 					<div class="table__header-row">
@@ -138,6 +183,7 @@
 				</div>
 			</article>
 		</section>
+
 	</main>
 {% endblock %}
 
