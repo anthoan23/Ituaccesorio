@@ -60,7 +60,7 @@ def validar_login():
 
 @login_blueprint.route('/logout', methods=['GET'])
 def logout():
-    resp = redirect(url_for('home.home'))
+    resp = redirect(url_for('login.pagina_login'))
     resp.set_cookie('access_token', '', expires=0, path='/')
     return resp
 

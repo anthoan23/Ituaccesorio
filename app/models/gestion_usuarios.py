@@ -1,3 +1,5 @@
+import mysql.connector
+
 from app.models.database import conectar
 
 
@@ -54,19 +56,43 @@ class GestionUsuarios(conectar):
 
         cursor = db.cursor()
         try:
-            cursor.callproc(
-                "sp_registrar_usuario_con_prefijo",
-                [nombre, cedula_personal, password, rol_id, foto_perfil],
-            )
+            try:
+                cursor.callproc(
+                    "sp_registrar_usuario_con_prefijo",
+                    [nombre, cedula_personal, password, rol_id, foto_perfil],
+                )
 
-            for resultado in cursor.stored_results():
-                fila = resultado.fetchone()
-                if fila:
-                    if isinstance(fila, dict):
-                        return fila.get("id_generado")
-                    return fila[0]
+                for resultado in cursor.stored_results():
+                    fila = resultado.fetchone()
+                    if fila:
+                        if isinstance(fila, dict):
+                            return fila.get("id_generado")
+                        return fila[0]
 
-            return None
+                return None
+            except mysql.connector.Error as error:
+                if getattr(error, "errno", None) != 1305:
+                    raise
+
+                cursor.execute(
+                    """
+                    SELECT COALESCE(MAX(CAST(SUBSTRING(id, 5) AS UNSIGNED)), 0)
+                    FROM usuario
+                    WHERE id LIKE 'USR-%'
+                    """
+                )
+                siguiente = (cursor.fetchone() or [0])[0] or 0
+                nuevo_id = f"USR-{int(siguiente) + 1:04d}"
+
+                cursor.execute(
+                    """
+                    INSERT INTO usuario (id, nombre, cedula, password, rol_id, activo, foto_perfil)
+                    VALUES (%s, %s, %s, %s, %s, 1, %s)
+                    """,
+                    (nuevo_id, nombre, cedula_personal, password, rol_id, foto_perfil),
+                )
+                db.commit()
+                return nuevo_id
         finally:
             cursor.close()
             db.close()

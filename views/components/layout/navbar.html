@@ -27,13 +27,30 @@
 		</button>
 
 		{% if g.user %}
-		<div class="user">
-			<span class="user__avatar" aria-hidden="true"></span>
-			<div class="user__meta">
-				<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
-				<span class="user__role">{{ g.user.nombre_rol }}</span>
+		<details class="user-menu">
+			<summary class="user-menu__trigger">
+				<span class="user__avatar" aria-hidden="true"></span>
+				<span class="user__meta">
+					<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
+					<span class="user__role">{{ g.user.nombre_rol }}</span>
+				</span>
+				<svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+					<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</summary>
+
+			<div class="user-menu__panel" role="menu" aria-label="Menú de usuario">
+				<div class="user-menu__identity">
+					<span class="user-menu__label">Usuario</span>
+					<strong class="user-menu__full-name">{{ g.user.usuario_nombre }}</strong>
+					<span class="user-menu__role-text">{{ g.user.nombre_rol }}</span>
+				</div>
+
+				<form class="user-menu__logout" action="{{ url_for('login.logout') }}" method="GET">
+					<button class="user-menu__logout-btn" type="submit">Cerrar sesión</button>
+				</form>
 			</div>
-		</div>
+		</details>
 		{% else %}
 		<div class="user user--guest">
 			<a class="btn btn--yellow" href="{{ url_for('login.pagina_login') }}">Iniciar sesión</a>
