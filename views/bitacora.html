@@ -2,39 +2,49 @@
 
 {% block title %}Ituaccesorio - Bitacora{% endblock %}
 
-{% block content %}
-<section style="padding: 1.5rem;">
-  <h1 style="margin-bottom: 1rem;">Bitacora del sistema</h1>
+{% block head_extra %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/styles/ag-theme-alpine.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bitacora.css') }}">
+{% endblock %}
 
-  {% if registros and registros|length > 0 %}
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">ID</th>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Usuario</th>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Modulo</th>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Accion</th>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Descripcion</th>
-            <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Fecha</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in registros %}
-            <tr>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.id }}</td>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.usuario_id }}</td>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.modulo_id }}</td>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.accion }}</td>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.descripcion }}</td>
-              <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ item.fecha_hora }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% block content %}
+<main class="page bitacora-page">
+  <section class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow">Registro del sistema</p>
+      <h1>Bitacora del sistema</h1>
     </div>
-  {% else %}
-    <p>No hay registros en la bitacora.</p>
-  {% endif %}
-</section>
+
+    <div class="stats" aria-label="Resumen general">
+      <article class="stat-card">
+        <span class="stat-card__label">Entradas</span>
+        <strong id="stat-entradas" class="stat-card__value">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label">Ultima actividad</span>
+        <strong id="stat-ultima" class="stat-card__value">-</strong>
+      </article>
+    </div>
+  </section>
+
+  <section class="board">
+    <article class="panel--full panel">
+      <div class="table__header">
+        <h2 class="panel__title">Entradas de bitacora</h2>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Tabla de bitacora">
+        <div id="bitacoraGrid" class="ag-theme-alpine"></div>
+      </div>
+    </article>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/dist/ag-grid-community.min.noStyle.js"></script>
+  <script src="{{ url_for('static', filename='js/bitacora.js') }}"></script>
 {% endblock %}
