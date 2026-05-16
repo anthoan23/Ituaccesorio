@@ -11,19 +11,6 @@ def pagina_login():
         "login_phone.html"
     )
 
-
-@login_blueprint.route("/login-phone", methods=["GET"])
-def pagina_login_phone_mock():
-    return render_template(
-        "login_phone.html"
-    )
-
-@login_blueprint.route("/api/consultar/login", methods=["GET"])
-def consultar_usurios():
-    modelo = Usuarios()
-    resultados = modelo.consultar_usuario()
-    return jsonify({"success": True, "data": resultados})
-
 @login_blueprint.route("/api/login", methods=["POST"])
 def validar_login():
     datos = request.get_json(silent=True) or {}
