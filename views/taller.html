@@ -23,31 +23,6 @@
 				<h1 class="taller-hero__title">Taller</h1>
 				<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
 			</header>
-
-			<article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
-				<div class="table__header">
-					<div class="table__header-row">
-						<h2 class="card__title">Reparaciones asignadas</h2>
-					</div>
-				</div>
-
-				<div class="table-wrap">
-					<table class="table table--compact">
-						<thead>
-							<tr>
-								<th>ID orden</th>
-								<th>Modelo</th>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody id="tabla-reparaciones-asignadas">
-							<tr>
-								<td colspan="3">Sin reparaciones asignadas por ahora.</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</article>
 		</div>
 
 	
@@ -56,6 +31,7 @@
 
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
 					<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Ordenes de servicio</button>
+					<button class="vista-switcher__btn" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
 			</nav>
 			<article class="card card--table" aria-label="Ordenes de servicio">
 				
@@ -80,6 +56,32 @@
 			</article>
 		</section>
 
+		<!-- Sección reparaciones asignadas (vista-5) -->
+		<section class="content vista-5" aria-label="Reparaciones asignadas" hidden>
+			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-1">Ordenes de servicio</button>
+				<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
+			</nav>
+			<article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Modelo</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-reparaciones-asignadas">
+							<tr>
+								<td colspan="3">Sin reparaciones asignadas por ahora.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</article>
+		</section>
+
 		<section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
@@ -99,6 +101,9 @@
 
 					<!-- Photos -->
 					<div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
+					<div class="device-detail__actions" style="margin-top:1rem;">
+						<button type="button" class="form-btn form-btn--primary" data-open-modal="modal-fotos-registrar">Registrar fotos</button>
+					</div>
 
 					<!-- Tests -->
 					<div id="order-tests" class="device-tests"></div>
@@ -193,5 +198,39 @@
 
 {% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
 <div id="modal-test-body"></div>
+{% endcall %}
+
+{% call modal('modal-fotos-registrar', 'Registrar fotos', 'lg') %}
+<form id="form-fotos-orden" class="form" autocomplete="off">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+	<input type="hidden" name="id_orden" id="modal-fotos-id-orden" value="">
+	<label id="fotos-dropzone" class="photo-dropzone" for="input-fotos-orden">
+		<input id="input-fotos-orden" name="fotos" type="file" accept="image/*" multiple required>
+		<span class="photo-dropzone__title">Arrastra img aquí</span>
+		<span class="photo-dropzone__subtitle">o haz clic para seleccionarlas</span>
+	</label>
+	<div id="modal-fotos-body" class="device-photos-wrap" style="margin-top:1rem;"></div>
+	<div class="form__actions">
+		<button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
+		<button type="submit" class="form-btn form-btn--primary">Guardar</button>
+	</div>
+</form>
+{% endcall %}
+
+
+{% call modal('modal-foto-eliminar-guardada', 'Eliminar imagen', 'sm') %}
+<div class="photo-remove-confirm">
+	<p class="photo-remove-confirm__text">¿Estás seguro de eliminar esta imagen guardada?</p>
+	<div class="form__actions">
+		<button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
+		<button type="button" class="form-btn form-btn--danger" id="btn-confirm-delete-saved-photo">Aceptar</button>
+	</div>
+</div>
+{% endcall %}
+
+{% call modal('modal-photo-view', 'Ver imagen', 'lg') %}
+<div id="modal-photo-view-body">
+	<img id="modal-photo-view-img" src="" alt="" />
+</div>
 {% endcall %}
 

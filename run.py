@@ -39,6 +39,7 @@ csp = {
     'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', "'unsafe-inline'"],
     'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
+    'img-src': ["'self'", 'data:', 'blob:'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
 }
 

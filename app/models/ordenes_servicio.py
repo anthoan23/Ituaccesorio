@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
+import os
+
+from flask import current_app
 
 from app.models.database import conectar
 
@@ -70,8 +72,11 @@ class OrdenServicio(conectar):
         try:
             sql = (
                 "SELECT o.*, "
-                "m.N_modelo AS Modelo "
+                "m.N_modelo AS Modelo, "
+                "c.Nombre_c AS Nombre_cliente, "
+                "c.Apellido_c AS Apellido_cliente "
                 "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
+                "JOIN cliente c ON o.ID_c = c.ID_c "
                 "WHERE o.ID_orden_e = %s"
             )
             cursor.execute(sql, (id_orden,))
@@ -124,6 +129,90 @@ class OrdenServicio(conectar):
             cursor.close()
             db.close()
 
+    def eliminar_foto_orden(self, id_evidencia: int):
+        db = self.conexion1()
+        if not db:
+            return False
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT Foto_e FROM evidencia_e WHERE ID_evidencia_e = %s",
+                (id_evidencia,)
+            )
+            foto = cursor.fetchone()
+
+            if not foto:
+                return False
+
+            ruta_archivo = foto.get("Foto_e") if isinstance(foto, dict) else None
+            if ruta_archivo:
+                ruta_relativa = ruta_archivo.lstrip("/\\")
+                posibles_rutas = []
+
+                if ruta_archivo.startswith("/static/"):
+                    try:
+                        relativas_static = ruta_archivo.split("/static/", 1)[1].lstrip("/\\")
+                        posibles_rutas.append(os.path.join(current_app.static_folder, relativas_static))
+                    except RuntimeError:
+                        pass
+
+                try:
+                    posibles_rutas.append(os.path.join(current_app.root_path, ruta_relativa))
+                except RuntimeError:
+                    pass
+
+                posibles_rutas.append(os.path.join(os.getcwd(), ruta_relativa))
+
+                ruta_local = next((ruta for ruta in posibles_rutas if os.path.exists(ruta)), None)
+                if ruta_local:
+                    os.remove(ruta_local)
+
+            cursor.execute(
+                "DELETE FROM evidencia_e WHERE ID_evidencia_e = %s",
+                (id_evidencia,)
+            )
+            db.commit()
+            return True
+
+        except Exception as e:
+            db.rollback()
+            print(f"Error al eliminar foto: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_fotos_orden(self, id_orden: int, rutas_fotos: list[str]):
+        if not rutas_fotos:
+            return False
+
+        db = self.conexion1()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            db.start_transaction()
+
+            sql = (
+                "INSERT INTO evidencia_e (ID_orden, Foto_e) "
+                "VALUES (%s, %s)"
+            )
+            for ruta in rutas_fotos:
+                cursor.execute(sql, (id_orden, ruta))
+
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al registrar fotos: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
 
     def asignar_orden_empleado(self, id_orden: int, id_empleado: int):
         # 1. Primero verificamos si ya existe esa asignación activa
@@ -169,6 +258,51 @@ class OrdenServicio(conectar):
             print(f"Error al procesar la asignación: {e}")
             return False
         
+        finally:
+            cursor.close()
+            db.close()
+    
+    def liberar_orden(self, id_orden: int, id_empleado: int):
+        # Verificamos si existe una asignación activa para esta orden y empleado
+        asignada = self.verificar_asignacion(id_orden, id_empleado)
+        if not asignada:
+            print(f"No hay asignación activa para la orden {id_orden} y empleado {id_empleado}.")
+            return False
+
+        db = self.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            # Iniciamos la transacción de forma explícita
+            db.start_transaction()
+
+            # Eliminar el registro de asignación en la tabla interaccion
+            sql_delete = (
+                "DELETE FROM interaccion "
+                "WHERE ID_orden = %s AND ID_em = %s AND Accion = 'Asignado'"
+            )
+            cursor.execute(sql_delete, (id_orden, id_empleado))
+
+            # Actualizar el estado de la orden a 'En Proceso'
+            sql_orden = (
+                "UPDATE orden_e "
+                "SET Estado_o = 'En Proceso' "
+                "WHERE ID_orden_e = %s"
+            )
+            cursor.execute(sql_orden, (id_orden,))
+
+            # Guardamos los cambios
+            db.commit()
+            print("Liberación realizada con éxito.")
+            return True
+
+        except Exception as e:
+            db.rollback()
+            print(f"Error al liberar la orden: {e}")
+            return False
+
         finally:
             cursor.close()
             db.close()
