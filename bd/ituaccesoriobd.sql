@@ -1,4 +1,4 @@
--- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: ituaccesoriobd
 -- ------------------------------------------------------
@@ -311,7 +311,7 @@ CREATE TABLE `evidencia_e` (
   PRIMARY KEY (`ID_evidencia_e`),
   KEY `ID_orden` (`ID_orden`),
   CONSTRAINT `evidencia_e_ibfk_1` FOREIGN KEY (`ID_orden`) REFERENCES `orden_e` (`ID_orden_e`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -320,7 +320,7 @@ CREATE TABLE `evidencia_e` (
 
 LOCK TABLES `evidencia_e` WRITE;
 /*!40000 ALTER TABLE `evidencia_e` DISABLE KEYS */;
-INSERT INTO `evidencia_e` VALUES (1,1,'/fotos/orden1/antes_pantalla.jpg'),(2,1,'/fotos/orden1/despues_pantalla.jpg'),(3,2,'/fotos/orden2/puerto_danado.jpg'),(4,3,'/fotos/orden3/bateria_vieja.jpg'),(5,4,'/fotos/orden4/camara_rota.jpg'),(6,5,'/fotos/orden5/boton_danado.jpg'),(7,6,'/fotos/orden6/placa_madre.jpg'),(8,7,'/fotos/orden7/altavoz.jpg'),(9,8,'/fotos/orden8/mica_rota.jpg'),(10,9,'/fotos/orden9/wifi.jpg');
+INSERT INTO `evidencia_e` VALUES (1,1,'/fotos/orden1/antes_pantalla.jpg'),(2,1,'/fotos/orden1/despues_pantalla.jpg'),(3,2,'/fotos/orden2/puerto_danado.jpg'),(4,3,'/fotos/orden3/bateria_vieja.jpg'),(5,4,'/fotos/orden4/camara_rota.jpg'),(6,5,'/fotos/orden5/boton_danado.jpg'),(7,6,'/fotos/orden6/placa_madre.jpg'),(8,7,'/fotos/orden7/altavoz.jpg'),(9,8,'/fotos/orden8/mica_rota.jpg'),(18,12,'/static/img/evidencias/taller/12/ab11a26a444443e0a2c986baf1f78a0d.png'),(19,12,'/static/img/evidencias/taller/12/1d55f943f4f14567b9a58de4509251a0.png'),(20,10,'/static/img/evidencias/taller/10/63e7593e94e342309a050b5bd580bfa3.png'),(45,12,'/static/img/evidencias/taller/12/9ed4e454d7744520a5d1bf48f78e25de.png'),(46,12,'/static/img/evidencias/taller/12/824cf4b153c24a9cb560da3f6886502a.png'),(49,9,'/static/img/evidencias/taller/9/1919a303db5148458be87b16f3541671.png'),(50,9,'/static/img/evidencias/taller/9/3416bd8d2e4643bcacc881ff4fbecc1d.png'),(51,9,'/static/img/evidencias/taller/9/f628eab37a13439da0e3e192e467ace9.png');
 /*!40000 ALTER TABLE `evidencia_e` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -352,6 +352,33 @@ INSERT INTO `evidencia_r` VALUES (1,1,'/fotos/test1/mica_trasera.jpg'),(2,2,'/fo
 UNLOCK TABLES;
 
 --
+-- Table structure for table `evidencia_s`
+--
+
+DROP TABLE IF EXISTS `evidencia_s`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `evidencia_s` (
+  `ID_Foto_s` int NOT NULL AUTO_INCREMENT,
+  `ID_producto` int DEFAULT NULL,
+  `Foto_s` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_Foto_s`),
+  KEY `ID_producto` (`ID_producto`),
+  CONSTRAINT `evidencia_s_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `stock` (`ID_producto`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `evidencia_s`
+--
+
+LOCK TABLES `evidencia_s` WRITE;
+/*!40000 ALTER TABLE `evidencia_s` DISABLE KEYS */;
+INSERT INTO `evidencia_s` VALUES (1,1,'/productos/s23_ultra_negro.jpg'),(2,2,'/productos/s23_plus_verde.jpg'),(3,3,'/productos/a54_blanco.jpg'),(4,4,'/productos/iphone15_pro_max_titanio.jpg'),(5,5,'/productos/iphone15_pro_azul.jpg'),(6,6,'/productos/iphone14_morado.jpg'),(7,7,'/productos/xiaomi13pro_negro.jpg'),(8,8,'/productos/xiaomi12lite_rosa.jpg'),(9,9,'/productos/moto_g84_azul.jpg'),(10,10,'/productos/moto_edge40_negro.jpg');
+/*!40000 ALTER TABLE `evidencia_s` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `evidencia_t`
 --
 
@@ -359,12 +386,12 @@ DROP TABLE IF EXISTS `evidencia_t`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `evidencia_t` (
-  `ID_Foto_s` int NOT NULL AUTO_INCREMENT,
-  `ID_producto` int DEFAULT NULL,
-  `Foto_s` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`ID_Foto_s`),
-  KEY `ID_producto` (`ID_producto`),
-  CONSTRAINT `evidencia_t_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `stock` (`ID_producto`)
+  `ID_evidencia_t` int NOT NULL AUTO_INCREMENT,
+  `ID_Tradein` int DEFAULT NULL,
+  `Foto_t` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_evidencia_t`),
+  KEY `ID_Tradein` (`ID_Tradein`),
+  CONSTRAINT `evidencia_t_ibfk_1` FOREIGN KEY (`ID_Tradein`) REFERENCES `tradein` (`ID_Tradein`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -374,35 +401,8 @@ CREATE TABLE `evidencia_t` (
 
 LOCK TABLES `evidencia_t` WRITE;
 /*!40000 ALTER TABLE `evidencia_t` DISABLE KEYS */;
-INSERT INTO `evidencia_t` VALUES (1,1,'/productos/s23_ultra_negro.jpg'),(2,2,'/productos/s23_plus_verde.jpg'),(3,3,'/productos/a54_blanco.jpg'),(4,4,'/productos/iphone15_pro_max_titanio.jpg'),(5,5,'/productos/iphone15_pro_azul.jpg'),(6,6,'/productos/iphone14_morado.jpg'),(7,7,'/productos/xiaomi13pro_negro.jpg'),(8,8,'/productos/xiaomi12lite_rosa.jpg'),(9,9,'/productos/moto_g84_azul.jpg'),(10,10,'/productos/moto_edge40_negro.jpg');
+INSERT INTO `evidencia_t` VALUES (1,1,'/tradein/trade1_galaxy_s23.jpg'),(2,2,'/tradein/trade2_iphone15pm.jpg'),(3,3,'/tradein/trade3_iphone14.jpg'),(4,4,'/tradein/trade4_xiaomi12lite.jpg'),(5,5,'/tradein/trade5_moto_edge40.jpg'),(6,6,'/tradein/trade6_pixel7a.jpg'),(7,7,'/tradein/trade7_case.jpg'),(8,8,'/tradein/trade8_s23plus.jpg'),(9,9,'/tradein/trade9_iphone15pro.jpg'),(10,10,'/tradein/trade10_ipadpro.jpg');
 /*!40000 ALTER TABLE `evidencia_t` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `evidencia_t_tradein`
---
-
-DROP TABLE IF EXISTS `evidencia_t_tradein`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `evidencia_t_tradein` (
-  `ID_evidencia_t` int NOT NULL AUTO_INCREMENT,
-  `ID_Tradein` int DEFAULT NULL,
-  `Foto_t` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`ID_evidencia_t`),
-  KEY `ID_Tradein` (`ID_Tradein`),
-  CONSTRAINT `evidencia_t_tradein_ibfk_1` FOREIGN KEY (`ID_Tradein`) REFERENCES `tradein` (`ID_Tradein`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `evidencia_t_tradein`
---
-
-LOCK TABLES `evidencia_t_tradein` WRITE;
-/*!40000 ALTER TABLE `evidencia_t_tradein` DISABLE KEYS */;
-INSERT INTO `evidencia_t_tradein` VALUES (1,1,'/tradein/trade1_galaxy_s23.jpg'),(2,2,'/tradein/trade2_iphone15pm.jpg'),(3,3,'/tradein/trade3_iphone14.jpg'),(4,4,'/tradein/trade4_xiaomi12lite.jpg'),(5,5,'/tradein/trade5_moto_edge40.jpg'),(6,6,'/tradein/trade6_pixel7a.jpg'),(7,7,'/tradein/trade7_case.jpg'),(8,8,'/tradein/trade8_s23plus.jpg'),(9,9,'/tradein/trade9_iphone15pro.jpg'),(10,10,'/tradein/trade10_ipadpro.jpg');
-/*!40000 ALTER TABLE `evidencia_t_tradein` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -415,8 +415,8 @@ DROP TABLE IF EXISTS `interaccion`;
 CREATE TABLE `interaccion` (
   `ID_em` int NOT NULL,
   `ID_orden` int NOT NULL,
-  `Accion` varchar(30) DEFAULT NULL,
-  PRIMARY KEY (`ID_em`,`ID_orden`),
+  `Accion` varchar(30) NOT NULL,
+  PRIMARY KEY (`ID_em`,`ID_orden`,`Accion`),
   KEY `ID_orden` (`ID_orden`),
   CONSTRAINT `interaccion_ibfk_1` FOREIGN KEY (`ID_em`) REFERENCES `empleado` (`ID_em`),
   CONSTRAINT `interaccion_ibfk_2` FOREIGN KEY (`ID_orden`) REFERENCES `orden_e` (`ID_orden_e`)
@@ -429,7 +429,7 @@ CREATE TABLE `interaccion` (
 
 LOCK TABLES `interaccion` WRITE;
 /*!40000 ALTER TABLE `interaccion` DISABLE KEYS */;
-INSERT INTO `interaccion` VALUES (1006,1,'Diagnostico inicial'),(1006,2,'Revision de equipo'),(1006,6,'Reparacion en curso'),(1006,9,'Revision de software'),(1007,3,'Reparacion completada'),(1007,4,'Esperando repuestos'),(1007,7,'Pruebas finales'),(1007,10,'Reparacion de carga'),(1008,5,'Diagnostico avanzado'),(1008,8,'Cambio de pantalla');
+INSERT INTO `interaccion` VALUES (1003,1,'Entrega'),(1003,1,'Recepcion'),(1004,2,'Entrega'),(1004,2,'Recepcion'),(1007,2,'Reparacion'),(1007,2,'Revision'),(1005,8,'Recepcion'),(1004,9,'Asignado'),(1004,10,'Asignado'),(1003,11,'Asignado'),(1004,12,'Asignado');
 /*!40000 ALTER TABLE `interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -612,7 +612,7 @@ CREATE TABLE `orden_e` (
 
 LOCK TABLES `orden_e` WRITE;
 /*!40000 ALTER TABLE `orden_e` DISABLE KEYS */;
-INSERT INTO `orden_e` VALUES (1,1,1,'Pendiente','Pantalla rota por caida',1234,'0000',250000,NULL,NULL,NULL,NULL,NULL),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000,NULL,NULL,NULL,NULL,NULL),(3,3,3,'Completado','Bateria no dura',9012,'2222',80000,NULL,NULL,NULL,NULL,NULL),(4,6,4,'Pendiente','Camara no funciona',3456,'3333',150000,NULL,NULL,NULL,NULL,NULL),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000,NULL,NULL,NULL,NULL,NULL),(6,9,6,'Pendiente','No enciende',1122,'5555',180000,NULL,NULL,NULL,NULL,NULL),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000,NULL,NULL,NULL,NULL,NULL),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000,NULL,NULL,NULL,NULL,NULL),(9,5,9,'Pendiente','Problemas de WiFi',7788,'8888',100000,NULL,NULL,NULL,NULL,NULL),(10,8,10,'Completado','Puerto de carga suelto',9900,'9999',80000,NULL,NULL,NULL,NULL,NULL),(11,10,11,'Pendiente','Fallo en lector huella',1212,'1010',95000,NULL,NULL,NULL,NULL,NULL),(12,12,12,'En Proceso','Camara frontal pixeleada',3434,'1212',110000,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO `orden_e` VALUES (1,1,1,'En Proceso','Pantalla rota por caida',1234,'0000',250000,'2026-01-15',NULL,NULL,NULL,NULL),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000,'2026-02-10',NULL,NULL,NULL,NULL),(3,3,3,'En Proceso','Bateria no dura',9012,'2222',80000,'2026-03-05',NULL,NULL,NULL,NULL),(4,6,4,'En Proceso','Camara no funciona',3456,'3333',150000,'2026-04-20',NULL,NULL,NULL,NULL),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000,'2026-05-12',NULL,NULL,NULL,NULL),(6,9,6,'Pendiente','No enciende',1122,'5555',180000,'2026-06-18',NULL,NULL,NULL,NULL),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000,'2026-07-22',NULL,NULL,NULL,NULL),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000,'2026-08-30',NULL,NULL,NULL,NULL),(9,5,9,'Asignado','Problemas de WiFi',7788,'8888',100000,'2026-09-14',NULL,NULL,NULL,NULL),(10,8,10,'Asignado','Puerto de carga suelto',9900,'9999',80000,'2026-10-05',NULL,NULL,NULL,NULL),(11,10,11,'Asignado','Fallo en lector huella',1212,'1010',95000,'2026-11-25',NULL,NULL,NULL,NULL),(12,12,12,'En revisión','Camara frontal pixeleada',3434,'1212',110000,'2026-12-31',NULL,NULL,'sssssssss','sssssss');
 /*!40000 ALTER TABLE `orden_e` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -832,7 +832,7 @@ CREATE TABLE `revision_orden` (
 
 LOCK TABLES `revision_orden` WRITE;
 /*!40000 ALTER TABLE `revision_orden` DISABLE KEYS */;
-INSERT INTO `revision_orden` VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10),(1,11),(2,12);
+INSERT INTO `revision_orden` VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10),(1,11),(2,12),(18,12),(19,12);
 /*!40000 ALTER TABLE `revision_orden` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -921,10 +921,11 @@ CREATE TABLE `test` (
   `Face_id` int DEFAULT NULL,
   `Bluetooth` int DEFAULT NULL,
   `Observaciones` varchar(300) DEFAULT NULL,
+  `Fecha` datetime DEFAULT NULL,
   PRIMARY KEY (`ID_test`),
   KEY `ID_em` (`ID_em`),
   CONSTRAINT `test_ibfk_1` FOREIGN KEY (`ID_em`) REFERENCES `empleado` (`ID_em`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -933,7 +934,7 @@ CREATE TABLE `test` (
 
 LOCK TABLES `test` WRITE;
 /*!40000 ALTER TABLE `test` DISABLE KEYS */;
-INSERT INTO `test` VALUES (1,1006,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Mica trasera danada'),(2,1007,2,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,'Puerto de carga defectuoso'),(3,1008,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Todo funciona correctamente'),(4,1006,4,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,'Boton power y mute no funcionan'),(5,1007,5,1,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,'Altavoz y microfono danados'),(6,1008,6,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,'LCD, tactil y sensor rotos'),(7,1006,7,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,0,'WiFi y Bluetooth no funcionan'),(8,1007,8,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,1,1,1,'Camaras y flash danados'),(9,1008,9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Dispositivo en perfecto estado'),(10,1006,10,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Boton volumen no responde');
+INSERT INTO `test` VALUES (1,1006,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Mica trasera danada','2026-05-14 08:05:00'),(2,1007,2,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,'Puerto de carga defectuoso',NULL),(3,1008,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Todo funciona correctamente',NULL),(4,1006,4,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,'Boton power y mute no funcionan',NULL),(5,1007,5,1,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,'Altavoz y microfono danados',NULL),(6,1008,6,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,'LCD, tactil y sensor rotos',NULL),(7,1006,7,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,0,'WiFi y Bluetooth no funcionan',NULL),(8,1007,8,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,1,1,1,'Camaras y flash danados',NULL),(9,1008,9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Dispositivo en perfecto estado',NULL),(10,1006,10,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,'Boton volumen no responde',NULL),(18,1004,3,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,'hhhhhhhhhh','2026-05-18 03:02:11'),(19,1004,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,'mandigoo','2026-05-18 03:04:56');
 /*!40000 ALTER TABLE `test` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1022,4 +1023,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-13 19:43:02
+-- Dump completed on 2026-05-17 23:18:38

@@ -15,19 +15,53 @@ document.addEventListener("DOMContentLoaded", () => {
 	const modalFotosBody = document.getElementById('modal-fotos-body');
 	const modalPhotoBody = document.getElementById('modal-photo-view-body');
 	const modalPhotoImg = document.getElementById('modal-photo-view-img');
+	const modalRepuestosBody = document.getElementById('modal-repuestos-body');
+	const modalRepuestosSubtitle = document.getElementById('modal-repuestos-subtitle');
 	const fotosDropzone = document.getElementById('fotos-dropzone');
 	const formFotosOrden = document.getElementById('form-fotos-orden');
 	const inputFotosOrden = document.getElementById('input-fotos-orden');
 	const modalFotosIdOrden = document.getElementById('modal-fotos-id-orden');
+	const btnRepuestosEquipo = document.getElementById('btn-repuestos-equipo');
+	const btnRepuestosInventario = document.getElementById('btn-repuestos-inventario');
+	const reparacionOrdenId = document.getElementById('reparacion-orden-id');
+	const reparacionModelo = document.getElementById('reparacion-modelo');
+	const repuestosUsadosList = document.getElementById('repuestos-usados-list');
+	const reparacionTextarea = document.getElementById('reparacion-textarea');
 	const btnConfirmDeletePhoto = document.getElementById('btn-confirm-delete-photo');
 	const btnConfirmDeleteSavedPhoto = document.getElementById('btn-confirm-delete-saved-photo');
-	const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
+	// Preferir el input con id para selección fiable; fallback a nombre
+	const csrfToken = (document.getElementById('csrf-token')?.value) || document.querySelector("input[name='_csrf_token']")?.value || "";
 	let ordenesCargadas = [];
 	let fotosOrdenActual = [];
+	let testsOrdenActual = [];
 	let fotosSeleccionadas = [];
 	let fotoIndexPendienteEliminar = null;
 	let fotoGuardadaPendienteEliminar = null;
 	let ordenActualId = '';
+	let reparacionOrdenContextId = '';
+	let repuestosUsados = [];
+	let repuestosModalFuente = 'equipo';
+
+	const repuestosCatalogo = {
+		equipo: [
+			{ id: 'eq-pantalla', nombre: 'Pantalla', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-bateria', nombre: 'Batería', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-puerto', nombre: 'Puerto de carga', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-altavoz', nombre: 'Altavoz', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-microfono', nombre: 'Micrófono', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-camara-del', nombre: 'Cámara delantera', tipo: 'Equipo', stock: '-' },
+			{ id: 'eq-camara-pos', nombre: 'Cámara trasera', tipo: 'Equipo', stock: '-' },
+		],
+		inventario: [
+			{ id: 'inv-flex-carga', nombre: 'Flex de carga', tipo: 'Inventario', stock: '12' },
+			{ id: 'inv-bateria', nombre: 'Batería 4000 mAh', tipo: 'Inventario', stock: '8' },
+			{ id: 'inv-pantalla', nombre: 'Pantalla genérica', tipo: 'Inventario', stock: '5' },
+			{ id: 'inv-altavoz', nombre: 'Altavoz interno', tipo: 'Inventario', stock: '9' },
+			{ id: 'inv-microfono', nombre: 'Micrófono', tipo: 'Inventario', stock: '6' },
+			{ id: 'inv-sensor', nombre: 'Sensor de proximidad', tipo: 'Inventario', stock: '4' },
+			{ id: 'inv-flex-volumen', nombre: 'Flex de volumen', tipo: 'Inventario', stock: '7' },
+		],
+	};
 
 	if (!viewButtons.length || !viewPanels.length) {
 		return;
@@ -82,6 +116,209 @@ document.addEventListener("DOMContentLoaded", () => {
 		return fecha.toLocaleDateString("es-ES");
 	};
 
+	const formatHora = (value) => {
+		if (!value) return "";
+		const s = String(value);
+		// Buscar un patrón de hora y devolver solo HH:MM (sin segundos)
+		const match = s.match(/([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?/);
+		if (match) {
+			const hh = match[1].padStart(2, '0');
+			const mm = match[2].padStart(2, '0');
+			return `${hh}:${mm}`;
+		}
+		// Si no se encuentra una hora, devolver la representación original
+		return s;
+	};
+
+	const renderRepuestosUsados = () => {
+		if (!repuestosUsadosList) return;
+
+		if (!repuestosUsados.length) {
+			repuestosUsadosList.innerHTML = '<p class="device-detail__empty">Aún no has agregado repuestos.</p>';
+			return;
+		}
+
+		repuestosUsadosList.innerHTML = `
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Repuesto</th>
+						<th>Origen</th>
+						<th>ID</th>
+						<th>Cantidad</th>
+						<th class="table__actions">Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					${repuestosUsados.map((repuesto) => `
+						<tr>
+							<td>${escapeHtml(repuesto.nombre)}</td>
+							<td>${escapeHtml(repuesto.tipo)}</td>
+							<td>${escapeHtml(repuesto.id)}</td>
+							<td>${escapeHtml(repuesto.cantidad)}</td>
+							<td class="table__actions">
+								<button type="button" class="table-action table-action--danger" data-remove-repuesto="${escapeHtml(repuesto.id)}">Quitar</button>
+							</td>
+						</tr>
+					`).join('')}
+				</tbody>
+			</table>
+		`;
+	};
+
+	const actualizarEncabezadoReparacion = (orden) => {
+		if (reparacionOrdenId) {
+			reparacionOrdenId.textContent = orden ? `(${String(orden)})` : '-';
+		}
+		if (reparacionModelo) {
+			reparacionModelo.textContent = '-';
+		}
+	};
+
+	const normalizarRepuesto = (repuesto) => ({
+		id: repuesto.id,
+		nombre: repuesto.nombre,
+		tipo: repuesto.tipo,
+		stock: repuesto.stock,
+	});
+
+	const fetchInventarioRepuestos = async (modelo) => {
+		try {
+			const url = `/api/taller/inventario/${encodeURIComponent(String(modelo || ''))}`;
+			const resp = await fetch(url, {
+				method: 'POST',
+				cache: 'no-store',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+					...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+				},
+				credentials: 'same-origin',
+			});
+			if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+			const data = await resp.json().catch(() => ({}));
+			return {
+				inventario_taller: Array.isArray(data?.inventario_taller) ? data.inventario_taller : [],
+				inventario_modelo: Array.isArray(data?.inventario_modelo) ? data.inventario_modelo : [],
+			};
+		} catch (err) {
+			console.error('Error fetch inventario:', err);
+			return { inventario_taller: [], inventario_modelo: [] };
+		}
+	};
+
+	const renderModalRepuestos = (fuente, data = { inventario_taller: [], inventario_modelo: [] }) => {
+		if (!modalRepuestosBody) return;
+		repuestosModalFuente = fuente;
+		if (modalRepuestosSubtitle) {
+			modalRepuestosSubtitle.textContent = fuente === 'inventario'
+				? 'Inventario de repuestos disponibles.'
+				: 'Piezas del equipo que puedes añadir como usadas.';
+		}
+
+		const renderTabla = (titulo, items, prefijo) => {
+			if (!Array.isArray(items) || items.length === 0) {
+				return `<div class="device-detail__empty">No hay registros en ${escapeHtml(titulo.toLowerCase())}.</div>`;
+			}
+
+			return `
+				<div style="margin-bottom:1rem;">
+					<h3 class="card__subtitle">${escapeHtml(titulo)}</h3>
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Tipo</th>
+								<th>Marca</th>
+								<th>Modelo</th>
+								<th>Existencia</th>
+								<th>Costo</th>
+							</tr>
+						</thead>
+						<tbody>
+							${items.map((repuesto, index) => {
+								const tipo = repuesto.tipo ?? repuesto.N_Clase ?? '';
+								const marca = repuesto.N_marca ?? repuesto.marca ?? '';
+								const modelo = repuesto.N_modelo ?? repuesto.modelo ?? '';
+								const existencia = repuesto.Existencia ?? repuesto.existencia ?? '-';
+								const costo = repuesto.Costo_venta ?? repuesto.costo ?? '-';
+								const idProducto = repuesto.ID_producto ?? repuesto.id ?? repuesto.ID ?? '';
+								return `
+									<tr class="repuesto-row" data-repuesto-id="${escapeHtml(idProducto)}" data-repuesto-nombre="${escapeHtml(modelo)}" data-repuesto-tipo="${escapeHtml(tipo)}" data-repuesto-stock="${escapeHtml(existencia)}" style="cursor:pointer;">
+										<td>${escapeHtml(tipo)}</td>
+										<td>${escapeHtml(marca)}</td>
+										<td>${escapeHtml(modelo)}</td>
+										<td>${escapeHtml(existencia)}</td>
+										<td>${escapeHtml(costo)}</td>
+									</tr>
+								`;
+							}).join('')}
+						</tbody>
+					</table>
+				</div>
+			`;
+		};
+
+		if (fuente === 'equipo') {
+			modalRepuestosBody.innerHTML = renderTabla('Inventario del modelo', data.inventario_modelo, 'modelo');
+			return;
+		}
+
+		// fuente === 'inventario' -> mostrar inventario general
+		modalRepuestosBody.innerHTML = renderTabla('Inventario general', data.inventario_taller, 'taller');
+	};
+
+	const agregarRepuestoUsado = (repuesto) => {
+		if (!repuesto.id) {
+			alert('No se pudo identificar el ID del repuesto seleccionado.');
+			return;
+		}
+		const encontrado = repuestosUsados.find((item) => item.id === repuesto.id);
+		if (encontrado) {
+			encontrado.cantidad += 1;
+		} else {
+			repuestosUsados.push({
+				id: repuesto.id,
+				nombre: repuesto.nombre,
+				tipo: repuesto.tipo,
+				cantidad: 1,
+			});
+		}
+
+		renderRepuestosUsados();
+		if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+			window.UiModal.closeById('modal-repuestos');
+		}
+	};
+
+	const abrirModalRepuestos = async (fuente) => {
+		const modelo = String(reparacionModelo?.textContent || '').replace(/[()]/g, '').trim();
+		if (fuente === 'equipo' && (!modelo || modelo === '-' )) {
+			alert('Selecciona una orden/con modelo antes de ver las piezas del equipo.');
+			return;
+		}
+		const data = await fetchInventarioRepuestos(modelo);
+		renderModalRepuestos(fuente, data);
+		if (window.UiModal && typeof window.UiModal.openById === 'function') {
+			window.UiModal.openById('modal-repuestos');
+		}
+	};
+
+	const actualizarNumeroSiguienteTest = () => {
+		const numeros = Array.isArray(testsOrdenActual)
+			? testsOrdenActual
+				.map((test) => Number(test?.Num_test ?? test?.num_test ?? 0))
+				.filter((numero) => Number.isFinite(numero))
+			: [];
+		const siguienteNumero = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+
+		const testIdSpan = document.getElementById('test-id-form');
+		const inputNumTest = document.getElementById('input-num-test');
+		if (testIdSpan) testIdSpan.textContent = String(siguienteNumero);
+		if (inputNumTest) inputNumTest.value = String(siguienteNumero);
+
+		return siguienteNumero;
+	};
+
 	const labelPorCampo = {
 		ID_orden: "ID orden",
 		Estado: "Estado",
@@ -96,6 +333,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!orden || typeof orden !== 'object') {
 			orderInfo.innerHTML = '<p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>';
 			if (detalleOrdenSubtitle) detalleOrdenSubtitle.textContent = 'Selecciona una orden para ver toda su información.';
+			if (reparacionOrdenId) {
+				reparacionOrdenId.textContent = '-';
+			}
+			if (reparacionModelo) {
+				reparacionModelo.textContent = '-';
+			}
 			return;
 		}
 
@@ -125,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				<span class="device-detail__label">ID orden</span>
 				<strong class="device-detail__value">${escapeHtml(id)}</strong>
 			</div>`);
-
 		parts.push(`
 			<div class="device-detail__item">
 				<span class="device-detail__label">Fecha de ingreso</span>
@@ -170,6 +412,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		orderInfo.innerHTML = parts.join('');
 		if (detalleOrdenSubtitle) detalleOrdenSubtitle.textContent = `Información de la orden ${id} (${accion}).`;
+		if (reparacionOrdenId) {
+			reparacionOrdenId.textContent = `(${String(id || '')})`;
+		}
+		if (reparacionModelo) {
+			reparacionModelo.textContent = String(modelo || '-');
+		}
 	};
 
 	const renderOrdenes = (ordenes) => {
@@ -371,10 +619,25 @@ document.addEventListener("DOMContentLoaded", () => {
 			const detalle = data.detalle_orden || data.detalle || {};
 			const fotos = Array.isArray(data.fotos_orden) ? data.fotos_orden : (Array.isArray(data.fotos) ? data.fotos : []);
 			const tests = Array.isArray(data.test_orden) ? data.test_orden : (Array.isArray(data.test_orden) ? data.test_orden : []);
+			testsOrdenActual = Array.isArray(tests) ? tests : [];
 			fotosOrdenActual = fotos;
 			ordenActualId = detalle.ID_orden || idOrden;
 			if (modalFotosIdOrden) {
 				modalFotosIdOrden.value = String(ordenActualId || '');
+			}
+			if (String(reparacionOrdenContextId) !== String(ordenActualId || '')) {
+				reparacionOrdenContextId = String(ordenActualId || '');
+				repuestosUsados = [];
+				if (reparacionTextarea) {
+					reparacionTextarea.value = '';
+				}
+				renderRepuestosUsados();
+			}
+
+			// Actualizar el span en el formulario de revisión con el ID de la orden
+			const ordenIdSpan = document.getElementById('orden-id');
+			if (ordenIdSpan) {
+				ordenIdSpan.textContent = String(ordenActualId || '-');
 			}
 
 			// Render principal (todos los campos de detalle)
@@ -386,7 +649,24 @@ document.addEventListener("DOMContentLoaded", () => {
 					orderPhotos.innerHTML = '<p class="device-detail__empty">No hay fotos de esta orden.</p>';
 				} else {
 					orderPhotos.innerHTML = '<h3>Fotos</h3><div class="device-photos">' + fotos.map((f, index) => {
-						const src = f.Foto_e || f.foto || f.url || f.path || f.ruta || '';
+						let src = f.Foto_e || f.foto || f.url || f.path || f.ruta || '';
+						// Normalizar rutas antiguas o relativas guardadas en BD
+						if (src && !src.startsWith('/') && !src.startsWith('http')) {
+							// ejemplo: fotos/orden9/wifi.jpg -> extraer nombre de fichero y generar ruta estática
+							try {
+								if (src.startsWith('fotos/orden')) {
+									const parts = src.split('/');
+									const filename = parts[parts.length - 1];
+									src = `/static/img/evidencias/taller/${ordenActualId}/${filename}`;
+								} else {
+									// por si quedó una ruta relativa cualquiera, convertirla a raíz
+									src = '/' + src;
+								}
+							} catch (e) {
+								console.warn('No se pudo normalizar ruta de foto:', src, e);
+								src = '/' + src;
+							}
+						}
 						const idFoto = f.ID_evidencia_e || f.ID_evidencia || f.id || f.ID || index;
 						const titulo = f.Nombre || f.nombre || f.Nombre_e || `Foto ${index + 1}`;
 						return `
@@ -412,7 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
 						<table class="table">
 							<thead>
 								<tr>
-									<th>ID test</th>
+									<th>Fecha</th>
 									<th>Número</th>
 									<th>Observaciones</th>
 									<th class="table__actions">Acciones</th>
@@ -420,8 +700,8 @@ document.addEventListener("DOMContentLoaded", () => {
 							</thead>
 							<tbody>
 							${tests.map((t) => `
-								<tr>
-									<td>${escapeHtml(t.ID_test ?? t.ID_test)}</td>
+								<tr>				
+									<td>${escapeHtml(formatFecha(t.Fecha_e ?? t.Fecha ?? t.fecha ?? t.Fecha_test ?? t.fecha_test ?? ''))}</td>
 									<td>${escapeHtml(t.Num_test ?? t.Num_test)}</td>
 									<td>${escapeHtml(t.Observaciones ?? t.Observaciones ?? '')}</td>
 									<td class="table__actions"><button type="button" class="table-action" data-test-id="${escapeHtml(t.ID_test)}">Ver detalle</button></td>
@@ -440,15 +720,67 @@ document.addEventListener("DOMContentLoaded", () => {
 						if (!testObj) return;
 						const modalBody = document.getElementById('modal-test-body');
 						if (modalBody) {
-							modalBody.innerHTML = Object.entries(testObj).map(([k, v]) => `
-								<div style="margin-bottom:.5rem;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</div>
-							`).join('');
+								// Renderizar campos con estilo similar a los checkbox del formulario
+								const isBooleanLike = (val) => {
+									if (val === null || val === undefined) return false;
+									const s = String(val).trim().toLowerCase();
+									return ['1', 'true', 'si', 'sí', 'on', 'yes'].includes(s) || s === '0' || s === 'false' ? (s === '1' || ['1','true','si','sí','on','yes'].includes(s)) : false;
+								};
+
+								const keyToLabel = (k) => {
+									const map = {
+										'Num_test': 'Número',
+										'Observaciones': 'Observaciones',
+										'Fecha_e': 'Fecha',
+										'Fecha': 'Fecha',
+										'Fecha_test': 'Fecha',
+									};
+									return map[k] || k;
+								};
+
+								// Encabezado: Número, Fecha y Hora (mostrar arriba de los checks)
+								const numVal = testObj?.Num_test ?? testObj?.Num ?? testObj?.num_test ?? '';
+								const fechaRaw = testObj?.Fecha_e ?? testObj?.Fecha ?? testObj?.fecha ?? testObj?.Fecha_test ?? testObj?.fecha_test ?? '';
+								const horaVal = formatHora(fechaRaw);
+								const headerHtml = `<div class="modal-test-subtitle" style="margin-bottom:.25rem;font-weight:600;">Información de test</div><div class="modal-test-header" style="display:flex;gap:1rem;align-items:center;margin-bottom:.5rem;"><div><strong>Número:</strong> ${escapeHtml(String(numVal ?? ''))}</div><div><strong>Fecha:</strong> ${escapeHtml(formatFecha(fechaRaw))}</div><div><strong>Hora:</strong> ${escapeHtml(horaVal)}</div></div>`;
+
+								const entries = Object.entries(testObj || {});
+								const checkboxParts = [];
+								let observationText = '';
+
+								entries.forEach(([k, v]) => {
+									const label = keyToLabel(k);
+									if (k.toLowerCase().includes('observ') || String(k).toLowerCase() === 'observaciones') {
+										observationText = String(v || '');
+										return;
+									}
+
+									if (isBooleanLike(v) || /^(btn_|btn|cornetas|mica|lcd|tactil|wifi|puerto|cam_|flash|microfono|btn_sil|auricular|senal|sensor|face|bluetooth)/i.test(k)) {
+										const checked = isBooleanLike(v);
+										checkboxParts.push(`<label class="checkbox-card"><input type="checkbox" disabled ${checked ? 'checked' : ''}><span class="checkbox-text">${escapeHtml(label)}</span></label>`);
+										return;
+									}
+
+									// Ignorar campos no-booleanos (no los añadimos debajo de los checks)
+								});
+
+								let html = headerHtml;
+								if (checkboxParts.length) {
+									html += `<div class="modal-checkbox-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;align-items:start;">${checkboxParts.join('')}</div>`;
+								}
+
+								// Observaciones al final como campo de texto (readonly)
+								html += `<label class="field field--full" style="margin-top:.5rem;"><span>Observaciones</span><textarea class="field__input" rows="4" readonly style="width:100%;margin-top:.25rem;">${escapeHtml(observationText)}</textarea></label>`;
+
+								modalBody.innerHTML = html;
 						}
 						if (window.UiModal && typeof window.UiModal.openById === 'function') {
 							window.UiModal.openById('modal-test-detail');
 						}
 					});
 				}
+
+				actualizarNumeroSiguienteTest();
 
 			// Render revisión / reparación / costo debajo de tests
 			if (orderPeople) {
@@ -461,6 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					for (const k of keys) {
 						if (k in obj && obj[k] !== null && obj[k] !== undefined && String(obj[k]).trim() !== '') return obj[k];
 					}
+
 					// fallback: buscar por clave normalizada
 					const objKeys = Object.keys(obj);
 					for (const k of keys) {
@@ -482,7 +815,6 @@ document.addEventListener("DOMContentLoaded", () => {
 					orderPeople.innerHTML = '<p class="device-detail__empty">No hay información de revisión o reparación.</p>';
 				} else {
 					orderPeople.innerHTML = `
-						${revisionVal ? `<div class="device-detail__item"><span class="device-detail__label">Revisión</span><strong class="device-detail__value">${escapeHtml(revisionVal)}</strong></div>` : ''}
 						${reparacionVal ? `<div class="device-detail__item"><span class="device-detail__label">Reparación</span><strong class="device-detail__value">${escapeHtml(reparacionVal)}</strong></div>` : ''}
 						${costoVal ? `<div class="device-detail__item"><span class="device-detail__label">Costo de reparación</span><strong class="device-detail__value">${escapeHtml(costoVal)}</strong></div>` : ''}
 						<div class="device-detail__actions" style="margin-top:1rem; display:flex; gap:.5rem;">
@@ -501,6 +833,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (detalleDispositivo) {
 				detalleDispositivo.innerHTML = '<p class="device-detail__empty">No se pudo cargar el detalle de la orden.</p>';
 			}
+			actualizarEncabezadoReparacion('');
+			renderRepuestosUsados();
 		}
 	};
 
@@ -584,6 +918,117 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		});
 	}
+
+	if (btnRepuestosEquipo) {
+		btnRepuestosEquipo.addEventListener('click', () => abrirModalRepuestos('equipo'));
+	}
+
+	if (btnRepuestosInventario) {
+		btnRepuestosInventario.addEventListener('click', () => abrirModalRepuestos('inventario'));
+	}
+
+	if (repuestosUsadosList) {
+		repuestosUsadosList.addEventListener('click', (event) => {
+			const button = event.target.closest('button[data-remove-repuesto]');
+			if (!button) return;
+			const repuestoId = button.getAttribute('data-remove-repuesto');
+			repuestosUsados = repuestosUsados
+				.map((item) => item.id === repuestoId ? { ...item, cantidad: item.cantidad - 1 } : item)
+				.filter((item) => item.cantidad > 0);
+			renderRepuestosUsados();
+		});
+	}
+
+	const btnGuardarReparacion = document.getElementById('btn-guardar-reparacion');
+	if (btnGuardarReparacion) {
+		btnGuardarReparacion.addEventListener('click', async () => {
+			const idOrden = String(reparacionOrdenContextId || ordenActualId || '').trim();
+			if (!idOrden) {
+				alert('No hay una orden seleccionada para guardar la reparación.');
+				return;
+			}
+
+			const reparacionTexto = String(reparacionTextarea?.value || '').trim();
+			const id_productos = repuestosUsados.map((item) => Number(item.id)).filter((id) => Number.isFinite(id) && id > 0);
+			const cantidades = repuestosUsados
+				.map((item) => Number(item.cantidad))
+				.filter((cantidad) => Number.isFinite(cantidad) && cantidad > 0);
+
+			if (id_productos.length !== cantidades.length) {
+				alert('Los repuestos seleccionados no son válidos.');
+				return;
+			}
+
+			try {
+				btnGuardarReparacion.disabled = true;
+				btnGuardarReparacion.textContent = 'Guardando...';
+
+				const response = await fetch(`/api/taller/reparacion/${encodeURIComponent(idOrden)}`, {
+					method: 'POST',
+					cache: 'no-store',
+					headers: {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+						...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+					},
+					credentials: 'same-origin',
+					body: JSON.stringify({
+						id_productos,
+						cantidades,
+						id_empleado: 1004,
+						reparacion: reparacionTexto,
+					}),
+				});
+
+				if (!response.ok) {
+					let message = `HTTP ${response.status}`;
+					try {
+						const errorData = await response.json();
+						message = errorData?.message || message;
+					} catch (_) {
+						const text = await response.text();
+						if (text) message = text;
+					}
+					throw new Error(message);
+				}
+
+				const result = await response.json().catch(() => ({}));
+				if (!result.ok) {
+					throw new Error(result.message || 'No se pudo registrar la reparación.');
+				}
+
+				alert('Reparación guardada correctamente.');
+				repuestosUsados = [];
+				if (reparacionTextarea) {
+					reparacionTextarea.value = '';
+				}
+				renderRepuestosUsados();
+				await cargarDetalleOrden(idOrden, 'vista-4');
+			} catch (error) {
+				console.error('Error guardando la reparación:', error);
+				alert('No se pudo guardar la reparación.');
+			} finally {
+				btnGuardarReparacion.disabled = false;
+				btnGuardarReparacion.textContent = 'Guardar reparación';
+			}
+		});
+	}
+
+	if (modalRepuestosBody) {
+		modalRepuestosBody.addEventListener('click', (event) => {
+			const row = event.target.closest('tr[data-repuesto-id]');
+			if (!row) return;
+			const repuesto = {
+				id: row.getAttribute('data-repuesto-id') || '',
+				nombre: row.getAttribute('data-repuesto-nombre') || '',
+				tipo: row.getAttribute('data-repuesto-tipo') || repuestosModalFuente,
+				stock: row.getAttribute('data-repuesto-stock') || '-',
+			};
+			agregarRepuestoUsado(repuesto);
+		});
+	}
+
+	renderRepuestosUsados();
 
 	// Delegation listener para botones dentro del detalle de orden (Revisar / Reparar)
 	if (orderPeople) {
@@ -673,6 +1118,93 @@ document.addEventListener("DOMContentLoaded", () => {
 			setFotosSeleccionadas(inputFotosOrden.files);
 		});
 	}
+
+// Manejo del formulario de revisión: construir JSON con los campos requeridos y enviarlos
+const serviceForm = document.querySelector('.service-form');
+if (serviceForm) {
+	serviceForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		if (!ordenActualId) {
+			console.error('No hay orden seleccionada');
+			return;
+		}
+
+		// Campos en el mismo orden que el backend
+		const campos = [
+			'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+			'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+			'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+		];
+
+		const payload = {};
+		const findField = (baseName) => {
+			const candidates = [baseName, baseName.toLowerCase(), baseName.charAt(0).toLowerCase() + baseName.slice(1)];
+			for (const name of candidates) {
+				const el = serviceForm.querySelector(`[name="${name}"]`);
+				if (el) return el;
+			}
+			return null;
+		};
+
+		for (const campo of campos) {
+			if (campo === 'ID_em') continue; // servidor llena este campo
+			if (campo === 'Num_test') {
+				const numInput = document.getElementById('input-num-test');
+				payload['Num_test'] = numInput ? Number(numInput.value) || 1 : 1;
+				continue;
+			}
+
+			const el = findField(campo);
+			if (el) {
+				if (el.type === 'checkbox') {
+					payload[campo] = el.checked ? 1 : 0;
+				} else if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+					const val = el.value;
+					if (campo.toLowerCase() === 'observaciones') payload[campo] = String(val || '');
+					else payload[campo] = val === '' ? null : Number(val);
+				} else {
+					payload[campo] = null;
+				}
+			} else {
+				// campos no presentes en HTML -> enviar 0 excepto Observaciones -> ''
+				payload[campo] = (campo.toLowerCase() === 'observaciones') ? '' : 0;
+			}
+		}
+
+		try {
+			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(ordenActualId)}/test`, {
+				method: 'POST',
+				cache: 'no-store',
+				headers: {
+					'Content-Type': 'application/json',
+					...(csrfToken ? { 'X-CSRFToken': csrfToken, 'X-CSRF-Token': csrfToken } : {}),
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				const txt = await response.text();
+				console.error('Error registrando test:', response.status, txt);
+				alert('Error al guardar la revisión.');
+				return;
+			}
+
+			const result = await response.json();
+			if (result && result.ok) {
+				alert('Revisión guardada correctamente.');
+				// recargar detalle para actualizar lista de tests
+				await cargarDetalleOrden(ordenActualId, 'vista-2');
+			} else {
+				console.error('Respuesta inesperada:', result);
+				alert('No se pudo guardar la revisión.');
+			}
+		} catch (err) {
+			console.error('Exception registrando test:', err);
+			alert('Error al guardar la revisión.');
+		}
+	});
+}
 
 	if (fotosDropzone && inputFotosOrden) {
 		const setDropzoneActive = (isActive) => {
