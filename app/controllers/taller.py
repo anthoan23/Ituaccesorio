@@ -47,7 +47,7 @@ def obtener_detalles_orden(id_orden):
 	test = Tests()
 	detalle_orden = ordenes.detalles_orden(id_orden)
 	fotos_orden = ordenes.fotos_orden(id_orden)
-	test_orden = test.buscar_ordenes(id_orden)
+	test_orden = test.buscar_test(id_orden)
 	empleados_orden = ordenes.empleados_asignados(id_orden)
 
 	resultado = {
@@ -111,6 +111,50 @@ def registrar_fotos_orden(id_orden):
 		return jsonify({"ok": False, "message": "No se pudieron registrar las fotos."}), 500
 
 	return jsonify({"ok": True, "message": "Fotos registradas correctamente.", "fotos": rutas_guardadas})
+
+
+@taller_blueprint.route("/api/taller/ordenes/<int:id_orden>/test", methods=["POST"])
+@jwt_required
+def registrar_test_orden(id_orden):
+	# Espera JSON con los campos del test. ID_em y Fecha se gestionan en el servidor.
+	datos = request.get_json() or {}
+
+	# empleado por defecto (cambiar para usar usuario real)
+	id_empleado = 1004
+
+	# Campos en el mismo orden que la función registrar_test espera
+	campos = [
+		'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+		'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+		'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+	]
+
+	valores = []
+	for campo in campos:
+		if campo == 'ID_em':
+			valores.append(id_empleado)
+			continue
+
+		if campo in datos:
+			v = datos.get(campo)
+			# Empty string -> None (no revisado)
+			if v is None or v == '':
+				valores.append(None)
+			else:
+				# Observaciones is text
+				if campo == 'Observaciones':
+					valores.append(str(v))
+				else:
+					try:
+						valores.append(int(v))
+					except Exception:
+						valores.append(None)
+		else:
+			valores.append(None)
+
+	test_model = Tests()
+	ok = test_model.registrar_test(tuple(valores), id_orden)
+	return jsonify({"ok": bool(ok)})
 
 
 @taller_blueprint.route("/api/taller/fotos/<int:id_evidencia>", methods=["DELETE"])

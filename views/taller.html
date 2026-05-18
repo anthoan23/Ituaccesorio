@@ -17,7 +17,7 @@
 			</ol>
 		</nav>
 		
-		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+		<input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
 		<div class="taller-top-grid">
 			<header class="taller-hero">
 				<h1 class="taller-hero__title">Taller</h1>
@@ -114,46 +114,137 @@
 			</article>
 		</section>
 
-		<section class="content vista-3" aria-label="Formulario de seguimiento" hidden>
+		<section class="content vista-3" aria-label="Formulario de revisión" hidden>
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
 			</nav>
-			<article class="card card--form" aria-label="Formulario de seguimiento">
+			<article class="card card--form" aria-label="Formulario de revisión">
 				<div class="form__header">
-					<h2 class="card__title">Formulario de seguimiento</h2>
-					<p class="form__subtitle">Usa esta tercera vista para actualizar el avance de una orden.</p>
+					<h2 class="card__title">Formulario de revisión</h2>
+					<p class="form__subtitle">Revisión de la orden(<span id="orden-id">-</span>)</p>
+					<label class="field field--full">
+							<span>Número de test: <span id="test-id-form">-</span></span>
+						</label>
 				</div>
 
 				<form class="service-form" autocomplete="off">
+					<input type="hidden" id="input-num-test" name="Num_test" value="">
 					<div class="service-form__grid">
-						<label class="field">
-							<span>Número de orden</span>
-							<input name="numero_orden" type="text" placeholder="Ej: OS-001" required>
+						
+						<div class="grid-container">
+						<label class="checkbox-card">
+							<input type="checkbox" name="Btn_power">
+							<span class="checkbox-text">Botón de power</span>
 						</label>
-						<label class="field">
-							<span>Técnico</span>
-							<input name="tecnico" type="text" placeholder="Nombre del técnico" required>
-						</label>
-						<label class="field">
-							<span>Prioridad</span>
-							<select name="prioridad" required>
-								<option value="">Seleccione una prioridad</option>
-								<option value="baja">Baja</option>
-								<option value="media">Media</option>
-								<option value="alta">Alta</option>
-							</select>
-						</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Cornetas">
+								<span class="checkbox-text">Cornetas</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Mica">
+								<span class="checkbox-text">Mica</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="LCD">
+								<span class="checkbox-text">LCD</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Tactil">
+								<span class="checkbox-text">Táctil</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Btn_vol">
+								<span class="checkbox-text">Botones laterales</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Btn_sil">
+								<span class="checkbox-text">Botones inferiores</span>
+							</label>
+							
+							<label class="checkbox-card highlighted">
+								<input type="checkbox" name="Puerto_carga">
+								<span class="checkbox-text">Puerto de carga</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Wifi">
+								<span class="checkbox-text">WiFi</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Cam_pos">
+								<span class="checkbox-text">Cámara trasera</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Cam_del">
+								<span class="checkbox-text">Cámara delantera</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Flash">
+								<span class="checkbox-text">Flash</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Senal">
+								<span class="checkbox-text">Señal auricular</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Microfono">
+								<span class="checkbox-text">Micrófono</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Sensor_proximidad">
+								<span class="checkbox-text">Sensor de proximidad</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Caja">
+								<span class="checkbox-text">Caja</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Cargador">
+								<span class="checkbox-text">Cargador</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Cable">
+								<span class="checkbox-text">Cable</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Auricular">
+								<span class="checkbox-text">Audifonos</span>
+							</label>
+							
+							<label class="checkbox-card">
+								<input type="checkbox" name="Manuales">
+								<span class="checkbox-text">Manuales</span>
+							</label>
+						</div>
 						<label class="field field--full">
 							<span>Observaciones</span>
-							<textarea name="observaciones" rows="4" placeholder="Notas adicionales del seguimiento" required></textarea>
+							<textarea name="observaciones" rows="4" placeholder="Notas adicionales de la revisión" required></textarea>
 						</label>
+
+						
 					</div>
 
 					<div class="service-form__actions">
 						<button type="button" class="form-btn form-btn--ghost">Cancelar</button>
-						<button type="submit" class="form-btn form-btn--primary">Guardar seguimiento</button>
+						<button type="submit" class="form-btn form-btn--primary">Guardar revisión</button>
 					</div>
 				</form>
 			</article>

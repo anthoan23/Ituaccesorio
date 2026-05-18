@@ -52,7 +52,7 @@ class OrdenServicio(conectar):
                 "SELECT i.ID_orden, m.N_modelo "
                 "FROM interaccion i JOIN orden_e o ON i.ID_orden = o.ID_orden_e "
                 "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
-                "WHERE o.Estado_o = 'Asignado' AND i.ID_em = %s"
+                "WHERE o.Estado_o IN ('Asignado', 'Revisado') AND i.ID_em = %s"
             )
             cursor.execute(sql, (id_empleado,))
             ordenes = cursor.fetchall()

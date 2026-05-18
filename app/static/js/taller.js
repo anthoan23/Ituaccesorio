@@ -21,9 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	const modalFotosIdOrden = document.getElementById('modal-fotos-id-orden');
 	const btnConfirmDeletePhoto = document.getElementById('btn-confirm-delete-photo');
 	const btnConfirmDeleteSavedPhoto = document.getElementById('btn-confirm-delete-saved-photo');
-	const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
+	// Preferir el input con id para selección fiable; fallback a nombre
+	const csrfToken = (document.getElementById('csrf-token')?.value) || document.querySelector("input[name='_csrf_token']")?.value || "";
 	let ordenesCargadas = [];
 	let fotosOrdenActual = [];
+	let testsOrdenActual = [];
 	let fotosSeleccionadas = [];
 	let fotoIndexPendienteEliminar = null;
 	let fotoGuardadaPendienteEliminar = null;
@@ -82,6 +84,22 @@ document.addEventListener("DOMContentLoaded", () => {
 		return fecha.toLocaleDateString("es-ES");
 	};
 
+	const actualizarNumeroSiguienteTest = () => {
+		const numeros = Array.isArray(testsOrdenActual)
+			? testsOrdenActual
+				.map((test) => Number(test?.Num_test ?? test?.num_test ?? 0))
+				.filter((numero) => Number.isFinite(numero))
+			: [];
+		const siguienteNumero = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+
+		const testIdSpan = document.getElementById('test-id-form');
+		const inputNumTest = document.getElementById('input-num-test');
+		if (testIdSpan) testIdSpan.textContent = String(siguienteNumero);
+		if (inputNumTest) inputNumTest.value = String(siguienteNumero);
+
+		return siguienteNumero;
+	};
+
 	const labelPorCampo = {
 		ID_orden: "ID orden",
 		Estado: "Estado",
@@ -125,7 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				<span class="device-detail__label">ID orden</span>
 				<strong class="device-detail__value">${escapeHtml(id)}</strong>
 			</div>`);
-
 		parts.push(`
 			<div class="device-detail__item">
 				<span class="device-detail__label">Fecha de ingreso</span>
@@ -371,6 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const detalle = data.detalle_orden || data.detalle || {};
 			const fotos = Array.isArray(data.fotos_orden) ? data.fotos_orden : (Array.isArray(data.fotos) ? data.fotos : []);
 			const tests = Array.isArray(data.test_orden) ? data.test_orden : (Array.isArray(data.test_orden) ? data.test_orden : []);
+			testsOrdenActual = Array.isArray(tests) ? tests : [];
 			fotosOrdenActual = fotos;
 			ordenActualId = detalle.ID_orden || idOrden;
 			if (modalFotosIdOrden) {
@@ -386,7 +404,24 @@ document.addEventListener("DOMContentLoaded", () => {
 					orderPhotos.innerHTML = '<p class="device-detail__empty">No hay fotos de esta orden.</p>';
 				} else {
 					orderPhotos.innerHTML = '<h3>Fotos</h3><div class="device-photos">' + fotos.map((f, index) => {
-						const src = f.Foto_e || f.foto || f.url || f.path || f.ruta || '';
+						let src = f.Foto_e || f.foto || f.url || f.path || f.ruta || '';
+						// Normalizar rutas antiguas o relativas guardadas en BD
+						if (src && !src.startsWith('/') && !src.startsWith('http')) {
+							// ejemplo: fotos/orden9/wifi.jpg -> extraer nombre de fichero y generar ruta estática
+							try {
+								if (src.startsWith('fotos/orden')) {
+									const parts = src.split('/');
+									const filename = parts[parts.length - 1];
+									src = `/static/img/evidencias/taller/${ordenActualId}/${filename}`;
+								} else {
+									// por si quedó una ruta relativa cualquiera, convertirla a raíz
+									src = '/' + src;
+								}
+							} catch (e) {
+								console.warn('No se pudo normalizar ruta de foto:', src, e);
+								src = '/' + src;
+							}
+						}
 						const idFoto = f.ID_evidencia_e || f.ID_evidencia || f.id || f.ID || index;
 						const titulo = f.Nombre || f.nombre || f.Nombre_e || `Foto ${index + 1}`;
 						return `
@@ -450,6 +485,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					});
 				}
 
+				actualizarNumeroSiguienteTest();
+
 			// Render revisión / reparación / costo debajo de tests
 			if (orderPeople) {
 				// Normaliza cadenas para buscar claves con/ sin acentos, guiones, espacios y mayúsculas
@@ -461,6 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					for (const k of keys) {
 						if (k in obj && obj[k] !== null && obj[k] !== undefined && String(obj[k]).trim() !== '') return obj[k];
 					}
+
 					// fallback: buscar por clave normalizada
 					const objKeys = Object.keys(obj);
 					for (const k of keys) {
@@ -673,6 +711,93 @@ document.addEventListener("DOMContentLoaded", () => {
 			setFotosSeleccionadas(inputFotosOrden.files);
 		});
 	}
+
+// Manejo del formulario de revisión: construir JSON con los campos requeridos y enviarlos
+const serviceForm = document.querySelector('.service-form');
+if (serviceForm) {
+	serviceForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		if (!ordenActualId) {
+			console.error('No hay orden seleccionada');
+			return;
+		}
+
+		// Campos en el mismo orden que el backend
+		const campos = [
+			'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+			'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+			'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+		];
+
+		const payload = {};
+		const findField = (baseName) => {
+			const candidates = [baseName, baseName.toLowerCase(), baseName.charAt(0).toLowerCase() + baseName.slice(1)];
+			for (const name of candidates) {
+				const el = serviceForm.querySelector(`[name="${name}"]`);
+				if (el) return el;
+			}
+			return null;
+		};
+
+		for (const campo of campos) {
+			if (campo === 'ID_em') continue; // servidor llena este campo
+			if (campo === 'Num_test') {
+				const numInput = document.getElementById('input-num-test');
+				payload['Num_test'] = numInput ? Number(numInput.value) || 1 : 1;
+				continue;
+			}
+
+			const el = findField(campo);
+			if (el) {
+				if (el.type === 'checkbox') {
+					payload[campo] = el.checked ? 1 : 0;
+				} else if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+					const val = el.value;
+					if (campo.toLowerCase() === 'observaciones') payload[campo] = String(val || '');
+					else payload[campo] = val === '' ? null : Number(val);
+				} else {
+					payload[campo] = null;
+				}
+			} else {
+				// campos no presentes en HTML -> enviar 0 excepto Observaciones -> ''
+				payload[campo] = (campo.toLowerCase() === 'observaciones') ? '' : 0;
+			}
+		}
+
+		try {
+			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(ordenActualId)}/test`, {
+				method: 'POST',
+				cache: 'no-store',
+				headers: {
+					'Content-Type': 'application/json',
+					...(csrfToken ? { 'X-CSRFToken': csrfToken, 'X-CSRF-Token': csrfToken } : {}),
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				const txt = await response.text();
+				console.error('Error registrando test:', response.status, txt);
+				alert('Error al guardar la revisión.');
+				return;
+			}
+
+			const result = await response.json();
+			if (result && result.ok) {
+				alert('Revisión guardada correctamente.');
+				// recargar detalle para actualizar lista de tests
+				await cargarDetalleOrden(ordenActualId, 'vista-2');
+			} else {
+				console.error('Respuesta inesperada:', result);
+				alert('No se pudo guardar la revisión.');
+			}
+		} catch (err) {
+			console.error('Exception registrando test:', err);
+			alert('Error al guardar la revisión.');
+		}
+	});
+}
 
 	if (fotosDropzone && inputFotosOrden) {
 		const setDropzoneActive = (isActive) => {

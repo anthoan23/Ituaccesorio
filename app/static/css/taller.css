@@ -553,6 +553,13 @@ body {
 	gap: 0.9rem;
 }
 
+/* Hacer que la cuadrícula de checkboxes ocupe todo el ancho del formulario */
+.service-form__grid > .grid-container {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+}
+
 .field {
 	display: grid;
 	gap: 0.45rem;
@@ -696,6 +703,86 @@ body {
 	outline-offset: 2px;
 }
 
+
+.grid-container {
+			display: grid;
+			/* 4 columnas para formar una cuadrícula de hasta 4x5 (20 items) */
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 12px;
+			width: 100%;
+			max-width: 100%;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		.checkbox-card {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			/* mostrar el checkbox a la derecha */
+			flex-direction: row-reverse;
+			width: 100%;
+			background-color: #ffffff;
+			border: 1px solid #e0e0e0;
+			border-radius: 12px;
+			padding: 10px 12px;
+			min-height: 44px;
+			box-sizing: border-box;
+			cursor: pointer;
+			user-select: none;
+			transition: border-color 0.2s, box-shadow 0.2s;
+		}
+
+        /* Efecto al pasar el mouse por encima */
+        .checkbox-card:hover {
+            border-color: #b0b0b0;
+        }
+
+        /* Estilo especial para la tarjeta seleccionada/destacada (Puerto de carga) */
+     
+        /* Ocultar el checkbox real pero mantenerlo funcional */
+		.checkbox-card input[type="checkbox"] {
+			appearance: none;
+			-webkit-appearance: none;
+			width: 18px;
+			height: 18px;
+			border: 1px solid #a0a0a0;
+			border-radius: 4px;
+			margin-left: 12px;
+			outline: none;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			align-self: center;
+			flex: 0 0 18px;
+			transition: background-color 0.2s, border-color 0.2s;
+			box-sizing: border-box;
+		}
+
+        /* Estilo cuando el checkbox está seleccionado */
+        .checkbox-card input[type="checkbox"]:checked {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+
+        .checkbox-card input[type="checkbox"]:checked::after {
+            content: "✓";
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .checkbox-text {
+            color: #333333;
+            font-size: 15px;
+			flex: 1 1 auto;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+        }
+
+
 @media (max-width: 780px) {
 	.page {
 		width: min(100%, calc(100% - 1rem));
@@ -742,6 +829,12 @@ body {
 
 	.device-detail__grid {
 		grid-template-columns: 1fr;
+	}
+
+	/* En pantallas pequeñas, usar 2 columnas para los checkboxes */
+	.grid-container {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
 	}
 
 
@@ -815,6 +908,8 @@ body {
 .breadcrumb__section{
 	color:inherit;
 }
+
+
 
 /* Modal photo view styles (moved from inline in views/taller.html) */
 #modal-photo-view-body {
