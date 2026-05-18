@@ -49,7 +49,7 @@ class Tests(conectar):
             sql_ordenes = "INSERT INTO revision_orden (ID_orden, ID_test) VALUES (%s, %s)"
             cursor.execute(sql_ordenes, (id_orden, cursor.lastrowid))
 
-            sql_update_orden = "UPDATE orden_e SET Estado_o = 'En revisión' WHERE ID_orden_e = %s"
+            sql_update_orden = "UPDATE orden_e SET Estado_o = 'Revisado' WHERE ID_orden_e = %s"
            
             cursor.execute(sql_update_orden, (id_orden,))
             db.commit()  # Confirma los cambios en la base de datos

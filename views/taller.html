@@ -208,6 +208,16 @@
 								<input type="checkbox" name="Sensor_proximidad">
 								<span class="checkbox-text">Sensor de proximidad</span>
 							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Face_id">
+								<span class="checkbox-text">Face ID</span>
+							</label>
+
+							<label class="checkbox-card">
+								<input type="checkbox" name="Bluetooth">
+								<span class="checkbox-text">Bluetooth</span>
+							</label>
 							
 							<label class="checkbox-card">
 								<input type="checkbox" name="Caja">
@@ -250,34 +260,41 @@
 			</article>
 		</section>
 
-		<section class="content vista-4" aria-label="Historial de reparaciones" hidden>
+		<section class="content vista-4" aria-label="Reparación" hidden>
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
 			</nav>
-			<article class="card card--table" aria-label="Historial de reparaciones">
-				<div class="table__header">
-					<div class="table__header-row">
-						<h2 class="card__title">Historial de reparaciones</h2>
+			<article class="card card--form" aria-label="Trabajo de reparación">
+				<div class="form__header">
+					<h2 class="card__title">Reparación <span id="reparacion-orden-id">-</span></h2>
+					<p class="form__subtitle">Modelo del producto: <strong id="reparacion-modelo">-</strong></p>
+				</div>
+
+				<div class="device-detail__actions" style="margin-bottom:1rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+					<button type="button" class="form-btn form-btn--ghost" id="btn-repuestos-equipo">Piezas del equipo</button>
+					<button type="button" class="form-btn form-btn--primary" id="btn-repuestos-inventario">Inventario de repuestos</button>
+				</div>
+
+				<div class="repair-used-parts">
+					<h3 class="card__subtitle">Repuestos usados</h3>
+					<div id="repuestos-usados-list" class="device-detail__grid">
+						<p class="device-detail__empty">Aún no has agregado repuestos.</p>
 					</div>
 				</div>
 
-				<div class="table-wrap">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>ID orden</th>
-								<th>Fecha</th>
-								<th>Tarea</th>
-								<th>Técnico</th>
-								<th class="table__actions">Acciones</th>
-							</tr>
-						</thead>
-						<tbody id="tabla-historial"></tbody>
-					</table>
+				<label class="field field--full" style="margin-top:1rem;">
+					<span>Reparación</span>
+					<textarea id="reparacion-textarea" class="field__input" name="reparacion" rows="5" placeholder="Escribe lo que se le hizo al teléfono"></textarea>
+				</label>
+
+				<div class="service-form__actions" style="margin-top:1rem;">
+					<button type="button" id="btn-guardar-reparacion" class="form-btn form-btn--primary">Guardar reparación</button>
 				</div>
 			</article>
+
+
 		</section>
 
 	</main>
@@ -323,5 +340,12 @@
 <div id="modal-photo-view-body">
 	<img id="modal-photo-view-img" src="" alt="" />
 </div>
+{% endcall %}
+
+{% call modal('modal-repuestos', 'Selecciona un repuesto', 'lg') %}
+<div class="form__header" style="margin-bottom:1rem;">
+	<p class="form__subtitle" id="modal-repuestos-subtitle">Elige un repuesto de la lista.</p>
+</div>
+<div id="modal-repuestos-body"></div>
 {% endcall %}
 

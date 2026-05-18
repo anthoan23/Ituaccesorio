@@ -340,3 +340,61 @@ class OrdenServicio(conectar):
             cursor.close()
             db.close()
 
+
+    def Orden_reparada(self, id_orden: int, id_productos, cantidades, id_empleado: int, reparacion: str):
+
+        # Validación básica de parámetros
+        if not isinstance(id_productos, (list, tuple)) or not isinstance(cantidades, (list, tuple)):
+            return False
+        if len(id_productos) != len(cantidades):
+            return False
+
+        db = self.conexion1()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            db.start_transaction()
+
+            sql_insert = (
+                "INSERT INTO repuestos_u (ID_orden, ID_producto, Cantidad) "
+                "VALUES (%s, %s, %s)"
+            )
+            for pid, qty in zip(id_productos, cantidades):
+                cursor.execute(sql_insert, (id_orden, pid, qty))
+
+            # Guardar texto de reparación en la orden
+            sql_update_reparacion = (
+                "UPDATE orden_e "
+                "SET Reparacion = %s "
+                "WHERE ID_orden_e = %s"
+            )
+            cursor.execute(sql_update_reparacion, (reparacion, id_orden))
+
+            # Marcar orden como reparada
+            sql_update = (
+                "UPDATE orden_e "
+                "SET Estado_o = 'Reparado' "
+                "WHERE ID_orden_e = %s"
+            )
+            cursor.execute(sql_update, (id_orden,))
+
+            sql_empleado = (
+                "UPDATE interaccion "
+                "SET Accion = 'Reparado' "
+                "WHERE ID_orden = %s AND ID_em = %s"
+            )
+            cursor.execute(sql_empleado, (id_orden, id_empleado))
+
+            db.commit()
+            return True
+
+        except Exception as e:
+            db.rollback()
+            print(f"Error al registrar reparación: {e}")
+            return False
+
+        finally:
+            cursor.close()
+            db.close()

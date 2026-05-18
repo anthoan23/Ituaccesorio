@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required
 from app.models.ordenes_servicio import OrdenServicio
 from app.models.test import Tests
+from app.models.inventario import Inventario
 
 taller_blueprint = Blueprint("taller", __name__)
 
@@ -23,6 +24,7 @@ def pagina_taller():
 		"taller.html",
 		active_page="taller",
 	)
+
 
 @taller_blueprint.route("/api/taller/ordenes", methods=["GET"])
 @jwt_required
@@ -157,6 +159,56 @@ def registrar_test_orden(id_orden):
 	return jsonify({"ok": bool(ok)})
 
 
+@taller_blueprint.route("/api/taller/inventario/<string:N_modelo>", methods=["POST"])
+@jwt_required
+def obtener_inventarios(N_modelo):
+	inventario = Inventario()
+	inventraio_taller = inventario.listar_inventario()
+	inventraio_modelo = inventario.listar_inventario_modelo(N_modelo)
+	resultado = {
+		"inventario_taller": inventraio_taller,
+		"inventario_modelo": inventraio_modelo
+	}
+	return jsonify(resultado)
+
+
+@taller_blueprint.route("/api/taller/reparacion/<int:id_orden>", methods=["POST"])
+@jwt_required
+def registrar_reparacion_orden(id_orden):
+	# Espera JSON: { "id_productos": [1,2], "cantidades": [1,1], "id_empleado": 1004, "reparacion": "texto" }
+	datos = request.get_json() or {}
+	id_productos = datos.get('id_productos')
+	cantidades = datos.get('cantidades')
+	id_empleado = datos.get('id_empleado', 1004)
+	# Texto explicativo de la reparación (opcional)
+	reparacion = datos.get('reparacion')
+
+	if not isinstance(id_productos, (list, tuple)) or not isinstance(cantidades, (list, tuple)):
+		return jsonify({"ok": False, "message": "id_productos y cantidades deben ser arrays."}), 400
+	if len(id_productos) != len(cantidades):
+		return jsonify({"ok": False, "message": "Las longitudes de id_productos y cantidades deben coincidir."}), 400
+
+	# Convertir a enteros
+	try:
+		ids = [int(x) for x in id_productos]
+		qts = [int(x) for x in cantidades]
+		id_empleado = int(id_empleado)
+	except Exception:
+		return jsonify({"ok": False, "message": "Valores inválidos en id_productos o cantidades."}), 400
+
+	# Normalizar reparacion a string o None
+	if reparacion is None:
+		reparacion_val = None
+	else:
+		reparacion_val = str(reparacion)
+
+	ordenes = OrdenServicio()
+	ok = ordenes.Orden_reparada(id_orden, ids, qts, id_empleado, reparacion_val)
+	if ok:
+		return jsonify({"ok": True})
+	return jsonify({"ok": False, "message": "No se pudo registrar la reparación."}), 500
+
+
 @taller_blueprint.route("/api/taller/fotos/<int:id_evidencia>", methods=["DELETE"])
 @jwt_required
 def eliminar_foto_orden(id_evidencia):
@@ -165,3 +217,5 @@ def eliminar_foto_orden(id_evidencia):
 		return jsonify({"ok": False, "message": "No se pudo eliminar la imagen."}), 404
 
 	return jsonify({"ok": True, "message": "Imagen eliminada correctamente."})
+
+
