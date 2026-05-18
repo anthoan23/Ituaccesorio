@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request
+import mysql.connector
 
-from app.models.gestion_usuarios import GestionUsuarios
+from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
@@ -8,6 +9,35 @@ usuarios_blueprint = Blueprint("usuarios", __name__)
 
 def _respuesta_error(mensaje, status=400):
     return jsonify({"success": False, "error": mensaje}), status
+
+
+def _respuesta_por_excepcion(error):
+    if isinstance(error, (ValueError, TypeError)):
+        return _respuesta_error("Hay datos invalidos en la solicitud.", 400)
+
+    if isinstance(error, mysql.connector.IntegrityError):
+        errno = getattr(error, "errno", None)
+        mensajes = {
+            1062: "Ya existe un registro con esos datos.",
+            1048: "Hay campos obligatorios sin completar.",
+            1451: "No se puede eliminar porque el registro esta siendo usado.",
+            1452: "La relacion indicada no existe o no es valida.",
+        }
+        return _respuesta_error(mensajes.get(errno, "No se pudo guardar la informacion por una restriccion de datos."), 409)
+
+    if isinstance(error, mysql.connector.DataError):
+        return _respuesta_error("El formato o tamaño de los datos no es valido.", 400)
+
+    if isinstance(error, mysql.connector.ProgrammingError):
+        return _respuesta_error("Ocurrio un error interno al procesar la solicitud.", 500)
+
+    if isinstance(error, mysql.connector.OperationalError):
+        return _respuesta_error("No fue posible conectar con la base de datos en este momento.", 503)
+
+    if isinstance(error, mysql.connector.DatabaseError):
+        return _respuesta_error("Se produjo un error al consultar la base de datos.", 500)
+
+    return _respuesta_error("Ocurrio un error inesperado.", 500)
 
 
 def _bool(valor):
@@ -35,9 +65,17 @@ def pagina_usuarios():
 @usuarios_blueprint.route("/api/usuarios", methods=["GET"])
 @jwt_required
 def listar_usuarios():
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     datos = modelo.listar_usuarios() or []
     return jsonify({"success": True, "usuarios": datos})
+
+
+@usuarios_blueprint.route("/api/usuarios/empleados", methods=["GET"])
+@jwt_required
+def listar_empleados():
+    modelo = Usuarios()
+    datos = modelo.listar_empleados() or []
+    return jsonify({"success": True, "empleados": datos})
 
 
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
@@ -53,12 +91,16 @@ def crear_usuario():
     if not nombre or not cedula_personal or not password or not rol_id:
         return _respuesta_error("Nombre, cedula, password y rol son obligatorios.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
+    if not modelo.verificar_empleado(cedula_personal):
+        return _respuesta_error("La cedula no pertenece a un empleado registrado.")
     try:
         nuevo_id = modelo.crear_usuario(nombre, int(cedula_personal), password, int(rol_id), foto_perfil)
+        if not nuevo_id:
+            return _respuesta_error("No se pudo crear el usuario.")
         return jsonify({"success": True, "message": "Usuario creado.", "id": nuevo_id})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
@@ -74,7 +116,9 @@ def actualizar_usuario(usuario_id):
     if not nombre or not cedula_personal or not rol_id:
         return _respuesta_error("Nombre, cedula y rol son obligatorios.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
+    if not modelo.verificar_empleado(cedula_personal):
+        return _respuesta_error("La cedula no pertenece a un empleado registrado.")
     try:
         if password:
             resultado = modelo.actualizar_usuario_con_password(
@@ -95,24 +139,24 @@ def actualizar_usuario(usuario_id):
             )
         return jsonify({"success": True, "message": "Usuario actualizado.", "result": resultado})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
 @jwt_required
 def eliminar_usuario(usuario_id):
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         modelo.eliminar_usuario(usuario_id)
         return jsonify({"success": True, "message": "Usuario eliminado."})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/roles", methods=["GET"])
 @jwt_required
 def listar_roles():
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     datos = modelo.listar_roles() or []
     return jsonify({"success": True, "roles": datos})
 
@@ -127,12 +171,12 @@ def crear_rol():
     if not nombre:
         return _respuesta_error("El nombre del rol es obligatorio.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         nuevo_id = modelo.crear_rol(nombre, descripcion)
         return jsonify({"success": True, "message": "Rol creado.", "id": nuevo_id})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["PUT"])
@@ -145,29 +189,29 @@ def actualizar_rol(rol_id):
     if not nombre:
         return _respuesta_error("El nombre del rol es obligatorio.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         resultado = modelo.actualizar_rol(rol_id, nombre, descripcion)
         return jsonify({"success": True, "message": "Rol actualizado.", "result": resultado})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["DELETE"])
 @jwt_required
 def eliminar_rol(rol_id):
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         modelo.eliminar_rol(rol_id)
         return jsonify({"success": True, "message": "Rol eliminado."})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/modulos", methods=["GET"])
 @jwt_required
 def listar_modulos():
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     datos = modelo.listar_modulos() or []
     return jsonify({"success": True, "modulos": datos})
 
@@ -182,12 +226,12 @@ def crear_modulo():
     if not nombre:
         return _respuesta_error("El nombre del modulo es obligatorio.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         nuevo_id = modelo.crear_modulo(nombre, descripcion)
         return jsonify({"success": True, "message": "Modulo creado.", "id": nuevo_id})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["PUT"])
@@ -200,29 +244,29 @@ def actualizar_modulo(modulo_id):
     if not nombre:
         return _respuesta_error("El nombre del modulo es obligatorio.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         resultado = modelo.actualizar_modulo(modulo_id, nombre, descripcion)
         return jsonify({"success": True, "message": "Modulo actualizado.", "result": resultado})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["DELETE"])
 @jwt_required
 def eliminar_modulo(modulo_id):
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         modelo.eliminar_modulo(modulo_id)
         return jsonify({"success": True, "message": "Modulo eliminado."})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/permisos", methods=["GET"])
 @jwt_required
 def listar_permisos():
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     datos = modelo.listar_permisos() or []
     return jsonify({"success": True, "permisos": datos})
 
@@ -237,7 +281,7 @@ def guardar_permiso():
     if not rol_id or not modulo_id:
         return _respuesta_error("Rol y modulo son obligatorios.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         resultado = modelo.guardar_permiso(
             int(rol_id),
@@ -248,7 +292,7 @@ def guardar_permiso():
         )
         return jsonify({"success": True, "message": "Permiso guardado.", "result": resultado})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/permisos", methods=["DELETE"])
@@ -261,9 +305,9 @@ def eliminar_permiso():
     if not rol_id or not modulo_id:
         return _respuesta_error("Rol y modulo son obligatorios.")
 
-    modelo = GestionUsuarios()
+    modelo = Usuarios()
     try:
         modelo.eliminar_permiso(int(rol_id), int(modulo_id))
         return jsonify({"success": True, "message": "Permiso eliminado."})
     except Exception as error:
-        return _respuesta_error(str(error))
+        return _respuesta_por_excepcion(error)
