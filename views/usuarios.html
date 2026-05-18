@@ -89,7 +89,6 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th style="display: none;">ID</th>
                                 <th>Nombre</th>
                                 <th>Descripcion</th>
                                 <th class="table__actions">Acciones</th>
@@ -108,7 +107,6 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th style="display: none;">ID</th>
                                 <th>Nombre</th>
                                 <th>Descripcion</th>
                                 <th class="table__actions">Acciones</th>
@@ -194,6 +192,7 @@
             <form id="form-usuario" class="form" autocomplete="off">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id">
+                <input type="hidden" name="foto_perfil_actual">
                 <label>
                     <span>Nombre</span>
                     <input name="nombre" type="text" placeholder="Nombre completo" required>
@@ -212,7 +211,12 @@
                 </label>
                 <label>
                     <span>Foto de perfil</span>
-                    <input name="foto_perfil" type="text" placeholder="/static/img/perfil.png">
+                    <input id="foto-perfil-input" name="foto_perfil" type="file" accept="image/*" hidden>
+                    <button id="btn-foto-perfil" class="btn btn--ghost" type="button">Subir foto</button>
+                    <small id="foto-perfil-name" class="form__hint">Ningun archivo seleccionado</small>
+                    <div class="foto-perfil-preview" aria-label="Vista previa de foto de perfil">
+                        <img id="foto-perfil-preview" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Vista previa de foto de perfil">
+                    </div>
                 </label>
                 <div class="form__actions">
                     <button class="btn btn--primary" type="submit">Guardar usuario</button>
@@ -297,5 +301,12 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+    window.currentUser = {
+        id: {{ (current_user.usuario_id if current_user else none)|tojson }},
+        rolId: {{ (current_user.rol_id if current_user else none)|tojson }},
+        rolNombre: {{ (current_user.nombre_rol if current_user else none)|tojson }},
+    };
+</script>
 <script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
 {% endblock %}

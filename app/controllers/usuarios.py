@@ -1,5 +1,9 @@
-from flask import Blueprint, jsonify, render_template, request
+import os
+import uuid
+
+from flask import Blueprint, jsonify, render_template, request, g, current_app
 import mysql.connector
+from werkzeug.utils import secure_filename
 
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
@@ -51,6 +55,43 @@ def _bool(valor):
     return 1 if texto in {"1", "true", "on", "si", "yes"} else 0
 
 
+def _usuario_actual():
+    usuario = getattr(g, "user", None)
+    if not usuario:
+        return {}
+    if isinstance(usuario, dict):
+        return usuario
+    return {
+        "usuario_id": getattr(usuario, "usuario_id", None),
+        "rol_id": getattr(usuario, "rol_id", None),
+        "nombre_rol": getattr(usuario, "nombre_rol", None),
+    }
+
+
+def _datos_solicitud():
+    datos = request.get_json(silent=True)
+    if datos is not None:
+        return datos
+    return request.form.to_dict()
+
+
+def _guardar_foto_perfil(archivo):
+    if not archivo or not getattr(archivo, "filename", ""):
+        return None
+
+    nombre_seguro = secure_filename(archivo.filename)
+    _, extension = os.path.splitext(nombre_seguro)
+    extension = extension.lower()[:10]
+    nombre_final = f"{uuid.uuid4().hex}{extension}"
+
+    carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
+    os.makedirs(carpeta_destino, exist_ok=True)
+
+    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
+    archivo.save(ruta_fisica)
+    return f"/static/img/perfil/{nombre_final}"
+
+
 @usuarios_blueprint.route("/usuarios", methods=["GET"])
 @jwt_required
 def pagina_usuarios():
@@ -59,6 +100,7 @@ def pagina_usuarios():
         show_navbar=True,
         show_notifications=True,
         active_page="usuarios",
+        current_user=_usuario_actual(),
     )
 
 
@@ -81,12 +123,12 @@ def listar_empleados():
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
 @jwt_required
 def crear_usuario():
-    datos = request.get_json(silent=True) or {}
+    datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
     cedula_personal = datos.get("cedula_personal")
     password = (datos.get("password") or "").strip()
     rol_id = datos.get("rol_id")
-    foto_perfil = (datos.get("foto_perfil") or None)
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
 
     if not nombre or not cedula_personal or not password or not rol_id:
         return _respuesta_error("Nombre, cedula, password y rol son obligatorios.")
@@ -106,12 +148,12 @@ def crear_usuario():
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
 @jwt_required
 def actualizar_usuario(usuario_id):
-    datos = request.get_json(silent=True) or {}
+    datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
     cedula_personal = datos.get("cedula_personal")
     password = (datos.get("password") or "").strip()
     rol_id = datos.get("rol_id")
-    foto_perfil = (datos.get("foto_perfil") or None)
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
 
     if not nombre or not cedula_personal or not rol_id:
         return _respuesta_error("Nombre, cedula y rol son obligatorios.")
@@ -147,6 +189,21 @@ def actualizar_usuario(usuario_id):
 def eliminar_usuario(usuario_id):
     modelo = Usuarios()
     try:
+        usuario_actual = _usuario_actual()
+        usuario_objetivo = modelo.obtener_usuario_por_id(usuario_id)
+
+        if not usuario_objetivo:
+            return _respuesta_error("El usuario no existe.", 404)
+
+        if str(usuario_actual.get("usuario_id", "")).strip() == str(usuario_id).strip():
+            return _respuesta_error("No puedes eliminar tu propio usuario.", 403)
+
+        rol_actual = str(usuario_actual.get("nombre_rol", "")).strip().lower()
+        rol_objetivo = str((usuario_objetivo or {}).get("rol_nombre", "")).strip().lower()
+
+        if rol_objetivo == "admin" and rol_actual != "admin":
+            return _respuesta_error("Solo otro admin puede eliminar este usuario.", 403)
+
         modelo.eliminar_usuario(usuario_id)
         return jsonify({"success": True, "message": "Usuario eliminado."})
     except Exception as error:
@@ -202,6 +259,12 @@ def actualizar_rol(rol_id):
 def eliminar_rol(rol_id):
     modelo = Usuarios()
     try:
+        roles = modelo.listar_roles() or []
+        rol = next((item for item in roles if int(item.get("id", 0)) == int(rol_id)), None)
+        nombre_rol = (rol or {}).get("nombre", "")
+        if str(nombre_rol).strip().lower() in {"admin", "cliente"}:
+            return _respuesta_error("El rol Admin y Cliente no se pueden eliminar.", 403)
+
         modelo.eliminar_rol(rol_id)
         return jsonify({"success": True, "message": "Rol eliminado."})
     except Exception as error:

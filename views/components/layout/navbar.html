@@ -29,7 +29,13 @@
 		{% if g.user %}
 		<details class="user-menu">
 			<summary class="user-menu__trigger">
-				<span class="user__avatar" aria-hidden="true"></span>
+				<span class="user__avatar" aria-hidden="true">
+					{% if g.user.foto_perfil %}
+					<img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
+					{% else %}
+					<span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
+					{% endif %}
+				</span>
 				<span class="user__meta">
 					<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
 					<span class="user__role">{{ g.user.nombre_rol }}</span>
@@ -41,6 +47,13 @@
 
 			<div class="user-menu__panel" role="menu" aria-label="Menú de usuario">
 				<div class="user-menu__identity">
+					<span class="user-menu__identity-avatar" aria-hidden="true">
+						{% if g.user.foto_perfil %}
+						<img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
+						{% else %}
+						<span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
+						{% endif %}
+					</span>
 					<span class="user-menu__label">Usuario</span>
 					<strong class="user-menu__full-name">{{ g.user.usuario_nombre }}</strong>
 					<span class="user-menu__role-text">{{ g.user.nombre_rol }}</span>

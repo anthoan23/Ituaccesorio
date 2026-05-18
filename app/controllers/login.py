@@ -33,6 +33,7 @@ def validar_login():
                 "cedula_personal": usuario.get("cedula_personal"),
                 "rol_id": usuario.get("rol_id"),
                 "nombre_rol": usuario.get("nombre_rol"),
+                "foto_perfil": usuario.get("foto_perfil"),
             }
             token = create_token(payload)
             resp = make_response(jsonify({"success": True, "message": "Inicio de sesión exitoso."}))

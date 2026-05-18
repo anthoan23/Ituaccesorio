@@ -161,6 +161,23 @@ class Usuarios(conectar):
     def eliminar_usuario(self, usuario_id):
         return self._ejecutar("DELETE FROM usuario WHERE id = %s", (usuario_id,))
 
+    def obtener_usuario_por_id(self, usuario_id):
+        datos = self._consultar(
+            """
+            SELECT
+                u.id,
+                u.nombre,
+                u.rol_id,
+                r.nombre AS rol_nombre
+            FROM usuario u
+            INNER JOIN rol r ON r.id = u.rol_id
+            WHERE u.id = %s
+            LIMIT 1
+            """,
+            (usuario_id,),
+        )
+        return datos[0] if datos else None
+
     def listar_roles(self):
         return self._consultar(
             """

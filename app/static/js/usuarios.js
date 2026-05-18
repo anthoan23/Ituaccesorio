@@ -17,6 +17,14 @@ const statUsuarios = document.getElementById("stat-usuarios");
 const statRoles = document.getElementById("stat-roles");
 const statModulos = document.getElementById("stat-modulos");
 const statPermisos = document.getElementById("stat-permisos");
+const fotoPerfilInput = document.getElementById("foto-perfil-input");
+const fotoPerfilButton = document.getElementById("btn-foto-perfil");
+const fotoPerfilName = document.getElementById("foto-perfil-name");
+const fotoPerfilPreview = document.getElementById("foto-perfil-preview");
+
+const currentUser = window.currentUser || {};
+const currentUserId = currentUser?.id == null ? "" : String(currentUser.id);
+const currentUserRole = String(currentUser?.rolNombre || "").trim().toLowerCase();
 
 const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
 const selectUsuarioCedula = formUsuario?.querySelector("select[name='cedula_personal']");
@@ -41,6 +49,7 @@ const adminButtons = {
 
 let activeAdminKey = null;
 let pendingConfirmAction = null;
+let currentFotoPreviewUrl = null;
 
 const state = {
     usuarios: [],
@@ -60,6 +69,13 @@ function iniciar() {
     formModulo?.addEventListener("submit", onModuloSubmit);
     formPermiso?.addEventListener("submit", onPermisoSubmit);
     confirmActionBtn?.addEventListener("click", onConfirmAction);
+    fotoPerfilButton?.addEventListener("click", () => fotoPerfilInput?.click());
+    fotoPerfilInput?.addEventListener("change", () => {
+        if (!fotoPerfilName) return;
+        const file = fotoPerfilInput.files?.[0];
+        fotoPerfilName.textContent = file ? file.name : "Ningun archivo seleccionado";
+        actualizarVistaPreviaFoto(file || null);
+    });
 
     setupTableTabs();
     setActiveTableTab(activeTableTabKey);
@@ -342,23 +358,28 @@ function renderRoles() {
     if (!tablaRoles) return;
 
     if (!state.roles.length) {
-        tablaRoles.innerHTML = emptyRow(4, "No hay roles creados.");
+        tablaRoles.innerHTML = emptyRow(3, "No hay roles creados.");
         return;
     }
 
-    tablaRoles.innerHTML = state.roles.map(rol => `
+    tablaRoles.innerHTML = state.roles.map(rol => {
+        const nombreRol = String(rol.nombre || "").trim().toLowerCase();
+        const esProtegido = nombreRol === "admin" || nombreRol === "cliente";
+        const proteccionMensaje = esProtegido ? "No se puede eliminar este rol." : "";
+
+        return `
         <tr>
-            <td>${escapeHtml(String(rol.id ?? ""))}</td>
             <td>${escapeHtml(rol.nombre || "")}</td>
             <td>${escapeHtml(rol.descripcion || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
                     <button class="icon-action" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}">Editar</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}">Eliminar</button>
+                    <button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" data-protected="${esProtegido ? "1" : "0"}" data-protected-message="${escapeHtml(proteccionMensaje)}">Eliminar</button>
                 </div>
             </td>
         </tr>
-    `).join("");
+    `;
+    }).join("");
 
     bindTableActions(tablaRoles, state.roles, "rol");
 }
@@ -367,13 +388,12 @@ function renderModulos() {
     if (!tablaModulos) return;
 
     if (!state.modulos.length) {
-        tablaModulos.innerHTML = emptyRow(4, "No hay modulos creados.");
+        tablaModulos.innerHTML = emptyRow(3, "No hay modulos creados.");
         return;
     }
 
     tablaModulos.innerHTML = state.modulos.map(modulo => `
         <tr>
-            <td>${escapeHtml(String(modulo.id ?? ""))}</td>
             <td>${escapeHtml(modulo.nombre || "")}</td>
             <td>${escapeHtml(modulo.descripcion || "")}</td>
             <td class="table__actions">
@@ -442,6 +462,27 @@ function bindTableActions(table, items, type) {
             }
 
             if (action === `delete-${type}`) {
+                if (type === "usuario") {
+                    if (String(id) === currentUserId) {
+                        mostrarToast("No puedes eliminar tu propio usuario.", true);
+                        return;
+                    }
+
+                    const roleName = String(item?.rol_nombre || "").trim().toLowerCase();
+                    if (roleName === "admin" && currentUserRole !== "admin") {
+                        mostrarToast("Solo otro admin puede eliminar este usuario.", true);
+                        return;
+                    }
+                }
+
+                if (type === "rol") {
+                    const nombreRol = String(item?.nombre || "").trim().toLowerCase();
+                    if (nombreRol === "admin" || nombreRol === "cliente") {
+                        mostrarToast("No se puede eliminar el rol Admin o Cliente.", true);
+                        return;
+                    }
+                }
+
                 const endpoints = {
                     usuario: `/api/usuarios/${id}`,
                     rol: `/api/roles/${id}`,
@@ -507,7 +548,14 @@ function llenarFormularioUsuario(usuario) {
     formUsuario.password.placeholder = "Dejar vacio para conservar";
     formUsuario.password.value = "";
     formUsuario.rol_id.value = usuario.rol_id ?? "";
-    formUsuario.foto_perfil.value = usuario.foto_perfil ?? "";
+    formUsuario.foto_perfil_actual.value = usuario.foto_perfil ?? "";
+    if (fotoPerfilName) {
+        fotoPerfilName.textContent = usuario.foto_perfil ? usuario.foto_perfil.split("/").pop() : "Ningun archivo seleccionado";
+    }
+    actualizarVistaPreviaFoto(null, usuario.foto_perfil || null);
+    if (fotoPerfilInput) {
+        fotoPerfilInput.value = "";
+    }
 }
 
 function llenarFormularioRol(rol) {
@@ -537,19 +585,22 @@ async function onUsuarioSubmit(event) {
     event.preventDefault();
 
     const id = formUsuario.id.value;
-    const payload = {
-        nombre: formUsuario.nombre.value.trim(),
-        cedula_personal: Number(formUsuario.cedula_personal.value),
-        password: formUsuario.password.value.trim(),
-        rol_id: Number(formUsuario.rol_id.value),
-        foto_perfil: formUsuario.foto_perfil.value.trim(),
-    };
+    const formData = new FormData();
+    formData.append("nombre", formUsuario.nombre.value.trim());
+    formData.append("cedula_personal", String(Number(formUsuario.cedula_personal.value)));
+    formData.append("password", formUsuario.password.value.trim());
+    formData.append("rol_id", String(Number(formUsuario.rol_id.value)));
+    formData.append("foto_perfil_actual", formUsuario.foto_perfil_actual.value || "");
+
+    if (fotoPerfilInput?.files?.[0]) {
+        formData.append("foto_perfil", fotoPerfilInput.files[0]);
+    }
 
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/usuarios/${id}` : "/api/usuarios";
 
     try {
-        await fetchJson(url, { method, body: JSON.stringify(payload) });
+        await fetchJson(url, { method, body: formData, isMultipart: true });
         limpiarFormulario(formUsuario);
         closeAdminModal("usuarios");
         mostrarToast(id ? "Usuario actualizado." : "Usuario creado.");
@@ -632,6 +683,13 @@ function limpiarFormulario(form) {
     if (form === formUsuario) {
         form.password.required = true;
         form.password.placeholder = "Contrasena";
+        if (fotoPerfilName) {
+            fotoPerfilName.textContent = "Ningun archivo seleccionado";
+        }
+        actualizarVistaPreviaFoto(null, null);
+        if (fotoPerfilInput) {
+            fotoPerfilInput.value = "";
+        }
     }
     const idField = form.querySelector("input[name='id']");
     if (idField) {
@@ -640,14 +698,21 @@ function limpiarFormulario(form) {
 }
 
 async function fetchJson(url, options = {}) {
+    const isMultipart = Boolean(options.isMultipart);
+    const headers = {
+        Accept: "application/json",
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+    };
+
+    if (!isMultipart) {
+        headers["Content-Type"] = "application/json";
+    }
+
     const response = await fetch(url, {
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-        },
+        headers,
         credentials: "same-origin",
-        ...options,
+        method: options.method || "GET",
+        body: options.body,
     });
 
     const data = await response.json().catch(() => ({}));
@@ -668,6 +733,28 @@ function mostrarToast(message, isError = false) {
     mostrarToast._timer = window.setTimeout(() => {
         toast.classList.remove("is-visible");
     }, 2400);
+}
+
+function actualizarVistaPreviaFoto(file, fotoExistente = null) {
+    if (!fotoPerfilPreview) return;
+
+    if (currentFotoPreviewUrl) {
+        URL.revokeObjectURL(currentFotoPreviewUrl);
+        currentFotoPreviewUrl = null;
+    }
+
+    if (file) {
+        currentFotoPreviewUrl = URL.createObjectURL(file);
+        fotoPerfilPreview.src = currentFotoPreviewUrl;
+        return;
+    }
+
+    if (fotoExistente) {
+        fotoPerfilPreview.src = fotoExistente;
+        return;
+    }
+
+    fotoPerfilPreview.src = "/static/img/LOGO.png";
 }
 
 function emptyRow(colspan, text) {
