@@ -9,6 +9,9 @@ const formModulo = document.getElementById("form-modulo");
 const formPermiso = document.getElementById("form-permiso");
 
 const toast = document.getElementById("toast");
+const confirmMessage = document.getElementById("confirmacion-mensaje");
+const confirmActionBtn = document.getElementById("confirmacion-btn");
+const confirmModalId = "modal-confirmacion";
 
 const statUsuarios = document.getElementById("stat-usuarios");
 const statRoles = document.getElementById("stat-roles");
@@ -16,6 +19,7 @@ const statModulos = document.getElementById("stat-modulos");
 const statPermisos = document.getElementById("stat-permisos");
 
 const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
+const selectUsuarioCedula = formUsuario?.querySelector("select[name='cedula_personal']");
 const selectPermisoRol = formPermiso?.querySelector("select[name='rol_id']");
 const selectPermisoModulo = formPermiso?.querySelector("select[name='modulo_id']");
 
@@ -36,12 +40,14 @@ const adminButtons = {
 };
 
 let activeAdminKey = null;
+let pendingConfirmAction = null;
 
 const state = {
     usuarios: [],
     roles: [],
     modulos: [],
     permisos: [],
+    empleados: [],
 };
 
 const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
@@ -53,6 +59,7 @@ function iniciar() {
     formRol?.addEventListener("submit", onRolSubmit);
     formModulo?.addEventListener("submit", onModuloSubmit);
     formPermiso?.addEventListener("submit", onPermisoSubmit);
+    confirmActionBtn?.addEventListener("click", onConfirmAction);
 
     setupTableTabs();
     setActiveTableTab(activeTableTabKey);
@@ -78,6 +85,39 @@ function iniciar() {
     });
 
     cargarTodo();
+}
+
+async function onConfirmAction() {
+    if (!pendingConfirmAction) return;
+    const action = pendingConfirmAction;
+    pendingConfirmAction = null;
+
+    if (confirmActionBtn) confirmActionBtn.disabled = true;
+    try {
+        await action();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo completar la accion.", true);
+    } finally {
+        if (confirmActionBtn) confirmActionBtn.disabled = false;
+        if (window.UiModal && typeof window.UiModal.closeById === "function") {
+            window.UiModal.closeById(confirmModalId);
+        }
+    }
+}
+
+function abrirConfirmacion(mensaje, onConfirm) {
+    pendingConfirmAction = onConfirm;
+    if (confirmMessage) {
+        confirmMessage.textContent = mensaje;
+    }
+    if (window.UiModal && typeof window.UiModal.openById === "function") {
+        window.UiModal.openById(confirmModalId);
+        return;
+    }
+    const aceptado = confirm(mensaje);
+    if (aceptado) {
+        onConfirm();
+    }
 }
 
 function setupTableTabs() {
@@ -202,17 +242,19 @@ function closeAdminModal(key) {
 
 async function cargarTodo() {
     try {
-        const [usuarios, roles, modulos, permisos] = await Promise.all([
+        const [usuarios, roles, modulos, permisos, empleados] = await Promise.all([
             fetchJson("/api/usuarios"),
             fetchJson("/api/roles"),
             fetchJson("/api/modulos"),
             fetchJson("/api/permisos"),
+            fetchJson("/api/usuarios/empleados"),
         ]);
 
         state.usuarios = usuarios.usuarios || [];
         state.roles = roles.roles || [];
         state.modulos = modulos.modulos || [];
         state.permisos = permisos.permisos || [];
+        state.empleados = empleados.empleados || [];
 
         renderTodo();
     } catch (error) {
@@ -240,6 +282,9 @@ function renderSelects() {
     if (selectUsuarioRol) {
         selectUsuarioRol.innerHTML = renderOptions(state.roles);
     }
+    if (selectUsuarioCedula) {
+        selectUsuarioCedula.innerHTML = renderEmpleadoOptions(state.empleados);
+    }
     if (selectPermisoRol) {
         selectPermisoRol.innerHTML = renderOptions(state.roles);
     }
@@ -252,6 +297,17 @@ function renderOptions(items) {
     const options = ['<option value="">Seleccione...</option>'];
     items.forEach(item => {
         options.push(`<option value="${escapeHtml(String(item.id))}">${escapeHtml(item.nombre || "")}</option>`);
+    });
+    return options.join("");
+}
+
+function renderEmpleadoOptions(items) {
+    const options = ['<option value="">Seleccione...</option>'];
+    items.forEach(item => {
+        const cedula = item.cedula ?? "";
+        const nombre = item.nombre_completo || [item.nombre, item.apellido].filter(Boolean).join(" ");
+        const label = `${cedula} - ${nombre}`.trim();
+        options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(label)}</option>`);
     });
     return options.join("");
 }
@@ -386,18 +442,24 @@ function bindTableActions(table, items, type) {
             }
 
             if (action === `delete-${type}`) {
-                const confirmado = confirm("Esta accion no se puede deshacer.");
-                if (!confirmado) return;
-
                 const endpoints = {
                     usuario: `/api/usuarios/${id}`,
                     rol: `/api/roles/${id}`,
                     modulo: `/api/modulos/${id}`,
                 };
+                const labels = {
+                    usuario: "usuario",
+                    rol: "rol",
+                    modulo: "modulo",
+                };
+                const nombre = item?.nombre ? ` ${item.nombre}` : "";
+                const mensaje = `¿Seguro que desea eliminar el ${labels[type]}${nombre}? Esta accion no se puede deshacer.`;
 
-                await fetchJson(endpoints[type], { method: "DELETE" });
-                mostrarToast("Registro eliminado.");
-                await cargarTodo();
+                abrirConfirmacion(mensaje, async () => {
+                    await fetchJson(endpoints[type], { method: "DELETE" });
+                    mostrarToast("Registro eliminado.");
+                    await cargarTodo();
+                });
             }
         });
     });
@@ -419,15 +481,18 @@ function bindPermisoActions() {
 
             if (action === "delete-permiso") {
                 setActiveTableTab("permisos");
-                const confirmado = confirm("Eliminar este permiso?");
-                if (!confirmado) return;
+                const rolNombre = permiso?.rol_nombre || "este rol";
+                const moduloNombre = permiso?.modulo_nombre || "este modulo";
+                const mensaje = `¿Eliminar el permiso del rol ${rolNombre} en ${moduloNombre}?`;
 
-                await fetchJson("/api/permisos", {
-                    method: "DELETE",
-                    body: JSON.stringify({ rol_id: rolId, modulo_id: moduloId }),
+                abrirConfirmacion(mensaje, async () => {
+                    await fetchJson("/api/permisos", {
+                        method: "DELETE",
+                        body: JSON.stringify({ rol_id: rolId, modulo_id: moduloId }),
+                    });
+                    mostrarToast("Permiso eliminado.");
+                    await cargarTodo();
                 });
-                mostrarToast("Permiso eliminado.");
-                await cargarTodo();
             }
         });
     });
@@ -483,10 +548,15 @@ async function onUsuarioSubmit(event) {
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/usuarios/${id}` : "/api/usuarios";
 
-    await fetchJson(url, { method, body: JSON.stringify(payload) });
-    mostrarToast(id ? "Usuario actualizado." : "Usuario creado.");
-    limpiarFormulario(formUsuario);
-    await cargarTodo();
+    try {
+        await fetchJson(url, { method, body: JSON.stringify(payload) });
+        limpiarFormulario(formUsuario);
+        closeAdminModal("usuarios");
+        mostrarToast(id ? "Usuario actualizado." : "Usuario creado.");
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo guardar el usuario.", true);
+    }
 }
 
 async function onRolSubmit(event) {
@@ -501,10 +571,15 @@ async function onRolSubmit(event) {
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/roles/${id}` : "/api/roles";
 
-    await fetchJson(url, { method, body: JSON.stringify(payload) });
-    mostrarToast(id ? "Rol actualizado." : "Rol creado.");
-    limpiarFormulario(formRol);
-    await cargarTodo();
+    try {
+        await fetchJson(url, { method, body: JSON.stringify(payload) });
+        limpiarFormulario(formRol);
+        closeAdminModal("roles");
+        mostrarToast(id ? "Rol actualizado." : "Rol creado.");
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo guardar el rol.", true);
+    }
 }
 
 async function onModuloSubmit(event) {
@@ -519,10 +594,15 @@ async function onModuloSubmit(event) {
     const method = id ? "PUT" : "POST";
     const url = id ? `/api/modulos/${id}` : "/api/modulos";
 
-    await fetchJson(url, { method, body: JSON.stringify(payload) });
-    mostrarToast(id ? "Modulo actualizado." : "Modulo creado.");
-    limpiarFormulario(formModulo);
-    await cargarTodo();
+    try {
+        await fetchJson(url, { method, body: JSON.stringify(payload) });
+        limpiarFormulario(formModulo);
+        closeAdminModal("modulos");
+        mostrarToast(id ? "Modulo actualizado." : "Modulo creado.");
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo guardar el modulo.", true);
+    }
 }
 
 async function onPermisoSubmit(event) {
@@ -536,10 +616,14 @@ async function onPermisoSubmit(event) {
         eliminar: formPermiso.eliminar.checked,
     };
 
-    await fetchJson("/api/permisos", { method: "POST", body: JSON.stringify(payload) });
-    mostrarToast("Permiso guardado.");
-    limpiarFormulario(formPermiso);
-    await cargarTodo();
+    try {
+        await fetchJson("/api/permisos", { method: "POST", body: JSON.stringify(payload) });
+        limpiarFormulario(formPermiso);
+        mostrarToast("Permiso guardado.");
+        await cargarTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo guardar el permiso.", true);
+    }
 }
 
 function limpiarFormulario(form) {

@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Usuarios{% endblock %}
 
@@ -88,7 +89,7 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th style="display: none;">ID</th>
                                 <th>Nombre</th>
                                 <th>Descripcion</th>
                                 <th class="table__actions">Acciones</th>
@@ -107,7 +108,7 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th style="display: none;">ID</th>
                                 <th>Nombre</th>
                                 <th>Descripcion</th>
                                 <th class="table__actions">Acciones</th>
@@ -199,7 +200,7 @@
                 </label>
                 <label>
                     <span>Cedula personal</span>
-                    <input name="cedula_personal" type="number" placeholder="32014015" required>
+                    <select name="cedula_personal" required></select>
                 </label>
                 <label>
                     <span>Contrasena</span>
@@ -280,6 +281,16 @@
             </form>
         </article>
     </div>
+
+    {% call modal('modal-confirmacion', 'Confirmar accion', 'sm') %}
+      <div class="ui-form__grid ui-form__grid--one">
+        <p id="confirmacion-mensaje">¿Seguro que desea continuar?</p>
+      </div>
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button id="confirmacion-btn" type="button" class="ui-btn ui-btn--primary">Confirmar</button>
+      </div>
+    {% endcall %}
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </main>
