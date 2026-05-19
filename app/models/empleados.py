@@ -37,6 +37,31 @@ class Empleados(conectar):
         finally:
             cursor.close()
             db.close()
+
+    def listar_tecnicos(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    e.ID_em AS id,
+                    e.Nombre_em AS nombre,
+                    e.Apellido_em AS apellido,
+                    c.N_cargo AS cargo
+                FROM empleado e
+                JOIN cargo c ON e.ID_cargo = c.ID_cargo
+                WHERE LOWER(c.N_cargo) = 'tecnico'
+                ORDER BY e.Nombre_em ASC, e.Apellido_em ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
     
     def listar_cargos(self):
         db = self.conexion1()

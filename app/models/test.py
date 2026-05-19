@@ -3,6 +3,39 @@ from __future__ import annotations
 from app.models.database import conectar
 
 class Tests(conectar):
+    @staticmethod
+    def construir_valores_test(datos, id_empleado: int):
+        datos = datos or {}
+        campos = [
+            'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+            'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+            'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+        ]
+        valores = []
+
+        for campo in campos:
+            if campo == 'ID_em':
+                valores.append(id_empleado)
+                continue
+
+            valor = datos.get(campo)
+            if valor is None or valor == '':
+                if campo == 'Observaciones':
+                    valores.append('')
+                else:
+                    valores.append(None)
+                continue
+
+            if campo == 'Observaciones':
+                valores.append(str(valor))
+                continue
+
+            try:
+                valores.append(int(valor))
+            except Exception:
+                valores.append(None)
+
+        return tuple(valores)
 
     def buscar_test(self, id_orden: int):
         db = self.conexion1()

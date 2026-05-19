@@ -13,6 +13,7 @@ from app.controllers.usuarios import usuarios_blueprint
 from app.controllers.bitacora import bitacora_blueprint
 from app.controllers.taller import taller_blueprint
 from app.controllers.clientes import clientes_blueprint
+from app.controllers.ordenes_servicio import ordenes_servicio_blueprint
 from app.utils.jwt_utils import decode_token
 from types import SimpleNamespace
 
@@ -56,6 +57,7 @@ app.register_blueprint(usuarios_blueprint)
 app.register_blueprint(bitacora_blueprint)
 app.register_blueprint(taller_blueprint)
 app.register_blueprint(clientes_blueprint)
+app.register_blueprint(ordenes_servicio_blueprint)
 
 
 @app.before_request

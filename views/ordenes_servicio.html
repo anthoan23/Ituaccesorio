@@ -1,0 +1,406 @@
+{% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
+
+{% block title %}Ituaccesorio - Órdenes de servicio{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ordenes_servicio.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page ordenes-page">
+	<section class="hero">
+		<div class="hero__copy">
+			<p class="eyebrow">Órdenes de servicio</p>
+			<h1>Gestión de órdenes del taller</h1>
+			<p class="hero__subtitle">Registra clientes, asigna técnicos y controla el estado de las reparaciones.</p>
+		</div>
+
+		<div class="stats" aria-label="Resumen de órdenes">
+			<button class="stat-card" type="button" data-open-modal="modal-ordenes-pendientes">
+				<span class="stat-card__label">Pendientes</span>
+				<strong id="stat-pendientes" class="stat-card__value">0</strong>
+			</button>
+			<button class="stat-card" type="button" data-open-modal="modal-ordenes-asignadas">
+				<span class="stat-card__label">Asignadas</span>
+				<strong id="stat-asignadas" class="stat-card__value">0</strong>
+			</button>
+			<button class="stat-card" type="button" data-open-modal="modal-ordenes-revisadas">
+				<span class="stat-card__label">Revisadas</span>
+				<strong id="stat-revisadas" class="stat-card__value">0</strong>
+			</button>
+		</div>
+	</section>
+
+	<section class="board">
+		<article class="panel panel--full">
+			<div class="panel__header">
+				<div>
+					<p class="panel__eyebrow">Registro</p>
+					<h2 class="panel__title">Crear orden de servicio</h2>
+				</div>
+			</div>
+
+			<form id="form-orden-servicio" class="form" autocomplete="off">
+				<input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
+				<div class="form-grid">
+					<div class="form-section">
+						<h3 class="section-title">Datos del cliente</h3>
+						<div class="field-row">
+							<label class="field">
+								<span>Cédula</span>
+								<input id="cliente-cedula" name="cedula_cliente" type="text" inputmode="numeric" placeholder="12345678" required>
+							</label>
+							<button id="btn-verificar-cliente" class="btn btn--ghost" type="button">Verificar cliente</button>
+						</div>
+						<label class="field">
+							<span>Nombre</span>
+							<input id="cliente-nombre" name="cliente_nombre" type="text" placeholder="María">
+						</label>
+						<label class="field">
+							<span>Apellido</span>
+							<input id="cliente-apellido" name="cliente_apellido" type="text" placeholder="González">
+						</label>
+						<label class="field">
+							<span>Celular</span>
+							<input id="cliente-celular" name="cliente_celular" type="text" placeholder="0414-1234567">
+						</label>
+						<label class="field">
+							<span>Correo</span>
+							<input id="cliente-correo" name="cliente_correo" type="email" placeholder="cliente@example.com">
+						</label>
+						<label class="field">
+							<span>Dirección</span>
+							<input id="cliente-direccion" name="cliente_direccion" type="text" placeholder="Calle 1, Ciudad">
+						</label>
+						<label class="field">
+							<span>Tipo</span>
+							<select id="cliente-tipo" name="cliente_tipo">
+								<option value="">Seleccione tipo</option>
+								<option value="Regular">Regular</option>
+								<option value="Premium">Premium</option>
+								<option value="Mayorista">Mayorista</option>
+							</select>
+						</label>
+						<div class="client-actions">
+							<button id="btn-crear-cliente" class="btn btn--primary" type="button" hidden>Registrar cliente</button>
+							<span id="cliente-status" class="status-text"></span>
+						</div>
+					</div>
+
+					<div class="form-section">
+						<h3 class="section-title">Datos principales de la orden</h3>
+						<label class="field">
+							<span>Modelo</span>
+							<select id="orden-modelo" name="orden_modelo" required>
+								<option value="">Seleccione modelo</option>
+							</select>
+						</label>
+						<label class="field">
+							<span>Fecha de ingreso</span>
+							<input id="orden-fecha" name="orden_fecha" type="date" required>
+						</label>
+						<div class="field-row">
+							<label class="field">
+								<span>Patrón</span>
+								<input id="orden-patron" name="orden_patron" type="text" inputmode="numeric" placeholder="1234">
+							</label>
+							<label class="field">
+								<span>Clave</span>
+								<input id="orden-clave" name="orden_clave" type="text" placeholder="0000">
+							</label>
+						</div>
+						<label class="field">
+							<span>Descripción del cliente</span>
+							<textarea id="orden-descripcion" name="orden_descripcion" rows="4" placeholder="Describe el problema reportado por el cliente" required></textarea>
+						</label>
+						<label class="field">
+							<span>Nota del empleado</span>
+							<textarea id="orden-nota" name="orden_nota" rows="3" placeholder="Notas internas"></textarea>
+						</label>
+					</div>
+				</div>
+
+				<div class="form__actions">
+					<button class="btn btn--ghost" type="reset">Limpiar</button>
+					<button class="btn btn--primary" type="submit">Guardar orden</button>
+				</div>
+			</form>
+		</article>
+
+		<article class="panel">
+			<div class="panel__header">
+				<div>
+					<p class="panel__eyebrow">Asignación</p>
+					<h2 class="panel__title">Asignar orden a técnico</h2>
+				</div>
+			</div>
+			<div class="assign-grid">
+				<label class="field">
+					<span>Orden pendiente</span>
+					<select id="select-orden-asignar">
+						<option value="">Seleccione una orden</option>
+					</select>
+				</label>
+				<label class="field">
+					<span>Técnico</span>
+					<select id="select-tecnico">
+						<option value="">Seleccione un técnico</option>
+					</select>
+				</label>
+				<button id="btn-asignar-orden" class="btn btn--primary" type="button">Asignar orden</button>
+			</div>
+			<div class="smart-placeholder">
+				<h3>Componente inteligente</h3>
+				<p>Espacio reservado para recomendaciones automáticas de asignación.</p>
+			</div>
+			<button class="btn btn--ghost" type="button" data-open-modal="modal-trabajos-tecnico">Ver trabajos asignados</button>
+		</article>
+
+		<article class="panel panel--full">
+			<div class="panel__header">
+				<div>
+					<p class="panel__eyebrow">Listado general</p>
+					<h2 class="panel__title">Órdenes registradas</h2>
+				</div>
+			</div>
+			<div class="table-wrap" role="region" aria-label="Tabla de órdenes">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>ID orden</th>
+							<th>Estado</th>
+							<th>Cliente</th>
+							<th>Modelo</th>
+							<th>Descripción</th>
+							<th>Fecha ingreso</th>
+							<th class="table__actions">Acciones</th>
+						</tr>
+					</thead>
+					<tbody id="tabla-ordenes-servicio"></tbody>
+				</table>
+			</div>
+		</article>
+	</section>
+
+	<div id="toast-mensaje" class="toast" aria-live="polite"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ordenes_servicio.js') }}"></script>
+{% endblock %}
+
+{% call modal('modal-ordenes-pendientes', 'Órdenes pendientes', 'lg') %}
+<div class="table-wrap">
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID orden</th>
+				<th>Cliente</th>
+				<th>Modelo</th>
+				<th>Fecha ingreso</th>
+				<th class="table__actions">Acción</th>
+			</tr>
+		</thead>
+		<tbody id="tabla-pendientes"></tbody>
+	</table>
+</div>
+{% endcall %}
+
+{% call modal('modal-ordenes-asignadas', 'Órdenes asignadas', 'lg') %}
+<div class="table-wrap">
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID orden</th>
+				<th>Cliente</th>
+				<th>Modelo</th>
+				<th>Fecha ingreso</th>
+				<th class="table__actions">Acción</th>
+			</tr>
+		</thead>
+		<tbody id="tabla-asignadas"></tbody>
+	</table>
+</div>
+{% endcall %}
+
+{% call modal('modal-ordenes-revisadas', 'Órdenes revisadas', 'lg') %}
+<div class="table-wrap">
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID orden</th>
+				<th>Cliente</th>
+				<th>Modelo</th>
+				<th>Fecha ingreso</th>
+				<th class="table__actions">Acción</th>
+			</tr>
+		</thead>
+		<tbody id="tabla-revisadas"></tbody>
+	</table>
+</div>
+{% endcall %}
+
+{% call modal('modal-trabajos-tecnico', 'Trabajos asignados por técnico', 'lg') %}
+<div class="field-row field-row--modal">
+	<label class="field">
+		<span>Técnico</span>
+		<select id="modal-tecnico-select">
+			<option value="">Seleccione un técnico</option>
+		</select>
+	</label>
+	<button id="btn-cargar-trabajos" class="btn btn--primary" type="button">Cargar trabajos</button>
+</div>
+<div class="table-wrap">
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID orden</th>
+				<th>Cliente</th>
+				<th>Modelo</th>
+				<th>Estado</th>
+				<th class="table__actions">Acción</th>
+			</tr>
+		</thead>
+		<tbody id="tabla-trabajos-tecnico"></tbody>
+	</table>
+</div>
+{% endcall %}
+
+{% call modal('modal-detalle-orden', 'Detalle de la orden', 'lg') %}
+<input type="hidden" id="detalle-orden-id" value="">
+<div class="detalle-grid">
+	<div class="detalle-card">
+		<h3 class="section-title">Información general</h3>
+		<div id="detalle-info" class="detail-list"></div>
+	</div>
+	<div class="detalle-card">
+		<h3 class="section-title">Responsables</h3>
+		<div id="detalle-responsables" class="detail-list"></div>
+	</div>
+</div>
+<div class="detalle-card">
+	<h3 class="section-title">Fotos de evidencia</h3>
+	<div id="detalle-fotos" class="photo-grid"></div>
+	<div class="form__actions form__actions--inline">
+		<button class="btn btn--primary" type="button" data-open-modal="modal-fotos-orden">Agregar fotos</button>
+	</div>
+</div>
+<div class="detalle-card">
+	<h3 class="section-title">Tests realizados</h3>
+	<div id="detalle-tests"></div>
+	<div class="form__actions form__actions--inline">
+		<button class="btn btn--ghost" type="button" data-open-modal="modal-revision-orden">Registrar revisión</button>
+	</div>
+</div>
+{% endcall %}
+
+{% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
+<form id="form-revision-orden" class="form" autocomplete="off">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+	<input type="hidden" id="revision-orden-id" name="id_orden" value="">
+	<div class="grid-container">
+		<label class="checkbox-card">
+			<input type="checkbox" name="Btn_power">
+			<span class="checkbox-text">Botón de power</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Cornetas">
+			<span class="checkbox-text">Cornetas</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Mica">
+			<span class="checkbox-text">Mica</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="LCD">
+			<span class="checkbox-text">LCD</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Tactil">
+			<span class="checkbox-text">Táctil</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Btn_vol">
+			<span class="checkbox-text">Botones laterales</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Btn_sil">
+			<span class="checkbox-text">Botones inferiores</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Puerto_carga">
+			<span class="checkbox-text">Puerto de carga</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Wifi">
+			<span class="checkbox-text">WiFi</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Cam_pos">
+			<span class="checkbox-text">Cámara trasera</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Cam_del">
+			<span class="checkbox-text">Cámara delantera</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Flash">
+			<span class="checkbox-text">Flash</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Senal">
+			<span class="checkbox-text">Señal auricular</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Microfono">
+			<span class="checkbox-text">Micrófono</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Sensor_proximidad">
+			<span class="checkbox-text">Sensor de proximidad</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Face_id">
+			<span class="checkbox-text">Face ID</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Bluetooth">
+			<span class="checkbox-text">Bluetooth</span>
+		</label>
+		<label class="checkbox-card">
+			<input type="checkbox" name="Auricular">
+			<span class="checkbox-text">Audífonos</span>
+		</label>
+	</div>
+	<label class="field">
+		<span>Observaciones</span>
+		<textarea name="Observaciones" rows="4" placeholder="Notas de la revisión"></textarea>
+	</label>
+	<label class="field">
+		<span>Cotización</span>
+		<input name="Costo" type="number" min="0" step="1" placeholder="Costo estimado">
+	</label>
+	<div class="form__actions">
+		<button class="btn btn--ghost" type="button" data-close-modal>Cancelar</button>
+		<button class="btn btn--primary" type="submit">Guardar revisión</button>
+	</div>
+</form>
+{% endcall %}
+
+{% call modal('modal-fotos-orden', 'Registrar fotos de evidencia', 'lg') %}
+<form id="form-fotos-orden" class="form" autocomplete="off">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+	<input type="hidden" id="fotos-orden-id" name="id_orden" value="">
+	<label class="field">
+		<span>Selecciona fotos</span>
+		<input id="input-fotos-orden" name="fotos" type="file" accept="image/*" multiple required>
+	</label>
+	<div id="preview-fotos" class="photo-grid"></div>
+	<div class="form__actions">
+		<button class="btn btn--ghost" type="button" data-close-modal>Cancelar</button>
+		<button class="btn btn--primary" type="submit">Guardar fotos</button>
+	</div>
+</form>
+{% endcall %}

@@ -87,6 +87,15 @@ def crear_cliente():
     except Exception as error:
         return _respuesta_por_excepcion(error)
 
+@clientes_blueprint.route("/api/clientes/<int:cliente_id>", methods=["GET"])
+@jwt_required
+def obtener_cliente(cliente_id):
+    modelo = GestionClientes()
+    cliente = modelo.obtener_cliente_por_id(cliente_id)
+    if not cliente:
+        return _respuesta_error("Cliente no encontrado.", 404)
+    return jsonify({"success": True, "cliente": cliente})
+
 
 @clientes_blueprint.route("/api/clientes/<int:cliente_id>", methods=["PUT"])
 @jwt_required

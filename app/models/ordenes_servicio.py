@@ -19,14 +19,14 @@ class OrdenServicio(conectar):
         cursor = db.cursor(dictionary=True)
         try:
             sql = (
-                "SELECT o.ID_orden_e AS ID_orden, "
+                "SELECT o.*, "
+                "o.ID_orden_e AS ID_orden, "
                 "o.Estado_o AS Estado, "
                 "o.ID_c AS ID_cliente, "
                 "c.Nombre_c AS Nombre_cliente, "
                 "c.Apellido_c AS Apellido_cliente, "
                 "m.N_modelo AS Modelo, "
-                "o.Des_cliente, "
-                "o.Fecha_e "
+                "o.Des_cliente "
                 "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
                 "JOIN cliente c ON o.ID_c = c.ID_c "
                 "WHERE o.Estado_o = %s OR o.Estado_o = %s "
@@ -39,6 +39,85 @@ class OrdenServicio(conectar):
         finally:
             cursor.close()
             db.close() 
+
+    def listado_ordenes_servicio(self, estados=None):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            where_sql = ""
+            params = []
+            if estados:
+                placeholders = ", ".join(["%s"] * len(estados))
+                where_sql = f"WHERE o.Estado_o IN ({placeholders})"
+                params = list(estados)
+
+            sql = (
+                "SELECT o.*, "
+                "o.ID_orden_e AS ID_orden, "
+                "o.Estado_o AS Estado, "
+                "o.ID_c AS ID_cliente, "
+                "c.Nombre_c AS Nombre_cliente, "
+                "c.Apellido_c AS Apellido_cliente, "
+                "m.N_modelo AS Modelo, "
+                "o.Des_cliente "
+                "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
+                "JOIN cliente c ON o.ID_c = c.ID_c "
+                f"{where_sql} "
+                "ORDER BY o.ID_orden_e DESC"
+            )
+            cursor.execute(sql, tuple(params))
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
+    def crear_orden(
+        self,
+        id_cliente: int,
+        id_modelo: int,
+        descripcion: str,
+        patron,
+        clave: str,
+        fecha_ingreso,
+        nota: str | None = None,
+        estado: str = "Pendiente",
+    ):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor()
+        try:
+            sql = (
+                "INSERT INTO orden_e (ID_modelo, ID_c, Estado_o, Des_cliente, Patron, Clave, Costo_reparacion, Fecha_e, Nota) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            )
+            cursor.execute(
+                sql,
+                (
+                    id_modelo,
+                    id_cliente,
+                    estado,
+                    descripcion,
+                    patron,
+                    clave,
+                    None,
+                    fecha_ingreso,
+                    nota,
+                ),
+            )
+            db.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            db.rollback()
+            print(f"Error al crear orden: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
 
     def ordenes_asignadas_empleado(self):
         db = self.conexion1()
@@ -59,6 +138,33 @@ class OrdenServicio(conectar):
         
             return ordenes
         
+        finally:
+            cursor.close()
+            db.close()
+
+    def ordenes_asignadas_tecnico(self, id_empleado: int):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = (
+                "SELECT o.*, "
+                "o.ID_orden_e AS ID_orden, "
+                "o.Estado_o AS Estado, "
+                "m.N_modelo AS Modelo, "
+                "c.Nombre_c AS Nombre_cliente, "
+                "c.Apellido_c AS Apellido_cliente "
+                "FROM interaccion i "
+                "JOIN orden_e o ON i.ID_orden = o.ID_orden_e "
+                "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
+                "JOIN cliente c ON o.ID_c = c.ID_c "
+                "WHERE i.ID_em = %s AND i.Accion = 'Asignado' "
+                "ORDER BY o.ID_orden_e DESC"
+            )
+            cursor.execute(sql, (id_empleado,))
+            return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
@@ -208,6 +314,59 @@ class OrdenServicio(conectar):
         except Exception as e:
             db.rollback()
             print(f"Error al registrar fotos: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_interaccion(self, id_orden: int, id_empleado: int, accion: str):
+        db = self.conexion1()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "INSERT IGNORE INTO interaccion (ID_orden, ID_em, Accion) VALUES (%s, %s, %s)",
+                (id_orden, id_empleado, accion),
+            )
+            db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            db.rollback()
+            print(f"Error al registrar interacción: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def actualizar_revision_cotizacion(self, id_orden: int, revision: str | None = None, costo=None):
+        if revision is None and costo is None:
+            return False
+
+        db = self.conexion1()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            fields = []
+            params = []
+            if revision is not None:
+                fields.append("Revision = %s")
+                params.append(revision)
+            if costo is not None:
+                fields.append("Costo_reparacion = %s")
+                params.append(costo)
+
+            params.append(id_orden)
+            sql = f"UPDATE orden_e SET {', '.join(fields)} WHERE ID_orden_e = %s"
+            cursor.execute(sql, tuple(params))
+            db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            db.rollback()
+            print(f"Error al actualizar revisión/cotización: {e}")
             return False
         finally:
             cursor.close()
