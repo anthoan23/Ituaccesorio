@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Login (Mock) | Ituaccesorio{% endblock %}
 
@@ -52,7 +53,7 @@
 
 								<div class="phone__links" aria-label="Acciones adicionales">
 									<a class="phone__link" href="#">¿Olvidaste tu Contraseña?</a>
-									<a class="phone__link" href="#">Crear una Cuenta Nueva</a>
+									<button class="phone__link phone__link--button" type="button" data-open-modal="modal-registro-cliente">Crear una Cuenta Nueva</button>
 								</div>
 							</form>
 						</div>
@@ -62,7 +63,77 @@
 			</section>
 		</section>
 	</main>
+	{% call modal('modal-registro-cliente', 'Registro de cliente', 'md') %}
+		<section id="registro-step1" class="registro-step" data-registro-step="1">
+			<p class="registro-copy">Paso 1 de 2: Crea tu cuenta con tus datos de acceso.</p>
+			<form id="registro-cliente-step1-form" class="ui-form" autocomplete="on">
+				<div class="ui-form__grid ui-form__grid--one">
+					<label class="ui-field">
+						<span>Usuario</span>
+						<input id="registro-usuario" type="text" required>
+					</label>
+					<label class="ui-field">
+						<span>Cédula</span>
+						<input id="registro-cedula" type="text" inputmode="numeric" required>
+					</label>
+					<label class="ui-field">
+						<span>Contraseña</span>
+						<input id="registro-password" type="password" required>
+					</label>
+					<label class="ui-field">
+						<span>Confirmar contraseña</span>
+						<input id="registro-password-confirm" type="password" required>
+					</label>
+				</div>
+				<div class="ui-form__actions">
+					<button class="ui-btn ui-btn--primary" type="submit">Continuar</button>
+				</div>
+			</form>
+		</section>
+
+		<section id="registro-step2" class="registro-step" data-registro-step="2" hidden>
+			<p class="registro-copy">¡Casi listo! Paso 2 de 2: completa tus datos personales.</p>
+			<form id="registro-cliente-step2-form" class="ui-form" autocomplete="on">
+				<div class="ui-form__grid">
+					<label class="ui-field">
+						<span>Nombre</span>
+						<input id="perfil-nombre" type="text" required>
+					</label>
+					<label class="ui-field">
+						<span>Apellido</span>
+						<input id="perfil-apellido" type="text" required>
+					</label>
+					<label class="ui-field">
+						<span>Celular</span>
+						<input id="perfil-celular" type="text" required>
+					</label>
+					<label class="ui-field">
+						<span>Correo</span>
+						<input id="perfil-correo" type="email">
+					</label>
+					<label class="ui-field ui-field--full">
+						<span>Dirección</span>
+						<input id="perfil-direccion" type="text">
+					</label>
+				</div>
+				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Regular</strong>.</p>
+				<div class="ui-form__actions">
+					<button class="ui-btn ui-btn--ghost" type="button" id="registro-volver-step1">Volver</button>
+					<button class="ui-btn ui-btn--primary" type="submit">Finalizar registro</button>
+				</div>
+			</form>
+		</section>
+	{% endcall %}
+	{% call modal('modal-feedback-login', 'Mensaje', 'sm') %}
+		<div class="ui-form__grid ui-form__grid--one">
+			<p id="feedback-login-message">Mensaje</p>
+		</div>
+		<div class="ui-form__actions">
+			<button class="ui-btn ui-btn--primary" type="button" data-close-modal>Aceptar</button>
+		</div>
+	{% endcall %}
+{% endblock %}
+
 {% block scripts %}
   <script src="{{ url_for('static', filename='js/login.js') }}"></script>
-{% endblock %}
 {% endblock %}

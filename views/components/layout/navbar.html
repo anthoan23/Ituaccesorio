@@ -1,3 +1,4 @@
+{% from 'components/ui/modal.html' import modal %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
 
@@ -60,6 +61,7 @@
 				</div>
 
 				<form class="user-menu__logout" action="{{ url_for('login.logout') }}" method="GET">
+					<button class="user-menu__action-btn" type="button" data-open-modal="modal-mi-perfil">Editar perfil</button>
 					<button class="user-menu__logout-btn" type="submit">Cerrar sesión</button>
 				</form>
 			</div>
@@ -79,16 +81,50 @@
 		<span class="drawer__title">Menú</span>
 	</div>
 
-	<nav class="drawer__nav">
-		<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-		<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-		<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-		<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
-		<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
-		<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
-		<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
-		<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
-	</nav>
+	<div class="drawer__nav-wrapper">
+		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
+		<nav class="drawer__nav" id="drawerNav">
+			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
+			<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+			<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+			<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+			<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+			<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+		</nav>
+		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
+	</div>
+
+	<script>
+	(function(){
+		var nav = document.getElementById('drawerNav');
+		if(!nav) return;
+		var btnUp = nav.parentElement.querySelector('.nav-scroll-up');
+		var btnDown = nav.parentElement.querySelector('.nav-scroll-down');
+		var scrollAmount = 140;
+
+		function updateButtons(){
+			if(nav.scrollTop <= 0) btnUp.style.display = 'none'; else btnUp.style.display = '';
+			if(nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1) btnDown.style.display = 'none'; else btnDown.style.display = '';
+		}
+
+		btnUp.addEventListener('click', function(){
+			nav.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+			setTimeout(updateButtons, 300);
+		});
+		btnDown.addEventListener('click', function(){
+			nav.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+			setTimeout(updateButtons, 300);
+		});
+
+		nav.addEventListener('scroll', updateButtons);
+		// initial
+		updateButtons();
+	})();
+	</script>
 
 	<div class="drawer__footer">
 		{% if g.user %}
@@ -99,3 +135,46 @@
 	</div>
 
 </aside>
+
+{% if g.user %}
+{% call modal('modal-mi-perfil', 'Mi perfil', 'sm') %}
+	<form id="mi-perfil-form" class="ui-form" autocomplete="off">
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+		<label class="ui-field">
+			<span>Usuario</span>
+			<input id="mi-perfil-nombre" name="nombre" type="text" value="{{ g.user.usuario_nombre or '' }}" required>
+		</label>
+		<label class="ui-field">
+			<span>Cédula</span>
+			<input id="mi-perfil-cedula" type="text" value="{{ g.user.cedula_personal or '' }}" readonly>
+		</label>
+		<label class="ui-field">
+			<span>Rol</span>
+			<input id="mi-perfil-rol" type="text" value="{{ g.user.nombre_rol or '' }}" readonly>
+		</label>
+		<label class="ui-field">
+			<span>Nueva contraseña (opcional)</span>
+			<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar">
+		</label>
+		<label class="ui-field">
+			<span>Confirmar contraseña</span>
+			<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña">
+		</label>
+		<label class="ui-field">
+			<span>Foto de perfil</span>
+			<input id="mi-perfil-foto-input" name="foto_perfil" type="file" accept="image/*" hidden>
+			<button id="mi-perfil-foto-btn" class="ui-btn ui-btn--ghost" type="button">Subir foto</button>
+			<small id="mi-perfil-foto-name" class="user-menu__hint">Ningún archivo seleccionado</small>
+			<div class="user-menu__avatar-preview">
+				<img id="mi-perfil-foto-preview" src="{{ g.user.foto_perfil if g.user.foto_perfil else url_for('static', filename='img/LOGO.png') }}" alt="Vista previa de foto de perfil">
+			</div>
+		</label>
+		<div class="ui-form__actions">
+			<button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+			<button class="ui-btn ui-btn--primary" type="submit">Guardar cambios</button>
+		</div>
+	</form>
+{% endcall %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>

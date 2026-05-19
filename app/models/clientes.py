@@ -45,31 +45,51 @@ class GestionClientes(conectar):
             """
         )
 
-    def crear_cliente(self, nombre, apellido, celular, correo, direccion, tipo=None):
-        db = self.conexion1()
-        if not db:
-            return None
+    def crear_cliente(self, cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
+        resultado = self._ejecutar(
+            """
+            INSERT INTO cliente (ID_c, Nombre_c, Apellido_c, Celular_c, Correo_c, Direccion_c, Tipo_c)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (cliente_id, nombre, apellido, celular, correo, direccion, tipo),
+        )
+        return cliente_id if resultado else None
 
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT COALESCE(MAX(ID_c), 0) + 1 FROM cliente")
-            row = cursor.fetchone()
-            next_id = int(row[0]) if row else 1
-            cursor.execute(
-                "INSERT INTO cliente (ID_c, Nombre_c, Apellido_c, Celular_c, Correo_c, Direccion_c, Tipo_c) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (next_id, nombre, apellido, celular, correo, direccion, tipo),
-            )
-            db.commit()
-            return next_id
-        finally:
-            cursor.close()
-            db.close()
+    def obtener_cliente_por_id(self, cliente_id):
+        datos = self._consultar(
+            """
+            SELECT
+                ID_c,
+                Nombre_c AS nombre,
+                Apellido_c AS apellido,
+                Celular_c AS celular,
+                Correo_c AS correo,
+                Direccion_c AS direccion,
+                Tipo_c AS tipo
+            FROM cliente
+            WHERE ID_c = %s
+            LIMIT 1
+            """,
+            (cliente_id,),
+        )
+        return datos[0] if datos else None
 
-    def actualizar_cliente(self, cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
+    def crear_cliente_con_id(self, cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
+        resultado = self._ejecutar(
+            """
+            INSERT INTO cliente (ID_c, Nombre_c, Apellido_c, Celular_c, Correo_c, Direccion_c, Tipo_c)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (cliente_id, nombre, apellido, celular, correo, direccion, tipo),
+        )
+        return cliente_id if resultado else None
+
+    def actualizar_cliente(self, cliente_id_actual, nuevo_cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
         return self._ejecutar(
             """
             UPDATE cliente
-            SET Nombre_c = %s,
+            SET ID_c = %s,
+                Nombre_c = %s,
                 Apellido_c = %s,
                 Celular_c = %s,
                 Correo_c = %s,
@@ -77,7 +97,7 @@ class GestionClientes(conectar):
                 Tipo_c = %s
             WHERE ID_c = %s
             """,
-            (nombre, apellido, celular, correo, direccion, tipo, cliente_id),
+            (nuevo_cliente_id, nombre, apellido, celular, correo, direccion, tipo, cliente_id_actual),
         )
 
     def eliminar_cliente(self, cliente_id):

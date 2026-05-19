@@ -37,7 +37,7 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Cedula</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Celular</th>
@@ -57,6 +57,10 @@
     <form id="form-cliente" class="form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="">
+        <label>
+            <span>Cédula</span>
+            <input name="cedula" type="text" inputmode="numeric" placeholder="12345678" required>
+        </label>
         <label>
             <span>Nombre</span>
             <input name="nombre" type="text" placeholder="Maria" required>

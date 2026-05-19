@@ -8,7 +8,7 @@ class Usuarios(conectar):
             cursor = db.cursor(dictionary=True)
             try:
                 cursor.execute(
-                    "SELECT usuario.*, rol.nombre AS nombre_rol"
+                    "SELECT usuario.*, usuario.cedula AS cedula_personal, rol.nombre AS nombre_rol"
                     " FROM usuario"
                     " JOIN rol ON usuario.rol_id = rol.id"
                     " WHERE usuario.nombre = %s AND usuario.password = %s",
@@ -131,6 +131,18 @@ class Usuarios(conectar):
             cursor.close()
             db.close()
 
+    def obtener_rol_por_nombre(self, nombre_rol):
+        datos = self._consultar(
+            """
+            SELECT id, nombre
+            FROM rol
+            WHERE LOWER(nombre) = LOWER(%s)
+            LIMIT 1
+            """,
+            (nombre_rol,),
+        )
+        return datos[0] if datos else None
+
     def actualizar_usuario(self, usuario_id, nombre, cedula_personal, rol_id, foto_perfil=None):
         return self._ejecutar(
             """
@@ -167,7 +179,9 @@ class Usuarios(conectar):
             SELECT
                 u.id,
                 u.nombre,
+                u.cedula AS cedula_personal,
                 u.rol_id,
+                u.foto_perfil,
                 r.nombre AS rol_nombre
             FROM usuario u
             INNER JOIN rol r ON r.id = u.rol_id
@@ -177,6 +191,29 @@ class Usuarios(conectar):
             (usuario_id,),
         )
         return datos[0] if datos else None
+
+    def actualizar_perfil_actual(self, usuario_id, nombre, password=None, foto_perfil=None):
+        if password:
+            return self._ejecutar(
+                """
+                UPDATE usuario
+                SET nombre = %s,
+                    password = %s,
+                    foto_perfil = %s
+                WHERE id = %s
+                """,
+                (nombre, password, foto_perfil, usuario_id),
+            )
+
+        return self._ejecutar(
+            """
+            UPDATE usuario
+            SET nombre = %s,
+                foto_perfil = %s
+            WHERE id = %s
+            """,
+            (nombre, foto_perfil, usuario_id),
+        )
 
     def listar_roles(self):
         return self._consultar(

@@ -1,6 +1,7 @@
 const tablaClientes = document.getElementById("tabla-clientes");
 const btnNuevoCliente = document.getElementById("btn-nuevo-cliente");
 const formCliente = document.getElementById("form-cliente");
+const clienteIdInput = formCliente?.querySelector("input[name='id']");
 const toast = document.getElementById("toast-mensaje");
 const statClientes = document.getElementById("stat-clientes");
 
@@ -90,13 +91,16 @@ function abrirEdicion(id) {
     const cliente = clientes.find((item) => String(item.ID_c) === String(id));
     if (!cliente || !formCliente) return;
 
-    formCliente.nombre.value = cliente.nombre || "";
-    formCliente.apellido.value = cliente.apellido || "";
-    formCliente.celular.value = cliente.celular || "";
-    formCliente.correo.value = cliente.correo || "";
-    formCliente.direccion.value = cliente.direccion || "";
-    formCliente.tipo.value = cliente.tipo || "";
-    formCliente.id.value = String(cliente.ID_c);
+    setFieldValue("nombre", cliente.nombre || "");
+    setFieldValue("apellido", cliente.apellido || "");
+    setFieldValue("cedula", String(cliente.ID_c || ""));
+    setFieldValue("celular", cliente.celular || "");
+    setFieldValue("correo", cliente.correo || "");
+    setFieldValue("direccion", cliente.direccion || "");
+    setFieldValue("tipo", cliente.tipo || "");
+    if (clienteIdInput) {
+        clienteIdInput.value = String(cliente.ID_c || "");
+    }
     formCliente.dataset.editing = "true";
 
     if (window.UiModal && typeof window.UiModal.openById === "function") {
@@ -109,21 +113,32 @@ async function onSubmitCliente(event) {
     if (!formCliente) return;
 
     const payload = {
-        nombre: formCliente.nombre.value.trim(),
-        apellido: formCliente.apellido.value.trim(),
-        celular: formCliente.celular.value.trim(),
-        correo: formCliente.correo.value.trim(),
-        direccion: formCliente.direccion.value.trim(),
-        tipo: formCliente.tipo.value.trim(),
+        cedula: getFieldValue("cedula"),
+        nombre: getFieldValue("nombre"),
+        apellido: getFieldValue("apellido"),
+        celular: getFieldValue("celular"),
+        correo: getFieldValue("correo"),
+        direccion: getFieldValue("direccion"),
+        tipo: getFieldValue("tipo"),
     };
 
-    if (!payload.nombre || !payload.apellido || !payload.celular) {
-        mostrarToast("Nombre, apellido y celular son obligatorios.", true);
+    if (!payload.cedula || !payload.nombre || !payload.apellido || !payload.celular) {
+        mostrarToast("Cédula, nombre, apellido y celular son obligatorios.", true);
+        return;
+    }
+
+    if (!/^\d+$/.test(payload.cedula)) {
+        mostrarToast("La cédula debe contener solo números.", true);
         return;
     }
 
     const isEdit = formCliente.dataset.editing === "true";
-    const url = isEdit ? `/api/clientes/${encodeURIComponent(formCliente.id.value)}` : "/api/clientes";
+    const clienteId = clienteIdInput?.value || "";
+    if (isEdit && !clienteId) {
+        mostrarToast("No se encontró el cliente a actualizar.", true);
+        return;
+    }
+    const url = isEdit ? `/api/clientes/${encodeURIComponent(clienteId)}` : "/api/clientes";
     const method = isEdit ? "PUT" : "POST";
 
     try {
@@ -152,8 +167,22 @@ async function eliminarCliente(id) {
 function limpiarFormulario() {
     if (!formCliente) return;
     formCliente.reset();
-    formCliente.id.value = "";
+    if (clienteIdInput) {
+        clienteIdInput.value = "";
+    }
     delete formCliente.dataset.editing;
+}
+
+function getFieldValue(fieldName) {
+    const field = formCliente?.elements?.namedItem(fieldName);
+    return field && "value" in field ? String(field.value).trim() : "";
+}
+
+function setFieldValue(fieldName, value) {
+    const field = formCliente?.elements?.namedItem(fieldName);
+    if (field && "value" in field) {
+        field.value = value;
+    }
 }
 
 async function fetchJson(url, options = {}) {

@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
+from app.utils.jwt_utils import create_token
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
 
@@ -63,8 +64,12 @@ def _usuario_actual():
         return usuario
     return {
         "usuario_id": getattr(usuario, "usuario_id", None),
+        "usuario_nombre": getattr(usuario, "usuario_nombre", None),
+        "cedula_personal": getattr(usuario, "cedula_personal", None),
         "rol_id": getattr(usuario, "rol_id", None),
         "nombre_rol": getattr(usuario, "nombre_rol", None),
+        "foto_perfil": getattr(usuario, "foto_perfil", None),
+        "perfil_completo": getattr(usuario, "perfil_completo", True),
     }
 
 
@@ -90,6 +95,21 @@ def _guardar_foto_perfil(archivo):
     ruta_fisica = os.path.join(carpeta_destino, nombre_final)
     archivo.save(ruta_fisica)
     return f"/static/img/perfil/{nombre_final}"
+
+
+def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
+    payload = {
+        "usuario_id": usuario_db.get("id"),
+        "usuario_nombre": usuario_db.get("nombre"),
+        "cedula_personal": usuario_db.get("cedula_personal"),
+        "rol_id": usuario_db.get("rol_id"),
+        "nombre_rol": usuario_db.get("rol_nombre"),
+        "foto_perfil": usuario_db.get("foto_perfil"),
+        "perfil_completo": bool((usuario_actual or {}).get("perfil_completo", True)),
+    }
+    token = create_token(payload)
+    resp.set_cookie("access_token", token, httponly=True, samesite="Lax", secure=False, path="/")
+    return resp
 
 
 @usuarios_blueprint.route("/usuarios", methods=["GET"])
@@ -118,6 +138,56 @@ def listar_empleados():
     modelo = Usuarios()
     datos = modelo.listar_empleados() or []
     return jsonify({"success": True, "empleados": datos})
+
+
+@usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
+@jwt_required
+def obtener_mi_perfil():
+    usuario_actual = _usuario_actual()
+    usuario_id = usuario_actual.get("usuario_id")
+    if not usuario_id:
+        return _respuesta_error("No se pudo identificar al usuario actual.", 401)
+
+    modelo = Usuarios()
+    usuario = modelo.obtener_usuario_por_id(usuario_id)
+    if not usuario:
+        return _respuesta_error("El usuario actual no existe.", 404)
+
+    return jsonify({"success": True, "usuario": usuario})
+
+
+@usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["PUT"])
+@jwt_required
+def actualizar_mi_perfil():
+    usuario_actual = _usuario_actual()
+    usuario_id = usuario_actual.get("usuario_id")
+    if not usuario_id:
+        return _respuesta_error("No se pudo identificar al usuario actual.", 401)
+
+    datos = _datos_solicitud() or {}
+    nombre = (datos.get("nombre") or "").strip()
+    password = (datos.get("password") or "").strip()
+
+    if not nombre:
+        return _respuesta_error("El nombre es obligatorio.")
+
+    modelo = Usuarios()
+    usuario_db_actual = modelo.obtener_usuario_por_id(usuario_id)
+    if not usuario_db_actual:
+        return _respuesta_error("El usuario actual no existe.", 404)
+
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or usuario_db_actual.get("foto_perfil")
+
+    try:
+        modelo.actualizar_perfil_actual(usuario_id, nombre, password if password else None, foto_perfil)
+        usuario_actualizado = modelo.obtener_usuario_por_id(usuario_id)
+        if not usuario_actualizado:
+            return _respuesta_error("No se pudo actualizar el perfil.", 500)
+
+        resp = jsonify({"success": True, "message": "Perfil actualizado.", "usuario": usuario_actualizado})
+        return _actualizar_cookie_usuario(resp, usuario_actual, usuario_actualizado)
+    except Exception as error:
+        return _respuesta_por_excepcion(error)
 
 
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
