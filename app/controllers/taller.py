@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 
-from flask import Blueprint, jsonify, render_template, request, current_app, g
+from flask import Blueprint, jsonify, render_template, request, current_app
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required
 from app.models.ordenes_servicio import OrdenServicio
@@ -122,36 +122,40 @@ def registrar_test_orden(id_orden):
 	datos = request.get_json() or {}
 
 	# empleado por defecto (cambiar para usar usuario real)
-	usuario = getattr(g, "user", {}) or {}
-	if isinstance(usuario, dict):
-		cedula = usuario.get("cedula_personal")
-	else:
-		cedula = getattr(usuario, "cedula_personal", None)
-	try:
-		id_empleado = int(cedula) if cedula else 1004
-	except Exception:
-		id_empleado = 1004
+	id_empleado = 1004
+
+	# Campos en el mismo orden que la función registrar_test espera
+	campos = [
+		'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+		'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+		'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+	]
+
+	valores = []
+	for campo in campos:
+		if campo == 'ID_em':
+			valores.append(id_empleado)
+			continue
+
+		if campo in datos:
+			v = datos.get(campo)
+			# Empty string -> None (no revisado)
+			if v is None or v == '':
+				valores.append(None)
+			else:
+				# Observaciones is text
+				if campo == 'Observaciones':
+					valores.append(str(v))
+				else:
+					try:
+						valores.append(int(v))
+					except Exception:
+						valores.append(None)
+		else:
+			valores.append(None)
 
 	test_model = Tests()
-	valores = test_model.construir_valores_test(datos, id_empleado)
-	ok = test_model.registrar_test(valores, id_orden)
-
-	if ok:
-		ordenes = OrdenServicio()
-		ordenes.registrar_interaccion(id_orden, id_empleado, "Revision")
-
-		costo = datos.get("Costo") or datos.get("costo")
-		revision = datos.get("Revision") or datos.get("revision")
-		costo_val = None
-		if costo not in (None, ""):
-			try:
-				costo_val = int(costo)
-			except Exception:
-				costo_val = None
-		revision_val = None if revision in (None, "") else str(revision)
-		if costo_val is not None or revision_val is not None:
-			ordenes.actualizar_revision_cotizacion(id_orden, revision=revision_val, costo=costo_val)
-
+	ok = test_model.registrar_test(tuple(valores), id_orden)
 	return jsonify({"ok": bool(ok)})
 
 
@@ -213,5 +217,4 @@ def eliminar_foto_orden(id_evidencia):
 		return jsonify({"ok": False, "message": "No se pudo eliminar la imagen."}), 404
 
 	return jsonify({"ok": True, "message": "Imagen eliminada correctamente."})
-
 
