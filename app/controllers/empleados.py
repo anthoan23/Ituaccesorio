@@ -11,6 +11,9 @@ empleados_blueprint = Blueprint("empleados", __name__)
 def pagina_empleados():
     return render_template(
         "empleados.html",
+        show_navbar=True,
+        show_notifications=True,
+        active_page="empleados",
     )
 
 @empleados_blueprint.route("/api/empleados", methods=["GET"])

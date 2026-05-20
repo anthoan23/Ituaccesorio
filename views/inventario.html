@@ -4,6 +4,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/inventario.css') }}">
+  <script src="{{ url_for('static', filename='js/inventario.js') }}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -14,33 +15,33 @@
       
 
       <div class="hero__chips" aria-label="Filtros rápidos">
-        <span class="chip chip--active">Todos</span>
-        <span class="chip">Telefonos</span>
-        <span class="chip">Accesorios</span>
-        <span class="chip">Repuestos</span>
-        <span class="chip">Bajo stock</span>
+        <span class="chip chip--active" role="button" tabindex="0" aria-pressed="true" data-filter="all">Todos</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Telefonos">Telefonos</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Accesorios">Accesorios</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Repuestos">Repuestos</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="low">Bajo stock</span>
       </div>
     </div>
 
     <div class="hero__stats" aria-label="Indicadores del inventario">
       <article class="stat-card">
         <span class="stat-card__label">Clases</span>
-        <strong class="stat-card__value">10</strong>
+        <strong class="stat-card__value" id="inv-stat-clases">—</strong>
       </article>
 
       <article class="stat-card">
         <span class="stat-card__label">Marcas</span>
-        <strong class="stat-card__value">10</strong>
+        <strong class="stat-card__value" id="inv-stat-marcas">—</strong>
       </article>
 
       <article class="stat-card">
         <span class="stat-card__label">Modelos</span>
-        <strong class="stat-card__value">20</strong>
+        <strong class="stat-card__value" id="inv-stat-modelos">—</strong>
       </article>
 
       <article class="stat-card stat-card--accent">
         <span class="stat-card__label">Piezas en stock</span>
-        <strong class="stat-card__value">277</strong>
+        <strong class="stat-card__value" id="inv-stat-piezas">—</strong>
       </article>
     </div>
   </section>
@@ -73,139 +74,70 @@
               <th>Estado</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="inventario-tbody">
             <tr>
-              <td>Telefonos</td>
-              <td>Samsung</td>
-              <td>Galaxy S23 Ultra</td>
-              <td>512GB</td>
-              <td>Negro</td>
-              <td><span class="badge badge--good">15</span></td>
-              <td>$750.000</td>
-              <td><span class="status status--good">Disponible</span></td>
-            </tr>
-            <tr>
-              <td>Telefonos</td>
-              <td>Apple</td>
-              <td>iPhone 15 Pro Max</td>
-              <td>1TB</td>
-              <td>Titanio</td>
-              <td><span class="badge badge--warn">8</span></td>
-              <td>$1.200.000</td>
-              <td><span class="status status--warn">Bajo stock</span></td>
-            </tr>
-            <tr>
-              <td>Telefonos</td>
-              <td>Xiaomi</td>
-              <td>Xiaomi 13 Pro</td>
-              <td>256GB</td>
-              <td>Negro</td>
-              <td><span class="badge badge--good">10</span></td>
-              <td>$950.000</td>
-              <td><span class="status status--good">Disponible</span></td>
-            </tr>
-            <tr>
-              <td>Accesorios de Audio</td>
-              <td>Sony</td>
-              <td>WH-1000XM5</td>
-              <td>128GB</td>
-              <td>Negro</td>
-              <td><span class="badge badge--good">15</span></td>
-              <td>$250.000</td>
-              <td><span class="status status--good">Disponible</span></td>
-            </tr>
-            <tr>
-              <td>Fundas y Protectores</td>
-              <td>OtterBox</td>
-              <td>Defender Case</td>
-              <td>Universal</td>
-              <td>Negro</td>
-              <td><span class="badge badge--good">50</span></td>
-              <td>$45.000</td>
-              <td><span class="status status--good">Alto stock</span></td>
-            </tr>
-            <tr>
-              <td>Tablets</td>
-              <td>Apple</td>
-              <td>iPad Pro 11</td>
-              <td>256GB</td>
-              <td>Gris Espacial</td>
-              <td><span class="badge badge--warn">7</span></td>
-              <td>$1.000.000</td>
-              <td><span class="status status--warn">Revisar</span></td>
+              <td colspan="8">Cargando inventario…</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <p class="table-note">Vista estática basada en el dump actual. La tabla principal une stock, modelo, marca, clase y características.</p>
+      <p class="table-note" id="inventario-note">La tabla une stock, modelo, marca, clase y características.</p>
     </article>
 
     <aside class="sidebar" aria-label="Detalles del inventario">
       <article class="panel panel--stacked panel--form" aria-label="Formulario de stock">
         <h2 class="panel__title">Registrar stock</h2>
 
-        <form class="inventory-form" autocomplete="off">
+        <form id="inventario-form" class="inventory-form" autocomplete="off">
           <label class="field">
             <span class="field__label">Clase</span>
-            <select aria-label="Clase">
-              <option>Telefonos</option>
-              <option>Tablets</option>
-              <option>Accesorios de Audio</option>
-              <option>Repuestos Internos</option>
-              <option>Herramientas</option>
+            <select id="inv-clase" name="id_clase" aria-label="Clase" required>
+              <option value="">Selecciona una clase</option>
             </select>
           </label>
 
           <label class="field">
             <span class="field__label">Marca</span>
-            <select aria-label="Marca">
-              <option>Samsung</option>
-              <option>Apple</option>
-              <option>Xiaomi</option>
-              <option>Motorola</option>
-              <option>OtterBox</option>
+            <select id="inv-marca" name="id_marca" aria-label="Marca" required>
+              <option value="">Selecciona una marca</option>
             </select>
           </label>
 
           <label class="field">
             <span class="field__label">Modelo</span>
-            <select aria-label="Modelo">
-              <option>Galaxy S23 Ultra</option>
-              <option>iPhone 15 Pro Max</option>
-              <option>Xiaomi 13 Pro</option>
-              <option>WH-1000XM5</option>
-              <option>Defender Case</option>
+            <select id="inv-modelo" name="id_modelo" aria-label="Modelo" required>
+              <option value="">Selecciona un modelo</option>
             </select>
           </label>
 
           <div class="inventory-form__grid">
             <label class="field">
               <span class="field__label">Capacidad</span>
-              <input type="text" placeholder="512GB" aria-label="Capacidad">
+              <input id="inv-capacidad" name="capacidad" type="text" placeholder="512GB" aria-label="Capacidad">
             </label>
 
             <label class="field">
               <span class="field__label">Color</span>
-              <input type="text" placeholder="Negro" aria-label="Color">
+              <input id="inv-color" name="color" type="text" placeholder="Negro" aria-label="Color">
             </label>
           </div>
 
           <div class="inventory-form__grid">
             <label class="field">
               <span class="field__label">Existencia</span>
-              <input type="number" placeholder="15" aria-label="Existencia">
+              <input id="inv-existencia" name="existencia" type="number" min="0" placeholder="0" aria-label="Existencia" required>
             </label>
 
             <label class="field">
               <span class="field__label">Costo venta</span>
-              <input type="text" placeholder="$750.000" aria-label="Costo venta">
+              <input id="inv-costo" name="costo_venta" type="text" placeholder="0" inputmode="numeric" aria-label="Costo venta" required>
             </label>
           </div>
 
           <div class="inventory-form__actions">
-            <button class="btn btn--primary btn--disabled" type="button" disabled>Guardar stock</button>
-            <button class="btn btn--ghost" type="button">Limpiar</button>
+            <button id="inv-guardar" class="btn btn--primary" type="submit">Guardar stock</button>
+            <button id="inv-limpiar" class="btn btn--ghost" type="button">Limpiar</button>
           </div>
         </form>
       </article>
@@ -281,29 +213,7 @@
       <article class="panel panel--stacked">
         <h2 class="panel__title">Atributos clave por producto</h2>
 
-        <ul class="mini-list" aria-label="Lista de caracteristicas">
-          <li class="mini-list__item">
-            <span class="mini-list__left">
-              <strong>Galaxy S23 Ultra</strong>
-              <span>512GB · Negro</span>
-            </span>
-            <span class="mini-list__badge">ID 1</span>
-          </li>
-          <li class="mini-list__item">
-            <span class="mini-list__left">
-              <strong>iPhone 15 Pro Max</strong>
-              <span>1TB · Titanio</span>
-            </span>
-            <span class="mini-list__badge">ID 4</span>
-          </li>
-          <li class="mini-list__item">
-            <span class="mini-list__left">
-              <strong>Xiaomi 13 Pro</strong>
-              <span>256GB · Negro</span>
-            </span>
-            <span class="mini-list__badge">ID 7</span>
-          </li>
-        </ul>
+        <ul class="mini-list" aria-label="Lista de caracteristicas" id="inventario-mini-list"></ul>
       </article>
 
     </aside>
