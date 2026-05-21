@@ -78,17 +78,19 @@
 
 <aside class="drawer" aria-label="Menú lateral">
 	<div class="drawer__header">
-		<span class="drawer__title">Menú</span>
+		<img class="drawer__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
+		<div class="drawer__header-copy">
+			<span class="drawer__title">Menú</span>
+		</div>
 	</div>
 
 	<div class="drawer__nav-wrapper">
-		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
 		<nav class="drawer__nav" id="drawerNav">
 			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-			<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+			<a class="drawer__link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
 			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo / Ventas</a>
 			<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_validar_pagos') }}">Validar Pagos</a>
-			<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+			<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
 			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
 			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
@@ -96,38 +98,9 @@
 			<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
 			<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
 			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
-			<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+			<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 		</nav>
-		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
-
-	<script>
-	(function(){
-		var nav = document.getElementById('drawerNav');
-		if(!nav) return;
-		var btnUp = nav.parentElement.querySelector('.nav-scroll-up');
-		var btnDown = nav.parentElement.querySelector('.nav-scroll-down');
-		var scrollAmount = 140;
-
-		function updateButtons(){
-			if(nav.scrollTop <= 0) btnUp.style.display = 'none'; else btnUp.style.display = '';
-			if(nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1) btnDown.style.display = 'none'; else btnDown.style.display = '';
-		}
-
-		btnUp.addEventListener('click', function(){
-			nav.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-		btnDown.addEventListener('click', function(){
-			nav.scrollBy({ top: scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-
-		nav.addEventListener('scroll', updateButtons);
-		// initial
-		updateButtons();
-	})();
-	</script>
 
 	<div class="drawer__footer">
 		{% if g.user %}

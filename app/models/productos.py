@@ -228,8 +228,16 @@ class Productos(conectar):
                 "INSERT INTO modelo_producto (ID_marca, N_modelo) VALUES (%s, %s)",
                 (id_marca, nombre),
             )
+            id_modelo = int(cursor.lastrowid)
+
+            # Al registrar un modelo nuevo, crear su fila en stock en 0.
+            cursor.execute(
+                "INSERT INTO stock (ID_modelo, Existencia, Costo_venta) VALUES (%s, %s, %s)",
+                (id_modelo, 0, 0),
+            )
+
             db.commit()
-            return int(cursor.lastrowid)
+            return id_modelo
         except Exception:
             db.rollback()
             raise
@@ -264,6 +272,8 @@ class Productos(conectar):
 
         cursor = db.cursor()
         try:
+            # Borrar stock primero para evitar restricción FK al borrar el modelo.
+            cursor.execute("DELETE FROM stock WHERE ID_modelo=%s", (id_modelo,))
             cursor.execute("DELETE FROM modelo_producto WHERE ID_modelo=%s", (id_modelo,))
             db.commit()
             return cursor.rowcount > 0

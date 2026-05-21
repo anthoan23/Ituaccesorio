@@ -38,7 +38,7 @@ body {
 
 .hero {
   display: grid;
-  grid-template-columns: 1.25fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   align-items: stretch;
 }
@@ -101,6 +101,20 @@ body {
   color: rgba(255, 255, 255, 0.78);
   font-weight: 800;
   font-size: 0.88rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(243, 197, 0, 0.22);
+}
+
+.chip:focus-visible {
+  outline: 3px solid rgba(243, 197, 0, 0.35);
+  outline-offset: 3px;
 }
 
 .chip--active {
@@ -162,7 +176,7 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: 1.45fr 0.85fr;
+  grid-template-columns: 1.65fr 0.75fr;
   gap: 1rem;
   align-items: start;
 }
@@ -238,13 +252,18 @@ body {
 }
 
 .btn--ghost {
-  background: rgba(17, 24, 39, 0.04);
-  color: var(--inv-ink);
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(17, 24, 39, 0.08);
+  color: rgba(18, 20, 24, 0.92);
+  border: 1px solid rgba(17, 24, 39, 0.18);
 }
 
 .btn--ghost:hover {
-  background: rgba(17, 24, 39, 0.08);
+  background: rgba(17, 24, 39, 0.12);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(243, 197, 0, 0.32);
+  outline-offset: 3px;
 }
 
 .btn--primary {
@@ -252,6 +271,31 @@ body {
   color: #151515;
   font-weight: 900;
   box-shadow: 0 14px 28px rgba(243, 197, 0, 0.2);
+}
+
+/*
+  Importante: navbar.css también define .btn/.btn--ghost y se carga desde navbar.html
+  (después del head), por lo que puede pisar los estilos del módulo Inventario.
+  Estas reglas más específicas aseguran contraste correcto dentro de esta página.
+*/
+.inventario-page .btn {
+  filter: none;
+}
+
+.inventario-page .panel .btn--ghost {
+  background: rgba(17, 24, 39, 0.08);
+  color: rgba(18, 20, 24, 0.92);
+  border: 1px solid rgba(17, 24, 39, 0.18);
+}
+
+.inventario-page .panel .btn--ghost:hover {
+  background: rgba(17, 24, 39, 0.12);
+  border-color: rgba(17, 24, 39, 0.22);
+}
+
+.inventario-page .panel .btn--ghost:focus-visible {
+  outline: 3px solid rgba(243, 197, 0, 0.32);
+  outline-offset: 3px;
 }
 
 .btn--disabled {
@@ -313,7 +357,7 @@ body {
 }
 
 .table-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
   border-radius: 18px;
 }
 
@@ -326,12 +370,12 @@ body {
 .table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
-  min-width: 820px;
+  table-layout: fixed;
+  min-width: 0;
 }
 
 .table thead th {
-  padding: 0.95rem 0.9rem;
+  padding: 0.75rem 0.7rem;
   text-align: left;
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -342,9 +386,48 @@ body {
 }
 
 .table tbody td {
-  padding: 0.92rem 0.9rem;
+  padding: 0.75rem 0.7rem;
   border-bottom: 1px solid rgba(17, 24, 39, 0.08);
   vertical-align: middle;
+}
+
+.inventory-table th,
+.inventory-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-table th:nth-child(1),
+.inventory-table td:nth-child(1) { width: 16%; }
+.inventory-table th:nth-child(2),
+.inventory-table td:nth-child(2) { width: 12%; }
+.inventory-table th:nth-child(3),
+.inventory-table td:nth-child(3) { width: 18%; }
+.inventory-table th:nth-child(4),
+.inventory-table td:nth-child(4) { width: 12%; }
+.inventory-table th:nth-child(5),
+.inventory-table td:nth-child(5) { width: 11%; }
+.inventory-table th:nth-child(6),
+.inventory-table td:nth-child(6) { width: 10%; }
+.inventory-table th:nth-child(7),
+.inventory-table td:nth-child(7) { width: 12%; }
+.inventory-table th:nth-child(8),
+.inventory-table td:nth-child(8) { width: 9%; }
+
+.inventory-table td:nth-child(1),
+.inventory-table td:nth-child(2),
+.inventory-table td:nth-child(3),
+.inventory-table td:nth-child(4),
+.inventory-table td:nth-child(5) {
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.inventory-table td:nth-child(6),
+.inventory-table td:nth-child(7),
+.inventory-table td:nth-child(8) {
+  white-space: nowrap;
 }
 
 .table tbody tr:nth-child(even) {
@@ -356,7 +439,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.65rem;
+  padding: 0.3rem 0.55rem;
   border-radius: 999px;
   font-weight: 800;
   font-size: 0.82rem;
@@ -513,6 +596,15 @@ body {
   .hero,
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    table-layout: auto;
+    min-width: 820px;
   }
 }
 
