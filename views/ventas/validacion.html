@@ -1,0 +1,87 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Validación de Pagos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ventas.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page ventas-validacion">
+    <header class="products-hero">
+        <h1 class="products-hero__title">Validación de Pagos</h1>
+        <button id="btn-venta-local" class="btn btn--yellow">Registrar venta local</button>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="pendientes">Pendientes</button>
+        <button class="tab-btn" data-tab="aprobados">Aprobados</button>
+        <button class="tab-btn" data-tab="rechazados">Rechazados</button>
+    </div>
+
+    <div id="pendientes-tab" class="tab-content">
+        <div id="pendientes-list"></div>
+    </div>
+    <div id="aprobados-tab" class="tab-content is-hidden">
+        <div id="aprobados-list"></div>
+    </div>
+    <div id="rechazados-tab" class="tab-content is-hidden">
+        <div id="rechazados-list"></div>
+    </div>
+</main>
+
+<div id="rechazo-modal" class="modal-rechazo is-hidden">
+    <div class="modal-panel">
+        <h3>Rechazar pago</h3>
+        <textarea id="motivo-rechazo" class="motivo-rechazo" placeholder="Motivo del rechazo..." rows="3"></textarea>
+        <div class="filters-panel__actions rechazo-actions">
+            <button id="cancelar-rechazo" class="btn btn--ghost">Cancelar</button>
+            <button id="confirmar-rechazo" class="btn btn--yellow">Confirmar rechazo</button>
+        </div>
+    </div>
+</div>
+
+<div id="venta-local-modal" class="modal is-hidden">
+    <div class="modal__backdrop" data-modal-close="true"></div>
+    <div class="modal__panel card venta-local-panel">
+        <h2 class="card__title">Registrar venta local</h2>
+        <form id="form-venta-local">
+            <label class="field">
+                <span class="field__label">Cliente ID</span>
+                <input type="number" id="cliente-id" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Producto</span>
+                <select id="producto-select" required></select>
+            </label>
+            <label class="field">
+                <span class="field__label">Cantidad</span>
+                <input type="number" id="cantidad-local" value="1" min="1" required>
+            </label>
+            <button type="button" id="agregar-producto-local" class="btn btn--ghost">Agregar producto</button>
+            <div id="items-local-list"></div>
+            <label class="field">
+                <span class="field__label">Método de pago</span>
+                <select id="metodo-local" required>
+                    <option value="efectivo_usd">Efectivo USD</option>
+                    <option value="efectivo_bs">Efectivo Bs</option>
+                    <option value="pago_movil">Pago Móvil</option>
+                    <option value="zelle">Zelle</option>
+                </select>
+            </label>
+            <label class="field">
+                <span class="field__label">Total pagado</span>
+                <input type="number" id="total-pagado" step="0.01" required>
+            </label>
+            <div class="filters-panel__actions">
+                <button type="submit" class="btn btn--yellow">Registrar venta</button>
+                <button type="button" data-modal-close="true" class="btn btn--ghost">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+{% endblock %}

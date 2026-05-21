@@ -89,7 +89,7 @@ CREATE TABLE `cargo` (
 
 LOCK TABLES `cargo` WRITE;
 /*!40000 ALTER TABLE `cargo` DISABLE KEYS */;
-INSERT INTO `cargo` VALUES (1,'Gerente General','Responsable de la gestion general de la tienda'),(2,'Supervisor de Ventas','Supervisa el equipo de ventas y cumplimiento de metas'),(3,'Vendedor','Atencion al cliente y venta de productos'),(4,'Tecnico Reparaciones','Realiza diagnosticos y reparaciones de dispositivos'),(5,'Tecnico Especialista','Especialista en reparaciones avanzadas'),(6,'Auxiliar de Almacen','Gestiona inventario y recepcion de productos'),(7,'Delivery','Realiza entregas a domicilio'),(8,'Community Manager','Gestiona redes sociales y atencion digital'),(9,'Contador','Maneja finanzas y facturacion'),(10,'Asesor Comercial','Asesora a clientes corporativos');
+INSERT INTO `cargo` VALUES (1,'Gerente General','Responsable de la gestion general de la tienda'),(2,'Supervisor de Ventas','Supervisa el equipo de ventas y cumplimiento de metas'),(3,'Vendedor','Atencion al cliente y venta de productos'),(4,'Tecnico','Realiza diagnosticos y reparaciones de dispositivos'),(5,'Tecnico','Especialista en reparaciones avanzadas'),(6,'Auxiliar de Almacen','Gestiona inventario y recepcion de productos'),(7,'Delivery','Realiza entregas a domicilio'),(8,'Community Manager','Gestiona redes sociales y atencion digital'),(9,'Contador','Maneja finanzas y facturacion'),(10,'Asesor Comercial','Asesora a clientes corporativos');
 /*!40000 ALTER TABLE `cargo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -143,7 +143,7 @@ CREATE TABLE `cliente` (
 
 LOCK TABLES `cliente` WRITE;
 /*!40000 ALTER TABLE `cliente` DISABLE KEYS */;
-INSERT INTO `cliente` VALUES (1,'Maria','Gonzalez','04141234567','maria.g@example.com','Calle 1, Ciudad','Regular'),(2,'Juan','Perez','04141234568','juan.p@example.com','Av. 2, Ciudad','Premium'),(3,'Ana','Rodriguez','04141234569','ana.r@example.com','Calle 3, Ciudad','Regular'),(4,'Luis','Martinez','04141234570','luis.m@example.com','Av. 4, Ciudad','Mayorista'),(5,'Carla','Fernandez','04141234571','carla.f@example.com','Calle 5, Ciudad','Regular'),(6,'Carlos','Sanchez','04161234572','carlos.s@example.com','Calle 6, Ciudad','Premium'),(7,'Laura','Diaz','04161234573','laura.d@example.com','Av. 7, Ciudad','Regular'),(8,'Pedro','Gomez','04161234574','pedro.g@example.com','Calle 8, Ciudad','Regular'),(9,'Sofia','Lopez','04161234575','sofia.l@example.com','Av. 9, Ciudad','Premium'),(10,'Diego','Torres','04161234576','diego.t@example.com','Calle 10, Ciudad','Mayorista'),(11,'Valentina','Ruiz','04161234577','valentina.r@example.com','Av. 11, Ciudad','Regular'),(12,'Andres','Morales','04161234578','andres.m@example.com','Calle 12, Ciudad','Premium'),(13,'Camila','Ortega','04161234579','camila.o@example.com','Av. 13, Ciudad','Regular'),(14,'Javier','Castro','04161234580','javier.c@example.com','Calle 14, Ciudad','Regular'),(15,'Isabella','Mendoza','04161234581','isabella.m@example.com','Av. 15, Ciudad','Premium');
+INSERT INTO `cliente` VALUES (1,'Maria','Gonzalez','04141234567','maria.g@example.com','Calle 1, Ciudad','Regular'),(2,'Juan','Perez','04141234568','juan.p@example.com','Av. 2, Ciudad','Premium'),(3,'Ana','Rodriguez','04141234569','ana.r@example.com','Calle 3, Ciudad','Regular'),(4,'Luis','Martinez','04141234570','luis.m@example.com','Av. 4, Ciudad','Mayorista'),(5,'Carla','Fernandez','04141234571','carla.f@example.com','Calle 5, Ciudad','Regular'),(6,'Carlos','Sanchez','04161234572','carlos.s@example.com','Calle 6, Ciudad','Premium'),(7,'Laura','Diaz','04161234573','laura.d@example.com','Av. 7, Ciudad','Regular'),(8,'Pedro','Gomez','04161234574','pedro.g@example.com','Calle 8, Ciudad','Regular'),(9,'Sofia','Lopez','04161234575','sofia.l@example.com','Av. 9, Ciudad','Premium'),(10,'Diego','Torres','04161234576','diego.t@example.com','Calle 10, Ciudad','Mayorista'),(11,'Valentina','Ruiz','04161234577','valentina.r@example.com','Av. 11, Ciudad','Regular'),(12,'Andres','Morales','04161234578','andres.m@example.com','Calle 12, Ciudad','Premium'),(13,'Camila','Ortega','04161234579','camila.o@example.com','Av. 13, Ciudad','Regular'),(14,'Javier','Castro','04161234580','javier.c@example.com','Calle 14, Ciudad','Regular'),(15,'Isabella','Mendoza','04161234581','isabella.m@example.com','Av. 15, Ciudad','Premium'),(11111111,'Cliente','Test','00000000000','clientetest@gmail.com','Barquisimeto','Regular'),(31111553,'Anthoan','Gonzalez','04145558268','anthoan@gmail.com','barquisimeto','Regular');
 /*!40000 ALTER TABLE `cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -311,7 +311,7 @@ CREATE TABLE `evidencia_e` (
   PRIMARY KEY (`ID_evidencia_e`),
   KEY `ID_orden` (`ID_orden`),
   CONSTRAINT `evidencia_e_ibfk_1` FOREIGN KEY (`ID_orden`) REFERENCES `orden_e` (`ID_orden_e`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -320,7 +320,7 @@ CREATE TABLE `evidencia_e` (
 
 LOCK TABLES `evidencia_e` WRITE;
 /*!40000 ALTER TABLE `evidencia_e` DISABLE KEYS */;
-INSERT INTO `evidencia_e` VALUES (1,1,'/fotos/orden1/antes_pantalla.jpg'),(2,1,'/fotos/orden1/despues_pantalla.jpg'),(3,2,'/fotos/orden2/puerto_danado.jpg'),(4,3,'/fotos/orden3/bateria_vieja.jpg'),(5,4,'/fotos/orden4/camara_rota.jpg'),(6,5,'/fotos/orden5/boton_danado.jpg'),(7,6,'/fotos/orden6/placa_madre.jpg'),(8,7,'/fotos/orden7/altavoz.jpg'),(9,8,'/fotos/orden8/mica_rota.jpg'),(18,12,'/static/img/evidencias/taller/12/ab11a26a444443e0a2c986baf1f78a0d.png'),(19,12,'/static/img/evidencias/taller/12/1d55f943f4f14567b9a58de4509251a0.png'),(20,10,'/static/img/evidencias/taller/10/63e7593e94e342309a050b5bd580bfa3.png'),(45,12,'/static/img/evidencias/taller/12/9ed4e454d7744520a5d1bf48f78e25de.png'),(46,12,'/static/img/evidencias/taller/12/824cf4b153c24a9cb560da3f6886502a.png'),(49,9,'/static/img/evidencias/taller/9/1919a303db5148458be87b16f3541671.png'),(50,9,'/static/img/evidencias/taller/9/3416bd8d2e4643bcacc881ff4fbecc1d.png'),(51,9,'/static/img/evidencias/taller/9/f628eab37a13439da0e3e192e467ace9.png');
+INSERT INTO `evidencia_e` VALUES (1,1,'/fotos/orden1/antes_pantalla.jpg'),(2,1,'/fotos/orden1/despues_pantalla.jpg'),(3,2,'/fotos/orden2/puerto_danado.jpg'),(4,3,'/fotos/orden3/bateria_vieja.jpg'),(5,4,'/fotos/orden4/camara_rota.jpg'),(6,5,'/fotos/orden5/boton_danado.jpg'),(7,6,'/fotos/orden6/placa_madre.jpg'),(8,7,'/fotos/orden7/altavoz.jpg'),(9,8,'/fotos/orden8/mica_rota.jpg'),(18,12,'/static/img/evidencias/taller/12/ab11a26a444443e0a2c986baf1f78a0d.png'),(19,12,'/static/img/evidencias/taller/12/1d55f943f4f14567b9a58de4509251a0.png'),(20,10,'/static/img/evidencias/taller/10/63e7593e94e342309a050b5bd580bfa3.png'),(45,12,'/static/img/evidencias/taller/12/9ed4e454d7744520a5d1bf48f78e25de.png'),(46,12,'/static/img/evidencias/taller/12/824cf4b153c24a9cb560da3f6886502a.png'),(49,9,'/static/img/evidencias/taller/9/1919a303db5148458be87b16f3541671.png'),(50,9,'/static/img/evidencias/taller/9/3416bd8d2e4643bcacc881ff4fbecc1d.png'),(51,9,'/static/img/evidencias/taller/9/f628eab37a13439da0e3e192e467ace9.png'),(52,13,'/static/img/evidencias/taller/13/99b88ab982a5489a803c6698b8773c85.jpeg');
 /*!40000 ALTER TABLE `evidencia_e` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -429,7 +429,7 @@ CREATE TABLE `interaccion` (
 
 LOCK TABLES `interaccion` WRITE;
 /*!40000 ALTER TABLE `interaccion` DISABLE KEYS */;
-INSERT INTO `interaccion` VALUES (1003,1,'Entrega'),(1003,1,'Recepcion'),(1004,2,'Entrega'),(1004,2,'Recepcion'),(1007,2,'Reparacion'),(1007,2,'Revision'),(1005,8,'Recepcion'),(1004,9,'Asignado'),(1004,10,'Asignado'),(1003,11,'Asignado'),(1004,12,'Asignado');
+INSERT INTO `interaccion` VALUES (1003,1,'Entrega'),(1003,1,'Recepcion'),(1004,2,'Entrega'),(1004,2,'Recepcion'),(1007,2,'Reparacion'),(1007,2,'Revision'),(1007,6,'Asignado'),(1005,8,'Recepcion'),(1004,9,'Asignado'),(1004,10,'Asignado'),(1003,11,'Asignado'),(1004,12,'Asignado'),(1007,14,'Asignado');
 /*!40000 ALTER TABLE `interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -603,7 +603,7 @@ CREATE TABLE `orden_e` (
   KEY `ID_c` (`ID_c`),
   CONSTRAINT `orden_e_ibfk_1` FOREIGN KEY (`ID_modelo`) REFERENCES `modelo_producto` (`ID_modelo`),
   CONSTRAINT `orden_e_ibfk_2` FOREIGN KEY (`ID_c`) REFERENCES `cliente` (`ID_c`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -612,7 +612,7 @@ CREATE TABLE `orden_e` (
 
 LOCK TABLES `orden_e` WRITE;
 /*!40000 ALTER TABLE `orden_e` DISABLE KEYS */;
-INSERT INTO `orden_e` VALUES (1,1,1,'En Proceso','Pantalla rota por caida',1234,'0000',250000,'2026-01-15',NULL,NULL,NULL,NULL),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000,'2026-02-10',NULL,NULL,NULL,NULL),(3,3,3,'En Proceso','Bateria no dura',9012,'2222',80000,'2026-03-05',NULL,NULL,NULL,NULL),(4,6,4,'En Proceso','Camara no funciona',3456,'3333',150000,'2026-04-20',NULL,NULL,NULL,NULL),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000,'2026-05-12',NULL,NULL,NULL,NULL),(6,9,6,'Pendiente','No enciende',1122,'5555',180000,'2026-06-18',NULL,NULL,NULL,NULL),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000,'2026-07-22',NULL,NULL,NULL,NULL),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000,'2026-08-30',NULL,NULL,NULL,NULL),(9,5,9,'Asignado','Problemas de WiFi',7788,'8888',100000,'2026-09-14',NULL,NULL,NULL,NULL),(10,8,10,'Asignado','Puerto de carga suelto',9900,'9999',80000,'2026-10-05',NULL,NULL,NULL,NULL),(11,10,11,'Asignado','Fallo en lector huella',1212,'1010',95000,'2026-11-25',NULL,NULL,NULL,NULL),(12,12,12,'En revisión','Camara frontal pixeleada',3434,'1212',110000,'2026-12-31',NULL,NULL,'sssssssss','sssssss');
+INSERT INTO `orden_e` VALUES (1,1,1,'En Proceso','Pantalla rota por caida',1234,'0000',250000,'2026-01-15',NULL,NULL,NULL,NULL),(2,4,2,'En Proceso','No carga, puerto danado',5678,'1111',120000,'2026-02-10',NULL,NULL,NULL,NULL),(3,3,3,'En Proceso','Bateria no dura',9012,'2222',80000,'2026-03-05',NULL,NULL,NULL,NULL),(4,6,4,'En Proceso','Camara no funciona',3456,'3333',150000,'2026-04-20',NULL,NULL,NULL,NULL),(5,7,5,'En Proceso','Boton power atascado',7890,'4444',60000,'2026-05-12',NULL,NULL,NULL,NULL),(6,9,6,'Asignado','No enciende',1122,'5555',180000,'2026-06-18',NULL,NULL,NULL,NULL),(7,11,7,'Completado','Altavoz distorsionado',3344,'6666',70000,'2026-07-22',NULL,NULL,NULL,NULL),(8,2,8,'En Proceso','Mica trasera rota',5566,'7777',90000,'2026-08-30',NULL,NULL,NULL,NULL),(9,5,9,'Asignado','Problemas de WiFi',7788,'8888',100000,'2026-09-14',NULL,NULL,NULL,NULL),(10,8,10,'Asignado','Puerto de carga suelto',9900,'9999',80000,'2026-10-05',NULL,NULL,NULL,NULL),(11,10,11,'Asignado','Fallo en lector huella',1212,'1010',95000,'2026-11-25',NULL,NULL,NULL,NULL),(12,12,12,'En revisión','Camara frontal pixeleada',3434,'1212',110000,'2026-12-31',NULL,NULL,'sssssssss','sssssss'),(13,4,15,'Pendiente','no',1234,'0000',NULL,'2026-05-19',NULL,'no',NULL,NULL),(14,1,31111553,'Asignado','no',1111,'1111',NULL,'2026-05-20',NULL,'no',NULL,NULL);
 /*!40000 ALTER TABLE `orden_e` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -779,6 +779,40 @@ LOCK TABLES `proveedores_productos` WRITE;
 /*!40000 ALTER TABLE `proveedores_productos` DISABLE KEYS */;
 INSERT INTO `proveedores_productos` VALUES (1,1,550000),(1,4,950000),(1,9,220000),(2,3,250000),(2,6,600000),(2,10,450000),(3,8,380000),(3,12,150000),(4,2,480000),(5,7,700000),(6,17,25000),(7,13,180000),(8,15,55000),(9,14,32000),(10,11,980000);
 /*!40000 ALTER TABLE `proveedores_productos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `reporte_pagos`
+--
+
+DROP TABLE IF EXISTS `reporte_pagos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reporte_pagos` (
+  `ID_pago` int NOT NULL AUTO_INCREMENT,
+  `ID_factura` varchar(20) NOT NULL,
+  `Metodo_Pago` enum('Pago Movil','Zelle','Binance','Efectivo Dolares','Efectivo Bolivares') NOT NULL,
+  `Referencia_O_Comprobante` varchar(50) DEFAULT NULL,
+  `Banco_Origen` varchar(50) DEFAULT NULL,
+  `Celular_O_Correo` varchar(50) DEFAULT NULL,
+  `Titular_Cuenta` varchar(60) DEFAULT NULL,
+  `Billete_Entregado` decimal(10,2) DEFAULT NULL,
+  `Capture_Pantalla` varchar(255) DEFAULT NULL,
+  `Monto_Pagado` decimal(10,2) NOT NULL,
+  `Fecha_Pago` varchar(10) NOT NULL,
+  PRIMARY KEY (`ID_pago`),
+  KEY `fk_pago_venta` (`ID_factura`),
+  CONSTRAINT `fk_pago_venta` FOREIGN KEY (`ID_factura`) REFERENCES `venta` (`ID_factura`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `reporte_pagos`
+--
+
+LOCK TABLES `reporte_pagos` WRITE;
+/*!40000 ALTER TABLE `reporte_pagos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reporte_pagos` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -988,6 +1022,9 @@ CREATE TABLE `venta` (
   `ID_c` int DEFAULT NULL,
   `Costo_total` int DEFAULT NULL,
   `Fecha_v` varchar(10) DEFAULT NULL,
+  `Estado_pago` enum('Pendiente','Por Verificar','Aprobado','Rechazado') NOT NULL DEFAULT 'Pendiente',
+  `Metodo_pago` varchar(30) DEFAULT NULL,
+  `Motivo_rechazo` varchar(300) DEFAULT NULL,
   PRIMARY KEY (`ID_factura`),
   KEY `ID_em` (`ID_em`),
   KEY `ID_c` (`ID_c`),
@@ -1002,17 +1039,9 @@ CREATE TABLE `venta` (
 
 LOCK TABLES `venta` WRITE;
 /*!40000 ALTER TABLE `venta` DISABLE KEYS */;
-INSERT INTO `venta` VALUES ('FAC-2026-0001',1003,1,750000,'2026-05-01'),('FAC-2026-0002',1004,2,1100000,'2026-05-01'),('FAC-2026-0003',1003,3,350000,'2026-05-02'),('FAC-2026-0004',1005,4,1200000,'2026-05-02'),('FAC-2026-0005',1003,5,650000,'2026-05-03'),('FAC-2026-0006',1004,6,800000,'2026-05-03'),('FAC-2026-0007',1005,7,250000,'2026-05-04'),('FAC-2026-0008',1003,8,600000,'2026-05-04'),('FAC-2026-0009',1004,9,1300000,'2026-05-05'),('FAC-2026-0010',1005,10,45000,'2026-05-05'),('FAC-2026-0011',1003,11,950000,'2026-05-06'),('FAC-2026-0012',1004,12,500000,'2026-05-06'),('FAC-2026-0013',1005,13,300000,'2026-05-07'),('FAC-2026-0014',1003,14,80000,'2026-05-07'),('FAC-2026-0015',1004,15,1000000,'2026-05-08');
+INSERT INTO `venta` VALUES ('FAC-2026-0001',1003,1,750000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0002',1004,2,1100000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0003',1003,3,350000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0004',1005,4,1200000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0005',1003,5,650000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0006',1004,6,800000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0007',1005,7,250000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0008',1003,8,600000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0009',1004,9,1300000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0010',1005,10,45000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0011',1003,11,950000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0012',1004,12,500000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0013',1005,13,300000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0014',1003,14,80000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0015',1004,15,1000000,'2026-05-08','Pendiente',NULL,NULL);
 /*!40000 ALTER TABLE `venta` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping events for database 'ituaccesoriobd'
---
-
---
--- Dumping routines for database 'ituaccesoriobd'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1023,4 +1052,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-17 23:18:38
+-- Dump completed on 2026-05-20 22:48:28
