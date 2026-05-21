@@ -8,22 +8,40 @@
 {% endblock %}
 
 {% block content %}
-  <main class="page">
-    <section class="grid" aria-label="Tablas principales">
-      <article class="card card--table" aria-label="Empleados registrados">
-        <div class="table__header">
-          <button class="table__register-btn" type="button" data-open-modal="modal-empleado">Registrar empleado</button>
-          <div class="table__header-row">
-            <h2 class="card__title">Empleados registrados</h2>
-            <div class="pager" aria-label="Paginación">
-              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
-              <span id="pager-pages" class="pager__pages">1</span>
-              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
-            </div>
+  <main class="page empleados-page">
+    <section class="hero" aria-label="Encabezado de empleados">
+      <div class="hero__copy">
+        <p class="eyebrow">Gestión de personal</p>
+        <h1>Empleados</h1>
+        <p class="hero__hint">Administra empleados, cargos y especialidades desde un solo lugar.</p>
+      </div>
+
+      <div class="stats" aria-label="Resumen">
+        <article class="stat-card">
+          <span class="stat-card__label">Empleados</span>
+          <strong id="stat-empleados" class="stat-card__value">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Cargos</span>
+          <strong id="stat-cargos" class="stat-card__value">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Especialidades</span>
+          <strong id="stat-especialidades" class="stat-card__value">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="board" aria-label="Tablas principales">
+      <article class="panel panel--wide" aria-label="Empleados registrados">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Empleados registrados</h2>
           </div>
+          <button class="btn btn--primary" type="button" data-open-modal="modal-empleado">Registrar empleado</button>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap table-wrap--tall" role="region" aria-label="Tabla de empleados">
           <table class="table">
             <thead>
               <tr>
@@ -38,21 +56,16 @@
         </div>
       </article>
 
-      <article class="card card--table" aria-label="Cargos registrados">
-        <div class="table__header">
-          <button class="table__register-btn" type="button" data-open-modal="modal-cargo">Registrar cargo</button>
-          <div class="table__header-row">
-            <h2 class="card__title">Cargos registrados</h2>
-            <div class="pager" aria-label="Paginación">
-              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
-              <span class="pager__pages">1</span>
-              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
-            </div>
+      <article class="panel" aria-label="Cargos registrados">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Cargos</h2>
           </div>
+          <button class="btn btn--primary" type="button" data-open-modal="modal-cargo">Añadir Cargo</button>
         </div>
 
-        <div class="table-wrap">
-          <table class="table">
+        <div class="table-wrap table-wrap--side" role="region" aria-label="Tabla de cargos">
+          <table class="table table--compact">
             <thead>
               <tr>
                 <th>ID</th>
@@ -65,21 +78,16 @@
         </div>
       </article>
 
-      <article class="card card--table" aria-label="Especialidades registradas">
-        <div class="table__header">
-          <button class="table__register-btn" type="button" data-open-modal="modal-especialidad">Registrar especialidad</button>
-          <div class="table__header-row">
-            <h2 class="card__title">Especialidades registradas</h2>
-            <div class="pager" aria-label="Paginación">
-              <button class="pager__btn" type="button" data-page="prev" aria-label="Anterior">‹</button>
-              <span class="pager__pages">1</span>
-              <button class="pager__btn" type="button" data-page="next" aria-label="Siguiente">›</button>
-            </div>
+      <article class="panel" aria-label="Especialidades registradas">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Especialidades</h2>
           </div>
+          <button class="btn btn--primary" type="button" data-open-modal="modal-especialidad">Nueva Especialidad</button>
         </div>
 
-        <div class="table-wrap">
-          <table class="table">
+        <div class="table-wrap table-wrap--side" role="region" aria-label="Tabla de especialidades">
+          <table class="table table--compact">
             <thead>
               <tr>
                 <th>ID</th>
@@ -103,26 +111,18 @@
             <input name="cedula" type="text" required>
           </label>
           <label class="ui-field">
-            <span>Cargo</span>
-            <select name="id_cargo" required>
-              <option value="">Seleccione un cargo</option>
-            </select>
-          </label>
-          <label class="ui-field">
-            <span>Especialidades</span>
-            <select name="id_especialidad" id="select-especialidad">
-              <option value="">Seleccione una especialidad</option>
-            </select>
-            <div id="selected-especialidades" class="selected-list" aria-live="polite"></div>
-            <input type="hidden" name="especialidades" id="input-especialidades" value="[]">
-          </label>
-          <label class="ui-field">
             <span>Nombre</span>
             <input name="nombre" type="text" required>
           </label>
           <label class="ui-field">
             <span>Apellido</span>
             <input name="apellido" type="text" required>
+          </label>
+          <label class="ui-field">
+            <span>Cargo</span>
+            <select name="id_cargo" required>
+              <option value="">Seleccione un cargo</option>
+            </select>
           </label>
           <label class="ui-field">
             <span>Celular</span>
@@ -135,6 +135,14 @@
           <label class="ui-field ui-field--full">
             <span>Dirección</span>
             <input name="direccion" type="text" required>
+          </label>
+          <label class="ui-field ui-field--full">
+            <span>Especialidades</span>
+            <select name="id_especialidad" id="select-especialidad">
+              <option value="">Seleccione una especialidad</option>
+            </select>
+            <div id="selected-especialidades" class="selected-list" aria-live="polite"></div>
+            <input type="hidden" name="especialidades" id="input-especialidades" value="[]">
           </label>
         </div>
         <div class="ui-form__actions">
