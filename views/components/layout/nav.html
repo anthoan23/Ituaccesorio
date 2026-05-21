@@ -19,6 +19,14 @@
 	</div>
 
 	<div class="topbar__right">
+		<!-- Botón de catálogo/ventas -->
+		<a class="cart-icon-btn" href="{{ url_for('ventas.pagina_catalogo') }}" title="Catálogo de productos">
+			<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+				<path d="M4 6h16l-2 13H6L4 6zm2 0l1-3h10l1 3H6zm2 4v2h8v-2H8z" fill="currentColor"/>
+			</svg>
+			<span id="cart-badge-nav" class="cart-badge">0</span>
+		</a>
+
 		<button class="icon-btn" type="button" aria-label="Notificaciones">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 				<path
@@ -78,19 +86,27 @@
 
 <aside class="drawer" aria-label="Menú lateral">
 	<div class="drawer__header">
-		<img class="drawer__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
-		<div class="drawer__header-copy">
-			<span class="drawer__title">Menú</span>
-		</div>
+		<span class="drawer__title">Menú</span>
 	</div>
 
 	<div class="drawer__nav-wrapper">
+		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
 		<nav class="drawer__nav" id="drawerNav">
 			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-			<a class="drawer__link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo / Ventas</a>
-			<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_validar_pagos') }}">Validar Pagos</a>
-			<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+			<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+			
+			<!-- Sección de Productos y Ventas -->
+			<details class="drawer__submenu" {% if active_page in ['productos', 'catalogo', 'validar_pagos'] %}open{% endif %}>
+				<summary class="drawer__submenu-trigger">📦 Productos / Ventas</summary>
+				<div class="drawer__submenu-items">
+					<a class="drawer__submenu-link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">📱 Gestión de Productos</a>
+					<a class="drawer__submenu-link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">🛍️ Catálogo / Ventas</a>
+					{% if g.user and g.user.nombre_rol in ['Administrador', 'Supervisor', 'Vendedor'] %}
+					<a class="drawer__submenu-link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_validar_pagos') }}">💰 Validar Pagos</a>
+					{% endif %}
+				</div>
+			</details>
+			
 			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
 			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
 			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
@@ -98,10 +114,37 @@
 			<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
 			<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
 			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
-			<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
-			<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
+			<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 		</nav>
+		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
+
+	<script>
+	(function(){
+		var nav = document.getElementById('drawerNav');
+		if(!nav) return;
+		var btnUp = nav.parentElement.querySelector('.nav-scroll-up');
+		var btnDown = nav.parentElement.querySelector('.nav-scroll-down');
+		var scrollAmount = 140;
+
+		function updateButtons(){
+			if(nav.scrollTop <= 0) btnUp.style.display = 'none'; else btnUp.style.display = '';
+			if(nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1) btnDown.style.display = 'none'; else btnDown.style.display = '';
+		}
+
+		btnUp.addEventListener('click', function(){
+			nav.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+			setTimeout(updateButtons, 300);
+		});
+		btnDown.addEventListener('click', function(){
+			nav.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+			setTimeout(updateButtons, 300);
+		});
+
+		nav.addEventListener('scroll', updateButtons);
+		updateButtons();
+	})();
+	</script>
 
 	<div class="drawer__footer">
 		{% if g.user %}

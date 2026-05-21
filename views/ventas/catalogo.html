@@ -1,0 +1,93 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Catálogo de Productos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ventas.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page ventas-catalogo">
+    <header class="products-hero">
+        <div>
+            <h1 class="products-hero__title">Catálogo de Productos</h1>
+            <p class="products-hero__subtitle">Precios en USD + Tasa del día</p>
+        </div>
+        <div class="products-hero__actions">
+            <button id="cart-toggle" class="cart-icon-btn" aria-label="Carrito">
+                Carrito
+                <span id="cart-count" class="cart-badge">0</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="products-grid">
+        <article class="card">
+            <div class="table__header">
+                <h2 class="card__title">Productos</h2>
+                <span id="productos-count"></span>
+            </div>
+            <div id="productos-grid" class="productos-grid"></div>
+            <div id="paginacion" class="pager"></div>
+        </article>
+
+        <aside class="card filters-panel">
+            <h2 class="card__title">Filtros</h2>
+            <div class="filters-panel__section">
+                <label class="field">
+                    <span class="field__label">Clase</span>
+                    <select id="f-clase">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field__label">Marca</span>
+                    <select id="f-marca">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field__label">Buscar</span>
+                    <input id="f-texto" type="search" placeholder="Nombre o marca...">
+                </label>
+                <div class="filters-panel__actions">
+                    <button id="btn-aplicar" class="btn btn--yellow">Buscar</button>
+                    <button id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+                </div>
+            </div>
+            <div class="filters-panel__section">
+                <h3 class="filters-panel__title">Más vendidos</h3>
+                <div id="mas-vendidos" class="mas-vendidos-list"></div>
+            </div>
+            <div class="filters-panel__section">
+                <h3 class="filters-panel__title">Tasas del día</h3>
+                <div id="tasas-info" class="tasas-info"></div>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<div id="cart-modal" class="modal is-hidden">
+    <div class="modal__backdrop" data-modal-close="true"></div>
+    <div class="modal__panel card cart-modal-panel">
+        <div class="cart-header">
+            <h2 class="card__title">Mi Carrito</h2>
+            <button class="icon-action" data-modal-close="true" aria-label="Cerrar carrito">X</button>
+        </div>
+        <div id="cart-items" class="cart-items"></div>
+        <div class="cart-total">
+            <strong>Total:</strong>
+            <span id="cart-total-usd">$0.00</span>
+            <span id="cart-total-bs">Bs 0.00</span>
+        </div>
+        <div class="filters-panel__actions">
+            <button id="cart-vaciar" class="btn btn--ghost">Vaciar</button>
+            <button id="cart-checkout" class="btn btn--yellow">Proceder al pago</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+{% endblock %}

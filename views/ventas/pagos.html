@@ -1,0 +1,36 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Procesar Pago{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ventas.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page ventas-pagos">
+    <div class="pagos-container">
+        <div class="card">
+            <h1 class="card__title">Finalizar compra</h1>
+            <div id="resumen-carrito" class="resumen-carrito"></div>
+            <div class="filters-panel__section">
+                <h3>Método de pago</h3>
+                <label class="field">
+                    <span class="field__label">Selecciona un método</span>
+                    <select id="metodo-pago" class="metodo-select">
+                        <option value="">-- Selecciona --</option>
+                    </select>
+                </label>
+            </div>
+            <div id="form-pago-container" class="form-pago-container"></div>
+            <div class="filters-panel__actions">
+                <button id="btn-volver" class="btn btn--ghost">Volver al catálogo</button>
+                <button id="btn-pagar" class="btn btn--yellow">Confirmar pago</button>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+{% endblock %}

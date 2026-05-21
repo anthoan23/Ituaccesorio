@@ -65,6 +65,7 @@ def _usuario_actual():
     return {
         "usuario_id": getattr(usuario, "usuario_id", None),
         "usuario_nombre": getattr(usuario, "usuario_nombre", None),
+        "cedula": getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None),
         "cedula_personal": getattr(usuario, "cedula_personal", None),
         "rol_id": getattr(usuario, "rol_id", None),
         "nombre_rol": getattr(usuario, "nombre_rol", None),
@@ -101,7 +102,7 @@ def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
     payload = {
         "usuario_id": usuario_db.get("id"),
         "usuario_nombre": usuario_db.get("nombre"),
-        "cedula_personal": usuario_db.get("cedula_personal"),
+        "cedula": usuario_db.get("cedula_personal"),
         "rol_id": usuario_db.get("rol_id"),
         "nombre_rol": usuario_db.get("rol_nombre"),
         "foto_perfil": usuario_db.get("foto_perfil"),
@@ -195,7 +196,7 @@ def actualizar_mi_perfil():
 def crear_usuario():
     datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
-    cedula_personal = datos.get("cedula_personal")
+    cedula_personal = datos.get("cedula") or datos.get("cedula_personal")
     password = (datos.get("password") or "").strip()
     rol_id = datos.get("rol_id")
     foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
@@ -220,7 +221,7 @@ def crear_usuario():
 def actualizar_usuario(usuario_id):
     datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
-    cedula_personal = datos.get("cedula_personal")
+    cedula_personal = datos.get("cedula") or datos.get("cedula_personal")
     password = (datos.get("password") or "").strip()
     rol_id = datos.get("rol_id")
     foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
