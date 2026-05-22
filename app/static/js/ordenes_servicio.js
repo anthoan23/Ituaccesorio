@@ -485,15 +485,18 @@ document.addEventListener("DOMContentLoaded", () => {
 			["Reparación", getField("Reparacion")],
 			["Revisión", getField("Revision")],
 		];
-		const html = items
-			.filter(([, value]) => value !== "")
-			.map(([label, value]) => `
-				<div class="detail-item">
-					<span class="detail-item__label">${escapeHtml(label)}</span>
-					<span class="detail-item__value">${escapeHtml(value)}</span>
-				</div>
-			`)
-			.join("");
+		const html = `
+			<div class="device-detail__grid">
+				${items
+					.filter(([, value]) => value !== "")
+					.map(([label, value]) => `
+						<div class="detail-item">
+							<span class="device-detail__label">${escapeHtml(label)}</span>
+							<span class="device-detail__value">${escapeHtml(value)}</span>
+						</div>
+					`)
+					.join("")}
+			</div>`;
 		detalleInfo.innerHTML = html || "<p>Sin información disponible.</p>";
 	}
 
@@ -514,18 +517,21 @@ document.addEventListener("DOMContentLoaded", () => {
 			responsables[accion].push(`${nombre} (${item.ID_em})`);
 		});
 
-		const rows = roles.map((rol) => {
-			const nombres = rol.acciones
-				.flatMap((accion) => responsables[accion] || [])
-				.filter(Boolean);
-			return `
-				<div class="detail-item">
-					<span class="detail-item__label">${escapeHtml(rol.label)}</span>
-					<span class="detail-item__value">${escapeHtml(nombres.length ? nombres.join(", ") : "Sin registro")}</span>
-				</div>
-			`;
-		});
-		detalleResponsables.innerHTML = rows.join("");
+		const rows = `
+			<div class="device-detail__grid">
+				${roles.map((rol) => {
+					const nombres = rol.acciones
+						.flatMap((accion) => responsables[accion] || [])
+						.filter(Boolean);
+					return `
+						<div class="detail-item">
+							<span class="device-detail__label">${escapeHtml(rol.label)}</span>
+							<span class="device-detail__value">${escapeHtml(nombres.length ? nombres.join(", ") : "Sin registro")}</span>
+						</div>
+					`;
+				}).join("")}
+			</div>`;
+		detalleResponsables.innerHTML = rows;
 	}
 
 	function renderFotos(fotos) {
@@ -534,13 +540,20 @@ document.addEventListener("DOMContentLoaded", () => {
 			detalleFotos.innerHTML = "<p>No hay fotos registradas.</p>";
 			return;
 		}
-		detalleFotos.innerHTML = fotos.map((foto) => {
-			let src = foto.Foto_e || foto.foto || foto.url || "";
-			if (src && !src.startsWith("/") && !src.startsWith("http")) {
-				src = `/${src}`;
-			}
-			return `<img src="${escapeHtml(src)}" alt="Evidencia">`;
-		}).join("");
+		detalleFotos.innerHTML = `
+			<h3>Fotos</h3>
+			<div class="device-photos">
+				${fotos.map((foto) => {
+					let src = foto.Foto_e || foto.foto || foto.url || "";
+					if (src && !src.startsWith("/") && !src.startsWith("http")) {
+						src = `/${src}`;
+					}
+					return `
+						<div class="img-wrap">
+							<img src="${escapeHtml(src)}" alt="Evidencia">
+						</div>`;
+				}).join("")}
+			</div>`;
 	}
 
 	function renderTests(tests) {
@@ -550,24 +563,29 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 		detalleTests.innerHTML = `
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Fecha</th>
-						<th>Número</th>
-						<th>Observaciones</th>
-					</tr>
-				</thead>
-				<tbody>
-					${tests.map((test) => `
+			<h3>Historial de revisiones</h3>
+			<div class="table-wrap">
+				<table class="table">
+					<thead>
 						<tr>
-							<td>${escapeHtml(formatFecha(test.Fecha_e ?? test.Fecha ?? ""))}</td>
-							<td>${escapeHtml(test.Num_test ?? "")}</td>
-							<td>${escapeHtml(test.Observaciones ?? "")}</td>
+							<th>Fecha</th>
+							<th>Número</th>
+							<th>Observaciones</th>
+							<th>Costo</th>
 						</tr>
-					`).join("")}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						${tests.map((test) => `
+							<tr>
+								<td>${escapeHtml(formatFecha(test.Fecha_e ?? test.Fecha ?? ""))}</td>
+								<td>${escapeHtml(test.Num_test ?? "")}</td>
+								<td>${escapeHtml(test.Observaciones ?? "")}</td>
+								<td>${escapeHtml(test.Costo_reparacion ?? "0")}</td>
+							</tr>
+						`).join("")}
+					</tbody>
+				</table>
+			</div>
 		`;
 	}
 

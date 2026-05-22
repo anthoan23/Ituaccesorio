@@ -13,7 +13,9 @@ class Tests(conectar):
         cursor = db.cursor(dictionary=True)
         try:
             sql = (
-                "SELECT o.ID_orden , t.* FROM revision_orden o JOIN test t ON o.ID_test = t.ID_test WHERE o.ID_orden = %s"
+                "SELECT o.ID_orden, t.*, oe.Costo_reparacion "
+                "FROM revision_orden o JOIN test t ON o.ID_test = t.ID_test "
+                "JOIN orden_e oe ON o.ID_orden = oe.ID_orden_e WHERE o.ID_orden = %s"
             )
             cursor.execute(sql, (id_orden,))
             ordenes = cursor.fetchall()
@@ -25,10 +27,10 @@ class Tests(conectar):
             db.close()
     
    
-    def registrar_test(self, datos, id_orden):
+    def registrar_test(self, datos, id_orden, costo=None):
         """
         Registra los resultados de un test en la base de datos.
-        'datos' debe ser una tupla o lista con los 21 valores en el orden correcto.
+        'datos' debe ser una tupla o lista con los 21 valores en el orden correcto. 'costo' es opcional.
         """
         db = self.conexion1()
         if not db:
@@ -51,9 +53,14 @@ class Tests(conectar):
             sql_ordenes = "INSERT INTO revision_orden (ID_orden, ID_test) VALUES (%s, %s)"
             cursor.execute(sql_ordenes, (id_orden, cursor.lastrowid))
 
-            sql_update_orden = "UPDATE orden_e SET Estado_o = 'Revisado' WHERE ID_orden_e = %s"
-           
-            cursor.execute(sql_update_orden, (id_orden,))
+            # Si se proporciona un costo, actualizamos la columna Costo_reparacion en la tabla de la orden
+            if costo is not None and str(costo).strip() != "":
+                sql_update_orden = "UPDATE orden_e SET Estado_o = 'Revisado', Costo_reparacion = %s WHERE ID_orden_e = %s"
+                cursor.execute(sql_update_orden, (costo, id_orden))
+            else:
+                sql_update_orden = "UPDATE orden_e SET Estado_o = 'Revisado' WHERE ID_orden_e = %s"
+                cursor.execute(sql_update_orden, (id_orden,))
+
             db.commit()  # Confirma los cambios en la base de datos
             return True
             
