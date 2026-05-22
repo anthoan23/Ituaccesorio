@@ -72,21 +72,24 @@
             return;
         }
         
-        container.innerHTML = state.productos.map(p => `
+        container.innerHTML = state.productos.map(p => {
+            const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
+            const usdAjustado = bsFinal / (state.tasas.oficial || 1);
+            return `
             <div class="producto-card">
                 <div class="producto-imagen"></div>
                 <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
                 <div class="producto-marca">${escapeHtml(p.marca)}</div>
                 <div class="producto-precios">
-                    <div class="precio-usd">${formatUSD(p.precio_usd)}</div>
-                    <div class="precio-bs">${formatVES(p.precio_bs_paralelo)}</div>
+                    <div class="precio-usd">${formatUSD(usdAjustado)}</div>
+                    <div class="precio-bs">${formatVES(bsFinal)}</div>
                 </div>
                 <div class="producto-stock">Stock: ${p.stock} unidades</div>
                 <button class="btn btn--yellow btn-agregar" data-id="${p.id}" ${p.stock <= 0 ? 'disabled' : ''}>
                     ${p.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
                 </button>
             </div>
-        `).join("");
+        `}).join("");
         
         document.querySelectorAll(".btn-agregar").forEach(btn => {
             btn.addEventListener("click", async (e) => {
@@ -105,12 +108,15 @@
             return;
         }
         
-        container.innerHTML = state.masVendidos.map(p => `
+        container.innerHTML = state.masVendidos.map(p => {
+            const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
+            const usdAjustado = bsFinal / (state.tasas.oficial || 1);
+            return `
             <div class="mas-vendido-item">
                 <span>${escapeHtml(p.nombre)}</span>
-                <strong>${formatUSD(p.precio_usd)}</strong>
+                <strong>${formatUSD(usdAjustado)}</strong>
             </div>
-        `).join("");
+        `}).join("");
     }
 
     function renderTasas() {
@@ -119,7 +125,6 @@
         
         container.innerHTML = `
             <div>Oficial: 1 USD = ${formatVES(state.tasas.oficial)}</div>
-            <div>Paralelo: 1 USD = ${formatVES(state.tasas.paralelo)}</div>
             <small>Los precios se calculan al momento del pago</small>
         `;
     }
@@ -202,11 +207,14 @@
             return;
         }
         
-        container.innerHTML = state.carrito.map(item => `
+        container.innerHTML = state.carrito.map(item => {
+            const bsItem = Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
+            const usdItem = bsItem / (state.tasas.oficial || 1);
+            return `
             <div class="cart-item">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${escapeHtml(item.nombre)}</div>
-                    <div class="cart-item-price">${formatUSD(item.precio_usd)}</div>
+                    <div class="cart-item-price">${formatUSD(usdItem)} / ${formatVES(bsItem)}</div>
                 </div>
                 <div class="cart-item-controls">
                     <button class="icon-action" data-action="decrement" data-id="${item.producto_id}">-</button>
@@ -215,12 +223,13 @@
                     <button class="icon-action" data-action="remove" data-id="${item.producto_id}" aria-label="Eliminar producto">X</button>
                 </div>
             </div>
-        `).join("");
+        `}).join("");
         
-        const totalUsd = state.carrito.reduce((sum, item) => sum + (item.precio_usd * item.cantidad), 0);
-        const totalBs = totalUsd * state.tasas.paralelo;
-        
-        if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(totalUsd);
+        // Total Bs uses tasa paralelo; USD mostrado es conversion de ese Bs por la tasa oficial
+        const totalBs = state.carrito.reduce((sum, item) => sum + (Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad), 0);
+        const totalUsdAjustado = totalBs / (state.tasas.oficial || 1);
+
+        if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(totalUsdAjustado);
         if (totalBsSpan) totalBsSpan.textContent = formatVES(totalBs);
         
         container.querySelectorAll("[data-action='increment']").forEach(btn => {
@@ -570,15 +579,15 @@
             return;
         }
         
-        const totalUsd = itemsLocal.reduce((sum, i) => sum + (i.precio_usd * i.cantidad), 0);
-        const totalBs = totalUsd * state.tasas.paralelo;
+        const totalBs = itemsLocal.reduce((sum, i) => sum + (Number(i.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * i.cantidad), 0);
+        const totalUsd = totalBs / (state.tasas.oficial || 1);
         
         container.innerHTML = `
             <div class="items-local">
                 ${itemsLocal.map((item, idx) => `
                     <div class="cart-item">
                         <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
-                        <span>${formatUSD(item.precio_usd * item.cantidad)}</span>
+                        <span>${formatUSD((Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial)) / (state.tasas.oficial || 1) * item.cantidad)} / ${formatVES(Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad)}</span>
                         <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">X</button>
                     </div>
                 `).join('')}
@@ -726,17 +735,22 @@
             const carritoData = await fetchJson("/api/carrito");
             const resumenContainer = document.getElementById("resumen-carrito");
             if (resumenContainer && carritoData.items?.length) {
-                const totalUsd = carritoData.total_usd;
-                const totalBs = totalUsd * (carritoData.tasas?.paralelo || state.tasas.paralelo);
-                resumenContainer.innerHTML = `
-                    <div class="resumen-card">
-                        <h3>Resumen de compra</h3>
-                        <ul>
-                            ${carritoData.items.map(i => `<li>${i.cantidad}x ${i.nombre} - ${formatUSD(i.precio_usd * i.cantidad)}</li>`).join('')}
-                        </ul>
-                        <div class="resumen-total">Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</div>
-                    </div>
-                `;
+                // Recalculate totals using paralelo for Bs and convert to USD via tasa oficial
+                    const totalBs = (carritoData.items || []).reduce((sum, i) => sum + (Number(i.precio_usd) * (carritoData.tasas?.paralelo || state.tasas.paralelo || state.tasas.oficial) * i.cantidad), 0);
+                    const totalUsd = totalBs / (carritoData.tasas?.oficial || state.tasas.oficial || 1);
+                    resumenContainer.innerHTML = `
+                        <div class="resumen-card">
+                            <h3>Resumen de compra</h3>
+                            <ul>
+                                ${carritoData.items.map(i => {
+                                    const bsItem = Number(i.precio_usd) * (carritoData.tasas?.paralelo || state.tasas.paralelo || state.tasas.oficial) * i.cantidad;
+                                    const usdItem = bsItem / (carritoData.tasas?.oficial || state.tasas.oficial || 1);
+                                    return `<li>${i.cantidad}x ${i.nombre} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
+                                }).join('')}
+                            </ul>
+                            <div class="resumen-total">Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</div>
+                        </div>
+                    `;
             }
         }
         

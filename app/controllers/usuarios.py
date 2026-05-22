@@ -65,6 +65,7 @@ def _usuario_actual():
     return {
         "usuario_id": getattr(usuario, "usuario_id", None),
         "usuario_nombre": getattr(usuario, "usuario_nombre", None),
+        # Exponer la cédula bajo la clave unificada `cedula`
         "cedula": getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None),
         "cedula_personal": getattr(usuario, "cedula_personal", None),
         "rol_id": getattr(usuario, "rol_id", None),
