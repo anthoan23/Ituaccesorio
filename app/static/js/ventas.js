@@ -346,23 +346,13 @@
             efectivo_bs: `
                 <div class="form-pago">
                     <h4>Efectivo (Bolívares)</h4>
-                    <label class="field"><span class="field__label">¿Con qué billete vas a pagar?</span>
-                        <input type="text" name="billete" required placeholder="Ej: Bs 500, Bs 200">
-                    </label>
-                    <div class="pago-info">Por favor, tenga el monto exacto o el billete indicado al momento de la entrega.</div>
+                    <div class="pago-info">Pago en efectivo seleccionado. El monto se confirma al momento de la entrega.</div>
                 </div>
             `,
             efectivo_usd: `
                 <div class="form-pago">
                     <h4>Efectivo (Dólares)</h4>
-                    <label class="field"><span class="field__label">¿Con qué billete vas a pagar?</span>
-                        <select name="billete" required>
-                            <option value="">Selecciona</option>
-                            <option>$1</option><option>$5</option><option>$10</option>
-                            <option>$20</option><option>$50</option><option>$100</option>
-                        </select>
-                    </label>
-                    <div class="pago-info">Por favor, tenga el monto exacto o el billete indicado al momento de la entrega.</div>
+                    <div class="pago-info">Pago en efectivo seleccionado. El monto se confirma al momento de la entrega.</div>
                 </div>
             `
         };
@@ -450,19 +440,57 @@
             return;
         }
         
+        const valorVisible = (valor) => valor !== undefined && valor !== null && String(valor).trim() !== "" && String(valor).trim().toLowerCase() !== "n/a";
+        const metodo = (String(p.metodo_pago || "")).toLowerCase();
+
+        const renderCamposMetodo = (pago) => {
+            if (metodo === "pago_movil") {
+                return [
+                    valorVisible(pago.banco) ? `<div class="info-row"><strong>Banco:</strong> <span>${escapeHtml(pago.banco)}</span></div>` : "",
+                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
+                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
+                ].join("");
+            }
+
+            if (metodo === "zelle") {
+                return [
+                    valorVisible(pago.titular) ? `<div class="info-row"><strong>Titular:</strong> <span>${escapeHtml(pago.titular)}</span></div>` : "",
+                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>Correo / Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
+                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
+                ].join("");
+            }
+
+            if (metodo === "binance") {
+                return [
+                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>UID / Correo:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
+                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Pay ID:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
+                ].join("");
+            }
+
+            if (metodo === "efectivo_bs") {
+                return valorVisible(pago.billete)
+                    ? `<div class="info-row"><strong>Billete:</strong> <span>${escapeHtml(pago.billete)}</span></div>`
+                    : `<div class="info-row"><strong>Pago:</strong> <span>Efectivo en bolívares</span></div>`;
+            }
+
+            if (metodo === "efectivo_usd") {
+                return valorVisible(pago.billete)
+                    ? `<div class="info-row"><strong>Billete:</strong> <span>${escapeHtml(pago.billete)}</span></div>`
+                    : `<div class="info-row"><strong>Pago:</strong> <span>Efectivo en dólares</span></div>`;
+            }
+
+            return "";
+        };
+
         container.innerHTML = pagos.map(p => `
             <div class="pago-card" data-factura="${p.factura_id}">
-                <div class="info-row"><strong>Factura:</strong> ${escapeHtml(p.factura_id)}</div>
-                <div class="info-row"><strong>Fecha:</strong> ${escapeHtml(p.fecha)}</div>
-                <div class="info-row"><strong>Cliente:</strong> ${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || '')}</div>
-                <div class="info-row"><strong>Teléfono:</strong> ${escapeHtml(p.cliente_celular || 'N/A')}</div>
-                <div class="info-row"><strong>Total:</strong> ${formatVES(p.total_bs)}</div>
-                <div class="info-row"><strong>Método:</strong> ${escapeHtml(p.metodo_pago)}</div>
-                ${p.banco ? `<div class="info-row"><strong>Banco:</strong> ${escapeHtml(p.banco)}</div>` : ''}
-                ${p.titular ? `<div class="info-row"><strong>Titular:</strong> ${escapeHtml(p.titular)}</div>` : ''}
-                ${p.referencia !== 'N/A' ? `<div class="info-row"><strong>Referencia:</strong> ${escapeHtml(p.referencia)}</div>` : ''}
-                ${p.contacto !== 'N/A' ? `<div class="info-row"><strong>Contacto:</strong> ${escapeHtml(p.contacto)}</div>` : ''}
-                ${p.billete !== 'N/A' ? `<div class="info-row"><strong>Billete:</strong> ${escapeHtml(p.billete)}</div>` : ''}
+                <div class="info-row"><strong>Factura:</strong> <span>${escapeHtml(p.factura_id)}</span></div>
+                <div class="info-row"><strong>Fecha:</strong> <span>${escapeHtml(p.fecha)}</span></div>
+                <div class="info-row"><strong>Cliente:</strong> <span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || '')}</span></div>
+                <div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(p.cliente_celular || 'N/A')}</span></div>
+                <div class="info-row"><strong>Total:</strong> <span>${formatVES(p.total_bs)}</span></div>
+                <div class="info-row"><strong>Método:</strong> <span>${escapeHtml(p.metodo_pago)}</span></div>
+                ${renderCamposMetodo(p)}
                 ${tipo === "pendientes" ? `
                     <div class="pago-actions">
                         <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">Aprobar</button>

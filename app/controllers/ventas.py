@@ -1,7 +1,7 @@
-# app/controllers/ventas.py
 from flask import Blueprint, jsonify, render_template, request, g, redirect
 from app.utils.decorators import jwt_required
 from app.models.ventas import VentasModel
+from app.models.clientes import GestionClientes
 from app.models.productos import Productos
 import requests
 import os
@@ -11,14 +11,21 @@ ventas_blueprint = Blueprint("ventas", __name__)
 
 def obtener_cliente_id_actual() -> int | None:
     usuario = getattr(g, "user", {}) or {}
-    # Prefer the unified `cedula` key, but accept legacy keys for compatibility
     cliente_id = usuario.get("cedula") or usuario.get("cedula_personal") or usuario.get("id_c") or usuario.get("id_cliente")
     if cliente_id is None:
         return None
+
     try:
-        return int(cliente_id)
+        cliente_id_int = int(cliente_id)
     except (TypeError, ValueError):
         return None
+
+    modelo_clientes = GestionClientes()
+    existente = modelo_clientes.obtener_cliente_por_id(cliente_id_int)
+    if existente:
+        return cliente_id_int
+
+    return None
 
 # --- Helper para obtener tasas de cambio ---
 def get_dolar_rates():

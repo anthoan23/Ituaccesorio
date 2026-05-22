@@ -1,4 +1,3 @@
-# app/models/ventas.py
 from __future__ import annotations
 from app.models.database import conectar
 from datetime import datetime

@@ -143,7 +143,7 @@ CREATE TABLE `cliente` (
 
 LOCK TABLES `cliente` WRITE;
 /*!40000 ALTER TABLE `cliente` DISABLE KEYS */;
-INSERT INTO `cliente` VALUES (1,'Maria','Gonzalez','04141234567','maria.g@example.com','Calle 1, Ciudad','Regular'),(2,'Juan','Perez','04141234568','juan.p@example.com','Av. 2, Ciudad','Premium'),(3,'Ana','Rodriguez','04141234569','ana.r@example.com','Calle 3, Ciudad','Regular'),(4,'Luis','Martinez','04141234570','luis.m@example.com','Av. 4, Ciudad','Mayorista'),(5,'Carla','Fernandez','04141234571','carla.f@example.com','Calle 5, Ciudad','Regular'),(6,'Carlos','Sanchez','04161234572','carlos.s@example.com','Calle 6, Ciudad','Premium'),(7,'Laura','Diaz','04161234573','laura.d@example.com','Av. 7, Ciudad','Regular'),(8,'Pedro','Gomez','04161234574','pedro.g@example.com','Calle 8, Ciudad','Regular'),(9,'Sofia','Lopez','04161234575','sofia.l@example.com','Av. 9, Ciudad','Premium'),(10,'Diego','Torres','04161234576','diego.t@example.com','Calle 10, Ciudad','Mayorista'),(11,'Valentina','Ruiz','04161234577','valentina.r@example.com','Av. 11, Ciudad','Regular'),(12,'Andres','Morales','04161234578','andres.m@example.com','Calle 12, Ciudad','Premium'),(13,'Camila','Ortega','04161234579','camila.o@example.com','Av. 13, Ciudad','Regular'),(14,'Javier','Castro','04161234580','javier.c@example.com','Calle 14, Ciudad','Regular'),(15,'Isabella','Mendoza','04161234581','isabella.m@example.com','Av. 15, Ciudad','Premium'),(11111111,'Cliente','Test','00000000000','clientetest@gmail.com','Barquisimeto','Regular'),(31111553,'Anthoan','Gonzalez','04145558268','anthoan@gmail.com','barquisimeto','Regular');
+INSERT INTO `cliente` VALUES (1,'Maria','Gonzalez','04141234567','maria.g@example.com','Calle 1, Ciudad','Regular'),(2,'Juan','Perez','04141234568','juan.p@example.com','Av. 2, Ciudad','Premium'),(3,'Ana','Rodriguez','04141234569','ana.r@example.com','Calle 3, Ciudad','Regular'),(4,'Luis','Martinez','04141234570','luis.m@example.com','Av. 4, Ciudad','Mayorista'),(5,'Carla','Fernandez','04141234571','carla.f@example.com','Calle 5, Ciudad','Regular'),(6,'Carlos','Sanchez','04161234572','carlos.s@example.com','Calle 6, Ciudad','Premium'),(7,'Laura','Diaz','04161234573','laura.d@example.com','Av. 7, Ciudad','Regular'),(8,'Pedro','Gomez','04161234574','pedro.g@example.com','Calle 8, Ciudad','Regular'),(9,'Sofia','Lopez','04161234575','sofia.l@example.com','Av. 9, Ciudad','Premium'),(10,'Diego','Torres','04161234576','diego.t@example.com','Calle 10, Ciudad','Mayorista'),(11,'Valentina','Ruiz','04161234577','valentina.r@example.com','Av. 11, Ciudad','Regular'),(12,'Andres','Morales','04161234578','andres.m@example.com','Calle 12, Ciudad','Premium'),(13,'Camila','Ortega','04161234579','camila.o@example.com','Av. 13, Ciudad','Regular'),(14,'Javier','Castro','04161234580','javier.c@example.com','Calle 14, Ciudad','Regular'),(15,'Isabella','Mendoza','04161234581','isabella.m@example.com','Av. 15, Ciudad','Premium'),(1001,'antonio','perez','0000000000','amskdmaksd@gmail.com','nada','Regular'),(9876543,'Test','Cliente','04244445676','clientetest@gmail.com','Barquisimeto','Regular'),(11111111,'Cliente','Test','00000000000','clientetest@gmail.com','Barquisimeto','Regular'),(31111553,'Anthoan','Gonzalez','04145558268','anthoan@gmail.com','barquisimeto','Regular');
 /*!40000 ALTER TABLE `cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -451,7 +451,7 @@ CREATE TABLE `lista_carrito` (
   KEY `ID_c` (`ID_c`),
   CONSTRAINT `lista_carrito_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `stock` (`ID_producto`),
   CONSTRAINT `lista_carrito_ibfk_2` FOREIGN KEY (`ID_c`) REFERENCES `cliente` (`ID_c`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -488,7 +488,7 @@ CREATE TABLE `lista_compra` (
 
 LOCK TABLES `lista_compra` WRITE;
 /*!40000 ALTER TABLE `lista_compra` DISABLE KEYS */;
-INSERT INTO `lista_compra` VALUES (1,'FAC-2026-0001',1),(2,'FAC-2026-0005',1),(3,'FAC-2026-0003',1),(4,'FAC-2026-0004',1),(5,'FAC-2026-0002',1),(6,'FAC-2026-0006',1),(7,'FAC-2026-0011',1),(8,'FAC-2026-0012',1),(9,'FAC-2026-0013',1),(10,'FAC-2026-0008',1),(11,'FAC-2026-0009',1),(12,'FAC-2026-0007',1),(13,'FAC-2026-0014',2),(14,'FAC-2026-0010',1),(15,'FAC-2026-0015',1);
+INSERT INTO `lista_compra` VALUES (1,'FAC-2026-0001',1),(2,'FAC-2026-0005',1),(3,'FAC-2026-0003',1),(4,'FAC-2026-0004',1),(5,'FAC-2026-0002',1),(6,'FAC-2026-0006',1),(6,'FAC-2026-05-29D385',1),(6,'FAC-2026-05-672F47',1),(6,'FAC-2026-05-6F879D',1),(6,'FAC-2026-05-9CF0E8',1),(6,'FAC-2026-05-9E57F1',1),(6,'FAC-2026-05-BFFDCE',1),(7,'FAC-2026-0011',1),(8,'FAC-2026-0012',1),(9,'FAC-2026-0013',1),(10,'FAC-2026-0008',1),(11,'FAC-2026-0009',1),(12,'FAC-2026-0007',1),(12,'FAC-2026-05-482BD8',1),(13,'FAC-2026-0014',2),(13,'FAC-2026-05-0F9A03',1),(13,'FAC-2026-05-386235',2),(13,'FAC-2026-05-482BD8',1),(13,'FAC-2026-05-672F47',1),(13,'FAC-2026-05-6E0EDA',2),(13,'FAC-2026-05-6F879D',1),(13,'FAC-2026-05-BFFDCE',1),(13,'FAC-2026-05-C02868',2),(13,'FAC-2026-05-D5BC4F',2),(13,'FAC-2026-05-F69DCE',2),(14,'FAC-2026-0010',1),(14,'FAC-2026-05-482BD8',1),(15,'FAC-2026-0015',1);
 /*!40000 ALTER TABLE `lista_compra` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -798,12 +798,12 @@ CREATE TABLE `reporte_pagos` (
   `Titular_Cuenta` varchar(60) DEFAULT NULL,
   `Billete_Entregado` decimal(10,2) DEFAULT NULL,
   `Capture_Pantalla` varchar(255) DEFAULT NULL,
-  `Monto_Pagado` decimal(10,2) NOT NULL,
+  `Monto_Pagado` decimal(15,2) NOT NULL,
   `Fecha_Pago` varchar(10) NOT NULL,
   PRIMARY KEY (`ID_pago`),
   KEY `fk_pago_venta` (`ID_factura`),
   CONSTRAINT `fk_pago_venta` FOREIGN KEY (`ID_factura`) REFERENCES `venta` (`ID_factura`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -812,6 +812,7 @@ CREATE TABLE `reporte_pagos` (
 
 LOCK TABLES `reporte_pagos` WRITE;
 /*!40000 ALTER TABLE `reporte_pagos` DISABLE KEYS */;
+INSERT INTO `reporte_pagos` VALUES (1,'FAC-2026-05-C02868','Zelle','0987654',NULL,'04141453221','eduin meneses',NULL,NULL,160000.00,'2026-05-21'),(2,'FAC-2026-05-0F9A03','Zelle','123321',NULL,'mail@gmail.com','Eduin Meneses',NULL,NULL,109058.38,'2026-05-22'),(3,'FAC-2026-05-BFFDCE','Pago Movil','123321','Mercantil','04121321232',NULL,NULL,NULL,624905600.00,'2026-05-22');
 /*!40000 ALTER TABLE `reporte_pagos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -921,7 +922,7 @@ CREATE TABLE `stock` (
 
 LOCK TABLES `stock` WRITE;
 /*!40000 ALTER TABLE `stock` DISABLE KEYS */;
-INSERT INTO `stock` VALUES (1,1,15,750000),(2,2,10,650000),(3,3,25,350000),(4,4,8,1200000),(5,5,12,1100000),(6,6,20,800000),(7,7,10,950000),(8,8,18,500000),(9,9,30,300000),(10,10,12,600000),(11,11,5,1300000),(12,13,15,250000),(13,15,40,80000),(14,17,50,45000),(15,19,7,1000000);
+INSERT INTO `stock` VALUES (1,1,15,750000),(2,2,10,650000),(3,3,25,350000),(4,4,8,1200000),(5,5,12,1100000),(6,6,14,800000),(7,7,10,950000),(8,8,18,500000),(9,9,30,300000),(10,10,12,600000),(11,11,5,1300000),(12,13,14,250000),(13,15,25,80000),(14,17,49,45000),(15,19,7,1000000);
 /*!40000 ALTER TABLE `stock` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1039,7 +1040,7 @@ CREATE TABLE `venta` (
 
 LOCK TABLES `venta` WRITE;
 /*!40000 ALTER TABLE `venta` DISABLE KEYS */;
-INSERT INTO `venta` VALUES ('FAC-2026-0001',1003,1,750000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0002',1004,2,1100000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0003',1003,3,350000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0004',1005,4,1200000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0005',1003,5,650000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0006',1004,6,800000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0007',1005,7,250000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0008',1003,8,600000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0009',1004,9,1300000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0010',1005,10,45000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0011',1003,11,950000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0012',1004,12,500000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0013',1005,13,300000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0014',1003,14,80000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0015',1004,15,1000000,'2026-05-08','Pendiente',NULL,NULL);
+INSERT INTO `venta` VALUES ('FAC-2026-0001',1003,1,750000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0002',1004,2,1100000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0003',1003,3,350000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0004',1005,4,1200000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0005',1003,5,650000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0006',1004,6,800000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0007',1005,7,250000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0008',1003,8,600000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0009',1004,9,1300000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0010',1005,10,45000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0011',1003,11,950000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0012',1004,12,500000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0013',1005,13,300000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0014',1003,14,80000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0015',1004,15,1000000,'2026-05-08','Pendiente',NULL,NULL),('FAC-2026-05-0F9A03',NULL,9876543,56926000,'2026-05-22','Por Verificar','zelle',NULL),('FAC-2026-05-29D385',NULL,9876543,569260000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-386235',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-482BD8',NULL,9876543,266296406,'2026-05-21','Pendiente','efectivo_usd',NULL),('FAC-2026-05-672F47',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-6E0EDA',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-6F879D',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-9CF0E8',NULL,9876543,569260000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-9E57F1',NULL,9876543,569260000,'2026-05-22','Por Verificar','binance',NULL),('FAC-2026-05-BFFDCE',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-C02868',NULL,9876543,113619200,'2026-05-21','Aprobado','zelle',NULL),('FAC-2026-05-D5BC4F',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-F69DCE',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL);
 /*!40000 ALTER TABLE `venta` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1052,4 +1053,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-20 22:48:28
+-- Dump completed on 2026-05-21 22:05:55

@@ -721,6 +721,7 @@ textarea:focus {
 	gap: 0.45rem;
 	margin-bottom: 1rem;
 	background: rgba(255, 255, 255, 0.96);
+	color: #111111;
 }
 
 .info-row {
@@ -729,6 +730,12 @@ textarea:focus {
 	gap: 1rem;
 	flex-wrap: wrap;
 	font-size: 0.95rem;
+	color: #111111;
+}
+
+.info-row strong,
+.info-row span {
+	color: #111111;
 }
 
 .pago-actions {
