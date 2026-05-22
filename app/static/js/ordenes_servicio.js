@@ -80,15 +80,28 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	function getAuthToken() {
+		const fromLocal = window.localStorage ? window.localStorage.getItem("access_token") : "";
+		if (fromLocal) return fromLocal;
+		const fromSession = window.sessionStorage ? window.sessionStorage.getItem("access_token") : "";
+		if (fromSession) return fromSession;
+		return "";
+	}
+
 	async function fetchJson(url, options = {}) {
+		const authToken = getAuthToken();
+		const { headers: extraHeaders, ...otherOptions } = options;
+
 		const response = await fetch(url, {
+			...otherOptions,
+			credentials: "same-origin",
 			headers: {
 				"Content-Type": "application/json",
 				"Accept": "application/json",
 				...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+				...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+				...(extraHeaders || {}),
 			},
-			credentials: "same-origin",
-			...options,
 		});
 		const data = await response.json().catch(() => ({}));
 		if (!response.ok || data.success === false) {
@@ -131,12 +144,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		try {
+			const authToken = getAuthToken();
 			const response = await fetch(`/api/clientes/${encodeURIComponent(cedula)}`, {
+				credentials: "same-origin",
 				headers: {
 					"Accept": "application/json",
 					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+					...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
 				},
-				credentials: "same-origin",
 			});
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok || data.success === false) {
@@ -586,8 +601,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			"Bluetooth",
 		];
 		campos.forEach((campo) => {
+			// Buscamos el elemento por nombre exacto (PascalCase)
 			const el = formRevision?.querySelector(`[name="${campo}"]`);
-			if (el) payload[campo] = el.checked ? 1 : 0;
+			if (el && el.type === "checkbox") {
+				payload[campo] = el.checked ? 1 : 0;
+			} else {
+				// Si no existe en el DOM, enviamos 0 para evitar NULLs inesperados
+				payload[campo] = 0;
+			}
 		});
 
 		payload.Num_test = obtenerSiguienteNumeroTest();
@@ -623,12 +644,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		const idOrden = fotosOrdenId?.value || ordenActualId;
 		if (!idOrden || !formFotos) return;
 		const formData = new FormData(formFotos);
+		const authToken = getAuthToken();
 		try {
 			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(idOrden)}/fotos`, {
 				method: "POST",
 				body: formData,
 				headers: {
 					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+					...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
 				},
 				credentials: "same-origin",
 			});

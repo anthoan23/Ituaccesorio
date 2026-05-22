@@ -24,6 +24,7 @@ class Tests(conectar):
             cursor.close()
             db.close()
     
+   
     def registrar_test(self, datos, id_orden):
         """
         Registra los resultados de un test en la base de datos.

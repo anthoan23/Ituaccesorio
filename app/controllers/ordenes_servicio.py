@@ -4,6 +4,7 @@ from app.models.empleados import Empleados
 from app.models.ordenes_servicio import OrdenServicio
 from app.models.test import Tests
 from app.utils.decorators import jwt_required
+import traceback
 
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
 
@@ -157,31 +158,43 @@ def listar_ordenes_tecnico(id_empleado):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/revision", methods=["POST"])
 @jwt_required
-def registrar_revision_orden(id_orden):
-    datos = request.get_json(silent=True) or {}
-    id_empleado = _obtener_id_empleado()
+def registrar_test_orden(id_orden):
+	# Espera JSON con los campos del test. ID_em y Fecha se gestionan en el servidor.
+	datos = request.get_json() or {}
 
-    test_model = Tests()
-    valores = test_model.construir_valores_test(datos, id_empleado)
-    ok = test_model.registrar_test(valores, id_orden)
-    if not ok:
-        return jsonify({"success": False, "error": "No se pudo registrar el test."}), 500
+	# empleado por defecto (cambiar para usar usuario real)
+	id_empleado = 1004
 
-    observacion = datos.get("Observaciones") or datos.get("observaciones") or ""
-    costo = datos.get("Costo") or datos.get("costo")
-    costo_val = None
-    if costo not in (None, ""):
-        try:
-            costo_val = int(costo)
-        except Exception:
-            costo_val = None
+	# Campos en el mismo orden que la función registrar_test espera
+	campos = [
+		'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+		'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+		'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+	]
 
-    ordenes = OrdenServicio()
-    ordenes.registrar_interaccion(id_orden, id_empleado, "Revision")
-    ordenes.actualizar_revision_cotizacion(
-        id_orden,
-        revision=str(observacion) if observacion is not None else None,
-        costo=costo_val,
-    )
+	valores = []
+	for campo in campos:
+		if campo == 'ID_em':
+			valores.append(id_empleado)
+			continue
 
-    return jsonify({"success": True})
+		if campo in datos:
+			v = datos.get(campo)
+			# Empty string -> None (no revisado)
+			if v is None or v == '':
+				valores.append(None)
+			else:
+				# Observaciones is text
+				if campo == 'Observaciones':
+					valores.append(str(v))
+				else:
+					try:
+						valores.append(int(v))
+					except Exception:
+						valores.append(None)
+		else:
+			valores.append(None)
+
+	test_model = Tests()
+	ok = test_model.registrar_test(tuple(valores), id_orden)
+	return jsonify({"ok": bool(ok)})

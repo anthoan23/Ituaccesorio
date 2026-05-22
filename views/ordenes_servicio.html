@@ -49,9 +49,11 @@
 						<div class="field-row">
 							<label class="field">
 								<span>Cédula</span>
-								<input id="cliente-cedula" name="cedula_cliente" type="text" inputmode="numeric" placeholder="12345678" required>
+								<input id="cliente-cedula" name="cedula_cliente" type="text" inputmode="numeric"
+									placeholder="12345678" required>
 							</label>
-							<button id="btn-verificar-cliente" class="btn btn--ghost" type="button">Verificar cliente</button>
+							<button id="btn-verificar-cliente" class="btn btn--ghost" type="button">Verificar
+								cliente</button>
 						</div>
 						<label class="field">
 							<span>Nombre</span>
@@ -67,11 +69,13 @@
 						</label>
 						<label class="field">
 							<span>Correo</span>
-							<input id="cliente-correo" name="cliente_correo" type="email" placeholder="cliente@example.com">
+							<input id="cliente-correo" name="cliente_correo" type="email"
+								placeholder="cliente@example.com">
 						</label>
 						<label class="field">
 							<span>Dirección</span>
-							<input id="cliente-direccion" name="cliente_direccion" type="text" placeholder="Calle 1, Ciudad">
+							<input id="cliente-direccion" name="cliente_direccion" type="text"
+								placeholder="Calle 1, Ciudad">
 						</label>
 						<label class="field">
 							<span>Tipo</span>
@@ -83,7 +87,8 @@
 							</select>
 						</label>
 						<div class="client-actions">
-							<button id="btn-crear-cliente" class="btn btn--primary" type="button" hidden>Registrar cliente</button>
+							<button id="btn-crear-cliente" class="btn btn--primary" type="button" hidden>Registrar
+								cliente</button>
 							<span id="cliente-status" class="status-text"></span>
 						</div>
 					</div>
@@ -103,7 +108,8 @@
 						<div class="field-row">
 							<label class="field">
 								<span>Patrón</span>
-								<input id="orden-patron" name="orden_patron" type="text" inputmode="numeric" placeholder="1234">
+								<input id="orden-patron" name="orden_patron" type="text" inputmode="numeric"
+									placeholder="1234">
 							</label>
 							<label class="field">
 								<span>Clave</span>
@@ -112,11 +118,13 @@
 						</div>
 						<label class="field">
 							<span>Descripción del cliente</span>
-							<textarea id="orden-descripcion" name="orden_descripcion" rows="4" placeholder="Describe el problema reportado por el cliente" required></textarea>
+							<textarea id="orden-descripcion" name="orden_descripcion" rows="4"
+								placeholder="Describe el problema reportado por el cliente" required></textarea>
 						</label>
 						<label class="field">
 							<span>Nota del empleado</span>
-							<textarea id="orden-nota" name="orden_nota" rows="3" placeholder="Notas internas"></textarea>
+							<textarea id="orden-nota" name="orden_nota" rows="3"
+								placeholder="Notas internas"></textarea>
 						</label>
 					</div>
 				</div>
@@ -154,7 +162,8 @@
 				<h3>Componente inteligente</h3>
 				<p>Espacio reservado para recomendaciones automáticas de asignación.</p>
 			</div>
-			<button class="btn btn--ghost" type="button" data-open-modal="modal-trabajos-tecnico">Ver trabajos asignados</button>
+			<button class="btn btn--ghost" type="button" data-open-modal="modal-trabajos-tecnico">Ver trabajos
+				asignados</button>
 		</article>
 
 		<article class="panel panel--full">
@@ -298,7 +307,7 @@
 
 {% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
 <form id="form-revision-orden" class="form" autocomplete="off">
-	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+	<input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
 	<input type="hidden" id="revision-orden-id" name="id_orden" value="">
 	<div class="grid-container">
 		<label class="checkbox-card">
@@ -371,7 +380,7 @@
 		</label>
 		<label class="checkbox-card">
 			<input type="checkbox" name="Auricular">
-			<span class="checkbox-text">Audífonos</span>
+			<span class="checkbox-text">Auricular / Audífonos</span>
 		</label>
 	</div>
 	<label class="field">

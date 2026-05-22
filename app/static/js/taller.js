@@ -1171,6 +1171,12 @@ if (serviceForm) {
 			}
 		}
 
+		// Extraer el costo del formulario para enviarlo al backend
+		const inputCosto = serviceForm.querySelector('[name="Costo"]');
+		if (inputCosto) {
+			payload['Costo'] = inputCosto.value;
+		}
+
 		try {
 			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(ordenActualId)}/test`, {
 				method: 'POST',
