@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Órdenes de compra{% endblock %}
 
@@ -37,7 +38,7 @@
 						<p class="card__subtitle">Órdenes registradas y aún sin entregar.</p>
 					</div>
 					<div class="card__actions">
-						<button id="btn-registrar-orden" type="button" class="btn btn--primary">Registrar orden</button>
+						<button id="btn-registrar-entrada" type="button" class="btn btn--primary" data-open-modal="modal-registrar-entrada">Registrar entrada</button>
 					</div>
 				</div>
 				<div class="table-wrap">
@@ -47,13 +48,13 @@
 								<th>ID orden</th>
 								<th>Proveedor</th>
 								<th>Fecha</th>
-                                <th>Costo total</th>
-								<th class="table__actions">Acción</th>
+								<th>Estado</th>
+								<th>Costo total</th>
 							</tr>
 						</thead>
 						<tbody id="tabla-ordenes-pendientes">
 							<tr>
-								<td colspan="5" class="table__empty">No hay órdenes de compra pendientes.</td>
+								<td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td>
 							</tr>
 						</tbody>
 					</table>
@@ -98,6 +99,99 @@
 
 		<!-- vista-3 removed -->
 	</main>
+
+	{% call modal('modal-registrar-entrada', 'Registrar entrada', 'lg') %}
+		<form id="form-registrar-entrada" class="form" autocomplete="off">
+			<input type="hidden" id="ordenes-compra-csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
+			<div class="form__group form__group--inline">
+				<div class="form__field">
+					<label for="entrada-id-proveedor">ID de proveedor</label>
+					<input id="entrada-id-proveedor" name="ID_proveedor" type="text" readonly required>
+				</div>
+				<div class="form__field form__field--grow">
+					<label for="entrada-nombre-proveedor">Proveedor</label>
+					<input id="entrada-nombre-proveedor" type="text" readonly>
+				</div>
+				<div class="form__field form__field--auto">
+					<label>&nbsp;</label>
+					<button id="btn-desplegar-proveedores" class="btn btn--ghost" type="button">Buscar proveedor</button>
+				</div>
+			</div>
+
+			<!-- Provider selection modal will be used instead of inline select -->
+
+
+			<div class="form__group">
+				<button id="btn-desplegar-productos" class="btn btn--ghost" type="button" data-open-modal="modal-seleccionar-productos" disabled title="Selecciona un proveedor primero">Registrar productos</button>
+				<!-- Product selection modal will be used instead of inline select -->
+			</div>
+
+			<div class="form__group">
+				<label>Productos agregados</label>
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Producto</th>
+								<th>Proveedor</th>
+								<th>Cantidad</th>
+								<th>Costo</th>
+								<th class="table__actions">Acción</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-productos-seleccionados">
+							<tr>
+								<td colspan="5" class="table__empty">Aún no hay productos seleccionados.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="form__actions form__actions--inline form__actions--end">
+				<p class="form__total">Costo total: <strong><span id="entrada-costo-total">0</span></strong></p>
+				<input id="entrada-costo-total-input" name="Costo_venta" type="hidden" value="0">
+			</div>
+
+			<div class="form__actions form__actions--inline">
+				<button class="btn btn--primary" type="submit" id="btn-guardar-entrada" disabled>Guardar entrada</button>
+			</div>
+		</form>
+	{% endcall %}
+
+	{% call modal('modal-seleccionar-proveedor', 'Seleccionar proveedor', 'md') %}
+		<div class="table-wrap">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Proveedor</th>
+					</tr>
+				</thead>
+				<tbody id="lista-proveedores">
+					<tr><td colspan="2" class="table__empty">Cargando proveedores...</td></tr>
+				</tbody>
+			</table>
+		</div>
+	{% endcall %}
+
+	{% call modal('modal-seleccionar-productos', 'Seleccionar productos', 'lg') %}
+		<div class="table-wrap">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Clase</th>
+						<th>Marca</th>
+						<th>Producto</th>
+						<th>Costo</th>
+					</tr>
+				</thead>
+				<tbody id="lista-productos">
+					<tr><td colspan="4" class="table__empty">Selecciona un proveedor primero.</td></tr>
+				</tbody>
+			</table>
+		</div>
+	{% endcall %}
 {% endblock %}
 
 {% block scripts %}

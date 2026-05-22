@@ -85,10 +85,10 @@
 		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
 		<nav class="drawer__nav" id="drawerNav">
 			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-			<a class="drawer__link" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo / Ventas</a>
-			<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_validar_pagos') }}">Validar Pagos</a>
-			<a class="drawer__link" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+			<a class="drawer__link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+			
+			
+			<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
 			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
 			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>

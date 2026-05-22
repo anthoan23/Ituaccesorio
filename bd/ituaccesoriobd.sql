@@ -1,13 +1,13 @@
--- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.46, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: ituaccesoriobd
+-- Host: localhost    Database: ituaccesoriobd
 -- ------------------------------------------------------
 -- Server version	8.0.46
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -103,7 +103,6 @@ DROP TABLE IF EXISTS `clase_producto`;
 CREATE TABLE `clase_producto` (
   `ID_clase` int NOT NULL AUTO_INCREMENT,
   `N_Clase` varchar(30) DEFAULT NULL,
-  `Num_i` int DEFAULT NULL,
   PRIMARY KEY (`ID_clase`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -114,7 +113,7 @@ CREATE TABLE `clase_producto` (
 
 LOCK TABLES `clase_producto` WRITE;
 /*!40000 ALTER TABLE `clase_producto` DISABLE KEYS */;
-INSERT INTO `clase_producto` VALUES (1,'Telefonos',3),(2,'Tablets',3),(3,'Accesorios de Audio',1),(4,'Cargadores',1),(5,'Fundas y Protectores',1),(6,'Cables',1),(7,'Baterias',2),(8,'Repuestos Internos',2),(9,'Herramientas',2),(10,'Smartwatches',3);
+INSERT INTO `clase_producto` VALUES (1,'Telefonos'),(2,'Tablets'),(3,'Accesorios de Audio'),(4,'Cargadores'),(5,'Fundas y Protectores'),(6,'Cables'),(7,'Baterias'),(8,'Repuestos Internos'),(9,'Herramientas'),(10,'Smartwatches');
 /*!40000 ALTER TABLE `clase_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -559,6 +558,7 @@ CREATE TABLE `orden_compra` (
   `ID_proveedor` int DEFAULT NULL,
   `Fecha_o` varchar(10) DEFAULT NULL,
   `Costo_venta` int DEFAULT NULL,
+  `Estado` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_orden_c`),
   KEY `ID_em` (`ID_em`),
   KEY `ID_proveedor` (`ID_proveedor`),
@@ -573,7 +573,7 @@ CREATE TABLE `orden_compra` (
 
 LOCK TABLES `orden_compra` WRITE;
 /*!40000 ALTER TABLE `orden_compra` DISABLE KEYS */;
-INSERT INTO `orden_compra` VALUES (1,1009,1,'2026-04-01',5500000),(2,1009,2,'2026-04-03',2500000),(3,1009,3,'2026-04-05',3800000),(4,1009,4,'2026-04-08',4800000),(5,1009,5,'2026-04-10',7000000),(6,1009,6,'2026-04-12',1250000),(7,1009,7,'2026-04-15',1800000),(8,1009,8,'2026-04-18',2200000),(9,1009,9,'2026-04-20',960000),(10,1009,10,'2026-04-22',9800000),(11,1009,1,'2026-05-02',3300000),(12,1009,2,'2026-05-05',3150000),(13,1009,3,'2026-05-08',1500000),(14,1009,4,'2026-05-10',1900000),(15,1009,5,'2026-05-12',2800000);
+INSERT INTO `orden_compra` VALUES (1,1009,1,'2026-04-01',5500000,'Pendiente'),(2,1009,2,'2026-04-03',2500000,'Pendiente'),(3,1009,3,'2026-04-05',3800000,'Pendiente'),(4,1009,4,'2026-04-08',4800000,'Pendiente'),(5,1009,5,'2026-04-10',7000000,'Pendiente'),(6,1009,6,'2026-04-12',1250000,'Pendiente'),(7,1009,7,'2026-04-15',1800000,'Pendiente'),(8,1009,8,'2026-04-18',2200000,'Pendiente'),(9,1009,9,'2026-04-20',960000,'Pendiente'),(10,1009,10,'2026-04-22',9800000,'Pendiente'),(11,1009,1,'2026-05-02',3300000,'Pendiente'),(12,1009,2,'2026-05-05',3150000,'Pendiente'),(13,1009,3,'2026-05-08',1500000,'Pendiente'),(14,1009,4,'2026-05-10',1900000,'Pendiente'),(15,1009,5,'2026-05-12',2800000,'Pendiente');
 /*!40000 ALTER TABLE `orden_compra` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -910,6 +910,7 @@ CREATE TABLE `stock` (
   `ID_modelo` int DEFAULT NULL,
   `Existencia` int DEFAULT NULL,
   `Costo_venta` int DEFAULT NULL,
+  `Num_i` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_producto`),
   KEY `ID_modelo` (`ID_modelo`),
   CONSTRAINT `stock_ibfk_1` FOREIGN KEY (`ID_modelo`) REFERENCES `modelo_producto` (`ID_modelo`)
@@ -922,7 +923,7 @@ CREATE TABLE `stock` (
 
 LOCK TABLES `stock` WRITE;
 /*!40000 ALTER TABLE `stock` DISABLE KEYS */;
-INSERT INTO `stock` VALUES (1,1,15,750000),(2,2,10,650000),(3,3,25,350000),(4,4,8,1200000),(5,5,12,1100000),(6,6,14,800000),(7,7,10,950000),(8,8,18,500000),(9,9,30,300000),(10,10,12,600000),(11,11,5,1300000),(12,13,14,250000),(13,15,25,80000),(14,17,49,45000),(15,19,7,1000000);
+INSERT INTO `stock` VALUES (1,1,15,750000,NULL),(2,2,10,650000,NULL),(3,3,25,350000,NULL),(4,4,8,1200000,NULL),(5,5,12,1100000,NULL),(6,6,20,800000,NULL),(7,7,10,950000,NULL),(8,8,18,500000,NULL),(9,9,30,300000,NULL),(10,10,12,600000,NULL),(11,11,5,1300000,NULL),(12,13,15,250000,NULL),(13,15,40,80000,NULL),(14,17,50,45000,NULL),(15,19,7,1000000,NULL);
 /*!40000 ALTER TABLE `stock` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1043,6 +1044,14 @@ LOCK TABLES `venta` WRITE;
 INSERT INTO `venta` VALUES ('FAC-2026-0001',1003,1,750000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0002',1004,2,1100000,'2026-05-01','Pendiente',NULL,NULL),('FAC-2026-0003',1003,3,350000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0004',1005,4,1200000,'2026-05-02','Pendiente',NULL,NULL),('FAC-2026-0005',1003,5,650000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0006',1004,6,800000,'2026-05-03','Pendiente',NULL,NULL),('FAC-2026-0007',1005,7,250000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0008',1003,8,600000,'2026-05-04','Pendiente',NULL,NULL),('FAC-2026-0009',1004,9,1300000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0010',1005,10,45000,'2026-05-05','Pendiente',NULL,NULL),('FAC-2026-0011',1003,11,950000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0012',1004,12,500000,'2026-05-06','Pendiente',NULL,NULL),('FAC-2026-0013',1005,13,300000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0014',1003,14,80000,'2026-05-07','Pendiente',NULL,NULL),('FAC-2026-0015',1004,15,1000000,'2026-05-08','Pendiente',NULL,NULL),('FAC-2026-05-0F9A03',NULL,9876543,56926000,'2026-05-22','Por Verificar','zelle',NULL),('FAC-2026-05-29D385',NULL,9876543,569260000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-386235',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-482BD8',NULL,9876543,266296406,'2026-05-21','Pendiente','efectivo_usd',NULL),('FAC-2026-05-672F47',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-6E0EDA',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-6F879D',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-9CF0E8',NULL,9876543,569260000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-9E57F1',NULL,9876543,569260000,'2026-05-22','Por Verificar','binance',NULL),('FAC-2026-05-BFFDCE',NULL,9876543,626186000,'2026-05-22','Por Verificar','pago_movil',NULL),('FAC-2026-05-C02868',NULL,9876543,113619200,'2026-05-21','Aprobado','zelle',NULL),('FAC-2026-05-D5BC4F',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL),('FAC-2026-05-F69DCE',NULL,9876543,113619200,'2026-05-21','Por Verificar','pago_movil',NULL);
 /*!40000 ALTER TABLE `venta` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping events for database 'ituaccesoriobd'
+--
+
+--
+-- Dumping routines for database 'ituaccesoriobd'
+--
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1053,4 +1062,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-21 22:05:55
+-- Dump completed on 2026-05-22  3:43:47
