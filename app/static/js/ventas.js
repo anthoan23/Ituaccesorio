@@ -441,14 +441,14 @@
         }
         
         const valorVisible = (valor) => valor !== undefined && valor !== null && String(valor).trim() !== "" && String(valor).trim().toLowerCase() !== "n/a";
-        const metodo = (String(p.metodo_pago || "")).toLowerCase();
 
         const renderCamposMetodo = (pago) => {
+            const metodo = String(pago.metodo_pago || "").toLowerCase();
+
             if (metodo === "pago_movil") {
                 return [
                     valorVisible(pago.banco) ? `<div class="info-row"><strong>Banco:</strong> <span>${escapeHtml(pago.banco)}</span></div>` : "",
                     valorVisible(pago.contacto) ? `<div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
-                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
                 ].join("");
             }
 
@@ -456,7 +456,6 @@
                 return [
                     valorVisible(pago.titular) ? `<div class="info-row"><strong>Titular:</strong> <span>${escapeHtml(pago.titular)}</span></div>` : "",
                     valorVisible(pago.contacto) ? `<div class="info-row"><strong>Correo / Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
-                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
                 ].join("");
             }
 
@@ -490,6 +489,7 @@
                 <div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(p.cliente_celular || 'N/A')}</span></div>
                 <div class="info-row"><strong>Total:</strong> <span>${formatVES(p.total_bs)}</span></div>
                 <div class="info-row"><strong>Método:</strong> <span>${escapeHtml(p.metodo_pago)}</span></div>
+                ${valorVisible(p.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(p.referencia)}</span></div>` : ""}
                 ${renderCamposMetodo(p)}
                 ${tipo === "pendientes" ? `
                     <div class="pago-actions">
@@ -569,6 +569,27 @@
                 (data.productos || []).map(p => `<option value="${p.id}" data-precio="${p.precio_usd}">${p.nombre} - ${formatUSD(p.precio_usd)}</option>`).join("");
         }
     }
+
+    let clientesMap = {};
+    async function cargarClientesParaDatalist() {
+        try {
+            const data = await fetchJson('/api/clientes');
+            const list = document.getElementById('clientes-list');
+            if (!list) return;
+            clientesMap = {};
+            const clientes = data.clientes || [];
+            // Añadir opción con formato `ID - Nombre Apellido` para selección y búsqueda
+            list.innerHTML = clientes.map(c => {
+                const text = `${c.ID_c} - ${c.nombre} ${c.apellido}`.trim();
+                // Guardar mapeo por nombre y por id-string
+                clientesMap[String(c.ID_c)] = c.ID_c;
+                clientesMap[(c.nombre + ' ' + (c.apellido || '')).trim().toLowerCase()] = c.ID_c;
+                return `<option value="${escapeHtml(text)}"></option>`;
+            }).join('');
+        } catch (err) {
+            // ignore silently
+        }
+    }
     
     let itemsLocal = [];
     
@@ -637,12 +658,24 @@
     async function registrarVentaLocal(event) {
         event.preventDefault();
         
-        const clienteId = document.getElementById("cliente-id")?.value;
+        const clienteInput = document.getElementById("cliente-id")?.value || '';
+        let clienteId = null;
+        const v = String(clienteInput).trim();
+        if (/^\d+$/.test(v)) {
+            clienteId = parseInt(v);
+        } else if (v.includes(' - ')) {
+            const parts = v.split(' - ');
+            if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
+        } else {
+            // Buscar por nombre en el map (case-insensitive)
+            const lookup = v.toLowerCase();
+            if (clientesMap[lookup]) clienteId = clientesMap[lookup];
+        }
         const metodoPago = document.getElementById("metodo-local")?.value;
         const totalPagado = parseFloat(document.getElementById("total-pagado")?.value || 0);
         
         if (!clienteId) {
-            mostrarNotificacion("ID del cliente requerido", "error");
+            mostrarNotificacion("Cliente no encontrado. Escribe ID o selecciona un cliente válido.", "error");
             return;
         }
         if (!itemsLocal.length) {
@@ -784,6 +817,7 @@
         
         if (path === "/admin/validar-pagos") {
             await cargarProductosParaSelect();
+            await cargarClientesParaDatalist();
             
             const btnVentaLocal = document.getElementById("btn-venta-local");
             const ventaLocalModal = document.getElementById("venta-local-modal");

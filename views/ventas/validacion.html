@@ -47,8 +47,9 @@
         <h2 class="card__title">Registrar venta local</h2>
         <form id="form-venta-local">
             <label class="field">
-                <span class="field__label">Cliente ID</span>
-                <input type="number" id="cliente-id" required>
+                <span class="field__label">Cliente (ID o escribir nombre)</span>
+                <input type="text" id="cliente-id" list="clientes-list" placeholder="Escribe ID o nombre..." required>
+                <datalist id="clientes-list"></datalist>
             </label>
             <label class="field">
                 <span class="field__label">Producto</span>
