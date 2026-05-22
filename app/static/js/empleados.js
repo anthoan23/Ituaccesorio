@@ -16,6 +16,10 @@ const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || 
 const selectEspecialidad = document.getElementById('select-especialidad');
 const selectedEspecialidadesInput = document.getElementById('input-especialidades');
 
+const statEmpleados = document.getElementById('stat-empleados');
+const statCargos = document.getElementById('stat-cargos');
+const statEspecialidades = document.getElementById('stat-especialidades');
+
 iniciar();
 
 function iniciar() {
@@ -363,12 +367,19 @@ async function cargarTodo() {
         state.cargos = Array.isArray(cargos) ? cargos : (cargos.cargos || []);
         state.especialidades = Array.isArray(especialidades) ? especialidades : (especialidades.especialidades || []);
 
+        renderStats();
         renderCargoOptions();
         renderEspecialidadOptions();
         renderTodo();
     } catch (error) {
         mostrarToast(error.message || 'No se pudieron cargar los datos.', true);
     }
+}
+
+function renderStats() {
+    if (statEmpleados) statEmpleados.textContent = String(state.empleados.length || 0);
+    if (statCargos) statCargos.textContent = String(state.cargos.length || 0);
+    if (statEspecialidades) statEspecialidades.textContent = String(state.especialidades.length || 0);
 }
 
 function renderCargoOptions() {

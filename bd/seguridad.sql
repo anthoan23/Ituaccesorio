@@ -24,7 +24,7 @@ DROP TABLE IF EXISTS `bitacora`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `bitacora` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `usuario_id` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `usuario_id` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `modulo_id` int NOT NULL,
   `accion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `descripcion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
@@ -116,7 +116,7 @@ CREATE TABLE `rol` (
   `descripcion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nombre` (`nombre`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -125,7 +125,7 @@ CREATE TABLE `rol` (
 
 LOCK TABLES `rol` WRITE;
 /*!40000 ALTER TABLE `rol` DISABLE KEYS */;
-INSERT INTO `rol` VALUES (1,'Admin','none'),(5,'Tecnico','none'),(6,'Ventas','rol para los empleados de ventas');
+INSERT INTO `rol` VALUES (1,'Admin','none'),(5,'Tecnico','none'),(6,'Ventas','rol para los empleados de ventas'),(7,'Cliente','');
 /*!40000 ALTER TABLE `rol` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -137,7 +137,7 @@ DROP TABLE IF EXISTS `usuario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `usuario` (
-  `id` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `id` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `nombre` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `cedula` int NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -159,54 +159,9 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02',NULL,'2026-05-17 02:05:11'),('USR-002','Anthoan',2323123,'Dino1234',6,1,'2026-05-17 02:04:00',NULL,'2026-05-17 02:05:11'),('USR-003','Elena',40404040,'Dino1234',5,1,'2026-05-17 02:04:49',NULL,'2026-05-17 02:05:11'),('USR-004','antonio',313131313,'Dino1234',6,1,'2026-05-17 02:13:43',NULL,'2026-05-17 02:16:03');
+INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02','/static/img/perfil/725ff8bd356d449a8bc7e9cd9e54f579.jpg','2026-05-21 03:38:50'),('USR-002','Anthoan',2323123,'Dino1234',6,1,'2026-05-17 02:04:00',NULL,'2026-05-17 02:05:11'),('USR-003','Elena',40404040,'Dino1234',5,1,'2026-05-17 02:04:49',NULL,'2026-05-17 02:05:11'),('USR-004','ClienteTest',9876543,'Dino1234',7,1,'2026-05-21 03:24:14',NULL,'2026-05-21 03:24:14');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping routines for database 'seguridad'
---
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_usuario_con_prefijo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`%` PROCEDURE `sp_registrar_usuario_con_prefijo`(
-    IN p_nombre VARCHAR(50),
-    IN p_cedula INT,
-    IN p_password VARCHAR(255),
-    IN p_rol_id INT,
-    IN p_foto_perfil VARCHAR(100)
-)
-BEGIN
-    DECLARE v_count INT;
-    DECLARE v_nuevo_id VARCHAR(20);
-    DECLARE v_prefijo VARCHAR(5) DEFAULT 'USR-';
-    
-    -- Obtener el siguiente número secuencial
-    -- Contamos cuántos usuarios hay para generar el siguiente (puedes usar una tabla de secuencias si prefieres)
-    SELECT COUNT(*) + 1 INTO v_count FROM usuario;
-    
-    -- Formatear el ID (Ejemplo: USR-0001, USR-0002...)
-    SET v_nuevo_id = CONCAT(v_prefijo, LPAD(v_count, 3, '0'));
-    
-    -- Insertar el nuevo registro
-    INSERT INTO usuario (id, nombre, cedula, password, rol_id, activo, foto_perfil)
-    VALUES (v_nuevo_id, p_nombre, p_cedula, p_password, p_rol_id, 1, p_foto_perfil);
-    
-    -- Retornar el ID creado para el backend
-    SELECT v_nuevo_id AS id_generado;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -217,4 +172,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-16 22:17:18
+-- Dump completed on 2026-05-21 22:05:31

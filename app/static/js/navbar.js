@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const syncForm = (usuario) => {
 		nombreInput.value = usuario.nombre || "";
-		if (cedulaInput) cedulaInput.value = usuario.cedula_personal ?? "";
+		if (cedulaInput) cedulaInput.value = usuario.cedula ?? usuario.cedula_personal ?? "";
 		if (rolInput) rolInput.value = usuario.rol_nombre || "";
 		if (passwordInput) passwordInput.value = "";
 		if (passwordConfirmInput) passwordConfirmInput.value = "";
