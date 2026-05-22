@@ -59,7 +59,7 @@ def validar_login():
             payload = {
                 "usuario_id": usuario.get("id"),
                 "usuario_nombre": usuario.get("nombre"),
-                "cedula_personal": usuario.get("cedula_personal"),
+                "cedula": usuario.get("cedula_personal"),
                 "rol_id": usuario.get("rol_id"),
                 "nombre_rol": usuario.get("nombre_rol"),
                 "foto_perfil": usuario.get("foto_perfil"),
@@ -107,7 +107,7 @@ def registro_cliente_paso_1():
         payload = {
             "usuario_id": usuario_id,
             "usuario_nombre": nombre,
-            "cedula_personal": cedula_num,
+            "cedula": cedula_num,
             "rol_id": int(rol_cliente.get("id")),
             "nombre_rol": rol_cliente.get("nombre"),
             "foto_perfil": None,
@@ -136,7 +136,7 @@ def registro_cliente_paso_2():
     if not _es_rol_cliente(usuario.get("nombre_rol")):
         return jsonify({"success": False, "error": "Solo los usuarios con rol Cliente pueden completar este registro."}), 403
 
-    cedula = usuario.get("cedula_personal")
+    cedula = usuario.get("cedula")
     if not cedula:
         return jsonify({"success": False, "error": "No se encontró la cédula activa para completar el perfil."}), 400
 
@@ -161,7 +161,7 @@ def registro_cliente_paso_2():
         payload = {
             "usuario_id": usuario.get("usuario_id"),
             "usuario_nombre": usuario.get("usuario_nombre"),
-            "cedula_personal": int(cedula),
+            "cedula": int(cedula),
             "rol_id": usuario.get("rol_id"),
             "nombre_rol": usuario.get("nombre_rol"),
             "foto_perfil": usuario.get("foto_perfil"),

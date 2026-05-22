@@ -1,0 +1,105 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Órdenes de compra{% endblock %}
+
+{% block head_extra %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/ordenes_compra.css') }}">
+{% endblock %}
+
+{% block content %}
+	<main class="page orders-page">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<ol class="breadcrumb__list">
+				<li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+				<li class="breadcrumb__separator" aria-hidden="true">&gt;</li>
+				<li aria-current="page"><button class="breadcrumb__current" type="button" data-view-target="vista-1">Órdenes de compra</button><span class="breadcrumb__separator" id="breadcrumb-separator">/</span><span class="breadcrumb__section" id="breadcrumb-section"></span></li>
+			</ol>
+		</nav>
+
+		<header class="orders-hero">
+			<div class="orders-hero__copy">
+				<p class="orders-hero__eyebrow">Gestión de compras</p>
+				<h1 class="orders-hero__title">Órdenes de compra</h1>
+				<p class="orders-hero__description">Consulta pendientes, entregadas y la recepción de artículos en una sola vista.</p>
+			</div>
+		</header>
+
+		<section class="content vista-1" aria-label="Órdenes de compra pendientes">
+			<nav class="vista-switcher" aria-label="Seleccionar vista de órdenes de compra">
+				<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Órdenes pendientes</button>
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Órdenes entregadas</button>
+			</nav>
+
+			<article class="card card--table" aria-label="Órdenes de compra pendientes">
+				<div class="card__header">
+					<div class="card__header-left">
+						<h2 class="card__title">Órdenes de compra pendientes</h2>
+						<p class="card__subtitle">Órdenes registradas y aún sin entregar.</p>
+					</div>
+					<div class="card__actions">
+						<button id="btn-registrar-orden" type="button" class="btn btn--primary">Registrar orden</button>
+					</div>
+				</div>
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Proveedor</th>
+								<th>Fecha</th>
+                                <th>Costo total</th>
+								<th class="table__actions">Acción</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-ordenes-pendientes">
+							<tr>
+								<td colspan="5" class="table__empty">No hay órdenes de compra pendientes.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</article>
+		</section>
+
+		<section class="content vista-2" aria-label="Órdenes de compra entregadas" hidden>
+			<nav class="vista-switcher" aria-label="Seleccionar vista de órdenes de compra">
+				<button class="vista-switcher__btn" type="button" data-view-target="vista-1">Órdenes pendientes</button>
+				<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-2">Órdenes entregadas</button>
+			</nav>
+
+			<article class="card card--table" aria-label="Órdenes de compra entregadas">
+				<div class="card__header">
+					<div class="card__header-left">
+						<h2 class="card__title">Órdenes de compra entregadas</h2>
+						<p class="card__subtitle">Historial de compras que ya fueron recibidas.</p>
+					</div>
+					<!-- registrar-entrega button removed -->
+				</div>
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>ID orden</th>
+								<th>Proveedor</th>
+								<th>Fecha entrega</th>
+								<th>Recibido por</th>
+								<th class="table__actions">Acción</th>
+							</tr>
+						</thead>
+						<tbody id="tabla-ordenes-entregadas">
+							<tr>
+								<td colspan="5" class="table__empty">No hay órdenes de compra entregadas.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</article>
+		</section>
+
+		<!-- vista-3 removed -->
+	</main>
+{% endblock %}
+
+{% block scripts %}
+	<script defer src="{{ url_for('static', filename='js/ordenes_compra.js') }}"></script>
+{% endblock %}
