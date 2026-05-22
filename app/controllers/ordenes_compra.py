@@ -10,7 +10,7 @@ ordenes_compra = Blueprint('ordenes_compra', __name__)
 def pagina_ordenes_compra():
     return render_template(
         "ordenes_compra.html",
-        active_page="Órdenes de Compra",
+        active_page="ordenes_compra",
         show_navbar=True,
         show_notifications=True,
         )   
