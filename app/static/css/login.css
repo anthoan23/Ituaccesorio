@@ -98,6 +98,18 @@ body {
 	gap: 1rem;
 }
 
+.auth-form__captcha {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	overflow: hidden;
+}
+
+.auth-form__captcha .g-recaptcha {
+	transform-origin: top center;
+}
+
 .field {
 	display: grid;
 	gap: 0.45rem;

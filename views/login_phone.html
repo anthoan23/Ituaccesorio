@@ -49,6 +49,7 @@
 									<input id="login-password" class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
 								</label>
 
+								<div class="phone__captcha g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="compact"></div>
 								<button class="phone__button" type="submit">INICIAR SESIÓN</button>
 
 								<div class="phone__links" aria-label="Acciones adicionales">
@@ -135,5 +136,6 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}

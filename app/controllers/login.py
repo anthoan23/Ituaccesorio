@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, make_response, g
+import os
+import requests
 import mysql.connector
 
 from app.models.clientes import GestionClientes
@@ -30,11 +32,36 @@ def _perfil_cliente_completo(cedula):
     modelo_clientes = GestionClientes()
     return bool(modelo_clientes.obtener_cliente_por_id(int(cedula)))
 
+
+def _validar_recaptcha(token, remote_ip):
+    secret = os.getenv("RECAPTCHA_SECRET_KEY")
+    if not secret:
+        return False, "Captcha no configurado."
+    if not token:
+        return False, "Completa el captcha para continuar."
+    payload = {"secret": secret, "response": token}
+    if remote_ip:
+        payload["remoteip"] = remote_ip
+    try:
+        response = requests.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data=payload,
+            timeout=5
+        )
+        data = response.json()
+    except requests.RequestException:
+        return False, "No se pudo validar el captcha. Intenta nuevamente."
+    if data.get("success"):
+        return True, ""
+    return False, "Captcha inválido. Intenta nuevamente."
+
+
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
     # Servir la vista de login para teléfono en la ruta /login
     return render_template(
-        "login_phone.html"
+        "login_phone.html",
+        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY", "")
     )
 
 @login_blueprint.route("/api/login", methods=["POST"])
@@ -43,6 +70,12 @@ def validar_login():
     modelo = Usuarios()
 
     try:
+        recaptcha_token = datos.get("recaptcha")
+        recaptcha_ok, recaptcha_error = _validar_recaptcha(recaptcha_token, request.remote_addr)
+        if not recaptcha_ok:
+            status = 500 if recaptcha_error == "Captcha no configurado." else 400
+            return jsonify({"success": False, "error": recaptcha_error}), status
+
         nombre = datos.get("nombre")
         password = datos.get("password")
 

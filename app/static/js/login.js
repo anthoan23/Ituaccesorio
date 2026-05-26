@@ -71,9 +71,16 @@ document.addEventListener("DOMContentLoaded", () => {
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
 
+		const recaptchaResponse = form.querySelector('[name="g-recaptcha-response"]')?.value?.trim() || "";
+		if (!recaptchaResponse) {
+			mostrarMensaje("Completa el captcha para continuar.");
+			return;
+		}
+
 		const payload = {
 			nombre: nombreInput.value.trim(),
 			password: passwordInput.value,
+			recaptcha: recaptchaResponse,
 		};
 
 		try {
@@ -95,8 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			mostrarMensaje(data.error || "No se pudo iniciar sesión.");
+			if (window.grecaptcha && typeof window.grecaptcha.reset === "function") {
+				window.grecaptcha.reset();
+			}
 		} catch (error) {
 			mostrarMensaje("Error de conexión. Intenta nuevamente.");
+			if (window.grecaptcha && typeof window.grecaptcha.reset === "function") {
+				window.grecaptcha.reset();
+			}
 		}
 	});
 
@@ -178,4 +191,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (params.get("completar_perfil") === "1") {
 		abrirPerfilIncompleto();
 	}
+
+	programarAjusteRecaptcha();
+	window.addEventListener("resize", programarAjusteRecaptcha);
+	window.addEventListener("orientationchange", programarAjusteRecaptcha);
+	setTimeout(ajustarRecaptcha, 400);
 });

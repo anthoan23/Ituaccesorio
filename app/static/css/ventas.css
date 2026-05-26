@@ -116,13 +116,15 @@ body {
 }
 
 .btn--ghost {
-	background: transparent;
-	border-color: rgba(17, 24, 39, 0.14);
-	color: rgba(18, 18, 18, 0.88);
+	background: #eef0f4;
+	color: var(--ink);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .btn--ghost:hover {
-	background: rgba(17, 24, 39, 0.04);
+	background: #eef0f4;
+	color: var(--ink);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .products-grid,
@@ -168,13 +170,15 @@ body {
 }
 
 .modal .btn--ghost {
-	color: rgba(18, 18, 18, 0.88);
-	border: 1px solid rgba(17, 24, 39, 0.14);
-	background: transparent;
+	background: #eef0f4;
+	color: var(--ink);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .modal .btn--ghost:hover {
-	background: rgba(17, 24, 39, 0.04);
+	background: #eef0f4;
+	color: var(--ink);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .table__header {

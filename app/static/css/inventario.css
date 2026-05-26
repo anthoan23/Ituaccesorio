@@ -252,13 +252,15 @@ body {
 }
 
 .btn--ghost {
-  background: rgba(17, 24, 39, 0.08);
-  color: rgba(18, 20, 24, 0.92);
-  border: 1px solid rgba(17, 24, 39, 0.18);
+  background: #eef0f4;
+  color: var(--ink);
+  border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .btn--ghost:hover {
-  background: rgba(17, 24, 39, 0.12);
+  background: #eef0f4;
+  color: var(--ink);
+  border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .btn:focus-visible {
@@ -283,14 +285,15 @@ body {
 }
 
 .inventario-page .panel .btn--ghost {
-  background: rgba(17, 24, 39, 0.08);
-  color: rgba(18, 20, 24, 0.92);
-  border: 1px solid rgba(17, 24, 39, 0.18);
+  background: #eef0f4;
+  color: var(--ink);
+  border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .inventario-page .panel .btn--ghost:hover {
-  background: rgba(17, 24, 39, 0.12);
-  border-color: rgba(17, 24, 39, 0.22);
+  background: #eef0f4;
+  color: var(--ink);
+  border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .inventario-page .panel .btn--ghost:focus-visible {

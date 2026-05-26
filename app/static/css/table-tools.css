@@ -1,0 +1,106 @@
+.table-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin: 0 0 0.75rem;
+    color: var(--ink, #14161a);
+}
+
+.table-controls__search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 220px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted, #68707d);
+}
+
+.table-controls__input {
+    flex: 1 1 auto;
+    min-width: 160px;
+    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border-radius: 14px;
+    padding: 0.6rem 0.75rem;
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink, #14161a);
+    background: var(--panel, #ffffff);
+}
+
+.table-controls__input:focus {
+    outline: none;
+    border-color: rgba(243, 197, 0, 0.75);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+}
+
+.table-controls__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem 0.85rem;
+    flex-wrap: wrap;
+}
+
+.table-controls__pager {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.table-controls__btn {
+    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border-radius: 12px;
+    background: var(--panel, #ffffff);
+    color: var(--ink, #14161a);
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.table-controls__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.table-controls__info {
+    font-size: 0.85rem;
+    color: var(--muted, #68707d);
+    min-width: 120px;
+    text-align: center;
+}
+
+.table-controls__size {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted, #68707d);
+}
+
+.table-controls__select {
+    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border-radius: 12px;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+    font-weight: 600;
+    background: var(--panel, #ffffff);
+    color: var(--ink, #14161a);
+}
+
+.table-controls__select:focus {
+    outline: none;
+    border-color: rgba(243, 197, 0, 0.75);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+}
+
+.table-controls.is-empty {
+    opacity: 0.75;
+}

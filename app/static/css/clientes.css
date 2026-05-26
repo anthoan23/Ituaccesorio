@@ -260,9 +260,9 @@ textarea:focus {
 }
 
 .btn--ghost {
-    background: transparent;
-    border: 1px solid rgba(20, 22, 26, 0.14);
+    background: #eef0f4;
     color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .toast {

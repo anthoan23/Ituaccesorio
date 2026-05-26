@@ -379,9 +379,9 @@ body {
 }
 
 .btn--ghost {
-	background: #ffffff;
+	background: #eef0f4;
 	color: var(--ink);
-	border: 1px solid rgba(18, 18, 18, 0.12);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .assigned-repairs {
@@ -1062,9 +1062,9 @@ body {
 
 /* Make ghost buttons lighter on modal */
 .btn--ghost {
-	background: #f6f6f6;
+	background: #eef0f4;
 	color: var(--ink);
-	border: 1px solid rgba(18,18,18,0.06);
+	border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 /* Make the 'buscar' / modal open buttons more prominent */

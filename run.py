@@ -14,6 +14,7 @@ from app.controllers.bitacora import bitacora_blueprint
 from app.controllers.taller import taller_blueprint
 from app.controllers.clientes import clientes_blueprint
 from app.controllers.ordenes_servicio import ordenes_servicio_blueprint
+from app.controllers.ventas import ventas_blueprint
 
 from app.controllers.inventario import inventario_blueprint
 from app.controllers.ordenes_compra import ordenes_compra
@@ -40,11 +41,14 @@ csp = {
     'default-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'style-src-elem': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-    'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', "'unsafe-inline'"],
-    'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
+    'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'unsafe-inline'"],
+    'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-    'img-src': ["'self'", 'data:', 'blob:'],
+    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+    'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
+    'child-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
+    'connect-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
 }
 
 talisman = Talisman(app, content_security_policy=csp)
@@ -61,6 +65,7 @@ app.register_blueprint(bitacora_blueprint)
 app.register_blueprint(taller_blueprint)
 app.register_blueprint(clientes_blueprint)
 app.register_blueprint(ordenes_servicio_blueprint)
+app.register_blueprint(ventas_blueprint)
 
 app.register_blueprint(inventario_blueprint)
 app.register_blueprint(ordenes_compra)

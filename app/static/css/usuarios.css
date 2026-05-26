@@ -213,15 +213,17 @@ body {
 }
 
 .admin-toolbar .btn--ghost {
-    background: linear-gradient(180deg, rgba(15, 15, 16, 0.92), rgba(15, 15, 16, 0.72));
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(10px);
+    background: #eef0f4;
+    color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
 .admin-toolbar .btn--ghost:hover {
-    filter: brightness(1.08);
+    background: #eef0f4;
+    color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .admin-toolbar .btn--primary {
@@ -435,9 +437,9 @@ textarea:focus {
 }
 
 .btn--ghost {
-    background: transparent;
-    border: 1px solid rgba(20, 22, 26, 0.14);
+    background: #eef0f4;
     color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .table-wrap {
