@@ -24,12 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	const entradaCostoTotal = document.getElementById('entrada-costo-total');
 	const entradaCostoTotalInput = document.getElementById('entrada-costo-total-input');
 	const btnGuardarEntrada = document.getElementById('btn-guardar-entrada');
+	const btnRegistrarEntrada = document.getElementById('btn-registrar-entrada');
+	const modalRegistrarEntradaTitle = document.getElementById('modal-registrar-entrada-title');
+	const modalConfirmarAnularTexto = document.getElementById('texto-confirmar-anular-orden');
+	const btnConfirmarAnularOrden = document.getElementById('btn-confirmar-anular-orden');
 
 	const state = {
 		proveedores: [],
 		productosDisponibles: [],
 		productosSeleccionados: [],
 		proveedorSeleccionado: null,
+		modoFormulario: 'registrar',
+		ordenEditandoId: null,
+		ordenParaAnularId: null,
 	};
 
 	const formatMoney = (value) => {
@@ -45,6 +52,105 @@ document.addEventListener('DOMContentLoaded', () => {
 			.replaceAll('>', '&gt;')
 			.replaceAll('"', '&quot;')
 			.replaceAll("'", '&#039;');
+	}
+
+	function establecerModoFormulario(modo) {
+		const esEdicion = modo === 'editar';
+		state.modoFormulario = esEdicion ? 'editar' : 'registrar';
+		if (modalRegistrarEntradaTitle) {
+			modalRegistrarEntradaTitle.textContent = esEdicion ? 'Modificar orden' : 'Registrar orden';
+		}
+		if (btnGuardarEntrada) {
+			btnGuardarEntrada.textContent = esEdicion ? 'Modificar orden' : 'Registrar orden';
+		}
+		if (btnDesplegarProveedores) {
+			btnDesplegarProveedores.hidden = false;
+			btnDesplegarProveedores.disabled = esEdicion;
+			btnDesplegarProveedores.setAttribute('aria-disabled', esEdicion ? 'true' : 'false');
+		}
+	}
+
+	function limpiarFormularioEntrada() {
+		state.proveedorSeleccionado = null;
+		state.productosDisponibles = [];
+		state.productosSeleccionados = [];
+		state.ordenEditandoId = null;
+		if (formRegistrarEntrada) formRegistrarEntrada.reset();
+		if (entradaIdProveedor) entradaIdProveedor.value = '';
+		if (entradaNombreProveedor) entradaNombreProveedor.value = '';
+		renderProductosSeleccionados();
+		actualizarTotal();
+		if (btnDesplegarProductos) btnDesplegarProductos.disabled = true;
+		establecerModoFormulario('registrar');
+	}
+
+	function abrirModalRegistro() {
+		limpiarFormularioEntrada();
+		if (window.UiModal && typeof window.UiModal.openById === 'function') {
+			window.UiModal.openById('modal-registrar-entrada');
+		} else {
+			const modal = document.getElementById('modal-registrar-entrada');
+			if (modal) modal.removeAttribute('hidden');
+		}
+	}
+
+	function seleccionarProductoParaEdicion(productoDetalle) {
+		const nombreModelo = String(productoDetalle?.N_modelo ?? productoDetalle?.modelo ?? productoDetalle?.nombre ?? '');
+		const productoDisponible = state.productosDisponibles.find((item) => {
+			const nombreItem = String(item.modelo_nombre ?? item.N_modelo ?? item.nombre ?? '');
+			return nombreItem === nombreModelo;
+		});
+
+		return {
+			id_modelo: String(productoDisponible?.id_modelo ?? productoDisponible?.ID_modelo ?? productoDisponible?.id ?? ''),
+			nombre: nombreModelo,
+			proveedor: entradaNombreProveedor ? entradaNombreProveedor.value : '',
+			costo: Number(productoDetalle?.Costo ?? productoDisponible?.costo ?? productoDisponible?.Costo ?? 0),
+			cantidad: Number(productoDetalle?.Cantidad_p ?? productoDetalle?.cantidad ?? 1),
+		};
+	}
+
+	async function abrirModalModificarOrden(idOrden) {
+		try {
+			await cargarProveedores();
+			const data = await fetchJson(`/api/detalles_orden/${encodeURIComponent(idOrden)}`, { method: 'POST' });
+			const detalle = data?.datos_orden || null;
+			const productos = Array.isArray(data?.productos_orden) ? data.productos_orden : [];
+			if (!detalle) {
+				throw new Error('No se pudo cargar la orden');
+			}
+
+			const proveedorNombre = String(detalle.N_proveedor ?? '');
+			const proveedorEncontrado = state.proveedores.find((item) => String(item.N_proveedor ?? item.nombre ?? '') === proveedorNombre) || null;
+			state.proveedorSeleccionado = proveedorEncontrado;
+			state.ordenEditandoId = detalle.ID_orden_c ?? idOrden;
+
+			if (entradaIdProveedor) entradaIdProveedor.value = String(proveedorEncontrado?.ID_proveedor ?? proveedorEncontrado?.id ?? '');
+			if (entradaNombreProveedor) entradaNombreProveedor.value = proveedorNombre;
+			if (btnDesplegarProductos) btnDesplegarProductos.disabled = !proveedorEncontrado;
+
+			if (proveedorEncontrado) {
+				await cargarProductosDeProveedor(proveedorEncontrado.ID_proveedor ?? proveedorEncontrado.id);
+			}
+
+			state.productosSeleccionados = productos
+				.map((producto) => seleccionarProductoParaEdicion(producto))
+				.filter((producto) => producto.id_modelo);
+
+			establecerModoFormulario('editar');
+		renderProductosSeleccionados();
+			actualizarTotal();
+
+			if (window.UiModal && typeof window.UiModal.openById === 'function') {
+				window.UiModal.openById('modal-registrar-entrada');
+			} else {
+				const modal = document.getElementById('modal-registrar-entrada');
+				if (modal) modal.removeAttribute('hidden');
+			}
+		} catch (error) {
+			console.error(error);
+			alert(error.message || 'No se pudo cargar la orden');
+		}
 	}
 
 	async function fetchJson(url, options = {}) {
@@ -225,12 +331,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			const data = await fetchJson('/api/proveedores');
 			state.proveedores = normalizarProveedores(data);
 			renderProveedores();
+			return state.proveedores;
 		} catch (error) {
 			console.error(error);
 			state.proveedores = [];
 			if (listaProveedores) {
 				listaProveedores.innerHTML = '<tr><td colspan="3" class="table__empty">Error al cargar proveedores.</td></tr>';
 			}
+			return [];
 		}
 	}
 
@@ -259,7 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			console.error(error);
 			state.productosDisponibles = [];
 			if (listaProductos) listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.</td></tr>';
+			return [];
 		}
+		return state.productosDisponibles;
 	}
 
 	function seleccionarProveedor(idProveedor) {
@@ -290,10 +400,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	if (btnRegistrarEntrada) {
+		btnRegistrarEntrada.addEventListener('click', () => {
+			abrirModalRegistro();
+		});
+	}
+
 	// allow clicking the provider name input to open provider picker
 	if (entradaNombreProveedor) {
 		entradaNombreProveedor.style.cursor = 'pointer';
 		entradaNombreProveedor.addEventListener('click', () => {
+			if (state.modoFormulario === 'editar') return;
 			if (btnDesplegarProveedores) btnDesplegarProveedores.click();
 		});
 	}
@@ -384,39 +501,30 @@ document.addEventListener('DOMContentLoaded', () => {
 				return;
 			}
 
+			const esEdicion = state.modoFormulario === 'editar';
 			const payload = {
-				ID_proveedor: Number(state.proveedorSeleccionado.ID_proveedor ?? state.proveedorSeleccionado.id),
-				Costo_venta: Number(entradaCostoTotalInput?.value || 0),
+				...(esEdicion ? { ID_orden_c: Number(state.ordenEditandoId) } : {
+					ID_proveedor: Number(state.proveedorSeleccionado.ID_proveedor ?? state.proveedorSeleccionado.id),
+				}),
+				productos: state.productosSeleccionados.map((p) => [Number(p.id_modelo), Number(p.cantidad)]),
 			};
 
 			try {
-				await fetchJson('/api/ordenes_compra', {
+				await fetchJson(esEdicion ? '/api/ordenes_compra/actualizar_productos' : '/api/ordenes_compra/agregar', {
 					method: 'POST',
 					body: JSON.stringify(payload),
 				});
-				alert('Orden registrada');
-				formRegistrarEntrada.reset();
-				state.proveedorSeleccionado = null;
-				state.productosDisponibles = [];
-				limpiarProductosSeleccionados();
-				if (entradaIdProveedor) entradaIdProveedor.value = '';
-				if (entradaNombreProveedor) entradaNombreProveedor.value = '';
-				if (entradaCostoTotal) entradaCostoTotal.textContent = '0';
-				if (entradaCostoTotalInput) entradaCostoTotalInput.value = '0';
-				if (btnDesplegarProductos) btnDesplegarProductos.disabled = true;
-				// close selector modals if open
+				alert(esEdicion ? 'Orden modificada' : 'Orden registrada');
+				limpiarFormularioEntrada();
 				if (window.UiModal && typeof window.UiModal.closeById === 'function') {
 					window.UiModal.closeById('modal-seleccionar-productos');
 					window.UiModal.closeById('modal-seleccionar-proveedor');
-				}
-				if (btnGuardarEntrada) btnGuardarEntrada.disabled = true;
-					if (window.UiModal && typeof window.UiModal.closeById === 'function') {
 						window.UiModal.closeById('modal-registrar-entrada');
-					}
+				}
 				cargarOrdenes();
 			} catch (error) {
 				console.error(error);
-				alert(`Error registrando la orden: ${error.message}`);
+				alert(`Error ${esEdicion ? 'modificando' : 'registrando'} la orden: ${error.message}`);
 			}
 		});
 	}
@@ -429,44 +537,31 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!id) return;
 
 			if (btn.classList.contains('btn-ver')) {
-				window.location.href = `/ordenes_compra/${id}`;
+				await abrirDetalleCompra(id);
 				return;
 			}
 
 			if (btn.classList.contains('btn-anular')) {
-				if (!confirm('¿Anular esta orden de compra? Esta acción no se puede deshacer.')) return;
-				try {
-					await fetchJson(`/api/ordenes_compra/${id}`, { method: 'DELETE' });
-					alert('Orden anulada');
-					cargarOrdenes();
-				} catch (err) {
-					console.error(err);
-					alert('Error de red al anular la orden');
+				state.ordenParaAnularId = Number(id);
+				if (modalConfirmarAnularTexto) {
+					modalConfirmarAnularTexto.textContent = `¿Seguro de que quieres anular la orden ${id}?`;
+				}
+				if (window.UiModal && typeof window.UiModal.openById === 'function') {
+					window.UiModal.openById('modal-confirmar-anular-orden');
+				} else {
+					const modal = document.getElementById('modal-confirmar-anular-orden');
+					if (modal) modal.removeAttribute('hidden');
 				}
 				return;
 			}
 
 			if (btn.classList.contains('btn-edit')) {
-				const nuevoEstado = prompt('Nuevo estado:', 'Pendiente');
-				if (nuevoEstado === null) return;
-				const nuevoCosto = prompt('Nuevo costo total (numérico):', '0');
-				if (nuevoCosto === null) return;
-				try {
-					await fetchJson(`/api/ordenes_compra/${id}`, {
-						method: 'PUT',
-						body: JSON.stringify({ Estado: nuevoEstado, Costo_venta: Number(nuevoCosto) }),
-					});
-					alert('Orden actualizada');
-					cargarOrdenes();
-				} catch (err) {
-					console.error(err);
-					alert('Error de red al actualizar la orden');
-				}
+				await abrirModalModificarOrden(id);
 				return;
 			}
 
 			if (btn.classList.contains('btn-entrega')) {
-				const recibidoPor = prompt('Recibido por (nombre):', '');
+				const recibidoPor = prompt('Pedido realizado por (nombre):', '');
 				if (recibidoPor === null) return;
 				const fechaEntrega = prompt('Fecha de entrega (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
 				if (fechaEntrega === null) return;
@@ -484,6 +579,109 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	}
+
+	if (btnConfirmarAnularOrden) {
+		btnConfirmarAnularOrden.addEventListener('click', async () => {
+			if (!state.ordenParaAnularId) {
+				alert('No se encontró la orden a anular.');
+				return;
+			}
+
+			btnConfirmarAnularOrden.disabled = true;
+			try {
+				await fetchJson('/api/ordenes_compra/anular', {
+					method: 'POST',
+					body: JSON.stringify({ ID_orden_c: Number(state.ordenParaAnularId) }),
+				});
+				alert('Orden anulada');
+				state.ordenParaAnularId = null;
+				if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+					window.UiModal.closeById('modal-confirmar-anular-orden');
+				} else {
+					const modal = document.getElementById('modal-confirmar-anular-orden');
+					if (modal) modal.setAttribute('hidden', '');
+				}
+				cargarOrdenes();
+			} catch (err) {
+				console.error(err);
+				alert(err.message || 'Error de red al anular la orden');
+			} finally {
+				btnConfirmarAnularOrden.disabled = false;
+			}
+		});
+	}
+
+async function abrirDetalleCompra(id) {
+	try {
+		const data = await fetchJson(`/api/detalles_orden/${encodeURIComponent(id)}`, { method: 'POST' });
+		const detalle = data.datos_orden || null;
+		const productos = Array.isArray(data.productos_orden) ? data.productos_orden : [];
+
+		renderDetalleCompraInfo(detalle);
+		renderDetalleCompraProductos(productos);
+
+		if (window.UiModal && typeof window.UiModal.openById === 'function') {
+			window.UiModal.openById('modal-detalle-orden');
+		}
+	} catch (err) {
+		console.error(err);
+		alert(err.message || 'No se pudo cargar el detalle de la orden');
+	}
+}
+
+function renderDetalleCompraInfo(detalle) {
+	const container = document.getElementById('detalle-orden-info');
+	const title = document.getElementById('modal-detalle-orden-title');
+	if (!container) return;
+	if (!detalle) {
+		container.innerHTML = '<p>No se encontró información de la orden.</p>';
+		const totalValueEmpty = document.getElementById('detalle-orden-total-value');
+		if (totalValueEmpty) totalValueEmpty.textContent = '0';
+		if (title) title.textContent = 'Detalle de orden';
+		return;
+	}
+	if (title) title.textContent = `Detalle de orden #${detalle.ID_orden_c ?? ''}`;
+	const nombreEm = `${detalle.Nombre_em ?? ''} ${detalle.Apellido_em ?? ''}`.trim();
+	const items = [
+		
+		['Proveedor', detalle.N_proveedor],
+		['Fecha', formatDate(detalle.Fecha_o)],
+		['Estado', detalle.Estado],	
+		['Realizado por', nombreEm],
+	];
+
+	container.innerHTML = `
+		<div class="device-detail__grid">
+			${items.map(([label, value]) => `
+				<div class="detail-item">
+					<span class="device-detail__label">${escapeHtml(label)}</span>
+					<span class="device-detail__value">${escapeHtml(value)}</span>
+				</div>
+			`).join('')}
+		</div>
+	`;
+
+	const totalValue = document.getElementById('detalle-orden-total-value');
+	if (totalValue) totalValue.textContent = formatMoney(detalle.Costo_venta ?? 0);
+}
+
+function renderDetalleCompraProductos(productos) {
+	const tbody = document.getElementById('detalle-orden-productos');
+	if (!tbody) return;
+	if (!productos || productos.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos.</td></tr>';
+		return;
+	}
+	tbody.innerHTML = productos.map((p) => `
+		<tr>
+			<td>${escapeHtml(p.N_marca ?? p.marca ?? '')}</td>
+			<td>${escapeHtml(p.N_modelo ?? p.modelo ?? '')}</td>
+			<td>${escapeHtml(p.Cantidad_p ?? p.cantidad ?? '')}</td>
+			<td>${escapeHtml(formatMoney(p.Costo ?? p.costo ?? 0))}</td>
+			<td>${escapeHtml(formatMoney(p.sup_total ?? (p.Cantidad_p && p.Costo ? p.Cantidad_p * p.Costo : 0)))}</td>
+		</tr>
+	`).join('');
+}
 
 	async function cargarOrdenes() {
 		try {
