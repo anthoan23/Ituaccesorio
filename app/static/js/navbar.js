@@ -11,6 +11,28 @@ document.addEventListener("DOMContentLoaded", () => {
 	const fotoPreview = document.getElementById("mi-perfil-foto-preview");
 	const csrfToken = perfilForm?.querySelector("input[name='_csrf_token']")?.value || "";
 
+	const setupPasswordToggles = () => {
+		document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+			const container = button.closest(".password-field");
+			const input = container?.querySelector("input");
+			if (!input) return;
+
+			const updateLabel = () => {
+				const showing = input.type === "text";
+				button.textContent = showing ? "Ocultar" : "Mostrar";
+				button.setAttribute("aria-label", showing ? "Ocultar contraseña" : "Mostrar contraseña");
+			};
+
+			updateLabel();
+			button.addEventListener("click", () => {
+				input.type = input.type === "password" ? "text" : "password";
+				updateLabel();
+			});
+		});
+	};
+
+	setupPasswordToggles();
+
 	if (!perfilForm || !nombreInput) {
 		return;
 	}

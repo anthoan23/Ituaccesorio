@@ -46,7 +46,10 @@
 											<path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4Zm7 13H7v-9h10Z" fill="currentColor"/>
 										</svg>
 									</span>
-									<input id="login-password" class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+									<div class="password-field">
+										<input id="login-password" class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+										<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+									</div>
 								</label>
 
 								<div class="phone__captcha g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="compact"></div>
@@ -79,11 +82,17 @@
 					</label>
 					<label class="ui-field">
 						<span>Contraseña</span>
-						<input id="registro-password" type="password" required>
+						<div class="password-field">
+							<input id="registro-password" type="password" required>
+							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+						</div>
 					</label>
 					<label class="ui-field">
 						<span>Confirmar contraseña</span>
-						<input id="registro-password-confirm" type="password" required>
+						<div class="password-field">
+							<input id="registro-password-confirm" type="password" required>
+							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+						</div>
 					</label>
 				</div>
 				<div class="ui-form__actions">
