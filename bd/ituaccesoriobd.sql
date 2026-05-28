@@ -103,6 +103,7 @@ DROP TABLE IF EXISTS `clase_producto`;
 CREATE TABLE `clase_producto` (
   `ID_clase` int NOT NULL AUTO_INCREMENT,
   `N_Clase` varchar(30) DEFAULT NULL,
+  `Num_i` int DEFAULT NULL,
   PRIMARY KEY (`ID_clase`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -113,7 +114,7 @@ CREATE TABLE `clase_producto` (
 
 LOCK TABLES `clase_producto` WRITE;
 /*!40000 ALTER TABLE `clase_producto` DISABLE KEYS */;
-INSERT INTO `clase_producto` VALUES (1,'Telefonos'),(2,'Tablets'),(3,'Accesorios de Audio'),(4,'Cargadores'),(5,'Fundas y Protectores'),(6,'Cables'),(7,'Baterias'),(8,'Repuestos Internos'),(9,'Herramientas'),(10,'Smartwatches');
+INSERT INTO `clase_producto` (`ID_clase`, `N_Clase`, `Num_i`) VALUES (1,'Telefonos',NULL),(2,'Tablets',NULL),(3,'Accesorios de Audio',NULL),(4,'Cargadores',NULL),(5,'Fundas y Protectores',NULL),(6,'Cables',NULL),(7,'Baterias',NULL),(8,'Repuestos Internos',NULL),(9,'Herramientas',NULL),(10,'Smartwatches',NULL);
 /*!40000 ALTER TABLE `clase_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
