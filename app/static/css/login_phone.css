@@ -294,12 +294,19 @@ body::before {
 }
 
 .phone__captcha {
+	--recaptcha-scale: 0.48;
+	--recaptcha-base-height: 78px;
 	display: flex;
 	justify-content: center;
-	margin-top: 0.15rem;
+	margin-top: 0;
 	align-items: center;
 	width: 100%;
 	overflow: hidden;
+	position: relative;
+	height: calc(var(--recaptcha-base-height) * var(--recaptcha-scale));
+	padding: 0;
+	margin: 0;
+	top: 20px
 }
 
 .phone__captcha .g-recaptcha {

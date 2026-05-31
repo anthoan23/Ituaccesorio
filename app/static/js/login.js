@@ -1,3 +1,57 @@
+(() => {
+	let recaptchaAdjustTimer = null;
+
+	const ajustarRecaptcha = () => {
+		const widgets = document.querySelectorAll(".g-recaptcha");
+		if (!widgets.length) {
+			return;
+		}
+
+		widgets.forEach((widget) => {
+			const container = widget.parentElement;
+			if (!container) {
+				return;
+			}
+
+			const isPhoneCaptcha = Boolean(widget.closest(".phone__captcha"));
+			// Limpia ajustes previos solo para contenedores que NO sean el captcha del phone.
+			if (!isPhoneCaptcha && container.style.height) {
+				container.style.height = "";
+			}
+
+			const containerWidth = container.getBoundingClientRect().width;
+			const widgetWidth = widget.getBoundingClientRect().width || widget.offsetWidth || 304;
+			if (!containerWidth || !widgetWidth) {
+				return;
+			}
+
+			const scaleToFit = Math.min(1, containerWidth / widgetWidth);
+			const scale = 0.48;
+			widget.style.transformOrigin = "top center";
+			widget.style.transform = scale < 1 ? `scale(${scale})` : "";
+
+			// El transform no reduce el alto reservado; ajustamos SOLO el alto del contenedor
+			// del captcha en login-phone para eliminar el espacio vacío sin afectar el resto.
+			if (isPhoneCaptcha) {
+				const baseHeight = widget.offsetHeight || 78;
+				container.style.height = `${Math.ceil(baseHeight * scale)}px`;
+			} else if (container.style.height) {
+				container.style.height = "";
+			}
+		});
+	};
+
+	const programarAjusteRecaptcha = () => {
+		if (recaptchaAdjustTimer) {
+			clearTimeout(recaptchaAdjustTimer);
+		}
+		recaptchaAdjustTimer = setTimeout(ajustarRecaptcha, 60);
+	};
+
+	window.ajustarRecaptcha = ajustarRecaptcha;
+	window.programarAjusteRecaptcha = programarAjusteRecaptcha;
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
 	if (window.__loginPhoneInitialized) {
 		return;
@@ -71,9 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
 
+		const recaptchaContainer = form.querySelector(".g-recaptcha");
 		const recaptchaResponse = form.querySelector('[name="g-recaptcha-response"]')?.value?.trim() || "";
-		if (!recaptchaResponse) {
+		if (recaptchaContainer && !recaptchaResponse) {
 			mostrarMensaje("Completa el captcha para continuar.");
+			return;
+		}
+		if (!recaptchaContainer) {
+			mostrarMensaje("Captcha no configurado. Contacta al administrador.");
 			return;
 		}
 
@@ -192,8 +251,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		abrirPerfilIncompleto();
 	}
 
-	programarAjusteRecaptcha();
-	window.addEventListener("resize", programarAjusteRecaptcha);
-	window.addEventListener("orientationchange", programarAjusteRecaptcha);
-	setTimeout(ajustarRecaptcha, 400);
+	if (typeof window.programarAjusteRecaptcha === "function") {
+		window.programarAjusteRecaptcha();
+		window.addEventListener("resize", window.programarAjusteRecaptcha);
+		window.addEventListener("orientationchange", window.programarAjusteRecaptcha);
+	}
+	if (typeof window.ajustarRecaptcha === "function") {
+		setTimeout(window.ajustarRecaptcha, 400);
+	}
 });
