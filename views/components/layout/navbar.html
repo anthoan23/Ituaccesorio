@@ -158,11 +158,17 @@
 		</label>
 		<label class="ui-field">
 			<span>Nueva contraseña (opcional)</span>
-			<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar">
+			<div class="password-field">
+				<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar">
+				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+			</div>
 		</label>
 		<label class="ui-field">
 			<span>Confirmar contraseña</span>
-			<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña">
+			<div class="password-field">
+				<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña">
+				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+			</div>
 		</label>
 		<label class="ui-field">
 			<span>Foto de perfil</span>

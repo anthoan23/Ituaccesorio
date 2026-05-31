@@ -79,6 +79,28 @@ document.addEventListener("DOMContentLoaded", () => {
 	const perfilDireccionInput = document.getElementById("perfil-direccion");
 	const feedbackMessage = document.getElementById("feedback-login-message");
 
+	const setupPasswordToggles = () => {
+		document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+			const container = button.closest(".password-field");
+			const input = container?.querySelector("input");
+			if (!input) return;
+
+			const updateLabel = () => {
+				const showing = input.type === "text";
+				button.textContent = showing ? "Ocultar" : "Mostrar";
+				button.setAttribute("aria-label", showing ? "Ocultar contraseña" : "Mostrar contraseña");
+			};
+
+			updateLabel();
+			button.addEventListener("click", () => {
+				input.type = input.type === "password" ? "text" : "password";
+				updateLabel();
+			});
+		});
+	};
+
+	setupPasswordToggles();
+
 	if (!form || !nombreInput || !passwordInput) {
 		return;
 	}

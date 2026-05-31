@@ -38,7 +38,7 @@
 						<p class="card__subtitle">Órdenes registradas y aún sin entregar.</p>
 					</div>
 					<div class="card__actions">
-						<button id="btn-registrar-entrada" type="button" class="btn btn--primary" data-open-modal="modal-registrar-entrada">Registrar entrada</button>
+							<button id="btn-registrar-entrada" type="button" class="btn btn--primary">Registrar orden</button>
 					</div>
 				</div>
 				<div class="table-wrap">
@@ -100,7 +100,7 @@
 		<!-- vista-3 removed -->
 	</main>
 
-	{% call modal('modal-registrar-entrada', 'Registrar entrada', 'lg') %}
+	{% call modal('modal-registrar-entrada', 'Registrar orden', 'lg') %}
 		<form id="form-registrar-entrada" class="form" autocomplete="off">
 			<input type="hidden" id="ordenes-compra-csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
 			<div class="form__group form__group--inline">
@@ -154,7 +154,7 @@
 			</div>
 
 			<div class="form__actions form__actions--inline">
-				<button class="btn btn--primary" type="submit" id="btn-guardar-entrada" disabled>Guardar entrada</button>
+				<button class="btn btn--primary" type="submit" id="btn-guardar-entrada" disabled>Registrar orden</button>
 			</div>
 		</form>
 	{% endcall %}
@@ -190,6 +190,37 @@
 					<tr><td colspan="4" class="table__empty">Selecciona un proveedor primero.</td></tr>
 				</tbody>
 			</table>
+		</div>
+	{% endcall %}
+
+	{% call modal('modal-detalle-orden', 'Detalle de orden', 'md') %}
+		<div id="detalle-orden-info">
+			<p>Cargando...</p>
+		</div>
+		<div class="table-wrap" style="margin-top:1rem;">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Marca</th>
+						<th>Modelo</th>
+						<th>Cantidad</th>
+						<th>Costo</th>
+						<th>Subtotal</th>
+					</tr>
+				</thead>
+				<tbody id="detalle-orden-productos">
+					<tr><td colspan="5" class="table__empty">No hay productos.</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<p class="form__total" id="detalle-orden-total" style="margin-top:1rem;">Costo total: <strong><span id="detalle-orden-total-value">0</span></strong></p>
+	{% endcall %}
+
+	{% call modal('modal-confirmar-anular-orden', 'Confirmar anulación', 'sm') %}
+		<p id="texto-confirmar-anular-orden">¿Seguro de que quieres anular la orden?</p>
+		<div class="form__actions form__actions--inline form__actions--end" style="margin-top:1rem;">
+			<button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+			<button type="button" class="btn btn--primary" id="btn-confirmar-anular-orden">Sí, anular</button>
 		</div>
 	{% endcall %}
 {% endblock %}
