@@ -6,7 +6,7 @@ import mysql.connector
 from app.models.clientes import GestionClientes
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
-from app.utils.jwt_utils import create_token
+from app.utils.jwt_utils import clear_auth_cookies, set_auth_cookies
 
 login_blueprint = Blueprint("login", __name__)
 
@@ -98,7 +98,6 @@ def validar_login():
                 "foto_perfil": usuario.get("foto_perfil"),
                 "perfil_completo": perfil_completo,
             }
-            token = create_token(payload)
             resp = make_response(
                 jsonify(
                     {
@@ -108,8 +107,7 @@ def validar_login():
                     }
                 )
             )
-            resp.set_cookie('access_token', token, httponly=True, samesite='Lax', secure=False, path='/')
-            return resp
+            return set_auth_cookies(resp, payload)
         else:
             return jsonify({"success": False, "error": "Credenciales inválidas."}), 401
     except Exception as error:
@@ -146,7 +144,6 @@ def registro_cliente_paso_1():
             "foto_perfil": None,
             "perfil_completo": False,
         }
-        token = create_token(payload)
         resp = make_response(
             jsonify(
                 {
@@ -156,8 +153,7 @@ def registro_cliente_paso_1():
                 }
             )
         )
-        resp.set_cookie('access_token', token, httponly=True, samesite='Lax', secure=False, path='/')
-        return resp
+        return set_auth_cookies(resp, payload)
     except Exception as error:
         return _respuesta_error_por_excepcion(error)
 
@@ -200,10 +196,8 @@ def registro_cliente_paso_2():
             "foto_perfil": usuario.get("foto_perfil"),
             "perfil_completo": True,
         }
-        token = create_token(payload)
         resp = make_response(jsonify({"success": True, "message": "Perfil completado correctamente."}))
-        resp.set_cookie('access_token', token, httponly=True, samesite='Lax', secure=False, path='/')
-        return resp
+        return set_auth_cookies(resp, payload)
     except Exception as error:
         return _respuesta_error_por_excepcion(error)
 
@@ -212,7 +206,6 @@ def registro_cliente_paso_2():
 @login_blueprint.route('/logout', methods=['GET'])
 def logout():
     resp = redirect(url_for('login.pagina_login'))
-    resp.set_cookie('access_token', '', expires=0, path='/')
-    return resp
+    return clear_auth_cookies(resp)
 
 

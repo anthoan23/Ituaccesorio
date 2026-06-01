@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
-from app.utils.jwt_utils import create_token
+from app.utils.jwt_utils import set_auth_cookies
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
 
@@ -109,9 +109,7 @@ def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
         "foto_perfil": usuario_db.get("foto_perfil"),
         "perfil_completo": bool((usuario_actual or {}).get("perfil_completo", True)),
     }
-    token = create_token(payload)
-    resp.set_cookie("access_token", token, httponly=True, samesite="Lax", secure=False, path="/")
-    return resp
+    return set_auth_cookies(resp, payload)
 
 
 @usuarios_blueprint.route("/usuarios", methods=["GET"])

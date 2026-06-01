@@ -63,26 +63,7 @@ class Empleados(conectar):
             cursor.close()
             db.close()
     
-    def listar_cargos(self):
-        db = self.conexion1()
-        if not db:
-            return None
 
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute(
-                """
-                SELECT
-                    ID_cargo AS id,
-                    N_cargo AS nombre
-                FROM cargo
-                ORDER BY ID_cargo ASC
-                """
-            )
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
 
     def listar_especialidades(self):
         db = self.conexion1()
@@ -160,34 +141,7 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def agregar_cargo(self, cargo: str) -> str:
-        # ID_cargo es AUTO_INCREMENT, así que solo se inserta el nombre.
-        if self.verificar_cargo(cargo):
-            mensaje = f"El cargo '{cargo}' ya existe."
-            return mensaje
 
-        db = self.conexion1()
-        if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "INSERT INTO cargo (N_cargo) VALUES (%s)",
-                (cargo,),
-            )
-            db.commit()
-            mensaje = f"Cargo agregado exitosamente. ID: {cursor.lastrowid}."
-            return mensaje
-        except Exception as e:
-            print(f"Error al agregar cargo: {e}")
-            db.rollback()
-            mensaje = "Error al agregar cargo."
-            return mensaje
-        finally:
-            cursor.close()
-            db.close()
 
     def agregar_especialidad(self, especialidad: str) -> str:       # ID_espesialidad es AUTO_INCREMENT, así que solo se inserta el nombre.     
 
@@ -247,36 +201,7 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def eliminar_cargo(self, n_cargo: str) -> str:
-        # verificar existencia (aceptamos id o nombre en la función verificar)
-        if not self.verificar_cargo(n_cargo):
-            return f"El cargo con identificador {n_cargo} no existe."
-        
-        if n_cargo == "Tecnico":
-            return False
 
-        db = self.conexion1()
-        if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "DELETE FROM cargo WHERE N_cargo = %s",
-                (n_cargo,),
-            )
-            db.commit()
-            mensaje = "Cargo eliminado exitosamente."
-            return mensaje
-        except Exception as e:
-            print(f"Error al eliminar cargo: {e}")
-            db.rollback()
-            mensaje = "Error al eliminar cargo."
-            return mensaje
-        finally:
-            cursor.close()
-            db.close()
 
     def eliminar_especialidad(self, n_especialidad: str) -> str:
         # verificar existencia
@@ -434,21 +359,6 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def verificar_cargo(self, cargo: str) -> bool:
-        db = self.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "SELECT 1 FROM cargo WHERE N_cargo = %s LIMIT 1",
-                (cargo,),
-            )
-            return cursor.fetchone() is not None
-        finally:
-            cursor.close()
-            db.close()
 
     def verificar_espesialidad(self, especialidad: str) -> bool:
         db = self.conexion1()

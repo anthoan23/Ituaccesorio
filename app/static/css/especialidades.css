@@ -1,0 +1,19 @@
+@import url("./empleados.css");
+
+body.personal-page--especialidades {
+	background:
+		radial-gradient(circle at top left, rgba(88, 214, 212, 0.18), transparent 32%),
+		radial-gradient(circle at 86% 12%, rgba(255, 255, 255, 0.09), transparent 30%),
+		linear-gradient(135deg, #0d1718 0%, #132022 45%, #081012 100%);
+}
+
+body.personal-page--especialidades .panel__tag,
+body.personal-page--especialidades .table tbody tr.is-selected,
+body.personal-page--especialidades .mini-card__grid div {
+	background: rgba(88, 214, 212, 0.12);
+	border-color: rgba(88, 214, 212, 0.22);
+}
+
+body.personal-page--especialidades .table tbody tr:hover {
+	background: rgba(88, 214, 212, 0.08);
+}

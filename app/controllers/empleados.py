@@ -16,6 +16,19 @@ def pagina_empleados():
         active_page="empleados",
     )
 
+
+@empleados_blueprint.route("/especialidades", methods=["GET"])
+@jwt_required
+def pagina_especialidades():
+    return render_template(
+        "especialidades.html",
+        show_navbar=True,
+        show_notifications=True,
+        active_page="especialidades",
+    )
+
+
+
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
 @jwt_required
 def api_listar_empleados():
@@ -23,12 +36,7 @@ def api_listar_empleados():
     resultado = empleados.listar_empleados()
     return jsonify(resultado)
 
-@empleados_blueprint.route("/api/cargos", methods=["GET"])
-@jwt_required
-def api_listar_cargos():
-    empleados = Empleados()
-    resultado = empleados.listar_cargos()
-    return jsonify(resultado)
+
 
 @empleados_blueprint.route("/api/especialidades", methods=["GET"])
 @jwt_required
@@ -93,35 +101,7 @@ def api_agregar_empleado():
         return jsonify({"success": False, "error": str(error)}), 500
     
     
-@empleados_blueprint.route("/api/cargos", methods=["POST"])
-@jwt_required
-def api_agregar_cargo():
-    datos = request.get_json(silent=True) or {}
 
-    cargo = str(datos.get("cargo", "")).strip()
-
-    if not cargo:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "El nombre del cargo es obligatorio.",
-                }
-            ),
-            400,
-        )
-
-    modelo = Empleados()
-
-    try:
-        mensaje = modelo.agregar_cargo(cargo=cargo)
-
-        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 201
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo agregar el cargo."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
 
 @empleados_blueprint.route("/api/especialidades", methods=["POST"])
 @jwt_required
@@ -168,35 +148,7 @@ def api_eliminar_empleado(id_empleado):
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
     
-@empleados_blueprint.route("/api/cargos/<n_cargo>", methods=["DELETE"])
-@jwt_required
-def api_eliminar_cargo(n_cargo):
-    modelo = Empleados()
 
-    try:
-        mensaje = modelo.eliminar_cargo(n_cargo=n_cargo)
-
-        if isinstance(mensaje, str) and "eliminado" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo eliminar el cargo."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
-
-@empleados_blueprint.route("/api/especialidades/<n_especialidad>", methods=["DELETE"])
-@jwt_required
-def api_eliminar_especialidad(n_especialidad):
-    modelo = Empleados()
-
-    try:
-        mensaje = modelo.eliminar_especialidad(n_especialidad=n_especialidad)
-
-        if isinstance(mensaje, str) and ("eliminado" in mensaje.lower() or "eliminada" in mensaje.lower()):
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo eliminar la especialidad."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
     
 @empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["PUT"])
 @jwt_required
@@ -250,39 +202,7 @@ def api_actualizar_empleado(id_empleado):
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
 
-@empleados_blueprint.route("/api/cargos/<id_cargo>", methods=["PUT"])
-@jwt_required
-def api_actualizar_cargo(id_cargo):
-    datos = request.get_json(silent=True) or {}
 
-    cargo_nuevo = str(datos.get("cargo_nuevo", "")).strip()
-  
-
-    if not cargo_nuevo:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "El nombre del cargo es obligatorio.",
-                }
-            ),
-            400,
-        )
-
-    # permitir id original en body (`id_viejo`), si viene usarlo
-    cargo_viejo = datos.get('id_viejo')
-  
-    modelo = Empleados()
-
-    try:
-        mensaje = modelo.actualizar_cargo(id_cargo=id_cargo, cargo_n=cargo_nuevo, cargo_v=cargo_viejo)
-
-        if isinstance(mensaje, str) and "exitos" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo actualizar el cargo."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
 
 @empleados_blueprint.route("/api/especialidades/<id_especialidad>", methods=["PUT"])
 @jwt_required

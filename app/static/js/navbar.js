@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
+	const groupToggles = document.querySelectorAll("[data-nav-group-toggle]");
+	groupToggles.forEach((toggle) => {
+		const groupId = toggle.getAttribute("data-nav-group-toggle");
+		const group = document.querySelector(`[data-nav-group="${groupId}"]`);
+		if (!group) return;
+
+		const sync = (expanded) => {
+			toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+			group.toggleAttribute("hidden", !expanded);
+		};
+
+		sync(toggle.getAttribute("aria-expanded") === "true");
+		toggle.addEventListener("click", () => {
+			sync(group.hasAttribute("hidden"));
+		});
+	});
+
 	const perfilForm = document.getElementById("mi-perfil-form");
 	const nombreInput = document.getElementById("mi-perfil-nombre");
 	const cedulaInput = document.getElementById("mi-perfil-cedula");

@@ -1,0 +1,126 @@
+{% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
+
+{% block title %}Ituaccesorio - Cargos{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cargos.css') }}">
+{% endblock %}
+
+{% block content %}
+  <main class="page cargos-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol class="breadcrumb__list">
+        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+        <li class="breadcrumb__separator" aria-hidden="true">&gt;</li>
+        <li aria-current="page">
+          <span class="breadcrumb__current">Cargos</span>
+        </li>
+      </ol>
+    </nav>
+
+    <header class="cargos-hero">
+      <div class="cargos-hero__copy">
+        <p class="cargos-hero__eyebrow">Gestión de personal</p>
+        <h1 class="cargos-hero__title">Cargos</h1>
+        <p class="cargos-hero__description">Vista simple para consultar y registrar cargos.</p>
+      </div>
+
+      <div class="stats stats--single" aria-label="Resumen de cargos">
+        <article class="stat-card">
+          <span class="stat-card__label">Cargos</span>
+          <strong class="stat-card__value" data-count="7">0</strong>
+          <small class="stat-card__meta">Total de cargos visibles</small>
+        </article>
+      </div>
+    </header>
+
+    <section class="content vista-1 cargos-grid" aria-label="Gestión de cargos">
+      <article class="card card--table cargos-table-card" aria-label="Cargos registrados">
+        <div class="card__header">
+          <div class="card__header-left">
+            <h2 class="card__title">Catálogo de cargos</h2>
+            <p class="card__subtitle">Tabla principal de cargos registrados.</p>
+          </div>
+          <div class="card__actions">
+            <button id="btn-actualizar-cargos" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
+          </div>
+        </div>
+
+        <div class="table-wrap table-wrap--tall" role="region" aria-label="Tabla de cargos">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th class="table__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-cargos"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card card--form cargo-create-card" aria-label="Registrar nuevo cargo">
+        <div class="card__header">
+          <div class="card__header-left">
+            <h2 class="card__title">Registrar nuevo cargo</h2>
+            <p class="card__subtitle">Completa nombre y descripción para crear un cargo.</p>
+          </div>
+        </div>
+
+        <form id="form-cargo" class="cargo-form" autocomplete="off">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+          <label class="cargo-form__field">
+            <span>Nombre</span>
+            <input type="text" name="nombre_cargo" placeholder="Ej: Gerente de Ventas" required>
+          </label>
+          <label class="cargo-form__field cargo-form__field--full">
+            <span>Descripción</span>
+            <textarea name="descripcion_cargo" rows="4" placeholder="Ej: Responsable de la gestión de ventas y el desarrollo de estrategias de marketing" required></textarea>
+          </label>
+          <div class="cargo-form__actions cargo-form__actions--top">
+            <button class="ui-btn ui-btn--primary" type="submit">Registrar nuevo cargo</button>
+          </div>
+        </form>
+      </article>
+    </section>
+
+    {% call modal('modal-editar-cargo', 'Modificar cargo', 'sm') %}
+      <form id="form-editar-cargo" class="ui-form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id_cargo" id="editar-id-cargo">
+
+        <div class="ui-form__grid ui-form__grid--one">
+          <label class="cargo-form__field">
+            <span>Nombre</span>
+            <input id="editar-nombre-cargo" type="text" name="nombre_cargo" required>
+          </label>
+          <label class="cargo-form__field cargo-form__field--full">
+            <span>Descripción</span>
+            <textarea id="editar-descripcion-cargo" name="descripcion_cargo" rows="4" required></textarea>
+          </label>
+        </div>
+
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Guardar cambios</button>
+        </div>
+      </form>
+    {% endcall %}
+
+    {% call modal('modal-eliminar-cargo', 'Eliminar cargo', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <p id="texto-confirmar-eliminar-cargo" class="confirm-text">¿Estás seguro de que quieres eliminar este registro?</p>
+      <div class="ui-form__actions">
+        <button id="btn-confirmar-eliminar-cargo" type="button" class="ui-btn ui-btn--primary">Sí, eliminar</button>
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      </div>
+    {% endcall %}
+  </main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/cargos.js') }}"></script>
+{% endblock %}
