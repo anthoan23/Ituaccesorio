@@ -159,9 +159,9 @@
                 body: JSON.stringify({ producto_id: productoId, cantidad })
             });
             await cargarCarrito();
-            mostrarNotificacion("Producto agregado al carrito");
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            // El modal global ya maneja errores de /api/ en POST.
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
@@ -409,10 +409,12 @@
             });
             
             facturaPendiente = data.factura_id;
-            mostrarNotificacion(data.mensaje || "¡Pago registrado! En breve será verificado");
-            window.location.href = "/catalogo";
+            // El modal global se dispara por el POST; damos un momento para que se renderice antes del redirect.
+            window.setTimeout(() => {
+                window.location.href = "/catalogo";
+            }, 600);
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
@@ -514,7 +516,6 @@
         if (confirm("¿Aprobar este pago?")) {
             try {
                 await fetchJson(`/api/admin/aprobar-pago/${facturaId}`, { method: "POST" });
-                mostrarNotificacion("Pago aprobado");
                 cargarPagosPendientes();
                 cargarPagosAprobados();
             } catch (err) {
@@ -546,7 +547,6 @@
                 method: "POST",
                 body: JSON.stringify({ motivo })
             });
-            mostrarNotificacion("Pago rechazado");
             cerrarModalRechazo();
             cargarPagosPendientes();
             cargarPagosRechazados();
@@ -694,17 +694,21 @@
                 })
             });
             
-            mostrarNotificacion("Venta registrada exitosamente");
             itemsLocal = [];
             renderItemsLocal();
             closeModal();
             document.getElementById("form-venta-local")?.reset();
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
     function mostrarNotificacion(msg, tipo = "success") {
+        if (window.FeedbackModal) {
+            if (tipo === "error") window.FeedbackModal.showError(msg);
+            else window.FeedbackModal.showSuccess(msg);
+            return;
+        }
         const notif = document.createElement("div");
         notif.className = `notificacion notificacion--${tipo}`;
         notif.textContent = msg;

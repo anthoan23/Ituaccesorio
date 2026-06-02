@@ -14,11 +14,11 @@ class Productos(conectar):
             cursor.execute(
                 """
                 SELECT
-                    ID_clase AS id,
-                    N_Clase AS nombre,
-                    Num_i AS num_i
-                FROM clase_producto
-                ORDER BY N_Clase ASC
+                    ID_Clase AS id,
+                    Nombre_Clase AS nombre,
+                    NULL AS num_i
+                FROM Clase_producto
+                ORDER BY Nombre_Clase ASC
                 """
             )
             return cursor.fetchall()
@@ -34,8 +34,8 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT INTO clase_producto (N_Clase, Num_i) VALUES (%s, %s)",
-                (nombre, num_i),
+                "INSERT INTO Clase_producto (Nombre_Clase) VALUES (%s)",
+                (nombre,),
             )
             db.commit()
             return int(cursor.lastrowid)
@@ -54,8 +54,8 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "UPDATE clase_producto SET N_Clase=%s, Num_i=%s WHERE ID_clase=%s",
-                (nombre, num_i, id_clase),
+                "UPDATE Clase_producto SET Nombre_Clase=%s WHERE ID_Clase=%s",
+                (nombre, id_clase),
             )
             db.commit()
             return cursor.rowcount > 0
@@ -73,7 +73,7 @@ class Productos(conectar):
 
         cursor = db.cursor()
         try:
-            cursor.execute("DELETE FROM clase_producto WHERE ID_clase=%s", (id_clase,))
+            cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase=%s", (id_clase,))
             db.commit()
             return cursor.rowcount > 0
         except Exception:
@@ -94,24 +94,26 @@ class Productos(conectar):
                 cursor.execute(
                     """
                     SELECT
-                        ID_marca AS id,
-                        ID_clase AS id_clase,
-                        N_marca AS nombre
-                    FROM marca_producto
-                    WHERE ID_clase = %s
-                    ORDER BY N_marca ASC
+                        ma.ID_marca AS id,
+                        %s AS id_clase,
+                        ma.Nombre_marca AS nombre
+                    FROM Marca_producto ma
+                    JOIN Producto p ON p.ID_marca = ma.ID_marca
+                    WHERE p.ID_Clase = %s
+                    GROUP BY ma.ID_marca, ma.Nombre_marca
+                    ORDER BY ma.Nombre_marca ASC
                     """,
-                    (id_clase,),
+                    (id_clase, id_clase),
                 )
             else:
                 cursor.execute(
                     """
                     SELECT
                         ID_marca AS id,
-                        ID_clase AS id_clase,
-                        N_marca AS nombre
-                    FROM marca_producto
-                    ORDER BY N_marca ASC
+                        NULL AS id_clase,
+                        Nombre_marca AS nombre
+                    FROM Marca_producto
+                    ORDER BY Nombre_marca ASC
                     """
                 )
             return cursor.fetchall()
@@ -119,7 +121,7 @@ class Productos(conectar):
             cursor.close()
             db.close()
 
-    def crear_marca(self, id_clase: int, nombre: str) -> int:
+    def crear_marca(self, id_clase: int | None, nombre: str) -> int:
         db = self.conexion1()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -127,8 +129,8 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT INTO marca_producto (ID_clase, N_marca) VALUES (%s, %s)",
-                (id_clase, nombre),
+                "INSERT INTO Marca_producto (Nombre_marca) VALUES (%s)",
+                (nombre,),
             )
             db.commit()
             return int(cursor.lastrowid)
@@ -139,7 +141,7 @@ class Productos(conectar):
             cursor.close()
             db.close()
 
-    def actualizar_marca(self, id_marca: int, id_clase: int, nombre: str) -> bool:
+    def actualizar_marca(self, id_marca: int, id_clase: int | None, nombre: str) -> bool:
         db = self.conexion1()
         if not db:
             return False
@@ -147,8 +149,8 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "UPDATE marca_producto SET ID_clase=%s, N_marca=%s WHERE ID_marca=%s",
-                (id_clase, nombre, id_marca),
+                "UPDATE Marca_producto SET Nombre_marca=%s WHERE ID_marca=%s",
+                (nombre, id_marca),
             )
             db.commit()
             return cursor.rowcount > 0
@@ -166,7 +168,7 @@ class Productos(conectar):
 
         cursor = db.cursor()
         try:
-            cursor.execute("DELETE FROM marca_producto WHERE ID_marca=%s", (id_marca,))
+            cursor.execute("DELETE FROM Marca_producto WHERE ID_marca=%s", (id_marca,))
             db.commit()
             return cursor.rowcount > 0
         except Exception:
@@ -176,7 +178,7 @@ class Productos(conectar):
             cursor.close()
             db.close()
 
-    def listar_modelos(self, id_marca: int | None = None, q: str | None = None):
+    def listar_modelos(self, id_marca: int | None = None, id_clase: int | None = None, q: str | None = None):
         db = self.conexion1()
         if not db:
             return None
@@ -187,10 +189,13 @@ class Productos(conectar):
             params: list = []
 
             if id_marca:
-                where.append("mo.ID_marca = %s")
+                where.append("p.ID_marca = %s")
                 params.append(id_marca)
+            if id_clase:
+                where.append("p.ID_Clase = %s")
+                params.append(id_clase)
             if q:
-                where.append("mo.N_modelo LIKE %s")
+                where.append("p.Nombre_producto LIKE %s")
                 params.append(f"%{q}%")
 
             where_sql = ("WHERE " + " AND ".join(where)) if where else ""
@@ -198,17 +203,18 @@ class Productos(conectar):
             cursor.execute(
                 f"""
                 SELECT
-                    mo.ID_modelo AS id,
-                    mo.ID_marca AS id_marca,
-                    mo.N_modelo AS nombre,
-                    ma.N_marca AS marca_nombre,
-                    ma.ID_clase AS id_clase,
-                    cl.N_Clase AS clase_nombre
-                FROM modelo_producto mo
-                JOIN marca_producto ma ON mo.ID_marca = ma.ID_marca
-                JOIN clase_producto cl ON ma.ID_clase = cl.ID_clase
+                    p.ID_producto AS id,
+                    p.ID_marca AS id_marca,
+                    p.ID_Clase AS id_clase,
+                    p.Nombre_producto AS nombre,
+                    p.Descripcion AS descripcion,
+                    ma.Nombre_marca AS marca_nombre,
+                    cl.Nombre_Clase AS clase_nombre
+                FROM Producto p
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 {where_sql}
-                ORDER BY cl.N_Clase ASC, ma.N_marca ASC, mo.N_modelo ASC
+                ORDER BY cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
                 """,
                 tuple(params),
             )
@@ -217,7 +223,7 @@ class Productos(conectar):
             cursor.close()
             db.close()
 
-    def crear_modelo(self, id_marca: int, nombre: str) -> int:
+    def crear_modelo(self, id_clase: int, id_marca: int, nombre: str, descripcion: str | None = None) -> int:
         db = self.conexion1()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -225,19 +231,19 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT INTO modelo_producto (ID_marca, N_modelo) VALUES (%s, %s)",
-                (id_marca, nombre),
+                "INSERT INTO Producto (ID_Clase, ID_marca, Nombre_producto, Descripcion) VALUES (%s, %s, %s, %s)",
+                (id_clase, id_marca, nombre, descripcion),
             )
-            id_modelo = int(cursor.lastrowid)
+            id_producto = int(cursor.lastrowid)
 
-            # Al registrar un modelo nuevo, crear su fila en stock en 0.
+            # Al registrar un producto nuevo, crear un inventario base en 0.
             cursor.execute(
-                "INSERT INTO stock (ID_modelo, Existencia, Costo_venta) VALUES (%s, %s, %s)",
-                (id_modelo, 0, 0),
+                "INSERT INTO Inventario (ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s)",
+                (id_producto, 0, 0, None),
             )
 
             db.commit()
-            return id_modelo
+            return id_producto
         except Exception:
             db.rollback()
             raise
@@ -245,7 +251,14 @@ class Productos(conectar):
             cursor.close()
             db.close()
 
-    def actualizar_modelo(self, id_modelo: int, id_marca: int, nombre: str) -> bool:
+    def actualizar_modelo(
+        self,
+        id_modelo: int,
+        id_clase: int,
+        id_marca: int,
+        nombre: str,
+        descripcion: str | None = None,
+    ) -> bool:
         db = self.conexion1()
         if not db:
             return False
@@ -253,8 +266,8 @@ class Productos(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "UPDATE modelo_producto SET ID_marca=%s, N_modelo=%s WHERE ID_modelo=%s",
-                (id_marca, nombre, id_modelo),
+                "UPDATE Producto SET ID_Clase=%s, ID_marca=%s, Nombre_producto=%s, Descripcion=%s WHERE ID_producto=%s",
+                (id_clase, id_marca, nombre, descripcion, id_modelo),
             )
             db.commit()
             return cursor.rowcount > 0
@@ -272,9 +285,10 @@ class Productos(conectar):
 
         cursor = db.cursor()
         try:
-            # Borrar stock primero para evitar restricción FK al borrar el modelo.
-            cursor.execute("DELETE FROM stock WHERE ID_modelo=%s", (id_modelo,))
-            cursor.execute("DELETE FROM modelo_producto WHERE ID_modelo=%s", (id_modelo,))
+            # Borrar relaciones directas primero (si existen) para evitar restricciones FK.
+            cursor.execute("DELETE FROM Inventario WHERE ID_producto=%s", (id_modelo,))
+            cursor.execute("DELETE FROM Suministra WHERE ID_producto=%s", (id_modelo,))
+            cursor.execute("DELETE FROM Producto WHERE ID_producto=%s", (id_modelo,))
             db.commit()
             return cursor.rowcount > 0
         except Exception:
