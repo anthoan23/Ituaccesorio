@@ -97,7 +97,7 @@
 			</button>
 			<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
 				<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-				<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_especialidades') }}">Especialidades</a>
+				<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
 				<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
 			</div>
 			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>

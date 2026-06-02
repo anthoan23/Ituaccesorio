@@ -97,9 +97,12 @@ class Cargo(conectar):
             mensaje = "Cargo eliminado exitosamente."
             return mensaje
         except Exception as e:
-            print(f"Error al eliminar cargo: {e}")
             db.rollback()
-            mensaje = "Error al eliminar cargo. Verifica que no esté en uso por empleados."
+            print(f"Error al eliminar cargo: {e}")
+            if hasattr(e, 'errno') and e.errno == 1451:
+                mensaje = f"No se puede eliminar el cargo con ID {cargo_id} porque está en uso por empleados."
+                return mensaje
+            mensaje = "Error al eliminar cargo."
             return mensaje
         finally:
             cursor.close()
