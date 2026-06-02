@@ -25,21 +25,14 @@
 
   <section class="products-grid" aria-label="Catálogo de productos">
     <article class="card card--table" aria-label="Listado de productos">
-      <div class="table__header">
-        <h2 class="card__title">Productos</h2>
-        <div class="pager" aria-label="Paginación">
-          <button class="pager__btn" type="button" aria-label="Anterior">‹</button>
-          <span class="pager__pages">1 | 2 | 3</span>
-          <button class="pager__btn" type="button" aria-label="Siguiente">›</button>
-        </div>
-      </div>
+      
 
       <div class="table-wrap" role="region" aria-label="Tabla de productos">
         <table class="table products-table">
           <thead>
             <tr>
               <th class="col-image">Imagen</th>
-              <th>Modelo / Código</th>
+              <th>Producto / Código</th>
               <th>Marca</th>
               <th>Clase</th>
               <th class="table__actions">Acciones</th>
@@ -129,8 +122,13 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Modelo</span>
-            <input id="p-modelo" type="text" name="modelo" placeholder="Ej: Galaxy A52 (SM-A525F)" aria-label="Modelo" required>
+            <span class="field__label">Producto</span>
+            <input id="p-modelo" type="text" name="modelo" placeholder="Ej: Galaxy A52 (SM-A525F)" aria-label="Producto" required>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Descripción</span>
+            <textarea id="p-descripcion" name="descripcion" rows="3" placeholder="Descripción del producto" aria-label="Descripción"></textarea>
           </label>
 
           <div class="filters-panel__actions" aria-label="Acciones del formulario">

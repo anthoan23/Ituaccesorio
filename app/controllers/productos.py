@@ -6,6 +6,26 @@ from app.models.productos import Productos
 productos_blueprint = Blueprint("productos", __name__)
 
 
+def _validate_len(nombre_campo: str, valor: str, max_len: int):
+    valor = str(valor or "")
+    if len(valor) > max_len:
+        raise ValueError(f"{nombre_campo} no puede exceder {max_len} caracteres.")
+
+
+def _parse_int_field(nombre_campo: str, valor, required: bool = True) -> int | None:
+    if valor in (None, ""):
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    try:
+        num = int(valor)
+    except Exception:
+        raise ValueError(f"{nombre_campo} debe ser un número.")
+    if required and num <= 0:
+        raise ValueError(f"{nombre_campo} debe ser mayor a 0.")
+    return num
+
+
 @productos_blueprint.route("/productos", methods=["GET"])
 @jwt_required
 def pagina_productos():
@@ -35,6 +55,11 @@ def api_crear_clase():
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
     try:
+        _validate_len("Clase", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    try:
         num_i_val = int(num_i) if num_i not in (None, "") else None
     except Exception:
         return jsonify({"success": False, "error": "Num_i debe ser un número."}), 400
@@ -55,6 +80,11 @@ def api_actualizar_clase(id_clase: int):
     num_i = datos.get("num_i")
     if nombre == "":
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
+
+    try:
+        _validate_len("Clase", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
 
     try:
         num_i_val = int(num_i) if num_i not in (None, "") else None
@@ -98,10 +128,18 @@ def api_crear_marca():
 
     if nombre == "":
         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+
     try:
-        id_clase_val = int(id_clase)
-    except Exception:
-        return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
+        _validate_len("Marca", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    id_clase_val = None
+    if id_clase not in (None, ""):
+        try:
+            id_clase_val = int(id_clase)
+        except Exception:
+            return jsonify({"success": False, "error": "La clase debe ser un número."}), 400
 
     modelo = Productos()
     try:
@@ -120,10 +158,18 @@ def api_actualizar_marca(id_marca: int):
 
     if nombre == "":
         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+
     try:
-        id_clase_val = int(id_clase)
-    except Exception:
-        return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
+        _validate_len("Marca", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    id_clase_val = None
+    if id_clase not in (None, ""):
+        try:
+            id_clase_val = int(id_clase)
+        except Exception:
+            return jsonify({"success": False, "error": "La clase debe ser un número."}), 400
 
     modelo = Productos()
     try:
@@ -148,9 +194,10 @@ def api_eliminar_marca(id_marca: int):
 @jwt_required
 def api_listar_modelos():
     id_marca = request.args.get("marca_id", default=None, type=int)
+    id_clase = request.args.get("clase_id", default=None, type=int)
     q = request.args.get("q", default=None, type=str)
     modelo = Productos()
-    modelos = modelo.listar_modelos(id_marca=id_marca, q=q) or []
+    modelos = modelo.listar_modelos(id_marca=id_marca, id_clase=id_clase, q=q) or []
     return jsonify({"success": True, "modelos": modelos})
 
 
@@ -160,17 +207,30 @@ def api_crear_modelo():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
     id_marca = datos.get("id_marca")
+    id_clase = datos.get("id_clase")
+    descripcion = datos.get("descripcion")
 
     if nombre == "":
-        return jsonify({"success": False, "error": "El nombre del modelo es obligatorio."}), 400
+        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+
     try:
-        id_marca_val = int(id_marca)
-    except Exception:
-        return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
+        _validate_len("Producto", nombre, 30)
+        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    desc_val = None
+    if descripcion not in (None, ""):
+        desc_val = str(descripcion).strip()
+        try:
+            _validate_len("Descripción", desc_val, 300)
+        except Exception as error:
+            return jsonify({"success": False, "error": str(error)}), 400
 
     modelo = Productos()
     try:
-        new_id = modelo.crear_modelo(id_marca=id_marca_val, nombre=nombre)
+        new_id = modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -182,17 +242,36 @@ def api_actualizar_modelo(id_modelo: int):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
     id_marca = datos.get("id_marca")
+    id_clase = datos.get("id_clase")
+    descripcion = datos.get("descripcion")
 
     if nombre == "":
-        return jsonify({"success": False, "error": "El nombre del modelo es obligatorio."}), 400
+        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+
     try:
-        id_marca_val = int(id_marca)
-    except Exception:
-        return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
+        _validate_len("Producto", nombre, 30)
+        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    desc_val = None
+    if descripcion not in (None, ""):
+        desc_val = str(descripcion).strip()
+        try:
+            _validate_len("Descripción", desc_val, 300)
+        except Exception as error:
+            return jsonify({"success": False, "error": str(error)}), 400
 
     modelo = Productos()
     try:
-        ok = modelo.actualizar_modelo(id_modelo=id_modelo, id_marca=id_marca_val, nombre=nombre)
+        ok = modelo.actualizar_modelo(
+            id_modelo=id_modelo,
+            id_clase=id_clase_val,
+            id_marca=id_marca_val,
+            nombre=nombre,
+            descripcion=desc_val,
+        )
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400

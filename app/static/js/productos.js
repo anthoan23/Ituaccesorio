@@ -27,6 +27,7 @@
   const pMarcaNuevaWrap = document.getElementById("p-marca-nueva-wrap");
   const pMarcaNueva = document.getElementById("p-marca-nueva");
   const pModelo = document.getElementById("p-modelo");
+  const pDescripcion = document.getElementById("p-descripcion");
   const btnNuevaClase = document.getElementById("btn-nueva-clase");
   const btnNuevaMarca = document.getElementById("btn-nueva-marca");
   const btnGuardarClase = document.getElementById("btn-guardar-clase");
@@ -34,6 +35,34 @@
 
   let isCreatingNewClass = false;
   let isCreatingNewBrand = false;
+  let isSubmitting = false;
+
+  const MAX = {
+    clase: 30,
+    marca: 30,
+    producto: 30,
+    descripcion: 300,
+  };
+
+  function notify(type, message) {
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === "function") {
+      window.FeedbackModal.show({
+        type: type === "error" ? "error" : "success",
+        title: type === "error" ? "No se pudo completar" : "Acción exitosa",
+        message,
+      });
+      return;
+    }
+    // fallback
+    alert(message);
+  }
+
+  function validateMaxLen(label, value, max) {
+    const v = String(value || "");
+    if (v.length > max) {
+      throw new Error(`${label} no puede exceder ${max} caracteres.`);
+    }
+  }
 
   function getAuthToken() {
     const fromLocal = window.localStorage ? window.localStorage.getItem("access_token") : "";
@@ -193,18 +222,17 @@
     renderClaseFormSelect();
   }
 
-  async function cargarMarcasPorClase(idClase) {
-    const url = idClase ? `/api/productos/marcas?clase_id=${encodeURIComponent(idClase)}` : "/api/productos/marcas";
-    const data = await fetchJson(url, { method: "GET" });
+  async function cargarMarcas() {
+    const data = await fetchJson("/api/productos/marcas", { method: "GET" });
     const marcas = Array.isArray(data.marcas) ? data.marcas : [];
     state.marcas = marcas;
-
     renderSelect(fMarca, marcas, { includeAll: true, allLabel: "Todas" });
     renderMarcaFormSelect(marcas);
   }
 
-  async function cargarModelos({ marcaId = "", q = "" } = {}) {
+  async function cargarModelos({ claseId = "", marcaId = "", q = "" } = {}) {
     const params = new URLSearchParams();
+    if (claseId) params.set("clase_id", String(claseId));
     if (marcaId) params.set("marca_id", String(marcaId));
     if (q) params.set("q", String(q));
     const url = `/api/productos/modelos${params.toString() ? `?${params}` : ""}`;
@@ -228,7 +256,7 @@
           <td>
             <div class="product-meta">
               <strong class="product-name">${escapeHtml(m.nombre || "")}</strong>
-              <span class="product-sku">Código: MOD${escapeHtml(m.id ?? "")}</span>
+              <span class="product-sku">Código: PRO${escapeHtml(m.id ?? "")}</span>
             </div>
           </td>
           <td>${escapeHtml(m.marca_nombre || "")}</td>
@@ -269,16 +297,14 @@
   }
 
   async function onFiltroClaseChange() {
-    const claseId = fClase ? String(fClase.value || "") : "";
-    await cargarMarcasPorClase(claseId || null);
-    if (fMarca) fMarca.value = "";
     await recargarModelosSegunFiltros();
   }
 
   async function recargarModelosSegunFiltros() {
+    const claseId = fClase ? String(fClase.value || "") : "";
     const marcaId = fMarca ? String(fMarca.value || "") : "";
     const q = fTexto ? String(fTexto.value || "").trim() : "";
-    await cargarModelos({ marcaId, q });
+    await cargarModelos({ claseId, marcaId, q });
     aplicarFiltrosYRender();
   }
 
@@ -300,14 +326,16 @@
     // Asegurar selects cargados
     if (!state.clases.length) await cargarClases();
 
+    if (!state.marcas.length) await cargarMarcas();
+
     if (pClase) pClase.value = String(modelo.id_clase || "");
     setNewClassMode(false);
 
-    await cargarMarcasPorClase(String(modelo.id_clase || ""));
     if (pMarca) pMarca.value = String(modelo.id_marca || "");
     setNewBrandMode(false);
 
     if (pModelo) pModelo.value = modelo.nombre || "";
+    if (pDescripcion) pDescripcion.value = modelo.descripcion || "";
   }
 
   async function crearClaseSiHaceFalta() {
@@ -337,11 +365,10 @@
 
     const nombre = String(pMarcaNueva?.value || "").trim();
     if (!nombre) throw new Error("Debes escribir el nombre de la nueva marca.");
-    if (!idClase) throw new Error("Selecciona una clase para crear la marca.");
 
     const data = await fetchJson("/api/productos/marcas", {
       method: "POST",
-      body: JSON.stringify({ nombre, id_clase: idClase }),
+      body: JSON.stringify({ nombre }),
     });
     return Number(data.id);
   }
@@ -349,16 +376,21 @@
   async function onSubmitProducto(event) {
     event.preventDefault();
     if (!formProducto) return;
+    if (isSubmitting) return;
 
     const idModelo = String(formProducto.querySelector("input[name='id_modelo']")?.value || "").trim();
     const nombreModelo = String(pModelo?.value || "").trim();
-    const marcaChoiceBefore = String(pMarca?.value || "");
+    const descripcion = String(pDescripcion?.value || "").trim();
     if (!nombreModelo) {
-      alert("El nombre del modelo es obligatorio.");
+      notify("error", "El nombre del producto es obligatorio.");
       return;
     }
 
     try {
+      isSubmitting = true;
+      const submitBtn = formProducto.querySelector("button[type='submit']");
+      if (submitBtn) submitBtn.disabled = true;
+
       // Si el usuario está creando una marca nueva, debe guardarla primero
       if (isCreatingNewBrand) {
         throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
@@ -372,34 +404,32 @@
       const claseIdFinal = Number(pClase?.value || 0);
       if (!claseIdFinal) throw new Error("La clase es obligatoria.");
 
-      // Cargar marcas para la clase, y re-seleccionar marca si venía elegida
-      await cargarMarcasPorClase(String(claseIdFinal));
-      if (pMarca) {
-        const wanted = marcaChoiceBefore;
-        if (wanted && Array.from(pMarca.options).some((o) => String(o.value) === wanted)) {
-          pMarca.value = wanted;
-        }
-      }
-
       const finalMarcaId = Number(pMarca?.value || 0);
       if (!finalMarcaId) throw new Error("La marca es obligatoria.");
+
+      validateMaxLen("Producto", nombreModelo, MAX.producto);
+      validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
       if (idModelo) {
         await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
           method: "PUT",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId }),
+          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
         });
       } else {
         await fetchJson("/api/productos/modelos", {
           method: "POST",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId }),
+          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
         });
       }
 
       closeModal();
       await recargarModelosSegunFiltros();
     } catch (err) {
-      alert(err?.message || "No se pudo guardar.");
+      notify("error", err?.message || "No se pudo guardar.");
+    } finally {
+      isSubmitting = false;
+      const submitBtn = formProducto.querySelector("button[type='submit']");
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 
@@ -416,6 +446,8 @@
         throw new Error("Escribe el nombre de la clase.");
       }
 
+      validateMaxLen("Clase", nombreClase, MAX.clase);
+
       const data = await fetchJson("/api/productos/clases", {
         method: "POST",
         body: JSON.stringify({ nombre: nombreClase, num_i: null }),
@@ -425,15 +457,13 @@
       renderClaseFormSelect();
       if (pClase) pClase.value = String(data.id || "");
 
-      // Al cambiar/crear clase, recargar marcas y limpiar marca actual
-      await cargarMarcasPorClase(String(data.id || ""));
+      // Al cambiar/crear clase, limpiar marca actual para que el usuario elija explícitamente.
       if (pMarca) pMarca.value = "";
-      setNewBrandMode(false);
 
       setNewClassMode(false);
       if (pClaseNueva) pClaseNueva.value = "";
     } catch (err) {
-      alert(err?.message || "No se pudo guardar la clase.");
+      notify("error", err?.message || "No se pudo guardar la clase.");
     } finally {
       if (btnGuardarClase) btnGuardarClase.disabled = false;
     }
@@ -442,17 +472,6 @@
   async function onGuardarMarcaClick() {
     try {
       if (btnGuardarMarca) btnGuardarMarca.disabled = true;
-
-      // Para evitar guardar todo al mismo tiempo, la clase debe estar guardada antes
-      if (isCreatingNewClass) {
-        throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
-      }
-
-      let claseIdFinal = Number(pClase?.value || 0);
-
-      if (!claseIdFinal) {
-        throw new Error("Selecciona o crea una clase antes de guardar la marca.");
-      }
 
       // Debe estar en modo nueva marca para guardar
       if (!isCreatingNewBrand) {
@@ -464,19 +483,21 @@
         throw new Error("Escribe el nombre de la marca.");
       }
 
+      validateMaxLen("Marca", nombreMarca, MAX.marca);
+
       const data = await fetchJson("/api/productos/marcas", {
         method: "POST",
-        body: JSON.stringify({ nombre: nombreMarca, id_clase: claseIdFinal }),
+        body: JSON.stringify({ nombre: nombreMarca }),
       });
 
-      await cargarMarcasPorClase(String(claseIdFinal));
+      await cargarMarcas();
       if (pMarca) pMarca.value = String(data.id || "");
 
       // cerrar modo nueva marca
       setNewBrandMode(false);
       if (pMarcaNueva) pMarcaNueva.value = "";
     } catch (err) {
-      alert(err?.message || "No se pudo guardar la marca.");
+      notify("error", err?.message || "No se pudo guardar la marca.");
     } finally {
       if (btnGuardarMarca) btnGuardarMarca.disabled = false;
     }
@@ -499,14 +520,14 @@
     if (action === "delete") {
       const modelo = findModeloById(id);
       const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
-      const ok = confirm(`¿Seguro que deseas eliminar el modelo ${label}?`);
+      const ok = confirm(`¿Seguro que deseas eliminar el producto ${label}?`);
       if (!ok) return;
 
       try {
         await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
         await recargarModelosSegunFiltros();
       } catch (err) {
-        alert(err?.message || "No se pudo eliminar.");
+        notify("error", err?.message || "No se pudo eliminar.");
       }
     }
   }
@@ -519,7 +540,7 @@
       btnNuevo.addEventListener("click", async () => {
         resetFormToCreate();
         if (!state.clases.length) await cargarClases();
-        await cargarMarcasPorClase("");
+        if (!state.marcas.length) await cargarMarcas();
         openModal();
       });
     }
@@ -539,12 +560,6 @@
 
     if (btnNuevaMarca) {
       btnNuevaMarca.addEventListener("click", async () => {
-        const claseIdFinal = Number(pClase?.value || 0);
-        if (!claseIdFinal) {
-          alert("Primero selecciona una clase.");
-          return;
-        }
-
         setNewBrandMode(!isCreatingNewBrand);
         if (isCreatingNewBrand) {
           if (pMarca) pMarca.value = "";
@@ -596,7 +611,6 @@
       btnLimpiar.addEventListener("click", async () => {
         if (fTexto) fTexto.value = "";
         if (fClase) fClase.value = "";
-        await cargarMarcasPorClase("");
         if (fMarca) fMarca.value = "";
         await recargarModelosSegunFiltros();
       });
@@ -607,27 +621,19 @@
         // Si elige una clase existente, apagamos modo nueva clase
         if (isCreatingNewClass) setNewClassMode(false);
 
-        const v = String(pClase.value || "");
-        if (v) {
-          await cargarMarcasPorClase(v);
-        } else {
-          renderMarcaFormSelect([]);
-        }
-
-        // Cambiar clase invalida marca actual
+        // Cambiar clase invalida marca actual (el usuario debe elegir explícitamente).
         if (pMarca) pMarca.value = "";
-        setNewBrandMode(false);
       });
     }
 
     // Carga inicial
     try {
       await cargarClases();
-      await cargarMarcasPorClase("");
+      await cargarMarcas();
       await cargarModelos({});
       aplicarFiltrosYRender();
     } catch (err) {
-      if (tabla) tabla.innerHTML = emptyRow(6, err?.message || "No se pudo cargar el módulo.");
+      if (tabla) tabla.innerHTML = emptyRow(5, err?.message || "No se pudo cargar el módulo.");
     }
   }
 

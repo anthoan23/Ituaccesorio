@@ -2,8 +2,12 @@ from __future__ import annotations
 from app.models.database import conectar
 from datetime import datetime
 import uuid
+from decimal import Decimal
+import json
 
 class VentasModel(conectar):
+
+    _ESTADO_CARRITO = "carrito"
     
     # ==================== CATÁLOGO ====================
     
@@ -15,49 +19,55 @@ class VentasModel(conectar):
         
         cursor = db.cursor(dictionary=True)
         try:
-            where = ["s.Existencia > 0"]
+            where = ["i.Existencia > 0"]
             params = []
             
             if clase_id:
-                where.append("cl.ID_clase = %s")
+                where.append("cl.ID_Clase = %s")
                 params.append(clase_id)
             if marca_id:
                 where.append("ma.ID_marca = %s")
                 params.append(marca_id)
             if q:
-                where.append("(mo.N_modelo LIKE %s OR ma.N_marca LIKE %s)")
+                where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
                 params.append(f"%{q}%")
                 params.append(f"%{q}%")
             
             where_sql = " AND ".join(where)
             
-            # Subconsulta para obtener cantidad de ventas
+            # En el esquema nuevo, el identificador a usar en el catálogo es ID_inventario.
             query = f"""
-                SELECT 
-                    s.ID_producto AS id,
-                    mo.N_modelo AS nombre,
-                    ma.N_marca AS marca,
-                    cl.N_Clase AS clase,
-                    s.Costo_venta AS precio_usd,
-                    s.Existencia AS stock,
-                    mo.ID_modelo AS id_modelo,
-                    ma.ID_marca AS id_marca,
-                    cl.ID_clase AS id_clase,
+                SELECT
+                    i.ID_inventario AS id,
+                    p.Nombre_producto AS nombre,
+                    COALESCE(ma.Nombre_marca, '') AS marca,
+                    COALESCE(cl.Nombre_Clase, '') AS clase,
+                    i.Costo_venta AS precio_usd,
+                    i.Existencia AS stock,
+                    p.ID_producto AS id_producto,
+                    p.ID_marca AS id_marca,
+                    p.ID_Clase AS id_clase,
                     COALESCE((
-                        SELECT SUM(lc.Cantidad) 
-                        FROM lista_compra lc 
-                        WHERE lc.ID_producto = s.ID_producto
+                        SELECT SUM(dv.Cantidad_articulo)
+                        FROM Detalle_venta dv
+                        WHERE dv.ID_inventario = i.ID_inventario
                     ), 0) AS veces_vendido
-                FROM stock s
-                JOIN modelo_producto mo ON s.ID_modelo = mo.ID_modelo
-                JOIN marca_producto ma ON mo.ID_marca = ma.ID_marca
-                JOIN clase_producto cl ON ma.ID_clase = cl.ID_clase
+                FROM Inventario i
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE {where_sql}
-                ORDER BY veces_vendido DESC, cl.N_Clase ASC, ma.N_marca ASC, mo.N_modelo ASC
+                ORDER BY veces_vendido DESC, cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
             """
             
             cursor.execute(query, tuple(params))
             resultados = cursor.fetchall()
+
+            # Normalizar decimales
+            for r in resultados or []:
+                val = r.get("precio_usd")
+                if isinstance(val, Decimal):
+                    r["precio_usd"] = float(val)
             
             # Agregar URL de imagen
             for r in resultados:
@@ -76,19 +86,25 @@ class VentasModel(conectar):
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("""
-                SELECT 
-                    s.ID_producto AS id,
-                    mo.N_modelo AS nombre,
-                    ma.N_marca AS marca,
-                    s.Costo_venta AS precio_usd,
-                    s.Existencia AS stock
-                FROM stock s
-                JOIN modelo_producto mo ON s.ID_modelo = mo.ID_modelo
-                JOIN marca_producto ma ON mo.ID_marca = ma.ID_marca
-                WHERE s.ID_producto = %s
-            """, (producto_id,))
-            return cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT
+                    i.ID_inventario AS id,
+                    p.Nombre_producto AS nombre,
+                    COALESCE(ma.Nombre_marca, '') AS marca,
+                    i.Costo_venta AS precio_usd,
+                    i.Existencia AS stock
+                FROM Inventario i
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                WHERE i.ID_inventario = %s
+                """,
+                (producto_id,),
+            )
+            row = cursor.fetchone()
+            if row and isinstance(row.get("precio_usd"), Decimal):
+                row["precio_usd"] = float(row["precio_usd"])
+            return row
         finally:
             cursor.close()
             db.close()
@@ -101,22 +117,29 @@ class VentasModel(conectar):
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("""
-                SELECT 
-                    s.ID_producto AS id,
-                    mo.N_modelo AS nombre,
-                    ma.N_marca AS marca,
-                    s.Costo_venta AS precio_usd,
-                    SUM(lc.Cantidad) AS veces_vendido
-                FROM lista_compra lc
-                JOIN stock s ON lc.ID_producto = s.ID_producto
-                JOIN modelo_producto mo ON s.ID_modelo = mo.ID_modelo
-                JOIN marca_producto ma ON mo.ID_marca = ma.ID_marca
-                GROUP BY s.ID_producto
+            cursor.execute(
+                """
+                SELECT
+                    i.ID_inventario AS id,
+                    p.Nombre_producto AS nombre,
+                    COALESCE(ma.Nombre_marca, '') AS marca,
+                    i.Costo_venta AS precio_usd,
+                    SUM(dv.Cantidad_articulo) AS veces_vendido
+                FROM Detalle_venta dv
+                JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                GROUP BY i.ID_inventario, p.Nombre_producto, ma.Nombre_marca, i.Costo_venta
                 ORDER BY veces_vendido DESC
                 LIMIT %s
-            """, (limite,))
-            return cursor.fetchall()
+                """,
+                (limite,),
+            )
+            rows = cursor.fetchall()
+            for r in rows or []:
+                if isinstance(r.get("precio_usd"), Decimal):
+                    r["precio_usd"] = float(r["precio_usd"])
+            return rows
         finally:
             cursor.close()
             db.close()
@@ -131,22 +154,30 @@ class VentasModel(conectar):
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("""
-                SELECT 
-                    lc.ID_carrito AS id,
-                    lc.ID_producto AS producto_id,
-                    lc.Cantidad AS cantidad,
-                    s.Costo_venta AS precio_usd,
-                    mo.N_modelo AS nombre,
-                    ma.N_marca AS marca,
-                    s.Existencia AS stock_disponible
-                FROM lista_carrito lc
-                JOIN stock s ON lc.ID_producto = s.ID_producto
-                JOIN modelo_producto mo ON s.ID_modelo = mo.ID_modelo
-                JOIN marca_producto ma ON mo.ID_marca = ma.ID_marca
-                WHERE lc.ID_c = %s AND lc.Estado_c = 0
-            """, (cliente_id,))
-            return cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT
+                    lc.ID_lista_compra AS id,
+                    lc.ID_inventario AS producto_id,
+                    lc.Cantidad_producto AS cantidad,
+                    i.Costo_venta AS precio_usd,
+                    p.Nombre_producto AS nombre,
+                    COALESCE(ma.Nombre_marca, '') AS marca,
+                    i.Existencia AS stock_disponible
+                FROM Lista_compra lc
+                JOIN Inventario i ON lc.ID_inventario = i.ID_inventario
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                WHERE lc.ID_cliente = %s
+                  AND (lc.Estado_lista_compra IS NULL OR lc.Estado_lista_compra = %s)
+                """,
+                (cliente_id, self._ESTADO_CARRITO),
+            )
+            rows = cursor.fetchall()
+            for r in rows or []:
+                if isinstance(r.get("precio_usd"), Decimal):
+                    r["precio_usd"] = float(r["precio_usd"])
+            return rows
         finally:
             cursor.close()
             db.close()
@@ -159,23 +190,54 @@ class VentasModel(conectar):
         
         cursor = db.cursor()
         try:
-            # Verificar si ya existe
+            cant = int(cantidad)
+            if cant <= 0:
+                raise ValueError("La cantidad debe ser mayor que 0")
+
+            inv_id = int(producto_id)
+
+            # Validar stock disponible
             cursor.execute(
-                "SELECT ID_carrito, Cantidad FROM lista_carrito WHERE ID_c = %s AND ID_producto = %s AND Estado_c = 0",
-                (cliente_id, producto_id)
+                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+                (inv_id,),
+            )
+            stock_row = cursor.fetchone()
+            if not stock_row:
+                raise ValueError("Producto no encontrado en inventario")
+            stock = int(stock_row[0] or 0)
+            if stock <= 0:
+                raise ValueError("Producto sin stock")
+
+            # Verificar si ya existe en el carrito
+            cursor.execute(
+                """
+                SELECT ID_lista_compra, Cantidad_producto
+                FROM Lista_compra
+                WHERE ID_cliente = %s AND ID_inventario = %s
+                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+                LIMIT 1
+                """,
+                (int(cliente_id), inv_id, self._ESTADO_CARRITO),
             )
             existente = cursor.fetchone()
-            
+
             if existente:
-                nueva_cantidad = existente[1] + cantidad
+                nueva_cantidad = int(existente[1] or 0) + cant
+                if nueva_cantidad > stock:
+                    raise ValueError("La cantidad supera el stock disponible")
                 cursor.execute(
-                    "UPDATE lista_carrito SET Cantidad = %s WHERE ID_carrito = %s",
-                    (nueva_cantidad, existente[0])
+                    "UPDATE Lista_compra SET Cantidad_producto = %s WHERE ID_lista_compra = %s",
+                    (nueva_cantidad, int(existente[0])),
                 )
             else:
+                if cant > stock:
+                    raise ValueError("La cantidad supera el stock disponible")
                 cursor.execute(
-                    "INSERT INTO lista_carrito (ID_producto, ID_c, Cantidad, Estado_c) VALUES (%s, %s, %s, 0)",
-                    (producto_id, cliente_id, cantidad)
+                    """
+                    INSERT INTO Lista_compra (ID_inventario, ID_cliente, Cantidad_producto, Estado_lista_compra)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (inv_id, int(cliente_id), cant, self._ESTADO_CARRITO),
                 )
             db.commit()
         except Exception:
@@ -194,8 +256,12 @@ class VentasModel(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "DELETE FROM lista_carrito WHERE ID_c = %s AND ID_producto = %s AND Estado_c = 0",
-                (cliente_id, producto_id)
+                """
+                DELETE FROM Lista_compra
+                WHERE ID_cliente = %s AND ID_inventario = %s
+                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+                """,
+                (int(cliente_id), int(producto_id), self._ESTADO_CARRITO),
             )
             db.commit()
         except Exception:
@@ -216,9 +282,24 @@ class VentasModel(conectar):
         
         cursor = db.cursor()
         try:
+            # Validar stock
             cursor.execute(
-                "UPDATE lista_carrito SET Cantidad = %s WHERE ID_c = %s AND ID_producto = %s AND Estado_c = 0",
-                (cantidad, cliente_id, producto_id)
+                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+                (int(producto_id),),
+            )
+            row = cursor.fetchone()
+            stock = int(row[0] or 0) if row else 0
+            if int(cantidad) > stock:
+                raise ValueError("La cantidad supera el stock disponible")
+
+            cursor.execute(
+                """
+                UPDATE Lista_compra
+                SET Cantidad_producto = %s, Estado_lista_compra = %s
+                WHERE ID_cliente = %s AND ID_inventario = %s
+                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+                """,
+                (int(cantidad), self._ESTADO_CARRITO, int(cliente_id), int(producto_id), self._ESTADO_CARRITO),
             )
             db.commit()
         except Exception:
@@ -236,8 +317,12 @@ class VentasModel(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "DELETE FROM lista_carrito WHERE ID_c = %s AND Estado_c = 0",
-                (cliente_id,)
+                """
+                DELETE FROM Lista_compra
+                WHERE ID_cliente = %s
+                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+                """,
+                (int(cliente_id), self._ESTADO_CARRITO),
             )
             db.commit()
         except Exception:
@@ -261,28 +346,62 @@ class VentasModel(conectar):
             raise RuntimeError("No se pudo conectar a la base de datos")
         
         factura_id = self.generar_factura_id()
-        fecha_actual = datetime.now().strftime("%Y-%m-%d")
+        fecha_actual = datetime.now()
         
         cursor = db.cursor()
         try:
-            # Insertar venta
-            cursor.execute("""
-                INSERT INTO venta (ID_factura, ID_c, Costo_total, Fecha_v, Estado_pago, Metodo_pago)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (factura_id, cliente_id, total_bs, fecha_actual, estado_pago, metodo_pago))
-            
-            # Insertar items de la compra
-            for item in items:
-                cursor.execute("""
-                    INSERT INTO lista_compra (ID_producto, ID_factura, Cantidad)
+            moneda = "USD"
+            if metodo_pago in ("pago_movil", "efectivo_bs"):
+                moneda = "VES"
+            elif metodo_pago == "binance":
+                moneda = "USDT"
+
+            # Insertar venta (esquema nuevo)
+            cursor.execute(
+                """
+                INSERT INTO Venta (ID_factura, ID_empleado, ID_cliente, Moneda, Fecha_venta)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (factura_id, None, int(cliente_id), moneda, fecha_actual),
+            )
+
+            # Insertar detalle + descontar stock (Inventario)
+            for item in items or []:
+                inv_id = int(item["producto_id"])
+                qty = int(item["cantidad"])
+                if qty <= 0:
+                    continue
+
+                cursor.execute(
+                    "SELECT Existencia FROM Inventario WHERE ID_inventario=%s LIMIT 1",
+                    (inv_id,),
+                )
+                row = cursor.fetchone()
+                existencia = int(row[0] or 0) if row else 0
+                if existencia < qty:
+                    raise ValueError("Stock insuficiente para completar la compra")
+
+                cursor.execute(
+                    """
+                    INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo)
                     VALUES (%s, %s, %s)
-                """, (item["producto_id"], factura_id, item["cantidad"]))
-                
-                # Actualizar stock
-                cursor.execute("""
-                    UPDATE stock SET Existencia = Existencia - %s
-                    WHERE ID_producto = %s AND Existencia >= %s
-                """, (item["cantidad"], item["producto_id"], item["cantidad"]))
+                    """,
+                    (inv_id, factura_id, qty),
+                )
+                cursor.execute(
+                    "UPDATE Inventario SET Existencia = Existencia - %s WHERE ID_inventario = %s",
+                    (qty, inv_id),
+                )
+
+            # Marcar/limpiar carrito del cliente
+            cursor.execute(
+                """
+                DELETE FROM Lista_compra
+                WHERE ID_cliente = %s
+                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+                """,
+                (int(cliente_id), self._ESTADO_CARRITO),
+            )
             
             db.commit()
             return factura_id
@@ -300,27 +419,47 @@ class VentasModel(conectar):
             raise RuntimeError("No se pudo conectar a la base de datos")
         
         factura_id = self.generar_factura_id()
-        fecha_actual = datetime.now().strftime("%Y-%m-%d")
+        fecha_actual = datetime.now()
         
         cursor = db.cursor()
         try:
-            # Insertar venta
-            cursor.execute("""
-                INSERT INTO venta (ID_factura, ID_em, ID_c, Costo_total, Fecha_v, Estado_pago, Metodo_pago)
-                VALUES (%s, %s, %s, %s, %s, 'Aprobado', %s)
-            """, (factura_id, empleado_id, cliente_id, total_bs, fecha_actual, metodo_pago))
-            
-            # Insertar items
-            for item in items:
-                cursor.execute("""
-                    INSERT INTO lista_compra (ID_producto, ID_factura, Cantidad)
-                    VALUES (%s, %s, %s)
-                """, (item["producto_id"], factura_id, item["cantidad"]))
-                
-                cursor.execute("""
-                    UPDATE stock SET Existencia = Existencia - %s
-                    WHERE ID_producto = %s AND Existencia >= %s
-                """, (item["cantidad"], item["producto_id"], item["cantidad"]))
+            moneda = "USD"
+            if metodo_pago in ("pago_movil", "efectivo_bs"):
+                moneda = "VES"
+            elif metodo_pago == "binance":
+                moneda = "USDT"
+
+            cursor.execute(
+                """
+                INSERT INTO Venta (ID_factura, ID_empleado, ID_cliente, Moneda, Fecha_venta)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (factura_id, int(empleado_id) if empleado_id is not None else None, int(cliente_id), moneda, fecha_actual),
+            )
+
+            for item in items or []:
+                inv_id = int(item["producto_id"])
+                qty = int(item["cantidad"])
+                if qty <= 0:
+                    continue
+
+                cursor.execute(
+                    "SELECT Existencia FROM Inventario WHERE ID_inventario=%s LIMIT 1",
+                    (inv_id,),
+                )
+                row = cursor.fetchone()
+                existencia = int(row[0] or 0) if row else 0
+                if existencia < qty:
+                    raise ValueError("Stock insuficiente")
+
+                cursor.execute(
+                    "INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo) VALUES (%s, %s, %s)",
+                    (inv_id, factura_id, qty),
+                )
+                cursor.execute(
+                    "UPDATE Inventario SET Existencia = Existencia - %s WHERE ID_inventario = %s",
+                    (qty, inv_id),
+                )
             
             db.commit()
             return factura_id
@@ -339,47 +478,32 @@ class VentasModel(conectar):
         
         cursor = db.cursor()
         try:
-            fecha_actual = datetime.now().strftime("%Y-%m-%d")
-            
-            if metodo_pago == "pago_movil":
-                cursor.execute("""
-                    INSERT INTO reporte_pagos 
-                    (ID_factura, Metodo_Pago, Banco_Origen, Celular_O_Correo, Referencia_O_Comprobante, Fecha_Pago, Monto_Pagado)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    factura_id, "Pago Movil", datos.get("banco"), datos.get("telefono"),
-                    datos.get("referencia"), fecha_actual, datos.get("monto", 0)
-                ))
-            
-            elif metodo_pago == "zelle":
-                cursor.execute("""
-                    INSERT INTO reporte_pagos 
-                    (ID_factura, Metodo_Pago, Titular_Cuenta, Celular_O_Correo, Referencia_O_Comprobante, Fecha_Pago, Monto_Pagado)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    factura_id, "Zelle", datos.get("titular"), datos.get("correo"),
-                    datos.get("referencia"), fecha_actual, datos.get("monto", 0)
-                ))
-            
+            fecha_actual = datetime.now()
+
+            moneda = "USD"
+            if metodo_pago in ("pago_movil", "efectivo_bs"):
+                moneda = "VES"
             elif metodo_pago == "binance":
-                cursor.execute("""
-                    INSERT INTO reporte_pagos 
-                    (ID_factura, Metodo_Pago, Celular_O_Correo, Referencia_O_Comprobante, Fecha_Pago, Monto_Pagado)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (
-                    factura_id, "Binance", datos.get("uid"), datos.get("pay_id"),
-                    fecha_actual, datos.get("monto", 0)
-                ))
-            
-            elif metodo_pago in ["efectivo_bs", "efectivo_usd"]:
-                cursor.execute("""
-                    INSERT INTO reporte_pagos 
-                    (ID_factura, Metodo_Pago, Billete_Entregado, Fecha_Pago, Monto_Pagado)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (
-                    factura_id, "Efectivo " + ("Bolivares" if metodo_pago == "efectivo_bs" else "Dolares"),
-                    datos.get("billete"), fecha_actual, datos.get("monto", 0)
-                ))
+                moneda = "USDT"
+
+            # En el dump nuevo existe Transferencia (muy básica). Guardamos un resumen en Capture.
+            capture = None
+            try:
+                capture = json.dumps({"metodo": metodo_pago, "datos": datos or {}}, ensure_ascii=False)
+            except Exception:
+                capture = None
+
+            if capture and len(capture) > 255:
+                capture = capture[:255]
+
+            cursor.execute(
+                """
+                INSERT INTO Transferencia (ID_factura, Moneda, Fecha_pago, Capture)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE Moneda=VALUES(Moneda), Fecha_pago=VALUES(Fecha_pago), Capture=VALUES(Capture)
+                """,
+                (factura_id, moneda, fecha_actual, capture),
+            )
             
             db.commit()
         except Exception:
@@ -393,129 +517,25 @@ class VentasModel(conectar):
     
     def obtener_pagos_pendientes(self):
         """Obtener ventas con estado 'Por Verificar'"""
-        db = self.conexion1()
-        if not db:
-            return []
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    v.ID_factura AS factura_id,
-                    v.Fecha_v AS fecha,
-                    v.Costo_total AS total_bs,
-                    v.Metodo_pago AS metodo_pago,
-                    c.Nombre_c AS cliente_nombre,
-                    c.Apellido_c AS cliente_apellido,
-                    c.Celular_c AS cliente_celular,
-                    c.Correo_c AS cliente_correo,
-                    COALESCE(rp.Referencia_O_Comprobante, 'N/A') AS referencia,
-                    COALESCE(rp.Titular_Cuenta, 'N/A') AS titular,
-                    COALESCE(rp.Banco_Origen, 'N/A') AS banco,
-                    COALESCE(rp.Celular_O_Correo, 'N/A') AS contacto,
-                    COALESCE(rp.Billete_Entregado, 'N/A') AS billete
-                FROM venta v
-                JOIN cliente c ON v.ID_c = c.ID_c
-                LEFT JOIN reporte_pagos rp ON v.ID_factura = rp.ID_factura
-                WHERE v.Estado_pago = 'Por Verificar'
-                ORDER BY v.Fecha_v DESC
-            """)
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
+        # El esquema nuevo (Venta/Detalle_venta/Transferencia) no incluye estado de validación.
+        # Para evitar errores SQL en el panel admin, devolvemos una lista vacía por ahora.
+        return []
     
     def obtener_pagos_aprobados(self):
         """Obtener ventas aprobadas"""
-        db = self.conexion1()
-        if not db:
-            return []
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    v.ID_factura AS factura_id,
-                    v.Fecha_v AS fecha,
-                    v.Costo_total AS total_bs,
-                    v.Metodo_pago AS metodo_pago,
-                    c.Nombre_c AS cliente_nombre,
-                    c.Apellido_c AS cliente_apellido
-                FROM venta v
-                JOIN cliente c ON v.ID_c = c.ID_c
-                WHERE v.Estado_pago = 'Aprobado'
-                ORDER BY v.Fecha_v DESC
-            """)
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
+        return []
     
     def obtener_pagos_rechazados(self):
         """Obtener ventas rechazadas"""
-        db = self.conexion1()
-        if not db:
-            return []
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    v.ID_factura AS factura_id,
-                    v.Fecha_v AS fecha,
-                    v.Costo_total AS total_bs,
-                    v.Metodo_pago AS metodo_pago,
-                    c.Nombre_c AS cliente_nombre,
-                    c.Apellido_c AS cliente_apellido
-                FROM venta v
-                JOIN cliente c ON v.ID_c = c.ID_c
-                WHERE v.Estado_pago = 'Rechazado'
-                ORDER BY v.Fecha_v DESC
-            """)
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
+        return []
     
     def aprobar_pago(self, factura_id: str, empleado_id: int):
         """Aprobar un pago"""
-        db = self.conexion1()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos")
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "UPDATE venta SET Estado_pago = 'Aprobado', ID_em = %s WHERE ID_factura = %s",
-                (empleado_id, factura_id)
-            )
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+        raise RuntimeError("La validación de pagos (aprobar) no está soportada con el esquema de BD actual.")
     
     def rechazar_pago(self, factura_id: str, empleado_id: int, motivo: str):
         """Rechazar un pago con motivo"""
-        db = self.conexion1()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos")
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "UPDATE venta SET Estado_pago = 'Rechazado', ID_em = %s, Motivo_rechazo = %s WHERE ID_factura = %s",
-                (empleado_id, motivo, factura_id)
-            )
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+        raise RuntimeError("La validación de pagos (rechazar) no está soportada con el esquema de BD actual.")
     
     # ==================== ENTREGAS ====================
     
