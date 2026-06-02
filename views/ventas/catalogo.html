@@ -3,67 +3,164 @@
 {% block title %}Ituaccesorio - Catálogo de Productos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/ventas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogo.css') }}?v=20260602-2">
 {% endblock %}
 
 {% block content %}
-<main class="page ventas-catalogo">
-    <header class="products-hero">
-        <div>
-            <h1 class="products-hero__title">Catálogo de Productos</h1>
-            <p class="products-hero__subtitle">Precios en USD + Tasa del día</p>
-        </div>
-        <div class="products-hero__actions">
-            <button id="cart-toggle" class="cart-icon-btn" aria-label="Carrito">
-                Carrito
-                <span id="cart-count" class="cart-badge">0</span>
-            </button>
-        </div>
-    </header>
-
-    <div class="products-grid">
-        <article class="card">
-            <div class="table__header">
-                <h2 class="card__title">Productos</h2>
-                <span id="productos-count"></span>
+<main class="page ventas-catalogo catalogo-page">
+    <section class="catalog-hero">
+        <div class="catalog-hero__glow catalog-hero__glow--one"></div>
+        <div class="catalog-hero__glow catalog-hero__glow--two"></div>
+        <div class="catalog-hero__content">
+            <h1 class="catalog-hero__title">NUESTROS PRODUCTOS</h1>
+            <p class="catalog-hero__subtitle">Encuentra teléfonos, accesorios y repuestos pensados para iPhone y su ecosistema.</p>
+            <div class="catalog-hero__actions">
+                <button id="cart-toggle" class="cart-icon-btn cart-icon-btn--hero" aria-label="Abrir carrito">
+                    Carrito
+                    <span id="cart-count" class="cart-badge">0</span>
+                </button>
+                <a class="hero-link" href="#catalogo-completo">Ver catálogo completo</a>
             </div>
-            <div id="productos-grid" class="productos-grid"></div>
-            <div id="paginacion" class="pager"></div>
-        </article>
+        </div>
+    </section>
 
-        <aside class="card filters-panel">
-            <h2 class="card__title">Filtros</h2>
-            <div class="filters-panel__section">
-                <label class="field">
-                    <span class="field__label">Clase</span>
-                    <select id="f-clase">
-                        <option value="">Todas</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span class="field__label">Marca</span>
-                    <select id="f-marca">
-                        <option value="">Todas</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span class="field__label">Buscar</span>
-                    <input id="f-texto" type="search" placeholder="Nombre o marca...">
-                </label>
-                <div class="filters-panel__actions">
-                    <button id="btn-aplicar" class="btn btn--yellow">Buscar</button>
-                    <button id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+    <div class="catalog-content">
+        <section class="catalog-categories" aria-label="Categorías principales">
+            <article class="category-card category-card--primary">
+                <img class="category-card__image" src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&w=1200&q=80" alt="Teléfonos inteligentes" loading="lazy" decoding="async">
+                <div class="category-card__overlay"></div>
+                <div class="category-card__body">
+                    <h2 class="category-card__title">Telefonos</h2>
                 </div>
+            </article>
+
+            <article class="category-card">
+                <img class="category-card__image" src="https://images.unsplash.com/photo-1550029402-8280f657d8d1?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Accesorios para teléfonos" loading="lazy" decoding="async">
+                <div class="category-card__overlay"></div>
+                <div class="category-card__body">
+                    <h2 class="category-card__title">Accesorios</h2>
+                </div>
+            </article>
+
+            <article class="category-card">
+                <img class="category-card__image" src="https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=1200&q=80" alt="Repuestos electrónicos" loading="lazy" decoding="async">
+                <div class="category-card__overlay"></div>
+                <div class="category-card__body">
+                    <h2 class="category-card__title">Repuestos</h2>
+                </div>
+            </article>
+
+            <article class="category-card">
+                <img class="category-card__image" src="https://images.unsplash.com/photo-1543582890-139a4ff9946e?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Fundas y protección para iPhone" loading="lazy" decoding="async">
+                <div class="category-card__overlay"></div>
+                <div class="category-card__body">
+                    <h2 class="category-card__title">Protección iPhone</h2>
+                </div>
+            </article>
+        </section>
+
+        <section class="showcase-section">
+            <div class="showcase-section__header">
+                <h2 class="section-title">
+                    <svg class="section-title__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M13.5 2.5c.7 2.4.2 4.3-1.4 6-1 1.1-1.5 2.1-1.7 3.4-.8-1.1-1.1-2.2-.9-3.4-.9.5-1.7 1.4-2.2 2.6-.8 1.8-.5 3.9.7 5.5 1.2 1.6 3 2.4 4.9 2.4 2.7 0 5.1-1.7 5.9-4.3.7-2.3 0-4.8-1.8-6.4-.5-.4-1.1-.8-1.7-1.1.3 1.5-.2 2.8-1.5 3.8.2-2-1-3.7-2.3-4.5-.2-.1-.2-.3 0-.4.8-.8 1.5-1.7 2-3z" fill="currentColor"/>
+                    </svg>
+                    Los mas vendidos
+                </h2>
             </div>
-            <div class="filters-panel__section">
-                <h3 class="filters-panel__title">Más vendidos</h3>
-                <div id="mas-vendidos" class="mas-vendidos-list"></div>
+            <div class="rail-card-row">
+                <article class="rail-card">
+                    <img src="https://images.unsplash.com/photo-1695048132832-b41495f12eb4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="iPhone premium" loading="lazy" decoding="async">
+                    <h3>iPhone 15 Pro</h3>
+                </article>
+                <article class="rail-card">
+                    <img src="https://plus.unsplash.com/premium_photo-1679513691474-73102089c117?q=80&w=1113&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Audífonos inalámbricos" loading="lazy" decoding="async">
+                    <h3>Audífonos</h3>
+                </article>
+                <article class="rail-card">
+                    <img src="https://images.unsplash.com/photo-1731616103600-3fe7ccdc5a59?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Cargador y cable" loading="lazy" decoding="async">
+                    <h3>Carga rápida</h3>
+                </article>
+                <article class="rail-card">
+                    <img src="https://images.unsplash.com/photo-1535157412991-2ef801c1748b?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Fundas para teléfono" loading="lazy" decoding="async">
+                    <h3>Fundas premium</h3>
+                </article>
             </div>
-            <div class="filters-panel__section">
-                <h3 class="filters-panel__title">Tasas del día</h3>
-                <div id="tasas-info" class="tasas-info"></div>
+        </section>
+
+        <section class="showcase-section">
+            <div class="showcase-section__header">
+                <h2 class="section-title">Ofertas disponibles</h2>
             </div>
-        </aside>
+            <div class="offers-grid">
+                <article class="offer-card offer-card--feature">
+                    <span class="offer-card__tag">Oferta flash</span>
+                    <h3>Accesorios esenciales para iPhone</h3>
+                    <p>Cables, cargadores y protección con envío inmediato.</p>
+                </article>
+                <article class="offer-card">
+                    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80" alt="iPhone sobre fondo claro" loading="lazy" decoding="async">
+                    <h3>Smartphones</h3>
+                </article>
+                <article class="offer-card">
+                    <img src="https://images.unsplash.com/photo-1516724562728-afc824a36e84?auto=format&fit=crop&w=900&q=80" alt="Auriculares premium" loading="lazy" decoding="async">
+                    <h3>Audio</h3>
+                </article>
+                <article class="offer-card">
+                    <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=900&q=80" alt="Accesorios de escritorio" loading="lazy" decoding="async">
+                    <h3>Escritorio</h3>
+                </article>
+            </div>
+        </section>
+
+        <section id="catalogo-completo" class="catalog-browser">
+            <div class="table__header catalog-browser__header">
+                <div>
+                    <h2 class="card__title">Catálogo completo</h2>
+                    <p class="catalog-browser__subtitle">Todos los productos disponibles en tienda.</p>
+                </div>
+                <span id="productos-count" class="catalog-browser__count"></span>
+            </div>
+
+            <div id="catalog-status" class="catalog-status" aria-live="polite"></div>
+
+            <div class="products-grid catalog-browser__grid">
+                <aside class="card filters-panel catalog-filters">
+                    <h2 class="card__title">Filtros</h2>
+                    <div class="filters-panel__section">
+                        <label class="field">
+                            <span class="field__label">Clase</span>
+                            <select id="f-clase">
+                                <option value="">Todas</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span class="field__label">Marca</span>
+                            <select id="f-marca">
+                                <option value="">Todas</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span class="field__label">Buscar</span>
+                            <input id="f-texto" type="search" placeholder="Nombre o marca...">
+                        </label>
+                        <div class="filters-panel__actions">
+                            <button id="btn-aplicar" class="btn btn--yellow">Buscar</button>
+                            <button id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+                        </div>
+                    </div>
+                    <div class="filters-panel__section">
+                        <h3 class="filters-panel__title">Tasas del día</h3>
+                        <div id="tasas-info" class="tasas-info"></div>
+                    </div>
+                </aside>
+
+                <article class="card catalog-results">
+                    <div id="productos-grid" class="productos-grid"></div>
+                    <div id="paginacion" class="pager"></div>
+                </article>
+            </div>
+        </section>
     </div>
 </main>
 
@@ -89,5 +186,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script defer src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/ventas.js') }}?v=20260602-2"></script>
 {% endblock %}

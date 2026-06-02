@@ -36,6 +36,7 @@ app = Flask(
 
 app.config.update(
     SECRET_KEY=os.getenv("SECRET_KEY"),
+    SEND_FILE_MAX_AGE_DEFAULT=0,
 )
 
 csp = {
@@ -45,7 +46,7 @@ csp = {
     'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'unsafe-inline'"],
     'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
+    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', 'https://images.unsplash.com', 'https://plus.unsplash.com', 'https://picsum.photos'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
     'child-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
@@ -87,6 +88,16 @@ def load_user_from_jwt():
         g.user = SimpleNamespace(**payload)
     else:
         g.user = None
+
+
+@app.after_request
+def disable_html_cache(response):
+    content_type = response.headers.get("Content-Type", "")
+    if content_type.startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 
