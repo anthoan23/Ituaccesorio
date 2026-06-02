@@ -15,7 +15,6 @@ from app.controllers.taller import taller_blueprint
 from app.controllers.clientes import clientes_blueprint
 from app.controllers.ordenes_servicio import ordenes_servicio_blueprint
 from app.controllers.ventas import ventas_blueprint
-
 from app.controllers.inventario import inventario_blueprint
 from app.controllers.ordenes_compra import ordenes_compra
 from app.controllers.cargos import cargos_blueprint
@@ -44,7 +43,7 @@ csp = {
     'style-src-elem': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
     'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'unsafe-inline'"],
     'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com',  'https://cdn.jsdelivr.net'],
     'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
@@ -67,7 +66,6 @@ app.register_blueprint(taller_blueprint)
 app.register_blueprint(clientes_blueprint)
 app.register_blueprint(ordenes_servicio_blueprint)
 app.register_blueprint(ventas_blueprint)
-
 app.register_blueprint(inventario_blueprint)
 app.register_blueprint(ordenes_compra)
 app.register_blueprint(cargos_blueprint)
@@ -83,7 +81,6 @@ def load_user_from_jwt():
 
     payload = decode_token(token or "")
     if payload:
-        # convert dict to object for template attribute access
         g.user = SimpleNamespace(**payload)
     else:
         g.user = None
