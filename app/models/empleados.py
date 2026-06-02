@@ -15,22 +15,22 @@ class Empleados(conectar):
             cursor.execute(
                 """
                 SELECT
-                    e.ID_em AS cedula,
+                    e.ID_empleado AS cedula,
                     e.ID_cargo AS id_cargo,
-                    e.Nombre_em AS nombre,
-                    e.Apellido_em AS apellido,
-                    e.Celular_em AS celular,
-                    e.Correo_em AS correo,
-                    e.Direccion_em AS direccion,
+                    e.Nombre_empleado AS nombre,
+                    e.Apellido_empleado AS apellido,
+                    e.Celular_empleado AS celular,
+                    e.Correo_empleado AS correo,
+                    e.Direccion_empleado AS direccion,
                     c.N_cargo AS cargo_nombre,
                     GROUP_CONCAT(DISTINCT esp.ID_especialidad) AS especialidades_ids,
                     GROUP_CONCAT(DISTINCT esp.N_especialidad) AS especialidades_nombres
-                FROM empleado e
+                FROM Empleado e
                 JOIN cargo c ON e.ID_cargo = c.ID_cargo
-                LEFT JOIN capacitacion cap ON e.ID_em = cap.ID_em
+                LEFT JOIN capacitacion cap ON e.ID_empleado = cap.ID_empleado
                 LEFT JOIN especialidad esp ON cap.ID_especialidad = esp.ID_especialidad
-                GROUP BY e.ID_em
-                ORDER BY e.ID_em ASC
+                GROUP BY e.ID_empleado
+                ORDER BY e.ID_empleado ASC
                 """
             )
             return cursor.fetchall()
@@ -48,14 +48,14 @@ class Empleados(conectar):
             cursor.execute(
                 """
                 SELECT
-                    e.ID_em AS id,
-                    e.Nombre_em AS nombre,
-                    e.Apellido_em AS apellido,
+                    e.ID_empleado AS id,
+                    e.Nombre_empleado AS nombre,
+                    e.Apellido_empleado AS apellido,
                     c.N_cargo AS cargo
-                FROM empleado e
+                FROM Empleado e
                 JOIN cargo c ON e.ID_cargo = c.ID_cargo
                 WHERE LOWER(c.N_cargo) = 'tecnico'
-                ORDER BY e.Nombre_em ASC, e.Apellido_em ASC
+                ORDER BY e.Nombre_empleado ASC, e.Apellido_empleado ASC
                 """
             )
             return cursor.fetchall()
@@ -77,7 +77,7 @@ class Empleados(conectar):
                 SELECT
                     ID_especialidad AS id,
                     N_especialidad AS nombre
-                FROM especialidad
+                FROM Especialidad
                 ORDER BY ID_especialidad ASC
                 """
             )
@@ -111,7 +111,7 @@ class Empleados(conectar):
         try:
             cursor.execute(
                 """
-                INSERT INTO empleado (ID_em, ID_cargo, Nombre_em, Apellido_em, Celular_em, Correo_em, Direccion_em)
+                INSERT INTO empleado (ID_empleado, ID_cargo, Nombre_empleado, Apellido_empleado, Celular_empleado, Correo_empleado, Direccion_empleado)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (cedula, cargo_id, nombre, apellido, celular, correo, direccion),
@@ -122,7 +122,7 @@ class Empleados(conectar):
                 for esp_id in especialidades:
                     try:
                         cursor.execute(
-                            "INSERT INTO capacitacion (ID_especialidad, ID_em) VALUES (%s, %s)",
+                            "INSERT INTO capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
                             (esp_id, cedula),
                         )
                     except Exception:
@@ -157,7 +157,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT INTO especialidad (N_especialidad) VALUES (%s)",
+                "INSERT INTO Especialidad (N_especialidad) VALUES (%s)",
                 (especialidad,),
             )
             db.commit()
@@ -186,7 +186,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "DELETE FROM empleado WHERE ID_em = %s",
+                "DELETE FROM Empleado WHERE ID_empleado = %s",
                 (id_em,),
             )
             db.commit()
@@ -216,7 +216,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "DELETE FROM especialidad WHERE N_especialidad = %s",
+                "DELETE FROM Especialidad WHERE N_especialidad = %s",
                 (n_especialidad,),
             )
             db.commit()
@@ -255,8 +255,8 @@ class Empleados(conectar):
             cursor.execute(
                 """
                 UPDATE empleado
-                SET ID_em = %s, ID_cargo = %s, Nombre_em = %s, Apellido_em = %s, Celular_em = %s, Correo_em = %s, Direccion_em = %s
-                WHERE ID_em = %s
+                SET ID_empleado = %s, ID_cargo = %s, Nombre_empleado = %s, Apellido_empleado = %s, Celular_empleado = %s, Correo_empleado = %s, Direccion_empleado = %s
+                WHERE ID_empleado = %s
                 """,
                 (id_empleado, cargo_id, nombre, apellido, celular, correo, direccion, id_empleado),
             )
@@ -264,7 +264,7 @@ class Empleados(conectar):
             if especialidades is not None:
                 try:
                     cursor.execute(
-                        "DELETE FROM capacitacion WHERE ID_em = %s",
+                        "DELETE FROM Capacitacion WHERE ID_empleado = %s",
                         (id_empleado,),
                     )
                 except Exception:
@@ -273,7 +273,7 @@ class Empleados(conectar):
                 for esp_id in especialidades:
                     try:
                         cursor.execute(
-                            "INSERT INTO capacitacion (ID_especialidad, ID_em) VALUES (%s, %s)",
+                            "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
                             (esp_id, id_empleado),
                         )
                     except Exception:
@@ -351,7 +351,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT 1 FROM empleado WHERE ID_em = %s LIMIT 1",
+                "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
                 (cedula,),
             )
             return cursor.fetchone() is not None
@@ -368,7 +368,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT 1 FROM especialidad WHERE N_especialidad = %s LIMIT 1",
+                "SELECT 1 FROM Especialidad WHERE N_especialidad = %s LIMIT 1",
                 (especialidad,),
             )
             return cursor.fetchone() is not None
