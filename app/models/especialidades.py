@@ -82,10 +82,11 @@ class Especialidad(conectar):
         if len(descripcion_especialidad) > 255:
             mensaje = "La descripción de la especialidad no puede exceder los 255 caracteres."
             return mensaje
-        
-        if self.verificar_especialidad_nombre(nueva_especialidad):
-            mensaje = f"La especialidad '{nueva_especialidad}' ya existe."
-            return mensaje
+    
+        especialidad_id_existente = self.obtener_id_por_nombre(nueva_especialidad)
+        if especialidad_id_existente != especialidad_id:
+            return f"La especialidad '{nueva_especialidad}' ya existe."
+
 
         db = self.conexion1()
         if not db:
@@ -170,6 +171,23 @@ class Especialidad(conectar):
             cursor.execute(sql, (especialidad_id,))
             result = cursor.fetchone()
             return result[0] > 0
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_id_por_nombre(self, nombre_especialidad: str) -> int | None:
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT ID_especialidad FROM Especialidad WHERE Nombre_especialidad = %s LIMIT 1",
+                (nombre_especialidad,),
+            )
+            row = cursor.fetchone()
+            return row[0] if row else None
         finally:
             cursor.close()
             db.close()

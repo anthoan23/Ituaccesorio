@@ -16,18 +16,12 @@ def pagina_empleados():
         active_page="empleados",
     )
 
-
-
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
 @jwt_required
 def api_listar_empleados():
     empleados = Empleados()
     resultado = empleados.listar_empleados()
     return jsonify(resultado)
-
-
-
-
 
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
 @jwt_required
@@ -83,17 +77,15 @@ def api_agregar_empleado():
         return jsonify({"success": False, "error": mensaje or "No se pudo agregar el empleado."}), 400
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
-    
-    
 
-
-@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["DELETE"])
+@empleados_blueprint.route("/api/empleados", methods=["DELETE"])
 @jwt_required
-def api_eliminar_empleado(id_empleado):
+def api_eliminar_empleado():
+    datos = request.get_json(silent=True) or {}
+    id_empleado = str(datos.get("id_empleado", "")).strip()
     modelo = Empleados()
-
     try:
-        mensaje = modelo.eliminar_empleado(id_em=id_empleado)
+        mensaje = modelo.eliminar_empleado(id_empleado)
 
         if isinstance(mensaje, str) and "eliminado" in mensaje.lower():
             return jsonify({"success": True, "message": mensaje}), 200
@@ -102,13 +94,11 @@ def api_eliminar_empleado(id_empleado):
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
     
-
-    
-@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["PUT"])
+@empleados_blueprint.route("/api/empleados", methods=["PUT"])
 @jwt_required
-def api_actualizar_empleado(id_empleado):
+def api_actualizar_empleado():
     datos = request.get_json(silent=True) or {}
-
+    id_empleado = str(datos.get("id_empleado", "")).strip()
     cedula = str(datos.get("cedula", "")).strip()
     cargo_id = str(datos.get("id_cargo", "")).strip()
     nombre = str(datos.get("nombre", "")).strip()
