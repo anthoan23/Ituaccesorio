@@ -1,5 +1,6 @@
 import mysql.connector
 from app.models.database import conectar
+from app.utils.notificaciones_bus import bus_notificaciones
 
 
 class Bitacora(conectar):
@@ -57,6 +58,26 @@ class Bitacora(conectar):
             )
             cursor.execute(sql, (usuario_id, modulo_id, accion, descripcion))
             db.commit()
+
+            # Publicamos despues del commit para que la notificacion solo salga
+            # cuando la bitacora quedo realmente persistida.
+            try:
+                bus_notificaciones.publicar(
+                    {
+                        "tipo": "bitacora",
+                        "titulo": "Nueva actividad registrada",
+                        "accion": accion,
+                        "descripcion": descripcion,
+                        "modulo_nombre": modulo_nombre or "General",
+                        "usuario_id": str(usuario_id),
+                    },
+                    autor_id=usuario_id,
+                )
+            except Exception:
+                # La notificacion es un extra en tiempo real; si falla, no debe
+                # impedir que la bitacora ya persistida llegue a la base.
+                pass
+
             return {"success": True}
         except mysql.connector.Error as error:
             return {"success": False, "warning": f"No se pudo registrar la bitácora: {error}"}

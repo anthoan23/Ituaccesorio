@@ -19,13 +19,29 @@
 	</div>
 
 	<div class="topbar__right">
-		<button class="icon-btn" type="button" aria-label="Notificaciones">
-			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path
-					d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
-					fill="currentColor" />
-			</svg>
-		</button>
+		{% if g.user %}
+		<div class="notifications" data-notifications-root>
+			<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+					<path
+						d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
+						fill="currentColor" />
+				</svg>
+				<span class="notifications__badge" data-notifications-badge hidden>0</span>
+			</button>
+
+			<div class="notifications__panel" data-notifications-panel hidden>
+				<div class="notifications__header">
+					<strong>Notificaciones en tiempo real</strong>
+					<span data-notifications-status>Conectando...</span>
+				</div>
+				<div class="notifications__empty" data-notifications-empty>
+					Esperando actividad nueva.
+				</div>
+				<div class="notifications__list" data-notifications-list aria-live="polite" aria-relevant="additions"></div>
+			</div>
+		</div>
+		{% endif %}
 
 		{% if g.user %}
 		<details class="user-menu">
