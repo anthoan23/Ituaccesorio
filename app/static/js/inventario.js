@@ -184,14 +184,6 @@
 		return Number.parseInt(cleaned, 10);
 	};
 
-	const parseDecimalSafe = (value) => {
-		const str = String(value ?? '').trim();
-		if (!str) return NaN;
-		// Permite 12,50 o 12.50
-		const cleaned = str.replace(/[^0-9.,-]/g, '').replace(',', '.');
-		return Number.parseFloat(cleaned);
-	};
-
 	const stripAccents = (value) => {
 		try {
 			return String(value ?? '')
@@ -308,7 +300,7 @@
 
 		renderSelect(selectClase, [], 'Cargando clases…');
 		renderSelect(selectMarca, [], 'Selecciona una marca');
-		renderSelect(selectModelo, [], 'Selecciona un producto');
+		renderSelect(selectModelo, [], 'Selecciona un modelo');
 
 		try {
 			const dataClases = await fetchJson('/api/productos/clases', { method: 'GET' });
@@ -322,7 +314,7 @@
 		const cargarMarcas = async (idClase) => {
 			try {
 				renderSelect(selectMarca, [], 'Cargando marcas…');
-				renderSelect(selectModelo, [], 'Selecciona un producto');
+				renderSelect(selectModelo, [], 'Selecciona un modelo');
 				if (!idClase) {
 					renderSelect(selectMarca, [], 'Selecciona una marca');
 					return;
@@ -336,23 +328,19 @@
 			}
 		};
 
-		const cargarProductos = async (idMarca) => {
+		const cargarModelos = async (idMarca) => {
 			try {
-				renderSelect(selectModelo, [], 'Cargando productos…');
+				renderSelect(selectModelo, [], 'Cargando modelos…');
 				if (!idMarca) {
-					renderSelect(selectModelo, [], 'Selecciona un producto');
+					renderSelect(selectModelo, [], 'Selecciona un modelo');
 					return;
 				}
-				const idClase = String(selectClase?.value || '');
-				const qs = new URLSearchParams();
-				qs.set('marca_id', String(idMarca));
-				if (idClase) qs.set('clase_id', String(idClase));
-				const data = await fetchJson(`/api/productos/modelos?${qs.toString()}`, { method: 'GET' });
-				const productos = Array.isArray(data?.modelos) ? data.modelos : [];
-				renderSelect(selectModelo, productos, 'Selecciona un producto');
+				const data = await fetchJson(`/api/productos/modelos?marca_id=${encodeURIComponent(String(idMarca))}`, { method: 'GET' });
+				const modelos = Array.isArray(data?.modelos) ? data.modelos : [];
+				renderSelect(selectModelo, modelos, 'Selecciona un modelo');
 			} catch (err) {
-				console.error('Error cargando productos:', err);
-				renderSelect(selectModelo, [], 'No se pudieron cargar productos');
+				console.error('Error cargando modelos:', err);
+				renderSelect(selectModelo, [], 'No se pudieron cargar modelos');
 			}
 		};
 
@@ -360,26 +348,26 @@
 			cargarMarcas(String(selectClase.value || ''));
 		});
 		selectMarca.addEventListener('change', () => {
-			cargarProductos(String(selectMarca.value || ''));
+			cargarModelos(String(selectMarca.value || ''));
 		});
 
 		btnLimpiar?.addEventListener('click', () => {
 			form.reset();
 			renderSelect(selectMarca, [], 'Selecciona una marca');
-			renderSelect(selectModelo, [], 'Selecciona un producto');
+			renderSelect(selectModelo, [], 'Selecciona un modelo');
 			setNote('Formulario limpiado.');
 		});
 
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
-			const idProducto = String(selectModelo.value || '').trim();
-			if (!idProducto) {
-				setNote('Selecciona un producto antes de guardar.');
+			const idModelo = String(selectModelo.value || '').trim();
+			if (!idModelo) {
+				setNote('Selecciona un modelo antes de guardar.');
 				return;
 			}
 
 			const existencia = parseIntSafe(inputExistencia?.value);
-			const costoVenta = parseDecimalSafe(inputCosto?.value);
+			const costoVenta = parseIntSafe(inputCosto?.value);
 			if (!Number.isFinite(existencia) || existencia < 0) {
 				setNote('Existencia inválida.');
 				return;
@@ -390,9 +378,9 @@
 			}
 
 			const payload = {
-				id_producto: Number.parseInt(idProducto, 10),
+				id_modelo: Number.parseInt(idModelo, 10),
 				existencia,
-				costo_venta: String(inputCosto?.value || '').trim(),
+				costo_venta: costoVenta,
 				capacidad: inputCapacidad ? String(inputCapacidad.value || '') : '',
 				color: inputColor ? String(inputColor.value || '') : '',
 			};

@@ -22,10 +22,7 @@
 		{% block content %}{% endblock %}
 	</main>
 
-	{% include 'components/ui/feedback_modal.html' %}
-
 	<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/feedback-modal.js') }}" defer></script>
 	<script src="{{ url_for('static', filename='js/table-tools.js') }}" defer></script>
 	<script src="{{ url_for('static', filename='js/notificaciones.js') }}" defer></script>
 	{% block scripts %}{% endblock %}

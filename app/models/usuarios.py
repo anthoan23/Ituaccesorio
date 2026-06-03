@@ -59,12 +59,12 @@ class Usuarios(conectar):
             cursor.execute(
                 """
                 SELECT
-                    e.ID_empleado AS cedula,
-                    e.Nombre_empleado AS nombre,
-                    e.Apellido_empleado AS apellido,
-                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) AS nombre_completo
-                FROM Empleado e
-                ORDER BY e.ID_empleado ASC
+                    e.ID_em AS cedula,
+                    e.Nombre_em AS nombre,
+                    e.Apellido_em AS apellido,
+                    CONCAT(e.Nombre_em, ' ', e.Apellido_em) AS nombre_completo
+                FROM empleado e
+                ORDER BY e.ID_em ASC
                 """
             )
             return cursor.fetchall()
@@ -80,7 +80,7 @@ class Usuarios(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
+                "SELECT 1 FROM empleado WHERE ID_em = %s LIMIT 1",
                 (cedula,),
             )
             return cursor.fetchone() is not None

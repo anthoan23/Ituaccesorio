@@ -35,7 +35,7 @@
       </article>
 
       <article class="stat-card">
-        <span class="stat-card__label">Productos</span>
+        <span class="stat-card__label">Modelos</span>
         <strong class="stat-card__value" id="inv-stat-modelos">—</strong>
       </article>
 
@@ -47,11 +47,11 @@
   </section>
 
   <section class="layout" aria-label="Panel de inventario">
-    <article class="panel panel--table" aria-label="Existencias por producto">
+    <article class="panel panel--table" aria-label="Existencias por modelo">
       <div class="panel__header">
         <div>
           <p class="panel__eyebrow">Stock operativo</p>
-          <h2 class="panel__title">Existencias por producto</h2>
+          <h2 class="panel__title">Existencias por modelo</h2>
         </div>
 
         <div class="panel__tools" aria-label="Acciones de la vista">
@@ -66,7 +66,7 @@
             <tr>
               <th>Clase</th>
               <th>Marca</th>
-              <th>Producto</th>
+              <th>Modelo</th>
               <th>Capacidad</th>
               <th>Color</th>
               <th>Existencia</th>
@@ -82,7 +82,7 @@
         </table>
       </div>
 
-      <p class="table-note" id="inventario-note">La tabla une inventario, producto, marca, clase y atributos.</p>
+      <p class="table-note" id="inventario-note">La tabla une stock, modelo, marca, clase y características.</p>
     </article>
 
     <aside class="sidebar" aria-label="Detalles del inventario">
@@ -105,9 +105,9 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Producto</span>
-            <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
-              <option value="">Selecciona un producto</option>
+            <span class="field__label">Modelo</span>
+            <select id="inv-modelo" name="id_modelo" aria-label="Modelo" required>
+              <option value="">Selecciona un modelo</option>
             </select>
           </label>
 
@@ -187,13 +187,13 @@
         </div>
       </article>
       <article class="panel panel--stacked">
-        <h2 class="panel__title">Jerarquía de clase, marca y producto</h2>
+        <h2 class="panel__title">Jerarquía de clase, marca y modelo</h2>
 
         <div class="hierarchy">
           <div class="hierarchy__group">
             <span class="hierarchy__label">Clase</span>
             <strong>Telefonos</strong>
-            <span class="hierarchy__meta">ID_clase: 1</span>
+            <span class="hierarchy__meta">ID_clase: 1 · Num_i: 3</span>
           </div>
           <div class="hierarchy__arrow">↓</div>
           <div class="hierarchy__group">
@@ -203,9 +203,9 @@
           </div>
           <div class="hierarchy__arrow">↓</div>
           <div class="hierarchy__group">
-            <span class="hierarchy__label">Producto</span>
+            <span class="hierarchy__label">Modelo</span>
             <strong>Galaxy S23 Ultra</strong>
-            <span class="hierarchy__meta">ID_producto: 1</span>
+            <span class="hierarchy__meta">ID_modelo: 1</span>
           </div>
         </div>
       </article>

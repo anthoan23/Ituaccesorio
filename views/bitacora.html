@@ -1,104 +1,50 @@
 {% extends 'components/layout/base.html' %}
 
-{% block title %}Ituaccesorio - Bitácora del Sistema{% endblock %}
+{% block title %}Ituaccesorio - Bitacora{% endblock %}
 
 {% block head_extra %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/styles/ag-theme-alpine.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bitacora.css') }}">
 {% endblock %}
 
 {% block content %}
-<main class="page">
-  <header class="bitacora-hero" aria-label="Encabezado de bitácora">
-    <div class="bitacora-hero__copy">
-      <h1 class="bitacora-hero__title">Bitácora del Sistema</h1>
-      <p class="bitacora-hero__subtitle">Registro de actividades y eventos del sistema</p>
+<main class="page bitacora-page">
+  <section class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow">Registro del sistema</p>
+      <h1>Bitacora del sistema</h1>
     </div>
 
-    <div class="bitacora-hero__actions" aria-label="Acciones">
-      <button id="btn-refrescar" class="btn btn--ghost" type="button">
-        <span class="btn__icon" aria-hidden="true">⟳</span>
-        Refrescar
-      </button>
+    <div class="stats" aria-label="Resumen general">
+      <article class="stat-card">
+        <span class="stat-card__label">Entradas</span>
+        <strong id="stat-entradas" class="stat-card__value">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label">Ultima actividad</span>
+        <strong id="stat-ultima" class="stat-card__value">-</strong>
+      </article>
     </div>
-  </header>
+  </section>
 
-  <section class="bitacora-grid" aria-label="Gestión de bitácora">
-    <article class="card card--table" aria-label="Listado de eventos">
+  <section class="board">
+    <article class="panel--full panel">
       <div class="table__header">
-        <h2 class="card__title">Eventos Registrados</h2>
+        <h2 class="panel__title">Entradas de bitacora</h2>
       </div>
 
-      <div class="table-wrap" role="region" aria-label="Tabla de eventos">
-        <table class="table bitacora-table">
-          <thead>
-            <tr>
-              <th class="col-id">ID</th>
-              <th class="col-usuario">Usuario</th>
-              <th class="col-accion">Acción</th>
-              <th>Descripción</th>
-              <th class="col-fecha">Fecha/Hora</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-bitacora">
-            {% if registros %}
-              {% for registro in registros %}
-              <tr class="evento-row" data-id="{{ registro.id }}" data-usuario="{{ registro.usuario_id }}" data-accion="{{ registro.accion }}" data-descripcion="{{ registro.descripcion|escape }}" data-fecha="{{ registro.fecha_hora }}">
-                <td class="col-id">{{ registro.id }}</td>
-                <td class="col-usuario"><span class="chip">{{ registro.usuario_id }}</span></td>
-                <td class="col-accion">{{ registro.accion }}</td>
-                <td title="{{ registro.descripcion|escape }}">{{ registro.descripcion|truncate(80) }}</td>
-                <td class="col-fecha">{{ registro.fecha_hora }}</td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="5" class="table__empty">No hay eventos registrados para mostrar.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
+      <div class="table-wrap" role="region" aria-label="Tabla de bitacora">
+        <div id="bitacoraGrid" class="ag-theme-alpine"></div>
       </div>
     </article>
   </section>
 
-  <div id="modal-detalle" class="ui-modal" data-modal hidden aria-hidden="true">
-    <div class="ui-modal__dialog ui-modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="detalle-title">
-      <div class="ui-modal__header">
-        <h2 id="detalle-title" class="ui-modal__title">Detalle del evento</h2>
-        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
-      </div>
-      <div class="ui-modal__body">
-        <div class="detail-grid" aria-label="Información del evento">
-          <div class="detail-item">
-            <span class="detail-label">ID del evento</span>
-            <span id="d-id" class="detail-value"></span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Usuario ID</span>
-            <span id="d-usuario" class="detail-value"></span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Acción</span>
-            <span id="d-accion" class="detail-value"></span>
-          </div>
-          <div class="detail-item detail-item--full">
-            <span class="detail-label">Fecha y hora</span>
-            <span id="d-fecha" class="detail-value"></span>
-          </div>
-          <div class="detail-item detail-item--full">
-            <span class="detail-label">Descripción</span>
-            <span id="d-descripcion" class="detail-value"></span>
-          </div>
-        </div>
-        <div class="ui-form__actions">
-          <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cerrar</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </main>
 {% endblock %}
 
 {% block scripts %}
-  <script defer src="{{ url_for('static', filename='js/bitacora.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.2/dist/ag-grid-community.min.noStyle.js"></script>
+  <script src="{{ url_for('static', filename='js/bitacora.js') }}"></script>
 {% endblock %}
