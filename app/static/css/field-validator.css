@@ -1,0 +1,128 @@
+/* Contenedor del campo */
+.field-validator-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+/* Contador de caracteres */
+.field-counter {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: #6c757d;
+  text-align: right;
+  font-family: monospace;
+}
+
+.field-counter .counter-current {
+  font-weight: bold;
+  color: #495057;
+}
+
+.field-counter .counter-max {
+  color: #6c757d;
+}
+
+.field-counter .counter-remaining {
+  margin-left: 0.5rem;
+  color: #6c757d;
+  font-size: 0.7rem;
+}
+
+/* Advertencia de límite */
+.field-counter.counter-warning .counter-current {
+  color: #ffc107;
+}
+
+.field-counter.counter-warning .counter-remaining {
+  color: #ffc107;
+}
+
+.field-counter.counter-danger .counter-current {
+  color: #dc3545;
+}
+
+.field-counter.counter-danger .counter-remaining {
+  color: #dc3545;
+}
+
+/* Mensaje de advertencia */
+.field-warning {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: #ffc107;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Mensajes de error */
+.field-message {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: #dc3545;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.field-error {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8 !important;
+}
+
+.field-error:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.field-success {
+  border-color: #28a745 !important;
+}
+
+.field-success:focus {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+/* Indicador de campo requerido */
+.required-indicator {
+  color: #dc3545;
+  margin-left: 0.25rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Etiquetas */
+label {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Transiciones suaves */
+input, textarea, select {
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Estilos para campos deshabilitados */
+input:disabled, textarea:disabled, select:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+/* Animación para mensajes de error */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.field-message {
+  animation: slideDown 0.2s ease-out;
+}
