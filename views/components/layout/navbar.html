@@ -132,33 +132,7 @@
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
 
-	<script>
-	(function(){
-		var nav = document.getElementById('drawerNav');
-		if(!nav) return;
-		var btnUp = nav.parentElement.querySelector('.nav-scroll-up');
-		var btnDown = nav.parentElement.querySelector('.nav-scroll-down');
-		var scrollAmount = 140;
 
-		function updateButtons(){
-			if(nav.scrollTop <= 0) btnUp.style.display = 'none'; else btnUp.style.display = '';
-			if(nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1) btnDown.style.display = 'none'; else btnDown.style.display = '';
-		}
-
-		btnUp.addEventListener('click', function(){
-			nav.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-		btnDown.addEventListener('click', function(){
-			nav.scrollBy({ top: scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-
-		nav.addEventListener('scroll', updateButtons);
-		// initial
-		updateButtons();
-	})();
-	</script>
 
 	<div class="drawer__footer">
 		{% if g.user %}
