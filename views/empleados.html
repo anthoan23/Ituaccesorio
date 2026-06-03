@@ -1,7 +1,7 @@
 {% extends 'components/layout/base.html' %}
 {% from 'components/ui/modal.html' import modal %}
 
-{% block title %}Ituaccesorio - Empleados{% endblock %}
+{% block title %}Ituaccesorio - empleados{% endblock %}
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/empleados.css') }}">
@@ -9,44 +9,51 @@
 
 {% block content %}
   <main class="page empleados-page">
-    <section class="hero" aria-label="Encabezado de empleados">
-      <div class="hero__copy">
-        <p class="eyebrow">Gestión de personal</p>
-        <h1>Empleados</h1>
-        <p class="hero__hint">Administra empleados, cargos y especialidades desde un solo lugar.</p>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol class="breadcrumb__list">
+        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>    
+        <li aria-current="page">
+          <span class="breadcrumb__current">Empleados</span>
+        </li>
+      </ol>
+    </nav>
+
+    <header class="empleados-hero">
+      <div class="empleados-hero__copy">
+        <p class="empleados-hero__eyebrow">Gestión de personal</p>
+        <h1 class="empleados-hero__title">Empleados</h1>
+        <p class="empleados-hero__description">Vista simple para consultar y registrar empleados.</p>
       </div>
 
-      <div class="stats" aria-label="Resumen">
+      <div class="stats stats--single" aria-label="Resumen de empleados">
         <article class="stat-card">
-          <span class="stat-card__label">Empleados</span>
-          <strong id="stat-empleados" class="stat-card__value">0</strong>
+          <span class="stat-card__label">empleados</span>
+          <strong class="stat-card__value" data-count="7">0</strong>
+          <small class="stat-card__meta">Total de empleados visibles</small>
         </article>
-        <article class="stat-card">
-                <p class="hero__hint">Vista visual para revisar el equipo, sin envíos ni lógica de backend.</p>
-          <strong id="stat-cargos" class="stat-card__value">0</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-card__label">Especialidades</span>
-          <strong id="stat-especialidades" class="stat-card__value">0</strong>
-                  <strong class="stat-card__value" data-count="18">0</strong>
       </div>
-    </section>
+    </header>
 
-                  <strong class="stat-card__value" data-count="7">0</strong>
-      <article class="panel panel--wide" aria-label="Empleados registrados">
-        <div class="panel__header">
-          <div>
-                  <strong class="stat-card__value" data-count="12">0</strong>
+    <section class="content vista-1 empleados-grid" aria-label="Gestión de empleados">
+      <article class="card card--table empleados-table-card" aria-label="empleados registrados">
+        <div class="card__header">
+          <div class="card__header-left">
+            <h2 class="card__title">Catálogo de empleados</h2>
+            <p class="card__subtitle">Tabla principal de empleados registrados.</p>
           </div>
-          <button class="btn btn--primary" type="button" data-open-modal="modal-empleado">Registrar empleado</button>
+          <div class="card__actions">
+            <button class="ui-btn ui-btn--primary" type="submit">Nuevo cargo</button>
+            <button id="btn-actualizar-empleados" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
+          </div>
         </div>
 
         <div class="table-wrap table-wrap--tall" role="region" aria-label="Tabla de empleados">
           <table class="table">
             <thead>
               <tr>
-                <th>Cédula</th>
+                <th>Cedula</th>
                 <th>Nombre</th>
+                <th>Apellido</th>
                 <th>Cargo</th>
                 <th class="table__actions">Acciones</th>
               </tr>
@@ -56,147 +63,78 @@
         </div>
       </article>
 
-      <article class="panel" aria-label="Cargos registrados">
-        <div class="panel__header">
-          <div>
-            <h2 class="panel__title">Cargos</h2>
+      <div class="graficos-sidebar">  
+
+        <article class="card card--form empleado-grafico-card" aria-label="Registrar nuevo empleado">
+          <div class="card__header">
+            <div class="card__header-left">
+              <h2 class="card__title" >Graficos de Cargos</h2>
+              <p class="card__subtitle">Muestra un grafico de los empleados por cargos.</p>
+            </div>
           </div>
-          <button class="btn btn--primary" type="button" data-open-modal="modal-cargo">Añadir Cargo</button>
-        </div>
 
-        <div class="table-wrap table-wrap--side" role="region" aria-label="Tabla de cargos">
-          <table class="table table--compact">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th class="table__actions">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-cargos"></tbody>
-          </table>
-        </div>
-      </article>
+          <form id="form-empleado" class="empleado-form" autocomplete="off">
+            <div class="Grafico">
+                <canvas id="miGrafico1"></canvas>
+            </div>
+          </form>
+        </article>
 
-      <article class="panel" aria-label="Especialidades registradas">
-        <div class="panel__header">
-          <div>
-            <h2 class="panel__title">Especialidades</h2>
+        <article class="card card--form empleado-grafico-card" aria-label="Registrar nuevo empleado">
+          <div class="card__header">
+            <div class="card__header-left">
+              <h2 class="card__title" >Graficos de Especialidades</h2>
+              <p class="card__subtitle">Muestra un grafico de los empleados por especialidades.</p>
+            </div>
           </div>
-          <button class="btn btn--primary" type="button" data-open-modal="modal-especialidad">Nueva Especialidad</button>
-        </div>
 
-        <div class="table-wrap table-wrap--side" role="region" aria-label="Tabla de especialidades">
-          <table class="table table--compact">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th class="table__actions">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-especialidades"></tbody>
-          </table>
-        </div>
-      </article>
+          <form id="form-empleado" class="empleado-form" autocomplete="off">
+            <div class="Grafico">
+                <canvas id="miGrafico2"></canvas>
+            </div>
+          </form>
+        </article>
+        
+      </div>
+
     </section>
 
-    {% call modal('modal-empleado', 'Registrar empleado') %}
-      <form id="form-empleado" class="ui-form" autocomplete="off">
+    {% call modal('modal-editar-empleado', 'Modificar empleado', 'sm') %}
+      <form id="form-editar-empleado" class="ui-form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id_viejo" value="">
-        <div class="ui-form__grid">
-          <label class="ui-field">
-            <span>Cédula</span>
-            <input name="cedula" type="text" required>
-          </label>
-          <label class="ui-field">
+        <input type="hidden" name="id_empleado" id="editar-id-empleado">
+
+        <div class="ui-form__grid ui-form__grid--one">
+          <label class="empleado-form__field">
             <span>Nombre</span>
-            <input name="nombre" type="text" required>
+            <input id="editar-nombre-empleado" type="text" name="nombre_empleado" required>
           </label>
-          <label class="ui-field">
-            <span>Apellido</span>
-            <input name="apellido" type="text" required>
-          </label>
-          <label class="ui-field">
-            <span>Cargo</span>
-            <select name="id_cargo" required>
-              <option value="">Seleccione un cargo</option>
-            </select>
-          </label>
-          <label class="ui-field">
-            <span>Celular</span>
-            <input name="celular" type="text" required>
-          </label>
-          <label class="ui-field ui-field--full">
-            <span>Correo</span>
-            <input name="correo" type="email" required>
-          </label>
-          <label class="ui-field ui-field--full">
-            <span>Dirección</span>
-            <input name="direccion" type="text" required>
-          </label>
-          <label class="ui-field ui-field--full">
-            <span>Especialidades</span>
-            <select name="id_especialidad" id="select-especialidad">
-              <option value="">Seleccione una especialidad</option>
-            </select>
-            <div id="selected-especialidades" class="selected-list" aria-live="polite"></div>
-            <input type="hidden" name="especialidades" id="input-especialidades" value="[]">
+          <label class="empleado-form__field empleado-form__field--full">
+            <span>Descripción</span>
+            <textarea id="editar-descripcion-empleado" name="descripcion_empleado" rows="4" required></textarea>
           </label>
         </div>
+
         <div class="ui-form__actions">
           <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Guardar empleado</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Guardar cambios</button>
         </div>
       </form>
     {% endcall %}
 
-    {% call modal('modal-cargo', 'Registrar cargo', 'sm') %}
-      <form id="form-cargo" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id_viejo" value="">
-        <div class="ui-form__grid ui-form__grid--one">
-          <label class="ui-field">
-            <span>Nombre del cargo</span>
-            <input name="cargo" type="text" required>
-          </label>
-        </div>
-        <div class="ui-form__actions">
-          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Guardar cargo</button>
-        </div>
-      </form>
-    {% endcall %}
-
-    {% call modal('modal-especialidad', 'Registrar especialidad', 'sm') %}
-      <form id="form-especialidad" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id_viejo" value="">
-        <div class="ui-form__grid ui-form__grid--one">
-          <label class="ui-field">
-            <span>Nombre de la especialidad</span>
-            <input name="especialidad" type="text" required>
-          </label>
-        </div>
-        <div class="ui-form__actions">
-          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Guardar especialidad</button>
-        </div>
-      </form>
-    {% endcall %}
-    {% call modal('modal-delete', 'Confirmar eliminación', 'sm') %}
-      <div class="ui-form__grid ui-form__grid--one">
-        <p id="delete-message">¿Seguro que desea eliminar este registro?</p>
-      </div>
+    {% call modal('modal-eliminar-empleado', 'Eliminar empleado', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <p id="texto-confirmar-eliminar-empleado" class="confirm-text">¿Estás seguro de que quieres eliminar este registro?</p>
       <div class="ui-form__actions">
+        <button id="btn-confirmar-eliminar-empleado" type="button" class="ui-btn ui-btn--primary">Sí, eliminar</button>
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-        <button id="delete-confirm-btn" type="button" class="ui-btn ui-btn--danger">Eliminar</button>
       </div>
     {% endcall %}
   </main>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/empleados.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/empleados.js') }}"></script>
+ 
 {% endblock %}

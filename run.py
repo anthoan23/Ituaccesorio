@@ -42,11 +42,11 @@ app.config.update(
 
 csp = {
     'default-src': ["'self'"],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-    'style-src-elem': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-    'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'unsafe-inline'"],
+    'style-src': ["'self'", 'https://fonts.googleapis.com'],
+    'style-src-elem': ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+    'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
+    'style-src': ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
     'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],

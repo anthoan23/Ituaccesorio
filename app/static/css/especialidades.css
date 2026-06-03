@@ -431,8 +431,8 @@ body {
 
 .especialidad-form__field input:focus,
 .especialidad-form__field textarea:focus {
-	border-color: rgba(88, 214, 212, 0.8);
-	box-shadow: 0 0 0 3px rgba(88, 214, 212, 0.16);
+	border-color: rgba(243, 197, 0, 0.8);
+	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.16);
 }
 
 .especialidad-form__field--full {

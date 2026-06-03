@@ -128,7 +128,7 @@ class Cargo(conectar):
             return f"El cargo con identificador {cargo_id} no existe."
 
         cargo_id_existente = self.obtener_id_por_nombre(nuevo_cargo)
-        if cargo_id_existente and cargo_id_existente != cargo_id:
+        if cargo_id_existente != cargo_id:
             return f"El cargo '{nuevo_cargo}' ya existe."
 
         db = self.conexion1()

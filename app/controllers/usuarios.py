@@ -65,7 +65,6 @@ def _usuario_actual():
     return {
         "usuario_id": getattr(usuario, "usuario_id", None),
         "usuario_nombre": getattr(usuario, "usuario_nombre", None),
-        # Exponer la cédula bajo la clave unificada `cedula`
         "cedula": getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None),
         "cedula_personal": getattr(usuario, "cedula_personal", None),
         "rol_id": getattr(usuario, "rol_id", None),
@@ -112,6 +111,8 @@ def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
     return set_auth_cookies(resp, payload)
 
 
+# ==================== PÁGINAS ====================
+
 @usuarios_blueprint.route("/usuarios", methods=["GET"])
 @jwt_required
 def pagina_usuarios():
@@ -123,6 +124,8 @@ def pagina_usuarios():
         current_user=_usuario_actual(),
     )
 
+
+# ==================== USUARIOS ====================
 
 @usuarios_blueprint.route("/api/usuarios", methods=["GET"])
 @jwt_required
@@ -280,6 +283,8 @@ def eliminar_usuario(usuario_id):
         return _respuesta_por_excepcion(error)
 
 
+# ==================== ROLES ====================
+
 @usuarios_blueprint.route("/api/roles", methods=["GET"])
 @jwt_required
 def listar_roles():
@@ -341,6 +346,8 @@ def eliminar_rol(rol_id):
         return _respuesta_por_excepcion(error)
 
 
+# ==================== MÓDULOS ====================
+
 @usuarios_blueprint.route("/api/modulos", methods=["GET"])
 @jwt_required
 def listar_modulos():
@@ -396,51 +403,114 @@ def eliminar_modulo(modulo_id):
         return _respuesta_por_excepcion(error)
 
 
-@usuarios_blueprint.route("/api/permisos", methods=["GET"])
+# ==================== PERMISOS POR ROL ====================
+
+@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["GET"])
 @jwt_required
-def listar_permisos():
-    modelo = Usuarios()
-    datos = modelo.listar_permisos() or []
-    return jsonify({"success": True, "permisos": datos})
-
-
-@usuarios_blueprint.route("/api/permisos", methods=["POST"])
-@jwt_required
-def guardar_permiso():
-    datos = request.get_json(silent=True) or {}
-    rol_id = datos.get("rol_id")
-    modulo_id = datos.get("modulo_id")
-
-    if not rol_id or not modulo_id:
-        return _respuesta_error("Rol y modulo son obligatorios.")
-
+def obtener_permisos_por_rol(rol_id):
+    """Obtiene todos los permisos de un rol específico"""
     modelo = Usuarios()
     try:
-        resultado = modelo.guardar_permiso(
-            int(rol_id),
-            int(modulo_id),
-            _bool(datos.get("registrar")),
-            _bool(datos.get("modificar")),
-            _bool(datos.get("eliminar")),
-        )
-        return jsonify({"success": True, "message": "Permiso guardado.", "result": resultado})
+        modulos = modelo.listar_modulos() or []
+        permisos_existentes = modelo.listar_permisos_por_rol(rol_id) or []
+        
+        permisos_dict = {p["modulo_id"]: p for p in permisos_existentes}
+        
+        permisos_completos = []
+        for modulo in modulos:
+            permiso = permisos_dict.get(modulo["id"], {})
+            permisos_completos.append({
+                "modulo_id": modulo["id"],
+                "modulo_nombre": modulo["nombre"],
+                "modulo_descripcion": modulo.get("descripcion", ""),
+                "registrar": permiso.get("registrar", False),
+                "modificar": permiso.get("modificar", False),
+                "eliminar": permiso.get("eliminar", False),
+                "consultar": permiso.get("consultar", True),
+            })
+        
+        return jsonify({
+            "success": True,
+            "rol_id": rol_id,
+            "permisos": permisos_completos
+        })
     except Exception as error:
         return _respuesta_por_excepcion(error)
 
 
-@usuarios_blueprint.route("/api/permisos", methods=["DELETE"])
+@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["PUT"])
 @jwt_required
-def eliminar_permiso():
+def actualizar_permisos_rol(rol_id):
+    """Actualiza todos los permisos de un rol específico"""
     datos = request.get_json(silent=True) or {}
-    rol_id = datos.get("rol_id")
-    modulo_id = datos.get("modulo_id")
+    permisos = datos.get("permisos", [])
+    
+    if not permisos:
+        return _respuesta_error("Se requiere la lista de permisos.")
+    
+    modelo = Usuarios()
+    roles = modelo.listar_roles() or []
+    rol_existente = next((r for r in roles if r["id"] == rol_id), None)
+    
+    if not rol_existente:
+        return _respuesta_error(f"El rol con ID {rol_id} no existe.", 404)
+    
+    usuario_actual = _usuario_actual()
+    es_admin = str(usuario_actual.get("nombre_rol", "")).strip().lower() == "admin"
+    nombre_rol = str(rol_existente.get("nombre", "")).strip().lower()
+    
+    if nombre_rol == "admin" and not es_admin:
+        return _respuesta_error("No tienes permisos para modificar los permisos del rol Admin.", 403)
+    
+    try:
+        resultados = []
+        for permiso in permisos:
+            modulo_id = permiso.get("modulo_id")
+            registrar = _bool(permiso.get("registrar", False))
+            modificar = _bool(permiso.get("modificar", False))
+            eliminar = _bool(permiso.get("eliminar", False))
+            
+            if modulo_id:
+                resultado = modelo.guardar_permiso(
+                    rol_id, modulo_id, registrar, modificar, eliminar
+                )
+                resultados.append(resultado)
+        
+        return jsonify({
+            "success": True,
+            "message": "Permisos actualizados correctamente.",
+            "actualizados": len(resultados)
+        })
+    except Exception as error:
+        return _respuesta_por_excepcion(error)
 
-    if not rol_id or not modulo_id:
-        return _respuesta_error("Rol y modulo son obligatorios.")
 
+@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>/modulo/<int:modulo_id>", methods=["GET"])
+@jwt_required
+def obtener_permiso_especifico(rol_id, modulo_id):
+    """Obtiene un permiso específico de un rol para un módulo"""
     modelo = Usuarios()
     try:
-        modelo.eliminar_permiso(int(rol_id), int(modulo_id))
-        return jsonify({"success": True, "message": "Permiso eliminado."})
+        permisos = modelo.listar_permisos_por_rol(rol_id) or []
+        permiso = next((p for p in permisos if p["modulo_id"] == modulo_id), None)
+        
+        modulos = modelo.listar_modulos() or []
+        modulo = next((m for m in modulos if m["id"] == modulo_id), None)
+        
+        if not modulo:
+            return _respuesta_error(f"El módulo con ID {modulo_id} no existe.", 404)
+        
+        return jsonify({
+            "success": True,
+            "permiso": {
+                "rol_id": rol_id,
+                "modulo_id": modulo_id,
+                "modulo_nombre": modulo["nombre"],
+                "registrar": permiso.get("registrar", False) if permiso else False,
+                "modificar": permiso.get("modificar", False) if permiso else False,
+                "eliminar": permiso.get("eliminar", False) if permiso else False,
+                "consultar": permiso.get("consultar", True) if permiso else True,
+            }
+        })
     except Exception as error:
         return _respuesta_por_excepcion(error)

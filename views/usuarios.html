@@ -5,6 +5,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -12,7 +13,7 @@
     <section class="hero">
         <div class="hero__copy">
             <p class="eyebrow">Seguridad y acceso</p>
-            <h1>Gestion de usuarios, roles, permisos y modulos</h1>
+            <h1>Gestión de usuarios y roles</h1>
         </div>
 
         <div class="stats" aria-label="Resumen general">
@@ -25,31 +26,27 @@
                 <strong id="stat-roles" class="stat-card__value">0</strong>
             </article>
             <article class="stat-card">
-                <span class="stat-card__label">Modulos</span>
+                <span class="stat-card__label">Módulos</span>
                 <strong id="stat-modulos" class="stat-card__value">0</strong>
-            </article>
-            <article class="stat-card">
-                <span class="stat-card__label">Permisos</span>
-                <strong id="stat-permisos" class="stat-card__value">0</strong>
             </article>
         </div>
     </section>
 
     <section class="board">
         <article class="panel--full panel--admin">
-            <div class="panel__header">
-                <div>
-                    <!-- <p class="panel__eyebrow">Administracion</p>
-                    <h2 class="panel__title">Gestionar registros</h2> 
-                    
-                    No me convence esa verga-->
-                </div>
-            </div>
-
             <div class="admin-toolbar" role="group" aria-label="Administrar registros">
-                <button id="btn-admin-usuarios" class="btn btn--ghost" type="button" data-admin-target="usuarios" aria-controls="modal-admin-usuarios" aria-expanded="false">Administrar usuarios</button>
-                <button id="btn-admin-roles" class="btn btn--ghost" type="button" data-admin-target="roles" aria-controls="modal-admin-roles" aria-expanded="false">Administrar roles</button>
-                <button id="btn-admin-modulos" class="btn btn--ghost" type="button" data-admin-target="modulos" aria-controls="modal-admin-modulos" aria-expanded="false">Administrar modulos</button>
+                <button id="btn-admin-usuarios" class="btn btn--yellow" type="button" data-admin-target="usuarios" aria-controls="modal-admin-usuarios" aria-expanded="false">
+                    <span class="btn__icon" aria-hidden="true">+</span>
+                    Registrar usuarios
+                </button>
+                <button id="btn-admin-roles" class="btn btn--yellow" type="button" data-admin-target="roles" aria-controls="modal-admin-roles" aria-expanded="false">
+                    <span class="btn__icon" aria-hidden="true">+</span>
+                    Registrar roles
+                </button>
+                <button id="btn-admin-modulos" class="btn btn--yellow" type="button" data-admin-target="modulos" aria-controls="modal-admin-modulos" aria-expanded="false">
+                    <span class="btn__icon" aria-hidden="true">+</span>
+                    Registrar módulos
+                </button>
             </div>
         </article>
 
@@ -57,8 +54,7 @@
             <div class="tabs" role="tablist" aria-label="Pestañas de seguridad">
                 <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-panel-usuarios" id="tab-usuarios" data-table-tab="usuarios">Usuarios</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-roles" id="tab-roles" data-table-tab="roles">Roles</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-modulos" id="tab-modulos" data-table-tab="modulos">Modulos</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-permisos" id="tab-permisos" data-table-tab="permisos">Permisos</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-modulos" id="tab-modulos" data-table-tab="modulos">Módulos</button>
             </div>
 
             <section id="tab-panel-usuarios" class="tab-panel" role="tabpanel" aria-labelledby="tab-usuarios" data-table-panel="usuarios">
@@ -66,13 +62,13 @@
                     <h2 class="panel__title">Usuarios existentes</h2>
                 </div>
                 <div class="table-wrap" role="region" aria-label="Tabla de usuarios">
-                    <table class="table">
+                    <table class="table usuarios-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Cedula</th>
-                                <th>Rol</th>
+                                <th class="col-id">ID</th>
+                                <th>Usuario</th>
+                                <th>Cédula</th>
+                                <th class="col-rol">Rol</th>
                                 <th class="table__actions">Acciones</th>
                             </tr>
                         </thead>
@@ -86,11 +82,11 @@
                     <h2 class="panel__title">Roles creados</h2>
                 </div>
                 <div class="table-wrap" role="region" aria-label="Tabla de roles">
-                    <table class="table">
+                    <table class="table roles-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Descripcion</th>
+                                <th>Descripción</th>
                                 <th class="table__actions">Acciones</th>
                             </tr>
                         </thead>
@@ -101,14 +97,14 @@
 
             <section id="tab-panel-modulos" class="tab-panel" role="tabpanel" aria-labelledby="tab-modulos" data-table-panel="modulos" hidden>
                 <div class="table__header">
-                    <h2 class="panel__title">Modulos creados</h2>
+                    <h2 class="panel__title">Módulos del sistema</h2>
                 </div>
-                <div class="table-wrap" role="region" aria-label="Tabla de modulos">
-                    <table class="table">
+                <div class="table-wrap" role="region" aria-label="Tabla de módulos">
+                    <table class="table modulos-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Descripcion</th>
+                                <th>Descripción</th>
                                 <th class="table__actions">Acciones</th>
                             </tr>
                         </thead>
@@ -116,68 +112,10 @@
                     </table>
                 </div>
             </section>
-
-            <section id="tab-panel-permisos" class="tab-panel" role="tabpanel" aria-labelledby="tab-permisos" data-table-panel="permisos" hidden>
-                <div class="table__header">
-                    <h2 class="panel__title">Permisos</h2>
-                </div>
-
-                <div class="permiso-controls" aria-label="Formulario de permisos">
-                    <form id="form-permiso" class="form form--permiso" autocomplete="off">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-
-                        <div class="permiso-controls__row">
-                            <label>
-                                <span>Rol</span>
-                                <select name="rol_id" required></select>
-                            </label>
-                            <label>
-                                <span>Modulo</span>
-                                <select name="modulo_id" required></select>
-                            </label>
-                        </div>
-
-                        <div class="permiso-flags" aria-label="Permisos">
-                            <label class="check">
-                                <span>Registrar</span>
-                                <input name="registrar" type="checkbox">
-                            </label>
-                            <label class="check">
-                                <span>Modificar</span>
-                                <input name="modificar" type="checkbox">
-                            </label>
-                            <label class="check">
-                                <span>Eliminar</span>
-                                <input name="eliminar" type="checkbox">
-                            </label>
-                        </div>
-
-                        <div class="form__actions permiso-actions">
-                            <button class="btn btn--primary" type="submit">Guardar permiso</button>
-                            <button class="btn btn--ghost" type="button" data-reset-form="permiso">Limpiar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="table-wrap table-wrap--margin" role="region" aria-label="Tabla de permisos">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Rol</th>
-                                <th>Modulo</th>
-                                <th>Registrar</th>
-                                <th>Modificar</th>
-                                <th>Eliminar</th>
-                                <th class="table__actions">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-permisos"></tbody>
-                    </table>
-                </div>
-            </section>
         </article>
     </section>
 
+    <!-- Modal Usuarios -->
     <div id="modal-admin-usuarios" class="modal" hidden>
         <div class="modal__backdrop" data-modal-close="usuarios" aria-hidden="true"></div>
         <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-usuarios-title" tabindex="-1">
@@ -186,49 +124,87 @@
                     <p class="panel__eyebrow">Usuarios</p>
                     <h2 id="modal-usuarios-title" class="panel__title">Crear o editar usuario</h2>
                 </div>
-                <button class="icon-action modal__close" type="button" data-modal-close="usuarios">Cerrar</button>
+                <button class="icon-action modal__close" type="button" data-modal-close="usuarios">✕</button>
             </div>
 
             <form id="form-usuario" class="form" autocomplete="off">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id">
                 <input type="hidden" name="foto_perfil_actual">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Nombre completo" required>
-                </label>
-                <label>
-                    <span>Cedula personal</span>
-                    <select name="cedula_personal" required></select>
-                </label>
-                <label>
-                    <span>Contrasena</span>
-                    <div class="password-field">
-                        <input name="password" type="password" placeholder="Dejar vacio para no cambiar" required>
-                        <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+                
+                <div class="form__grid">
+                    <label class="form__field">
+                        <span>Nombre *</span>
+                        <input name="nombre" 
+                               type="text" 
+                               placeholder="Nombre completo" 
+                               required 
+                               maxlength="50"
+                               data-validator-config='{"maxLength": {"value": 50}}'>
+                    </label>
+                    
+                    <label class="form__field">
+                        <span>Cédula personal *</span>
+                        <select name="cedula_personal" required></select>
+                    </label>
+                    
+                    <label class="form__field">
+                        <span>Contraseña</span>
+                        <div class="password-field">
+                            <input name="password" 
+                                   type="password" 
+                                   placeholder="Dejar vacío para no cambiar" 
+                                   minlength="6"
+                                   maxlength="50"
+                                   data-validator-config='{
+                                       "required": {"enabled": false},
+                                       "maxLength": {"value": 50},
+                                       "customRules": [{
+                                           "validate": "function(value) { return value === \"\" || value.length >= 6; }",
+                                           "message": "La contraseña debe tener al menos 6 caracteres"
+                                       }]
+                                   }'>
+                            <button class="password-toggle" type="button" data-password-toggle>Mostrar</button>
+                        </div>
+                    </label>
+                    
+                    <label class="form__field">
+                        <span>Rol *</span>
+                        <select name="rol_id" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </label>
+
+                    <!-- Sección de permisos del rol  -->
+                    <div id="permisos-rol-container" class="permisos-container" style="display: none;">
+                        <h3 class="section-title">Permisos del rol seleccionado</h3>
+                        <div class="permisos-grid" id="permisos-grid">
+                            <!-- Los permisos se cargarán dinámicamente -->
+                        </div>
+                        <div class="permisos-actions">
+                            <button type="button" id="btn-guardar-permisos" class="btn btn--yellow btn--sm">Guardar permisos</button>
+                        </div>
                     </div>
-                </label>
-                <label>
-                    <span>Rol</span>
-                    <select name="rol_id" required></select>
-                </label>
-                <label>
+                
+                <label class="form__field">
                     <span>Foto de perfil</span>
                     <input id="foto-perfil-input" name="foto_perfil" type="file" accept="image/*" hidden>
-                    <button id="btn-foto-perfil" class="user-menu__action-btn" type="button">Subir foto</button>
-                    <small id="foto-perfil-name" class="form__hint">Ningun archivo seleccionado</small>
-                    <div class="foto-perfil-preview" aria-label="Vista previa de foto de perfil">
-                        <img id="foto-perfil-preview" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Vista previa de foto de perfil">
+                    <button id="btn-foto-perfil" class="btn btn--ghost btn--sm" type="button">Subir foto</button>
+                    <small id="foto-perfil-name" class="form__hint">Ningún archivo seleccionado</small>
+                    <div class="foto-perfil-preview">
+                        <img id="foto-perfil-preview" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Vista previa">
                     </div>
                 </label>
+                
                 <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar usuario</button>
+                    <button class="btn btn--yellow" type="submit">Guardar usuario</button>
                     <button class="btn btn--ghost" type="button" data-reset-form="usuario">Limpiar</button>
                 </div>
             </form>
         </article>
     </div>
 
+    <!-- Modal Roles -->
     <div id="modal-admin-roles" class="modal" hidden>
         <div class="modal__backdrop" data-modal-close="roles" aria-hidden="true"></div>
         <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-roles-title" tabindex="-1">
@@ -237,59 +213,88 @@
                     <p class="panel__eyebrow">Roles</p>
                     <h2 id="modal-roles-title" class="panel__title">Administrar roles</h2>
                 </div>
-                <button class="icon-action modal__close" type="button" data-modal-close="roles">Cerrar</button>
+                <button class="icon-action modal__close" type="button" data-modal-close="roles">✕</button>
             </div>
 
             <form id="form-rol" class="form" autocomplete="off">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Administrador" required>
-                </label>
-                <label>
-                    <span>Descripcion</span>
-                    <textarea name="descripcion" rows="3" placeholder="Descripcion del rol"></textarea>
-                </label>
+                
+                <div class="form__grid">
+                    <label class="form__field">
+                        <span>Nombre *</span>
+                        <input name="nombre" 
+                               type="text" 
+                               placeholder="Administrador" 
+                               required 
+                               maxlength="50"
+                               data-validator-config='{"maxLength": {"value": 50}}'>
+                    </label>
+                    
+                    <label class="form__field form__field--full">
+                        <span>Descripción</span>
+                        <textarea name="descripcion" 
+                                  rows="3" 
+                                  placeholder="Descripción del rol"
+                                  maxlength="255"
+                                  data-validator-config='{"maxLength": {"value": 255}}'></textarea>
+                    </label>
+                </div>
+                
                 <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar rol</button>
+                    <button class="btn btn--yellow" type="submit">Guardar rol</button>
                     <button class="btn btn--ghost" type="button" data-reset-form="rol">Limpiar</button>
                 </div>
             </form>
         </article>
     </div>
 
+    <!-- Modal Módulos -->
     <div id="modal-admin-modulos" class="modal" hidden>
         <div class="modal__backdrop" data-modal-close="modulos" aria-hidden="true"></div>
         <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-modulos-title" tabindex="-1">
             <div class="panel__header">
                 <div>
-                    <p class="panel__eyebrow">Modulos</p>
-                    <h2 id="modal-modulos-title" class="panel__title">Administrar modulos</h2>
+                    <p class="panel__eyebrow">Módulos</p>
+                    <h2 id="modal-modulos-title" class="panel__title">Administrar módulos</h2>
                 </div>
-                <button class="icon-action modal__close" type="button" data-modal-close="modulos">Cerrar</button>
+                <button class="icon-action modal__close" type="button" data-modal-close="modulos">✕</button>
             </div>
 
             <form id="form-modulo" class="form" autocomplete="off">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="id">
-                <label>
-                    <span>Nombre</span>
-                    <input name="nombre" type="text" placeholder="Nombre del modulo" required>
-                </label>
-                <label>
-                    <span>Descripcion</span>
-                    <textarea name="descripcion" rows="3" placeholder="Descripcion del modulo"></textarea>
-                </label>
+                
+                <div class="form__grid">
+                    <label class="form__field">
+                        <span>Nombre *</span>
+                        <input name="nombre" 
+                               type="text" 
+                               placeholder="Nombre del módulo" 
+                               required 
+                               maxlength="50"
+                               data-validator-config='{"maxLength": {"value": 50}}'>
+                    </label>
+                    
+                    <label class="form__field form__field--full">
+                        <span>Descripción</span>
+                        <textarea name="descripcion" 
+                                  rows="3" 
+                                  placeholder="Descripción del módulo"
+                                  maxlength="255"
+                                  data-validator-config='{"maxLength": {"value": 255}}'></textarea>
+                    </label>
+                </div>
+                
                 <div class="form__actions">
-                    <button class="btn btn--primary" type="submit">Guardar modulo</button>
+                    <button class="btn btn--yellow" type="submit">Guardar módulo</button>
                     <button class="btn btn--ghost" type="button" data-reset-form="modulo">Limpiar</button>
                 </div>
             </form>
         </article>
     </div>
 
-    {% call modal('modal-confirmacion', 'Confirmar accion', 'sm') %}
+    {% call modal('modal-confirmacion', 'Confirmar acción', 'sm') %}
       <div class="ui-form__grid ui-form__grid--one">
         <p id="confirmacion-mensaje">¿Seguro que desea continuar?</p>
       </div>
@@ -311,5 +316,6 @@
         rolNombre: {{ (current_user.nombre_rol if current_user else none)|tojson }},
     };
 </script>
+<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
 <script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
 {% endblock %}

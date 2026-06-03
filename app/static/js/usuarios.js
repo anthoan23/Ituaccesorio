@@ -1,12 +1,10 @@
 const tablaUsuarios = document.getElementById("tabla-usuarios");
 const tablaRoles = document.getElementById("tabla-roles");
 const tablaModulos = document.getElementById("tabla-modulos");
-const tablaPermisos = document.getElementById("tabla-permisos");
 
 const formUsuario = document.getElementById("form-usuario");
 const formRol = document.getElementById("form-rol");
 const formModulo = document.getElementById("form-modulo");
-const formPermiso = document.getElementById("form-permiso");
 
 const toast = document.getElementById("toast");
 const confirmMessage = document.getElementById("confirmacion-mensaje");
@@ -16,7 +14,6 @@ const confirmModalId = "modal-confirmacion";
 const statUsuarios = document.getElementById("stat-usuarios");
 const statRoles = document.getElementById("stat-roles");
 const statModulos = document.getElementById("stat-modulos");
-const statPermisos = document.getElementById("stat-permisos");
 const fotoPerfilInput = document.getElementById("foto-perfil-input");
 const fotoPerfilButton = document.getElementById("btn-foto-perfil");
 const fotoPerfilName = document.getElementById("foto-perfil-name");
@@ -24,12 +21,13 @@ const fotoPerfilPreview = document.getElementById("foto-perfil-preview");
 
 const currentUser = window.currentUser || {};
 const currentUserId = currentUser?.id == null ? "" : String(currentUser.id);
-const currentUserRole = String(currentUser?.rolNombre || "").trim().toLowerCase();
+// CORREGIDO: Detectar admin por rol_id o nombre_rol
+const currentUserRolId = currentUser?.rolId ? Number(currentUser.rolId) : null;
+const currentUserRolNombre = String(currentUser?.rolNombre || "").trim().toLowerCase();
+const esAdminActual = currentUserRolId === 1 || currentUserRolNombre === "admin";
 
 const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
 const selectUsuarioCedula = formUsuario?.querySelector("select[name='cedula_personal']");
-const selectPermisoRol = formPermiso?.querySelector("select[name='rol_id']");
-const selectPermisoModulo = formPermiso?.querySelector("select[name='modulo_id']");
 
 const tableTabButtons = Array.from(document.querySelectorAll("[data-table-tab]"));
 const tableTabPanels = Array.from(document.querySelectorAll("[data-table-panel]"));
@@ -55,86 +53,240 @@ const state = {
     usuarios: [],
     roles: [],
     modulos: [],
-    permisos: [],
     empleados: [],
 };
 
 const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
-iniciar();
+// ==================== FUNCIONES DE VALIDACIÓN ====================
 
-function iniciar() {
-    formUsuario?.addEventListener("submit", onUsuarioSubmit);
-    formRol?.addEventListener("submit", onRolSubmit);
-    formModulo?.addEventListener("submit", onModuloSubmit);
-    formPermiso?.addEventListener("submit", onPermisoSubmit);
-    confirmActionBtn?.addEventListener("click", onConfirmAction);
-    fotoPerfilButton?.addEventListener("click", () => fotoPerfilInput?.click());
-    fotoPerfilInput?.addEventListener("change", () => {
-        if (!fotoPerfilName) return;
-        const file = fotoPerfilInput.files?.[0];
-        fotoPerfilName.textContent = file ? file.name : "Ningun archivo seleccionado";
-        actualizarVistaPreviaFoto(file || null);
-    });
-
-    setupTableTabs();
-    setActiveTableTab(activeTableTabKey);
-
-    setupAdminToggles();
-
-    document.querySelectorAll("[data-reset-form]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.dataset.resetForm;
-            if (target === "usuario") {
-                limpiarFormulario(formUsuario);
-            }
-            if (target === "rol") {
-                limpiarFormulario(formRol);
-            }
-            if (target === "modulo") {
-                limpiarFormulario(formModulo);
-            }
-            if (target === "permiso") {
-                limpiarFormulario(formPermiso);
-            }
-        });
-    });
-
-    cargarTodo();
-}
-
-async function onConfirmAction() {
-    if (!pendingConfirmAction) return;
-    const action = pendingConfirmAction;
-    pendingConfirmAction = null;
-
-    if (confirmActionBtn) confirmActionBtn.disabled = true;
-    try {
-        await action();
-    } catch (error) {
-        mostrarToast(error.message || "No se pudo completar la accion.", true);
-    } finally {
-        if (confirmActionBtn) confirmActionBtn.disabled = false;
-        if (window.UiModal && typeof window.UiModal.closeById === "function") {
-            window.UiModal.closeById(confirmModalId);
+function validarFormularioAntesDeEnviar(form, nombreFormulario) {
+    if (!window.FieldValidator) {
+        console.warn('FieldValidator no disponible');
+        return true;
+    }
+    
+    const isValid = window.FieldValidator.validateForm(form);
+    
+    if (!isValid) {
+        mostrarToast(`Por favor, corrige los errores en el formulario de ${nombreFormulario}.`, true);
+        
+        const primerError = form.querySelector('.field-error');
+        if (primerError) {
+            primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            primerError.focus();
         }
+        
+        return false;
     }
+    
+    return true;
 }
 
-function abrirConfirmacion(mensaje, onConfirm) {
-    pendingConfirmAction = onConfirm;
-    if (confirmMessage) {
-        confirmMessage.textContent = mensaje;
-    }
-    if (window.UiModal && typeof window.UiModal.openById === "function") {
-        window.UiModal.openById(confirmModalId);
+// ==================== FUNCIONES DE PERMISOS ====================
+
+async function cargarPermisosPorRol(rolId) {
+    const container = document.getElementById("permisos-rol-container");
+    const grid = document.getElementById("permisos-grid");
+    const btnGuardar = document.getElementById("btn-guardar-permisos");
+    
+    console.log("cargarPermisosPorRol - rolId:", rolId);
+    console.log("esAdminActual:", esAdminActual);
+    
+    if (!rolId || !container || !grid) {
+        console.log("Elementos no encontrados");
         return;
     }
-    const aceptado = confirm(mensaje);
-    if (aceptado) {
-        onConfirm();
+    
+    // Buscar el rol seleccionado en la lista de roles
+    const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
+    const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
+    
+    console.log("rolSeleccionado:", rolSeleccionado);
+    console.log("esRolAdmin:", esRolAdmin);
+    
+    // Si el rol seleccionado es Admin, mostrar mensaje informativo
+    if (esRolAdmin) {
+        grid.innerHTML = `
+            <div class="permiso-item disabled">
+                <span class="permiso-modulo">⚠️ El rol Administrador tiene todos los permisos del sistema por defecto</span>
+            </div>
+        `;
+        if (btnGuardar) btnGuardar.style.display = "none";
+        container.style.display = "block";
+        return;
+    }
+    
+    // Para roles no admin, cargar permisos desde el backend
+    try {
+        const response = await fetch(`/api/permisos/rol/${rolId}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        console.log("Respuesta permisos:", data);
+        
+        if (!data.success) {
+            throw new Error(data.error || "Error al cargar permisos");
+        }
+        
+        const permisos = data.permisos || [];
+        
+        if (!permisos.length) {
+            grid.innerHTML = '<div class="permiso-item disabled">No hay módulos disponibles para configurar permisos</div>';
+            if (btnGuardar) btnGuardar.style.display = "none";
+        } else {
+            grid.innerHTML = permisos.map(permiso => `
+                <div class="permiso-item" data-modulo-id="${permiso.modulo_id}">
+                    <span class="permiso-modulo">${escapeHtml(permiso.modulo_nombre || "Módulo")}</span>
+                    <div class="permiso-checkboxes">
+                        <label>
+                            <input type="checkbox" ${permiso.registrar ? 'checked' : ''} data-permiso="registrar">
+                            Registrar
+                        </label>
+                        <label>
+                            <input type="checkbox" ${permiso.modificar ? 'checked' : ''} data-permiso="modificar">
+                            Modificar
+                        </label>
+                        <label>
+                            <input type="checkbox" ${permiso.eliminar ? 'checked' : ''} data-permiso="eliminar">
+                            Eliminar
+                        </label>
+                    </div>
+                </div>
+            `).join("");
+            if (btnGuardar) btnGuardar.style.display = "flex";
+        }
+        container.style.display = "block";
+    } catch (error) {
+        console.error("Error cargando permisos:", error);
+        mostrarToast("Error al cargar permisos: " + error.message, true);
+        container.style.display = "none";
     }
 }
+
+async function guardarPermisosRol(rolId) {
+    console.log("guardarPermisosRol - rolId:", rolId);
+    
+    // Buscar el rol seleccionado
+    const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
+    const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
+    
+    if (esRolAdmin) {
+        mostrarToast("No se pueden modificar los permisos del rol Administrador", true);
+        return;
+    }
+    
+    const items = document.querySelectorAll(".permiso-item");
+    if (!items.length) {
+        mostrarToast("No hay permisos para guardar", true);
+        return;
+    }
+    
+    const permisos = [];
+    items.forEach(item => {
+        const moduloId = item.dataset.moduloId;
+        if (moduloId) {
+            const registrar = item.querySelector('input[data-permiso="registrar"]')?.checked || false;
+            const modificar = item.querySelector('input[data-permiso="modificar"]')?.checked || false;
+            const eliminar = item.querySelector('input[data-permiso="eliminar"]')?.checked || false;
+            
+            permisos.push({
+                modulo_id: parseInt(moduloId),
+                registrar: registrar,
+                modificar: modificar,
+                eliminar: eliminar
+            });
+        }
+    });
+    
+    console.log("Enviando permisos:", permisos);
+    
+    try {
+        const response = await fetch(`/api/permisos/rol/${rolId}`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ permisos: permisos })
+        });
+        
+        const data = await response.json();
+        console.log("Respuesta guardar:", data);
+        
+        if (!data.success) {
+            throw new Error(data.error || "Error al guardar permisos");
+        }
+        
+        mostrarToast("Permisos actualizados correctamente");
+    } catch (error) {
+        console.error("Error guardando permisos:", error);
+        mostrarToast("Error al guardar permisos: " + error.message, true);
+    }
+}
+
+// ==================== FUNCIONES DE UI ====================
+
+function setupRolChangeListener() {
+    if (selectUsuarioRol) {
+        selectUsuarioRol.removeEventListener("change", window._rolChangeHandler);
+        
+        window._rolChangeHandler = async (e) => {
+            const rolId = e.target.value;
+            console.log("Rol cambiado a:", rolId);
+            const container = document.getElementById("permisos-rol-container");
+            
+            if (rolId) {
+                await cargarPermisosPorRol(rolId);
+            } else {
+                if (container) container.style.display = "none";
+            }
+        };
+        
+        selectUsuarioRol.addEventListener("change", window._rolChangeHandler);
+    }
+}
+
+function setupGuardarPermisosListener() {
+    const btnGuardar = document.getElementById("btn-guardar-permisos");
+    if (btnGuardar) {
+        btnGuardar.removeEventListener("click", window._guardarPermisosHandler);
+        
+        window._guardarPermisosHandler = () => {
+            const rolId = selectUsuarioRol?.value;
+            if (rolId) {
+                guardarPermisosRol(rolId);
+            } else {
+                mostrarToast("Seleccione un rol primero", true);
+            }
+        };
+        
+        btnGuardar.addEventListener("click", window._guardarPermisosHandler);
+    }
+}
+
+function setupPasswordToggle() {
+    const passwordToggle = document.querySelector("[data-password-toggle]");
+    if (passwordToggle) {
+        passwordToggle.addEventListener("click", function() {
+            const passwordInput = this.closest(".password-field")?.querySelector("input");
+            if (passwordInput) {
+                const type = passwordInput.type === "password" ? "text" : "password";
+                passwordInput.type = type;
+                this.textContent = type === "password" ? "Mostrar" : "Ocultar";
+            }
+        });
+    }
+}
+
+// ==================== FUNCIONES DE TABLA ====================
 
 function setupTableTabs() {
     tableTabButtons.forEach(btn => {
@@ -153,11 +305,7 @@ function setActiveTableTab(key) {
         const isActive = String(btn.dataset.tableTab || "") === key;
         btn.setAttribute("aria-selected", isActive ? "true" : "false");
         btn.classList.toggle("is-active", isActive);
-        if (isActive) {
-            btn.tabIndex = 0;
-        } else {
-            btn.tabIndex = -1;
-        }
+        btn.tabIndex = isActive ? 0 : -1;
     });
 
     tableTabPanels.forEach(panel => {
@@ -175,10 +323,17 @@ function syncAdminButtonsWithTab() {
 
         const isActive = key === activeTableTabKey;
         btn.setAttribute("aria-pressed", isActive ? "true" : "false");
-        btn.classList.toggle("btn--primary", isActive);
-        btn.classList.toggle("btn--ghost", !isActive);
+        if (isActive) {
+            btn.classList.remove("btn--ghost");
+            btn.classList.add("btn--yellow");
+        } else {
+            btn.classList.remove("btn--yellow");
+            btn.classList.add("btn--ghost");
+        }
     });
 }
+
+// ==================== FUNCIONES DE MODAL ====================
 
 function setupAdminToggles() {
     Object.keys(adminButtons).forEach(key => {
@@ -256,56 +411,54 @@ function closeAdminModal(key) {
     }
 }
 
-async function cargarTodo() {
-    try {
-        const [usuarios, roles, modulos, permisos, empleados] = await Promise.all([
-            fetchJson("/api/usuarios"),
-            fetchJson("/api/roles"),
-            fetchJson("/api/modulos"),
-            fetchJson("/api/permisos"),
-            fetchJson("/api/usuarios/empleados"),
-        ]);
+// ==================== CONFIRMACIÓN ====================
 
-        state.usuarios = usuarios.usuarios || [];
-        state.roles = roles.roles || [];
-        state.modulos = modulos.modulos || [];
-        state.permisos = permisos.permisos || [];
-        state.empleados = empleados.empleados || [];
-
-        renderTodo();
-    } catch (error) {
-        mostrarToast(error.message || "No se pudieron cargar los datos.", true);
+function abrirConfirmacion(mensaje, onConfirm) {
+    pendingConfirmAction = onConfirm;
+    if (confirmMessage) {
+        confirmMessage.textContent = mensaje;
+    }
+    if (window.UiModal && typeof window.UiModal.openById === "function") {
+        window.UiModal.openById(confirmModalId);
+        return;
+    }
+    const aceptado = confirm(mensaje);
+    if (aceptado) {
+        onConfirm();
     }
 }
 
-function renderTodo() {
-    renderSelects();
-    renderUsuarios();
-    renderRoles();
-    renderModulos();
-    renderPermisos();
-    renderStats();
+async function onConfirmAction() {
+    if (!pendingConfirmAction) return;
+    const action = pendingConfirmAction;
+    pendingConfirmAction = null;
+
+    if (confirmActionBtn) confirmActionBtn.disabled = true;
+    try {
+        await action();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo completar la accion.", true);
+    } finally {
+        if (confirmActionBtn) confirmActionBtn.disabled = false;
+        if (window.UiModal && typeof window.UiModal.closeById === "function") {
+            window.UiModal.closeById(confirmModalId);
+        }
+    }
 }
 
-function renderStats() {
-    if (statUsuarios) statUsuarios.textContent = state.usuarios.length;
-    if (statRoles) statRoles.textContent = state.roles.length;
-    if (statModulos) statModulos.textContent = state.modulos.length;
-    if (statPermisos) statPermisos.textContent = state.permisos.length;
-}
+// ==================== RENDERIZADO ====================
 
 function renderSelects() {
     if (selectUsuarioRol) {
         selectUsuarioRol.innerHTML = renderOptions(state.roles);
+        // Si hay un valor seleccionado previamente, mantenerlo
+        const currentValue = selectUsuarioRol.getAttribute("data-current-value");
+        if (currentValue) {
+            selectUsuarioRol.value = currentValue;
+        }
     }
     if (selectUsuarioCedula) {
         selectUsuarioCedula.innerHTML = renderEmpleadoOptions(state.empleados);
-    }
-    if (selectPermisoRol) {
-        selectPermisoRol.innerHTML = renderOptions(state.roles);
-    }
-    if (selectPermisoModulo) {
-        selectPermisoModulo.innerHTML = renderOptions(state.modulos);
     }
 }
 
@@ -338,14 +491,14 @@ function renderUsuarios() {
 
     tablaUsuarios.innerHTML = state.usuarios.map(usuario => `
         <tr>
-            <td>${escapeHtml(String(usuario.id ?? ""))}</td>
+            <td class="col-id"><span class="chip">${escapeHtml(String(usuario.id ?? ""))}</span></td>
             <td>${escapeHtml(usuario.nombre || "")}</td>
             <td>${escapeHtml(String(usuario.cedula_personal ?? ""))}</td>
-            <td>${escapeHtml(usuario.rol_nombre || "")}</td>
+            <td class="col-rol">${escapeHtml(usuario.rol_nombre || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}">Editar</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-usuario" data-id="${escapeHtml(String(usuario.id))}">Eliminar</button>
+                    <button class="icon-action" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--danger" type="button" data-action="delete-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Eliminar">🗑</button>
                 </div>
             </td>
         </tr>
@@ -364,21 +517,20 @@ function renderRoles() {
 
     tablaRoles.innerHTML = state.roles.map(rol => {
         const nombreRol = String(rol.nombre || "").trim().toLowerCase();
-        const esProtegido = nombreRol === "admin" || nombreRol === "cliente";
-        const proteccionMensaje = esProtegido ? "No se puede eliminar este rol." : "";
+        const esProtegido = nombreRol === "admin" || nombreRol === "cliente" || rol.id === 1;
 
         return `
-        <tr>
-            <td>${escapeHtml(rol.nombre || "")}</td>
-            <td>${escapeHtml(rol.descripcion || "")}</td>
-            <td class="table__actions">
-                <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}">Editar</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" data-protected="${esProtegido ? "1" : "0"}" data-protected-message="${escapeHtml(proteccionMensaje)}">Eliminar</button>
-                </div>
-            </td>
-        </tr>
-    `;
+            <tr>
+                <td>${escapeHtml(rol.nombre || "")}</td>
+                <td>${escapeHtml(rol.descripcion || "")}</td>
+                <td class="table__actions">
+                    <div class="row-actions">
+                        <button class="icon-action" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}" title="Editar">✎</button>
+                        ${!esProtegido ? `<button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" title="Eliminar">🗑</button>` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
     }).join("");
 
     bindTableActions(tablaRoles, state.roles, "rol");
@@ -388,7 +540,7 @@ function renderModulos() {
     if (!tablaModulos) return;
 
     if (!state.modulos.length) {
-        tablaModulos.innerHTML = emptyRow(3, "No hay modulos creados.");
+        tablaModulos.innerHTML = emptyRow(3, "No hay módulos creados.");
         return;
     }
 
@@ -398,8 +550,8 @@ function renderModulos() {
             <td>${escapeHtml(modulo.descripcion || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}">Editar</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-modulo" data-id="${escapeHtml(String(modulo.id))}">Eliminar</button>
+                    <button class="icon-action" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--danger" type="button" data-action="delete-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Eliminar">🗑</button>
                 </div>
             </td>
         </tr>
@@ -408,36 +560,27 @@ function renderModulos() {
     bindTableActions(tablaModulos, state.modulos, "modulo");
 }
 
-function renderPermisos() {
-    if (!tablaPermisos) return;
-
-    if (!state.permisos.length) {
-        tablaPermisos.innerHTML = emptyRow(6, "No hay permisos configurados.");
-        return;
-    }
-
-    tablaPermisos.innerHTML = state.permisos.map(permiso => `
-        <tr>
-            <td>${escapeHtml(permiso.rol_nombre || "")}</td>
-            <td>${escapeHtml(permiso.modulo_nombre || "")}</td>
-            <td>${toBadge(permiso.registrar)}</td>
-            <td>${toBadge(permiso.modificar)}</td>
-            <td>${toBadge(permiso.eliminar)}</td>
-            <td class="table__actions">
-                <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-permiso" data-rol-id="${escapeHtml(String(permiso.rol_id))}" data-modulo-id="${escapeHtml(String(permiso.modulo_id))}">Editar</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-permiso" data-rol-id="${escapeHtml(String(permiso.rol_id))}" data-modulo-id="${escapeHtml(String(permiso.modulo_id))}">Eliminar</button>
-                </div>
-            </td>
-        </tr>
-    `).join("");
-
-    bindPermisoActions();
+function renderStats() {
+    if (statUsuarios) statUsuarios.textContent = state.usuarios.length;
+    if (statRoles) statRoles.textContent = state.roles.length;
+    if (statModulos) statModulos.textContent = state.modulos.length;
 }
+
+function renderTodo() {
+    renderSelects();
+    renderUsuarios();
+    renderRoles();
+    renderModulos();
+    renderStats();
+}
+
+// ==================== BIND ACTIONS ====================
 
 function bindTableActions(table, items, type) {
     table.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", async () => {
+        btn.removeEventListener("click", btn._handler);
+        
+        const handler = async () => {
             const action = btn.dataset.action;
             const id = String(btn.dataset.id || "");
             const item = items.find(entry => String(entry.id) === id);
@@ -469,7 +612,7 @@ function bindTableActions(table, items, type) {
                     }
 
                     const roleName = String(item?.rol_nombre || "").trim().toLowerCase();
-                    if (roleName === "admin" && currentUserRole !== "admin") {
+                    if (roleName === "admin" && !esAdminActual) {
                         mostrarToast("Solo otro admin puede eliminar este usuario.", true);
                         return;
                     }
@@ -477,7 +620,7 @@ function bindTableActions(table, items, type) {
 
                 if (type === "rol") {
                     const nombreRol = String(item?.nombre || "").trim().toLowerCase();
-                    if (nombreRol === "admin" || nombreRol === "cliente") {
+                    if (nombreRol === "admin" || nombreRol === "cliente" || item?.id === 1) {
                         mostrarToast("No se puede eliminar el rol Admin o Cliente.", true);
                         return;
                     }
@@ -491,10 +634,10 @@ function bindTableActions(table, items, type) {
                 const labels = {
                     usuario: "usuario",
                     rol: "rol",
-                    modulo: "modulo",
+                    modulo: "módulo",
                 };
                 const nombre = item?.nombre ? ` ${item.nombre}` : "";
-                const mensaje = `¿Seguro que desea eliminar el ${labels[type]}${nombre}? Esta accion no se puede deshacer.`;
+                const mensaje = `¿Seguro que desea eliminar el ${labels[type]}${nombre}? Esta acción no se puede deshacer.`;
 
                 abrirConfirmacion(mensaje, async () => {
                     await fetchJson(endpoints[type], { method: "DELETE" });
@@ -502,55 +645,41 @@ function bindTableActions(table, items, type) {
                     await cargarTodo();
                 });
             }
-        });
+        };
+        
+        btn._handler = handler;
+        btn.addEventListener("click", handler);
     });
 }
 
-function bindPermisoActions() {
-    tablaPermisos.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const action = btn.dataset.action;
-            const rolId = Number(btn.dataset.rolId);
-            const moduloId = Number(btn.dataset.moduloId);
-            const permiso = state.permisos.find(item => Number(item.rol_id) === rolId && Number(item.modulo_id) === moduloId);
-
-            if (action === "edit-permiso") {
-                setActiveTableTab("permisos");
-                llenarFormularioPermiso(permiso);
-                return;
-            }
-
-            if (action === "delete-permiso") {
-                setActiveTableTab("permisos");
-                const rolNombre = permiso?.rol_nombre || "este rol";
-                const moduloNombre = permiso?.modulo_nombre || "este modulo";
-                const mensaje = `¿Eliminar el permiso del rol ${rolNombre} en ${moduloNombre}?`;
-
-                abrirConfirmacion(mensaje, async () => {
-                    await fetchJson("/api/permisos", {
-                        method: "DELETE",
-                        body: JSON.stringify({ rol_id: rolId, modulo_id: moduloId }),
-                    });
-                    mostrarToast("Permiso eliminado.");
-                    await cargarTodo();
-                });
-            }
-        });
-    });
-}
+// ==================== FORMULARIOS ====================
 
 function llenarFormularioUsuario(usuario) {
     if (!formUsuario || !usuario) return;
+    
     formUsuario.id.value = usuario.id ?? "";
     formUsuario.nombre.value = usuario.nombre ?? "";
     formUsuario.cedula_personal.value = usuario.cedula_personal ?? "";
     formUsuario.password.required = false;
-    formUsuario.password.placeholder = "Dejar vacio para conservar";
+    formUsuario.password.placeholder = "Dejar vacío para conservar";
     formUsuario.password.value = "";
     formUsuario.rol_id.value = usuario.rol_id ?? "";
     formUsuario.foto_perfil_actual.value = usuario.foto_perfil ?? "";
+    
+    // Guardar el valor actual del select para mantenerlo después de renderizar
+    if (selectUsuarioRol && usuario.rol_id) {
+        selectUsuarioRol.setAttribute("data-current-value", usuario.rol_id);
+    }
+    
+    if (usuario.rol_id) {
+        cargarPermisosPorRol(usuario.rol_id);
+    } else {
+        const container = document.getElementById("permisos-rol-container");
+        if (container) container.style.display = "none";
+    }
+    
     if (fotoPerfilName) {
-        fotoPerfilName.textContent = usuario.foto_perfil ? usuario.foto_perfil.split("/").pop() : "Ningun archivo seleccionado";
+        fotoPerfilName.textContent = usuario.foto_perfil ? usuario.foto_perfil.split("/").pop() : "Ningún archivo seleccionado";
     }
     actualizarVistaPreviaFoto(null, usuario.foto_perfil || null);
     if (fotoPerfilInput) {
@@ -572,19 +701,48 @@ function llenarFormularioModulo(modulo) {
     formModulo.descripcion.value = modulo.descripcion ?? "";
 }
 
-function llenarFormularioPermiso(permiso) {
-    if (!formPermiso || !permiso) return;
-    formPermiso.rol_id.value = permiso.rol_id ?? "";
-    formPermiso.modulo_id.value = permiso.modulo_id ?? "";
-    formPermiso.registrar.checked = Boolean(Number(permiso.registrar));
-    formPermiso.modificar.checked = Boolean(Number(permiso.modificar));
-    formPermiso.eliminar.checked = Boolean(Number(permiso.eliminar));
+function limpiarFormulario(form) {
+    if (!form) return;
+    form.reset();
+    
+    if (window.FieldValidator) {
+        window.FieldValidator.resetForm(form);
+    }
+    
+    if (form === formUsuario) {
+        form.password.required = true;
+        form.password.placeholder = "Contraseña";
+        if (fotoPerfilName) {
+            fotoPerfilName.textContent = "Ningún archivo seleccionado";
+        }
+        actualizarVistaPreviaFoto(null, null);
+        if (fotoPerfilInput) {
+            fotoPerfilInput.value = "";
+        }
+        const container = document.getElementById("permisos-rol-container");
+        if (container) container.style.display = "none";
+        if (selectUsuarioRol) {
+            selectUsuarioRol.removeAttribute("data-current-value");
+        }
+    }
+    
+    const idField = form.querySelector("input[name='id']");
+    if (idField) {
+        idField.value = "";
+    }
 }
+
+// ==================== SUBMIT HANDLERS ====================
 
 async function onUsuarioSubmit(event) {
     event.preventDefault();
 
+    if (!validarFormularioAntesDeEnviar(formUsuario, 'usuario')) {
+        return;
+    }
+
     const id = formUsuario.id.value;
+    
     const formData = new FormData();
     formData.append("nombre", formUsuario.nombre.value.trim());
     formData.append("cedula_personal", String(Number(formUsuario.cedula_personal.value)));
@@ -593,7 +751,12 @@ async function onUsuarioSubmit(event) {
     formData.append("foto_perfil_actual", formUsuario.foto_perfil_actual.value || "");
 
     if (fotoPerfilInput?.files?.[0]) {
-        formData.append("foto_perfil", fotoPerfilInput.files[0]);
+        const file = fotoPerfilInput.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            mostrarToast("La imagen no puede superar los 2MB.", true);
+            return;
+        }
+        formData.append("foto_perfil", file);
     }
 
     const method = id ? "PUT" : "POST";
@@ -601,6 +764,7 @@ async function onUsuarioSubmit(event) {
 
     try {
         await fetchJson(url, { method, body: formData, isMultipart: true });
+        
         limpiarFormulario(formUsuario);
         closeAdminModal("usuarios");
         mostrarToast(id ? "Usuario actualizado." : "Usuario creado.");
@@ -612,6 +776,10 @@ async function onUsuarioSubmit(event) {
 
 async function onRolSubmit(event) {
     event.preventDefault();
+
+    if (!validarFormularioAntesDeEnviar(formRol, 'rol')) {
+        return;
+    }
 
     const id = formRol.id.value;
     const payload = {
@@ -636,6 +804,10 @@ async function onRolSubmit(event) {
 async function onModuloSubmit(event) {
     event.preventDefault();
 
+    if (!validarFormularioAntesDeEnviar(formModulo, 'módulo')) {
+        return;
+    }
+
     const id = formModulo.id.value;
     const payload = {
         nombre: formModulo.nombre.value.trim(),
@@ -649,51 +821,33 @@ async function onModuloSubmit(event) {
         await fetchJson(url, { method, body: JSON.stringify(payload) });
         limpiarFormulario(formModulo);
         closeAdminModal("modulos");
-        mostrarToast(id ? "Modulo actualizado." : "Modulo creado.");
+        mostrarToast(id ? "Módulo actualizado." : "Módulo creado.");
         await cargarTodo();
     } catch (error) {
-        mostrarToast(error.message || "No se pudo guardar el modulo.", true);
+        mostrarToast(error.message || "No se pudo guardar el módulo.", true);
     }
 }
 
-async function onPermisoSubmit(event) {
-    event.preventDefault();
+// ==================== DATA FETCHING ====================
 
-    const payload = {
-        rol_id: Number(formPermiso.rol_id.value),
-        modulo_id: Number(formPermiso.modulo_id.value),
-        registrar: formPermiso.registrar.checked,
-        modificar: formPermiso.modificar.checked,
-        eliminar: formPermiso.eliminar.checked,
-    };
-
+async function cargarTodo() {
     try {
-        await fetchJson("/api/permisos", { method: "POST", body: JSON.stringify(payload) });
-        limpiarFormulario(formPermiso);
-        mostrarToast("Permiso guardado.");
-        await cargarTodo();
-    } catch (error) {
-        mostrarToast(error.message || "No se pudo guardar el permiso.", true);
-    }
-}
+        const [usuarios, roles, modulos, empleados] = await Promise.all([
+            fetchJson("/api/usuarios"),
+            fetchJson("/api/roles"),
+            fetchJson("/api/modulos"),
+            fetchJson("/api/usuarios/empleados"),
+        ]);
 
-function limpiarFormulario(form) {
-    if (!form) return;
-    form.reset();
-    if (form === formUsuario) {
-        form.password.required = true;
-        form.password.placeholder = "Contrasena";
-        if (fotoPerfilName) {
-            fotoPerfilName.textContent = "Ningun archivo seleccionado";
-        }
-        actualizarVistaPreviaFoto(null, null);
-        if (fotoPerfilInput) {
-            fotoPerfilInput.value = "";
-        }
-    }
-    const idField = form.querySelector("input[name='id']");
-    if (idField) {
-        idField.value = "";
+        state.usuarios = usuarios.usuarios || [];
+        state.roles = roles.roles || [];
+        state.modulos = modulos.modulos || [];
+        state.empleados = empleados.empleados || [];
+
+        console.log("Roles cargados:", state.roles);
+        renderTodo();
+    } catch (error) {
+        mostrarToast(error.message || "No se pudieron cargar los datos.", true);
     }
 }
 
@@ -704,7 +858,7 @@ async function fetchJson(url, options = {}) {
         ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
     };
 
-    if (!isMultipart) {
+    if (!isMultipart && options.body && !(options.body instanceof FormData)) {
         headers["Content-Type"] = "application/json";
     }
 
@@ -718,11 +872,13 @@ async function fetchJson(url, options = {}) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.success === false) {
-        throw new Error(data.error || "No se pudo completar la operacion.");
+        throw new Error(data.error || "No se pudo completar la operación.");
     }
 
     return data;
 }
+
+// ==================== UTILITIES ====================
 
 function mostrarToast(message, isError = false) {
     if (!toast) return;
@@ -758,18 +914,76 @@ function actualizarVistaPreviaFoto(file, fotoExistente = null) {
 }
 
 function emptyRow(colspan, text) {
-    return `<tr><td colspan="${colspan}">${escapeHtml(text)}</td></tr>`;
-}
-
-function toBadge(value) {
-    return Number(value) ? '<span class="badge badge--on">Si</span>' : '<span class="badge">No</span>';
+    return `<tr><td colspan="${colspan}" class="table__empty">${escapeHtml(text)}</td></tr>`;
 }
 
 function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
     return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+        .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
+
+// ==================== INITIALIZATION ====================
+
+function iniciar() {
+    formUsuario?.addEventListener("submit", onUsuarioSubmit);
+    formRol?.addEventListener("submit", onRolSubmit);
+    formModulo?.addEventListener("submit", onModuloSubmit);
+    confirmActionBtn?.addEventListener("click", onConfirmAction);
+    
+    fotoPerfilButton?.addEventListener("click", () => fotoPerfilInput?.click());
+    fotoPerfilInput?.addEventListener("change", () => {
+        if (!fotoPerfilName) return;
+        const file = fotoPerfilInput.files?.[0];
+        
+        if (file && !file.type.startsWith('image/')) {
+            mostrarToast("Solo se permiten archivos de imagen.", true);
+            fotoPerfilInput.value = "";
+            return;
+        }
+        
+        if (file && file.size > 2 * 1024 * 1024) {
+            mostrarToast("La imagen no puede superar los 2MB.", true);
+            fotoPerfilInput.value = "";
+            return;
+        }
+        
+        fotoPerfilName.textContent = file ? file.name : "Ningún archivo seleccionado";
+        actualizarVistaPreviaFoto(file || null);
+    });
+
+    setupTableTabs();
+    setActiveTableTab(activeTableTabKey);
+    setupAdminToggles();
+    setupRolChangeListener();
+    setupGuardarPermisosListener();
+    setupPasswordToggle();
+
+    document.querySelectorAll("[data-reset-form]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.resetForm;
+            if (target === "usuario") limpiarFormulario(formUsuario);
+            if (target === "rol") limpiarFormulario(formRol);
+            if (target === "modulo") limpiarFormulario(formModulo);
+        });
+    });
+
+    Object.keys(adminModals).forEach(key => {
+        const modal = adminModals[key];
+        if (!modal) return;
+        const observer = new MutationObserver(() => {
+            if (!modal.hidden && window.FieldValidator) {
+                window.FieldValidator.init();
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['hidden'] });
+    });
+
+    cargarTodo();
+}
+
+iniciar();
