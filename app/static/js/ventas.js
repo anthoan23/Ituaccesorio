@@ -46,38 +46,121 @@
         return `Bs ${Number(amount).toFixed(2)}`;
     }
 
+    function setCatalogStatus(message, type = "loading", actionsHtml = "") {
+        const status = document.getElementById("catalog-status");
+        if (!status) return;
+
+        if (!message) {
+            status.className = "catalog-status";
+            status.innerHTML = "";
+            return;
+        }
+
+        const spinner = type === "loading" ? '<span class="catalog-spinner" aria-hidden="true"></span>' : "";
+        status.className = `catalog-status is-visible catalog-status--${type}`;
+        status.innerHTML = `
+            <div class="catalog-status__content">
+                ${spinner}
+                <span>${escapeHtml(message)}</span>
+            </div>
+            ${actionsHtml ? `<div class="catalog-status__actions">${actionsHtml}</div>` : ""}
+        `;
+    }
+
+    function renderCatalogLoading() {
+        const container = document.getElementById("productos-grid");
+        if (!container) return;
+
+        container.innerHTML = Array.from({ length: 8 }).map(() => `
+            <article class="producto-card producto-card--skeleton" aria-hidden="true">
+                <div class="skeleton-block skeleton-block--image"></div>
+                <div class="skeleton-block skeleton-block--line"></div>
+                <div class="skeleton-block skeleton-block--line short"></div>
+                <div class="skeleton-block skeleton-block--line"></div>
+            </article>
+        `).join("");
+    }
+
+    function renderCatalogError(message) {
+        const container = document.getElementById("productos-grid");
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="catalog-error-box">
+                <p>No fue posible cargar el catálogo.</p>
+                <p>${escapeHtml(message)}</p>
+                <button class="btn btn--yellow" id="catalog-retry" type="button">Reintentar</button>
+            </div>
+        `;
+
+        const retry = document.getElementById("catalog-retry");
+        if (retry) {
+            retry.addEventListener("click", () => cargarCatalogo());
+        }
+    }
+
     async function cargarCatalogo() {
+        setCatalogStatus("Cargando productos...", "loading");
+        renderCatalogLoading();
+
         const params = new URLSearchParams();
         if (state.filtros.clase_id) params.set("clase_id", state.filtros.clase_id);
         if (state.filtros.marca_id) params.set("marca_id", state.filtros.marca_id);
         if (state.filtros.q) params.set("q", state.filtros.q);
-        
-        const data = await fetchJson(`/api/catalogo/productos?${params}`);
-        state.productos = data.productos || [];
-        state.masVendidos = data.mas_vendidos || [];
-        state.tasas = data.tasas || state.tasas;
-        
-        renderProductos();
-        renderMasVendidos();
-        renderTasas();
-        renderFiltros(data.clases, data.marcas);
+
+        try {
+            const data = await fetchJson(`/api/catalogo/productos?${params}`);
+            state.productos = data.productos || [];
+            state.masVendidos = data.mas_vendidos || [];
+            state.tasas = data.tasas || state.tasas;
+
+            renderProductos();
+            renderTasas();
+            renderFiltros(data.clases, data.marcas);
+            setCatalogStatus("");
+        } catch (err) {
+            state.productos = [];
+            state.masVendidos = [];
+            renderCatalogError(err.message);
+            const fallbackMessage = err.message === "Autenticación requerida." 
+                ? "Inicia sesión para ver el catálogo completo."
+                : "No pudimos cargar el catálogo.";
+            setCatalogStatus(
+                fallbackMessage,
+                "error",
+                '<button class="catalog-retry" type="button" id="catalog-status-retry">Reintentar</button>'
+            );
+
+            const retry = document.getElementById("catalog-status-retry");
+            if (retry) {
+                retry.addEventListener("click", () => cargarCatalogo());
+            }
+        }
     }
 
     function renderProductos() {
         const container = document.getElementById("productos-grid");
+        const count = document.getElementById("productos-count");
         if (!container) return;
+
+        if (count) {
+            count.textContent = `${state.productos.length} producto${state.productos.length === 1 ? "" : "s"}`;
+        }
         
         if (!state.productos.length) {
-            container.innerHTML = '<p class="sin-resultados">No se encontraron productos</p>';
+            container.innerHTML = '<div class="catalog-empty"><p>No se encontraron productos con esos filtros.</p></div>';
             return;
         }
         
         container.innerHTML = state.productos.map(p => {
             const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
             const usdAjustado = bsFinal / (state.tasas.oficial || 1);
+            const imagenSrc = p.imagen ? p.imagen : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
             return `
             <div class="producto-card">
-                <div class="producto-imagen"></div>
+                <div class="producto-imagen">
+                    <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
+                </div>
                 <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
                 <div class="producto-marca">${escapeHtml(p.marca)}</div>
                 <div class="producto-precios">
@@ -145,11 +228,31 @@
     }
 
     async function cargarCarrito() {
-        const data = await fetchJson("/api/carrito");
-        state.carrito = data.items || [];
-        actualizarBadgeCarrito();
-        renderCarritoModal();
-        return data;
+        const container = document.getElementById("cart-items");
+        if (container) {
+            container.innerHTML = '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
+        }
+
+        try {
+            const data = await fetchJson("/api/carrito");
+            state.carrito = data.items || [];
+            actualizarBadgeCarrito();
+            renderCarritoModal();
+            return data;
+        } catch (err) {
+            if (container) {
+                const carritoMsg = err.message === "Autenticación requerida."
+                    ? "Inicia sesión para guardar y consultar tu carrito."
+                    : err.message;
+                container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
+            }
+            const badge = document.getElementById("cart-count");
+            if (badge) {
+                badge.textContent = "0";
+                badge.style.display = "none";
+            }
+            return null;
+        }
     }
 
     async function agregarCarrito(productoId, cantidad) {
@@ -159,9 +262,9 @@
                 body: JSON.stringify({ producto_id: productoId, cantidad })
             });
             await cargarCarrito();
-            mostrarNotificacion("Producto agregado al carrito");
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            // El modal global ya maneja errores de /api/ en POST.
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
@@ -409,10 +512,12 @@
             });
             
             facturaPendiente = data.factura_id;
-            mostrarNotificacion(data.mensaje || "¡Pago registrado! En breve será verificado");
-            window.location.href = "/catalogo";
+            // El modal global se dispara por el POST; damos un momento para que se renderice antes del redirect.
+            window.setTimeout(() => {
+                window.location.href = "/catalogo";
+            }, 600);
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
@@ -514,7 +619,6 @@
         if (confirm("¿Aprobar este pago?")) {
             try {
                 await fetchJson(`/api/admin/aprobar-pago/${facturaId}`, { method: "POST" });
-                mostrarNotificacion("Pago aprobado");
                 cargarPagosPendientes();
                 cargarPagosAprobados();
             } catch (err) {
@@ -546,7 +650,6 @@
                 method: "POST",
                 body: JSON.stringify({ motivo })
             });
-            mostrarNotificacion("Pago rechazado");
             cerrarModalRechazo();
             cargarPagosPendientes();
             cargarPagosRechazados();
@@ -694,17 +797,21 @@
                 })
             });
             
-            mostrarNotificacion("Venta registrada exitosamente");
             itemsLocal = [];
             renderItemsLocal();
             closeModal();
             document.getElementById("form-venta-local")?.reset();
         } catch (err) {
-            mostrarNotificacion(err.message, "error");
+            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
 
     function mostrarNotificacion(msg, tipo = "success") {
+        if (window.FeedbackModal) {
+            if (tipo === "error") window.FeedbackModal.showError(msg);
+            else window.FeedbackModal.showSuccess(msg);
+            return;
+        }
         const notif = document.createElement("div");
         notif.className = `notificacion notificacion--${tipo}`;
         notif.textContent = msg;

@@ -49,8 +49,6 @@ class Usuarios(conectar):
             cursor.close()
             db.close()
 
-    # ==================== EMPLEADOS ====================
-
     def listar_empleados(self):
         db = self.conexion1()
         if not db:
@@ -89,8 +87,6 @@ class Usuarios(conectar):
         finally:
             cursor.close()
             db.close()
-
-    # ==================== USUARIOS ====================
 
     def listar_usuarios(self):
         return self._consultar(
@@ -134,6 +130,18 @@ class Usuarios(conectar):
         finally:
             cursor.close()
             db.close()
+
+    def obtener_rol_por_nombre(self, nombre_rol):
+        datos = self._consultar(
+            """
+            SELECT id, nombre
+            FROM rol
+            WHERE LOWER(nombre) = LOWER(%s)
+            LIMIT 1
+            """,
+            (nombre_rol,),
+        )
+        return datos[0] if datos else None
 
     def actualizar_usuario(self, usuario_id, nombre, cedula_personal, rol_id, foto_perfil=None):
         return self._ejecutar(
@@ -207,8 +215,6 @@ class Usuarios(conectar):
             (nombre, foto_perfil, usuario_id),
         )
 
-    # ==================== ROLES ====================
-
     def listar_roles(self):
         return self._consultar(
             """
@@ -232,20 +238,6 @@ class Usuarios(conectar):
 
     def eliminar_rol(self, rol_id):
         return self._ejecutar("DELETE FROM rol WHERE id = %s", (rol_id,))
-
-    def obtener_rol_por_nombre(self, nombre_rol):
-        datos = self._consultar(
-            """
-            SELECT id, nombre
-            FROM rol
-            WHERE LOWER(nombre) = LOWER(%s)
-            LIMIT 1
-            """,
-            (nombre_rol,),
-        )
-        return datos[0] if datos else None
-
-    # ==================== MÓDULOS ====================
 
     def listar_modulos(self):
         return self._consultar(
@@ -271,27 +263,23 @@ class Usuarios(conectar):
     def eliminar_modulo(self, modulo_id):
         return self._ejecutar("DELETE FROM modulo WHERE id = %s", (modulo_id,))
 
-    # ==================== PERMISOS ====================
-
-    def listar_permisos_por_rol(self, rol_id):
-        """Obtiene todos los permisos de un rol específico"""
+    def listar_permisos(self):
         return self._consultar(
             """
             SELECT
                 p.rol_id,
+                r.nombre AS rol_nombre,
                 p.modulo_id,
                 m.nombre AS modulo_nombre,
-                m.descripcion AS modulo_descripcion,
                 p.consultar,
                 p.registrar,
                 p.modificar,
                 p.eliminar
             FROM permiso p
+            INNER JOIN rol r ON r.id = p.rol_id
             INNER JOIN modulo m ON m.id = p.modulo_id
-            WHERE p.rol_id = %s
-            ORDER BY m.nombre
-            """,
-            (rol_id,)
+            ORDER BY r.nombre, m.nombre
+            """
         )
 
     def guardar_permiso(self, rol_id, modulo_id, registrar, modificar, eliminar):
@@ -306,3 +294,10 @@ class Usuarios(conectar):
             """,
             (rol_id, modulo_id, registrar, modificar, eliminar),
         )
+
+    def eliminar_permiso(self, rol_id, modulo_id):
+        return self._ejecutar(
+            "DELETE FROM permiso WHERE rol_id = %s AND modulo_id = %s",
+            (rol_id, modulo_id),
+        )
+

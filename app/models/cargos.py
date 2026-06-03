@@ -97,12 +97,9 @@ class Cargo(conectar):
             mensaje = "Cargo eliminado exitosamente."
             return mensaje
         except Exception as e:
-            db.rollback()
             print(f"Error al eliminar cargo: {e}")
-            if hasattr(e, 'errno') and e.errno == 1451:
-                mensaje = f"No se puede eliminar el cargo con ID {cargo_id} porque está en uso por empleados."
-                return mensaje
-            mensaje = "Error al eliminar cargo."
+            db.rollback()
+            mensaje = "Error al eliminar cargo. Verifica que no esté en uso por empleados."
             return mensaje
         finally:
             cursor.close()
@@ -128,7 +125,7 @@ class Cargo(conectar):
             return f"El cargo con identificador {cargo_id} no existe."
 
         cargo_id_existente = self.obtener_id_por_nombre(nuevo_cargo)
-        if cargo_id_existente != cargo_id:
+        if cargo_id_existente and cargo_id_existente != cargo_id:
             return f"El cargo '{nuevo_cargo}' ya existe."
 
         db = self.conexion1()

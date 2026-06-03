@@ -16,11 +16,33 @@ def pagina_empleados():
         active_page="empleados",
     )
 
+
+@empleados_blueprint.route("/especialidades", methods=["GET"])
+@jwt_required
+def pagina_especialidades():
+    return render_template(
+        "especialidades.html",
+        show_navbar=True,
+        show_notifications=True,
+        active_page="especialidades",
+    )
+
+
+
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
 @jwt_required
 def api_listar_empleados():
     empleados = Empleados()
     resultado = empleados.listar_empleados()
+    return jsonify(resultado)
+
+
+
+@empleados_blueprint.route("/api/especialidades", methods=["GET"])
+@jwt_required
+def api_listar_especialidades():
+    empleados = Empleados()
+    resultado = empleados.listar_especialidades()
     return jsonify(resultado)
 
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
@@ -77,15 +99,47 @@ def api_agregar_empleado():
         return jsonify({"success": False, "error": mensaje or "No se pudo agregar el empleado."}), 400
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
+    
+    
 
-@empleados_blueprint.route("/api/empleados", methods=["DELETE"])
+
+@empleados_blueprint.route("/api/especialidades", methods=["POST"])
 @jwt_required
-def api_eliminar_empleado():
+def api_agregar_especialidad():
     datos = request.get_json(silent=True) or {}
-    id_empleado = str(datos.get("id_empleado", "")).strip()
+
+    especialidad = str(datos.get("especialidad", "")).strip()
+
+    if not especialidad:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "El nombre de la especialidad es obligatorio.",
+                }
+            ),
+            400,
+        )
+
     modelo = Empleados()
+
     try:
-        mensaje = modelo.eliminar_empleado(id_empleado)
+        mensaje = modelo.agregar_especialidad(especialidad=especialidad)
+
+        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
+            return jsonify({"success": True, "message": mensaje}), 201
+
+        return jsonify({"success": False, "error": mensaje or "No se pudo agregar la especialidad."}), 400
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 500
+
+@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["DELETE"])
+@jwt_required
+def api_eliminar_empleado(id_empleado):
+    modelo = Empleados()
+
+    try:
+        mensaje = modelo.eliminar_empleado(id_em=id_empleado)
 
         if isinstance(mensaje, str) and "eliminado" in mensaje.lower():
             return jsonify({"success": True, "message": mensaje}), 200
@@ -94,11 +148,13 @@ def api_eliminar_empleado():
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
     
-@empleados_blueprint.route("/api/empleados", methods=["PUT"])
+
+    
+@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["PUT"])
 @jwt_required
-def api_actualizar_empleado():
+def api_actualizar_empleado(id_empleado):
     datos = request.get_json(silent=True) or {}
-    id_empleado = str(datos.get("id_empleado", "")).strip()
+
     cedula = str(datos.get("cedula", "")).strip()
     cargo_id = str(datos.get("id_cargo", "")).strip()
     nombre = str(datos.get("nombre", "")).strip()
@@ -148,3 +204,39 @@ def api_actualizar_empleado():
 
 
 
+@empleados_blueprint.route("/api/especialidades/<id_especialidad>", methods=["PUT"])
+@jwt_required
+def api_actualizar_especialidad(id_especialidad):
+    datos = request.get_json(silent=True) or {}
+
+    especialidad_nuevo = str(datos.get("especialidad_nuevo", "")).strip()
+
+    if not especialidad_nuevo:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "El nombre de la especialidad es obligatorio.",
+                }
+            ),
+            400,
+        )
+
+    # permitir nombre original en body (`especialidad_viejo`), si viene usarlo
+    especialidad_vieja = str(datos.get("especialidad_viejo", "")).strip()
+  
+    modelo = Empleados()
+
+    try:
+        mensaje = modelo.actualizar_especialidad(
+            id_especialidad=id_especialidad,
+            especialidad_n=especialidad_nuevo,
+            especialidad_v=especialidad_vieja,
+        )
+
+        if isinstance(mensaje, str) and "exitos" in mensaje.lower():
+            return jsonify({"success": True, "message": mensaje}), 200
+
+        return jsonify({"success": False, "error": mensaje or "No se pudo actualizar la especialidad."}), 400
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 500

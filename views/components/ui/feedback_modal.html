@@ -1,0 +1,27 @@
+{# Modal global para feedback de acciones (éxito / error). #}
+<div id="feedback-modal" class="ui-modal" data-modal hidden aria-hidden="true">
+  <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
+    <header class="ui-modal__header">
+      <h3 id="feedback-modal-title" class="ui-modal__title">Acción</h3>
+      <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
+    </header>
+
+    <div class="ui-modal__body">
+      <div class="feedback-modal__content" aria-live="polite">
+        <div class="feedback-modal__icon" data-feedback-icon="success" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div class="feedback-modal__icon" data-feedback-icon="error" aria-hidden="true" hidden>
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M7 7l10 10" />
+            <path d="M17 7L7 17" />
+          </svg>
+        </div>
+
+        <p class="feedback-modal__message" id="feedback-modal-message">Operación completada.</p>
+      </div>
+    </div>
+  </div>
+</div>

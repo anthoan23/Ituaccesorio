@@ -6,44 +6,47 @@
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/especialidades.css') }}">
 {% endblock %}
- 
-{% block content %}
-  <main class="page especialidades-page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <ol class="breadcrumb__list">
-        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>    
-        <li aria-current="page">
-          <span class="breadcrumb__current">Especialidades</span>
-        </li>
-      </ol>
-    </nav>
 
-    <header class="especialidades-hero">
-      <div class="especialidades-hero__copy">
-        <p class="especialidades-hero__eyebrow">Gestión de personal</p>
-        <h1 class="especialidades-hero__title">Especialidades</h1>
-        <p class="especialidades-hero__description">Vista simple para consultar y registrar especialidades.</p>
+{% block content %}
+  <main class="page personal-page personal-page--especialidades">
+    <section class="hero" aria-label="Encabezado de especialidades">
+      <div class="hero__copy">
+        <p class="eyebrow">Gestión de personal</p>
+        <h1>Especialidades</h1>
+        <p class="hero__hint">Panel gráfico para revisar capacidades, áreas de trabajo y especialidades destacadas.</p>
+        <div class="hero__actions">
+          <button class="btn btn--primary" type="button" data-open-modal="modal-especialidad-vista">Nueva especialidad</button>
+          <button class="btn btn--ghost" type="button" data-open-modal="modal-especialidad-vista">Ver formulario</button>
+        </div>
       </div>
 
-      <div class="stats stats--single" aria-label="Resumen de especialidades">
+      <div class="stats" aria-label="Resumen">
         <article class="stat-card">
           <span class="stat-card__label">Especialidades</span>
-          <strong class="stat-card__value" data-count="0">0</strong>
-          <small class="stat-card__meta">Total de especialidades visibles</small>
+          <strong class="stat-card__value" data-count="12">0</strong>
+          <small class="stat-card__meta">Competencias distribuidas</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Áreas activas</span>
+          <strong class="stat-card__value" data-count="9">0</strong>
+          <small class="stat-card__meta">Soporte, ventas y taller</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Destacadas</span>
+          <strong class="stat-card__value" data-count="6">0</strong>
+          <small class="stat-card__meta">Especialidades con mayor uso</small>
         </article>
       </div>
-    </header>
+    </section>
 
-    <section class="content vista-1 especialidades-grid" aria-label="Gestión de especialidades">
-      <article class="card card--table especialidades-table-card" aria-label="Especialidades registradas">
-        <div class="card__header">
-          <div class="card__header-left">
-            <h2 class="card__title">Catálogo de especialidades</h2>
-            <p class="card__subtitle">Tabla principal de especialidades registradas.</p>
+    <section class="board" aria-label="Vista principal">
+      <article class="panel panel--wide" aria-label="Especialidades registradas">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Catálogo de especialidades</h2>
+            <p class="panel__subtitle">Selecciona una fila para resaltar su ficha lateral.</p>
           </div>
-          <div class="card__actions">
-            <button id="btn-actualizar-especialidades" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
-          </div>
+          <span class="panel__tag">Vista estática</span>
         </div>
 
         <div class="table-wrap table-wrap--tall" role="region" aria-label="Tabla de especialidades">
@@ -52,69 +55,125 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Descripción</th>
+                <th>Área</th>
                 <th class="table__actions">Acciones</th>
               </tr>
             </thead>
-            <tbody id="tabla-especialidades"></tbody>
+            <tbody>
+              <tr data-personal-row data-detail-title="Ajuste fino" data-detail-text="Especialidad enfocada en calibración de relojería y piezas delicadas." data-detail-meta="Nivel alto" data-detail-role="Taller" data-detail-email="corto@ituaccesorio.com" data-detail-extra="Uso frecuente: 90%">
+                <td>ESP-01</td>
+                <td>Ajuste fino</td>
+                <td>Taller</td>
+                <td class="table__actions">
+                  <div class="row-actions" aria-label="Acciones de la especialidad">
+                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-personal-row data-detail-title="Atención premium" data-detail-text="Especialidad orientada al asesoramiento y venta personalizada." data-detail-meta="Nivel medio" data-detail-role="Ventas" data-detail-email="premium@ituaccesorio.com" data-detail-extra="Uso frecuente: 82%">
+                <td>ESP-02</td>
+                <td>Atención premium</td>
+                <td>Ventas</td>
+                <td class="table__actions">
+                  <div class="row-actions" aria-label="Acciones de la especialidad">
+                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-personal-row data-detail-title="Logística de vitrina" data-detail-text="Distribución, rotación y cuidado de productos en exhibición." data-detail-meta="Nivel medio" data-detail-role="Inventario" data-detail-email="vitrina@ituaccesorio.com" data-detail-extra="Uso frecuente: 74%">
+                <td>ESP-03</td>
+                <td>Logística de vitrina</td>
+                <td>Inventario</td>
+                <td class="table__actions">
+                  <div class="row-actions" aria-label="Acciones de la especialidad">
+                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+                  </div>
+                </td>
+              </tr>
+              <tr data-personal-row data-detail-title="Soporte posventa" data-detail-text="Seguimiento de garantías, devoluciones y atención posterior." data-detail-meta="Nivel alto" data-detail-role="Servicio" data-detail-email="posventa@ituaccesorio.com" data-detail-extra="Uso frecuente: 88%">
+                <td>ESP-04</td>
+                <td>Soporte posventa</td>
+                <td>Servicio</td>
+                <td class="table__actions">
+                  <div class="row-actions" aria-label="Acciones de la especialidad">
+                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </article>
 
-      <article class="card card--form especialidad-create-card" aria-label="Registrar nueva especialidad">
-        <div class="card__header">
-          <div class="card__header-left">
-            <h2 class="card__title">Registrar nueva especialidad</h2>
-            <p class="card__subtitle">Completa nombre y descripción para crear una especialidad.</p>
-          </div>
-        </div>
+      <aside class="panel panel--stack" aria-label="Ficha lateral">
+        <article class="detail-card">
+          <p class="detail-card__eyebrow">Ficha destacada</p>
+          <h3 class="detail-card__title" data-personal-detail-title>Ajuste fino</h3>
+          <p class="detail-card__copy" data-personal-detail-text>Especialidad enfocada en calibración de relojería y piezas delicadas.</p>
+          <ul class="detail-list">
+            <li><span>Área</span><strong data-personal-detail-role>Taller</strong></li>
+            <li><span>Correo</span><strong data-personal-detail-email>corto@ituaccesorio.com</strong></li>
+            <li><span>Referencia</span><strong data-personal-detail-extra>Uso frecuente: 90%</strong></li>
+          </ul>
+        </article>
 
-        <form id="form-especialidad" class="especialidad-form" autocomplete="off">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-          <label class="especialidad-form__field">
-            <span>Nombre</span>
-            <input type="text" name="nombre_especialidad" placeholder="Ej: Soporte Técnico" required>
-          </label>
-          <label class="especialidad-form__field especialidad-form__field--full">
-            <span>Descripción</span>
-            <textarea name="descripcion_especialidad" rows="4" placeholder="Ej: Responsable de la reparación y mantenimiento de equipos" required></textarea>
-          </label>
-          <div class="especialidad-form__actions especialidad-form__actions--top">
-            <button class="ui-btn ui-btn--primary" type="submit">Registrar nueva especialidad</button>
+        <article class="mini-card">
+          <p class="detail-card__eyebrow">Bloque visual</p>
+          <h4>Mapa de capacidades</h4>
+          <div class="mini-card__grid">
+            <div>
+              <span>Técnicas</span>
+              <strong>5</strong>
+            </div>
+            <div>
+              <span>Comerciales</span>
+              <strong>4</strong>
+            </div>
+            <div>
+              <span>Servicio</span>
+              <strong>2</strong>
+            </div>
+            <div>
+              <span>Inventario</span>
+              <strong>1</strong>
+            </div>
           </div>
-        </form>
-      </article>
+        </article>
+      </aside>
     </section>
 
-    {% call modal('modal-editar-especialidad', 'Modificar especialidad', 'sm') %}
-      <form id="form-editar-especialidad" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id_especialidad" id="editar-id-especialidad">
-
-        <div class="ui-form__grid ui-form__grid--one">
-          <label class="especialidad-form__field">
-            <span>Nombre</span>
-            <input id="editar-nombre-especialidad" type="text" name="nombre_especialidad" required>
+    {% call modal('modal-especialidad-vista', 'Formulario visual de especialidad', 'md') %}
+      <div class="ui-form">
+        <div class="ui-form__grid">
+          <label class="ui-field">
+            <span>ID</span>
+            <input type="text" placeholder="ESP-05">
           </label>
-          <label class="especialidad-form__field especialidad-form__field--full">
+          <label class="ui-field">
+            <span>Nombre</span>
+            <input type="text" placeholder="Nombre de la especialidad">
+          </label>
+          <label class="ui-field">
+            <span>Área</span>
+            <input type="text" placeholder="Área relacionada">
+          </label>
+          <label class="ui-field">
+            <span>Nivel</span>
+            <input type="text" placeholder="Alto / medio / bajo">
+          </label>
+          <label class="ui-field ui-field--full">
             <span>Descripción</span>
-            <textarea id="editar-descripcion-especialidad" name="descripcion_especialidad" rows="4" required></textarea>
+            <textarea rows="3" placeholder="Espacio visual para descripción"></textarea>
           </label>
         </div>
-
         <div class="ui-form__actions">
           <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Guardar cambios</button>
+          <button type="button" class="ui-btn ui-btn--primary" data-close-modal>Guardar vista</button>
         </div>
-      </form>
-    {% endcall %}
-
-    {% call modal('modal-eliminar-especialidad', 'Eliminar especialidad', 'sm') %}
-      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <p id="texto-confirmar-eliminar-especialidad" class="confirm-text">¿Estás seguro de que quieres eliminar este registro?</p>
-      <div class="ui-form__actions">
-        <button id="btn-confirmar-eliminar-especialidad" type="button" class="ui-btn ui-btn--primary">Sí, eliminar</button>
-        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
       </div>
     {% endcall %}
   </main>
