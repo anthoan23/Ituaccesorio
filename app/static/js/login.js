@@ -14,7 +14,6 @@
 			}
 
 			const isPhoneCaptcha = Boolean(widget.closest(".phone__captcha"));
-			// Limpia ajustes previos solo para contenedores que NO sean el captcha del phone.
 			if (!isPhoneCaptcha && container.style.height) {
 				container.style.height = "";
 			}
@@ -25,13 +24,10 @@
 				return;
 			}
 
-			const scaleToFit = Math.min(1, containerWidth / widgetWidth);
 			const scale = 0.48;
 			widget.style.transformOrigin = "top center";
 			widget.style.transform = scale < 1 ? `scale(${scale})` : "";
 
-			// El transform no reduce el alto reservado; ajustamos SOLO el alto del contenedor
-			// del captcha en login-phone para eliminar el espacio vacío sin afectar el resto.
 			if (isPhoneCaptcha) {
 				const baseHeight = widget.offsetHeight || 78;
 				container.style.height = `${Math.ceil(baseHeight * scale)}px`;
@@ -79,6 +75,37 @@ document.addEventListener("DOMContentLoaded", () => {
 	const perfilDireccionInput = document.getElementById("perfil-direccion");
 	const feedbackMessage = document.getElementById("feedback-login-message");
 
+	// ==================== FUNCIONES DE VALIDACIÓN ====================
+	
+	const validarFormulario = (formulario, nombreFormulario) => {
+		if (!window.FieldValidator) {
+			console.warn('FieldValidator no disponible');
+			return true;
+		}
+		
+		const isValid = window.FieldValidator.validateForm(formulario);
+		
+		if (!isValid) {
+			mostrarMensaje(`Por favor, corrige los errores en el formulario de ${nombreFormulario}.`);
+			const primerError = formulario.querySelector('.field-error');
+			if (primerError) {
+				primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				primerError.focus();
+			}
+			return false;
+		}
+		
+		return true;
+	};
+
+	const limpiarValidaciones = (formulario) => {
+		if (window.FieldValidator) {
+			window.FieldValidator.resetForm(formulario);
+		}
+	};
+
+	// ==================== PASSWORD TOGGLES ====================
+	
 	const setupPasswordToggles = () => {
 		document.querySelectorAll("[data-password-toggle]").forEach((button) => {
 			const container = button.closest(".password-field");
@@ -105,6 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		return;
 	}
 
+	// ==================== UTILITIES ====================
+	
 	const csrfHeaders = () => ({
 		"Content-Type": "application/json",
 		Accept: "application/json",
@@ -124,6 +153,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		setRegistroStep(1);
 		registroStep1Form?.reset();
 		registroStep2Form?.reset();
+		limpiarValidaciones(registroStep1Form);
+		limpiarValidaciones(registroStep2Form);
 	};
 
 	const abrirPerfilIncompleto = () => {
@@ -144,8 +175,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		alert(mensaje);
 	};
 
+	// ==================== LOGIN SUBMIT ====================
+	
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
+
+		// Validar formulario de login
+		if (!validarFormulario(form, 'login')) {
+			return;
+		}
 
 		const recaptchaContainer = form.querySelector(".g-recaptcha");
 		const recaptchaResponse = form.querySelector('[name="g-recaptcha-response"]')?.value?.trim() || "";
@@ -194,6 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	// ==================== REGISTRO STEP 1 ====================
+	
 	registroOpenBtn?.addEventListener("click", () => {
 		resetRegistro();
 	});
@@ -205,8 +245,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	registroStep1Form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
 
+		// Validar formulario paso 1
+		if (!validarFormulario(registroStep1Form, 'registro paso 1')) {
+			return;
+		}
+
 		const password = (registroPasswordInput?.value || "").trim();
 		const passwordConfirm = (registroPasswordConfirmInput?.value || "").trim();
+		
 		if (!password || password !== passwordConfirm) {
 			mostrarMensaje("Las contraseñas no coinciden.");
 			return;
@@ -238,8 +284,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	// ==================== REGISTRO STEP 2 ====================
+	
 	registroStep2Form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
+
+		// Validar formulario paso 2
+		if (!validarFormulario(registroStep2Form, 'registro paso 2')) {
+			return;
+		}
 
 		const payload = {
 			nombre: (perfilNombreInput?.value || "").trim(),
@@ -268,6 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	// ==================== INICIALIZACIÓN ====================
+	
 	const params = new URLSearchParams(window.location.search);
 	if (params.get("completar_perfil") === "1") {
 		abrirPerfilIncompleto();
@@ -280,5 +335,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 	if (typeof window.ajustarRecaptcha === "function") {
 		setTimeout(window.ajustarRecaptcha, 400);
+	}
+	
+	// Inicializar FieldValidator para campos dinámicos del modal
+	if (window.FieldValidator) {
+		window.FieldValidator.init();
 	}
 });
