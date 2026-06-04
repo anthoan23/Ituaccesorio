@@ -32,6 +32,142 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
+
+    def listar_empleados_cargos(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT 
+                    c.Nombre_cargo,
+                    COUNT(e.ID_empleado) AS cantidad_personas
+                FROM Cargo c
+                LEFT JOIN Empleado e ON c.ID_cargo = e.ID_cargo
+                GROUP BY c.ID_cargo, c.Nombre_cargo
+                ORDER BY cantidad_personas DESC
+                LIMIT 10
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
+
+    def listar_empleados_especialidades(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT 
+                    e.Nombre_especialidad,
+                    COUNT(c.ID_empleado) AS cantidad_personas
+                FROM Especialidad e
+                LEFT JOIN Capacitacion c ON e.ID_especialidad = c.ID_especialidad
+                GROUP BY e.ID_especialidad, e.Nombre_especialidad
+                LIMIT 10
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close() 
+
+
+    def lista_crgos(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT ID_cargo, Nombre_cargo FROM Cargo ORDER BY Nombre_cargo ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
+    def lista_especialidades(self):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT ID_especialidad, Nombre_especialidad FROM Especialidad ORDER BY Nombre_especialidad ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()       
+
+    def consultar_empleado(self, cedula: str):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT 
+                    e.ID_empleado AS cedula,
+                    e.Nombre_empleado AS nombre,
+                    e.Apellido_empleado AS apellido,
+                    e.Celular_empleado AS celular,
+                    e.Correo_empleado AS correo,
+                    e.Direccion_empleado AS direccion,
+                    c.Nombre_cargo AS cargo
+                FROM Empleado e
+                JOIN Cargo c ON e.ID_cargo = c.ID_cargo
+                WHERE e.ID_empleado = %s;
+                """,
+                (cedula,),
+            )
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
+    def consultar_especialidades_empleado(self, cedula: str):
+        db = self.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT 
+                    esp.Nombre_especialidad AS especialidad,
+                    esp.ID_especialidad AS id_especialidad
+                FROM Capacitacion cap
+                JOIN Especialidad esp ON cap.ID_especialidad = esp.ID_especialidad
+                WHERE cap.ID_empleado = %s
+                """,
+                (cedula,),
+            )
+            resultados = cursor.fetchall()
+            return [r['especialidad'] for r in resultados] if resultados else []
+        finally:
+            cursor.close()
+            db.close()
+
     def agregar_empleado(
         self,
         cedula: str,
@@ -138,9 +274,9 @@ class Empleados(conectar):
         try:
             cursor.execute(
                 """
-                UPDATE empleado
-                SET ID_em = %s, ID_cargo = %s, Nombre_em = %s, Apellido_em = %s, Celular_em = %s, Correo_em = %s, Direccion_em = %s
-                WHERE ID_em = %s
+                UPDATE Empleado
+                SET ID_empleado = %s, ID_cargo = %s, Nombre_empleado = %s, Apellido_empleado = %s, Celular_empleado = %s, Correo_empleado = %s, Direccion_empleado = %s
+                WHERE ID_empleado = %s
                 """,
                 (id_empleado, cargo_id, nombre, apellido, celular, correo, direccion, id_empleado),
             )
@@ -148,7 +284,7 @@ class Empleados(conectar):
             if especialidades is not None:
                 try:
                     cursor.execute(
-                        "DELETE FROM capacitacion WHERE ID_em = %s",
+                        "DELETE FROM Capacitacion WHERE ID_empleado = %s",
                         (id_empleado,),
                     )
                 except Exception:
@@ -157,7 +293,7 @@ class Empleados(conectar):
                 for esp_id in especialidades:
                     try:
                         cursor.execute(
-                            "INSERT INTO capacitacion (ID_especialidad, ID_em) VALUES (%s, %s)",
+                            "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
                             (esp_id, id_empleado),
                         )
                     except Exception:
@@ -181,7 +317,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT 1 FROM empleado WHERE ID_em = %s LIMIT 1",
+                "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
                 (cedula,),
             )
             return cursor.fetchone() is not None

@@ -493,6 +493,54 @@ body {
   height: auto;
 }
 
+  /* Estilos para las especialidades */
+  .especialidades-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+    min-height: 50px;
+  }
+  
+  
+  .especialidad-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .especialidad-tag .remove-especialidad {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    line-height: 1;
+    color: #666;
+    transition: color 0.2s;
+  }
+  
+  .especialidad-tag .remove-especialidad:hover {
+    color: #f44336;
+  }
+  
+  .ui-form__section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .ui-form__subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    color: #333;
+  }
+
 @media (max-width: 1100px) {
 	.empleados-hero {
 		grid-template-columns: 1fr;
