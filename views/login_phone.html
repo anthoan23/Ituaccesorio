@@ -5,6 +5,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login_phone.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block navbar %}{% endblock %}
@@ -13,7 +14,6 @@
 	<main class="login-phone">
 		<section class="login-phone__info" aria-label="Información adicional sobre el login">
 			<img src="{{ url_for('static', filename='img/LOGO COMPLETO.png') }}" alt="Ituaccesorio">
-			<!-- <h2 class="login-phone__subtitle">¡Bienvenido a Ituaccesorio!</h2> -->
 		</section>
 		<section class="login-phone__layout" aria-label="Login">
 			<section class="phone" aria-label="Login dentro de teléfono">
@@ -25,19 +25,27 @@
 					<div class="phone__screen">
 						<div class="phone__content" aria-label="Contenido del login">
 							<div class="phone__top">
-								<!-- <img class="phone__logo" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Ituaccesorio"> -->
 								<h1 class="phone__title">BIENVENIDO</h1>
 							</div>
 
 							<form id="login-form" class="phone__form" action="" method="post" autocomplete="on">
 								<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+								
 								<label class="pfield">
 									<span class="pfield__icon" aria-hidden="true">
 										<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
 											<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
 										</svg>
 									</span>
-									<input id="login-nombre" class="pfield__input" type="text" name="nombre" autocomplete="username" placeholder="Email / Usuario" required>
+									<input id="login-nombre" 
+									       class="pfield__input" 
+									       type="text" 
+									       name="nombre" 
+									       autocomplete="username" 
+									       placeholder="Email / Usuario" 
+									       required 
+									       maxlength="50"
+									       data-validator-config='{"maxLength": {"value": 50}}'>
 								</label>
 
 								<label class="pfield">
@@ -47,7 +55,16 @@
 										</svg>
 									</span>
 									<div class="password-field">
-										<input id="login-password" class="pfield__input" type="password" name="password" autocomplete="current-password" placeholder="Contraseña" required>
+										<input id="login-password" 
+										       class="pfield__input" 
+										       type="password" 
+										       name="password" 
+										       autocomplete="current-password" 
+										       placeholder="Contraseña" 
+										       required 
+										       minlength="6"
+										       maxlength="50"
+										       data-validator-config='{"maxLength": {"value": 50}}'>
 										<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 									</div>
 								</label>
@@ -59,6 +76,7 @@
 								{% else %}
 									<p class="phone__captcha" role="note">Captcha no configurado. Define <strong>RECAPTCHA_SITE_KEY</strong> y <strong>RECAPTCHA_SECRET_KEY</strong> en el archivo <strong>.env</strong>.</p>
 								{% endif %}
+								
 								<button class="phone__button" type="submit">INICIAR SESIÓN</button>
 
 								<div class="phone__links" aria-label="Acciones adicionales">
@@ -73,30 +91,50 @@
 			</section>
 		</section>
 	</main>
+	
 	{% call modal('modal-registro-cliente', 'Registro de cliente', 'md') %}
 		<section id="registro-step1" class="registro-step" data-registro-step="1">
 			<p class="registro-copy">Paso 1 de 2: Crea tu cuenta con tus datos de acceso.</p>
 			<form id="registro-cliente-step1-form" class="ui-form" autocomplete="on">
 				<div class="ui-form__grid ui-form__grid--one">
 					<label class="ui-field">
-						<span>Usuario</span>
-						<input id="registro-usuario" type="text" required>
+						<span>Usuario *</span>
+						<input id="registro-usuario" 
+						       type="text" 
+						       required 
+						       maxlength="50"
+						       data-validator-config='{"maxLength": {"value": 50}}'>
 					</label>
 					<label class="ui-field">
-						<span>Cédula</span>
-						<input id="registro-cedula" type="text" inputmode="numeric" required>
+						<span>Cédula *</span>
+						<input id="registro-cedula" 
+						       type="text" 
+						       inputmode="numeric" 
+						       required 
+						       maxlength="10"
+						       pattern="^\d+$"
+						       data-validator-config='{"maxLength": {"value": 10}}'>
 					</label>
 					<label class="ui-field">
-						<span>Contraseña</span>
+						<span>Contraseña *</span>
 						<div class="password-field">
-							<input id="registro-password" type="password" required>
+							<input id="registro-password" 
+							       type="password" 
+							       required 
+							       minlength="6"
+							       maxlength="50"
+							       data-validator-config='{"maxLength": {"value": 50}}'>
 							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 						</div>
 					</label>
 					<label class="ui-field">
-						<span>Confirmar contraseña</span>
+						<span>Confirmar contraseña *</span>
 						<div class="password-field">
-							<input id="registro-password-confirm" type="password" required>
+							<input id="registro-password-confirm" 
+							       type="password" 
+							       required 
+							       minlength="6"
+							       maxlength="50">
 							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 						</div>
 					</label>
@@ -107,32 +145,58 @@
 			</form>
 		</section>
 
+		<!-- Paso 2: Solo para persona natural -->
 		<section id="registro-step2" class="registro-step" data-registro-step="2" hidden>
 			<p class="registro-copy">¡Casi listo! Paso 2 de 2: completa tus datos personales.</p>
 			<form id="registro-cliente-step2-form" class="ui-form" autocomplete="on">
 				<div class="ui-form__grid">
 					<label class="ui-field">
-						<span>Nombre</span>
-						<input id="perfil-nombre" type="text" required>
+						<span>Nombre *</span>
+						<input id="perfil-nombre" 
+						       type="text" 
+						       required 
+						       maxlength="40"
+						       data-validator-config='{"maxLength": {"value": 40}}'>
 					</label>
 					<label class="ui-field">
-						<span>Apellido</span>
-						<input id="perfil-apellido" type="text" required>
+						<span>Apellido *</span>
+						<input id="perfil-apellido" 
+						       type="text" 
+						       required 
+						       maxlength="40"
+						       data-validator-config='{"maxLength": {"value": 40}}'>
 					</label>
 					<label class="ui-field">
-						<span>Celular</span>
-						<input id="perfil-celular" type="text" required>
+						<span>Celular *</span>
+						<input id="perfil-celular" 
+						       type="tel" 
+						       required 
+						       maxlength="15"
+						       pattern="^[\d\s\-+()]{7,15}$"
+						       data-validator-config='{
+						           "maxLength": {"value": 15},
+						           "customRules": [{
+						               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 10; }",
+						               "message": "El número de celular debe tener al menos 10 dígitos"
+						           }]
+						       }'>
 					</label>
 					<label class="ui-field">
 						<span>Correo</span>
-						<input id="perfil-correo" type="email">
+						<input id="perfil-correo" 
+						       type="email" 
+						       maxlength="120"
+						       data-validator-config='{"maxLength": {"value": 120}}'>
 					</label>
 					<label class="ui-field ui-field--full">
 						<span>Dirección</span>
-						<input id="perfil-direccion" type="text">
+						<input id="perfil-direccion" 
+						       type="text" 
+						       maxlength="255"
+						       data-validator-config='{"maxLength": {"value": 255}}'>
 					</label>
 				</div>
-				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Regular</strong>.</p>
+				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Persona Natural</strong>.</p>
 				<div class="ui-form__actions">
 					<button class="ui-btn ui-btn--ghost" type="button" id="registro-volver-step1">Volver</button>
 					<button class="ui-btn ui-btn--primary" type="submit">Finalizar registro</button>
@@ -140,6 +204,7 @@
 			</form>
 		</section>
 	{% endcall %}
+	
 	{% call modal('modal-feedback-login', 'Mensaje', 'sm') %}
 		<div class="ui-form__grid ui-form__grid--one">
 			<p id="feedback-login-message">Mensaje</p>
@@ -154,5 +219,6 @@
 	{% if recaptcha_site_key %}
 		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 	{% endif %}
-  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}

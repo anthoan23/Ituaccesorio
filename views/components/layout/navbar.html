@@ -1,20 +1,18 @@
 {% from 'components/ui/modal.html' import modal %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
-<input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
 
 <header class="topbar">
 	<div class="topbar__left">
-		<label class="hamburger" for="nav-toggle" aria-label="Abrir menú" role="button" tabindex="0">
+		<button class="hamburger" id="menu-toggle-btn" aria-label="Abrir menú" type="button">
 			<span class="hamburger__icon" aria-hidden="true">
 				<span></span>
 				<span></span>
 				<span></span>
 			</span>
-		</label>
+		</button>
 
 		<a class="brand" href="/" aria-label="Ir al inicio">
-			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}"
-				alt="Ituaccesorio">
+			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
 		</a>
 	</div>
 
@@ -23,9 +21,7 @@
 		<div class="notifications" data-notifications-root>
 			<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
 				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-					<path
-						d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
-						fill="currentColor" />
+					<path d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z" fill="currentColor" />
 				</svg>
 				<span class="notifications__badge" data-notifications-badge hidden>0</span>
 			</button>
@@ -90,25 +86,22 @@
 	</div>
 </header>
 
-<label class="backdrop" for="nav-toggle" aria-label="Cerrar menú"></label>
+<div class="backdrop" id="menu-backdrop"></div>
 
-<aside class="drawer" aria-label="Menú lateral">
+<aside class="drawer" id="main-drawer" aria-label="Menú lateral">
 	<div class="drawer__header">
 		<span class="drawer__title">Menú</span>
 	</div>
 
 	<div class="drawer__nav-wrapper">
 		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
-		<nav class="drawer__nav" id="drawerNav">
+		<nav class="drawer__nav" id="drawerNav" data-nav-container>
+			<!-- Dashboard -->
 			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
+
+			<!-- Personal (submenú) -->
 			{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-			<button
-				class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}"
-				type="button"
-				data-nav-group-toggle="personal-group"
-				aria-controls="personal-group"
-				aria-expanded="{{ 'true' if personal_active else 'false' }}"
-			>
+			<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" type="button" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
 				<span>Personal</span>
 			</button>
 			<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
@@ -116,23 +109,39 @@
 				<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
 				<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
 			</div>
+
+			<!-- Ventas -->
 			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
 			<a class="drawer__link {% if active_page == 'validacion' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_validar_pagos') }}">Ventas Realizadas</a>
+
+			<!-- Productos -->
 			<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+
+			<!-- Proveedores -->
 			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+
+			<!-- Trade-in -->
 			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+
+			<!-- Taller -->
 			<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+
+			<!-- Órdenes -->
 			<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
 			<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
+
+			<!-- Clientes -->
 			<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+
+			<!-- Usuarios -->
+			<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+
+			<!-- Bitácora -->
 			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
-			<a class="drawer__link" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 		</nav>
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
-
-
 
 	<div class="drawer__footer">
 		{% if g.user %}
@@ -141,7 +150,6 @@
 		</form>
 		{% endif %}
 	</div>
-
 </aside>
 
 {% if g.user %}
@@ -150,7 +158,7 @@
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 		<label class="ui-field">
 			<span>Usuario</span>
-			<input id="mi-perfil-nombre" name="nombre" type="text" value="{{ g.user.usuario_nombre or '' }}" required>
+			<input id="mi-perfil-nombre" name="nombre" type="text" value="{{ g.user.usuario_nombre or '' }}" required maxlength="50">
 		</label>
 		<label class="ui-field">
 			<span>Cédula</span>
@@ -163,14 +171,14 @@
 		<label class="ui-field">
 			<span>Nueva contraseña (opcional)</span>
 			<div class="password-field">
-				<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar">
+				<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar" minlength="6" maxlength="50">
 				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 			</div>
 		</label>
 		<label class="ui-field">
 			<span>Confirmar contraseña</span>
 			<div class="password-field">
-				<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña">
+				<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña" minlength="6" maxlength="50">
 				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 			</div>
 		</label>
