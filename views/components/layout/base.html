@@ -9,11 +9,11 @@
 	<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LOGO.png') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/table-tools.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/notificaciones.css') }}">
 	<title>{% block title %}Mi sitio{% endblock %}</title>
 	{% block head_extra %}{% endblock %}
 </head>
-<body>
+<body data-user-id="{{ g.user.usuario_id if g.user else '' }}">
 	{% block navbar %}
 		{% include 'components/layout/navbar.html' %}
 	{% endblock %}
@@ -24,7 +24,7 @@
 
 	<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/table-tools.js') }}" defer></script>
-	<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/notificaciones.js') }}" defer></script>
 	{% block scripts %}{% endblock %}
 </body>
 </html>

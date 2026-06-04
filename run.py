@@ -11,6 +11,7 @@ from app.controllers.proveedores import proveedores_blueprint
 from app.controllers.login import login_blueprint
 from app.controllers.usuarios import usuarios_blueprint
 from app.controllers.bitacora import bitacora_blueprint
+from app.controllers.notificaciones import notificaciones_blueprint
 from app.controllers.taller import taller_blueprint
 from app.controllers.clientes import clientes_blueprint
 from app.controllers.ordenes_servicio import ordenes_servicio_blueprint
@@ -41,11 +42,12 @@ app.config.update(
 
 csp = {
     'default-src': ["'self'"],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com',  'https://cdn.jsdelivr.net'],
-    'style-src-elem': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com',  'https://cdn.jsdelivr.net'],
-    'script-src': ["'self'", "'unsafe-inline'",  'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
-    'script-src-elem': ["'self'", "'unsafe-inline'",  'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],  
-    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'], 
+    'style-src': ["'self'", 'https://fonts.googleapis.com'],
+    'style-src-elem': ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+    'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
+    'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
+    'style-src': ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
     'child-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
@@ -63,6 +65,7 @@ app.register_blueprint(proveedores_blueprint)
 app.register_blueprint(login_blueprint)
 app.register_blueprint(usuarios_blueprint)
 app.register_blueprint(bitacora_blueprint)
+app.register_blueprint(notificaciones_blueprint)
 app.register_blueprint(taller_blueprint)
 app.register_blueprint(clientes_blueprint)
 app.register_blueprint(ordenes_servicio_blueprint)

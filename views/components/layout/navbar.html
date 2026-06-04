@@ -19,13 +19,29 @@
 	</div>
 
 	<div class="topbar__right">
-		<button class="icon-btn" type="button" aria-label="Notificaciones">
-			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path
-					d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
-					fill="currentColor" />
-			</svg>
-		</button>
+		{% if g.user %}
+		<div class="notifications" data-notifications-root>
+			<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+					<path
+						d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
+						fill="currentColor" />
+				</svg>
+				<span class="notifications__badge" data-notifications-badge hidden>0</span>
+			</button>
+
+			<div class="notifications__panel" data-notifications-panel hidden>
+				<div class="notifications__header">
+					<strong>Notificaciones en tiempo real</strong>
+					<span data-notifications-status>Conectando...</span>
+				</div>
+				<div class="notifications__empty" data-notifications-empty>
+					Esperando actividad nueva.
+				</div>
+				<div class="notifications__list" data-notifications-list aria-live="polite" aria-relevant="additions"></div>
+			</div>
+		</div>
+		{% endif %}
 
 		{% if g.user %}
 		<details class="user-menu">
@@ -116,33 +132,7 @@
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
 
-	<script>
-	(function(){
-		var nav = document.getElementById('drawerNav');
-		if(!nav) return;
-		var btnUp = nav.parentElement.querySelector('.nav-scroll-up');
-		var btnDown = nav.parentElement.querySelector('.nav-scroll-down');
-		var scrollAmount = 140;
 
-		function updateButtons(){
-			if(nav.scrollTop <= 0) btnUp.style.display = 'none'; else btnUp.style.display = '';
-			if(nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1) btnDown.style.display = 'none'; else btnDown.style.display = '';
-		}
-
-		btnUp.addEventListener('click', function(){
-			nav.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-		btnDown.addEventListener('click', function(){
-			nav.scrollBy({ top: scrollAmount, behavior: 'smooth' });
-			setTimeout(updateButtons, 300);
-		});
-
-		nav.addEventListener('scroll', updateButtons);
-		// initial
-		updateButtons();
-	})();
-	</script>
 
 	<div class="drawer__footer">
 		{% if g.user %}

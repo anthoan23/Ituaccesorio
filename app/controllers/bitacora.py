@@ -56,6 +56,9 @@ def registrar_bitacora_api():
         usuario_id=_resolver_usuario_actual(),
         modulo_nombre=modulo_nombre,
     )
+
+    # El helper de bitacora ya publica la notificacion al bus en memoria.
+    # Esta ruta solo representa el punto de escritura que usan los modulos del sistema.
     estado = 200 if resultado.get("success") else 500
     return jsonify(resultado), estado
 
