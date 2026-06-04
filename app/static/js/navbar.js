@@ -16,6 +16,81 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
+	// ==================== PERMISOS EN EL NAVBAR ====================
+	
+	let permisosUsuario = {};
+	
+	async function cargarPermisosNavbar() {
+		try {
+			const response = await fetch('/api/usuarios/mis-permisos', {
+				headers: {
+					'Accept': 'application/json',
+					'X-CSRFToken': document.querySelector('input[name="_csrf_token"]')?.value || ''
+				},
+				credentials: 'same-origin'
+			});
+			
+			if (response.ok) {
+				const data = await response.json();
+				permisosUsuario = data.permisos || {};
+				aplicarPermisosNavbar();
+			}
+		} catch (error) {
+			console.error('Error cargando permisos:', error);
+		}
+	}
+	
+	function tienePermisoNavbar(modulo, permiso = 'consultar') {
+		// Admin siempre tiene permisos
+		const userRole = document.querySelector('.user__role')?.textContent?.toLowerCase() || '';
+		if (userRole === 'admin') return true;
+		
+		const permisosModulo = permisosUsuario[modulo];
+		if (!permisosModulo) return false;
+		
+		return permisosModulo[permiso] === true || permisosModulo[permiso] === 1;
+	}
+	
+	function aplicarPermisosNavbar() {
+		// Ocultar/mostrar elementos del menú según permisos
+		const navLinks = document.querySelectorAll('[data-permiso]');
+		
+		navLinks.forEach(link => {
+			const modulo = link.dataset.modulo;
+			const permiso = link.dataset.permiso || 'consultar';
+			
+			if (modulo && !tienePermisoNavbar(modulo, permiso)) {
+				link.style.display = 'none';
+				
+				// Si es un submenú, también ocultar el grupo padre si está vacío
+				const parentSubmenu = link.closest('.drawer__submenu');
+				if (parentSubmenu) {
+					const parentGroup = parentSubmenu.closest('[data-nav-group]');
+					if (parentGroup) {
+						const visibleLinks = parentGroup.querySelectorAll('.drawer__submenu-link:not([style*="display: none"])');
+						if (visibleLinks.length === 0) {
+							const groupToggle = document.querySelector(`[data-nav-group-toggle="${parentGroup.id}"]`);
+							if (groupToggle) groupToggle.style.display = 'none';
+							parentGroup.style.display = 'none';
+						}
+					}
+				}
+			}
+		});
+		
+		// Mostrar sección de administración solo si tiene permisos
+		const tienePermisosAdmin = tienePermisoNavbar('Usuarios') || tienePermisoNavbar('Bitácora');
+		const adminSection = document.getElementById('admin-section');
+		if (adminSection) {
+			adminSection.style.display = tienePermisosAdmin ? 'block' : 'none';
+		}
+	}
+	
+	// Cargar permisos al iniciar
+	cargarPermisosNavbar();
+
+	// ==================== PERFIL DE USUARIO ====================
+	
 	const perfilForm = document.getElementById("mi-perfil-form");
 	const nombreInput = document.getElementById("mi-perfil-nombre");
 	const cedulaInput = document.getElementById("mi-perfil-cedula");

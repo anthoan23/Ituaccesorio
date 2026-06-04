@@ -4,7 +4,7 @@ import uuid
 from flask import Blueprint, jsonify, render_template, request, g, current_app
 import mysql.connector
 from werkzeug.utils import secure_filename
-
+from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
 from app.utils.jwt_utils import set_auth_cookies
@@ -115,6 +115,7 @@ def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
 
 @usuarios_blueprint.route("/usuarios", methods=["GET"])
 @jwt_required
+@solo_roles(['admin'])
 def pagina_usuarios():
     return render_template(
         "usuarios.html",
@@ -514,3 +515,12 @@ def obtener_permiso_especifico(rol_id, modulo_id):
         })
     except Exception as error:
         return _respuesta_por_excepcion(error)
+    
+
+@usuarios_blueprint.route("/api/usuarios/mis-permisos", methods=["GET"])
+@jwt_required
+def obtener_mis_permisos():
+    """Obtiene todos los permisos del usuario actual para el frontend"""
+    from app.utils.decorators import obtener_permisos_usuario_actual
+    permisos = obtener_permisos_usuario_actual()
+    return jsonify({"success": True, "permisos": permisos})
