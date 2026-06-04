@@ -5,6 +5,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login_phone.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block navbar %}{% endblock %}
@@ -144,6 +145,7 @@
 			</form>
 		</section>
 
+		<!-- Paso 2: Solo para persona natural -->
 		<section id="registro-step2" class="registro-step" data-registro-step="2" hidden>
 			<p class="registro-copy">¡Casi listo! Paso 2 de 2: completa tus datos personales.</p>
 			<form id="registro-cliente-step2-form" class="ui-form" autocomplete="on">
@@ -153,16 +155,16 @@
 						<input id="perfil-nombre" 
 						       type="text" 
 						       required 
-						       maxlength="50"
-						       data-validator-config='{"maxLength": {"value": 50}}'>
+						       maxlength="40"
+						       data-validator-config='{"maxLength": {"value": 40}}'>
 					</label>
 					<label class="ui-field">
 						<span>Apellido *</span>
 						<input id="perfil-apellido" 
 						       type="text" 
 						       required 
-						       maxlength="50"
-						       data-validator-config='{"maxLength": {"value": 50}}'>
+						       maxlength="40"
+						       data-validator-config='{"maxLength": {"value": 40}}'>
 					</label>
 					<label class="ui-field">
 						<span>Celular *</span>
@@ -170,22 +172,31 @@
 						       type="tel" 
 						       required 
 						       maxlength="15"
-						       pattern="^[\d\s\-+()]{7,15}$">
+						       pattern="^[\d\s\-+()]{7,15}$"
+						       data-validator-config='{
+						           "maxLength": {"value": 15},
+						           "customRules": [{
+						               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 10; }",
+						               "message": "El número de celular debe tener al menos 10 dígitos"
+						           }]
+						       }'>
 					</label>
 					<label class="ui-field">
 						<span>Correo</span>
 						<input id="perfil-correo" 
 						       type="email" 
-						       maxlength="100">
+						       maxlength="120"
+						       data-validator-config='{"maxLength": {"value": 120}}'>
 					</label>
 					<label class="ui-field ui-field--full">
 						<span>Dirección</span>
 						<input id="perfil-direccion" 
 						       type="text" 
-						       maxlength="255">
+						       maxlength="255"
+						       data-validator-config='{"maxLength": {"value": 255}}'>
 					</label>
 				</div>
-				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Regular</strong>.</p>
+				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Persona Natural</strong>.</p>
 				<div class="ui-form__actions">
 					<button class="ui-btn ui-btn--ghost" type="button" id="registro-volver-step1">Volver</button>
 					<button class="ui-btn ui-btn--primary" type="submit">Finalizar registro</button>
@@ -208,5 +219,6 @@
 	{% if recaptcha_site_key %}
 		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 	{% endif %}
+	<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}

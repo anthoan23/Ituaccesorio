@@ -8,7 +8,7 @@
       blockInput: true,
     },
     required: {
-      enabled: true,
+      enabled: false,
       showIndicator: true,
       indicatorChar: '*',
     },
