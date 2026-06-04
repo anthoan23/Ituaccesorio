@@ -1,4 +1,12 @@
 (() => {
+  // Función para verificar si un elemento está dentro del navbar
+  function isInsideNavbar(element) {
+    return element.closest('.drawer') !== null || 
+           element.closest('.topbar') !== null ||
+           element.closest('.user-menu') !== null ||
+           element.closest('.notifications') !== null;
+  }
+
   const DEFAULT_CONFIG = {
     maxLength: {
       enabled: true,
@@ -55,11 +63,9 @@
     }
 
     mergeConfig(config) {
-      // Procesar reglas personalizadas sin usar eval
       let customRules = [];
       if (Array.isArray(config.customRules)) {
         customRules = config.customRules.filter(rule => {
-          // Solo aceptar reglas que sean objetos con función validate
           return rule && typeof rule.validate === 'function';
         });
       }
@@ -80,6 +86,11 @@
 
     init() {
       if (this.initialized) return;
+      
+      // IGNORAR campos dentro del navbar
+      if (isInsideNavbar(this.field)) {
+        return;
+      }
       
       this.maxLength = this.getMaxLength();
       this.isRequired = this.field.hasAttribute('required') || this.field.dataset.required === 'true';
@@ -156,7 +167,6 @@
       const counter = document.createElement('div');
       counter.className = 'field-counter';
       counter.setAttribute('aria-live', 'polite');
-      this.updateCounter(counter);
       return counter;
     }
 
@@ -172,34 +182,6 @@
       warning.className = 'field-warning';
       warning.style.display = 'none';
       return warning;
-    }
-
-    updateCounter(counter) {
-      if (!counter) return;
-      const currentLength = this.field.value.length;
-      const remaining = this.maxLength - currentLength;
-      const percentage = (currentLength / this.maxLength) * 100;
-      
-      counter.innerHTML = `
-        <span class="counter-current">${currentLength}</span>
-        <span class="counter-separator">/</span>
-        <span class="counter-max">${this.maxLength}</span>
-        <span class="counter-remaining">(${remaining} restantes)</span>
-      `;
-      
-      counter.classList.remove('counter-warning', 'counter-danger');
-      if (percentage >= 90) {
-        counter.classList.add('counter-danger');
-      } else if (percentage >= this.config.maxLength.warningThreshold * 100) {
-        counter.classList.add('counter-warning');
-      }
-      
-      if (this.warningElement && percentage >= this.config.maxLength.warningThreshold * 100) {
-        this.warningElement.textContent = '⚠️ Cerca del límite máximo (' + this.maxLength + ' caracteres)';
-        this.warningElement.style.display = 'block';
-      } else if (this.warningElement) {
-        this.warningElement.style.display = 'none';
-      }
     }
 
     addRequiredIndicator() {
@@ -228,10 +210,6 @@
           }
           
           this.validate();
-          
-          if (this.counterElement) {
-            this.updateCounter(this.counterElement);
-          }
         });
       }
       
@@ -250,7 +228,6 @@
       const value = this.field.value;
       const trimmedValue = typeof value === 'string' ? value.trim() : value;
       
-      // Validar requerido
       if (this.isRequired && this.config.required.enabled) {
         if (!trimmedValue || trimmedValue === '') {
           isValid = false;
@@ -258,7 +235,6 @@
         }
       }
       
-      // Validar longitud máxima
       if (this.maxLength && this.config.maxLength.enabled && value) {
         if (value.length > this.maxLength) {
           isValid = false;
@@ -266,13 +242,11 @@
         }
       }
       
-      // Validar longitud mínima
       if (this.minLength && value && value.length < this.minLength) {
         isValid = false;
         errors.push('Mínimo ' + this.minLength + ' caracteres requeridos.');
       }
       
-      // Validar patrón
       if (this.pattern && trimmedValue && !this.isRequiredWithEmptyValue()) {
         try {
           const patternRegex = new RegExp(this.pattern);
@@ -285,14 +259,12 @@
         }
       }
       
-      // Validar tipo de campo específico
       const typeValidation = this.validateByType();
       if (!typeValidation.valid) {
         isValid = false;
         errors.push(typeValidation.message);
       }
       
-      // Validar rango de números
       if (this.minValue !== null && value && !isNaN(parseFloat(value))) {
         if (parseFloat(value) < this.minValue) {
           isValid = false;
@@ -307,7 +279,6 @@
         }
       }
       
-      // Validar reglas personalizadas
       if (this.config.customRules && Array.isArray(this.config.customRules)) {
         for (const rule of this.config.customRules) {
           try {
@@ -428,6 +399,10 @@
     const fields = document.querySelectorAll(selectors.join(','));
     
     fields.forEach((field) => {
+      // IGNORAR campos dentro del navbar
+      if (isInsideNavbar(field)) {
+        return;
+      }
       if (fieldStates.has(field)) return;
       if (field.dataset.validator === 'false') return;
       
@@ -458,7 +433,6 @@
     if (field.dataset.validatorConfig) {
       try {
         const parsed = JSON.parse(field.dataset.validatorConfig);
-        // Solo aceptar reglas que sean válidas sin eval
         if (parsed.customRules && Array.isArray(parsed.customRules)) {
           parsed.customRules = parsed.customRules.filter(rule => {
             return rule && typeof rule.validate === 'function';

@@ -5,7 +5,6 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -309,13 +308,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    window.currentUser = {
-        id: {{ (current_user.usuario_id if current_user else none)|tojson }},
-        rolId: {{ (current_user.rol_id if current_user else none)|tojson }},
-        rolNombre: {{ (current_user.nombre_rol if current_user else none)|tojson }},
-    };
-</script>
-<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
+
 <script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
 {% endblock %}

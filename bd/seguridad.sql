@@ -68,7 +68,7 @@ CREATE TABLE `modulo` (
 
 LOCK TABLES `modulo` WRITE;
 /*!40000 ALTER TABLE `modulo` DISABLE KEYS */;
-INSERT INTO `modulo` VALUES (1,'Productos','Gestión de productos y catálogo'),(2,'Categorías','Gestión de categorías de productos'),(3,'Carrito','Gestión del carrito de compras'),(4,'Pedidos','Procesamiento y seguimiento de pedidos'),(5,'Pagos','Procesamiento de pagos y facturación'),(15,'Trade-in','Modulo para la cotizacion y gestion del trade-in');
+INSERT INTO `modulo` VALUES (1,'Productos','Gestión de productos y catálogo'),(3,'Carrito','Gestión del carrito de compras'),(4,'Pedidos','Procesamiento y seguimiento de pedidos'),(5,'Pagos','Procesamiento de pagos y facturación'),(6,'Usuarios','Gestión de usuarios, credenciales y estados de cuenta'),(7,'Roles','Configuración de roles del sistema (Admin, Técnico, Ventas, etc.)'),(8,'Permisos','Asignación de permisos de lectura, escritura, modificación y borrado por módulo'),(9,'Bitácora','Auditoría del sistema y registro de acciones de los usuarios'),(10,'Reportes','Generación de estadísticas de ventas, reparaciones y movimientos técnicos'),(11,'Soporte','Gestión de tickets de soporte técnico y atención al cliente'),(13,'Inventario','Control de stock de repuestos y productos en almacén'),(14,'Clientes','Gestión de datos de contacto e historial de clientes específicos'),(15,'Trade-in','Modulo para la cotizacion y gestion del trade-in');
 /*!40000 ALTER TABLE `modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -99,7 +99,7 @@ CREATE TABLE `permiso` (
 
 LOCK TABLES `permiso` WRITE;
 /*!40000 ALTER TABLE `permiso` DISABLE KEYS */;
-INSERT INTO `permiso` VALUES (6,1,1,0,0,0),(6,2,1,1,1,1),(6,3,1,0,0,0),(6,4,1,0,0,0),(6,5,1,0,0,0),(6,15,1,0,0,0),(7,1,1,0,0,0),(7,2,1,1,1,0),(7,3,1,1,1,1),(7,4,1,0,0,0),(7,5,1,0,0,0),(7,15,1,0,0,0);
+INSERT INTO `permiso` VALUES (6,1,1,0,0,0),(6,3,1,0,0,0),(6,4,1,0,0,0),(6,5,1,0,0,0),(6,15,1,0,0,0),(7,1,1,0,0,0),(7,3,1,1,1,1),(7,4,1,0,0,0),(7,5,1,0,0,0),(7,15,1,0,0,0);
 /*!40000 ALTER TABLE `permiso` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -159,7 +159,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02','/static/img/perfil/725ff8bd356d449a8bc7e9cd9e54f579.jpg','2026-05-21 03:38:50'),('USR-002','Anthoan',2323123,'Dino1234',6,1,'2026-05-17 02:04:00',NULL,'2026-05-17 02:05:11'),('USR-003','Elena',40404040,'Dino1234',5,1,'2026-05-17 02:04:49',NULL,'2026-05-17 02:05:11'),('USR-004','ClienteTest',9876543,'Dino1234',7,1,'2026-05-21 03:24:14',NULL,'2026-05-21 03:24:14'),('USR-005','Prueba',12345678,'Dino1234',7,1,'2026-06-04 00:37:05',NULL,'2026-06-04 00:37:05');
+INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02','/static/img/perfil/725ff8bd356d449a8bc7e9cd9e54f579.jpg','2026-05-21 03:38:50'),('USR-002','Anthoan',2323123,'Dino1234',6,1,'2026-05-17 02:04:00',NULL,'2026-05-17 02:05:11'),('USR-003','Elena',40404040,'Dino1234',5,1,'2026-05-17 02:04:49',NULL,'2026-05-17 02:05:11'),('USR-004','ClienteTest',9876543,'Dino1234',7,1,'2026-05-21 03:24:14',NULL,'2026-05-21 03:24:14'),('USR-005','Prueba',12345678,'Dino1234',7,1,'2026-06-04 01:09:43','/static/img/perfil/4bf079567cf44a8086d4cce7a324573a.png','2026-06-04 01:21:23');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -254,4 +254,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-03 20:40:46
+-- Dump completed on 2026-06-03 22:05:07
