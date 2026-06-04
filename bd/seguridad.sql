@@ -42,7 +42,6 @@ CREATE TABLE `bitacora` (
 
 LOCK TABLES `bitacora` WRITE;
 /*!40000 ALTER TABLE `bitacora` DISABLE KEYS */;
-INSERT INTO `bitacora` VALUES (590,'CLIENTE',1,'Cotización Trade-in','Cotización Trade-in | Modelo: Galaxy S24 Ultra | Base: 1100 | Deducción: 0 | Estimado: 1100 | Fallas: Pantalla, Batería, Cámara, Táctil, Puerto de carga, Micrófono, Bocina, WiFi','2026-05-13 15:38:41'),(591,'CLIENTE',1,'Cotización Trade-in','Cotización Trade-in | Modelo: iPhone 15 Pro | Base: 1200 | Deducción: 0 | Estimado: 1200 | Fallas: Pantalla, Batería, Cámara, Táctil, Puerto de carga, Micrófono, Bocina, WiFi','2026-05-13 15:46:59'),(592,'CLIENTE',1,'Cotización Trade-in','Cotización Trade-in | Modelo: iPhone 15 Pro | Base: 1200 | Deducción: 0 | Estimado: 1200 | Fallas: Botón de power, LCD, Táctil, Cámara trasera, Cámara delantera, Sensor de proximidad, Caja','2026-05-13 16:00:50'),(593,'CLIENTE',1,'Cotización Trade-in','Cotización Trade-in | Modelo: iPhone 15 Pro | Base: 1200 | Deducción: 0 | Estimado: 1200 | Fallas: Botón de power, Cornetas, Táctil','2026-05-13 16:10:03'),(594,'CLIENTE',1,'Cotización Trade-in','Cotización Trade-in | Modelo: iPhone 15 Pro | Base: 1200 | Deducción: 0 | Estimado: 1200 | Fallas: Botón de power, Cornetas, Mica, Sensor de proximidad','2026-05-15 02:31:39');
 /*!40000 ALTER TABLE `bitacora` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -59,7 +58,7 @@ CREATE TABLE `modulo` (
   `descripcion` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nombre` (`nombre`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +67,7 @@ CREATE TABLE `modulo` (
 
 LOCK TABLES `modulo` WRITE;
 /*!40000 ALTER TABLE `modulo` DISABLE KEYS */;
-INSERT INTO `modulo` VALUES (1,'Productos','Gestión de productos y catálogo'),(3,'Carrito','Gestión del carrito de compras'),(4,'Pedidos','Procesamiento y seguimiento de pedidos'),(5,'Pagos','Procesamiento de pagos y facturación'),(6,'Usuarios','Gestión de usuarios, credenciales y estados de cuenta'),(7,'Roles','Configuración de roles del sistema (Admin, Técnico, Ventas, etc.)'),(8,'Permisos','Asignación de permisos de lectura, escritura, modificación y borrado por módulo'),(9,'Bitácora','Auditoría del sistema y registro de acciones de los usuarios'),(10,'Reportes','Generación de estadísticas de ventas, reparaciones y movimientos técnicos'),(11,'Soporte','Gestión de tickets de soporte técnico y atención al cliente'),(13,'Inventario','Control de stock de repuestos y productos en almacén'),(14,'Clientes','Gestión de datos de contacto e historial de clientes específicos'),(15,'Trade-in','Modulo para la cotizacion y gestion del trade-in');
+INSERT INTO `modulo` VALUES (1,'Empleados','Gestión de empleados del sistema'),(2,'Especialidades','Gestión de especialidades técnicas'),(3,'Cargos','Gestión de cargos y posiciones'),(4,'Catálogo','Catálogo de productos para ventas'),(5,'Ventas','Gestión de ventas y facturación'),(6,'Productos','Gestión de productos del inventario'),(7,'Inventario','Control de stock y existencias'),(8,'Proveedores','Gestión de proveedores'),(9,'Trade-in','Módulo de intercambio de equipos'),(10,'Taller','Gestión de reparaciones y servicio técnico'),(11,'Órdenes de servicio','Seguimiento de órdenes de servicio'),(12,'Órdenes de compra','Gestión de compras a proveedores'),(13,'Clientes','Gestión de clientes del sistema'),(14,'Usuarios','Administración de usuarios y roles'),(15,'Bitácora','Registro de actividades del sistema'),(16,'Personal','Agrupación de módulos de personal');
 /*!40000 ALTER TABLE `modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -99,7 +98,7 @@ CREATE TABLE `permiso` (
 
 LOCK TABLES `permiso` WRITE;
 /*!40000 ALTER TABLE `permiso` DISABLE KEYS */;
-INSERT INTO `permiso` VALUES (6,1,1,0,0,0),(6,3,1,0,0,0),(6,4,1,0,0,0),(6,5,1,0,0,0),(6,15,1,0,0,0),(7,1,1,0,0,0),(7,3,1,1,1,1),(7,4,1,0,0,0),(7,5,1,0,0,0),(7,15,1,0,0,0);
+INSERT INTO `permiso` VALUES (7,1,1,0,0,0),(7,2,1,0,0,0),(7,3,1,0,0,0),(7,4,1,1,1,1),(7,5,1,0,0,0),(7,6,1,0,0,0),(7,7,1,0,0,0),(7,8,1,0,0,0),(7,9,1,1,1,1),(7,10,1,0,0,0),(7,11,1,0,0,0),(7,12,1,0,0,0),(7,13,1,0,0,0),(7,14,1,0,0,0),(7,15,1,0,0,0),(7,16,1,0,0,0);
 /*!40000 ALTER TABLE `permiso` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -254,4 +253,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-03 22:05:07
+-- Dump completed on 2026-06-03 23:08:00
