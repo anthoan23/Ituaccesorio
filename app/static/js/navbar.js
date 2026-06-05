@@ -1,4 +1,52 @@
 document.addEventListener("DOMContentLoaded", () => {
+	// ==================== CONTROL DEL MENÚ HAMBURGUESA ====================
+	
+	const menuToggle = document.getElementById('menu-toggle-btn');
+	const backdrop = document.getElementById('menu-backdrop');
+	const drawer = document.getElementById('main-drawer');
+	
+	function openMenu() {
+		if (drawer) drawer.style.transform = 'translateX(0)';
+		if (backdrop) {
+			backdrop.style.opacity = '1';
+			backdrop.style.pointerEvents = 'auto';
+		}
+		document.body.style.overflow = 'hidden';
+	}
+	
+	function closeMenu() {
+		if (drawer) drawer.style.transform = '';
+		if (backdrop) {
+			backdrop.style.opacity = '';
+			backdrop.style.pointerEvents = '';
+		}
+		document.body.style.overflow = '';
+	}
+	
+	function toggleMenu() {
+		if (drawer && drawer.style.transform === 'translateX(0px)') {
+			closeMenu();
+		} else {
+			openMenu();
+		}
+	}
+	
+	if (menuToggle) {
+		menuToggle.addEventListener('click', toggleMenu);
+	}
+	
+	if (backdrop) {
+		backdrop.addEventListener('click', closeMenu);
+	}
+	
+	// Cerrar menú al hacer click en un enlace del drawer
+	const drawerLinks = document.querySelectorAll('.drawer__link');
+	drawerLinks.forEach(link => {
+		link.addEventListener('click', closeMenu);
+	});
+	
+	// ==================== TOGGLES DE SUBMENÚ ====================
+	
 	const groupToggles = document.querySelectorAll("[data-nav-group-toggle]");
 	groupToggles.forEach((toggle) => {
 		const groupId = toggle.getAttribute("data-nav-group-toggle");
@@ -15,7 +63,109 @@ document.addEventListener("DOMContentLoaded", () => {
 			sync(group.hasAttribute("hidden"));
 		});
 	});
-
+	
+	// ==================== PERMISOS EN EL NAVBAR ====================
+	
+	let permisosUsuario = {};
+	
+	async function cargarPermisosNavbar() {
+		try {
+			const response = await fetch('/api/usuarios/mis-permisos', {
+				headers: {
+					'Accept': 'application/json',
+					'X-CSRFToken': document.querySelector('input[name="_csrf_token"]')?.value || ''
+				},
+				credentials: 'same-origin'
+			});
+			
+			if (response.ok) {
+				const data = await response.json();
+				permisosUsuario = data.permisos || {};
+				aplicarPermisosNavbar();
+			}
+		} catch (error) {
+			console.error('Error cargando permisos:', error);
+		}
+	}
+	
+	function tienePermisoNavbar(modulo, permiso = 'consultar') {
+		const userRole = document.querySelector('.user__role')?.textContent?.toLowerCase() || '';
+		if (userRole === 'admin') return true;
+		
+		const permisosModulo = permisosUsuario[modulo];
+		if (!permisosModulo) return false;
+		
+		return permisosModulo[permiso] === true || permisosModulo[permiso] === 1;
+	}
+	
+	function aplicarPermisosNavbar() {
+		const navLinks = document.querySelectorAll('[data-permiso]');
+		
+		navLinks.forEach(link => {
+			const modulo = link.dataset.modulo;
+			const permiso = link.dataset.permiso || 'consultar';
+			
+			if (modulo && !tienePermisoNavbar(modulo, permiso)) {
+				link.style.display = 'none';
+				
+				const parentSubmenu = link.closest('.drawer__submenu');
+				if (parentSubmenu) {
+					const parentGroup = parentSubmenu.closest('[data-nav-group]');
+					if (parentGroup) {
+						const visibleLinks = parentGroup.querySelectorAll('.drawer__submenu-link:not([style*="display: none"])');
+						if (visibleLinks.length === 0) {
+							const groupToggle = document.querySelector(`[data-nav-group-toggle="${parentGroup.id}"]`);
+							if (groupToggle) groupToggle.style.display = 'none';
+							parentGroup.style.display = 'none';
+						}
+					}
+				}
+			}
+		});
+		
+		const tienePermisosAdmin = tienePermisoNavbar('Usuarios') || tienePermisoNavbar('Bitácora');
+		const adminSection = document.getElementById('admin-section');
+		if (adminSection) {
+			adminSection.style.display = tienePermisosAdmin ? 'block' : 'none';
+		}
+	}
+	
+	cargarPermisosNavbar();
+	
+	// ==================== SCROLL EN NAV ====================
+	
+	const navContainer = document.getElementById('drawerNav');
+	const scrollUpBtn = document.querySelector('.nav-scroll-up');
+	const scrollDownBtn = document.querySelector('.nav-scroll-down');
+	
+	function updateScrollButtons() {
+		if (!navContainer) return;
+		const canScrollUp = navContainer.scrollTop > 20;
+		const canScrollDown = navContainer.scrollHeight - navContainer.scrollTop - navContainer.clientHeight > 20;
+		
+		if (scrollUpBtn) scrollUpBtn.style.opacity = canScrollUp ? '1' : '0.3';
+		if (scrollDownBtn) scrollDownBtn.style.opacity = canScrollDown ? '1' : '0.3';
+	}
+	
+	if (scrollUpBtn) {
+		scrollUpBtn.addEventListener('click', () => {
+			navContainer.scrollBy({ top: -80, behavior: 'smooth' });
+		});
+	}
+	
+	if (scrollDownBtn) {
+		scrollDownBtn.addEventListener('click', () => {
+			navContainer.scrollBy({ top: 80, behavior: 'smooth' });
+		});
+	}
+	
+	if (navContainer) {
+		navContainer.addEventListener('scroll', updateScrollButtons);
+		setTimeout(updateScrollButtons, 100);
+	}
+	
+	// ==================== PERFIL DE USUARIO ====================
+	
 	const perfilForm = document.getElementById("mi-perfil-form");
 	const nombreInput = document.getElementById("mi-perfil-nombre");
 	const cedulaInput = document.getElementById("mi-perfil-cedula");

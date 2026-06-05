@@ -29,7 +29,7 @@
                 <div>
                     <h2 class="panel__title">Clientes existentes</h2>
                 </div>
-                <button id="btn-nuevo-cliente" class="btn btn--primary" type="button"
+                <button id="btn-nuevo-cliente" class="btn btn--yellow" type="button"
                     data-open-modal="modal-cliente">Nuevo cliente</button>
             </div>
 
@@ -37,13 +37,13 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Cedula</th>
+                            <th class="col-id">ID</th>
+                            <th>Tipo</th>
                             <th>Nombre</th>
-                            <th>Apellido</th>
+                            <th>Apellido / Razón Social</th>
                             <th>Celular</th>
                             <th>Correo</th>
                             <th>Dirección</th>
-                            <th>Tipo</th>
                             <th class="table__actions">Acciones</th>
                         </tr>
                     </thead>
@@ -57,42 +57,147 @@
     <form id="form-cliente" class="form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="">
-        <label>
-            <span>Cédula</span>
-            <input name="cedula" type="text" inputmode="numeric" placeholder="12345678" required>
-        </label>
-        <label>
-            <span>Nombre</span>
-            <input name="nombre" type="text" placeholder="Maria" required>
-        </label>
-        <label>
-            <span>Apellido</span>
-            <input name="apellido" type="text" placeholder="Gonzalez" required>
-        </label>
-        <label>
-            <span>Celular</span>
-            <input name="celular" type="text" placeholder="04141234567" required>
-        </label>
-        <label>
-            <span>Correo</span>
-            <input name="correo" type="email" placeholder="cliente@example.com">
-        </label>
-        <label>
-            <span>Dirección</span>
-            <input name="direccion" type="text" placeholder="Calle 1, Ciudad">
-        </label>
-        <label>
-            <span>Tipo de cliente</span>
-            <select name="tipo">
-                <option value="">Seleccione tipo</option>
-                <option value="Regular">Regular</option>
-                <option value="Premium">Premium</option>
-                <option value="Mayorista">Mayorista</option>
-            </select>
-        </label>
+        
+        <div class="form__grid">
+            <!-- Tipo de cliente -->
+            <label class="form__field form__field--full">
+                <span>Tipo de cliente *</span>
+                <select name="tipo_cliente" id="tipo-cliente" required>
+                    <option value="">Seleccione tipo de cliente</option>
+                    <option value="natural">Persona Natural</option>
+                    <option value="juridico">Persona Jurídica</option>
+                </select>
+            </label>
+        </div>
+
+        <!-- Campos para Persona Natural -->
+        <div id="campos-natural" class="form__grid campos-condicionales">
+            <label class="form__field">
+                <span>Cédula *</span>
+                <input name="cedula" 
+                       type="text" 
+                       inputmode="numeric" 
+                       placeholder="12345678" 
+                       required 
+                       maxlength="8"
+                       pattern="^\d+$"
+                       data-validator-config='{"maxLength": {"value": 8}}'>
+            </label>
+            
+            <label class="form__field">
+                <span>Nombre *</span>
+                <input name="nombre" 
+                       type="text" 
+                       placeholder="María" 
+                       required 
+                       maxlength="15"
+                       data-validator-config='{"maxLength": {"value": 15}}'>
+            </label>
+            
+            <label class="form__field">
+                <span>Apellido *</span>
+                <input name="apellido" 
+                       type="text" 
+                       placeholder="González" 
+                       required 
+                       maxlength="15"
+                       data-validator-config='{"maxLength": {"value": 15}}'>
+            </label>
+            
+            <label class="form__field">
+                <span>Celular *</span>
+                <input name="celular" 
+                       type="tel" 
+                       placeholder="04141234567" 
+                       required 
+                       maxlength="11"
+                       pattern="^[\d\s\-+()]{11,11}$"
+                       data-validator-config='{
+                           "maxLength": {"value": 11},
+                           "customRules": [{
+                               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 11; }",
+                               "message": "El número de celular debe tener 11 dígitos"
+                           }]
+                       }'>
+            </label>
+            
+            <label class="form__field">
+                <span>Correo</span>
+                <input name="correo" 
+                       type="email" 
+                       placeholder="cliente@example.com" 
+                       maxlength="120"
+                       data-validator-config='{"maxLength": {"value": 120}}'>
+            </label>
+            
+            <label class="form__field form__field--full">
+                <span>Dirección</span>
+                <input name="direccion" 
+                       type="text" 
+                       placeholder="Calle Principal #123, Ciudad" 
+                       maxlength="40"
+                       data-validator-config='{"maxLength": {"value": 40}}'>
+            </label>
+        </div>
+
+        <!-- Campos para Persona Jurídica -->
+        <div id="campos-juridico" class="form__grid campos-condicionales" style="display: none;">
+            <label class="form__field">
+                <span>RIF *</span>
+                <input name="rif" 
+                       type="text" 
+                       placeholder="J-12345678-9" 
+                       maxlength="10"
+                       data-validator-config='{"maxLength": {"value": 10}}'>
+            </label>
+            
+            <label class="form__field form__field--full">
+                <span>Razón Social *</span>
+                <input name="razon_social" 
+                       type="text" 
+                       placeholder="Empresa XYZ C.A." 
+                       maxlength="60"
+                       data-validator-config='{"maxLength": {"value": 60}}'>
+            </label>
+            
+            <label class="form__field">
+                <span>Teléfono *</span>
+                <input name="telefono" 
+                       type="tel" 
+                       placeholder="02121234567" 
+                       maxlength="11"
+                       pattern="^[\d\s\-+()]{11,11}$"
+                       data-validator-config='{
+                           "maxLength": {"value": 11},
+                           "customRules": [{
+                               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 11; }",
+                               "message": "El teléfono debe tener 11 dígitos"
+                           }]
+                       }'>
+            </label>
+            
+            <label class="form__field">
+                <span>Correo</span>
+                <input name="correo_juridico" 
+                       type="email" 
+                       placeholder="contacto@empresa.com" 
+                       maxlength="120"
+                       data-validator-config='{"maxLength": {"value": 120}}'>
+            </label>
+            
+            <label class="form__field form__field--full">
+                <span>Dirección</span>
+                <input name="direccion_juridico" 
+                       type="text" 
+                       placeholder="Zona Industrial, Calle 2" 
+                       maxlength="40"
+                       data-validator-config='{"maxLength": {"value": 40}}'>
+            </label>
+        </div>
+        
         <div class="form__actions">
             <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-            <button type="submit" class="btn btn--primary">Guardar cliente</button>
+            <button type="submit" class="btn btn--yellow">Guardar cliente</button>
         </div>
     </form>
     {% endcall %}

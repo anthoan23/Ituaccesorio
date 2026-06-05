@@ -36,6 +36,7 @@ def api_listar_empleados():
     resultado = empleados.listar_empleados()
     return jsonify(resultado)
 
+<<<<<<< HEAD
 
 
 @empleados_blueprint.route("/api/especialidades", methods=["GET"])
@@ -44,6 +45,41 @@ def api_listar_especialidades():
     empleados = Empleados()
     resultado = empleados.listar_especialidades()
     return jsonify(resultado)
+=======
+@empleados_blueprint.route("/api/empleados/lista", methods=["GET"])
+@jwt_required
+def api_listar_empleados_cargos():
+    empleados = Empleados()
+    resultado1 = empleados.lista_crgos()
+    resultado2 = empleados.lista_especialidades()
+    return jsonify({"cargos": resultado1, "especialidades": resultado2})
+
+
+@empleados_blueprint.route("/api/empleados/graficos", methods=["GET"])
+@jwt_required
+def api_listar_empleados_graficos():
+    empleados = Empleados()
+    resultado1 = empleados.listar_empleados_cargos()
+    resultado2 = empleados.listar_empleados_especialidades()
+    return jsonify({"cargos": resultado1, "especialidades": resultado2})
+
+@empleados_blueprint.route("/api/empleados/consultar", methods=["POST"])
+@jwt_required
+def api_consultar_empleado():
+    datos = request.get_json(silent=True) or {}
+    cedula = str(datos.get("cedula", "")).strip()
+    empleados = Empleados()
+    resultado1 = empleados.consultar_empleado(cedula)
+    
+    if not resultado1:
+        return jsonify({"success": False, "error": "Empleado no encontrado."}), 404
+    
+    if resultado1['cargo'] == 'Técnico':
+        resultado2 = empleados.consultar_especialidades_empleado(cedula)
+        return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
+    
+    return jsonify({"success": True, "empleado": resultado1})
+>>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0
 
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
 @jwt_required

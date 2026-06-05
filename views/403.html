@@ -1,0 +1,28 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Acceso denegado | Ituaccesorio{% endblock %}
+
+{% block head_extra %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/404.css') }}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+	<main class="auth-shell">
+		<section class="auth-card error-card" aria-label="Acceso denegado">
+			<div class="auth-card__brand">
+				<img class="auth-card__logo" src="{{ url_for('static', filename='img/LOGO TRAZO.png') }}" alt="Ituaccesorio">
+				<p class="auth-card__eyebrow">Error 403</p>
+			</div>
+
+			<h1 class="auth-card__title">Acceso denegado</h1>
+			<p class="auth-card__subtitle">No tienes permisos para acceder a esta página. Vuelve al inicio para continuar navegando.</p>
+
+			<div class="actions">
+				<a class="primary" href="/">Ir al inicio</a>
+				
+			</div>
+		</section>
+	</main>
+{% endblock %}

@@ -294,6 +294,7 @@ class Usuarios(conectar):
             """,
             (rol_id, modulo_id, registrar, modificar, eliminar),
         )
+<<<<<<< HEAD
 
     def eliminar_permiso(self, rol_id, modulo_id):
         return self._ejecutar(
@@ -301,3 +302,61 @@ class Usuarios(conectar):
             (rol_id, modulo_id),
         )
 
+=======
+    
+
+
+    def verificar_permiso(self, rol_id, modulo_nombre, permiso):
+        """
+        Verifica si un rol tiene un permiso específico en un módulo.
+        
+        Args:
+            rol_id (int): ID del rol
+            modulo_nombre (str): Nombre del módulo
+            permiso (str): Tipo de permiso ('consultar', 'registrar', 'modificar', 'eliminar')
+        
+        Returns:
+            bool: True si tiene el permiso, False si no
+        """
+        resultado = self._consultar(
+            f"""
+            SELECT p.{permiso} 
+            FROM permiso p
+            INNER JOIN modulo m ON m.id = p.modulo_id
+            WHERE p.rol_id = %s AND m.nombre = %s
+            LIMIT 1
+            """,
+            (rol_id, modulo_nombre)
+        )
+        if not resultado:
+            return False
+        return bool(resultado[0].get(permiso, 0))
+
+
+    def obtener_permisos_usuario(self, usuario_id):
+        """
+        Obtiene todos los permisos de un usuario.
+        
+        Args:
+            usuario_id (str): ID del usuario
+        
+        Returns:
+            list: Lista de permisos del usuario
+        """
+        return self._consultar(
+            """
+            SELECT 
+                m.nombre AS modulo_nombre,
+                COALESCE(p.consultar, 1) AS consultar,
+                COALESCE(p.registrar, 0) AS registrar,
+                COALESCE(p.modificar, 0) AS modificar,
+                COALESCE(p.eliminar, 0) AS eliminar
+            FROM modulo m
+            LEFT JOIN permiso p ON p.modulo_id = m.id AND p.rol_id = (
+                SELECT rol_id FROM usuario WHERE id = %s
+            )
+            ORDER BY m.nombre
+            """,
+            (usuario_id,)
+        )
+>>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0

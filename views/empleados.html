@@ -42,7 +42,9 @@
             <p class="card__subtitle">Tabla principal de empleados registrados.</p>
           </div>
           <div class="card__actions">
-            <button class="ui-btn ui-btn--primary" type="submit">Nuevo cargo</button>
+            <button class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-registrar-empleado">
+              Nuevo Empleado
+            </button>
             <button id="btn-actualizar-empleados" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
           </div>
         </div>
@@ -99,28 +101,73 @@
 
     </section>
 
-    {% call modal('modal-editar-empleado', 'Modificar empleado', 'sm') %}
-      <form id="form-editar-empleado" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id_empleado" id="editar-id-empleado">
+  {% call modal('modal-registrar-empleado', 'Registrar nuevo empleado', 'md') %}
+    <form id="form-registrar-empleado" class="ui-form" autocomplete="off">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
-        <div class="ui-form__grid ui-form__grid--one">
-          <label class="empleado-form__field">
-            <span>Nombre</span>
-            <input id="editar-nombre-empleado" type="text" name="nombre_empleado" required>
-          </label>
-          <label class="empleado-form__field empleado-form__field--full">
-            <span>Descripción</span>
-            <textarea id="editar-descripcion-empleado" name="descripcion_empleado" rows="4" required></textarea>
-          </label>
-        </div>
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="empleado-form__field">
+          <span>Cédula *</span>
+          <input type="text" name="cedula_empleado" id="reg-cedula-empleado" required placeholder="Ej: 12345678">
+        </label>
 
-        <div class="ui-form__actions">
-          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Guardar cambios</button>
+        <label class="empleado-form__field">
+          <span>Nombre *</span>
+          <input type="text" name="nombre_empleado" id="reg-nombre-empleado" required>
+        </label>
+
+        <label class="empleado-form__field">
+          <span>Apellido *</span>
+          <input type="text" name="apellido_empleado" id="reg-apellido-empleado" required>
+        </label>
+
+        <label class="empleado-form__field">
+          <span>Cargo *</span>
+          <select name="id_cargo" id="reg-cargo-empleado" required>
+          </select>
+        </label>
+
+        <label class="empleado-form__field">
+          <span>Celular</span>
+          <input type="tel" name="celular_empleado" id="reg-celular-empleado" pattern="[0-9]{10,15}" placeholder="Ej: 3123456789">
+        </label>
+
+        <label class="empleado-form__field empleado-form__field--full">
+          <span>Correo electrónico</span>
+          <input type="email" name="correo_empleado" id="reg-correo-empleado" placeholder="ejemplo@empresa.com">
+        </label>
+
+        <label class="empleado-form__field empleado-form__field--full">
+          <span>Dirección</span>
+          <input type="text" name="direccion_empleado" id="reg-direccion-empleado" placeholder="Calle, número, colonia">
+        </label>
+      </div>
+
+      <!-- Sección de especialidades (solo para técnicos) -->
+      <div id="especialidades-container" style="display: none;">
+        <div class="ui-form__section">
+          <h3 class="ui-form__subtitle">Especialidades</h3>
+          
+          <div class="ui-form__field">
+            <label class="ui-label">Seleccionar especialidad</label>
+            <select id="select-especialidad" class="ui-select">
+            </select>
+          </div>
+
+          <div id="lista-especialidades" class="especialidades-list">
+            <!-- Aquí se mostrarán las especialidades agregadas -->
+          </div>
+          
+          <input type="hidden" name="especialidades" id="especialidades-hidden">
         </div>
-      </form>
-    {% endcall %}
+      </div>
+
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="ui-btn ui-btn--primary">Guardar empleado</button>
+      </div>
+    </form>
+  {% endcall %}
 
     {% call modal('modal-eliminar-empleado', 'Eliminar empleado', 'sm') %}
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
