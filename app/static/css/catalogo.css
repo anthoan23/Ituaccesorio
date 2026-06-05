@@ -61,7 +61,7 @@ body::before {
 		linear-gradient(120deg, rgba(243, 197, 0, 0.44) 0%, rgba(243, 197, 0, 0.14) 18%, rgba(17, 17, 17, 0.08) 42%, rgba(255, 255, 255, 0.06) 66%, rgba(17, 17, 17, 0.30) 100%),
 		linear-gradient(180deg, #0f0f0f 0%, #1c1c1c 100%);
 	background-size: 320% 320%, 100% 100%;
-	animation: heroGradientFloat 28s ease-in-out infinite;
+	animation: heroGradientFloat 3s ease-in-out infinite;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
@@ -81,7 +81,7 @@ body::before {
 	right: -3rem;
 	top: 3rem;
 	background: radial-gradient(circle, rgba(243, 197, 0, 0.58), rgba(243, 197, 0, 0.08));
-	animation: heroDriftRight 26s ease-in-out infinite;
+	animation: heroDriftRight 3s ease-in-out infinite;
 }
 
 .catalog-hero::after {
@@ -90,7 +90,7 @@ body::before {
 	left: -2rem;
 	bottom: -8rem;
 	background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-	animation: heroDriftLeft 30s ease-in-out infinite;
+	animation: heroDriftLeft 3s ease-in-out infinite;
 }
 
 .catalog-hero__glow {
@@ -106,7 +106,7 @@ body::before {
 	top: 4rem;
 	right: 10%;
 	background: rgba(243, 197, 0, 0.18);
-	animation: glowDriftOne 24s ease-in-out infinite;
+	animation: glowDriftOne 3s ease-in-out infinite;
 }
 
 .catalog-hero__glow--two {
@@ -115,7 +115,7 @@ body::before {
 	left: 8%;
 	bottom: -6rem;
 	background: rgba(255, 255, 255, 0.05);
-	animation: glowDriftTwo 30s ease-in-out infinite;
+	animation: glowDriftTwo 3s ease-in-out infinite;
 }
 
 .catalog-hero__content {

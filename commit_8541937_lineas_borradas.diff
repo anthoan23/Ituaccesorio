@@ -1,0 +1,4191 @@
+﻿diff --git a/app/controllers/empleados.py b/app/controllers/empleados.py
+@@ -20,11 +19,0 @@ def pagina_empleados():
+-@empleados_blueprint.route("/especialidades", methods=["GET"])
+-@jwt_required
+-def pagina_especialidades():
+-    return render_template(
+-        "especialidades.html",
+-        show_navbar=True,
+-        show_notifications=True,
+-        active_page="especialidades",
+-    )
+@@ -41,6 +30 @@ def api_listar_empleados():
+-@empleados_blueprint.route("/api/especialidades", methods=["GET"])
+-@jwt_required
+-def api_listar_especialidades():
+-    empleados = Empleados()
+-    resultado = empleados.listar_especialidades()
+-    return jsonify(resultado)
+@@ -106,30 +89,0 @@ def api_agregar_empleado():
+-@empleados_blueprint.route("/api/especialidades", methods=["POST"])
+-@jwt_required
+-def api_agregar_especialidad():
+-    datos = request.get_json(silent=True) or {}
+-    especialidad = str(datos.get("especialidad", "")).strip()
+-    if not especialidad:
+-        return (
+-            jsonify(
+-                {
+-                    "success": False,
+-                    "error": "El nombre de la especialidad es obligatorio.",
+-                }
+-            ),
+-            400,
+-        )
+-    modelo = Empleados()
+-    try:
+-        mensaje = modelo.agregar_especialidad(especialidad=especialidad)
+-        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
+-            return jsonify({"success": True, "message": mensaje}), 201
+-        return jsonify({"success": False, "error": mensaje or "No se pudo agregar la especialidad."}), 400
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 500
+@@ -207,36 +160,0 @@ def api_actualizar_empleado(id_empleado):
+-@empleados_blueprint.route("/api/especialidades/<id_especialidad>", methods=["PUT"])
+-@jwt_required
+-def api_actualizar_especialidad(id_especialidad):
+-    datos = request.get_json(silent=True) or {}
+-    especialidad_nuevo = str(datos.get("especialidad_nuevo", "")).strip()
+-    if not especialidad_nuevo:
+-        return (
+-            jsonify(
+-                {
+-                    "success": False,
+-                    "error": "El nombre de la especialidad es obligatorio.",
+-                }
+-            ),
+-            400,
+-        )
+-    # permitir nombre original en body (`especialidad_viejo`), si viene usarlo
+-    especialidad_vieja = str(datos.get("especialidad_viejo", "")).strip()
+-  
+-    modelo = Empleados()
+-    try:
+-        mensaje = modelo.actualizar_especialidad(
+-            id_especialidad=id_especialidad,
+-            especialidad_n=especialidad_nuevo,
+-            especialidad_v=especialidad_vieja,
+-        )
+-        if isinstance(mensaje, str) and "exitos" in mensaje.lower():
+-            return jsonify({"success": True, "message": mensaje}), 200
+-        return jsonify({"success": False, "error": mensaje or "No se pudo actualizar la especialidad."}), 400
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 500
+diff --git a/app/controllers/especialidades.py b/app/controllers/especialidades.py
+@@ -0,0 +1,68 @@
+diff --git a/app/controllers/inventario.py b/app/controllers/inventario.py
+@@ -3,2 +2,0 @@ from flask import Blueprint, jsonify, request
+-from decimal import Decimal, InvalidOperation
+@@ -17 +15,2 @@ def api_listar_inventario():
+-    - modelo: filtra por Producto.Nombre_producto (match exacto)
+@@ -19,0 +19 @@ def api_listar_inventario():
+@@ -21,0 +22,7 @@ def api_listar_inventario():
+@@ -28 +35 @@ def api_listar_inventario():
+-    inventario = inv.listar_inventario_filtrado(N_modelo=modelo) or []
+@@ -36 +43 @@ def api_registrar_stock():
+-    id_producto = datos.get("id_producto")
+@@ -43 +50 @@ def api_registrar_stock():
+-        id_producto_val = int(id_producto)
+@@ -45 +52 @@ def api_registrar_stock():
+-        return jsonify({"success": False, "error": "id_producto es obligatorio."}), 400
+@@ -53,4 +60,3 @@ def api_registrar_stock():
+-        costo_raw = str(costo_venta).strip().replace(",", ".")
+-        costo_val = Decimal(costo_raw)
+-    except (InvalidOperation, Exception):
+-        return jsonify({"success": False, "error": "costo_venta debe ser un n├║mero (ej. 12.50)."}), 400
+@@ -65,2 +71,2 @@ def api_registrar_stock():
+-        id_inventario = inv.registrar_stock(
+-            id_producto=id_producto_val,
+@@ -72 +78 @@ def api_registrar_stock():
+-        if not id_inventario:
+@@ -74 +80 @@ def api_registrar_stock():
+-        return jsonify({"success": True, "id_inventario": int(id_inventario)})
+diff --git a/app/controllers/productos.py b/app/controllers/productos.py
+@@ -9,20 +8,0 @@ productos_blueprint = Blueprint("productos", __name__)
+-def _validate_len(nombre_campo: str, valor: str, max_len: int):
+-    valor = str(valor or "")
+-    if len(valor) > max_len:
+-        raise ValueError(f"{nombre_campo} no puede exceder {max_len} caracteres.")
+-def _parse_int_field(nombre_campo: str, valor, required: bool = True) -> int | None:
+-    if valor in (None, ""):
+-        if required:
+-            raise ValueError(f"{nombre_campo} es obligatorio.")
+-        return None
+-    try:
+-        num = int(valor)
+-    except Exception:
+-        raise ValueError(f"{nombre_campo} debe ser un n├║mero.")
+-    if required and num <= 0:
+-        raise ValueError(f"{nombre_campo} debe ser mayor a 0.")
+-    return num
+@@ -57,5 +36,0 @@ def api_crear_clase():
+-    try:
+-        _validate_len("Clase", nombre, 30)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+@@ -84,5 +58,0 @@ def api_actualizar_clase(id_clase: int):
+-    try:
+-        _validate_len("Clase", nombre, 30)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+@@ -131 +100,0 @@ def api_crear_marca():
+@@ -133,10 +102,3 @@ def api_crear_marca():
+-        _validate_len("Marca", nombre, 30)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+-    id_clase_val = None
+-    if id_clase not in (None, ""):
+-        try:
+-            id_clase_val = int(id_clase)
+-        except Exception:
+-            return jsonify({"success": False, "error": "La clase debe ser un n├║mero."}), 400
+@@ -161 +122,0 @@ def api_actualizar_marca(id_marca: int):
+@@ -163,10 +124,3 @@ def api_actualizar_marca(id_marca: int):
+-        _validate_len("Marca", nombre, 30)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+-    id_clase_val = None
+-    if id_clase not in (None, ""):
+-        try:
+-            id_clase_val = int(id_clase)
+-        except Exception:
+-            return jsonify({"success": False, "error": "La clase debe ser un n├║mero."}), 400
+@@ -197 +150,0 @@ def api_listar_modelos():
+-    id_clase = request.args.get("clase_id", default=None, type=int)
+@@ -200 +153 @@ def api_listar_modelos():
+-    modelos = modelo.listar_modelos(id_marca=id_marca, id_clase=id_clase, q=q) or []
+@@ -210,2 +162,0 @@ def api_crear_modelo():
+-    id_clase = datos.get("id_clase")
+-    descripcion = datos.get("descripcion")
+@@ -214,2 +165 @@ def api_crear_modelo():
+-        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+@@ -217,13 +167,3 @@ def api_crear_modelo():
+-        _validate_len("Producto", nombre, 30)
+-        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
+-        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+-    desc_val = None
+-    if descripcion not in (None, ""):
+-        desc_val = str(descripcion).strip()
+-        try:
+-            _validate_len("Descripci├│n", desc_val, 300)
+-        except Exception as error:
+-            return jsonify({"success": False, "error": str(error)}), 400
+@@ -233 +173 @@ def api_crear_modelo():
+-        new_id = modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
+@@ -245,2 +184,0 @@ def api_actualizar_modelo(id_modelo: int):
+-    id_clase = datos.get("id_clase")
+-    descripcion = datos.get("descripcion")
+@@ -249,2 +187 @@ def api_actualizar_modelo(id_modelo: int):
+-        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+@@ -252,13 +189,3 @@ def api_actualizar_modelo(id_modelo: int):
+-        _validate_len("Producto", nombre, 30)
+-        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
+-        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+-    except Exception as error:
+-        return jsonify({"success": False, "error": str(error)}), 400
+-    desc_val = None
+-    if descripcion not in (None, ""):
+-        desc_val = str(descripcion).strip()
+-        try:
+-            _validate_len("Descripci├│n", desc_val, 300)
+-        except Exception as error:
+-            return jsonify({"success": False, "error": str(error)}), 400
+@@ -268,7 +195 @@ def api_actualizar_modelo(id_modelo: int):
+-        ok = modelo.actualizar_modelo(
+-            id_modelo=id_modelo,
+-            id_clase=id_clase_val,
+-            id_marca=id_marca_val,
+-            nombre=nombre,
+-            descripcion=desc_val,
+-        )
+diff --git a/app/controllers/ventas.py b/app/controllers/ventas.py
+@@ -258,0 +259,421 @@ def api_procesar_pago():
+diff --git a/app/models/cargos.py b/app/models/cargos.py
+@@ -100 +99,0 @@ class Cargo(conectar):
+-            print(f"Error al eliminar cargo: {e}")
+@@ -102 +101,5 @@ class Cargo(conectar):
+-            mensaje = "Error al eliminar cargo. Verifica que no est├® en uso por empleados."
+diff --git a/app/models/clientes.py b/app/models/clientes.py
+@@ -36,15 +36,9 @@ class GestionClientes(conectar):
+-                c.ID_cliente AS ID_c,
+-                c.Nombre_cliente AS nombre,
+-                COALESCE(pn.Apellido_cliente, '') AS apellido,
+-                c.Celular_cliente AS celular,
+-                c.Correo_cliente AS correo,
+-                c.Direccion_cliente AS direccion,
+-                CASE
+-                    WHEN cj.ID_cliente IS NOT NULL THEN 'Juridico'
+-                    WHEN pn.ID_cliente IS NOT NULL THEN 'Natural'
+-                    ELSE ''
+-                END AS tipo
+-            FROM Cliente c
+-            LEFT JOIN Persona_natural pn ON pn.ID_cliente = c.ID_cliente
+-            LEFT JOIN Cliente_juridico cj ON cj.ID_cliente = c.ID_cliente
+-            ORDER BY c.ID_cliente DESC
+@@ -55,31 +49,8 @@ class GestionClientes(conectar):
+-        db = self.conexion1()
+-        if not db:
+-            return None
+-        cursor = db.cursor()
+-        try:
+-            cursor.execute(
+-                """
+-                INSERT INTO Cliente (ID_cliente, Nombre_cliente, Direccion_cliente, Celular_cliente, Correo_cliente)
+-                VALUES (%s, %s, %s, %s, %s)
+-                """,
+-                (cliente_id, nombre, direccion, celular, correo),
+-            )
+-            # Por compatibilidad con la UI actual (pide apellido), registramos como persona natural.
+-            cursor.execute(
+-                """
+-                INSERT INTO Persona_natural (ID_cliente, Apellido_cliente)
+-                VALUES (%s, %s)
+-                """,
+-                (cliente_id, apellido),
+-            )
+-            db.commit()
+-            return cliente_id
+-        except Exception:
+-            db.rollback()
+-            return None
+-        finally:
+-            cursor.close()
+-            db.close()
+@@ -91,15 +62,9 @@ class GestionClientes(conectar):
+-                c.ID_cliente AS ID_c,
+-                c.Nombre_cliente AS nombre,
+-                COALESCE(pn.Apellido_cliente, '') AS apellido,
+-                c.Celular_cliente AS celular,
+-                c.Correo_cliente AS correo,
+-                c.Direccion_cliente AS direccion,
+-                CASE
+-                    WHEN cj.ID_cliente IS NOT NULL THEN 'Juridico'
+-                    WHEN pn.ID_cliente IS NOT NULL THEN 'Natural'
+-                    ELSE ''
+-                END AS tipo
+-            FROM Cliente c
+-            LEFT JOIN Persona_natural pn ON pn.ID_cliente = c.ID_cliente
+-            LEFT JOIN Cliente_juridico cj ON cj.ID_cliente = c.ID_cliente
+-            WHERE c.ID_cliente = %s
+@@ -113 +78,8 @@ class GestionClientes(conectar):
+-        return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion, tipo)
+@@ -116,37 +88,14 @@ class GestionClientes(conectar):
+-        db = self.conexion1()
+-        if not db:
+-            return None
+-        cursor = db.cursor()
+-        try:
+-            cursor.execute(
+-                """
+-                UPDATE Cliente
+-                SET ID_cliente = %s,
+-                    Nombre_cliente = %s,
+-                    Direccion_cliente = %s,
+-                    Celular_cliente = %s,
+-                    Correo_cliente = %s
+-                WHERE ID_cliente = %s
+-                """,
+-                (nuevo_cliente_id, nombre, direccion, celular, correo, cliente_id_actual),
+-            )
+-            # Upsert de Persona_natural (apellido)
+-            cursor.execute(
+-                """
+-                INSERT INTO Persona_natural (ID_cliente, Apellido_cliente)
+-                VALUES (%s, %s)
+-                ON DUPLICATE KEY UPDATE Apellido_cliente = VALUES(Apellido_cliente)
+-                """,
+-                (nuevo_cliente_id, apellido),
+-            )
+-            db.commit()
+-            return cursor.rowcount
+-        except Exception:
+-            db.rollback()
+-            return None
+-        finally:
+-            cursor.close()
+-            db.close()
+@@ -155,17 +104 @@ class GestionClientes(conectar):
+-        db = self.conexion1()
+-        if not db:
+-            return None
+-        cursor = db.cursor()
+-        try:
+-            cursor.execute("DELETE FROM Persona_natural WHERE ID_cliente = %s", (cliente_id,))
+-            cursor.execute("DELETE FROM Cliente_juridico WHERE ID_cliente = %s", (cliente_id,))
+-            cursor.execute("DELETE FROM Cliente WHERE ID_cliente = %s", (cliente_id,))
+-            db.commit()
+-            return cursor.rowcount
+-        except Exception:
+-            db.rollback()
+-            return None
+-        finally:
+-            cursor.close()
+-            db.close()
+diff --git a/app/models/empleados.py b/app/models/empleados.py
+@@ -18 +18 @@ class Empleados(conectar):
+-                    e.ID_empleado AS cedula,
+@@ -20,5 +20,5 @@ class Empleados(conectar):
+-                    e.Nombre_empleado AS nombre,
+-                    e.Apellido_empleado AS apellido,
+-                    e.Celular_empleado AS celular,
+-                    e.Correo_empleado AS correo,
+-                    e.Direccion_empleado AS direccion,
+@@ -28 +28 @@ class Empleados(conectar):
+-                FROM Empleado e
+@@ -30 +30 @@ class Empleados(conectar):
+-                LEFT JOIN capacitacion cap ON e.ID_empleado = cap.ID_empleado
+@@ -32,2 +32,2 @@ class Empleados(conectar):
+-                GROUP BY e.ID_empleado
+-                ORDER BY e.ID_empleado ASC
+@@ -51,3 +51,3 @@ class Empleados(conectar):
+-                    e.ID_empleado AS id,
+-                    e.Nombre_empleado AS nombre,
+-                    e.Apellido_empleado AS apellido,
+@@ -55 +55 @@ class Empleados(conectar):
+-                FROM Empleado e
+@@ -58 +58 @@ class Empleados(conectar):
+-                ORDER BY e.Nombre_empleado ASC, e.Apellido_empleado ASC
+@@ -80 +80 @@ class Empleados(conectar):
+-                FROM Especialidad
+@@ -114 +114 @@ class Empleados(conectar):
+-                INSERT INTO empleado (ID_empleado, ID_cargo, Nombre_empleado, Apellido_empleado, Celular_empleado, Correo_empleado, Direccion_empleado)
+@@ -125 +125 @@ class Empleados(conectar):
+-                            "INSERT INTO capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
+@@ -160 +160 @@ class Empleados(conectar):
+-                "INSERT INTO Especialidad (N_especialidad) VALUES (%s)",
+@@ -189 +189 @@ class Empleados(conectar):
+-                "DELETE FROM Empleado WHERE ID_empleado = %s",
+@@ -219 +219 @@ class Empleados(conectar):
+-                "DELETE FROM Especialidad WHERE N_especialidad = %s",
+@@ -258,2 +258,2 @@ class Empleados(conectar):
+-                SET ID_empleado = %s, ID_cargo = %s, Nombre_empleado = %s, Apellido_empleado = %s, Celular_empleado = %s, Correo_empleado = %s, Direccion_empleado = %s
+-                WHERE ID_empleado = %s
+@@ -267 +267 @@ class Empleados(conectar):
+-                        "DELETE FROM Capacitacion WHERE ID_empleado = %s",
+@@ -276 +276 @@ class Empleados(conectar):
+-                            "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
+@@ -354 +354 @@ class Empleados(conectar):
+-                "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
+@@ -371 +371 @@ class Empleados(conectar):
+-                "SELECT 1 FROM Especialidad WHERE N_especialidad = %s LIMIT 1",
+diff --git a/app/models/especialidades.py b/app/models/especialidades.py
+@@ -0,0 +1,175 @@
+diff --git a/app/models/inventario.py b/app/models/inventario.py
+@@ -3,2 +2,0 @@ from __future__ import annotations
+-from decimal import Decimal
+@@ -10,17 +8,8 @@ class Inventario(conectar):
+-        "SELECT "
+-        "  cl.Nombre_Clase AS tipo, "
+-        "  ma.Nombre_marca AS N_marca, "
+-        "  p.Nombre_producto AS N_modelo, "
+-        "  (SELECT fi.Capacidad FROM Fotos_inventario fi "
+-        "     WHERE fi.ID_inventario = i.ID_inventario "
+-        "     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS Capacidad, "
+-        "  (SELECT fi.Color FROM Fotos_inventario fi "
+-        "     WHERE fi.ID_inventario = i.ID_inventario "
+-        "     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS Color, "
+-        "  i.Existencia, i.Costo_venta, "
+-        "  p.ID_producto AS ID_producto, "
+-        "  i.ID_inventario AS ID_inventario "
+-        "FROM Inventario i "
+-        "JOIN Producto p ON i.ID_producto = p.ID_producto "
+-        "LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca "
+-        "LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase "
+@@ -29,7 +18 @@ class Inventario(conectar):
+-    def _listar(
+-        self,
+-        *,
+-        id_clase: int | None = None,
+-        id_marca: int | None = None,
+-        N_modelo: str | None = None,
+-    ):
+@@ -44,6 +27,3 @@ class Inventario(conectar):
+-            if id_clase is not None:
+-                where.append("p.ID_Clase = %s")
+-                params.append(int(id_clase))
+-            if id_marca is not None:
+-                where.append("p.ID_marca = %s")
+-                params.append(int(id_marca))
+@@ -51 +31 @@ class Inventario(conectar):
+-                where.append("p.Nombre_producto = %s")
+@@ -57 +37 @@ class Inventario(conectar):
+-            sql += "ORDER BY cl.Nombre_Clase, ma.Nombre_marca, p.Nombre_producto"
+@@ -60,7 +40 @@ class Inventario(conectar):
+-            rows = cursor.fetchall()
+-            # mysql-connector puede devolver Decimal para columnas DECIMAL.
+-            for row in rows or []:
+-                val = row.get("Costo_venta") if isinstance(row, dict) else None
+-                if isinstance(val, Decimal):
+-                    row["Costo_venta"] = float(val)
+-            return rows
+@@ -72,2 +46,2 @@ class Inventario(conectar):
+-        # Compatibilidad: antes filtraba por Num_i (ya no existe). Devuelve todo.
+-        return self._listar()
+@@ -75,0 +50 @@ class Inventario(conectar):
+@@ -82,2 +57 @@ class Inventario(conectar):
+-        # Compatibilidad: Num_i ya no existe.
+-        return self._listar()
+@@ -86,2 +60 @@ class Inventario(conectar):
+-        # Compatibilidad: se ignora num_i.
+-        return self._listar(N_modelo=N_modelo)
+@@ -92 +65 @@ class Inventario(conectar):
+-        id_producto: int,
+@@ -94 +67 @@ class Inventario(conectar):
+-        costo_venta: Decimal,
+@@ -104 +76,0 @@ class Inventario(conectar):
+-            # Mantener 1 registro de inventario por producto: actualizar si existe, si no insertar.
+@@ -106,2 +78,2 @@ class Inventario(conectar):
+-                "SELECT ID_inventario FROM Inventario WHERE ID_producto=%s ORDER BY ID_inventario DESC LIMIT 1",
+-                (int(id_producto),),
+@@ -112 +84 @@ class Inventario(conectar):
+-                id_inventario = int(row[0])
+@@ -114,2 +86,2 @@ class Inventario(conectar):
+-                    "UPDATE Inventario SET Existencia=%s, Costo_venta=%s WHERE ID_inventario=%s",
+-                    (int(existencia), costo_venta, id_inventario),
+@@ -119,2 +91,2 @@ class Inventario(conectar):
+-                    "INSERT INTO Inventario (ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s)",
+-                    (int(id_producto), int(existencia), costo_venta, None),
+@@ -122 +94 @@ class Inventario(conectar):
+-                id_inventario = int(cursor.lastrowid)
+@@ -132 +104 @@ class Inventario(conectar):
+-            # Upsert de capacidad/color en Fotos_inventario solo si se env├¡a al menos uno.
+@@ -135,2 +107,2 @@ class Inventario(conectar):
+-                    "SELECT ID_foto_inventario FROM Fotos_inventario WHERE ID_inventario=%s ORDER BY ID_foto_inventario DESC LIMIT 1",
+-                    (id_inventario,),
+@@ -138,2 +110,2 @@ class Inventario(conectar):
+-                foto = cursor.fetchone()
+-                if foto:
+@@ -141,2 +113,2 @@ class Inventario(conectar):
+-                        "UPDATE Fotos_inventario SET Capacidad=%s, Color=%s WHERE ID_foto_inventario=%s",
+-                        (cap_val, color_val, int(foto[0])),
+@@ -146,2 +118,2 @@ class Inventario(conectar):
+-                        "INSERT INTO Fotos_inventario (ID_inventario, Capacidad, Color) VALUES (%s, %s, %s)",
+-                        (id_inventario, cap_val, color_val),
+@@ -151 +123 @@ class Inventario(conectar):
+-            return id_inventario
+@@ -160 +132 @@ class Inventario(conectar):
+-        return self._listar(N_modelo=N_modelo)
+diff --git a/app/models/productos.py b/app/models/productos.py
+@@ -17,5 +17,5 @@ class Productos(conectar):
+-                    ID_Clase AS id,
+-                    Nombre_Clase AS nombre,
+-                    NULL AS num_i
+-                FROM Clase_producto
+-                ORDER BY Nombre_Clase ASC
+@@ -37,2 +37,2 @@ class Productos(conectar):
+-                "INSERT INTO Clase_producto (Nombre_Clase) VALUES (%s)",
+-                (nombre,),
+@@ -57,2 +57,2 @@ class Productos(conectar):
+-                "UPDATE Clase_producto SET Nombre_Clase=%s WHERE ID_Clase=%s",
+-                (nombre, id_clase),
+@@ -76 +76 @@ class Productos(conectar):
+-            cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase=%s", (id_clase,))
+@@ -97,8 +97,6 @@ class Productos(conectar):
+-                        ma.ID_marca AS id,
+-                        %s AS id_clase,
+-                        ma.Nombre_marca AS nombre
+-                    FROM Marca_producto ma
+-                    JOIN Producto p ON p.ID_marca = ma.ID_marca
+-                    WHERE p.ID_Clase = %s
+-                    GROUP BY ma.ID_marca, ma.Nombre_marca
+-                    ORDER BY ma.Nombre_marca ASC
+@@ -106 +104 @@ class Productos(conectar):
+-                    (id_clase, id_clase),
+@@ -113,4 +111,4 @@ class Productos(conectar):
+-                        NULL AS id_clase,
+-                        Nombre_marca AS nombre
+-                    FROM Marca_producto
+-                    ORDER BY Nombre_marca ASC
+@@ -124 +122 @@ class Productos(conectar):
+-    def crear_marca(self, id_clase: int | None, nombre: str) -> int:
+@@ -132,2 +130,2 @@ class Productos(conectar):
+-                "INSERT INTO Marca_producto (Nombre_marca) VALUES (%s)",
+-                (nombre,),
+@@ -144 +142 @@ class Productos(conectar):
+-    def actualizar_marca(self, id_marca: int, id_clase: int | None, nombre: str) -> bool:
+@@ -152,2 +150,2 @@ class Productos(conectar):
+-                "UPDATE Marca_producto SET Nombre_marca=%s WHERE ID_marca=%s",
+-                (nombre, id_marca),
+@@ -171 +169 @@ class Productos(conectar):
+-            cursor.execute("DELETE FROM Marca_producto WHERE ID_marca=%s", (id_marca,))
+@@ -181 +179 @@ class Productos(conectar):
+-    def listar_modelos(self, id_marca: int | None = None, id_clase: int | None = None, q: str | None = None):
+@@ -192 +190 @@ class Productos(conectar):
+-                where.append("p.ID_marca = %s")
+@@ -194,3 +191,0 @@ class Productos(conectar):
+-            if id_clase:
+-                where.append("p.ID_Clase = %s")
+-                params.append(id_clase)
+@@ -198 +193 @@ class Productos(conectar):
+-                where.append("p.Nombre_producto LIKE %s")
+@@ -206,10 +201,9 @@ class Productos(conectar):
+-                    p.ID_producto AS id,
+-                    p.ID_marca AS id_marca,
+-                    p.ID_Clase AS id_clase,
+-                    p.Nombre_producto AS nombre,
+-                    p.Descripcion AS descripcion,
+-                    ma.Nombre_marca AS marca_nombre,
+-                    cl.Nombre_Clase AS clase_nombre
+-                FROM Producto p
+-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+-                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+@@ -217 +211 @@ class Productos(conectar):
+-                ORDER BY cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
+@@ -226 +220 @@ class Productos(conectar):
+-    def crear_modelo(self, id_clase: int, id_marca: int, nombre: str, descripcion: str | None = None) -> int:
+@@ -234,2 +228,2 @@ class Productos(conectar):
+-                "INSERT INTO Producto (ID_Clase, ID_marca, Nombre_producto, Descripcion) VALUES (%s, %s, %s, %s)",
+-                (id_clase, id_marca, nombre, descripcion),
+@@ -237 +231 @@ class Productos(conectar):
+-            id_producto = int(cursor.lastrowid)
+@@ -239 +233 @@ class Productos(conectar):
+-            # Al registrar un producto nuevo, crear un inventario base en 0.
+@@ -241,2 +235,2 @@ class Productos(conectar):
+-                "INSERT INTO Inventario (ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s)",
+-                (id_producto, 0, 0, None),
+@@ -246 +240 @@ class Productos(conectar):
+-            return id_producto
+@@ -254,8 +248 @@ class Productos(conectar):
+-    def actualizar_modelo(
+-        self,
+-        id_modelo: int,
+-        id_clase: int,
+-        id_marca: int,
+-        nombre: str,
+-        descripcion: str | None = None,
+-    ) -> bool:
+@@ -269,2 +256,2 @@ class Productos(conectar):
+-                "UPDATE Producto SET ID_Clase=%s, ID_marca=%s, Nombre_producto=%s, Descripcion=%s WHERE ID_producto=%s",
+-                (id_clase, id_marca, nombre, descripcion, id_modelo),
+@@ -288,4 +275,3 @@ class Productos(conectar):
+-            # Borrar relaciones directas primero (si existen) para evitar restricciones FK.
+-            cursor.execute("DELETE FROM Inventario WHERE ID_producto=%s", (id_modelo,))
+-            cursor.execute("DELETE FROM Suministra WHERE ID_producto=%s", (id_modelo,))
+-            cursor.execute("DELETE FROM Producto WHERE ID_producto=%s", (id_modelo,))
+diff --git a/app/models/usuarios.py b/app/models/usuarios.py
+@@ -62,6 +62,6 @@ class Usuarios(conectar):
+-                    e.ID_empleado AS cedula,
+-                    e.Nombre_empleado AS nombre,
+-                    e.Apellido_empleado AS apellido,
+-                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) AS nombre_completo
+-                FROM Empleado e
+-                ORDER BY e.ID_empleado ASC
+@@ -83 +83 @@ class Usuarios(conectar):
+-                "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
+diff --git a/app/models/ventas.py b/app/models/ventas.py
+@@ -5,2 +4,0 @@ import uuid
+-from decimal import Decimal
+-import json
+@@ -9,2 +6,0 @@ class VentasModel(conectar):
+-    _ESTADO_CARRITO = "carrito"
+@@ -22 +18 @@ class VentasModel(conectar):
+-            where = ["i.Existencia > 0"]
+@@ -26 +22 @@ class VentasModel(conectar):
+-                where.append("cl.ID_Clase = %s")
+@@ -32 +28 @@ class VentasModel(conectar):
+-                where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
+@@ -38 +34 @@ class VentasModel(conectar):
+-            # En el esquema nuevo, el identificador a usar en el cat├ílogo es ID_inventario.
+@@ -40,10 +36,10 @@ class VentasModel(conectar):
+-                SELECT
+-                    i.ID_inventario AS id,
+-                    p.Nombre_producto AS nombre,
+-                    COALESCE(ma.Nombre_marca, '') AS marca,
+-                    COALESCE(cl.Nombre_Clase, '') AS clase,
+-                    i.Costo_venta AS precio_usd,
+-                    i.Existencia AS stock,
+-                    p.ID_producto AS id_producto,
+-                    p.ID_marca AS id_marca,
+-                    p.ID_Clase AS id_clase,
+@@ -51,3 +47,3 @@ class VentasModel(conectar):
+-                        SELECT SUM(dv.Cantidad_articulo)
+-                        FROM Detalle_venta dv
+-                        WHERE dv.ID_inventario = i.ID_inventario
+@@ -55,4 +51,4 @@ class VentasModel(conectar):
+-                FROM Inventario i
+-                JOIN Producto p ON i.ID_producto = p.ID_producto
+-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+-                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+@@ -60 +56 @@ class VentasModel(conectar):
+-                ORDER BY veces_vendido DESC, cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
+@@ -65,6 +60,0 @@ class VentasModel(conectar):
+-            # Normalizar decimales
+-            for r in resultados or []:
+-                val = r.get("precio_usd")
+-                if isinstance(val, Decimal):
+-                    r["precio_usd"] = float(val)
+@@ -89,19 +79,13 @@ class VentasModel(conectar):
+-            cursor.execute(
+-                """
+-                SELECT
+-                    i.ID_inventario AS id,
+-                    p.Nombre_producto AS nombre,
+-                    COALESCE(ma.Nombre_marca, '') AS marca,
+-                    i.Costo_venta AS precio_usd,
+-                    i.Existencia AS stock
+-                FROM Inventario i
+-                JOIN Producto p ON i.ID_producto = p.ID_producto
+-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+-                WHERE i.ID_inventario = %s
+-                """,
+-                (producto_id,),
+-            )
+-            row = cursor.fetchone()
+-            if row and isinstance(row.get("precio_usd"), Decimal):
+-                row["precio_usd"] = float(row["precio_usd"])
+-            return row
+@@ -120,13 +104,12 @@ class VentasModel(conectar):
+-            cursor.execute(
+-                """
+-                SELECT
+-                    i.ID_inventario AS id,
+-                    p.Nombre_producto AS nombre,
+-                    COALESCE(ma.Nombre_marca, '') AS marca,
+-                    i.Costo_venta AS precio_usd,
+-                    SUM(dv.Cantidad_articulo) AS veces_vendido
+-                FROM Detalle_venta dv
+-                JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+-                JOIN Producto p ON i.ID_producto = p.ID_producto
+-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+-                GROUP BY i.ID_inventario, p.Nombre_producto, ma.Nombre_marca, i.Costo_venta
+@@ -135,8 +118,2 @@ class VentasModel(conectar):
+-                """,
+-                (limite,),
+-            )
+-            rows = cursor.fetchall()
+-            for r in rows or []:
+-                if isinstance(r.get("precio_usd"), Decimal):
+-                    r["precio_usd"] = float(r["precio_usd"])
+-            return rows
+@@ -157,24 +134,16 @@ class VentasModel(conectar):
+-            cursor.execute(
+-                """
+-                SELECT
+-                    lc.ID_lista_compra AS id,
+-                    lc.ID_inventario AS producto_id,
+-                    lc.Cantidad_producto AS cantidad,
+-                    i.Costo_venta AS precio_usd,
+-                    p.Nombre_producto AS nombre,
+-                    COALESCE(ma.Nombre_marca, '') AS marca,
+-                    i.Existencia AS stock_disponible
+-                FROM Lista_compra lc
+-                JOIN Inventario i ON lc.ID_inventario = i.ID_inventario
+-                JOIN Producto p ON i.ID_producto = p.ID_producto
+-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+-                WHERE lc.ID_cliente = %s
+-                  AND (lc.Estado_lista_compra IS NULL OR lc.Estado_lista_compra = %s)
+-                """,
+-                (cliente_id, self._ESTADO_CARRITO),
+-            )
+-            rows = cursor.fetchall()
+-            for r in rows or []:
+-                if isinstance(r.get("precio_usd"), Decimal):
+-                    r["precio_usd"] = float(r["precio_usd"])
+-            return rows
+@@ -193,19 +162 @@ class VentasModel(conectar):
+-            cant = int(cantidad)
+-            if cant <= 0:
+-                raise ValueError("La cantidad debe ser mayor que 0")
+-            inv_id = int(producto_id)
+-            # Validar stock disponible
+-            cursor.execute(
+-                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+-                (inv_id,),
+-            )
+-            stock_row = cursor.fetchone()
+-            if not stock_row:
+-                raise ValueError("Producto no encontrado en inventario")
+-            stock = int(stock_row[0] or 0)
+-            if stock <= 0:
+-                raise ValueError("Producto sin stock")
+-            # Verificar si ya existe en el carrito
+@@ -213,8 +164,2 @@ class VentasModel(conectar):
+-                """
+-                SELECT ID_lista_compra, Cantidad_producto
+-                FROM Lista_compra
+-                WHERE ID_cliente = %s AND ID_inventario = %s
+-                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+-                LIMIT 1
+-                """,
+-                (int(cliente_id), inv_id, self._ESTADO_CARRITO),
+@@ -223 +168 @@ class VentasModel(conectar):
+@@ -225,3 +170 @@ class VentasModel(conectar):
+-                nueva_cantidad = int(existente[1] or 0) + cant
+-                if nueva_cantidad > stock:
+-                    raise ValueError("La cantidad supera el stock disponible")
+@@ -229,2 +172,2 @@ class VentasModel(conectar):
+-                    "UPDATE Lista_compra SET Cantidad_producto = %s WHERE ID_lista_compra = %s",
+-                    (nueva_cantidad, int(existente[0])),
+@@ -233,2 +175,0 @@ class VentasModel(conectar):
+-                if cant > stock:
+-                    raise ValueError("La cantidad supera el stock disponible")
+@@ -236,5 +177,2 @@ class VentasModel(conectar):
+-                    """
+-                    INSERT INTO Lista_compra (ID_inventario, ID_cliente, Cantidad_producto, Estado_lista_compra)
+-                    VALUES (%s, %s, %s, %s)
+-                    """,
+-                    (inv_id, int(cliente_id), cant, self._ESTADO_CARRITO),
+@@ -259,6 +197,2 @@ class VentasModel(conectar):
+-                """
+-                DELETE FROM Lista_compra
+-                WHERE ID_cliente = %s AND ID_inventario = %s
+-                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+-                """,
+-                (int(cliente_id), int(producto_id), self._ESTADO_CARRITO),
+@@ -285,10 +218,0 @@ class VentasModel(conectar):
+-            # Validar stock
+-            cursor.execute(
+-                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+-                (int(producto_id),),
+-            )
+-            row = cursor.fetchone()
+-            stock = int(row[0] or 0) if row else 0
+-            if int(cantidad) > stock:
+-                raise ValueError("La cantidad supera el stock disponible")
+@@ -296,7 +220,2 @@ class VentasModel(conectar):
+-                """
+-                UPDATE Lista_compra
+-                SET Cantidad_producto = %s, Estado_lista_compra = %s
+-                WHERE ID_cliente = %s AND ID_inventario = %s
+-                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+-                """,
+-                (int(cantidad), self._ESTADO_CARRITO, int(cliente_id), int(producto_id), self._ESTADO_CARRITO),
+@@ -320,6 +239,2 @@ class VentasModel(conectar):
+-                """
+-                DELETE FROM Lista_compra
+-                WHERE ID_cliente = %s
+-                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+-                """,
+-                (int(cliente_id), self._ESTADO_CARRITO),
+@@ -349 +264 @@ class VentasModel(conectar):
+-        fecha_actual = datetime.now()
+@@ -353,34 +268,10 @@ class VentasModel(conectar):
+-            moneda = "USD"
+-            if metodo_pago in ("pago_movil", "efectivo_bs"):
+-                moneda = "VES"
+-            elif metodo_pago == "binance":
+-                moneda = "USDT"
+-            # Insertar venta (esquema nuevo)
+-            cursor.execute(
+-                """
+-                INSERT INTO Venta (ID_factura, ID_empleado, ID_cliente, Moneda, Fecha_venta)
+-                VALUES (%s, %s, %s, %s, %s)
+-                """,
+-                (factura_id, None, int(cliente_id), moneda, fecha_actual),
+-            )
+-            # Insertar detalle + descontar stock (Inventario)
+-            for item in items or []:
+-                inv_id = int(item["producto_id"])
+-                qty = int(item["cantidad"])
+-                if qty <= 0:
+-                    continue
+-                cursor.execute(
+-                    "SELECT Existencia FROM Inventario WHERE ID_inventario=%s LIMIT 1",
+-                    (inv_id,),
+-                )
+-                row = cursor.fetchone()
+-                existencia = int(row[0] or 0) if row else 0
+-                if existencia < qty:
+-                    raise ValueError("Stock insuficiente para completar la compra")
+-                cursor.execute(
+-                    """
+-                    INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo)
+@@ -388,17 +279,7 @@ class VentasModel(conectar):
+-                    """,
+-                    (inv_id, factura_id, qty),
+-                )
+-                cursor.execute(
+-                    "UPDATE Inventario SET Existencia = Existencia - %s WHERE ID_inventario = %s",
+-                    (qty, inv_id),
+-                )
+-            # Marcar/limpiar carrito del cliente
+-            cursor.execute(
+-                """
+-                DELETE FROM Lista_compra
+-                WHERE ID_cliente = %s
+-                  AND (Estado_lista_compra IS NULL OR Estado_lista_compra = %s)
+-                """,
+-                (int(cliente_id), self._ESTADO_CARRITO),
+-            )
+@@ -422 +303 @@ class VentasModel(conectar):
+-        fecha_actual = datetime.now()
+@@ -426,37 +307,17 @@ class VentasModel(conectar):
+-            moneda = "USD"
+-            if metodo_pago in ("pago_movil", "efectivo_bs"):
+-                moneda = "VES"
+-            elif metodo_pago == "binance":
+-                moneda = "USDT"
+-            cursor.execute(
+-                """
+-                INSERT INTO Venta (ID_factura, ID_empleado, ID_cliente, Moneda, Fecha_venta)
+-                VALUES (%s, %s, %s, %s, %s)
+-                """,
+-                (factura_id, int(empleado_id) if empleado_id is not None else None, int(cliente_id), moneda, fecha_actual),
+-            )
+-            for item in items or []:
+-                inv_id = int(item["producto_id"])
+-                qty = int(item["cantidad"])
+-                if qty <= 0:
+-                    continue
+-                cursor.execute(
+-                    "SELECT Existencia FROM Inventario WHERE ID_inventario=%s LIMIT 1",
+-                    (inv_id,),
+-                )
+-                row = cursor.fetchone()
+-                existencia = int(row[0] or 0) if row else 0
+-                if existencia < qty:
+-                    raise ValueError("Stock insuficiente")
+-                cursor.execute(
+-                    "INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo) VALUES (%s, %s, %s)",
+-                    (inv_id, factura_id, qty),
+-                )
+-                cursor.execute(
+-                    "UPDATE Inventario SET Existencia = Existencia - %s WHERE ID_inventario = %s",
+-                    (qty, inv_id),
+-                )
+@@ -481,5 +342,22 @@ class VentasModel(conectar):
+-            fecha_actual = datetime.now()
+-            moneda = "USD"
+-            if metodo_pago in ("pago_movil", "efectivo_bs"):
+-                moneda = "VES"
+@@ -487,20 +365,18 @@ class VentasModel(conectar):
+-                moneda = "USDT"
+-            # En el dump nuevo existe Transferencia (muy b├ísica). Guardamos un resumen en Capture.
+-            capture = None
+-            try:
+-                capture = json.dumps({"metodo": metodo_pago, "datos": datos or {}}, ensure_ascii=False)
+-            except Exception:
+-                capture = None
+-            if capture and len(capture) > 255:
+-                capture = capture[:255]
+-            cursor.execute(
+-                """
+-                INSERT INTO Transferencia (ID_factura, Moneda, Fecha_pago, Capture)
+-                VALUES (%s, %s, %s, %s)
+-                ON DUPLICATE KEY UPDATE Moneda=VALUES(Moneda), Fecha_pago=VALUES(Fecha_pago), Capture=VALUES(Capture)
+-                """,
+-                (factura_id, moneda, fecha_actual, capture),
+-            )
+@@ -520,3 +396,31 @@ class VentasModel(conectar):
+-        # El esquema nuevo (Venta/Detalle_venta/Transferencia) no incluye estado de validaci├│n.
+-        # Para evitar errores SQL en el panel admin, devolvemos una lista vac├¡a por ahora.
+-        return []
+@@ -526 +430,23 @@ class VentasModel(conectar):
+-        return []
+@@ -530 +456,23 @@ class VentasModel(conectar):
+-        return []
+@@ -534 +482,17 @@ class VentasModel(conectar):
+-        raise RuntimeError("La validaci├│n de pagos (aprobar) no est├í soportada con el esquema de BD actual.")
+@@ -538 +502,17 @@ class VentasModel(conectar):
+-        raise RuntimeError("La validaci├│n de pagos (rechazar) no est├í soportada con el esquema de BD actual.")
+diff --git a/app/static/css/bitacora.css b/app/static/css/bitacora.css
+@@ -1,370 +0,0 @@
+-:root {
+-  --bg: #1e1e1e;
+-  --card: #ffffff;
+-  --ink: #121212;
+-  --muted: rgba(18, 18, 18, 0.68);
+-  --line: rgba(0, 0, 0, 0.12);
+-  --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+-  --radius: 22px;
+-  --yellow: #f3c500;
+-  --yellow-soft: #f8dd69;
+-}
+-* {
+-  box-sizing: border-box;
+-}
+-body {
+-  margin: 0;
+-  min-height: 100vh;
+-  font-family: "Manrope", sans-serif;
+-  color: #ffffff;
+-  background: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%),
+-    radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
+-    linear-gradient(135deg, #1e1e1e, #2a2a2a);
+-}
+-.page {
+-  width: min(1240px, 100%);
+-  margin: 0 auto;
+-  padding: 1.4rem 1.1rem 2.2rem;
+-}
+-.bitacora-hero {
+-  display: flex;
+-  align-items: flex-start;
+-  justify-content: space-between;
+-  gap: 1.1rem;
+-  margin-bottom: 1.1rem;
+-}
+-.bitacora-hero__title {
+-  margin: 0;
+-  font-family: "Space Grotesk", sans-serif;
+-  font-weight: 900;
+-  letter-spacing: -0.03em;
+-  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+-}
+-.bitacora-hero__subtitle {
+-  margin: 0.35rem 0 0;
+-  color: rgba(255, 255, 255, 0.78);
+-  font-weight: 600;
+-}
+-.bitacora-hero__actions {
+-  display: inline-flex;
+-  flex-wrap: wrap;
+-  gap: 0.65rem;
+-  justify-content: flex-end;
+-}
+-.btn {
+-  appearance: none;
+-  border: 0;
+-  border-radius: 999px;
+-  padding: 0.72rem 1rem;
+-  cursor: pointer;
+-  font: inherit;
+-  font-weight: 900;
+-  display: inline-flex;
+-  align-items: center;
+-  justify-content: center;
+-  gap: 0.45rem;
+-  transition: transform 0.15s ease, filter 0.2s ease;
+-}
+-.btn:hover:not(:disabled) {
+-  transform: translateY(-1px);
+-  filter: brightness(1.02);
+-}
+-.btn__icon {
+-  display: inline-grid;
+-  place-items: center;
+-  width: 24px;
+-  height: 24px;
+-  border-radius: 999px;
+-  background: rgba(0, 0, 0, 0.12);
+-  font-weight: 900;
+-}
+-.btn--yellow {
+-  color: #111111;
+-  background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
+-}
+-.btn--ghost {
+-  background: #eef0f4;
+-  color: var(--ink);
+-  border: 1px solid rgba(20, 22, 26, 0.14);
+-}
+-.card {
+-  background: var(--card);
+-  border-radius: var(--radius);
+-  box-shadow: var(--shadow);
+-  border: 1px solid rgba(255, 255, 255, 0.18);
+-  padding: 1.2rem 1.25rem;
+-  color: var(--ink);
+-}
+-.card__title {
+-  margin: 0;
+-  font-family: "Space Grotesk", sans-serif;
+-  font-weight: 900;
+-  font-size: 1.1rem;
+-}
+-.table__header {
+-  display: flex;
+-  align-items: center;
+-  justify-content: space-between;
+-  gap: 1rem;
+-  margin-bottom: 0.9rem;
+-  flex-wrap: wrap;
+-}
+-.table-wrap {
+-  overflow-x: auto;
+-  overflow-y: hidden;
+-}
+-.table {
+-  width: 100%;
+-  border-collapse: collapse;
+-  min-width: 700px;
+-}
+-.table th,
+-.table td {
+-  padding: 0.85rem 0.75rem;
+-  border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+-  text-align: left;
+-  vertical-align: middle;
+-}
+-.table th {
+-  color: rgba(18, 18, 18, 0.62);
+-  font-size: 0.85rem;
+-  text-transform: uppercase;
+-  letter-spacing: 0.06em;
+-  font-weight: 900;
+-  white-space: normal;
+-}
+-.table td {
+-  font-weight: 700;
+-  color: var(--ink);
+-  overflow-wrap: break-word;
+-  word-break: normal;
+-}
+-/* Columnas de ancho fijo */
+-.col-id {
+-  width: 70px;
+-}
+-.col-usuario {
+-  width: 120px;
+-}
+-.col-accion {
+-  width: 150px;
+-}
+-.col-fecha {
+-  width: 180px;
+-}
+-/* Hover en filas para indicar que se puede hacer clic */
+-.evento-row {
+-  cursor: pointer;
+-  transition: background-color 0.2s ease;
+-}
+-.evento-row:hover {
+-  background: rgba(17, 24, 39, 0.04);
+-}
+-.table__empty {
+-  text-align: center;
+-  color: rgba(18, 18, 18, 0.65);
+-  font-weight: 800;
+-}
+-.chip {
+-  display: inline-flex;
+-  align-items: center;
+-  justify-content: center;
+-  padding: 0.35rem 0.65rem;
+-  border-radius: 999px;
+-  background: rgba(17, 24, 39, 0.06);
+-  border: 1px solid rgba(17, 24, 39, 0.12);
+-  font-weight: 900;
+-  font-size: 0.85rem;
+-  white-space: nowrap;
+-}
+-.detail-grid {
+-  display: grid;
+-  grid-template-columns: repeat(2, minmax(0, 1fr));
+-  gap: 0.85rem;
+-  margin-bottom: 0.8rem;
+-}
+-.detail-item {
+-  display: grid;
+-  gap: 0.25rem;
+-  padding: 0.85rem;
+-  border: 1px solid rgba(17, 24, 39, 0.12);
+-  border-radius: 14px;
+-  background: rgba(17, 24, 39, 0.03);
+-}
+-.detail-item--full {
+-  grid-column: 1 / -1;
+-}
+-.detail-label {
+-  font-size: 0.78rem;
+-  color: rgba(18, 18, 18, 0.6);
+-  font-weight: 900;
+-  text-transform: uppercase;
+-  letter-spacing: 0.06em;
+-}
+-.detail-value {
+-  font-weight: 900;
+-  color: rgba(18, 18, 18, 0.86);
+-  line-height: 1.5;
+-  white-space: pre-wrap;
+-  word-break: break-word;
+-}
+-.ui-btn {
+-  appearance: none;
+-  border: 0;
+-  border-radius: 999px;
+-  padding: 0.65rem 1.25rem;
+-  cursor: pointer;
+-  font: inherit;
+-  font-weight: 800;
+-  display: inline-flex;
+-  align-items: center;
+-  justify-content: center;
+-  transition: transform 0.15s ease, filter 0.2s ease;
+-}
+-.ui-btn--primary {
+-  background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
+-  color: #111111;
+-}
+-.ui-btn--ghost {
+-  background: #eef0f4;
+-  color: var(--ink);
+-  border: 1px solid rgba(20, 22, 26, 0.14);
+-}
+-.ui-form__actions {
+-  display: flex;
+-  justify-content: flex-end;
+-  gap: 0.75rem;
+-  margin-top: 1.5rem;
+-  padding-top: 1rem;
+-  border-top: 1px solid rgba(17, 24, 39, 0.08);
+-}
+-/* Modal */
+-.ui-modal {
+-  position: fixed;
+-  top: 0;
+-  left: 0;
+-  width: 100%;
+-  height: 100%;
+-  background: rgba(0, 0, 0, 0.6);
+-  display: flex;
+-  align-items: center;
+-  justify-content: center;
+-  z-index: 1000;
+-  backdrop-filter: blur(4px);
+-}
+-.ui-modal[hidden] {
+-  display: none;
+-}
+-.ui-modal__dialog {
+-  background: white;
+-  border-radius: 24px;
+-  max-width: 90vw;
+-  max-height: 85vh;
+-  overflow: hidden;
+-  display: flex;
+-  flex-direction: column;
+-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+-}
+-.ui-modal__dialog--md {
+-  width: 650px;
+-}
+-.ui-modal__header {
+-  display: flex;
+-  align-items: center;
+-  justify-content: space-between;
+-  padding: 1.25rem 1.5rem;
+-  border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+-}
+-.ui-modal__title {
+-  margin: 0;
+-  font-family: "Space Grotesk", sans-serif;
+-  font-weight: 900;
+-  font-size: 1.25rem;
+-  color: var(--ink);
+-}
+-.ui-modal__close {
+-  width: 32px;
+-  height: 32px;
+-  border-radius: 50%;
+-  background: rgba(17, 24, 39, 0.08);
+-  border: none;
+-  font-size: 1.5rem;
+-  cursor: pointer;
+-  color: rgba(18, 18, 18, 0.7);
+-  transition: background 0.2s ease;
+-}
+-.ui-modal__close:hover {
+-  background: rgba(17, 24, 39, 0.15);
+-}
+-.ui-modal__body {
+-  padding: 1.5rem;
+-  overflow-y: auto;
+-  flex: 1;
+-}
+-@media (max-width: 720px) {
+-  .bitacora-hero {
+-    flex-direction: column;
+-    align-items: stretch;
+-  }
+-  .bitacora-hero__actions {
+-    justify-content: flex-start;
+-  }
+-  .detail-grid {
+-    grid-template-columns: 1fr;
+-  }
+-  .table th,
+-  .table td {
+-    padding: 0.65rem 0.5rem;
+-    font-size: 0.85rem;
+-  }
+-}
+diff --git a/app/static/css/catalogo.css b/app/static/css/catalogo.css
+@@ -1,994 +0,0 @@
+-:root {
+-	--catalog-bg: #171717;
+-	--catalog-panel: rgba(255, 255, 255, 0.98);
+-	--catalog-panel-soft: rgba(255, 255, 255, 0.9);
+-	--catalog-ink: #111111;
+-	--catalog-muted: rgba(17, 17, 17, 0.68);
+-	--catalog-line: rgba(17, 17, 17, 0.1);
+-	--catalog-shadow: 0 22px 50px rgba(0, 0, 0, 0.34);
+-	--catalog-radius: 24px;
+-	--catalog-yellow: #f3c500;
+-	--catalog-yellow-soft: #f8dd69;
+-	--catalog-accent: #ffb800;
+-}
+-* {
+-	box-sizing: border-box;
+-}
+-html {
+-	scroll-behavior: smooth;
+-}
+-body {
+-	margin: 0;
+-	min-height: 100vh;
+-	font-family: "Manrope", sans-serif;
+-	color: #ffffff;
+-	background:
+-		radial-gradient(circle at 15% 18%, rgba(243, 197, 0, 0.18) 0%, transparent 35%),
+-		radial-gradient(circle at 75% 12%, rgba(255, 255, 255, 0.06) 0%, transparent 32%),
+-		linear-gradient(135deg, #161616 0%, #222222 55%, #181818 100%);
+-}
+-body::before {
+-	content: "";
+-	position: fixed;
+-	inset: 0;
+-	pointer-events: none;
+-	background:
+-		radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.04) 0, transparent 22%),
+-		radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.03) 0, transparent 24%);
+-	mix-blend-mode: screen;
+-	opacity: 0.8;
+-}
+-.page.catalogo-page {
+-	width: 100%;
+-	max-width: none;
+-	margin: 0;
+-	padding: 0 0 2.5rem;
+-	overflow-x: clip;
+-}
+-.catalog-hero {
+-	position: relative;
+-	width: 100%;
+-	min-height: 330px;
+-	padding: 2.5rem 0 2.35rem;
+-	overflow: hidden;
+-	background:
+-		linear-gradient(120deg, rgba(243, 197, 0, 0.44) 0%, rgba(243, 197, 0, 0.14) 18%, rgba(17, 17, 17, 0.08) 42%, rgba(255, 255, 255, 0.06) 66%, rgba(17, 17, 17, 0.30) 100%),
+-		linear-gradient(180deg, #0f0f0f 0%, #1c1c1c 100%);
+-	background-size: 320% 320%, 100% 100%;
+-	animation: heroGradientFloat 28s ease-in-out infinite;
+-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+-	box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+-}
+-.catalog-hero::before,
+-.catalog-hero::after {
+-	content: "";
+-	position: absolute;
+-	border-radius: 999px;
+-	filter: blur(40px);
+-	pointer-events: none;
+-}
+-.catalog-hero::before {
+-	width: 28rem;
+-	height: 20rem;
+-	right: -3rem;
+-	top: 3rem;
+-	background: radial-gradient(circle, rgba(243, 197, 0, 0.58), rgba(243, 197, 0, 0.08));
+-	animation: heroDriftRight 26s ease-in-out infinite;
+-}
+-.catalog-hero::after {
+-	width: 20rem;
+-	height: 20rem;
+-	left: -2rem;
+-	bottom: -8rem;
+-	background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+-	animation: heroDriftLeft 30s ease-in-out infinite;
+-}
+-.catalog-hero__glow {
+-	position: absolute;
+-	border-radius: 999px;
+-	filter: blur(32px);
+-	pointer-events: none;
+-}
+-.catalog-hero__glow--one {
+-	width: 24rem;
+-	height: 14rem;
+-	top: 4rem;
+-	right: 10%;
+-	background: rgba(243, 197, 0, 0.18);
+-	animation: glowDriftOne 24s ease-in-out infinite;
+-}
+-.catalog-hero__glow--two {
+-	width: 20rem;
+-	height: 20rem;
+-	left: 8%;
+-	bottom: -6rem;
+-	background: rgba(255, 255, 255, 0.05);
+-	animation: glowDriftTwo 30s ease-in-out infinite;
+-}
+-.catalog-hero__content {
+-	position: relative;
+-	z-index: 1;
+-	width: min(1240px, calc(100% - 2.2rem));
+-	margin: 0 auto;
+-	display: grid;
+-	gap: 0.85rem;
+-}
+-.catalog-hero__title {
+-	margin: 0;
+-	max-width: 100%;
+-    text-align: center;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: clamp(2.8rem, 4vw, 4.8rem);
+-	line-height: 0.92;
+-	letter-spacing: -0.06em;
+-	font-weight: 900;
+-	color: #ffffff;
+-	text-wrap: balance;
+-}
+-.catalog-hero__subtitle {
+-	margin: 0;
+-	max-width: 100%;
+-    text-align: center;
+-	font-size: 1.08rem;
+-	line-height: 1.7;
+-	font-weight: 600;
+-	color: rgba(255, 255, 255, 0.82);
+-    margin-top: 5rem;
+-}
+-.catalog-hero__actions {
+-	display: flex;
+-	align-items: center;
+-	gap: 0.75rem;
+-	flex-wrap: wrap;
+-	margin-top: 0.25rem;
+-}
+-.hero-link {
+-	display: inline-flex;
+-	align-items: center;
+-	justify-content: center;
+-	min-height: 44px;
+-	padding: 0.72rem 1rem;
+-	border-radius: 12px;
+-	border: 1px solid rgba(255, 255, 255, 0.16);
+-	background: rgba(255, 255, 255, 0.08);
+-	backdrop-filter: blur(10px);
+-	color: #ffffff;
+-	text-decoration: none;
+-	font-weight: 900;
+-	transition: transform 0.18s ease, background 0.18s ease;
+-}
+-.hero-link:hover {
+-	transform: translateY(-1px);
+-	background: rgba(255, 255, 255, 0.12);
+-	color: #ffffff;
+-}
+-.cart-icon-btn {
+-	position: relative;
+-	display: inline-flex;
+-	align-items: center;
+-	gap: 0.45rem;
+-	min-height: 44px;
+-	padding: 0.72rem 1rem;
+-	border-radius: 12px;
+-	border: 1px solid rgba(255, 255, 255, 0.16);
+-	background: rgba(255, 255, 255, 0.08);
+-	backdrop-filter: blur(10px);
+-	color: #ffffff;
+-	font-family: "Manrope", sans-serif;
+-	font-weight: 900;
+-	font-size: 0.95rem;
+-	cursor: pointer;
+-	transition: transform 0.18s ease, background 0.18s ease;
+-}
+-.cart-icon-btn:hover {
+-	transform: translateY(-1px);
+-	background: rgba(255, 255, 255, 0.12);
+-}
+-.cart-badge {
+-	position: absolute;
+-	top: -8px;
+-	right: -8px;
+-	min-width: 18px;
+-	height: 18px;
+-	padding: 0 5px;
+-	border-radius: 999px;
+-	background: var(--catalog-yellow);
+-	color: #111111;
+-	font-size: 11px;
+-	font-weight: 900;
+-	display: flex;
+-	align-items: center;
+-	justify-content: center;
+-}
+-.catalog-content {
+-	width: min(1240px, calc(100% - 2.2rem));
+-	margin: 0 auto;
+-	display: grid;
+-	gap: 1.2rem;
+-	padding-top: 1.25rem;
+-}
+-.catalog-categories {
+-	display: grid;
+-	grid-template-columns: repeat(4, minmax(0, 1fr));
+-	gap: 1rem;
+-}
+-.category-card,
+-.rail-card,
+-.offer-card {
+-	position: relative;
+-	overflow: hidden;
+-	border-radius: 24px;
+-	background: #111317;
+-	border: 1px solid rgba(255, 255, 255, 0.1);
+-	box-shadow: var(--catalog-shadow);
+-}
+-.category-card {
+-	min-height: 270px;
+-	isolation: isolate;
+-}
+-.category-card__image,
+-.rail-card img,
+-.offer-card img {
+-	position: absolute;
+-	inset: 0;
+-	width: 100%;
+-	height: 100%;
+-	object-fit: cover;
+-	display: block;
+-	transition: transform 0.45s ease, filter 0.45s ease;
+-}
+-.category-card__overlay {
+-	position: absolute;
+-	inset: 0;
+-	background: linear-gradient(180deg, rgba(3, 7, 18, 0.08) 0%, rgba(3, 7, 18, 0.84) 100%);
+-}
+-.category-card__body {
+-	position: relative;
+-	z-index: 1;
+-	display: grid;
+-	align-content: end;
+-	height: 100%;
+-	padding: 1.2rem;
+-	color: #ffffff;
+-}
+-.category-card__kicker {
+-	display: inline-flex;
+-	align-self: start;
+-	justify-self: start;
+-	padding: 0.35rem 0.65rem;
+-	border-radius: 999px;
+-	background: rgba(255, 255, 255, 0.14);
+-	backdrop-filter: blur(10px);
+-	font-size: 0.72rem;
+-	font-weight: 900;
+-	letter-spacing: 0.08em;
+-	text-transform: uppercase;
+-}
+-.category-card__title {
+-	margin: 0.55rem 0 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: 1.65rem;
+-	letter-spacing: -0.04em;
+-	font-weight: 900;
+-}
+-.category-card:hover .category-card__image,
+-.rail-card:hover img,
+-.offer-card:hover img {
+-	transform: scale(1.04);
+-	filter: saturate(1.04);
+-}
+-.showcase-section {
+-	display: grid;
+-	gap: 0.85rem;
+-}
+-.showcase-section__header,
+-.catalog-browser__header {
+-	display: flex;
+-	align-items: end;
+-	justify-content: space-between;
+-	gap: 1rem;
+-	flex-wrap: wrap;
+-}
+-.section-title,
+-.card__title {
+-	margin: 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-weight: 900;
+-	letter-spacing: -0.04em;
+-}
+-.section-title {
+-	display: inline-flex;
+-	align-items: center;
+-	gap: 0.6rem;
+-	font-size: clamp(1.3rem, 1.8vw, 1.85rem);
+-	color: #ffffff;
+-}
+-.section-title__icon {
+-	width: 1.1rem;
+-	height: 1.1rem;
+-	color: #ff6f00;
+-	filter: drop-shadow(0 0 12px rgba(255, 111, 0, 0.45));
+-}
+-.section-subtitle,
+-.catalog-browser__subtitle {
+-	margin: 0.25rem 0 0;
+-	font-weight: 600;
+-	color: rgba(255, 255, 255, 0.76);
+-}
+-.catalog-browser .catalog-browser__subtitle {
+-	color: rgba(17, 17, 17, 0.68);
+-}
+-.rail-card-row,
+-.offers-grid {
+-	display: grid;
+-	grid-template-columns: repeat(4, minmax(0, 1fr));
+-	gap: 1rem;
+-}
+-.rail-card {
+-	min-height: 188px;
+-	padding: 0;
+-	background: #111317;
+-}
+-.rail-card img {
+-	padding: 0;
+-	border-radius: 0;
+-	object-fit: cover;
+-	background: none;
+-}
+-.rail-card h3,
+-.offer-card h3 {
+-	position: relative;
+-	z-index: 1;
+-	margin: 0.85rem 0 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: 1rem;
+-	font-weight: 800;
+-	color: #ffffff;
+-    margin-left: 20px;
+-}
+-.offer-card {
+-	min-height: 240px;
+-	background: #121418;
+-	display: grid;
+-	align-content: end;
+-	padding: 1rem;
+-}
+-.offer-card img {
+-	padding: 1rem;
+-	border-radius: 22px;
+-	object-fit: cover;
+-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.92));
+-}
+-.offer-card--feature {
+-	background: linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(41, 37, 36, 0.96));
+-	padding: 1.25rem;
+-}
+-.offer-card--feature h3 {
+-	font-size: 1.45rem;
+-	margin-top: 0.85rem;
+-}
+-.offer-card--feature p {
+-	position: relative;
+-	z-index: 1;
+-	margin: 0.55rem 0 0;
+-	color: rgba(255, 255, 255, 0.78);
+-	line-height: 1.55;
+-}
+-.offer-card__tag {
+-	display: inline-flex;
+-	align-self: start;
+-	justify-self: start;
+-	padding: 0.35rem 0.65rem;
+-	border-radius: 999px;
+-	background: linear-gradient(180deg, var(--catalog-yellow), var(--catalog-yellow-soft));
+-	color: #111111;
+-	font-size: 0.72rem;
+-	font-weight: 900;
+-	text-transform: uppercase;
+-	letter-spacing: 0.08em;
+-}
+-.catalog-browser {
+-	display: grid;
+-	gap: 1rem;
+-}
+-.catalog-browser__grid {
+-	display: grid;
+-	grid-template-columns: 340px minmax(0, 1fr);
+-	gap: 1rem;
+-	align-items: start;
+-}
+-.catalog-browser__count {
+-	padding: 0.45rem 0.75rem;
+-	border-radius: 999px;
+-	background: rgba(17, 17, 17, 0.06);
+-	color: #111111;
+-	font-weight: 900;
+-}
+-.card {
+-	background: var(--catalog-panel);
+-	color: var(--catalog-ink);
+-	border-radius: var(--catalog-radius);
+-	box-shadow: var(--catalog-shadow);
+-	border: 1px solid rgba(255, 255, 255, 0.18);
+-	padding: 1.2rem 1.25rem;
+-}
+-.catalog-filters,
+-.catalog-results {
+-	min-height: 100%;
+-}
+-.filters-panel {
+-	position: sticky;
+-	top: 90px;
+-}
+-.filters-panel__section {
+-	margin-top: 1rem;
+-	padding-top: 1rem;
+-	border-top: 1px solid var(--catalog-line);
+-}
+-.filters-panel__title {
+-	margin: 0 0 0.75rem;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: 1rem;
+-	font-weight: 900;
+-	color: rgba(17, 17, 17, 0.8);
+-}
+-.field {
+-	display: grid;
+-	gap: 0.35rem;
+-}
+-.field__label {
+-	font-size: 0.78rem;
+-	color: rgba(17, 17, 17, 0.62);
+-	font-weight: 900;
+-	text-transform: uppercase;
+-	letter-spacing: 0.06em;
+-}
+-input,
+-select,
+-textarea {
+-	width: 100%;
+-	border: 1px solid rgba(17, 24, 39, 0.14);
+-	border-radius: 12px;
+-	padding: 0.75rem 0.85rem;
+-	font-size: 0.95rem;
+-	font-family: "Manrope", sans-serif;
+-	outline: none;
+-	background: #ffffff;
+-	color: #111111;
+-}
+-input:focus,
+-select:focus,
+-textarea:focus {
+-	border-color: rgba(243, 197, 0, 0.7);
+-	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
+-}
+-.filters-panel__actions {
+-	margin-top: 0.85rem;
+-	display: flex;
+-	gap: 0.6rem;
+-	justify-content: flex-end;
+-	flex-wrap: wrap;
+-}
+-.btn {
+-	display: inline-flex;
+-	align-items: center;
+-	justify-content: center;
+-	gap: 0.45rem;
+-	min-height: 42px;
+-	padding: 0.72rem 1rem;
+-	border-radius: 12px;
+-	border: 1px solid transparent;
+-	font-family: "Manrope", sans-serif;
+-	font-weight: 900;
+-	font-size: 0.95rem;
+-	cursor: pointer;
+-	transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+-}
+-.btn:hover {
+-	transform: translateY(-1px);
+-}
+-.btn--yellow {
+-	background: linear-gradient(180deg, var(--catalog-yellow), #f1bb00);
+-	color: #111111;
+-}
+-.btn--ghost {
+-	background: #eef0f4;
+-	color: #111111;
+-	border: 1px solid rgba(20, 22, 26, 0.14);
+-}
+-.catalog-results {
+-	display: grid;
+-	gap: 1rem;
+-	background: var(--catalog-panel-soft);
+-	color: var(--catalog-ink);
+-}
+-.catalog-status {
+-	display: none;
+-	padding: 0.95rem 1rem;
+-	border-radius: 18px;
+-	font-weight: 700;
+-	line-height: 1.5;
+-	border: 1px solid transparent;
+-}
+-.catalog-status.is-visible {
+-	display: flex;
+-	align-items: center;
+-	justify-content: space-between;
+-	gap: 1rem;
+-}
+-.catalog-status--loading {
+-	background: rgba(17, 17, 17, 0.05);
+-	border-color: rgba(17, 17, 17, 0.1);
+-	color: #111111;
+-}
+-.catalog-status--error {
+-	background: rgba(220, 38, 38, 0.1);
+-	border-color: rgba(220, 38, 38, 0.18);
+-	color: #7f1d1d;
+-}
+-.catalog-status__content {
+-	display: flex;
+-	align-items: center;
+-	gap: 0.85rem;
+-	flex-wrap: wrap;
+-}
+-.catalog-status__actions {
+-	display: flex;
+-	gap: 0.55rem;
+-	flex-wrap: wrap;
+-}
+-.catalog-spinner {
+-	width: 1rem;
+-	height: 1rem;
+-	border-radius: 999px;
+-	border: 2px solid rgba(17, 17, 17, 0.25);
+-	border-top-color: #111111;
+-	animation: spin 0.8s linear infinite;
+-}
+-.catalog-retry {
+-	min-height: 38px;
+-	padding: 0.55rem 0.85rem;
+-	border-radius: 12px;
+-	border: 1px solid rgba(17, 17, 17, 0.12);
+-	background: rgba(17, 17, 17, 0.08);
+-	color: #111111;
+-	font-weight: 800;
+-	cursor: pointer;
+-}
+-.productos-grid {
+-	display: grid;
+-	grid-template-columns: repeat(2, minmax(0, 1fr));
+-	gap: 1rem;
+-}
+-.producto-card,
+-.producto-card--skeleton {
+-	position: relative;
+-	overflow: hidden;
+-	border-radius: 20px;
+-	padding: 0.95rem;
+-	border: 1px solid rgba(17, 24, 39, 0.08);
+-	box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 247, 250, 0.98));
+-}
+-.producto-card {
+-	display: grid;
+-	gap: 0.25rem;
+-	align-content: start;
+-	transition: transform 0.2s ease, box-shadow 0.2s ease;
+-}
+-.producto-card:hover {
+-	transform: translateY(-4px);
+-	box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+-}
+-.producto-card--skeleton::before {
+-	content: "";
+-	position: absolute;
+-	inset: 0;
+-	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+-	transform: translateX(-100%);
+-	animation: shimmer 1.4s infinite;
+-}
+-.skeleton-block {
+-	position: relative;
+-	overflow: hidden;
+-	border-radius: 12px;
+-	background: rgba(17, 24, 39, 0.08);
+-	margin-bottom: 0.75rem;
+-}
+-.skeleton-block--image {
+-	height: 170px;
+-}
+-.skeleton-block--line {
+-	height: 14px;
+-	width: 78%;
+-}
+-.skeleton-block--line.short {
+-	width: 55%;
+-}
+-.producto-imagen {
+-	width: 100%;
+-	height: 180px;
+-	background: linear-gradient(135deg, rgba(243, 197, 0, 0.18), rgba(17, 24, 39, 0.06));
+-	border-radius: 16px;
+-	margin-bottom: 0.75rem;
+-	overflow: hidden;
+-	position: relative;
+-}
+-.producto-imagen img {
+-	width: 100%;
+-	height: 100%;
+-	object-fit: cover;
+-	display: block;
+-}
+-.producto-nombre {
+-	font-weight: 900;
+-	font-size: 1rem;
+-	color: #111111;
+-}
+-.producto-marca {
+-	color: rgba(17, 17, 17, 0.62);
+-	font-size: 0.86rem;
+-}
+-.producto-precios {
+-	margin: 0.75rem 0 0.1rem;
+-}
+-.precio-usd {
+-	font-weight: 900;
+-	font-size: 1.25rem;
+-	color: #111111;
+-}
+-.precio-bs {
+-	font-size: 0.86rem;
+-	color: rgba(17, 17, 17, 0.72);
+-}
+-.producto-stock {
+-	font-size: 0.82rem;
+-	color: #16a34a;
+-	font-weight: 700;
+-}
+-.btn-agregar {
+-	width: 100%;
+-	margin-top: 0.75rem;
+-}
+-.pager {
+-	display: inline-flex;
+-	align-items: center;
+-	gap: 0.6rem;
+-}
+-.catalog-empty,
+-.catalog-error-box {
+-	padding: 1rem;
+-	border-radius: 16px;
+-	border: 1px dashed rgba(17, 17, 17, 0.18);
+-	background: rgba(17, 17, 17, 0.04);
+-	font-weight: 700;
+-	color: rgba(17, 17, 17, 0.8);
+-}
+-.catalog-error-box {
+-	display: grid;
+-	gap: 0.75rem;
+-	justify-items: start;
+-}
+-.catalog-error-box p,
+-.catalog-empty p {
+-	margin: 0;
+-}
+-.cart-modal-panel {
+-	max-width: 540px;
+-	width: 100%;
+-}
+-.cart-header {
+-	display: flex;
+-	align-items: center;
+-	justify-content: space-between;
+-	gap: 1rem;
+-	margin-bottom: 1rem;
+-}
+-.cart-items {
+-	max-height: 400px;
+-	overflow-y: auto;
+-	display: grid;
+-	gap: 0.75rem;
+-}
+-.cart-item {
+-	display: flex;
+-	justify-content: space-between;
+-	align-items: center;
+-	gap: 0.75rem;
+-	padding: 0.75rem 0;
+-	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+-}
+-.cart-item-info {
+-	flex: 1;
+-}
+-.cart-item-name {
+-	font-weight: 800;
+-	color: #111111;
+-}
+-.cart-item-price {
+-	font-size: 0.85rem;
+-	color: rgba(17, 17, 17, 0.62);
+-}
+-.cart-item-controls {
+-	display: flex;
+-	align-items: center;
+-	gap: 0.5rem;
+-	flex-wrap: wrap;
+-	justify-content: flex-end;
+-}
+-.icon-action {
+-	width: 38px;
+-	height: 38px;
+-	border-radius: 12px;
+-	border: 1px solid rgba(17, 24, 39, 0.12);
+-	background: #ffffff;
+-	cursor: pointer;
+-	display: grid;
+-	place-items: center;
+-	color: rgba(17, 24, 39, 0.85);
+-	transition: transform 0.15s ease, filter 0.2s ease;
+-}
+-.icon-action:hover {
+-	transform: translateY(-1px);
+-	filter: brightness(1.02);
+-}
+-.cart-item-qty {
+-	width: 50px;
+-	text-align: center;
+-	font-weight: 900;
+-	color: #111111;
+-}
+-.cart-total {
+-	margin-top: 1rem;
+-	padding-top: 1rem;
+-	border-top: 2px solid var(--catalog-yellow);
+-	display: grid;
+-	gap: 0.25rem;
+-	text-align: right;
+-	color: #111111;
+-}
+-.sin-resultados,
+-.carrito-vacio {
+-	margin: 0;
+-	padding: 1rem;
+-	background: rgba(17, 24, 39, 0.04);
+-	border: 1px dashed rgba(17, 24, 39, 0.16);
+-	border-radius: 14px;
+-	font-weight: 700;
+-	color: rgba(17, 24, 39, 0.72);
+-}
+-.modal {
+-	position: fixed;
+-	inset: 0;
+-	z-index: 50;
+-	display: grid;
+-	place-items: center;
+-	padding: 1.1rem;
+-}
+-.modal.is-hidden {
+-	display: none;
+-}
+-.modal__backdrop {
+-	position: absolute;
+-	inset: 0;
+-	background: rgba(0, 0, 0, 0.55);
+-}
+-.modal__panel {
+-	position: relative;
+-	width: min(860px, 100%);
+-	max-height: min(82vh, 820px);
+-	overflow: auto;
+-}
+-@keyframes floatGlow {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	50% {
+-		transform: translate3d(18px, -12px, 0) scale(1.08);
+-	}
+-}
+-@keyframes heroGradientFloat {
+-	0% {
+-		background-position: 0% 50%, 0% 0%;
+-	}
+-	50% {
+-		background-position: 100% 50%, 0% 0%;
+-	}
+-	100% {
+-		background-position: 0% 50%, 0% 0%;
+-	}
+-}
+-@keyframes heroDriftRight {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-		opacity: 0.85;
+-	}
+-	50% {
+-		transform: translate3d(-2.4rem, 1rem, 0) scale(1.14);
+-		opacity: 1;
+-	}
+-}
+-@keyframes heroDriftLeft {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-		opacity: 0.55;
+-	}
+-	50% {
+-		transform: translate3d(2.2rem, -1.1rem, 0) scale(1.16);
+-		opacity: 0.8;
+-	}
+-}
+-@keyframes glowDriftOne {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	50% {
+-		transform: translate3d(-3rem, -1.3rem, 0) scale(1.16);
+-	}
+-}
+-@keyframes glowDriftTwo {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	50% {
+-		transform: translate3d(2.5rem, 1.6rem, 0) scale(1.18);
+-	}
+-}
+-@keyframes driftGlow {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	33% {
+-		transform: translate3d(-16px, 12px, 0) scale(1.05);
+-	}
+-	66% {
+-		transform: translate3d(18px, -10px, 0) scale(0.98);
+-	}
+-}
+-@keyframes spin {
+-	to {
+-		transform: rotate(360deg);
+-	}
+-}
+-@keyframes shimmer {
+-	to {
+-		transform: translateX(100%);
+-	}
+-}
+diff --git a/app/static/css/especialidades.css b/app/static/css/especialidades.css
+@@ -1 +1 @@
+-@import url("./empleados.css");
+@@ -3 +3,25 @@
+-body.personal-page--especialidades {
+@@ -5,3 +29,3 @@ body.personal-page--especialidades {
+-		radial-gradient(circle at top left, rgba(88, 214, 212, 0.18), transparent 32%),
+-		radial-gradient(circle at 86% 12%, rgba(255, 255, 255, 0.09), transparent 30%),
+-		linear-gradient(135deg, #0d1718 0%, #132022 45%, #081012 100%);
+@@ -10,5 +34,165 @@ body.personal-page--especialidades {
+-body.personal-page--especialidades .panel__tag,
+-body.personal-page--especialidades .table tbody tr.is-selected,
+-body.personal-page--especialidades .mini-card__grid div {
+-	background: rgba(88, 214, 212, 0.12);
+-	border-color: rgba(88, 214, 212, 0.22);
+@@ -17 +201,147 @@ body.personal-page--especialidades .mini-card__grid div {
+-body.personal-page--especialidades .table tbody tr:hover {
+@@ -19,0 +350,140 @@ body.personal-page--especialidades .table tbody tr:hover {
+diff --git a/app/static/css/modal.css b/app/static/css/modal.css
+@@ -147,99 +146,0 @@ body.ui-modal-open {
+-.feedback-modal__content {
+-    display: grid;
+-    gap: 0.85rem;
+-    text-align: center;
+-}
+-.feedback-modal__icon {
+-    width: 64px;
+-    height: 64px;
+-    margin: 0.25rem auto 0;
+-    border-radius: 999px;
+-    display: grid;
+-    place-items: center;
+-    border: 1px solid rgba(17, 24, 39, 0.12);
+-    background: rgba(243, 197, 0, 0.12);
+-    color: var(--yellow, #f3c500);
+-}
+-/* Importante: asegurar que hidden SI oculte el icono (nuestro display:grid lo estaba anulando). */
+-.feedback-modal__icon[hidden] {
+-    display: none !important;
+-}
+-.feedback-modal__icon svg {
+-    width: 34px;
+-    height: 34px;
+-}
+-.feedback-modal__icon svg path {
+-    fill: none;
+-    stroke: currentColor;
+-    stroke-width: 3;
+-    stroke-linecap: round;
+-    stroke-linejoin: round;
+-}
+-.feedback-modal__content[data-feedback-type="error"] .feedback-modal__icon {
+-    background: rgba(239, 68, 68, 0.12);
+-    color: var(--danger, #ef4444);
+-}
+-.feedback-modal__message {
+-    margin: 0;
+-    color: #1b1b1b;
+-    font-weight: 700;
+-    line-height: 1.35;
+-}
+-@keyframes feedback-pop {
+-    0% {
+-        transform: scale(0.75);
+-        opacity: 0;
+-    }
+-    70% {
+-        transform: scale(1.12);
+-        opacity: 1;
+-    }
+-    100% {
+-        transform: scale(1);
+-        opacity: 1;
+-    }
+-}
+-@keyframes feedback-draw {
+-    from {
+-        stroke-dashoffset: 100;
+-        opacity: 0.9;
+-    }
+-    to {
+-        stroke-dashoffset: 0;
+-        opacity: 1;
+-    }
+-}
+-@keyframes feedback-fade {
+-    0% {
+-        transform: translateY(6px);
+-        opacity: 0;
+-    }
+-    100% {
+-        transform: translateY(0);
+-        opacity: 1;
+-    }
+-}
+-.feedback-modal__icon.is-anim {
+-    animation: feedback-pop 460ms cubic-bezier(0.2, 0.9, 0.2, 1);
+-}
+-.feedback-modal__icon.is-anim svg path {
+-    stroke-dasharray: 100;
+-    stroke-dashoffset: 100;
+-    animation: feedback-draw 520ms ease-out 90ms forwards;
+-}
+-.feedback-modal__message.is-anim {
+-    animation: feedback-fade 220ms ease-out;
+-}
+diff --git a/app/static/css/ventas.css b/app/static/css/ventas.css
+@@ -33,17 +32,0 @@ body {
+-.catalogo-page {
+-	width: 100%;
+-	max-width: none;
+-	margin: 0;
+-	padding: 0 0 2.5rem;
+-	overflow-x: clip;
+-	gap: 0;
+-}
+-.catalog-content {
+-	width: min(1240px, calc(100% - 2.2rem));
+-	margin: 0 auto;
+-	display: grid;
+-	gap: 1.2rem;
+-	padding-top: 1.4rem;
+-}
+@@ -847,666 +829,0 @@ textarea:focus {
+-.catalogo-page {
+-	display: grid;
+-	gap: 1.2rem;
+-	position: relative;
+-	padding-bottom: 2.5rem;
+-}
+-.catalog-hero {
+-	position: relative;
+-	overflow: hidden;
+-	min-height: 320px;
+-	padding: clamp(1.5rem, 4vw, 3rem);
+-	width: 100%;
+-	margin: 0;
+-	border-radius: 0;
+-	background: linear-gradient(135deg, rgba(243, 197, 0, 0.24), rgba(243, 197, 0, 0.04) 34%, rgba(17, 24, 39, 0.12) 100%),
+-		linear-gradient(135deg, rgba(16, 16, 16, 0.92), rgba(40, 40, 40, 0.96));
+-	box-shadow: none;
+-	border: 0;
+-}
+-.catalog-hero::before,
+-.catalog-hero::after {
+-	content: "";
+-	position: absolute;
+-	border-radius: 999px;
+-	filter: blur(36px);
+-	opacity: 0.82;
+-	animation: floatGlow 14s ease-in-out infinite;
+-	pointer-events: none;
+-}
+-.catalog-hero::before {
+-	width: 38vw;
+-	height: 38vw;
+-	background: radial-gradient(circle, rgba(243, 197, 0, 0.58), rgba(243, 197, 0, 0.08));
+-	top: -16%;
+-	right: -10%;
+-}
+-.catalog-hero::after {
+-	width: 34vw;
+-	height: 34vw;
+-	background: radial-gradient(circle, rgba(88, 28, 135, 0.45), rgba(255, 255, 255, 0.05));
+-	left: -10%;
+-	bottom: -18%;
+-	animation-delay: -7s;
+-}
+-.catalog-hero__glow {
+-	position: absolute;
+-	border-radius: 999px;
+-	filter: blur(28px);
+-	animation: driftGlow 16s ease-in-out infinite;
+-	pointer-events: none;
+-}
+-.catalog-hero__glow--one {
+-	width: 28rem;
+-	height: 18rem;
+-	background: rgba(243, 197, 0, 0.26);
+-	right: 8%;
+-	top: 9%;
+-}
+-.catalog-hero__glow--two {
+-	width: 22rem;
+-	height: 22rem;
+-	background: rgba(255, 255, 255, 0.08);
+-	left: 12%;
+-	bottom: -20%;
+-	animation-delay: -5s;
+-}
+-.catalog-hero__content {
+-	position: relative;
+-	z-index: 1;
+-	width: min(1240px, calc(100% - 2.2rem));
+-	margin: 0 auto;
+-	max-width: 1240px;
+-	display: grid;
+-	gap: 0.7rem;
+-}
+-.catalog-hero__eyebrow {
+-	margin: 0;
+-	text-transform: uppercase;
+-	letter-spacing: 0.18em;
+-	font-size: 0.77rem;
+-	font-weight: 900;
+-	color: rgba(255, 255, 255, 0.72);
+-}
+-.catalog-hero__title {
+-	margin: 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: clamp(2.4rem, 6vw, 4.8rem);
+-	line-height: 0.92;
+-	letter-spacing: -0.05em;
+-	font-weight: 900;
+-	max-width: 10ch;
+-}
+-.catalog-hero__subtitle {
+-	margin: 0;
+-	max-width: 58ch;
+-	font-size: 1.05rem;
+-	line-height: 1.65;
+-	color: rgba(255, 255, 255, 0.82);
+-}
+-.catalog-hero__actions {
+-	display: flex;
+-	align-items: center;
+-	gap: 0.75rem;
+-	flex-wrap: wrap;
+-	margin-top: 0.35rem;
+-}
+-.hero-link {
+-	display: inline-flex;
+-	align-items: center;
+-	justify-content: center;
+-	min-height: 42px;
+-	padding: 0.72rem 1rem;
+-	border-radius: 12px;
+-	text-decoration: none;
+-	background: rgba(255, 255, 255, 0.1);
+-	border: 1px solid rgba(255, 255, 255, 0.16);
+-	color: #fff;
+-	font-weight: 900;
+-}
+-.hero-link:hover {
+-	color: #fff;
+-}
+-.cart-icon-btn--hero {
+-	background: rgba(255, 255, 255, 0.08);
+-	backdrop-filter: blur(8px);
+-}
+-.catalog-categories {
+-	display: grid;
+-	grid-template-columns: repeat(4, minmax(0, 1fr));
+-	gap: 1rem;
+-}
+-.category-card,
+-.rail-card,
+-.offer-card {
+-	position: relative;
+-	overflow: hidden;
+-	border-radius: 24px;
+-	box-shadow: var(--shadow);
+-	background: #0f1115;
+-	min-height: 240px;
+-	border: 1px solid rgba(255, 255, 255, 0.1);
+-}
+-.category-card {
+-	min-height: 270px;
+-	isolation: isolate;
+-}
+-.category-card__image,
+-.rail-card img,
+-.offer-card img {
+-	position: absolute;
+-	inset: 0;
+-	width: 100%;
+-	height: 100%;
+-	object-fit: cover;
+-	transition: transform 0.45s ease, filter 0.45s ease;
+-}
+-.category-card__overlay {
+-	position: absolute;
+-	inset: 0;
+-	background: linear-gradient(180deg, rgba(2, 6, 23, 0.12) 0%, rgba(2, 6, 23, 0.82) 100%);
+-}
+-.category-card__body {
+-	position: relative;
+-	z-index: 1;
+-	display: grid;
+-	align-content: end;
+-	height: 100%;
+-	padding: 1.2rem;
+-	color: #ffffff;
+-}
+-.category-card__kicker {
+-	display: inline-flex;
+-	align-self: start;
+-	justify-self: start;
+-	padding: 0.35rem 0.65rem;
+-	border-radius: 999px;
+-	background: rgba(255, 255, 255, 0.14);
+-	backdrop-filter: blur(10px);
+-	font-size: 0.74rem;
+-	font-weight: 900;
+-	letter-spacing: 0.08em;
+-	text-transform: uppercase;
+-}
+-.category-card__title {
+-	margin: 0.6rem 0 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: 1.65rem;
+-	font-weight: 900;
+-	letter-spacing: -0.04em;
+-}
+-.category-card:hover .category-card__image,
+-.rail-card:hover img,
+-.offer-card:hover img {
+-	transform: scale(1.04);
+-	filter: saturate(1.05);
+-}
+-.category-card--primary {
+-	grid-column: span 1;
+-}
+-.showcase-section {
+-	display: grid;
+-	gap: 0.85rem;
+-	padding: 0.2rem 0 0;
+-}
+-.showcase-section__header {
+-	display: flex;
+-	align-items: end;
+-	justify-content: space-between;
+-	gap: 1rem;
+-	flex-wrap: wrap;
+-}
+-.section-title {
+-	display: inline-flex;
+-	align-items: center;
+-	gap: 0.6rem;
+-	margin: 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-weight: 900;
+-	font-size: clamp(1.3rem, 2vw, 1.8rem);
+-	letter-spacing: -0.04em;
+-	color: #ffffff;
+-}
+-.section-title__icon {
+-	width: 1.15rem;
+-	height: 1.15rem;
+-	color: #ff6a00;
+-	filter: drop-shadow(0 0 12px rgba(255, 106, 0, 0.4));
+-}
+-.section-subtitle {
+-	margin: 0;
+-	color: rgba(255, 255, 255, 0.72);
+-	font-weight: 600;
+-}
+-.rail-card-row,
+-.offers-grid {
+-	display: grid;
+-	grid-template-columns: repeat(4, minmax(0, 1fr));
+-	gap: 1rem;
+-}
+-.rail-card {
+-	min-height: 190px;
+-	padding: 1rem;
+-	background: #111317;
+-}
+-.rail-card img {
+-	border-radius: 18px;
+-	padding: 0.9rem;
+-	object-fit: contain;
+-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.92));
+-}
+-.rail-card h3,
+-.offer-card h3 {
+-	position: relative;
+-	z-index: 1;
+-	margin: 0.85rem 0 0;
+-	font-family: "Space Grotesk", sans-serif;
+-	font-size: 1rem;
+-	font-weight: 800;
+-	color: #ffffff;
+-}
+-.offer-card {
+-	min-height: 240px;
+-	background: #121418;
+-	display: grid;
+-	align-content: end;
+-	padding: 1rem;
+-}
+-.offer-card img {
+-	padding: 1rem;
+-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.9));
+-	border-radius: 24px;
+-}
+-.offer-card--feature {
+-	background: linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(41, 37, 36, 0.96));
+-	padding: 1.2rem;
+-}
+-.offer-card--feature h3 {
+-	font-size: 1.45rem;
+-	margin-top: 0.85rem;
+-}
+-.offer-card--feature p {
+-	position: relative;
+-	z-index: 1;
+-	margin: 0.55rem 0 0;
+-	color: rgba(255, 255, 255, 0.76);
+-	line-height: 1.55;
+-}
+-.offer-card__tag {
+-	display: inline-flex;
+-	align-self: start;
+-	justify-self: start;
+-	padding: 0.35rem 0.65rem;
+-	border-radius: 999px;
+-	background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
+-	color: #111111;
+-	font-size: 0.74rem;
+-	font-weight: 900;
+-	text-transform: uppercase;
+-	letter-spacing: 0.08em;
+-}
+-.catalog-browser {
+-	display: grid;
+-	gap: 1rem;
+-	padding-top: 0.2rem;
+-}
+-.catalog-browser__grid {
+-	grid-template-columns: 330px minmax(0, 1fr);
+-}
+-.catalog-browser__header {
+-	margin-bottom: 0;
+-	align-items: end;
+-}
+-.catalog-browser__subtitle {
+-	margin: 0.25rem 0 0;
+-	color: rgba(255, 255, 255, 0.72);
+-	font-weight: 600;
+-}
+-.catalog-browser__count {
+-	padding: 0.45rem 0.75rem;
+-	border-radius: 999px;
+-	background: rgba(255, 255, 255, 0.1);
+-	color: #ffffff;
+-	font-weight: 900;
+-}
+-.catalog-filters,
+-.catalog-results {
+-	min-height: 100%;
+-}
+-.catalog-results {
+-	display: grid;
+-	gap: 1rem;
+-}
+-.catalog-status {
+-	display: none;
+-	padding: 0.95rem 1rem;
+-	border-radius: 18px;
+-	font-weight: 700;
+-	line-height: 1.5;
+-	border: 1px solid transparent;
+-}
+-.catalog-status.is-visible {
+-	display: flex;
+-	align-items: center;
+-	justify-content: space-between;
+-	gap: 1rem;
+-}
+-.catalog-status--loading {
+-	background: rgba(255, 255, 255, 0.08);
+-	border-color: rgba(255, 255, 255, 0.14);
+-	color: #ffffff;
+-}
+-.catalog-status--error {
+-	background: rgba(220, 38, 38, 0.12);
+-	border-color: rgba(248, 113, 113, 0.28);
+-	color: #fff4f4;
+-}
+-.catalog-status__content {
+-	display: flex;
+-	align-items: center;
+-	gap: 0.85rem;
+-	flex-wrap: wrap;
+-}
+-.catalog-spinner {
+-	width: 1rem;
+-	height: 1rem;
+-	border-radius: 999px;
+-	border: 2px solid rgba(255, 255, 255, 0.35);
+-	border-top-color: #ffffff;
+-	animation: spin 0.8s linear infinite;
+-}
+-.catalog-status__actions {
+-	display: flex;
+-	gap: 0.55rem;
+-	flex-wrap: wrap;
+-}
+-.catalog-retry {
+-	min-height: 38px;
+-	padding: 0.55rem 0.85rem;
+-	border-radius: 12px;
+-	border: 1px solid rgba(255, 255, 255, 0.16);
+-	background: rgba(255, 255, 255, 0.12);
+-	color: #ffffff;
+-	font-weight: 800;
+-	cursor: pointer;
+-}
+-.catalog-loading-grid {
+-	display: grid;
+-	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+-	gap: 1rem;
+-}
+-.producto-card--skeleton {
+-	position: relative;
+-	overflow: hidden;
+-	min-height: 320px;
+-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+-	border: 1px solid rgba(255, 255, 255, 0.08);
+-	border-radius: 18px;
+-	padding: 1rem;
+-}
+-.producto-card--skeleton::before {
+-	content: "";
+-	position: absolute;
+-	inset: 0;
+-	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+-	transform: translateX(-100%);
+-	animation: shimmer 1.4s infinite;
+-}
+-.skeleton-block {
+-	position: relative;
+-	overflow: hidden;
+-	border-radius: 12px;
+-	background: rgba(255, 255, 255, 0.08);
+-	margin-bottom: 0.75rem;
+-}
+-.skeleton-block--image {
+-	height: 160px;
+-}
+-.skeleton-block--line {
+-	height: 14px;
+-	width: 78%;
+-}
+-.skeleton-block--line.short {
+-	width: 55%;
+-}
+-.catalog-empty,
+-.catalog-error-box {
+-	padding: 1rem;
+-	border-radius: 16px;
+-	border: 1px dashed rgba(255, 255, 255, 0.18);
+-	background: rgba(255, 255, 255, 0.05);
+-	color: rgba(255, 255, 255, 0.88);
+-	font-weight: 700;
+-}
+-.catalog-error-box {
+-	display: grid;
+-	gap: 0.75rem;
+-	justify-items: start;
+-}
+-.catalog-error-box p,
+-.catalog-empty p {
+-	margin: 0;
+-}
+-.product-thumb--catalog {
+-	width: 100%;
+-	height: 170px;
+-	object-fit: cover;
+-	border-radius: 16px;
+-	background: rgba(17, 24, 39, 0.05);
+-	border: 1px solid rgba(17, 24, 39, 0.08);
+-	margin-bottom: 0.75rem;
+-}
+-.productos-grid {
+-	display: grid;
+-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+-	gap: 1rem;
+-}
+-.producto-card {
+-	display: grid;
+-	align-content: start;
+-	gap: 0.25rem;
+-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(245, 247, 250, 0.98));
+-	border: 1px solid rgba(17, 24, 39, 0.08);
+-	border-radius: 20px;
+-	padding: 0.95rem;
+-	box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+-	transition: transform 0.2s ease, box-shadow 0.2s ease;
+-}
+-.producto-card:hover {
+-	transform: translateY(-4px);
+-	box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+-}
+-.producto-imagen {
+-	width: 100%;
+-	height: 180px;
+-	background: linear-gradient(135deg, #f3c50030, #12121210);
+-	border-radius: 16px;
+-	margin-bottom: 0.75rem;
+-	overflow: hidden;
+-	position: relative;
+-}
+-.producto-imagen img {
+-	width: 100%;
+-	height: 100%;
+-	object-fit: cover;
+-	display: block;
+-}
+-.catalog-results .card__title,
+-.catalog-filters .card__title,
+-.catalog-browser .filters-panel__title,
+-.catalog-browser .producto-nombre,
+-.catalog-browser .producto-marca,
+-.catalog-browser .precio-bs,
+-.catalog-browser .field__label {
+-	color: var(--ink);
+-}
+-@keyframes floatGlow {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	50% {
+-		transform: translate3d(18px, -12px, 0) scale(1.08);
+-	}
+-}
+-@keyframes driftGlow {
+-	0%,
+-	100% {
+-		transform: translate3d(0, 0, 0) scale(1);
+-	}
+-	33% {
+-		transform: translate3d(-16px, 12px, 0) scale(1.05);
+-	}
+-	66% {
+-		transform: translate3d(18px, -10px, 0) scale(0.98);
+-	}
+-}
+-@keyframes spin {
+-	to {
+-		transform: rotate(360deg);
+-	}
+-}
+-@keyframes shimmer {
+-	to {
+-		transform: translateX(100%);
+-	}
+-}
+-@media (max-width: 1100px) {
+-	.catalog-content {
+-		width: min(1240px, calc(100% - 1.8rem));
+-	}
+-	.catalog-categories,
+-	.rail-card-row,
+-	.offers-grid {
+-		grid-template-columns: repeat(2, minmax(0, 1fr));
+-	}
+-	.catalog-browser__grid {
+-		grid-template-columns: 1fr;
+-	}
+-	.catalog-filters {
+-		position: static;
+-	}
+-}
+-@media (max-width: 720px) {
+-	.catalog-hero {
+-		min-height: 240px;
+-		padding: 1.25rem;
+-		border-radius: 0;
+-	}
+-	.catalog-content {
+-		width: calc(100% - 1.2rem);
+-		padding-top: 1rem;
+-	}
+-	.catalog-hero__title {
+-		max-width: 8ch;
+-	}
+-	.catalog-categories,
+-	.rail-card-row,
+-	.offers-grid {
+-		grid-template-columns: 1fr;
+-	}
+-	.category-card,
+-	.rail-card,
+-	.offer-card {
+-		min-height: 220px;
+-	}
+-	.showcase-section__header,
+-	.catalog-browser__header {
+-		align-items: flex-start;
+-		flex-direction: column;
+-	}
+-	.catalog-status.is-visible {
+-		align-items: flex-start;
+-		flex-direction: column;
+-	}
+-}
+diff --git a/app/static/js/bitacora.js b/app/static/js/bitacora.js
+@@ -1,134 +1,33 @@
+-/* global UiModal */
+-(function () {
+-  'use strict';
+-  function $id(id) {
+-    return document.getElementById(id);
+-  }
+-  function openModal(id) {
+-    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+-      window.UiModal.openById(id);
+-      return;
+-    }
+-    const el = $id(id);
+-    if (el) {
+-      el.hidden = false;
+-      el.setAttribute('aria-hidden', 'false');
+-    }
+-  }
+-  function closeModal(id) {
+-    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+-      window.UiModal.closeById(id);
+-      return;
+-    }
+-    const el = $id(id);
+-    if (el) {
+-      el.hidden = true;
+-      el.setAttribute('aria-hidden', 'true');
+-    }
+-  }
+-  function formatFecha(fechaHora) {
+-    if (!fechaHora) return '';
+-    
+-    try {
+-      let fecha;
+-      
+-      // Si es un string en formato MySQL/Timestamp (YYYY-MM-DD HH:MM:SS)
+-      if (typeof fechaHora === 'string') {
+-        // Reemplazar espacio por T para hacerlo ISO compatible
+-        let fechaStr = fechaHora.replace(' ', 'T');
+-        
+-        // Si no tiene zona horaria, agregar la zona local
+-        if (!fechaStr.includes('Z') && !fechaStr.includes('+')) {
+-          fechaStr = fechaStr + 'T00:00:00';
+-        }
+-        
+-        fecha = new Date(fechaStr);
+-        
+-        // Si falla, intentar con el string original
+-        if (isNaN(fecha.getTime())) {
+-          fecha = new Date(fechaHora);
+-        }
+-      } else {
+-        fecha = new Date(fechaHora);
+-      }
+-      
+-      // Verificar si la fecha es v├ílida
+-      if (isNaN(fecha.getTime())) {
+-        console.warn('Fecha inv├ílida:', fechaHora);
+-        return fechaHora; // Devolver el string original si no se puede formatear
+-      }
+-      
+-      return fecha.toLocaleString('es-VE', {
+-        year: 'numeric',
+-        month: '2-digit',
+-        day: '2-digit',
+-        hour: '2-digit',
+-        minute: '2-digit',
+-        second: '2-digit',
+-        hour12: false
+-      });
+-    } catch (e) {
+-      console.error('Error formateando fecha:', e);
+-      return fechaHora;
+-    }
+-  }
+-  function mostrarDetalleEvento(evento) {
+-    $id('d-id').textContent = evento.id || '';
+-    $id('d-usuario').textContent = evento.usuario || '';
+-    $id('d-accion').textContent = evento.accion || '';
+-    $id('d-descripcion').textContent = evento.descripcion || '';
+-    $id('d-fecha').textContent = formatFecha(evento.fecha);
+-    
+-    openModal('modal-detalle');
+-  }
+-  function refrescarPagina() {
+-    window.location.reload();
+-  }
+-  function bindEvents() {
+-    const btnRefrescar = $id('btn-refrescar');
+-    btnRefrescar?.addEventListener('click', refrescarPagina);
+-    // Agregar evento de click para ver detalle
+-    document.querySelectorAll('.evento-row').forEach(row => {
+-      row.addEventListener('click', () => {
+-        const id = row.getAttribute('data-id');
+-        const usuario = row.getAttribute('data-usuario');
+-        const accion = row.getAttribute('data-accion');
+-        const descripcion = row.getAttribute('data-descripcion');
+-        const fecha = row.getAttribute('data-fecha');
+-        
+-        mostrarDetalleEvento({ id, usuario, accion, descripcion, fecha });
+-      });
+-    });
+-  }
+-  function init() {
+-    bindEvents();
+-    
+-    // Formatear fechas en la tabla
+-    document.querySelectorAll('.col-fecha').forEach(cell => {
+-      const fechaOriginal = cell.textContent;
+-      if (fechaOriginal && fechaOriginal !== 'No hay eventos' && !cell.classList.contains('formateado')) {
+-        const fechaFormateada = formatFecha(fechaOriginal);
+-        if (fechaFormateada !== fechaOriginal) {
+-          cell.textContent = fechaFormateada;
+-        }
+-        cell.classList.add('formateado');
+-      }
+-    });
+-  }
+-  if (document.readyState === 'loading') {
+-    document.addEventListener('DOMContentLoaded', init);
+-  } else {
+-    void init();
+-  }
+-})();
+diff --git a/app/static/js/especialidades.js b/app/static/js/especialidades.js
+@@ -1,20 +1,117 @@
+-window.addEventListener("DOMContentLoaded", () => {
+-	const counterNodes = document.querySelectorAll("[data-count]");
+-	const rowNodes = document.querySelectorAll("[data-personal-row]");
+-	const detailTitle = document.querySelector("[data-personal-detail-title]");
+-	const detailText = document.querySelector("[data-personal-detail-text]");
+-	const detailEmail = document.querySelector("[data-personal-detail-email]");
+-	const detailRole = document.querySelector("[data-personal-detail-role]");
+-	const detailExtra = document.querySelector("[data-personal-detail-extra]");
+-	const animateCounter = (node) => {
+-		const target = Number(node.getAttribute("data-count") || 0);
+-		const duration = 900;
+-		const start = performance.now();
+-		const tick = (now) => {
+-			const progress = Math.min((now - start) / duration, 1);
+-			node.textContent = String(Math.round(target * progress));
+-			if (progress < 1) {
+-				requestAnimationFrame(tick);
+-			}
+@@ -21,0 +119,7 @@ window.addEventListener("DOMContentLoaded", () => {
+@@ -23,2 +127,2 @@ window.addEventListener("DOMContentLoaded", () => {
+-		requestAnimationFrame(tick);
+-	};
+@@ -26 +130,9 @@ window.addEventListener("DOMContentLoaded", () => {
+-	counterNodes.forEach(animateCounter);
+@@ -28,3 +140,6 @@ window.addEventListener("DOMContentLoaded", () => {
+-	const setDetails = (row) => {
+-		if (!row) return;
+-		rowNodes.forEach((currentRow) => currentRow.classList.toggle("is-selected", currentRow === row));
+@@ -32,6 +147,15 @@ window.addEventListener("DOMContentLoaded", () => {
+-		if (detailTitle) detailTitle.textContent = row.dataset.detailTitle || "";
+-		if (detailText) detailText.textContent = row.dataset.detailText || "";
+-		if (detailEmail) detailEmail.textContent = row.dataset.detailEmail || "";
+-		if (detailRole) detailRole.textContent = row.dataset.detailRole || "";
+-		if (detailExtra) detailExtra.textContent = row.dataset.detailExtra || "";
+-	};
+@@ -39,2 +163 @@ window.addEventListener("DOMContentLoaded", () => {
+-	if (rowNodes.length > 0) {
+-		setDetails(rowNodes[0]);
+@@ -43,2 +166,113 @@ window.addEventListener("DOMContentLoaded", () => {
+-	rowNodes.forEach((row) => {
+-		row.addEventListener("click", () => setDetails(row));
+diff --git a/app/static/js/feedback-modal.js b/app/static/js/feedback-modal.js
+@@ -1,191 +0,0 @@
+-(() => {
+-  "use strict";
+-  const MODAL_ID = "feedback-modal";
+-  const TITLE_ID = "feedback-modal-title";
+-  const MESSAGE_ID = "feedback-modal-message";
+-  const AUTO_CLOSE_MS = 3500;
+-  let autoCloseTimer = null;
+-  function $(id) {
+-    return document.getElementById(id);
+-  }
+-  function setText(el, text) {
+-    if (!el) return;
+-    el.textContent = String(text ?? "");
+-  }
+-  function setIcon(modal, type) {
+-    const successIcon = modal?.querySelector("[data-feedback-icon='success']");
+-    const errorIcon = modal?.querySelector("[data-feedback-icon='error']");
+-    if (successIcon) successIcon.hidden = type !== "success";
+-    if (errorIcon) errorIcon.hidden = type !== "error";
+-    const content = modal?.querySelector(".feedback-modal__content");
+-    if (content) {
+-      content.dataset.feedbackType = type;
+-    }
+-  }
+-  function restartAnim(el) {
+-    if (!el) return;
+-    el.classList.remove("is-anim");
+-    // forzar reflow para reiniciar la animaci├│n
+-    void el.offsetWidth;
+-    el.classList.add("is-anim");
+-  }
+-  function scheduleAutoClose() {
+-    if (!window.UiModal) return;
+-    if (autoCloseTimer) {
+-      window.clearTimeout(autoCloseTimer);
+-      autoCloseTimer = null;
+-    }
+-    autoCloseTimer = window.setTimeout(() => {
+-      window.UiModal.closeById(MODAL_ID);
+-    }, AUTO_CLOSE_MS);
+-  }
+-  function show({ type = "success", title = "Acci├│n", message = "Operaci├│n completada." } = {}) {
+-    const modal = $(MODAL_ID);
+-    if (!modal || !window.UiModal) return;
+-    setText($(TITLE_ID), title);
+-    setText($(MESSAGE_ID), message);
+-    setIcon(modal, type);
+-    window.UiModal.openById(MODAL_ID);
+-    // animaci├│n check/X y mensaje
+-    const iconToAnimate = modal.querySelector(type === "error" ? "[data-feedback-icon='error']" : "[data-feedback-icon='success']");
+-    restartAnim(iconToAnimate);
+-    restartAnim($(MESSAGE_ID));
+-    // autocierre
+-    scheduleAutoClose();
+-  }
+-  function buildSuccessMessage(url, method) {
+-    const path = String(url || "");
+-    const m = String(method || "").toUpperCase();
+-    if (path.includes("/api/carrito")) {
+-      if (m === "POST") return "Producto agregado al carrito.";
+-      if (m === "PUT" || m === "PATCH") return "Carrito actualizado.";
+-      if (m === "DELETE") return "Carrito actualizado.";
+-    }
+-    if (path.includes("/api/procesar-pago")) {
+-      if (m === "POST") return "Pago registrado. Tu pago est├í siendo verificado.";
+-    }
+-    if (path.includes("/api/productos/modelos")) {
+-      if (m === "POST") return "Producto registrado satisfactoriamente.";
+-      if (m === "PUT" || m === "PATCH") return "Producto actualizado satisfactoriamente.";
+-      if (m === "DELETE") return "Producto eliminado satisfactoriamente.";
+-    }
+-    if (path.includes("/api/productos/clases")) {
+-      if (m === "POST") return "Clase registrada satisfactoriamente.";
+-      if (m === "PUT" || m === "PATCH") return "Clase actualizada satisfactoriamente.";
+-      if (m === "DELETE") return "Clase eliminada satisfactoriamente.";
+-    }
+-    if (path.includes("/api/productos/marcas")) {
+-      if (m === "POST") return "Marca registrada satisfactoriamente.";
+-      if (m === "PUT" || m === "PATCH") return "Marca actualizada satisfactoriamente.";
+-      if (m === "DELETE") return "Marca eliminada satisfactoriamente.";
+-    }
+-    if (m === "POST") return "Registro realizado satisfactoriamente.";
+-    if (m === "PUT" || m === "PATCH") return "Actualizaci├│n realizada satisfactoriamente.";
+-    if (m === "DELETE") return "Eliminaci├│n realizada satisfactoriamente.";
+-    return "Acci├│n realizada satisfactoriamente.";
+-  }
+-  function shouldHandleRequest(url, options) {
+-    const method = String(options?.method || "GET").toUpperCase();
+-    if (method === "GET" || method === "HEAD") return false;
+-    const u = String(url || "");
+-    if (!u.includes("/api/")) return false;
+-    // Evitar modales en auth/login
+-    if (u.includes("/api/login") || u.includes("/api/auth") || u.includes("/api/token")) return false;
+-    return true;
+-  }
+-  function attachFetchInterceptor() {
+-    if (window.__feedbackFetchPatched) return;
+-    window.__feedbackFetchPatched = true;
+-    const originalFetch = window.fetch.bind(window);
+-    window.fetch = async (input, init = {}) => {
+-      const url = typeof input === "string" ? input : input?.url;
+-      const options = init || {};
+-      let response;
+-      try {
+-        response = await originalFetch(input, init);
+-      } catch (err) {
+-        if (shouldHandleRequest(url, options)) {
+-          show({
+-            type: "error",
+-            title: "Error",
+-            message: "No se pudo realizar el env├¡o. Verifica tu conexi├│n e int├®ntalo de nuevo.",
+-          });
+-        }
+-        throw err;
+-      }
+-      if (!shouldHandleRequest(url, options)) {
+-        return response;
+-      }
+-      // Para no consumir el body que los m├│dulos podr├¡an leer, trabajamos con clone().
+-      const cloned = response.clone();
+-      let data = null;
+-      try {
+-        const contentType = cloned.headers.get("content-type") || "";
+-        if (contentType.includes("application/json")) {
+-          data = await cloned.json();
+-        }
+-      } catch {
+-        data = null;
+-      }
+-      const success = response.ok && !(data && data.success === false);
+-      if (success) {
+-        show({
+-          type: "success",
+-          title: "Acci├│n exitosa",
+-          message: buildSuccessMessage(url, options?.method),
+-        });
+-      } else {
+-        const errMsg = (data && (data.error || data.message)) || "No se pudo realizar el env├¡o.";
+-        show({
+-          type: "error",
+-          title: "No se pudo completar",
+-          message: String(errMsg),
+-        });
+-      }
+-      return response;
+-    };
+-  }
+-  document.addEventListener("DOMContentLoaded", () => {
+-    attachFetchInterceptor();
+-  });
+-  window.FeedbackModal = {
+-    showSuccess: (message, title = "Acci├│n exitosa") => show({ type: "success", title, message }),
+-    showError: (message, title = "No se pudo completar") => show({ type: "error", title, message }),
+-    show,
+-  };
+-})();
+diff --git a/app/static/js/inventario.js b/app/static/js/inventario.js
+@@ -187,8 +186,0 @@
+-	const parseDecimalSafe = (value) => {
+-		const str = String(value ?? '').trim();
+-		if (!str) return NaN;
+-		// Permite 12,50 o 12.50
+-		const cleaned = str.replace(/[^0-9.,-]/g, '').replace(',', '.');
+-		return Number.parseFloat(cleaned);
+-	};
+@@ -311 +303 @@
+-		renderSelect(selectModelo, [], 'Selecciona un producto');
+@@ -325 +317 @@
+-				renderSelect(selectModelo, [], 'Selecciona un producto');
+@@ -339 +331 @@
+-		const cargarProductos = async (idMarca) => {
+@@ -341 +333 @@
+-				renderSelect(selectModelo, [], 'Cargando productosÔÇª');
+@@ -343 +335 @@
+-					renderSelect(selectModelo, [], 'Selecciona un producto');
+@@ -346,7 +338,3 @@
+-				const idClase = String(selectClase?.value || '');
+-				const qs = new URLSearchParams();
+-				qs.set('marca_id', String(idMarca));
+-				if (idClase) qs.set('clase_id', String(idClase));
+-				const data = await fetchJson(`/api/productos/modelos?${qs.toString()}`, { method: 'GET' });
+-				const productos = Array.isArray(data?.modelos) ? data.modelos : [];
+-				renderSelect(selectModelo, productos, 'Selecciona un producto');
+@@ -354,2 +342,2 @@
+-				console.error('Error cargando productos:', err);
+-				renderSelect(selectModelo, [], 'No se pudieron cargar productos');
+@@ -363 +351 @@
+-			cargarProductos(String(selectMarca.value || ''));
+@@ -369 +357 @@
+-			renderSelect(selectModelo, [], 'Selecciona un producto');
+@@ -375,3 +363,3 @@
+-			const idProducto = String(selectModelo.value || '').trim();
+-			if (!idProducto) {
+-				setNote('Selecciona un producto antes de guardar.');
+@@ -382 +370 @@
+-			const costoVenta = parseDecimalSafe(inputCosto?.value);
+@@ -393 +381 @@
+-				id_producto: Number.parseInt(idProducto, 10),
+@@ -395 +383 @@
+-				costo_venta: String(inputCosto?.value || '').trim(),
+diff --git a/app/static/js/productos.js b/app/static/js/productos.js
+@@ -30 +29,0 @@
+-  const pDescripcion = document.getElementById("p-descripcion");
+@@ -38,28 +36,0 @@
+-  let isSubmitting = false;
+-  const MAX = {
+-    clase: 30,
+-    marca: 30,
+-    producto: 30,
+-    descripcion: 300,
+-  };
+-  function notify(type, message) {
+-    if (window.FeedbackModal && typeof window.FeedbackModal.show === "function") {
+-      window.FeedbackModal.show({
+-        type: type === "error" ? "error" : "success",
+-        title: type === "error" ? "No se pudo completar" : "Acci├│n exitosa",
+-        message,
+-      });
+-      return;
+-    }
+-    // fallback
+-    alert(message);
+-  }
+-  function validateMaxLen(label, value, max) {
+-    const v = String(value || "");
+-    if (v.length > max) {
+-      throw new Error(`${label} no puede exceder ${max} caracteres.`);
+-    }
+-  }
+@@ -225,2 +196,3 @@
+-  async function cargarMarcas() {
+-    const data = await fetchJson("/api/productos/marcas", { method: "GET" });
+@@ -228,0 +201 @@
+@@ -233 +206 @@
+-  async function cargarModelos({ claseId = "", marcaId = "", q = "" } = {}) {
+@@ -235 +207,0 @@
+-    if (claseId) params.set("clase_id", String(claseId));
+@@ -259 +231 @@
+-              <span class="product-sku">C├│digo: PRO${escapeHtml(m.id ?? "")}</span>
+@@ -299,0 +272,3 @@
+@@ -304 +278,0 @@
+-    const claseId = fClase ? String(fClase.value || "") : "";
+@@ -307 +281 @@
+-    await cargarModelos({ claseId, marcaId, q });
+@@ -329,2 +302,0 @@
+-    if (!state.marcas.length) await cargarMarcas();
+@@ -333,0 +306 @@
+@@ -338 +310,0 @@
+-    if (pDescripcion) pDescripcion.value = modelo.descripcion || "";
+@@ -367,0 +340 @@
+@@ -371 +344 @@
+-      body: JSON.stringify({ nombre }),
+@@ -379 +351,0 @@
+-    if (isSubmitting) return;
+@@ -383 +355 @@
+-    const descripcion = String(pDescripcion?.value || "").trim();
+@@ -385 +357 @@
+-      notify("error", "El nombre del producto es obligatorio.");
+@@ -390,4 +361,0 @@
+-      isSubmitting = true;
+-      const submitBtn = formProducto.querySelector("button[type='submit']");
+-      if (submitBtn) submitBtn.disabled = true;
+@@ -406,0 +375,9 @@
+@@ -410,3 +386,0 @@
+-      validateMaxLen("Producto", nombreModelo, MAX.producto);
+-      validateMaxLen("Descripci├│n", descripcion, MAX.descripcion);
+@@ -416 +390 @@
+-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+@@ -421 +395 @@
+-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+@@ -428,5 +402 @@
+-      notify("error", err?.message || "No se pudo guardar.");
+-    } finally {
+-      isSubmitting = false;
+-      const submitBtn = formProducto.querySelector("button[type='submit']");
+-      if (submitBtn) submitBtn.disabled = false;
+@@ -449,2 +418,0 @@
+-      validateMaxLen("Clase", nombreClase, MAX.clase);
+@@ -460 +428,2 @@
+-      // Al cambiar/crear clase, limpiar marca actual para que el usuario elija expl├¡citamente.
+@@ -461,0 +431 @@
+@@ -466 +436 @@
+-      notify("error", err?.message || "No se pudo guardar la clase.");
+@@ -475,0 +446,11 @@
+@@ -486,2 +466,0 @@
+-      validateMaxLen("Marca", nombreMarca, MAX.marca);
+@@ -490 +469 @@
+-        body: JSON.stringify({ nombre: nombreMarca }),
+@@ -493 +472 @@
+-      await cargarMarcas();
+@@ -500 +479 @@
+-      notify("error", err?.message || "No se pudo guardar la marca.");
+@@ -523 +502 @@
+-      const ok = confirm(`┬┐Seguro que deseas eliminar el producto ${label}?`);
+@@ -530 +509 @@
+-        notify("error", err?.message || "No se pudo eliminar.");
+@@ -543 +522 @@
+-        if (!state.marcas.length) await cargarMarcas();
+@@ -562,0 +542,6 @@
+@@ -613,0 +599 @@
+@@ -624 +610,8 @@
+-        // Cambiar clase invalida marca actual (el usuario debe elegir expl├¡citamente).
+@@ -625,0 +619 @@
+@@ -632 +626 @@
+-      await cargarMarcas();
+@@ -636 +630 @@
+-      if (tabla) tabla.innerHTML = emptyRow(5, err?.message || "No se pudo cargar el m├│dulo.");
+diff --git a/app/static/js/table-tools.js b/app/static/js/table-tools.js
+@@ -2,27 +2,24 @@
+-  const DEFAULT_PAGE_SIZE = 10;
+-  const PAGE_SIZES = [10, 25, 50, 100];
+-  const DEBOUNCE_DELAY = 300;
+-  const tableStates = new Map();
+-  function initAllTables() {
+-    document.querySelectorAll("table.table").forEach((table) => {
+-      if (table.dataset.tableToolsInitialized === "true") return;
+-      initTable(table);
+-    });
+-  }
+-  function initTable(table) {
+-    const tbody = table.tBodies?.[0];
+-    if (!tbody) return;
+-    table.dataset.tableToolsInitialized = "true";
+-    const state = {
+-      page: 1,
+-      pageSize: DEFAULT_PAGE_SIZE,
+-      query: "",
+-      controls: null,
+-      observer: null,
+-      isRefreshing: false,
+-      debounceTimer: null,
+-    };
+@@ -30,3 +27,3 @@
+-    const controls = buildControls(table);
+-    attachControls(table, controls.container);
+-    wireControls(controls, state, table);
+@@ -34,2 +31,6 @@
+-    const observer = new MutationObserver(() => {
+-      if (!state.isRefreshing) {
+@@ -37,77 +38 @@
+-      }
+-    });
+-    observer.observe(tbody, { childList: true });
+-    state.controls = controls;
+-    state.observer = observer;
+-    tableStates.set(table, state);
+-    refreshTable(table);
+-  }
+-  function buildControls() {
+-    const container = document.createElement("div");
+-    container.className = "table-controls";
+-    container.setAttribute("data-table-controls", "true");
+-    const searchLabel = document.createElement("label");
+-    searchLabel.className = "table-controls__search";
+-    const searchText = document.createElement("span");
+-    searchText.textContent = "Buscar";
+-    const searchInput = document.createElement("input");
+-    searchInput.type = "search";
+-    searchInput.placeholder = "Buscar en la tabla";
+-    searchInput.setAttribute("aria-label", "Buscar en la tabla");
+-    searchInput.className = "table-controls__input";
+-    searchLabel.append(searchText, searchInput);
+-    const meta = document.createElement("div");
+-    meta.className = "table-controls__meta";
+-    const pager = document.createElement("div");
+-    pager.className = "table-controls__pager";
+-    const prevBtn = document.createElement("button");
+-    prevBtn.type = "button";
+-    prevBtn.className = "table-controls__btn";
+-    prevBtn.textContent = "Anterior";
+-    const info = document.createElement("span");
+-    info.className = "table-controls__info";
+-    info.setAttribute("aria-live", "polite");
+-    const nextBtn = document.createElement("button");
+-    nextBtn.type = "button";
+-    nextBtn.className = "table-controls__btn";
+-    nextBtn.textContent = "Siguiente";
+-    pager.append(prevBtn, info, nextBtn);
+-    const sizeLabel = document.createElement("label");
+-    sizeLabel.className = "table-controls__size";
+-    const sizeText = document.createElement("span");
+-    sizeText.textContent = "Filas";
+-    const sizeSelect = document.createElement("select");
+-    sizeSelect.className = "table-controls__select";
+-    PAGE_SIZES.forEach((size) => {
+-      const option = document.createElement("option");
+-      option.value = String(size);
+-      option.textContent = String(size);
+-      if (size === DEFAULT_PAGE_SIZE) {
+-        option.selected = true;
+-      }
+-      sizeSelect.appendChild(option);
+-    });
+-    sizeLabel.append(sizeText, sizeSelect);
+-    meta.append(pager, sizeLabel);
+-    container.append(searchLabel, meta);
+-    return {
+-      container,
+-      searchInput,
+-      prevBtn,
+-      nextBtn,
+-      info,
+-      sizeSelect,
+-    };
+-  }
+@@ -115,5 +40,66 @@
+-  function attachControls(table, controls) {
+-    const wrapper = table.closest(".table-wrap");
+-    if (wrapper?.parentElement) {
+-      wrapper.parentElement.insertBefore(controls, wrapper);
+-      return;
+@@ -121,37 +106,0 @@
+-    table.parentElement?.insertBefore(controls, table);
+-  }
+-  function wireControls(controls, state, table) {
+-    controls.searchInput.addEventListener("input", (event) => {
+-      if (state.debounceTimer) clearTimeout(state.debounceTimer);
+-      
+-      const newQuery = event.target.value || "";
+-      const isDeleting = newQuery.length < state.query.length;
+-      
+-      if (isDeleting && newQuery.length < 2) {
+-        // Borrado r├ípido
+-        state.query = newQuery;
+-        state.page = 1;
+-        requestAnimationFrame(() => refreshTable(table));
+-      } else {
+-        state.debounceTimer = setTimeout(() => {
+-          state.query = newQuery;
+-          state.page = 1;
+-          refreshTable(table);
+-        }, DEBOUNCE_DELAY);
+-      }
+-    });
+-    controls.sizeSelect.addEventListener("change", (event) => {
+-      const value = Number(event.target.value);
+-      state.pageSize = Number.isNaN(value) ? DEFAULT_PAGE_SIZE : value;
+-      state.page = 1;
+-      refreshTable(table);
+-    });
+-    controls.prevBtn.addEventListener("click", () => {
+-      if (state.page > 1) {
+-        state.page -= 1;
+-        refreshTable(table);
+-      }
+-    });
+@@ -159,5 +108,8 @@
+-    controls.nextBtn.addEventListener("click", () => {
+-      state.page += 1;
+-      refreshTable(table);
+-    });
+-  }
+@@ -165,3 +117,6 @@
+-  function refreshTable(table) {
+-    const tbody = table.tBodies?.[0];
+-    if (!tbody) return;
+@@ -169,2 +124,6 @@
+-    const state = tableStates.get(table);
+-    if (!state || state.isRefreshing) return;
+@@ -172 +131,6 @@
+-    state.isRefreshing = true;
+@@ -174,4 +138,26 @@
+-    try {
+-      const dataRows = getDataRows(tbody);
+-      const placeholderRows = getPlaceholderRows(tbody);
+-      const hasDataRows = dataRows.length > 0;
+@@ -179,2 +164,0 @@
+-      // Manejar placeholders
+-      if (!hasDataRows) {
+@@ -182 +166 @@
+-          row.hidden = false;
+@@ -184,57 +168,26 @@
+-        removeNoResultsRow(tbody);
+-        updateControls(state, 0, 0, 0);
+-        state.controls.container.classList.toggle("is-empty", true);
+-        return;
+-      }
+-      placeholderRows.forEach((row) => {
+-        row.hidden = true;
+-      });
+-      const query = state.query.trim().toLowerCase();
+-      const filteredRows = query
+-        ? dataRows.filter((row) => row.textContent.toLowerCase().includes(query))
+-        : dataRows;
+-      const total = filteredRows.length;
+-      const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+-      
+-      // Ajustar p├ígina actual si es necesario
+-      if (state.page > totalPages) {
+-        state.page = totalPages;
+-      }
+-      const startIndex = (state.page - 1) * state.pageSize;
+-      const endIndex = startIndex + state.pageSize;
+-      // Ocultar todas las filas
+-      dataRows.forEach((row) => {
+-        row.hidden = true;
+-      });
+-      // Mostrar filas filtradas y paginadas
+-      if (total > 0) {
+-        for (let i = startIndex; i < Math.min(endIndex, total); i++) {
+-          filteredRows[i].hidden = false;
+-        }
+-      }
+-      // MANEJO DE "SIN RESULTADOS" - EVITA LOOPS
+-      const existingNoResultsRow = tbody.querySelector("tr[data-table-tools-empty='true']");
+-      
+-      if (total === 0 && query) {
+-        // Solo agregar si no existe
+-        if (!existingNoResultsRow) {
+-          const row = document.createElement("tr");
+-          row.dataset.tableToolsEmpty = "true";
+-          const cell = document.createElement("td");
+-          cell.className = "table__empty";
+-          cell.colSpan = getColumnCount(table);
+-          cell.textContent = "Sin resultados.";
+-          row.appendChild(cell);
+-          tbody.appendChild(row);
+-        }
+-      } else {
+-        // Eliminar si existe
+-        if (existingNoResultsRow) {
+-          existingNoResultsRow.remove();
+@@ -242 +194,0 @@
+-      }
+@@ -244,5 +196,17 @@
+-      updateControls(state, total, startIndex, endIndex);
+-      state.controls.container.classList.toggle("is-empty", total === 0 && !query);
+-      
+-    } finally {
+-      state.isRefreshing = false;
+@@ -250,18 +214,3 @@
+-  }
+-  function updateControls(state, total, startIndex, endIndex) {
+-    const { info, prevBtn, nextBtn } = state.controls;
+-    const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+-    const start = total ? startIndex + 1 : 0;
+-    const end = total ? Math.min(endIndex, total) : 0;
+-    info.textContent = total ? `${start}-${end} de ${total}` : "0 resultados";
+-    if (totalPages > 1) {
+-      prevBtn.style.display = "";
+-      nextBtn.style.display = "";
+-      prevBtn.disabled = state.page <= 1;
+-      nextBtn.disabled = state.page >= totalPages;
+-    } else {
+-      prevBtn.style.display = "none";
+-      nextBtn.style.display = "none";
+@@ -269,20 +218,11 @@
+-  }
+-  function getDataRows(tbody) {
+-    return Array.from(tbody.rows).filter((row) => !isPlaceholderRow(row));
+-  }
+-  function getPlaceholderRows(tbody) {
+-    return Array.from(tbody.rows).filter(
+-      (row) => isPlaceholderRow(row) && row.dataset.tableToolsEmpty !== "true",
+-    );
+-  }
+-  function isPlaceholderRow(row) {
+-    if (row.dataset.tableToolsEmpty === "true") return true;
+-    const cells = Array.from(row.cells || []);
+-    if (cells.length === 1) {
+-      const cell = cells[0];
+-      const colSpan = Number(cell.getAttribute("colspan") || 1);
+-      if (cell.classList.contains("table__empty")) return true;
+-      if (colSpan > 1) return true;
+@@ -290,21 +230,11 @@
+-    return Boolean(row.querySelector("td.table__empty"));
+-  }
+-  function removeNoResultsRow(tbody) {
+-    const row = tbody.querySelector("tr[data-table-tools-empty='true']");
+-    if (row) row.remove();
+-  }
+-  function getColumnCount(table) {
+-    const headerRow = table.tHead?.rows?.[0];
+-    if (headerRow) return headerRow.cells.length;
+-    const firstRow = table.tBodies?.[0]?.rows?.[0];
+-    if (firstRow) return firstRow.cells.length;
+-    return 1;
+-  }
+-  // Limpiar timers al descargar p├ígina
+-  window.addEventListener('beforeunload', () => {
+-    for (const [_, state] of tableStates) {
+-      if (state.debounceTimer) clearTimeout(state.debounceTimer);
+-      if (state.observer) state.observer.disconnect();
+@@ -312 +241,0 @@
+-  });
+@@ -314 +243,11 @@
+-  document.addEventListener("DOMContentLoaded", initAllTables);
+@@ -316,7 +255,9 @@
+-  window.TableTools = {
+-    initAll: initAllTables,
+-    refreshAll: () => {
+-      tableStates.forEach((_, table) => refreshTable(table));
+-    },
+-  };
+-})();
+diff --git a/app/static/js/ventas.js b/app/static/js/ventas.js
+@@ -49,53 +48,0 @@
+-    function setCatalogStatus(message, type = "loading", actionsHtml = "") {
+-        const status = document.getElementById("catalog-status");
+-        if (!status) return;
+-        if (!message) {
+-            status.className = "catalog-status";
+-            status.innerHTML = "";
+-            return;
+-        }
+-        const spinner = type === "loading" ? '<span class="catalog-spinner" aria-hidden="true"></span>' : "";
+-        status.className = `catalog-status is-visible catalog-status--${type}`;
+-        status.innerHTML = `
+-            <div class="catalog-status__content">
+-                ${spinner}
+-                <span>${escapeHtml(message)}</span>
+-            </div>
+-            ${actionsHtml ? `<div class="catalog-status__actions">${actionsHtml}</div>` : ""}
+-        `;
+-    }
+-    function renderCatalogLoading() {
+-        const container = document.getElementById("productos-grid");
+-        if (!container) return;
+-        container.innerHTML = Array.from({ length: 8 }).map(() => `
+-            <article class="producto-card producto-card--skeleton" aria-hidden="true">
+-                <div class="skeleton-block skeleton-block--image"></div>
+-                <div class="skeleton-block skeleton-block--line"></div>
+-                <div class="skeleton-block skeleton-block--line short"></div>
+-                <div class="skeleton-block skeleton-block--line"></div>
+-            </article>
+-        `).join("");
+-    }
+-    function renderCatalogError(message) {
+-        const container = document.getElementById("productos-grid");
+-        if (!container) return;
+-        container.innerHTML = `
+-            <div class="catalog-error-box">
+-                <p>No fue posible cargar el cat├ílogo.</p>
+-                <p>${escapeHtml(message)}</p>
+-                <button class="btn btn--yellow" id="catalog-retry" type="button">Reintentar</button>
+-            </div>
+-        `;
+-        const retry = document.getElementById("catalog-retry");
+-        if (retry) {
+-            retry.addEventListener("click", () => cargarCatalogo());
+-        }
+-    }
+@@ -103,3 +49,0 @@
+-        setCatalogStatus("Cargando productos...", "loading");
+-        renderCatalogLoading();
+@@ -110,29 +54,10 @@
+-        try {
+-            const data = await fetchJson(`/api/catalogo/productos?${params}`);
+-            state.productos = data.productos || [];
+-            state.masVendidos = data.mas_vendidos || [];
+-            state.tasas = data.tasas || state.tasas;
+-            renderProductos();
+-            renderTasas();
+-            renderFiltros(data.clases, data.marcas);
+-            setCatalogStatus("");
+-        } catch (err) {
+-            state.productos = [];
+-            state.masVendidos = [];
+-            renderCatalogError(err.message);
+-            const fallbackMessage = err.message === "Autenticaci├│n requerida." 
+-                ? "Inicia sesi├│n para ver el cat├ílogo completo."
+-                : "No pudimos cargar el cat├ílogo.";
+-            setCatalogStatus(
+-                fallbackMessage,
+-                "error",
+-                '<button class="catalog-retry" type="button" id="catalog-status-retry">Reintentar</button>'
+-            );
+-            const retry = document.getElementById("catalog-status-retry");
+-            if (retry) {
+-                retry.addEventListener("click", () => cargarCatalogo());
+-            }
+-        }
+@@ -143 +67,0 @@
+-        const count = document.getElementById("productos-count");
+@@ -145,4 +68,0 @@
+-        if (count) {
+-            count.textContent = `${state.productos.length} producto${state.productos.length === 1 ? "" : "s"}`;
+-        }
+@@ -151 +71 @@
+-            container.innerHTML = '<div class="catalog-empty"><p>No se encontraron productos con esos filtros.</p></div>';
+@@ -158 +77,0 @@
+-            const imagenSrc = p.imagen ? p.imagen : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+@@ -161,3 +80 @@
+-                <div class="producto-imagen">
+-                    <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
+-                </div>
+@@ -231,25 +148,5 @@
+-        const container = document.getElementById("cart-items");
+-        if (container) {
+-            container.innerHTML = '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
+-        }
+-        try {
+-            const data = await fetchJson("/api/carrito");
+-            state.carrito = data.items || [];
+-            actualizarBadgeCarrito();
+-            renderCarritoModal();
+-            return data;
+-        } catch (err) {
+-            if (container) {
+-                const carritoMsg = err.message === "Autenticaci├│n requerida."
+-                    ? "Inicia sesi├│n para guardar y consultar tu carrito."
+-                    : err.message;
+-                container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
+-            }
+-            const badge = document.getElementById("cart-count");
+-            if (badge) {
+-                badge.textContent = "0";
+-                badge.style.display = "none";
+-            }
+-            return null;
+-        }
+@@ -264,0 +162 @@
+@@ -266,2 +164 @@
+-            // El modal global ya maneja errores de /api/ en POST.
+-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
+@@ -515,4 +412,2 @@
+-            // El modal global se dispara por el POST; damos un momento para que se renderice antes del redirect.
+-            window.setTimeout(() => {
+-                window.location.href = "/catalogo";
+-            }, 600);
+@@ -520 +415 @@
+-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
+@@ -621,0 +517 @@
+@@ -652,0 +549 @@
+@@ -799,0 +697 @@
+@@ -805 +703 @@
+-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
+@@ -810,5 +707,0 @@
+-        if (window.FeedbackModal) {
+-            if (tipo === "error") window.FeedbackModal.showError(msg);
+-            else window.FeedbackModal.showSuccess(msg);
+-            return;
+-        }
+diff --git a/run.py b/run.py
+@@ -18,0 +19 @@ from app.controllers.ventas import ventas_blueprint
+@@ -21,0 +23 @@ from app.controllers.cargos import cargos_blueprint
+@@ -39 +40,0 @@ app.config.update(
+-    SEND_FILE_MAX_AGE_DEFAULT=0,
+@@ -49 +50 @@ csp = {
+-    'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', 'https://images.unsplash.com', 'https://plus.unsplash.com', 'https://picsum.photos'],
+@@ -71,0 +73 @@ app.register_blueprint(ventas_blueprint)
+@@ -75 +77 @@ app.register_blueprint(cargos_blueprint)
+@@ -86,0 +89 @@ def load_user_from_jwt():
+@@ -92,10 +94,0 @@ def load_user_from_jwt():
+-@app.after_request
+-def disable_html_cache(response):
+-    content_type = response.headers.get("Content-Type", "")
+-    if content_type.startswith("text/html"):
+-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+-        response.headers["Pragma"] = "no-cache"
+-        response.headers["Expires"] = "0"
+-    return response
+diff --git a/views/bitacora.html b/views/bitacora.html
+@@ -3 +3 @@
+-{% block title %}Ituaccesorio - Bit├ícora del Sistema{% endblock %}
+@@ -5,0 +6,2 @@
+@@ -10,5 +12,5 @@
+-<main class="page">
+-  <header class="bitacora-hero" aria-label="Encabezado de bit├ícora">
+-    <div class="bitacora-hero__copy">
+-      <h1 class="bitacora-hero__title">Bit├ícora del Sistema</h1>
+-      <p class="bitacora-hero__subtitle">Registro de actividades y eventos del sistema</p>
+@@ -17,5 +19,9 @@
+-    <div class="bitacora-hero__actions" aria-label="Acciones">
+-      <button id="btn-refrescar" class="btn btn--ghost" type="button">
+-        <span class="btn__icon" aria-hidden="true">Ôƒ│</span>
+-        Refrescar
+-      </button>
+@@ -23 +29 @@
+-  </header>
+@@ -25,2 +31,2 @@
+-  <section class="bitacora-grid" aria-label="Gesti├│n de bit├ícora">
+-    <article class="card card--table" aria-label="Listado de eventos">
+@@ -28 +34 @@
+-        <h2 class="card__title">Eventos Registrados</h2>
+@@ -31,29 +37,2 @@
+-      <div class="table-wrap" role="region" aria-label="Tabla de eventos">
+-        <table class="table bitacora-table">
+-          <thead>
+-            <tr>
+-              <th class="col-id">ID</th>
+-              <th class="col-usuario">Usuario</th>
+-              <th class="col-accion">Acci├│n</th>
+-              <th>Descripci├│n</th>
+-              <th class="col-fecha">Fecha/Hora</th>
+-            </tr>
+-          </thead>
+-          <tbody id="tabla-bitacora">
+-            {% if registros %}
+-              {% for registro in registros %}
+-              <tr class="evento-row" data-id="{{ registro.id }}" data-usuario="{{ registro.usuario_id }}" data-accion="{{ registro.accion }}" data-descripcion="{{ registro.descripcion|escape }}" data-fecha="{{ registro.fecha_hora }}">
+-                <td class="col-id">{{ registro.id }}</td>
+-                <td class="col-usuario"><span class="chip">{{ registro.usuario_id }}</span></td>
+-                <td class="col-accion">{{ registro.accion }}</td>
+-                <td title="{{ registro.descripcion|escape }}">{{ registro.descripcion|truncate(80) }}</td>
+-                <td class="col-fecha">{{ registro.fecha_hora }}</td>
+-              </tr>
+-              {% endfor %}
+-            {% else %}
+-              <tr>
+-                <td colspan="5" class="table__empty">No hay eventos registrados para mostrar.</td>
+-              </tr>
+-            {% endif %}
+-          </tbody>
+-        </table>
+@@ -64,35 +43 @@
+-  <div id="modal-detalle" class="ui-modal" data-modal hidden aria-hidden="true">
+-    <div class="ui-modal__dialog ui-modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="detalle-title">
+-      <div class="ui-modal__header">
+-        <h2 id="detalle-title" class="ui-modal__title">Detalle del evento</h2>
+-        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">├ù</button>
+-      </div>
+-      <div class="ui-modal__body">
+-        <div class="detail-grid" aria-label="Informaci├│n del evento">
+-          <div class="detail-item">
+-            <span class="detail-label">ID del evento</span>
+-            <span id="d-id" class="detail-value"></span>
+-          </div>
+-          <div class="detail-item">
+-            <span class="detail-label">Usuario ID</span>
+-            <span id="d-usuario" class="detail-value"></span>
+-          </div>
+-          <div class="detail-item">
+-            <span class="detail-label">Acci├│n</span>
+-            <span id="d-accion" class="detail-value"></span>
+-          </div>
+-          <div class="detail-item detail-item--full">
+-            <span class="detail-label">Fecha y hora</span>
+-            <span id="d-fecha" class="detail-value"></span>
+-          </div>
+-          <div class="detail-item detail-item--full">
+-            <span class="detail-label">Descripci├│n</span>
+-            <span id="d-descripcion" class="detail-value"></span>
+-          </div>
+-        </div>
+-        <div class="ui-form__actions">
+-          <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cerrar</button>
+-        </div>
+-      </div>
+-    </div>
+-  </div>
+@@ -103,2 +48,3 @@
+-  <script defer src="{{ url_for('static', filename='js/bitacora.js') }}"></script>
+-{% endblock %}
+diff --git a/views/cargos.html b/views/cargos.html
+@@ -14,2 +14 @@
+-        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+-        <li class="breadcrumb__separator" aria-hidden="true">&gt;</li>
+diff --git a/views/components/layout/base.html b/views/components/layout/base.html
+@@ -25,2 +24,0 @@
+-	{% include 'components/ui/feedback_modal.html' %}
+@@ -28 +25,0 @@
+-	<script src="{{ url_for('static', filename='js/feedback-modal.js') }}" defer></script>
+diff --git a/views/components/layout/navbar.html b/views/components/layout/navbar.html
+@@ -116 +116 @@
+-				<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_especialidades') }}">Especialidades</a>
+diff --git a/views/components/ui/feedback_modal.html b/views/components/ui/feedback_modal.html
+@@ -1,27 +0,0 @@
+-{# Modal global para feedback de acciones (├®xito / error). #}
+-<div id="feedback-modal" class="ui-modal" data-modal hidden aria-hidden="true">
+-  <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
+-    <header class="ui-modal__header">
+-      <h3 id="feedback-modal-title" class="ui-modal__title">Acci├│n</h3>
+-      <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">├ù</button>
+-    </header>
+-    <div class="ui-modal__body">
+-      <div class="feedback-modal__content" aria-live="polite">
+-        <div class="feedback-modal__icon" data-feedback-icon="success" aria-hidden="true">
+-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+-            <path d="M5 13l4 4L19 7" />
+-          </svg>
+-        </div>
+-        <div class="feedback-modal__icon" data-feedback-icon="error" aria-hidden="true" hidden>
+-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+-            <path d="M7 7l10 10" />
+-            <path d="M17 7L7 17" />
+-          </svg>
+-        </div>
+-        <p class="feedback-modal__message" id="feedback-modal-message">Operaci├│n completada.</p>
+-      </div>
+-    </div>
+-  </div>
+-</div>
+diff --git a/views/especialidades.html b/views/especialidades.html
+@@ -9 +9 @@
+@@ -11,10 +11,15 @@
+-  <main class="page personal-page personal-page--especialidades">
+-    <section class="hero" aria-label="Encabezado de especialidades">
+-      <div class="hero__copy">
+-        <p class="eyebrow">Gesti├│n de personal</p>
+-        <h1>Especialidades</h1>
+-        <p class="hero__hint">Panel gr├ífico para revisar capacidades, ├íreas de trabajo y especialidades destacadas.</p>
+-        <div class="hero__actions">
+-          <button class="btn btn--primary" type="button" data-open-modal="modal-especialidad-vista">Nueva especialidad</button>
+-          <button class="btn btn--ghost" type="button" data-open-modal="modal-especialidad-vista">Ver formulario</button>
+-        </div>
+@@ -23 +28 @@
+-      <div class="stats" aria-label="Resumen">
+@@ -26,12 +31,2 @@
+-          <strong class="stat-card__value" data-count="12">0</strong>
+-          <small class="stat-card__meta">Competencias distribuidas</small>
+-        </article>
+-        <article class="stat-card">
+-          <span class="stat-card__label">├üreas activas</span>
+-          <strong class="stat-card__value" data-count="9">0</strong>
+-          <small class="stat-card__meta">Soporte, ventas y taller</small>
+-        </article>
+-        <article class="stat-card">
+-          <span class="stat-card__label">Destacadas</span>
+-          <strong class="stat-card__value" data-count="6">0</strong>
+-          <small class="stat-card__meta">Especialidades con mayor uso</small>
+@@ -40 +35 @@
+-    </section>
+@@ -42,6 +37,9 @@
+-    <section class="board" aria-label="Vista principal">
+-      <article class="panel panel--wide" aria-label="Especialidades registradas">
+-        <div class="panel__header">
+-          <div>
+-            <h2 class="panel__title">Cat├ílogo de especialidades</h2>
+-            <p class="panel__subtitle">Selecciona una fila para resaltar su ficha lateral.</p>
+@@ -49 +46,0 @@
+-          <span class="panel__tag">Vista est├ítica</span>
+@@ -58 +55 @@
+-                <th>├ürea</th>
+@@ -62,46 +59 @@
+-            <tbody>
+-              <tr data-personal-row data-detail-title="Ajuste fino" data-detail-text="Especialidad enfocada en calibraci├│n de relojer├¡a y piezas delicadas." data-detail-meta="Nivel alto" data-detail-role="Taller" data-detail-email="corto@ituaccesorio.com" data-detail-extra="Uso frecuente: 90%">
+-                <td>ESP-01</td>
+-                <td>Ajuste fino</td>
+-                <td>Taller</td>
+-                <td class="table__actions">
+-                  <div class="row-actions" aria-label="Acciones de la especialidad">
+-                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+-                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+-                  </div>
+-                </td>
+-              </tr>
+-              <tr data-personal-row data-detail-title="Atenci├│n premium" data-detail-text="Especialidad orientada al asesoramiento y venta personalizada." data-detail-meta="Nivel medio" data-detail-role="Ventas" data-detail-email="premium@ituaccesorio.com" data-detail-extra="Uso frecuente: 82%">
+-                <td>ESP-02</td>
+-                <td>Atenci├│n premium</td>
+-                <td>Ventas</td>
+-                <td class="table__actions">
+-                  <div class="row-actions" aria-label="Acciones de la especialidad">
+-                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+-                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+-                  </div>
+-                </td>
+-              </tr>
+-              <tr data-personal-row data-detail-title="Log├¡stica de vitrina" data-detail-text="Distribuci├│n, rotaci├│n y cuidado de productos en exhibici├│n." data-detail-meta="Nivel medio" data-detail-role="Inventario" data-detail-email="vitrina@ituaccesorio.com" data-detail-extra="Uso frecuente: 74%">
+-                <td>ESP-03</td>
+-                <td>Log├¡stica de vitrina</td>
+-                <td>Inventario</td>
+-                <td class="table__actions">
+-                  <div class="row-actions" aria-label="Acciones de la especialidad">
+-                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+-                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+-                  </div>
+-                </td>
+-              </tr>
+-              <tr data-personal-row data-detail-title="Soporte posventa" data-detail-text="Seguimiento de garant├¡as, devoluciones y atenci├│n posterior." data-detail-meta="Nivel alto" data-detail-role="Servicio" data-detail-email="posventa@ituaccesorio.com" data-detail-extra="Uso frecuente: 88%">
+-                <td>ESP-04</td>
+-                <td>Soporte posventa</td>
+-                <td>Servicio</td>
+-                <td class="table__actions">
+-                  <div class="row-actions" aria-label="Acciones de la especialidad">
+-                    <button class="icon-action" type="button" aria-label="Ver especialidad">Ver</button>
+-                    <button class="icon-action" type="button" aria-label="Editar especialidad">Editar</button>
+-                  </div>
+-                </td>
+-              </tr>
+-            </tbody>
+@@ -112,32 +64,5 @@
+-      <aside class="panel panel--stack" aria-label="Ficha lateral">
+-        <article class="detail-card">
+-          <p class="detail-card__eyebrow">Ficha destacada</p>
+-          <h3 class="detail-card__title" data-personal-detail-title>Ajuste fino</h3>
+-          <p class="detail-card__copy" data-personal-detail-text>Especialidad enfocada en calibraci├│n de relojer├¡a y piezas delicadas.</p>
+-          <ul class="detail-list">
+-            <li><span>├ürea</span><strong data-personal-detail-role>Taller</strong></li>
+-            <li><span>Correo</span><strong data-personal-detail-email>corto@ituaccesorio.com</strong></li>
+-            <li><span>Referencia</span><strong data-personal-detail-extra>Uso frecuente: 90%</strong></li>
+-          </ul>
+-        </article>
+-        <article class="mini-card">
+-          <p class="detail-card__eyebrow">Bloque visual</p>
+-          <h4>Mapa de capacidades</h4>
+-          <div class="mini-card__grid">
+-            <div>
+-              <span>T├®cnicas</span>
+-              <strong>5</strong>
+-            </div>
+-            <div>
+-              <span>Comerciales</span>
+-              <strong>4</strong>
+-            </div>
+-            <div>
+-              <span>Servicio</span>
+-              <strong>2</strong>
+-            </div>
+-            <div>
+-              <span>Inventario</span>
+-              <strong>1</strong>
+-            </div>
+@@ -145,3 +70 @@
+-        </article>
+-      </aside>
+-    </section>
+@@ -149,8 +72,3 @@
+-    {% call modal('modal-especialidad-vista', 'Formulario visual de especialidad', 'md') %}
+-      <div class="ui-form">
+-        <div class="ui-form__grid">
+-          <label class="ui-field">
+-            <span>ID</span>
+-            <input type="text" placeholder="ESP-05">
+-          </label>
+-          <label class="ui-field">
+@@ -158 +76 @@
+-            <input type="text" placeholder="Nombre de la especialidad">
+@@ -160,3 +78,3 @@
+-          <label class="ui-field">
+-            <span>├ürea</span>
+-            <input type="text" placeholder="├ürea relacionada">
+@@ -164,3 +82,16 @@
+-          <label class="ui-field">
+-            <span>Nivel</span>
+-            <input type="text" placeholder="Alto / medio / bajo">
+@@ -168 +99 @@
+-          <label class="ui-field ui-field--full">
+@@ -170 +101 @@
+-            <textarea rows="3" placeholder="Espacio visual para descripci├│n"></textarea>
+@@ -172,0 +104 @@
+@@ -175 +107 @@
+-          <button type="button" class="ui-btn ui-btn--primary" data-close-modal>Guardar vista</button>
+@@ -176,0 +109,9 @@
+diff --git a/views/inventario.html b/views/inventario.html
+@@ -38 +38 @@
+-        <span class="stat-card__label">Productos</span>
+@@ -50 +50 @@
+-    <article class="panel panel--table" aria-label="Existencias por producto">
+@@ -54 +54 @@
+-          <h2 class="panel__title">Existencias por producto</h2>
+@@ -69 +69 @@
+-              <th>Producto</th>
+@@ -85 +85 @@
+-      <p class="table-note" id="inventario-note">La tabla une inventario, producto, marca, clase y atributos.</p>
+@@ -108,3 +108,3 @@
+-            <span class="field__label">Producto</span>
+-            <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
+-              <option value="">Selecciona un producto</option>
+@@ -190 +190 @@
+-        <h2 class="panel__title">Jerarqu├¡a de clase, marca y producto</h2>
+@@ -196 +196 @@
+-            <span class="hierarchy__meta">ID_clase: 1</span>
+@@ -206 +206 @@
+-            <span class="hierarchy__label">Producto</span>
+@@ -208 +208 @@
+-            <span class="hierarchy__meta">ID_producto: 1</span>
+diff --git a/views/productos.html b/views/productos.html
+@@ -28 +28,8 @@
+-      
+@@ -35 +42 @@
+-              <th>Producto / C├│digo</th>
+@@ -125,7 +132,2 @@
+-            <span class="field__label">Producto</span>
+-            <input id="p-modelo" type="text" name="modelo" placeholder="Ej: Galaxy A52 (SM-A525F)" aria-label="Producto" required>
+-          </label>
+-          <label class="field">
+-            <span class="field__label">Descripci├│n</span>
+-            <textarea id="p-descripcion" name="descripcion" rows="3" placeholder="Descripci├│n del producto" aria-label="Descripci├│n"></textarea>
+diff --git a/views/ventas/catalogo.html b/views/ventas/catalogo.html
+@@ -6 +6 @@
+-<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogo.css') }}?v=20260602-2">
+@@ -10,14 +10,5 @@
+-<main class="page ventas-catalogo catalogo-page">
+-    <section class="catalog-hero">
+-        <div class="catalog-hero__glow catalog-hero__glow--one"></div>
+-        <div class="catalog-hero__glow catalog-hero__glow--two"></div>
+-        <div class="catalog-hero__content">
+-            <h1 class="catalog-hero__title">NUESTROS PRODUCTOS</h1>
+-            <p class="catalog-hero__subtitle">Encuentra tel├®fonos, accesorios y repuestos pensados para iPhone y su ecosistema.</p>
+-            <div class="catalog-hero__actions">
+-                <button id="cart-toggle" class="cart-icon-btn cart-icon-btn--hero" aria-label="Abrir carrito">
+-                    Carrito
+-                    <span id="cart-count" class="cart-badge">0</span>
+-                </button>
+-                <a class="hero-link" href="#catalogo-completo">Ver cat├ílogo completo</a>
+-            </div>
+@@ -25,65 +16,7 @@
+-    </section>
+-    <div class="catalog-content">
+-        <section class="catalog-categories" aria-label="Categor├¡as principales">
+-            <article class="category-card category-card--primary">
+-                <img class="category-card__image" src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&w=1200&q=80" alt="Tel├®fonos inteligentes" loading="lazy" decoding="async">
+-                <div class="category-card__overlay"></div>
+-                <div class="category-card__body">
+-                    <h2 class="category-card__title">Telefonos</h2>
+-                </div>
+-            </article>
+-            <article class="category-card">
+-                <img class="category-card__image" src="https://images.unsplash.com/photo-1550029402-8280f657d8d1?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Accesorios para tel├®fonos" loading="lazy" decoding="async">
+-                <div class="category-card__overlay"></div>
+-                <div class="category-card__body">
+-                    <h2 class="category-card__title">Accesorios</h2>
+-                </div>
+-            </article>
+-            <article class="category-card">
+-                <img class="category-card__image" src="https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=1200&q=80" alt="Repuestos electr├│nicos" loading="lazy" decoding="async">
+-                <div class="category-card__overlay"></div>
+-                <div class="category-card__body">
+-                    <h2 class="category-card__title">Repuestos</h2>
+-                </div>
+-            </article>
+-            <article class="category-card">
+-                <img class="category-card__image" src="https://images.unsplash.com/photo-1543582890-139a4ff9946e?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Fundas y protecci├│n para iPhone" loading="lazy" decoding="async">
+-                <div class="category-card__overlay"></div>
+-                <div class="category-card__body">
+-                    <h2 class="category-card__title">Protecci├│n iPhone</h2>
+-                </div>
+-            </article>
+-        </section>
+-        <section class="showcase-section">
+-            <div class="showcase-section__header">
+-                <h2 class="section-title">
+-                    <svg class="section-title__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+-                        <path d="M13.5 2.5c.7 2.4.2 4.3-1.4 6-1 1.1-1.5 2.1-1.7 3.4-.8-1.1-1.1-2.2-.9-3.4-.9.5-1.7 1.4-2.2 2.6-.8 1.8-.5 3.9.7 5.5 1.2 1.6 3 2.4 4.9 2.4 2.7 0 5.1-1.7 5.9-4.3.7-2.3 0-4.8-1.8-6.4-.5-.4-1.1-.8-1.7-1.1.3 1.5-.2 2.8-1.5 3.8.2-2-1-3.7-2.3-4.5-.2-.1-.2-.3 0-.4.8-.8 1.5-1.7 2-3z" fill="currentColor"/>
+-                    </svg>
+-                    Los mas vendidos
+-                </h2>
+-            </div>
+-            <div class="rail-card-row">
+-                <article class="rail-card">
+-                    <img src="https://images.unsplash.com/photo-1695048132832-b41495f12eb4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="iPhone premium" loading="lazy" decoding="async">
+-                    <h3>iPhone 15 Pro</h3>
+-                </article>
+-                <article class="rail-card">
+-                    <img src="https://plus.unsplash.com/premium_photo-1679513691474-73102089c117?q=80&w=1113&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Aud├¡fonos inal├ímbricos" loading="lazy" decoding="async">
+-                    <h3>Aud├¡fonos</h3>
+-                </article>
+-                <article class="rail-card">
+-                    <img src="https://images.unsplash.com/photo-1731616103600-3fe7ccdc5a59?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Cargador y cable" loading="lazy" decoding="async">
+-                    <h3>Carga r├ípida</h3>
+-                </article>
+-                <article class="rail-card">
+-                    <img src="https://images.unsplash.com/photo-1535157412991-2ef801c1748b?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Fundas para tel├®fono" loading="lazy" decoding="async">
+-                    <h3>Fundas premium</h3>
+-                </article>
+-            </div>
+-        </section>
+@@ -91,22 +24,5 @@
+-        <section class="showcase-section">
+-            <div class="showcase-section__header">
+-                <h2 class="section-title">Ofertas disponibles</h2>
+-            </div>
+-            <div class="offers-grid">
+-                <article class="offer-card offer-card--feature">
+-                    <span class="offer-card__tag">Oferta flash</span>
+-                    <h3>Accesorios esenciales para iPhone</h3>
+-                    <p>Cables, cargadores y protecci├│n con env├¡o inmediato.</p>
+-                </article>
+-                <article class="offer-card">
+-                    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80" alt="iPhone sobre fondo claro" loading="lazy" decoding="async">
+-                    <h3>Smartphones</h3>
+-                </article>
+-                <article class="offer-card">
+-                    <img src="https://images.unsplash.com/photo-1516724562728-afc824a36e84?auto=format&fit=crop&w=900&q=80" alt="Auriculares premium" loading="lazy" decoding="async">
+-                    <h3>Audio</h3>
+-                </article>
+-                <article class="offer-card">
+-                    <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=900&q=80" alt="Accesorios de escritorio" loading="lazy" decoding="async">
+-                    <h3>Escritorio</h3>
+-                </article>
+@@ -114 +30,3 @@
+-        </section>
+@@ -116,5 +34,22 @@
+-        <section id="catalogo-completo" class="catalog-browser">
+-            <div class="table__header catalog-browser__header">
+-                <div>
+-                    <h2 class="card__title">Cat├ílogo completo</h2>
+-                    <p class="catalog-browser__subtitle">Todos los productos disponibles en tienda.</p>
+@@ -122 +56,0 @@
+-                <span id="productos-count" class="catalog-browser__count"></span>
+@@ -124,38 +58,7 @@
+-            <div id="catalog-status" class="catalog-status" aria-live="polite"></div>
+-            <div class="products-grid catalog-browser__grid">
+-                <aside class="card filters-panel catalog-filters">
+-                    <h2 class="card__title">Filtros</h2>
+-                    <div class="filters-panel__section">
+-                        <label class="field">
+-                            <span class="field__label">Clase</span>
+-                            <select id="f-clase">
+-                                <option value="">Todas</option>
+-                            </select>
+-                        </label>
+-                        <label class="field">
+-                            <span class="field__label">Marca</span>
+-                            <select id="f-marca">
+-                                <option value="">Todas</option>
+-                            </select>
+-                        </label>
+-                        <label class="field">
+-                            <span class="field__label">Buscar</span>
+-                            <input id="f-texto" type="search" placeholder="Nombre o marca...">
+-                        </label>
+-                        <div class="filters-panel__actions">
+-                            <button id="btn-aplicar" class="btn btn--yellow">Buscar</button>
+-                            <button id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
+-                        </div>
+-                    </div>
+-                    <div class="filters-panel__section">
+-                        <h3 class="filters-panel__title">Tasas del d├¡a</h3>
+-                        <div id="tasas-info" class="tasas-info"></div>
+-                    </div>
+-                </aside>
+-                <article class="card catalog-results">
+-                    <div id="productos-grid" class="productos-grid"></div>
+-                    <div id="paginacion" class="pager"></div>
+-                </article>
+@@ -163 +66 @@
+-        </section>
+@@ -189 +92 @@
+-<script defer src="{{ url_for('static', filename='js/ventas.js') }}?v=20260602-2"></script>
+diff --git a/Dockerfile b/Dockerfile
+@@ -11,0 +12,6 @@ COPY . .
+diff --git a/app/controllers/bitacora.py b/app/controllers/bitacora.py
+@@ -58,0 +59,3 @@ def registrar_bitacora_api():
+diff --git a/app/controllers/notificaciones.py b/app/controllers/notificaciones.py
+@@ -0,0 +1,57 @@
+diff --git a/app/models/bitacora.py b/app/models/bitacora.py
+@@ -2,0 +3 @@ from app.models.database import conectar
+@@ -59,0 +61,20 @@ class Bitacora(conectar):
+diff --git a/app/static/css/notificaciones.css b/app/static/css/notificaciones.css
+@@ -0,0 +1,129 @@
+diff --git a/app/static/js/notificaciones.js b/app/static/js/notificaciones.js
+@@ -0,0 +1,124 @@
+diff --git a/app/utils/notificaciones_bus.py b/app/utils/notificaciones_bus.py
+@@ -0,0 +1,102 @@
+diff --git a/run.py b/run.py
+@@ -13,0 +14 @@ from app.controllers.bitacora import bitacora_blueprint
+@@ -66,0 +68 @@ app.register_blueprint(bitacora_blueprint)
+diff --git a/views/components/layout/base.html b/views/components/layout/base.html
+@@ -11,0 +12 @@
+@@ -15 +16 @@
+-<body>
+@@ -25,0 +27 @@
+diff --git a/views/components/layout/navbar.html b/views/components/layout/navbar.html
+@@ -22,7 +22,23 @@
+-		<button class="icon-btn" type="button" aria-label="Notificaciones">
+-			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+-				<path
+-					d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"
+-					fill="currentColor" />
+-			</svg>
+-		</button>
