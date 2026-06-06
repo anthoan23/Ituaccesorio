@@ -1445,6 +1445,7 @@ CREATE TABLE `Fotos_inventario` (
   `ID_inventario` varchar(10) DEFAULT NULL,
   `Capacidad` varchar(10) DEFAULT NULL,
   `Color` varchar(15) DEFAULT NULL,
+  `Foto_inventario` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID_foto_inventario`),
   KEY `ID_inventario` (`ID_inventario`),
   CONSTRAINT `Fotos_inventario_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)

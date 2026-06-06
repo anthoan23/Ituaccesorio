@@ -13,10 +13,11 @@
 
 	async function fetchJson(url, options = {}) {
 		const authToken = getAuthToken();
+		const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 		const response = await fetch(url, {
 			headers: {
 				Accept: "application/json",
-				...(options.method && options.method !== "GET" ? { "Content-Type": "application/json" } : {}),
+				...(options.method && options.method !== "GET" && !isFormData ? { "Content-Type": "application/json" } : {}),
 				...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
 				...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
 				...(options.headers || {}),
@@ -49,6 +50,14 @@
 		return text === '' ? '-' : text;
 	};
 
+	const escapeHtml = (value) => String(value ?? '').replace(/[&<>"]|'/g, (char) => ({
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;',
+	}[char]));
+
 	const computeStatus = (existencia) => {
 		const qty = Number(existencia);
 		if (!Number.isFinite(qty)) {
@@ -71,13 +80,14 @@
 
 		if (!Array.isArray(rows) || rows.length === 0) {
 			const tr = document.createElement('tr');
-			tr.innerHTML = '<td colspan="8">No hay datos de inventario.</td>';
+			tr.innerHTML = '<td colspan="9">No hay datos de inventario.</td>';
 			tbody.appendChild(tr);
 			return;
 		}
 
 		const frag = document.createDocumentFragment();
 		for (const item of rows) {
+			const foto = normalizeText(item?.Foto_inventario ?? item?.foto_inventario);
 			const tipo = normalizeText(item?.tipo);
 			const marca = normalizeText(item?.N_marca);
 			const modelo = normalizeText(item?.N_modelo);
@@ -87,16 +97,18 @@
 			const costo = item?.Costo_venta;
 
 			const status = computeStatus(existencia);
+			const imageCell = foto !== '-' ? `<img class="inventory-thumb" src="${escapeHtml(foto)}" alt="${escapeHtml(modelo)}">` : '<span class="inventory-thumb inventory-thumb--empty">Sin foto</span>';
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
-				<td>${tipo}</td>
-				<td>${marca}</td>
-				<td>${modelo}</td>
-				<td>${capacidad}</td>
-				<td>${color}</td>
-				<td><span class="badge ${status.badgeClass}">${normalizeText(existencia)}</span></td>
+				<td>${imageCell}</td>
+				<td>${escapeHtml(tipo)}</td>
+				<td>${escapeHtml(marca)}</td>
+				<td>${escapeHtml(modelo)}</td>
+				<td>${escapeHtml(capacidad)}</td>
+				<td>${escapeHtml(color)}</td>
+				<td><span class="badge ${status.badgeClass}">${escapeHtml(normalizeText(existencia))}</span></td>
 				<td>${formatMoney(costo)}</td>
-				<td><span class="status ${status.statusClass}">${status.label}</span></td>
+				<td><span class="status ${status.statusClass}">${escapeHtml(status.label)}</span></td>
 			`;
 			frag.appendChild(tr);
 		}
@@ -126,10 +138,10 @@
 			li.className = 'mini-list__item';
 			li.innerHTML = `
 				<span class="mini-list__left">
-					<strong>${normalizeText(item?.N_modelo)}</strong>
-					<span>${normalizeText(item?.Capacidad)} · ${normalizeText(item?.Color)}</span>
+					<strong>${escapeHtml(normalizeText(item?.N_modelo))}</strong>
+					<span>${escapeHtml(normalizeText(item?.Capacidad))} · ${escapeHtml(normalizeText(item?.Color))}</span>
 				</span>
-				<span class="mini-list__badge">ID ${normalizeText(item?.ID_producto)}</span>
+				<span class="mini-list__badge">ID ${escapeHtml(normalizeText(item?.ID_producto))}</span>
 			`;
 			frag.appendChild(li);
 		}
@@ -300,6 +312,7 @@
 		const selectModelo = document.getElementById('inv-modelo');
 		const inputCapacidad = document.getElementById('inv-capacidad');
 		const inputColor = document.getElementById('inv-color');
+		const inputFoto = document.getElementById('inv-foto');
 		const inputExistencia = document.getElementById('inv-existencia');
 		const inputCosto = document.getElementById('inv-costo');
 		const btnLimpiar = document.getElementById('inv-limpiar');
@@ -377,6 +390,10 @@
 				setNote('Selecciona un producto antes de guardar.');
 				return;
 			}
+			if (!inputFoto?.files?.length) {
+				setNote('Selecciona una foto antes de guardar.');
+				return;
+			}
 
 			const existencia = parseIntSafe(inputExistencia?.value);
 			const costoVenta = parseDecimalSafe(inputCosto?.value);
@@ -389,13 +406,12 @@
 				return;
 			}
 
-			const payload = {
-				id_producto: Number.parseInt(idProducto, 10),
-				existencia,
-				costo_venta: String(inputCosto?.value || '').trim(),
-				capacidad: inputCapacidad ? String(inputCapacidad.value || '') : '',
-				color: inputColor ? String(inputColor.value || '') : '',
-			};
+			const payload = new FormData(form);
+			payload.set('id_producto', idProducto);
+			payload.set('existencia', String(existencia));
+			payload.set('costo_venta', String(inputCosto?.value || '').trim());
+			payload.set('capacidad', inputCapacidad ? String(inputCapacidad.value || '') : '');
+			payload.set('color', inputColor ? String(inputColor.value || '') : '');
 
 			const oldText = btnGuardar.textContent;
 			btnGuardar.disabled = true;
@@ -403,9 +419,13 @@
 			try {
 				await fetchJson('/api/inventario/stock', {
 					method: 'POST',
-					body: JSON.stringify(payload),
+					body: payload,
 				});
 				setNote('Stock guardado correctamente.');
+				form.reset();
+				renderSelect(selectMarca, [], 'Selecciona una marca');
+				renderSelect(selectModelo, [], 'Selecciona un producto');
+				window.UiModal?.closeById('modal-inventario-stock');
 				await loadInventario();
 			} catch (err) {
 				console.error('Error guardando stock:', err);
