@@ -34,47 +34,51 @@ class TradeIn(conectar):
                 return falla
         return None
 
-    def _consulta_equipos_base(self):
-        return (
-            "SELECT stock.ID_producto, stock.ID_modelo, stock.Existencia, stock.Costo_venta, "
-            "COALESCE(modelo_producto.N_modelo, CONCAT('Producto #', stock.ID_producto)) AS N_modelo "
-            "FROM stock "
-            "LEFT JOIN modelo_producto ON stock.ID_modelo = modelo_producto.ID_modelo"
-        )
-
-    def _es_modelo_iphone(self, nombre_modelo: str) -> bool:
-        if not nombre_modelo:
-            return False
-        return "iphone" in nombre_modelo.lower()
-
     def consultar_equipos(self):
+        """Consulta equipos disponibles para trade-in (solo iPhone)"""
         db = self.conexion1()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            # Listar solo modelos que contengan 'iPhone' (case-insensitive)
-            query = (
-                self._consulta_equipos_base()
-                + " WHERE LOWER(COALESCE(modelo_producto.N_modelo, '')) LIKE %s"
-                + " ORDER BY N_modelo ASC, stock.ID_producto ASC"
-            )
-            cursor.execute(query, ("%iphone%",))
+            # Buscar productos iPhone en inventario
+            query = """
+                SELECT 
+                    i.ID_inventario AS ID_producto,
+                    i.Costo_venta,
+                    p.Nombre_producto AS N_modelo
+                FROM Inventario i
+                INNER JOIN Producto p ON p.ID_producto = i.ID_producto
+                WHERE LOWER(p.Nombre_producto) LIKE '%iphone%'
+                ORDER BY p.Nombre_producto ASC
+            """
+            cursor.execute(query)
             filas = cursor.fetchall()
-            return [cast(dict[str, Any], fila) for fila in filas]
+            return [cast(dict[str, Any], fila) for fila in filas] if filas else []
         finally:
             cursor.close()
             db.close()
 
     def consultar_equipo_por_id(self, id_producto):
+        """Consulta un equipo específico por ID"""
         db = self.conexion1()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            query = self._consulta_equipos_base() + " WHERE stock.ID_producto = %s LIMIT 1"
+            query = """
+                SELECT 
+                    i.ID_inventario AS ID_producto,
+                    i.Costo_venta,
+                    p.Nombre_producto AS N_modelo,
+                    i.Existencia
+                FROM Inventario i
+                INNER JOIN Producto p ON p.ID_producto = i.ID_producto
+                WHERE i.ID_inventario = %s
+                LIMIT 1
+            """
             cursor.execute(query, (id_producto,))
             fila = cursor.fetchone()
             return cast(dict[str, Any], fila) if fila else None
@@ -83,16 +87,21 @@ class TradeIn(conectar):
             db.close()
 
     def consultar_costo_repuesto(self, nombre_modelo, nombre_falla):
+        """Consulta el costo de un repuesto para un modelo específico"""
         db = self.conexion1()
         if not db:
             return None
 
         cursor = db.cursor()
         try:
+            # Buscar en productos relacionados con repuestos
             cursor.execute(
-                "SELECT Costo_r FROM repuesto "
-                "WHERE Nombre_r LIKE %s AND Nombre_r LIKE %s "
-                "ORDER BY Costo_r ASC LIMIT 1",
+                """SELECT Precio_venta FROM Inventario i
+                INNER JOIN Producto p ON p.ID_producto = i.ID_producto
+                WHERE p.Nombre_producto LIKE %s 
+                AND p.Nombre_producto LIKE %s 
+                AND i.Costo_venta > 0
+                LIMIT 1""",
                 (f"%{nombre_falla}%", f"%{nombre_modelo}%"),
             )
             fila = cursor.fetchone()
@@ -106,7 +115,8 @@ class TradeIn(conectar):
             cursor.close()
             db.close()
 
-    def calcular_cotizacion(self, id_producto, fallas_seleccionadas):
+    def calcular_cotizacion(self, id_producto, fallas_seleccionadas, usuario_id="CLIENTE"):
+        """Calcula la cotización de un equipo"""
         equipo = self.consultar_equipo_por_id(id_producto)
         if not equipo:
             return {
@@ -115,12 +125,14 @@ class TradeIn(conectar):
             }
 
         nombre_modelo = str(equipo["N_modelo"] or "")
-        if not self._es_modelo_iphone(nombre_modelo):
+        if "iphone" not in nombre_modelo.lower():
             return {
                 "success": False,
                 "error": "Lo sentimos, solo se aceptan iPhones para cotización.",
             }
+        
         precio_base = int(equipo["Costo_venta"] or 0)
+        
         fallas_validas = []
         for clave_falla in fallas_seleccionadas or []:
             config = self._obtener_config_falla(str(clave_falla))
@@ -147,6 +159,8 @@ class TradeIn(conectar):
             })
 
         monto_estimado = max(precio_base - costo_total_repuestos, 0)
+        
+        # Registrar en bitácora
         descripcion_bitacora = (
             f"Cotización Trade-in | Modelo: {nombre_modelo} | Base: {precio_base} | "
             f"Deducción: {costo_total_repuestos} | Estimado: {monto_estimado}"
@@ -158,9 +172,10 @@ class TradeIn(conectar):
         registro_bitacora = registrar_en_bitacora(
             "Cotización Trade-in",
             descripcion_bitacora,
-            usuario_id="CLIENTE",
+            usuario_id=usuario_id,
             modulo_nombre="Trade-in",
         )
+        
         if not registro_bitacora.get("success") and registro_bitacora.get("warning"):
             advertencias.append(registro_bitacora["warning"])
 

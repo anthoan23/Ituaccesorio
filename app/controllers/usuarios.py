@@ -144,6 +144,29 @@ def listar_empleados():
     return jsonify({"success": True, "empleados": datos})
 
 
+@usuarios_blueprint.route("/api/usuarios/clientes", methods=["GET"])
+@jwt_required
+def listar_clientes():
+    """Lista todos los clientes (personas naturales) para asignar como usuarios"""
+    from app.models.clientes import GestionClientes
+    
+    modelo_clientes = GestionClientes()
+    clientes = modelo_clientes.listar_clientes() or []
+    
+    # Filtrar solo clientes que son personas naturales (ID numérico)
+    clientes_naturales = []
+    for cliente in clientes:
+        if str(cliente.get("id", "")).isdigit():
+            clientes_naturales.append({
+                "cedula": cliente.get("id"),
+                "nombre_completo": cliente.get("nombre", ""),
+                "celular": cliente.get("celular", ""),
+                "correo": cliente.get("correo", "")
+            })
+    
+    return jsonify({"success": True, "clientes": clientes_naturales})
+
+
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
 @jwt_required
 def obtener_mi_perfil():
@@ -188,7 +211,6 @@ def actualizar_mi_perfil():
         if not usuario_actualizado:
             return _respuesta_error("No se pudo actualizar el perfil.", 500)
 
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Actualizar perfil",
             descripcion=f"Usuario {usuario_actual.get('usuario_nombre')} actualizó su perfil",
@@ -216,14 +238,28 @@ def crear_usuario():
         return _respuesta_error("Nombre, cedula, password y rol son obligatorios.")
 
     modelo = Usuarios()
-    if not modelo.verificar_empleado(cedula_personal):
-        return _respuesta_error("La cedula no pertenece a un empleado registrado.")
+    
+    # Verificar si la cédula pertenece a un empleado o a un cliente según el rol
+    rol = modelo.obtener_rol_por_id(int(rol_id)) if rol_id else None
+    es_rol_cliente = rol and rol.get("nombre", "").lower() == "cliente"
+    
+    if es_rol_cliente:
+        # Para clientes, verificar que la cédula exista en Persona_natural
+        from app.models.clientes import GestionClientes
+        modelo_clientes = GestionClientes()
+        cliente = modelo_clientes.obtener_cliente_por_id(int(cedula_personal))
+        if not cliente:
+            return _respuesta_error("La cédula no pertenece a un cliente registrado.")
+    else:
+        # Para otros roles, verificar empleado
+        if not modelo.verificar_empleado(cedula_personal):
+            return _respuesta_error("La cedula no pertenece a un empleado registrado.")
+    
     try:
         nuevo_id = modelo.crear_usuario(nombre, int(cedula_personal), password, int(rol_id), foto_perfil)
         if not nuevo_id:
             return _respuesta_error("No se pudo crear el usuario.")
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Crear usuario",
             descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula_personal} - Rol ID: {rol_id}",
@@ -250,8 +286,21 @@ def actualizar_usuario(usuario_id):
         return _respuesta_error("Nombre, cedula y rol son obligatorios.")
 
     modelo = Usuarios()
-    if not modelo.verificar_empleado(cedula_personal):
-        return _respuesta_error("La cedula no pertenece a un empleado registrado.")
+    
+    # Verificar si la cédula pertenece a un empleado o a un cliente según el rol
+    rol = modelo.obtener_rol_por_id(int(rol_id)) if rol_id else None
+    es_rol_cliente = rol and rol.get("nombre", "").lower() == "cliente"
+    
+    if es_rol_cliente:
+        from app.models.clientes import GestionClientes
+        modelo_clientes = GestionClientes()
+        cliente = modelo_clientes.obtener_cliente_por_id(int(cedula_personal))
+        if not cliente:
+            return _respuesta_error("La cédula no pertenece a un cliente registrado.")
+    else:
+        if not modelo.verificar_empleado(cedula_personal):
+            return _respuesta_error("La cedula no pertenece a un empleado registrado.")
+    
     try:
         if password:
             resultado = modelo.actualizar_usuario_con_password(
@@ -271,7 +320,6 @@ def actualizar_usuario(usuario_id):
                 foto_perfil,
             )
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Actualizar usuario",
             descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
@@ -306,7 +354,6 @@ def eliminar_usuario(usuario_id):
 
         modelo.eliminar_usuario(usuario_id)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Eliminar usuario",
             descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {usuario_objetivo.get('nombre', 'N/A')}",
@@ -343,7 +390,6 @@ def crear_rol():
     try:
         nuevo_id = modelo.crear_rol(nombre, descripcion)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Crear rol",
             descripcion=f"Se creó el rol: {nombre}",
@@ -370,7 +416,6 @@ def actualizar_rol(rol_id):
     try:
         resultado = modelo.actualizar_rol(rol_id, nombre, descripcion)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Actualizar rol",
             descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
@@ -396,7 +441,6 @@ def eliminar_rol(rol_id):
 
         modelo.eliminar_rol(rol_id)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Eliminar rol",
             descripcion=f"Se eliminó el rol ID: {rol_id} - Nombre: {nombre_rol}",
@@ -433,7 +477,6 @@ def crear_modulo():
     try:
         nuevo_id = modelo.crear_modulo(nombre, descripcion)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Crear módulo",
             descripcion=f"Se creó el módulo: {nombre}",
@@ -460,7 +503,6 @@ def actualizar_modulo(modulo_id):
     try:
         resultado = modelo.actualizar_modulo(modulo_id, nombre, descripcion)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Actualizar módulo",
             descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
@@ -480,7 +522,6 @@ def eliminar_modulo(modulo_id):
     try:
         modelo.eliminar_modulo(modulo_id)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Eliminar módulo",
             descripcion=f"Se eliminó el módulo ID: {modulo_id}",
@@ -566,7 +607,6 @@ def actualizar_permisos_rol(rol_id):
                 )
                 resultados.append(resultado)
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Actualizar permisos de rol",
             descripcion=f"Se actualizaron {len(resultados)} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",

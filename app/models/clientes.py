@@ -30,76 +30,50 @@ class GestionClientes(conectar):
             db.close()
 
     def listar_clientes(self):
-        """Lista todos los clientes con su información completa"""
+        """Lista todos los clientes (personas naturales)"""
         return self._consultar(
             """
-            SELECT
+            SELECT 
                 c.ID_cliente AS id,
-                c.Nombre_cliente AS nombre,
+                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre,
                 c.Direccion_cliente AS direccion,
                 c.Celular_cliente AS celular,
-                c.Correo_cliente AS correo,
-                p.Apellido_cliente AS apellido,
-                CASE
-                    WHEN p.ID_cliente IS NOT NULL THEN 'natural'
-                    WHEN j.ID_cliente IS NOT NULL THEN 'juridico'
-                    ELSE 'natural'
-                END AS tipo
+                c.Correo_cliente AS correo
             FROM Cliente c
-            LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             ORDER BY c.ID_cliente DESC
             """
         )
 
-    def crear_cliente(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None):
-        """Crea un nuevo cliente (persona natural por defecto)"""
-
-        resultado = self._ejecutar(
+    def listar_clientes_completo(self):
+        """Lista todos los clientes (personas naturales) con todos los datos"""
+        return self._consultar(
             """
-            INSERT INTO Cliente (ID_cliente, Nombre_cliente, Direccion_cliente, Celular_cliente, Correo_cliente)
-            VALUES (%s, %s, %s, %s, %s)
-            """,
-            (cliente_id, nombre, direccion, celular, correo),
-        )
-
-        if not resultado:
-            return None
-
-        if str(cliente_id).isdigit() and apellido:
-            self._ejecutar(
-                """
-                INSERT INTO Persona_natural (ID_cliente, Apellido_cliente)
-                VALUES (%s, %s)
-                """,
-                (cliente_id, apellido)
-            )
-
-        return cliente_id
-
-    def crear_cliente_con_id(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None):
-        """Crea un cliente (compatible con la estructura anterior)"""
-        return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion)
-
-    def obtener_cliente_por_id(self, cliente_id):
-        """Obtiene un cliente por su ID incluyendo su tipo y apellido"""
-        datos = self._consultar(
-            """
-            SELECT
+            SELECT 
                 c.ID_cliente AS id,
-                c.Nombre_cliente AS nombre,
+                p.Nombre_cliente AS nombre,
+                p.Apellido_cliente AS apellido,
                 c.Direccion_cliente AS direccion,
                 c.Celular_cliente AS celular,
-                c.Correo_cliente AS correo,
-                p.Apellido_cliente AS apellido,
-                CASE
-                    WHEN p.ID_cliente IS NOT NULL THEN 'natural'
-                    WHEN j.ID_cliente IS NOT NULL THEN 'juridico'
-                    ELSE 'natural'
-                END AS tipo
+                c.Correo_cliente AS correo
             FROM Cliente c
-            LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+            ORDER BY c.ID_cliente DESC
+            """
+        )
+
+    def obtener_cliente_por_id(self, cliente_id):
+        """Obtiene un cliente por su ID"""
+        datos = self._consultar(
+            """
+            SELECT 
+                c.ID_cliente AS id,
+                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre,
+                c.Direccion_cliente AS direccion,
+                c.Celular_cliente AS celular,
+                c.Correo_cliente AS correo
+            FROM Cliente c
+            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             WHERE c.ID_cliente = %s
             LIMIT 1
             """,
@@ -107,39 +81,62 @@ class GestionClientes(conectar):
         )
         return datos[0] if datos else None
 
+    def crear_cliente(self, cliente_id, nombre, apellido, celular=None, correo=None, direccion=None):
+        """Crea un nuevo cliente (persona natural)"""
+        
+        # Primero insertar en la tabla Cliente
+        resultado = self._ejecutar(
+            """
+            INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (cliente_id, direccion, celular, correo),
+        )
+        
+        if not resultado:
+            return None
+        
+        # Insertar en Persona_natural
+        self._ejecutar(
+            """
+            INSERT INTO Persona_natural (ID_cliente, Nombre_cliente, Apellido_cliente)
+            VALUES (%s, %s, %s)
+            """,
+            (cliente_id, nombre, apellido)
+        )
+        
+        return cliente_id
+
+    def crear_cliente_con_id(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None):
+        """Crea un cliente (compatible con la estructura anterior)"""
+        return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion)
+
     def actualizar_cliente(self, cliente_id_actual, nuevo_cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None):
         """Actualiza un cliente existente"""
-
-        resultado = self._ejecutar(
+        
+        # Actualizar tabla Cliente
+        self._ejecutar(
             """
             UPDATE Cliente
             SET ID_cliente = %s,
-                Nombre_cliente = %s,
                 Direccion_cliente = %s,
                 Celular_cliente = %s,
                 Correo_cliente = %s
             WHERE ID_cliente = %s
             """,
-            (nuevo_cliente_id, nombre, direccion, celular, correo, cliente_id_actual),
+            (nuevo_cliente_id, direccion, celular, correo, cliente_id_actual),
         )
-
-        if apellido and str(nuevo_cliente_id).isdigit():
-            existe = self._consultar(
-                "SELECT 1 FROM Persona_natural WHERE ID_cliente = %s",
-                (nuevo_cliente_id,)
-            )
-            if existe:
-                self._ejecutar(
-                    "UPDATE Persona_natural SET Apellido_cliente = %s WHERE ID_cliente = %s",
-                    (apellido, nuevo_cliente_id)
-                )
-            else:
-                self._ejecutar(
-                    "INSERT INTO Persona_natural (ID_cliente, Apellido_cliente) VALUES (%s, %s)",
-                    (nuevo_cliente_id, apellido)
-                )
-
-        return resultado
+        
+        # Actualizar Persona_natural
+        return self._ejecutar(
+            """
+            UPDATE Persona_natural
+            SET Nombre_cliente = %s,
+                Apellido_cliente = %s
+            WHERE ID_cliente = %s
+            """,
+            (nombre, apellido, nuevo_cliente_id),
+        )
 
     def eliminar_cliente(self, cliente_id):
         """Elimina un cliente (las tablas hijas se eliminan por CASCADE)"""

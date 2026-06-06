@@ -150,15 +150,16 @@ class Usuarios(conectar):
             cursor.close()
             db.close()
 
-    def obtener_rol_por_nombre(self, nombre_rol):
+    def obtener_rol_por_id(self, rol_id):
+        """Obtiene un rol por su ID"""
         datos = self._consultar(
             """
-            SELECT id, nombre
+            SELECT id, nombre, descripcion
             FROM rol
-            WHERE LOWER(nombre) = LOWER(%s)
+            WHERE id = %s
             LIMIT 1
             """,
-            (nombre_rol,),
+            (rol_id,),
         )
         return datos[0] if datos else None
 

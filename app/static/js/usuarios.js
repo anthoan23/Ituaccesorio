@@ -21,7 +21,6 @@ const fotoPerfilPreview = document.getElementById("foto-perfil-preview");
 
 const currentUser = window.currentUser || {};
 const currentUserId = currentUser?.id == null ? "" : String(currentUser.id);
-// CORREGIDO: Detectar admin por rol_id o nombre_rol
 const currentUserRolId = currentUser?.rolId ? Number(currentUser.rolId) : null;
 const currentUserRolNombre = String(currentUser?.rolNombre || "").trim().toLowerCase();
 const esAdminActual = currentUserRolId === 1 || currentUserRolNombre === "admin";
@@ -54,6 +53,7 @@ const state = {
     roles: [],
     modulos: [],
     empleados: [],
+    clientes: [],
 };
 
 const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
@@ -83,6 +83,73 @@ function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     return true;
 }
 
+// ==================== CARGAR OPCIONES DE CÉDULA POR ROL ====================
+
+async function cargarOpcionesCedula(rolId) {
+    if (!selectUsuarioCedula) return;
+    
+    // Buscar el rol seleccionado para saber si es Cliente
+    const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
+    const esRolCliente = rolSeleccionado && (String(rolSeleccionado.nombre || "").toLowerCase() === "cliente");
+    
+    selectUsuarioCedula.innerHTML = '<option value="">Cargando...</option>';
+    selectUsuarioCedula.disabled = true;
+    
+    try {
+        let data;
+        if (esRolCliente) {
+            const response = await fetch("/api/usuarios/clientes", {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            });
+            data = await response.json();
+            
+            if (data.success && data.clientes) {
+                const options = ['<option value="">Seleccione un cliente...</option>'];
+                data.clientes.forEach(cliente => {
+                    const cedula = cliente.cedula;
+                    const nombre = cliente.nombre_completo || "";
+                    const celular = cliente.celular || "";
+                    const label = `${cedula} - ${nombre} ${celular ? `(${celular})` : ''}`.trim();
+                    options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(label)}</option>`);
+                });
+                selectUsuarioCedula.innerHTML = options.join("");
+            } else {
+                selectUsuarioCedula.innerHTML = '<option value="">No hay clientes disponibles</option>';
+            }
+        } else {
+            const response = await fetch("/api/usuarios/empleados", {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            });
+            data = await response.json();
+            
+            if (data.success && data.empleados) {
+                const options = ['<option value="">Seleccione un empleado...</option>'];
+                data.empleados.forEach(empleado => {
+                    const cedula = empleado.cedula;
+                    const nombre = empleado.nombre_completo || "";
+                    options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(`${cedula} - ${nombre}`)}</option>`);
+                });
+                selectUsuarioCedula.innerHTML = options.join("");
+            } else {
+                selectUsuarioCedula.innerHTML = '<option value="">No hay empleados disponibles</option>';
+            }
+        }
+    } catch (error) {
+        console.error("Error cargando opciones de cédula:", error);
+        selectUsuarioCedula.innerHTML = '<option value="">Error al cargar datos</option>';
+    } finally {
+        selectUsuarioCedula.disabled = false;
+    }
+}
+
 // ==================== FUNCIONES DE PERMISOS ====================
 
 async function cargarPermisosPorRol(rolId) {
@@ -90,22 +157,11 @@ async function cargarPermisosPorRol(rolId) {
     const grid = document.getElementById("permisos-grid");
     const btnGuardar = document.getElementById("btn-guardar-permisos");
     
-    console.log("cargarPermisosPorRol - rolId:", rolId);
-    console.log("esAdminActual:", esAdminActual);
+    if (!rolId || !container || !grid) return;
     
-    if (!rolId || !container || !grid) {
-        console.log("Elementos no encontrados");
-        return;
-    }
-    
-    // Buscar el rol seleccionado en la lista de roles
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
     
-    console.log("rolSeleccionado:", rolSeleccionado);
-    console.log("esRolAdmin:", esRolAdmin);
-    
-    // Si el rol seleccionado es Admin, mostrar mensaje informativo
     if (esRolAdmin) {
         grid.innerHTML = `
             <div class="permiso-item disabled">
@@ -117,7 +173,6 @@ async function cargarPermisosPorRol(rolId) {
         return;
     }
     
-    // Para roles no admin, cargar permisos desde el backend
     try {
         const response = await fetch(`/api/permisos/rol/${rolId}`, {
             headers: {
@@ -128,7 +183,6 @@ async function cargarPermisosPorRol(rolId) {
         });
         
         const data = await response.json();
-        console.log("Respuesta permisos:", data);
         
         if (!data.success) {
             throw new Error(data.error || "Error al cargar permisos");
@@ -170,9 +224,6 @@ async function cargarPermisosPorRol(rolId) {
 }
 
 async function guardarPermisosRol(rolId) {
-    console.log("guardarPermisosRol - rolId:", rolId);
-    
-    // Buscar el rol seleccionado
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
     
@@ -204,8 +255,6 @@ async function guardarPermisosRol(rolId) {
         }
     });
     
-    console.log("Enviando permisos:", permisos);
-    
     try {
         const response = await fetch(`/api/permisos/rol/${rolId}`, {
             method: "PUT",
@@ -219,7 +268,6 @@ async function guardarPermisosRol(rolId) {
         });
         
         const data = await response.json();
-        console.log("Respuesta guardar:", data);
         
         if (!data.success) {
             throw new Error(data.error || "Error al guardar permisos");
@@ -240,13 +288,17 @@ function setupRolChangeListener() {
         
         window._rolChangeHandler = async (e) => {
             const rolId = e.target.value;
-            console.log("Rol cambiado a:", rolId);
             const container = document.getElementById("permisos-rol-container");
             
             if (rolId) {
+                await cargarOpcionesCedula(rolId);
                 await cargarPermisosPorRol(rolId);
             } else {
                 if (container) container.style.display = "none";
+                if (selectUsuarioCedula) {
+                    selectUsuarioCedula.innerHTML = '<option value="">Primero seleccione un rol</option>';
+                    selectUsuarioCedula.disabled = true;
+                }
             }
         };
         
@@ -451,14 +503,14 @@ async function onConfirmAction() {
 function renderSelects() {
     if (selectUsuarioRol) {
         selectUsuarioRol.innerHTML = renderOptions(state.roles);
-        // Si hay un valor seleccionado previamente, mantenerlo
         const currentValue = selectUsuarioRol.getAttribute("data-current-value");
         if (currentValue) {
             selectUsuarioRol.value = currentValue;
         }
     }
     if (selectUsuarioCedula) {
-        selectUsuarioCedula.innerHTML = renderEmpleadoOptions(state.empleados);
+        selectUsuarioCedula.innerHTML = '<option value="">Seleccione un rol primero</option>';
+        selectUsuarioCedula.disabled = true;
     }
 }
 
@@ -466,17 +518,6 @@ function renderOptions(items) {
     const options = ['<option value="">Seleccione...</option>'];
     items.forEach(item => {
         options.push(`<option value="${escapeHtml(String(item.id))}">${escapeHtml(item.nombre || "")}</option>`);
-    });
-    return options.join("");
-}
-
-function renderEmpleadoOptions(items) {
-    const options = ['<option value="">Seleccione...</option>'];
-    items.forEach(item => {
-        const cedula = item.cedula ?? "";
-        const nombre = item.nombre_completo || [item.nombre, item.apellido].filter(Boolean).join(" ");
-        const label = `${cedula} - ${nombre}`.trim();
-        options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(label)}</option>`);
     });
     return options.join("");
 }
@@ -666,16 +707,24 @@ function llenarFormularioUsuario(usuario) {
     formUsuario.rol_id.value = usuario.rol_id ?? "";
     formUsuario.foto_perfil_actual.value = usuario.foto_perfil ?? "";
     
-    // Guardar el valor actual del select para mantenerlo después de renderizar
     if (selectUsuarioRol && usuario.rol_id) {
         selectUsuarioRol.setAttribute("data-current-value", usuario.rol_id);
     }
     
     if (usuario.rol_id) {
+        cargarOpcionesCedula(usuario.rol_id).then(() => {
+            if (selectUsuarioCedula && usuario.cedula_personal) {
+                selectUsuarioCedula.value = usuario.cedula_personal;
+            }
+        });
         cargarPermisosPorRol(usuario.rol_id);
     } else {
         const container = document.getElementById("permisos-rol-container");
         if (container) container.style.display = "none";
+        if (selectUsuarioCedula) {
+            selectUsuarioCedula.innerHTML = '<option value="">Seleccione un rol primero</option>';
+            selectUsuarioCedula.disabled = true;
+        }
     }
     
     if (fotoPerfilName) {
@@ -724,6 +773,10 @@ function limpiarFormulario(form) {
         if (selectUsuarioRol) {
             selectUsuarioRol.removeAttribute("data-current-value");
         }
+        if (selectUsuarioCedula) {
+            selectUsuarioCedula.innerHTML = '<option value="">Seleccione un rol primero</option>';
+            selectUsuarioCedula.disabled = true;
+        }
     }
     
     const idField = form.querySelector("input[name='id']");
@@ -742,10 +795,16 @@ async function onUsuarioSubmit(event) {
     }
 
     const id = formUsuario.id.value;
+    const cedulaPersonal = formUsuario.cedula_personal.value;
+    
+    if (!cedulaPersonal) {
+        mostrarToast("Debe seleccionar una cédula válida.", true);
+        return;
+    }
     
     const formData = new FormData();
     formData.append("nombre", formUsuario.nombre.value.trim());
-    formData.append("cedula_personal", String(Number(formUsuario.cedula_personal.value)));
+    formData.append("cedula_personal", String(Number(cedulaPersonal)));
     formData.append("password", formUsuario.password.value.trim());
     formData.append("rol_id", String(Number(formUsuario.rol_id.value)));
     formData.append("foto_perfil_actual", formUsuario.foto_perfil_actual.value || "");
@@ -844,7 +903,6 @@ async function cargarTodo() {
         state.modulos = modulos.modulos || [];
         state.empleados = empleados.empleados || [];
 
-        console.log("Roles cargados:", state.roles);
         renderTodo();
     } catch (error) {
         mostrarToast(error.message || "No se pudieron cargar los datos.", true);

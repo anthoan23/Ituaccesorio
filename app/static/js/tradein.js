@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!Number.isFinite(numero)) {
       return "$0.00";
     }
-
     return `$${new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -46,10 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return !bloqueado;
   }
 
-  function renderResultado(resultado) {
-    if (!resultado) {
-      return;
+  function validarFormulario() {
+    const equipo = equipoSelect?.value;
+    if (!equipo) {
+      renderError("Selecciona un equipo para continuar.");
+      return false;
     }
+    return true;
+  }
+
+  function renderResultado(resultado) {
+    if (!resultado) return;
 
     montoEstimado.textContent = formatMoney(resultado.monto_estimado);
     precioBase.textContent = formatMoney(resultado.precio_base);
@@ -68,14 +74,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const advertencias = Array.isArray(resultado.advertencias) ? resultado.advertencias : [];
     if (mensajes) {
       mensajes.innerHTML = advertencias.length > 0
-        ? advertencias.map((advertencia) => `<p>${advertencia}</p>`).join("")
-        : "Cotización generada correctamente.";
+        ? advertencias.map((advertencia) => `<p class="warning">${advertencia}</p>`).join("")
+        : '<p class="success">Cotización generada correctamente.</p>';
     }
   }
 
   function renderError(mensaje) {
     if (mensajes) {
-      mensajes.innerHTML = `<p class="tradein-result__messages--error">${mensaje}</p>`;
+      mensajes.innerHTML = `<p class="error">${mensaje}</p>`;
+    }
+    montoEstimado.textContent = "$0.00";
+    precioBase.textContent = "$0.00";
+    deduccionTotal.textContent = "$0.00";
+    if (detallesFallas) {
+      detallesFallas.innerHTML = "<li>No hay fallas seleccionadas.</li>";
     }
   }
 
@@ -99,12 +111,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const idProducto = equipoSelect.value;
-    if (!idProducto) {
-      renderError("Selecciona un equipo para continuar.");
+    if (!validarFormulario()) {
       return;
     }
 
+    const idProducto = equipoSelect.value;
     const payload = {
       id_producto: idProducto,
       liberado: liberado,
