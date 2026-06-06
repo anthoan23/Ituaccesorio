@@ -26,18 +26,20 @@ def api_listar_cargos():
 @jwt_required
 def api_agregar_cargo():
     data = request.get_json(silent=True) or request.form
-    nuevo_cargo = data.get("nombre_cargo", "").strip()
+    nombre_cargo = data.get("nombre_cargo", "").strip()
     descripcion_cargo = data.get("descripcion_cargo", "").strip()
 
-
-    cargo_model = Cargo()
-    mensaje = cargo_model.agregar_cargo(nuevo_cargo, descripcion_cargo )
+    # Crear instancia con los datos y asignar a los atributos
+    cargo_model = Cargo(
+        nombre_cargo=nombre_cargo,
+        descripcion_cargo=descripcion_cargo
+    )
+    mensaje = cargo_model.agregar_cargo()  # Sin parámetros
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 201
     else:
         return jsonify({"success": False, "message": mensaje}), 400
-
 
 @cargos_blueprint.route("/api/cargos", methods=["PUT"])
 @jwt_required
@@ -47,24 +49,27 @@ def api_actualizar_cargo():
     nombre_cargo = data.get("nombre_cargo", "").strip()
     descripcion_cargo = data.get("descripcion_cargo", "").strip()
 
-    cargo_model = Cargo()
-    mensaje = cargo_model.actualizar_cargo(cargo_id, nombre_cargo, descripcion_cargo)
+    # Crear instancia con los datos y asignar a los atributos
+    cargo_model = Cargo(
+        id_cargo=cargo_id,
+        nombre_cargo=nombre_cargo,
+        descripcion_cargo=descripcion_cargo
+    )
+    mensaje = cargo_model.actualizar_cargo()  # Sin parámetros
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
     return jsonify({"success": False, "message": mensaje}), 400
-    
 
 @cargos_blueprint.route("/api/cargos", methods=["DELETE"])
 @jwt_required
 def api_eliminar_cargo():
-
     data = request.get_json(silent=True) or request.form
-    
     cargo_id = data.get("id_cargo", "").strip()
 
-    cargo_model = Cargo()
-    mensaje = cargo_model.eliminar_cargo(cargo_id)
+    # Crear instancia con el ID y asignar al atributo
+    cargo_model = Cargo(id_cargo=cargo_id)
+    mensaje = cargo_model.eliminar_cargo()  # Sin parámetros
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200

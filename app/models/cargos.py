@@ -4,10 +4,17 @@ from datetime import date
 
 from app.models.database import conectar
 
-class Cargo(conectar):
+class Cargo():
+
+    def __init__(self, id_cargo: str = "", nombre_cargo: str = "", descripcion_cargo: str = ""):
+        self.id_cargo = id_cargo
+        self.nombre_cargo = nombre_cargo
+        self.descripcion_cargo = descripcion_cargo
+
+        self.__conexion_bd = conectar()
 
     def listar_cargos(self):
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             Mensaje = "Error al conectar a la base de datos."
             return Mensaje
@@ -29,38 +36,42 @@ class Cargo(conectar):
             cursor.close()
             db.close()
 
+    def agregar_cargo(self) -> str:
+        # Usar los atributos de la instancia
+        nombre = self.nombre_cargo.strip()
+        descripcion = self.descripcion_cargo.strip()
 
-    def agregar_cargo(self, nuevo_cargo: str, descripcion_cargo: str) -> str:
-
-        if not nuevo_cargo or not descripcion_cargo:
+        # Validaciones
+        if not nombre or not descripcion:
             mensaje = "El nombre y la descripción del cargo no pueden estar vacíos."
             return mensaje
         
-        if len(nuevo_cargo) > 30:
+        if len(nombre) > 30:
             mensaje = "El nombre del cargo no puede exceder los 30 caracteres."
             return mensaje
         
-        if len(descripcion_cargo) > 255:
+        if len(descripcion) > 255:
             mensaje = "La descripción del cargo no puede exceder los 255 caracteres."
             return mensaje
         
-        if self.verificar_cargo(nuevo_cargo):
-            mensaje = f"El cargo '{nuevo_cargo}' ya existe."
+        # Verificar si el cargo ya existe
+        if self.verificar_cargo():
+            mensaje = f"El cargo '{nombre}' ya existe."
             return mensaje
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             mensaje = "Error al conectar a la base de datos."
             return mensaje
 
         cursor = db.cursor()
         try:
-            sql= 'CALL Crear_cargo(%s, %s)'
-            cursor.execute(sql, (nuevo_cargo, descripcion_cargo))
+            sql = 'CALL Crear_cargo(%s, %s)'
+            cursor.execute(sql, (nombre, descripcion))
             while cursor.nextset():
                 pass
             db.commit()
-            mensaje = f"Cargo agregado exitosamente. ID: {cursor.lastrowid}."
+            mensaje = f"Cargo agregado exitosamente."
             return mensaje
         except Exception as e:
             print(f"Error al agregar cargo: {e}")
@@ -71,20 +82,18 @@ class Cargo(conectar):
             cursor.close()
             db.close()
 
-    def eliminar_cargo(self, cargo_id: str) -> str:
+    def eliminar_cargo(self) -> str:
+        # Usar el atributo id_cargo
+        cargo_id = self.id_cargo.strip()
 
         if not cargo_id:
             mensaje = "El identificador del cargo no puede estar vacío."
             return mensaje
         
-        if len(cargo_id) > 10:
-            mensaje = "El identificador del cargo no puede exceder los 10 caracteres."
-            return mensaje
-      
-        if not self.verificar_cargo_por_id(cargo_id):
+        if not self.verificar_cargo_por_id():
             return f"El cargo con identificador {cargo_id} no existe."
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             mensaje = "Error al conectar a la base de datos."
             return mensaje
@@ -105,30 +114,35 @@ class Cargo(conectar):
             cursor.close()
             db.close()
 
-    def actualizar_cargo(self, cargo_id: str, nuevo_cargo: str, descripcion_cargo: str) -> str:
+    def actualizar_cargo(self) -> str:
+        # Usar los atributos de la instancia
+        cargo_id = self.id_cargo.strip()
+        nuevo_nombre = self.nombre_cargo.strip()
+        nueva_descripcion = self.descripcion_cargo.strip()
+
+        # Validaciones
         if not cargo_id:
             return "El identificador del cargo es obligatorio."
 
-        if len(cargo_id) > 10:
-            return "El identificador del cargo no puede exceder los 10 caracteres."
-
-        if not nuevo_cargo or not descripcion_cargo:
+        if not nuevo_nombre or not nueva_descripcion:
             return "El nombre y la descripción del cargo no pueden estar vacíos."
 
-        if len(nuevo_cargo) > 30:
+        if len(nuevo_nombre) > 30:
             return "El nombre del cargo no puede exceder los 30 caracteres."
 
-        if len(descripcion_cargo) > 255:
+        if len(nueva_descripcion) > 255:
             return "La descripción del cargo no puede exceder los 255 caracteres."
 
-        if not self.verificar_cargo_por_id(cargo_id):
+        # Verificar si el cargo existe
+        if not self.verificar_cargo_por_id():
             return f"El cargo con identificador {cargo_id} no existe."
 
-        cargo_id_existente = self.obtener_id_por_nombre(nuevo_cargo)
+        # Verificar si el nuevo nombre ya existe (excepto para el mismo cargo)
+        cargo_id_existente = self.obtener_id_por_nombre()
         if cargo_id_existente and cargo_id_existente != cargo_id:
-            return f"El cargo '{nuevo_cargo}' ya existe."
+            return f"El cargo '{nuevo_nombre}' ya existe."
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
@@ -140,7 +154,7 @@ class Cargo(conectar):
                     Descripcion_cargo = %s
                 WHERE ID_cargo = %s
             """
-            cursor.execute(sql, (nuevo_cargo, descripcion_cargo, cargo_id))
+            cursor.execute(sql, (nuevo_nombre, nueva_descripcion, cargo_id))
             db.commit()
             return "Cargo actualizado exitosamente."
         except Exception as e:
@@ -151,8 +165,11 @@ class Cargo(conectar):
             cursor.close()
             db.close()
     
-    def verificar_cargo(self, cargo: str) -> bool:
-        db = self.conexion1()
+    def verificar_cargo(self) -> bool:
+        # Usar el atributo nombre_cargo
+        cargo = self.nombre_cargo.strip()
+        
+        db = self.__conexion_bd.conexion1()
         if not db:
             return False
 
@@ -167,8 +184,11 @@ class Cargo(conectar):
             cursor.close()
             db.close()
 
-    def verificar_cargo_por_id(self, cargo_id: str) -> bool:
-        db = self.conexion1()
+    def verificar_cargo_por_id(self) -> bool:
+        # Usar el atributo id_cargo
+        cargo_id = self.id_cargo.strip()
+        
+        db = self.__conexion_bd.conexion1()
         if not db:
             return False
 
@@ -183,8 +203,11 @@ class Cargo(conectar):
             cursor.close()
             db.close()
 
-    def obtener_id_por_nombre(self, cargo: str) -> str | None:
-        db = self.conexion1()
+    def obtener_id_por_nombre(self) -> str | None:
+        # Usar el atributo nombre_cargo
+        cargo = self.nombre_cargo.strip()
+        
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
