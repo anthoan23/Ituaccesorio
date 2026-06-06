@@ -66,8 +66,6 @@ def api_registrar_stock():
     id_producto = datos.get("id_producto")
     existencia = datos.get("existencia")
     costo_venta = datos.get("costo_venta")
-    capacidad = datos.get("capacidad")
-    color = datos.get("color")
     foto_inventario = _guardar_foto_inventario(request.files.get("foto_inventario"))
 
     id_producto_val = str(id_producto).strip() if id_producto not in (None, "") else ""
@@ -99,8 +97,6 @@ def api_registrar_stock():
             id_producto=id_producto_val,
             existencia=existencia_val,
             costo_venta=costo_val,
-            capacidad=capacidad,
-            color=color,
             foto_inventario=foto_inventario,
         )
         if not id_inventario:

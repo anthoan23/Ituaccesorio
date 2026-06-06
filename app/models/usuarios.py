@@ -1,7 +1,16 @@
 from app.models.database import conectar
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class Usuarios(conectar):
+    def _hash_password(self, password):
+        """Genera un hash de la contraseña"""
+        return generate_password_hash(password)
+
+    def _verify_password(self, password, password_hash):
+        """Verifica si la contraseña coincide con el hash"""
+        return check_password_hash(password_hash, password)
+
     def validar(self, nombre, password):
         db = self.conexion2()
         if db:
@@ -11,11 +20,18 @@ class Usuarios(conectar):
                     "SELECT usuario.*, usuario.cedula AS cedula_personal, rol.nombre AS nombre_rol"
                     " FROM usuario"
                     " JOIN rol ON usuario.rol_id = rol.id"
-                    " WHERE usuario.nombre = %s AND usuario.password = %s",
-                    (nombre, password),
+                    " WHERE usuario.nombre = %s",
+                    (nombre,),
                 )
                 resultados = cursor.fetchall()
-                return resultados
+                
+                # Verificar contraseña con hash
+                if resultados:
+                    usuario = resultados[0]
+                    if self._verify_password(password, usuario.get("password", "")):
+                        return [usuario]
+                
+                return []
             finally:
                 cursor.close()
                 db.close()
@@ -113,9 +129,12 @@ class Usuarios(conectar):
 
         cursor = db.cursor()
         try:
+            # Hashear la contraseña antes de guardar
+            password_hash = self._hash_password(password)
+            
             cursor.callproc(
                 "sp_registrar_usuario_con_prefijo",
-                [nombre, cedula_personal, password, rol_id, foto_perfil],
+                [nombre, cedula_personal, password_hash, rol_id, foto_perfil],
             )
 
             db.commit()
@@ -157,6 +176,9 @@ class Usuarios(conectar):
         )
 
     def actualizar_usuario_con_password(self, usuario_id, nombre, cedula_personal, password, rol_id, foto_perfil=None):
+        # Hashear la nueva contraseña
+        password_hash = self._hash_password(password)
+        
         return self._ejecutar(
             """
             UPDATE usuario
@@ -167,7 +189,7 @@ class Usuarios(conectar):
                 foto_perfil = %s
             WHERE id = %s
             """,
-            (nombre, cedula_personal, password, rol_id, foto_perfil, usuario_id),
+            (nombre, cedula_personal, password_hash, rol_id, foto_perfil, usuario_id),
         )
 
     def eliminar_usuario(self, usuario_id):
@@ -194,6 +216,8 @@ class Usuarios(conectar):
 
     def actualizar_perfil_actual(self, usuario_id, nombre, password=None, foto_perfil=None):
         if password:
+            # Hashear la nueva contraseña
+            password_hash = self._hash_password(password)
             return self._ejecutar(
                 """
                 UPDATE usuario
@@ -202,7 +226,7 @@ class Usuarios(conectar):
                     foto_perfil = %s
                 WHERE id = %s
                 """,
-                (nombre, password, foto_perfil, usuario_id),
+                (nombre, password_hash, foto_perfil, usuario_id),
             )
 
         return self._ejecutar(
@@ -282,6 +306,27 @@ class Usuarios(conectar):
             """
         )
 
+    def listar_permisos_por_rol(self, rol_id):
+        """Obtiene todos los permisos de un rol específico"""
+        return self._consultar(
+            """
+            SELECT
+                p.rol_id,
+                p.modulo_id,
+                m.nombre AS modulo_nombre,
+                m.descripcion AS modulo_descripcion,
+                p.consultar,
+                p.registrar,
+                p.modificar,
+                p.eliminar
+            FROM permiso p
+            INNER JOIN modulo m ON m.id = p.modulo_id
+            WHERE p.rol_id = %s
+            ORDER BY m.nombre
+            """,
+            (rol_id,)
+        )
+    
     def guardar_permiso(self, rol_id, modulo_id, registrar, modificar, eliminar):
         return self._ejecutar(
             """
@@ -294,6 +339,7 @@ class Usuarios(conectar):
             """,
             (rol_id, modulo_id, registrar, modificar, eliminar),
         )
+    
     def eliminar_permiso(self, rol_id, modulo_id):
         return self._ejecutar(
             "DELETE FROM permiso WHERE rol_id = %s AND modulo_id = %s",
@@ -325,7 +371,6 @@ class Usuarios(conectar):
         if not resultado:
             return False
         return bool(resultado[0].get(permiso, 0))
-
 
     def obtener_permisos_usuario(self, usuario_id):
         """

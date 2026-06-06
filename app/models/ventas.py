@@ -44,6 +44,13 @@ class VentasModel(conectar):
                     COALESCE(cl.Nombre_Clase, '') AS clase,
                     i.Costo_venta AS precio_usd,
                     i.Existencia AS stock,
+                    COALESCE((
+                        SELECT fi.Foto_inventario
+                        FROM Fotos_inventario fi
+                        WHERE fi.ID_inventario = i.ID_inventario
+                        ORDER BY fi.ID_foto_inventario DESC
+                        LIMIT 1
+                    ), CONCAT('/static/img/productos/', p.ID_producto, '.jpg')) AS imagen,
                     p.ID_producto AS id_producto,
                     p.ID_marca AS id_marca,
                     p.ID_Clase AS id_clase,
@@ -68,10 +75,6 @@ class VentasModel(conectar):
                 val = r.get("precio_usd")
                 if isinstance(val, Decimal):
                     r["precio_usd"] = float(val)
-            
-            # Agregar URL de imagen
-            for r in resultados:
-                r["imagen"] = f"/static/img/productos/{r['id']}.jpg" if r['id'] else None
             
             return resultados
         finally:

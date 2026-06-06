@@ -33,7 +33,7 @@ CREATE TABLE `bitacora` (
   KEY `usuario_id` (`usuario_id`),
   KEY `modulo_id` (`modulo_id`),
   CONSTRAINT `bitacora_ibfk_2` FOREIGN KEY (`modulo_id`) REFERENCES `modulo` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=595 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=601 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,6 +42,7 @@ CREATE TABLE `bitacora` (
 
 LOCK TABLES `bitacora` WRITE;
 /*!40000 ALTER TABLE `bitacora` DISABLE KEYS */;
+INSERT INTO `bitacora` VALUES (595,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-001 - Nuevo nombre: Eduin - Rol ID: 1','2026-06-06 20:19:35'),(596,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-001 - Nuevo nombre: Eduin - Rol ID: 1','2026-06-06 20:29:27'),(597,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-002 - Nuevo nombre: Anthoan - Rol ID: 6','2026-06-06 20:40:49'),(598,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-003 - Nuevo nombre: Elena - Rol ID: 5','2026-06-06 20:41:02'),(599,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-004 - Nuevo nombre: ClienteTest - Rol ID: 7','2026-06-06 20:41:14'),(600,'USR-001',14,'Actualizar usuario','Se actualizó el usuario ID: USR-005 - Nuevo nombre: Prueba - Rol ID: 7','2026-06-06 20:41:24');
 /*!40000 ALTER TABLE `bitacora` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -146,7 +147,6 @@ CREATE TABLE `usuario` (
   `foto_perfil` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `ultima_actualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`cedula`),
   KEY `rol_id` (`rol_id`),
   CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `rol` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -158,7 +158,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'Dino1234',1,1,'2026-05-10 02:51:02','/static/img/perfil/725ff8bd356d449a8bc7e9cd9e54f579.jpg','2026-05-21 03:38:50'),('USR-002','Anthoan',2323123,'Dino1234',6,1,'2026-05-17 02:04:00',NULL,'2026-05-17 02:05:11'),('USR-003','Elena',40404040,'Dino1234',5,1,'2026-05-17 02:04:49',NULL,'2026-05-17 02:05:11'),('USR-004','ClienteTest',9876543,'Dino1234',7,1,'2026-05-21 03:24:14',NULL,'2026-05-21 03:24:14'),('USR-005','Prueba',12345678,'Dino1234',7,1,'2026-06-04 01:09:43','/static/img/perfil/4bf079567cf44a8086d4cce7a324573a.png','2026-06-04 01:21:23');
+INSERT INTO `usuario` VALUES ('USR-001','Eduin',32014004,'scrypt:32768:8:1$mxwPiweA9tJ7B6Lo$729382722a55df092f3adef1a1c4517c4451d26aaf40c6d0b8357bc9b5de02de5356fdee34aa5d8cc60889a0fcf891bb36e210f673a7ca8131fadcc9fb291cc4',1,1,'2026-05-10 02:51:02','/static/img/perfil/725ff8bd356d449a8bc7e9cd9e54f579.jpg','2026-06-06 20:29:27'),('USR-002','Anthoan',12345543,'scrypt:32768:8:1$EY3xLxxGteKZdpu8$283663cbdf1749a8cfc820f7bc1355833d83ec376e186559779404adbe072a8cc4f36383549fbe6926338986adb0b6257f7a6472b6fadcdac5da52424c95c9a9',6,1,'2026-05-17 02:04:00',NULL,'2026-06-06 20:40:49'),('USR-003','Elena',30124556,'scrypt:32768:8:1$9m0ICCxI0bwFmxmk$e8a71fc275c67c8dda2704f227838c02426c980d8f0f7c9de95be5872b7a62edf7e69281b604ae361cb0f07e6078150510ba3e792e0b97f82215e5bfa1e94c53',5,1,'2026-05-17 02:04:49',NULL,'2026-06-06 20:41:02'),('USR-004','ClienteTest',30548845,'scrypt:32768:8:1$1KR2WxQrRgAhljzc$dc6695d2bf3169711ea51793e015a47738f33cf90114ab562a24409eca2b3107866c3301414a3e9d93e12c252c40faa59dd72d73abbaf94c7f3e7b19d2591c4f',7,1,'2026-05-21 03:24:14',NULL,'2026-06-06 20:41:14'),('USR-005','Prueba',31111555,'scrypt:32768:8:1$tVHhdy5aM0GpG4Ih$eea5255b05e729be54f83953b0851833a64d51f28ce5e75e55c07f8c247c50c3331dd72a97b9c40f122e5ccfc6c2073b439060771fb67f429324013016c0c475',7,1,'2026-06-04 01:09:43','/static/img/perfil/4bf079567cf44a8086d4cce7a324573a.png','2026-06-06 20:41:24');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -253,4 +253,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-03 23:08:00
+-- Dump completed on 2026-06-06 16:44:55
