@@ -156,6 +156,10 @@
             const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
             const usdAjustado = bsFinal / (state.tasas.oficial || 1);
             const imagenSrc = p.imagen ? p.imagen : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+            const stockNum = Number(p.stock);
+            const avisoStockBajo = Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 5
+                ? '<div class="producto-stock producto-stock--low">Pocas unidades disponibles</div>'
+                : '';
             return `
             <div class="producto-card">
                 <div class="producto-imagen">
@@ -167,7 +171,7 @@
                     <div class="precio-usd">${formatUSD(usdAjustado)}</div>
                     <div class="precio-bs">${formatVES(bsFinal)}</div>
                 </div>
-                <div class="producto-stock">Stock: ${p.stock} unidades</div>
+                ${avisoStockBajo}
                 <button class="btn btn--yellow btn-agregar" data-id="${p.id}" ${p.stock <= 0 ? 'disabled' : ''}>
                     ${p.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
                 </button>
@@ -210,6 +214,37 @@
             <div>Oficial: 1 USD = ${formatVES(state.tasas.oficial)}</div>
             <small>Los precios se calculan al momento del pago</small>
         `;
+    }
+
+    function setupCatalogSearchToggle() {
+        const searchToggle = document.getElementById("catalog-search-toggle");
+        const searchBox = document.getElementById("catalog-search-box");
+        const searchInput = document.getElementById("f-texto");
+        if (!searchToggle || !searchBox) return;
+
+        const abrirBusqueda = () => {
+            searchBox.classList.add("is-open");
+            searchBox.setAttribute("aria-hidden", "false");
+            searchToggle.setAttribute("aria-expanded", "true");
+            window.setTimeout(() => {
+                searchInput?.focus();
+            }, 220);
+        };
+
+        const cerrarBusqueda = () => {
+            searchBox.classList.remove("is-open");
+            searchBox.setAttribute("aria-hidden", "true");
+            searchToggle.setAttribute("aria-expanded", "false");
+        };
+
+        searchToggle.addEventListener("click", () => {
+            const abierta = searchBox.classList.contains("is-open");
+            if (abierta) {
+                cerrarBusqueda();
+            } else {
+                abrirBusqueda();
+            }
+        });
     }
 
     function renderFiltros(clases, marcas) {
@@ -857,32 +892,40 @@
             const cartToggle = document.getElementById("cart-toggle");
             const cartVaciar = document.getElementById("cart-vaciar");
             const cartCheckout = document.getElementById("cart-checkout");
-            const btnAplicar = document.getElementById("btn-aplicar");
-            const btnLimpiar = document.getElementById("btn-limpiar");
             const fClase = document.getElementById("f-clase");
             const fMarca = document.getElementById("f-marca");
             const fTexto = document.getElementById("f-texto");
+
+            const aplicarFiltros = () => {
+                state.filtros.clase_id = fClase?.value || "";
+                state.filtros.marca_id = fMarca?.value || "";
+                state.filtros.q = (fTexto?.value || "").trim();
+                cargarCatalogo();
+            };
             
             if (cartToggle) cartToggle.addEventListener("click", () => openCartModal());
             if (cartVaciar) cartVaciar.addEventListener("click", () => vaciarCarrito());
             if (cartCheckout) cartCheckout.addEventListener("click", () => iniciarCheckout());
+            setupCatalogSearchToggle();
             
-            if (btnAplicar) {
-                btnAplicar.addEventListener("click", () => {
-                    state.filtros.clase_id = fClase?.value || "";
-                    state.filtros.marca_id = fMarca?.value || "";
-                    state.filtros.q = fTexto?.value || "";
-                    cargarCatalogo();
+            if (fClase) {
+                fClase.addEventListener("change", () => {
+                    aplicarFiltros();
                 });
             }
-            
-            if (btnLimpiar) {
-                btnLimpiar.addEventListener("click", () => {
-                    if (fClase) fClase.value = "";
-                    if (fMarca) fMarca.value = "";
-                    if (fTexto) fTexto.value = "";
-                    state.filtros = { clase_id: "", marca_id: "", q: "" };
-                    cargarCatalogo();
+
+            if (fMarca) {
+                fMarca.addEventListener("change", () => {
+                    aplicarFiltros();
+                });
+            }
+
+            if (fTexto) {
+                fTexto.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        aplicarFiltros();
+                    }
                 });
             }
             
