@@ -6,7 +6,7 @@ import mysql.connector
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.usuarios import Usuarios
-from app.utils.decorators import jwt_required
+from app.models.bitacora import registrar_en_bitacora
 from app.utils.jwt_utils import set_auth_cookies
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
@@ -188,6 +188,14 @@ def actualizar_mi_perfil():
         if not usuario_actualizado:
             return _respuesta_error("No se pudo actualizar el perfil.", 500)
 
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar perfil",
+            descripcion=f"Usuario {usuario_actual.get('usuario_nombre')} actualizó su perfil",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+
         resp = jsonify({"success": True, "message": "Perfil actualizado.", "usuario": usuario_actualizado})
         return _actualizar_cookie_usuario(resp, usuario_actual, usuario_actualizado)
     except Exception as error:
@@ -214,6 +222,15 @@ def crear_usuario():
         nuevo_id = modelo.crear_usuario(nombre, int(cedula_personal), password, int(rol_id), foto_perfil)
         if not nuevo_id:
             return _respuesta_error("No se pudo crear el usuario.")
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear usuario",
+            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula_personal} - Rol ID: {rol_id}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Usuario creado.", "id": nuevo_id})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -253,6 +270,15 @@ def actualizar_usuario(usuario_id):
                 int(rol_id),
                 foto_perfil,
             )
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar usuario",
+            descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Usuario actualizado.", "result": resultado})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -279,6 +305,15 @@ def eliminar_usuario(usuario_id):
             return _respuesta_error("Solo otro admin puede eliminar este usuario.", 403)
 
         modelo.eliminar_usuario(usuario_id)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Eliminar usuario",
+            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {usuario_objetivo.get('nombre', 'N/A')}",
+            usuario_id=usuario_actual.get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Usuario eliminado."})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -307,6 +342,15 @@ def crear_rol():
     modelo = Usuarios()
     try:
         nuevo_id = modelo.crear_rol(nombre, descripcion)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear rol",
+            descripcion=f"Se creó el rol: {nombre}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Rol creado.", "id": nuevo_id})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -325,6 +369,15 @@ def actualizar_rol(rol_id):
     modelo = Usuarios()
     try:
         resultado = modelo.actualizar_rol(rol_id, nombre, descripcion)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar rol",
+            descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Rol actualizado.", "result": resultado})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -342,6 +395,15 @@ def eliminar_rol(rol_id):
             return _respuesta_error("El rol Admin y Cliente no se pueden eliminar.", 403)
 
         modelo.eliminar_rol(rol_id)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Eliminar rol",
+            descripcion=f"Se eliminó el rol ID: {rol_id} - Nombre: {nombre_rol}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Rol eliminado."})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -370,6 +432,15 @@ def crear_modulo():
     modelo = Usuarios()
     try:
         nuevo_id = modelo.crear_modulo(nombre, descripcion)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear módulo",
+            descripcion=f"Se creó el módulo: {nombre}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Modulo creado.", "id": nuevo_id})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -388,6 +459,15 @@ def actualizar_modulo(modulo_id):
     modelo = Usuarios()
     try:
         resultado = modelo.actualizar_modulo(modulo_id, nombre, descripcion)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar módulo",
+            descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Modulo actualizado.", "result": resultado})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -399,6 +479,15 @@ def eliminar_modulo(modulo_id):
     modelo = Usuarios()
     try:
         modelo.eliminar_modulo(modulo_id)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Eliminar módulo",
+            descripcion=f"Se eliminó el módulo ID: {modulo_id}",
+            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
+        
         return jsonify({"success": True, "message": "Modulo eliminado."})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -476,6 +565,14 @@ def actualizar_permisos_rol(rol_id):
                     rol_id, modulo_id, registrar, modificar, eliminar
                 )
                 resultados.append(resultado)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar permisos de rol",
+            descripcion=f"Se actualizaron {len(resultados)} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
+            usuario_id=usuario_actual.get("usuario_id", "SYSTEM"),
+            modulo_nombre="Usuarios"
+        )
         
         return jsonify({
             "success": True,
