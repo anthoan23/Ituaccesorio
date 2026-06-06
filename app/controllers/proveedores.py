@@ -5,6 +5,8 @@ from app.models.proveedores import Proveedores
 from app.models.productos import Productos
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
+proveedores_modelo = Proveedores()
+productos_modelo = Productos()
 
 
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
@@ -22,8 +24,7 @@ def pagina_proveedores():
 @jwt_required
 def api_listar_proveedores():
     q = request.args.get("q", default=None, type=str)
-    modelo = Proveedores()
-    proveedores = modelo.listar_proveedores(q=q) or []
+    proveedores = proveedores_modelo.listar_proveedores(q=q) or []
     return jsonify({"success": True, "proveedores": proveedores})
 
 
@@ -43,10 +44,9 @@ def api_crear_proveedor():
     if nombre == "":
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
 
-    modelo = Proveedores()
     try:
         if id_proveedor in (None, ""):
-            id_val = modelo.siguiente_id_proveedor()
+            id_val = proveedores_modelo.siguiente_id_proveedor()
         else:
             id_val = int(id_proveedor)
     except Exception:
@@ -85,7 +85,7 @@ def api_crear_proveedor():
 
     try:
         if productos_norm:
-            new_id = modelo.crear_proveedor_con_productos(
+            new_id = proveedores_modelo.crear_proveedor_con_productos(
                 id_proveedor=id_val,
                 nombre=nombre,
                 tipo=tipo,
@@ -96,7 +96,7 @@ def api_crear_proveedor():
                 productos=productos_norm,
             )
         else:
-            new_id = modelo.crear_proveedor(
+            new_id = proveedores_modelo.crear_proveedor(
                 id_proveedor=id_val,
                 nombre=nombre,
                 tipo=tipo,
@@ -113,12 +113,11 @@ def api_crear_proveedor():
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["GET"])
 @jwt_required
 def api_obtener_proveedor(id_proveedor: int):
-    modelo = Proveedores()
-    proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+    proveedor = proveedores_modelo.obtener_proveedor(id_proveedor=id_proveedor)
     if not proveedor:
         return jsonify({"success": False, "error": "Proveedor no encontrado."}), 404
 
-    productos = modelo.listar_productos_por_proveedor(id_proveedor=id_proveedor) or []
+    productos = proveedores_modelo.listar_productos_por_proveedor(id_proveedor=id_proveedor) or []
     return jsonify({"success": True, "proveedor": proveedor, "productos": productos})
 
 
@@ -144,9 +143,8 @@ def api_actualizar_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
 
-    modelo = Proveedores()
     try:
-        ok = modelo.actualizar_proveedor(
+        ok = proveedores_modelo.actualizar_proveedor(
             id_proveedor=id_proveedor,
             nombre=nombre,
             tipo=tipo,
@@ -163,9 +161,8 @@ def api_actualizar_proveedor(id_proveedor: int):
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["DELETE"])
 @jwt_required
 def api_eliminar_proveedor(id_proveedor: int):
-    modelo = Proveedores()
     try:
-        ok = modelo.eliminar_proveedor(id_proveedor=id_proveedor)
+        ok = proveedores_modelo.eliminar_proveedor(id_proveedor=id_proveedor)
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -174,8 +171,7 @@ def api_eliminar_proveedor(id_proveedor: int):
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>/productos", methods=["GET"])
 @jwt_required
 def api_listar_productos_proveedor(id_proveedor: int):
-    modelo = Proveedores()
-    productos = modelo.listar_productos_por_proveedor(id_proveedor=id_proveedor) or []
+    productos = proveedores_modelo.listar_productos_por_proveedor(id_proveedor=id_proveedor) or []
     return jsonify({"success": True, "productos": productos})
 
 
@@ -199,9 +195,8 @@ def api_upsert_producto_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
 
-    modelo = Proveedores()
     try:
-        ok = modelo.upsert_producto_proveedor(
+        ok = proveedores_modelo.upsert_producto_proveedor(
             id_proveedor=id_proveedor,
             id_modelo=id_modelo_val,
             costo=costo_val,
@@ -216,9 +211,8 @@ def api_upsert_producto_proveedor(id_proveedor: int):
 )
 @jwt_required
 def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: int):
-    modelo = Proveedores()
     try:
-        ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
+        ok = proveedores_modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -228,6 +222,5 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: int):
 @jwt_required
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
-    modelo = Productos()
-    modelos = modelo.listar_modelos(q=q) or []
+    modelos = productos_modelo.listar_modelos(q=q) or []
     return jsonify({"success": True, "modelos": modelos})

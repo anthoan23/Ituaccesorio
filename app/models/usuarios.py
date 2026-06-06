@@ -294,17 +294,11 @@ class Usuarios(conectar):
             """,
             (rol_id, modulo_id, registrar, modificar, eliminar),
         )
-<<<<<<< HEAD
-
     def eliminar_permiso(self, rol_id, modulo_id):
         return self._ejecutar(
             "DELETE FROM permiso WHERE rol_id = %s AND modulo_id = %s",
             (rol_id, modulo_id),
         )
-
-=======
-    
-
 
     def verificar_permiso(self, rol_id, modulo_nombre, permiso):
         """
@@ -359,4 +353,3 @@ class Usuarios(conectar):
             """,
             (usuario_id,)
         )
->>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0

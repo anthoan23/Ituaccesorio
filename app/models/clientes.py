@@ -33,7 +33,6 @@ class GestionClientes(conectar):
         """Lista todos los clientes con su información completa"""
         return self._consultar(
             """
-<<<<<<< HEAD
             SELECT
                 c.ID_cliente AS ID_c,
                 c.Nombre_cliente AS nombre,
@@ -49,7 +48,6 @@ class GestionClientes(conectar):
             FROM Cliente c
             LEFT JOIN Persona_natural pn ON pn.ID_cliente = c.ID_cliente
             LEFT JOIN Cliente_juridico cj ON cj.ID_cliente = c.ID_cliente
-=======
             SELECT 
                 c.ID_cliente AS id,
                 c.Nombre_cliente AS nombre,
@@ -65,12 +63,10 @@ class GestionClientes(conectar):
             FROM Cliente c
             LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
->>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0
             ORDER BY c.ID_cliente DESC
             """
         )
 
-<<<<<<< HEAD
     def crear_cliente(self, cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
         db = self.conexion1()
         if not db:
@@ -104,13 +100,10 @@ class GestionClientes(conectar):
             cursor.close()
             db.close()
 
-=======
->>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0
     def obtener_cliente_por_id(self, cliente_id):
         """Obtiene un cliente por su ID incluyendo su tipo y apellido"""
         datos = self._consultar(
             """
-<<<<<<< HEAD
             SELECT
                 c.ID_cliente AS ID_c,
                 c.Nombre_cliente AS nombre,
@@ -126,7 +119,6 @@ class GestionClientes(conectar):
             FROM Cliente c
             LEFT JOIN Persona_natural pn ON pn.ID_cliente = c.ID_cliente
             LEFT JOIN Cliente_juridico cj ON cj.ID_cliente = c.ID_cliente
-=======
             SELECT 
                 c.ID_cliente AS id,
                 c.Nombre_cliente AS nombre,
@@ -142,7 +134,6 @@ class GestionClientes(conectar):
             FROM Cliente c
             LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
->>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0
             WHERE c.ID_cliente = %s
             LIMIT 1
             """,
@@ -150,7 +141,6 @@ class GestionClientes(conectar):
         )
         return datos[0] if datos else None
 
-<<<<<<< HEAD
     def crear_cliente_con_id(self, cliente_id, nombre, apellido, celular, correo, direccion, tipo=None):
         return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion, tipo)
 
@@ -211,7 +201,6 @@ class GestionClientes(conectar):
         finally:
             cursor.close()
             db.close()
-=======
     def crear_cliente(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None):
         """Crea un nuevo cliente (persona natural por defecto)"""
         
@@ -290,4 +279,3 @@ class GestionClientes(conectar):
         if not cliente:
             return None
         return cliente
->>>>>>> 2f82cfda297eab91d337a033612ea877fe5729f0
