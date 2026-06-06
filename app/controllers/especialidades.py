@@ -29,8 +29,12 @@ def api_agregar_especialidad():
     nueva_especialidad = data.get("nombre_especialidad", "").strip()
     descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
 
-    especialidad_model = Especialidad()
-    mensaje = especialidad_model.agregar_especialidad(nueva_especialidad, descripcion_especialidad)
+    # Crear instancia con los datos
+    especialidad_model = Especialidad(
+        nombre_especialidad=nueva_especialidad,
+        descripcion_especialidad=descripcion_especialidad
+    )
+    mensaje = especialidad_model.agregar_especialidad()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 201
@@ -43,8 +47,9 @@ def api_eliminar_especialidad():
     data = request.get_json(silent=True) or request.form
     especialidad_id = data.get("id_especialidad", "").strip()
 
-    especialidad_model = Especialidad()
-    mensaje = especialidad_model.eliminar_especialidad(especialidad_id)
+    # Crear instancia con el ID
+    especialidad_model = Especialidad(id_especialidad=especialidad_id)
+    mensaje = especialidad_model.eliminar_especialidad()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
@@ -59,8 +64,13 @@ def api_actualizar_especialidad():
     nombre_especialidad = data.get("nombre_especialidad", "").strip()
     descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
 
-    especialidad_model = Especialidad()
-    mensaje = especialidad_model.actualizar_especialidad(especialidad_id, nombre_especialidad, descripcion_especialidad)
+    # Crear instancia con todos los datos
+    especialidad_model = Especialidad(
+        id_especialidad=especialidad_id,
+        nombre_especialidad=nombre_especialidad,
+        descripcion_especialidad=descripcion_especialidad
+    )
+    mensaje = especialidad_model.actualizar_especialidad()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
