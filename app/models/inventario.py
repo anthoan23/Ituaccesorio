@@ -28,12 +28,6 @@ class Inventario(conectar):
         "  (SELECT fi.Foto_inventario FROM Fotos_inventario fi "
         "     WHERE fi.ID_inventario = i.ID_inventario "
         "     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS Foto_inventario, "
-        "  (SELECT fi.Capacidad FROM Fotos_inventario fi "
-        "     WHERE fi.ID_inventario = i.ID_inventario "
-        "     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS Capacidad, "
-        "  (SELECT fi.Color FROM Fotos_inventario fi "
-        "     WHERE fi.ID_inventario = i.ID_inventario "
-        "     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS Color, "
         "  i.Existencia, i.Costo_venta, "
         "  p.ID_producto AS ID_producto, "
         "  i.ID_inventario AS ID_inventario "
@@ -109,8 +103,6 @@ class Inventario(conectar):
         id_producto: str,
         existencia: int,
         costo_venta: Decimal,
-        capacidad: str | None = None,
-        color: str | None = None,
         foto_inventario: str | None = None,
     ) -> str | None:
         db = self.conexion1()
@@ -139,41 +131,26 @@ class Inventario(conectar):
                     (id_inventario, str(id_producto), int(existencia), costo_venta, None),
                 )
 
-            cap_val = None
-            if capacidad is not None:
-                cap_val = str(capacidad).strip() or None
-
-            color_val = None
-            if color is not None:
-                color_val = str(color).strip() or None
-
             foto_val = None
             if foto_inventario is not None:
                 foto_val = str(foto_inventario).strip() or None
 
-            # Upsert de capacidad/color en Fotos_inventario solo si se envía al menos uno.
-            if capacidad is not None or color is not None or foto_inventario is not None:
+            if foto_val is not None:
                 cursor.execute(
                     "SELECT ID_foto_inventario FROM Fotos_inventario WHERE ID_inventario=%s ORDER BY ID_foto_inventario DESC LIMIT 1",
                     (id_inventario,),
                 )
                 foto = cursor.fetchone()
                 if foto:
-                    if foto_val is not None:
-                        cursor.execute(
-                            "UPDATE Fotos_inventario SET Capacidad=%s, Color=%s, Foto_inventario=%s WHERE ID_foto_inventario=%s",
-                            (cap_val, color_val, foto_val, str(foto[0])),
-                        )
-                    else:
-                        cursor.execute(
-                            "UPDATE Fotos_inventario SET Capacidad=%s, Color=%s WHERE ID_foto_inventario=%s",
-                            (cap_val, color_val, str(foto[0])),
-                        )
+                    cursor.execute(
+                        "UPDATE Fotos_inventario SET Foto_inventario=%s WHERE ID_foto_inventario=%s",
+                        (foto_val, str(foto[0])),
+                    )
                 else:
                     id_foto_inventario = self._siguiente_id_texto("Fotos_inventario", "ID_foto_inventario")
                     cursor.execute(
-                        "INSERT INTO Fotos_inventario (ID_foto_inventario, ID_inventario, Capacidad, Color, Foto_inventario) VALUES (%s, %s, %s, %s, %s)",
-                        (id_foto_inventario, id_inventario, cap_val, color_val, foto_val),
+                        "INSERT INTO Fotos_inventario (ID_foto_inventario, ID_inventario, Foto_inventario) VALUES (%s, %s, %s)",
+                        (id_foto_inventario, id_inventario, foto_val),
                     )
 
             db.commit()

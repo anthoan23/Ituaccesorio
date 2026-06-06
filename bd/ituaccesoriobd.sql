@@ -1443,8 +1443,6 @@ DROP TABLE IF EXISTS `Fotos_inventario`;
 CREATE TABLE `Fotos_inventario` (
   `ID_foto_inventario` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
-  `Capacidad` varchar(10) DEFAULT NULL,
-  `Color` varchar(15) DEFAULT NULL,
   `Foto_inventario` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID_foto_inventario`),
   KEY `ID_inventario` (`ID_inventario`),

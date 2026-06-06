@@ -72,22 +72,20 @@
 
       <div class="table-wrap" role="region" aria-label="Tabla principal de inventario">
         <table class="table inventory-table">
-              <th>Imagen</th>
           <thead>
             <tr>
+              <th>Imagen</th>
               <th>Clase</th>
               <th>Marca</th>
               <th>Producto</th>
-              <th>Capacidad</th>
-              <th>Color</th>
               <th>Existencia</th>
               <th>Costo venta</th>
               <th>Estado</th>
             </tr>
           </thead>
-              <td colspan="9">Cargando inventario…</td>
+          <tbody id="inventario-tbody">
             <tr>
-              <td colspan="8">Cargando inventario…</td>
+              <td colspan="7">Cargando inventario…</td>
             </tr>
           </tbody>
         </table>
@@ -195,16 +193,6 @@
           <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
             <option value="">Selecciona un producto</option>
           </select>
-        </label>
-
-        <label class="ui-field">
-          <span>Capacidad</span>
-          <input id="inv-capacidad" name="capacidad" type="text" placeholder="512GB" aria-label="Capacidad">
-        </label>
-
-        <label class="ui-field">
-          <span>Color</span>
-          <input id="inv-color" name="color" type="text" placeholder="Negro" aria-label="Color">
         </label>
 
         <label class="ui-field ui-field--full">

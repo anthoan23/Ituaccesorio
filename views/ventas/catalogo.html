@@ -3,7 +3,7 @@
 {% block title %}Ituaccesorio - Catálogo de Productos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogo.css') }}?v=20260602-2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogo.css') }}?v=20260606-2">
 {% endblock %}
 
 {% block content %}
@@ -15,10 +15,10 @@
             <h1 class="catalog-hero__title">NUESTROS PRODUCTOS</h1>
             <p class="catalog-hero__subtitle">Encuentra teléfonos, accesorios y repuestos pensados para iPhone y su ecosistema.</p>
             <div class="catalog-hero__actions">
-                <button id="cart-toggle" class="cart-icon-btn cart-icon-btn--hero" aria-label="Abrir carrito">
+                <!-- <button id="cart-toggle" class="cart-icon-btn cart-icon-btn--hero" aria-label="Abrir carrito">
                     Carrito
                     <span id="cart-count" class="cart-badge">0</span>
-                </button>
+                </button> -->
                 <a class="hero-link" href="#catalogo-completo">Ver catálogo completo</a>
             </div>
         </div>
@@ -122,39 +122,37 @@
                 <span id="productos-count" class="catalog-browser__count"></span>
             </div>
 
+            <div class="catalog-toolbar" aria-label="Búsqueda y filtros del catálogo">
+                <div class="catalog-toolbar__search">
+                    <button id="catalog-search-toggle" class="catalog-search-toggle" type="button" aria-label="Mostrar búsqueda" aria-expanded="false" aria-controls="catalog-search-box">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M10.5 3a7.5 7.5 0 0 1 5.95 12.07l4.24 4.24a1 1 0 0 1-1.42 1.42l-4.24-4.24A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <div id="catalog-search-box" class="catalog-search-box" aria-hidden="true">
+                        <input id="f-texto" type="search" placeholder="Buscar producto o marca..." aria-label="Buscar producto o marca">
+                    </div>
+                </div>
+
+                <label class="catalog-filter-select" for="f-clase">
+                    <span>Clase</span>
+                    <select id="f-clase">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+
+                <label class="catalog-filter-select" for="f-marca">
+                    <span>Marca</span>
+                    <select id="f-marca">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+            </div>
+
             <div id="catalog-status" class="catalog-status" aria-live="polite"></div>
+            <div id="tasas-info" class="tasas-info tasas-info--inline"></div>
 
             <div class="products-grid catalog-browser__grid">
-                <aside class="card filters-panel catalog-filters">
-                    <h2 class="card__title">Filtros</h2>
-                    <div class="filters-panel__section">
-                        <label class="field">
-                            <span class="field__label">Clase</span>
-                            <select id="f-clase">
-                                <option value="">Todas</option>
-                            </select>
-                        </label>
-                        <label class="field">
-                            <span class="field__label">Marca</span>
-                            <select id="f-marca">
-                                <option value="">Todas</option>
-                            </select>
-                        </label>
-                        <label class="field">
-                            <span class="field__label">Buscar</span>
-                            <input id="f-texto" type="search" placeholder="Nombre o marca...">
-                        </label>
-                        <div class="filters-panel__actions">
-                            <button id="btn-aplicar" class="btn btn--yellow">Buscar</button>
-                            <button id="btn-limpiar" class="btn btn--ghost">Limpiar</button>
-                        </div>
-                    </div>
-                    <div class="filters-panel__section">
-                        <h3 class="filters-panel__title">Tasas del día</h3>
-                        <div id="tasas-info" class="tasas-info"></div>
-                    </div>
-                </aside>
-
                 <article class="card catalog-results">
                     <div id="productos-grid" class="productos-grid"></div>
                     <div id="paginacion" class="pager"></div>
@@ -186,5 +184,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script defer src="{{ url_for('static', filename='js/ventas.js') }}?v=20260602-2"></script>
+<script defer src="{{ url_for('static', filename='js/ventas.js') }}?v=20260606-2"></script>
 {% endblock %}

@@ -80,7 +80,7 @@
 
 		if (!Array.isArray(rows) || rows.length === 0) {
 			const tr = document.createElement('tr');
-			tr.innerHTML = '<td colspan="9">No hay datos de inventario.</td>';
+			tr.innerHTML = '<td colspan="7">No hay datos de inventario.</td>';
 			tbody.appendChild(tr);
 			return;
 		}
@@ -91,8 +91,6 @@
 			const tipo = normalizeText(item?.tipo);
 			const marca = normalizeText(item?.N_marca);
 			const modelo = normalizeText(item?.N_modelo);
-			const capacidad = normalizeText(item?.Capacidad);
-			const color = normalizeText(item?.Color);
 			const existencia = item?.Existencia;
 			const costo = item?.Costo_venta;
 
@@ -104,8 +102,6 @@
 				<td>${escapeHtml(tipo)}</td>
 				<td>${escapeHtml(marca)}</td>
 				<td>${escapeHtml(modelo)}</td>
-				<td>${escapeHtml(capacidad)}</td>
-				<td>${escapeHtml(color)}</td>
 				<td><span class="badge ${status.badgeClass}">${escapeHtml(normalizeText(existencia))}</span></td>
 				<td>${formatMoney(costo)}</td>
 				<td><span class="status ${status.statusClass}">${escapeHtml(status.label)}</span></td>
@@ -113,39 +109,6 @@
 			frag.appendChild(tr);
 		}
 		tbody.appendChild(frag);
-	};
-
-	const renderMiniList = (rows) => {
-		const list = document.getElementById('inventario-mini-list');
-		if (!list) return;
-		list.innerHTML = '';
-
-		const items = (Array.isArray(rows) ? rows : [])
-			.filter((x) => x && (x.Capacidad || x.Color))
-			.slice(0, 6);
-
-		if (items.length === 0) {
-			const li = document.createElement('li');
-			li.className = 'mini-list__item';
-			li.innerHTML = '<span class="mini-list__left"><strong>Sin características</strong><span>No hay datos de capacidad/color.</span></span>';
-			list.appendChild(li);
-			return;
-		}
-
-		const frag = document.createDocumentFragment();
-		for (const item of items) {
-			const li = document.createElement('li');
-			li.className = 'mini-list__item';
-			li.innerHTML = `
-				<span class="mini-list__left">
-					<strong>${escapeHtml(normalizeText(item?.N_modelo))}</strong>
-					<span>${escapeHtml(normalizeText(item?.Capacidad))} · ${escapeHtml(normalizeText(item?.Color))}</span>
-				</span>
-				<span class="mini-list__badge">ID ${escapeHtml(normalizeText(item?.ID_producto))}</span>
-			`;
-			frag.appendChild(li);
-		}
-		list.appendChild(frag);
 	};
 
 	const renderStats = (rows) => {
@@ -245,7 +208,6 @@
 	const applyFilterAndRender = () => {
 		const filtered = filterRows(lastRows);
 		renderTable(filtered);
-		renderMiniList(filtered);
 		renderStats(filtered);
 		setNote(`Mostrando ${filtered.length} de ${lastRows.length} registros · ${getFilterLabel()}.`);
 	};
@@ -264,7 +226,6 @@
 				: 'Error cargando inventario.';
 			setNote(message);
 			renderTable([]);
-			renderMiniList([]);
 			renderStats([]);
 		}
 	};
@@ -310,8 +271,6 @@
 		const selectClase = document.getElementById('inv-clase');
 		const selectMarca = document.getElementById('inv-marca');
 		const selectModelo = document.getElementById('inv-modelo');
-		const inputCapacidad = document.getElementById('inv-capacidad');
-		const inputColor = document.getElementById('inv-color');
 		const inputFoto = document.getElementById('inv-foto');
 		const inputExistencia = document.getElementById('inv-existencia');
 		const inputCosto = document.getElementById('inv-costo');
@@ -410,8 +369,6 @@
 			payload.set('id_producto', idProducto);
 			payload.set('existencia', String(existencia));
 			payload.set('costo_venta', String(inputCosto?.value || '').trim());
-			payload.set('capacidad', inputCapacidad ? String(inputCapacidad.value || '') : '');
-			payload.set('color', inputColor ? String(inputColor.value || '') : '');
 
 			const oldText = btnGuardar.textContent;
 			btnGuardar.disabled = true;

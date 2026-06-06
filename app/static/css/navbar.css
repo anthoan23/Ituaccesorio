@@ -97,6 +97,7 @@
 	gap: 1rem;
 }
 
+/* Estilos unificados para iconos de acción (notificaciones y carrito) */
 .icon-btn {
 	width: 44px;
 	height: 44px;
@@ -107,17 +108,65 @@
 	background: var(--navbar-white-bg-soft);
 	color: var(--navbar-white);
 	cursor: pointer;
-	transition: transform 0.15s ease, filter 0.2s ease;
+	transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
 }
 
 .icon-btn:hover {
 	filter: brightness(1.08);
 	transform: translateY(-1px);
+	background: rgba(255, 255, 255, 0.12);
 }
 
 .icon-btn svg {
 	width: 22px;
 	height: 22px;
+}
+
+/* Estilos específicos para el botón de notificaciones */
+.icon-btn--notifications {
+	composes: icon-btn;
+}
+
+/* Estilos específicos para el botón del carrito */
+.icon-btn--cart {
+	composes: icon-btn;
+}
+
+/* Badge unificado para notificaciones y carrito */
+.icon-btn .badge,
+.icon-btn .cart-badge,
+.notifications__badge {
+	position: absolute;
+	top: -5px;
+	right: -8px;
+	background: var(--navbar-yellow);
+	color: var(--navbar-black);
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 900;
+	min-width: 18px;
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 5px;
+	font-family: 'Manrope', sans-serif;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Ocultar badge cuando está vacío */
+.notifications__badge[hidden] {
+	display: none;
+}
+
+/* Asegurar que el contenedor de notificaciones tenga posición relativa para el badge */
+.notifications {
+	position: relative;
+}
+
+/* Asegurar que el botón del carrito tenga posición relativa */
+.icon-btn--cart {
+	position: relative;
 }
 
 .user-menu {
@@ -666,6 +715,7 @@
 	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
 }
 
+/* Estilos responsivos adicionales para los iconos */
 @media (max-width: 720px) {
 	.topbar {
 		padding: 0 0.9rem;
@@ -677,6 +727,20 @@
 
 	.brand__name {
 		display: none;
+	}
+	
+	.icon-btn,
+	.icon-btn--notifications,
+	.icon-btn--cart {
+		width: 40px;
+		height: 40px;
+	}
+	
+	.icon-btn svg,
+	.icon-btn--notifications svg,
+	.icon-btn--cart svg {
+		width: 20px;
+		height: 20px;
 	}
 }
 
@@ -712,5 +776,23 @@
 
 	.drawer__footer .drawer__logout {
 		font-size: 0.92rem;
+	}
+	
+	.topbar__right {
+		gap: 0.5rem;
+	}
+	
+	.icon-btn,
+	.icon-btn--notifications,
+	.icon-btn--cart {
+		width: 36px;
+		height: 36px;
+	}
+	
+	.icon-btn svg,
+	.icon-btn--notifications svg,
+	.icon-btn--cart svg {
+		width: 18px;
+		height: 18px;
 	}
 }
