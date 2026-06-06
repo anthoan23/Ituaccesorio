@@ -281,11 +281,7 @@
                     : err.message;
                 container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
             }
-            const badge = document.getElementById("cart-count");
-            if (badge) {
-                badge.textContent = "0";
-                badge.style.display = "none";
-            }
+            actualizarBadgeCarrito();
             return null;
         }
     }
@@ -298,7 +294,6 @@
             });
             await cargarCarrito();
         } catch (err) {
-            // El modal global ya maneja errores de /api/ en POST.
             if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
         }
     }
@@ -323,11 +318,20 @@
     }
 
     function actualizarBadgeCarrito() {
+        // Actualizar badge del botón original (hero)
         const badge = document.getElementById("cart-count");
         if (badge) {
             const total = state.carrito.reduce((sum, item) => sum + item.cantidad, 0);
             badge.textContent = total;
             badge.style.display = total > 0 ? "flex" : "none";
+        }
+        
+        // Actualizar badge del botón en navbar
+        const navBadge = document.getElementById("cart-nav-count");
+        if (navBadge) {
+            const total = state.carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            navBadge.textContent = total;
+            navBadge.style.display = total > 0 ? "flex" : "none";
         }
     }
 
@@ -363,7 +367,6 @@
             </div>
         `}).join("");
         
-        // Total Bs uses tasa paralelo; USD mostrado es conversion de ese Bs por la tasa oficial
         const totalBs = state.carrito.reduce((sum, item) => sum + (Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad), 0);
         const totalUsdAjustado = totalBs / (state.tasas.oficial || 1);
 
@@ -522,7 +525,6 @@
             return;
         }
         
-        // Recoger datos del formulario dinámico
         const datosPago = {};
         const formContainer = document.getElementById("form-pago-container");
         if (formContainer) {
@@ -531,7 +533,6 @@
             });
         }
         
-        // Validar campos requeridos
         const requiredFields = formContainer?.querySelectorAll("[required]") || [];
         for (const field of requiredFields) {
             if (!field.value) {
@@ -547,7 +548,6 @@
             });
             
             facturaPendiente = data.factura_id;
-            // El modal global se dispara por el POST; damos un momento para que se renderice antes del redirect.
             window.setTimeout(() => {
                 window.location.href = "/catalogo";
             }, 600);
@@ -716,10 +716,8 @@
             if (!list) return;
             clientesMap = {};
             const clientes = data.clientes || [];
-            // Añadir opción con formato `ID - Nombre Apellido` para selección y búsqueda
             list.innerHTML = clientes.map(c => {
                 const text = `${c.ID_c} - ${c.nombre} ${c.apellido}`.trim();
-                // Guardar mapeo por nombre y por id-string
                 clientesMap[String(c.ID_c)] = c.ID_c;
                 clientesMap[(c.nombre + ' ' + (c.apellido || '')).trim().toLowerCase()] = c.ID_c;
                 return `<option value="${escapeHtml(text)}"></option>`;
@@ -805,7 +803,6 @@
             const parts = v.split(' - ');
             if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
         } else {
-            // Buscar por nombre en el map (case-insensitive)
             const lookup = v.toLowerCase();
             if (clientesMap[lookup]) clienteId = clientesMap[lookup];
         }
@@ -888,6 +885,17 @@
             if (e.key === "Escape") closeModal();
         });
         
+        // ==================== INTEGRACIÓN CARRITO EN NAVBAR ====================
+        // Configurar botón del carrito en navbar
+        const navCartBtn = document.getElementById("cart-nav-btn");
+        if (navCartBtn) {
+            navCartBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openCartModal();
+            });
+        }
+        
         if (path === "/catalogo") {
             const cartToggle = document.getElementById("cart-toggle");
             const cartVaciar = document.getElementById("cart-vaciar");
@@ -946,7 +954,6 @@
             const carritoData = await fetchJson("/api/carrito");
             const resumenContainer = document.getElementById("resumen-carrito");
             if (resumenContainer && carritoData.items?.length) {
-                // Recalculate totals using paralelo for Bs and convert to USD via tasa oficial
                     const totalBs = (carritoData.items || []).reduce((sum, i) => sum + (Number(i.precio_usd) * (carritoData.tasas?.paralelo || state.tasas.paralelo || state.tasas.oficial) * i.cantidad), 0);
                     const totalUsd = totalBs / (carritoData.tasas?.oficial || state.tasas.oficial || 1);
                     resumenContainer.innerHTML = `
