@@ -20,3 +20,7 @@ EXPOSE 5000
 
 # Ejecutamos el archivo de entrada
 CMD ["python", "run.py"]
+
+# Esto solo lo vamos a poner cuando nos toque subir a produccion, para que en desarrollo podamos usar el modo debug de Flask y no tener que reiniciar el contenedor cada vez que hagamos un cambio
+# y funcionen las notificaciones en tiempo real sin tener que configurar un bus de mensajes externo como Redis o RabbitMQ
+# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "8", "--worker-class", "gthread", "run:app"]

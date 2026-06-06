@@ -1,10 +1,46 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required
+
+from app.models.bitacora import registrar_en_bitacora
 
 from app.models.productos import Productos
 
 productos_blueprint = Blueprint("productos", __name__)
 productos_modelo = Productos()
+
+
+def _resolver_usuario_actual():
+    """Obtiene la información completa del usuario actual para la bitácora y notificaciones"""
+    usuario = getattr(g, "user", None)
+    if not usuario:
+        return {
+            "id": "SYSTEM",
+            "nombre": "SISTEMA",
+            "foto": None
+        }
+    
+    if isinstance(usuario, dict):
+        user_id = usuario.get("usuario_id") or usuario.get("id") or "SYSTEM"
+        user_name = usuario.get("usuario_nombre") or usuario.get("nombre") or usuario.get("username") or "USUARIO"
+        user_foto = usuario.get("foto_perfil") or None
+    else:
+        user_id = getattr(usuario, "usuario_id", None) or getattr(usuario, "id", None) or "SYSTEM"
+        user_name = getattr(usuario, "usuario_nombre", None) or getattr(usuario, "nombre", None) or getattr(usuario, "username", None) or "USUARIO"
+        user_foto = getattr(usuario, "foto_perfil", None) or None
+    
+    return {
+        "id": user_id,
+        "nombre": user_name,
+        "foto": user_foto
+    }
+
+
+def _resolver_usuario_id_str():
+    """Para compatibilidad con código existente que espera string"""
+    info = _resolver_usuario_actual()
+    if info["nombre"] and info["id"] != "SYSTEM":
+        return f"{info['nombre']} ({info['id']})"
+    return info["id"] if info["id"] else "SISTEMA"
 
 
 def _validate_len(nombre_campo: str, valor: str, max_len: int):
@@ -83,6 +119,19 @@ def api_crear_clase():
     modelo = Productos()
     try:
         new_id = modelo.crear_clase(nombre=nombre, num_i=num_i_val)
+        
+        # ========== BITÁCORA ==========
+        user_info = _resolver_usuario_actual()
+        registrar_en_bitacora(
+            "Crear clase",
+            f"Clase creada: {nombre} (ID: {new_id})",
+            usuario_id=user_info["id"],
+            modulo_nombre="Productos",
+            usuario_nombre=user_info["nombre"],
+            usuario_foto=user_info["foto"]
+        )
+        # ==============================
+        
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -110,6 +159,20 @@ def api_actualizar_clase(id_clase: str):
     modelo = Productos()
     try:
         ok = modelo.actualizar_clase(id_clase=id_clase, nombre=nombre, num_i=num_i_val)
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Actualizar clase",
+                f"Clase actualizada: {nombre} (ID: {id_clase})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -121,6 +184,20 @@ def api_eliminar_clase(id_clase: str):
     modelo = Productos()
     try:
         ok = modelo.eliminar_clase(id_clase=id_clase)
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Eliminar clase",
+                f"Clase eliminada (ID: {id_clase})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -158,6 +235,19 @@ def api_crear_marca():
     modelo = Productos()
     try:
         new_id = modelo.crear_marca(id_clase=id_clase_val, nombre=nombre)
+        
+        # ========== BITÁCORA ==========
+        user_info = _resolver_usuario_actual()
+        registrar_en_bitacora(
+            "Crear marca",
+            f"Marca creada: {nombre} (ID: {new_id})",
+            usuario_id=user_info["id"],
+            modulo_nombre="Productos",
+            usuario_nombre=user_info["nombre"],
+            usuario_foto=user_info["foto"]
+        )
+        # ==============================
+        
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -186,6 +276,20 @@ def api_actualizar_marca(id_marca: str):
     modelo = Productos()
     try:
         ok = modelo.actualizar_marca(id_marca=id_marca, id_clase=id_clase_val, nombre=nombre)
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Actualizar marca",
+                f"Marca actualizada: {nombre} (ID: {id_marca})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -197,6 +301,20 @@ def api_eliminar_marca(id_marca: str):
     modelo = Productos()
     try:
         ok = modelo.eliminar_marca(id_marca=id_marca)
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Eliminar marca",
+                f"Marca eliminada (ID: {id_marca})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -243,6 +361,19 @@ def api_crear_modelo():
     modelo = Productos()
     try:
         new_id = modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
+        
+        # ========== BITÁCORA ==========
+        user_info = _resolver_usuario_actual()
+        registrar_en_bitacora(
+            "Crear producto",
+            f"Producto creado: {nombre} (ID: {new_id})",
+            usuario_id=user_info["id"],
+            modulo_nombre="Productos",
+            usuario_nombre=user_info["nombre"],
+            usuario_foto=user_info["foto"]
+        )
+        # ==============================
+        
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -284,6 +415,20 @@ def api_actualizar_modelo(id_modelo: str):
             nombre=nombre,
             descripcion=desc_val,
         )
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Actualizar producto",
+                f"Producto actualizado: {nombre} (ID: {id_modelo})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -295,6 +440,20 @@ def api_eliminar_modelo(id_modelo: str):
     modelo = Productos()
     try:
         ok = modelo.eliminar_modelo(id_modelo=id_modelo)
+        
+        # ========== BITÁCORA ==========
+        if ok:
+            user_info = _resolver_usuario_actual()
+            registrar_en_bitacora(
+                "Eliminar producto",
+                f"Producto eliminado (ID: {id_modelo})",
+                usuario_id=user_info["id"],
+                modulo_nombre="Productos",
+                usuario_nombre=user_info["nombre"],
+                usuario_foto=user_info["foto"]
+            )
+        # ==============================
+        
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
