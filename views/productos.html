@@ -8,6 +8,14 @@
 
 {% block content %}
 <main class="page">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Productos</span>
+      </li>
+    </ol>
+  </nav>
   <header class="products-hero" aria-label="Encabezado de productos">
     <div class="products-hero__copy">
       <h1 class="products-hero__title">Productos</h1>

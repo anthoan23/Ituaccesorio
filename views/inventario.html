@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Inventario{% endblock %}
 
@@ -9,10 +10,18 @@
 
 {% block content %}
 <main class="page inventario-page">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Inventario</span>
+      </li>
+    </ol>
+  </nav>
   <section class="hero" aria-label="Resumen del inventario">
     <div class="hero__copy">
       <h1>Inventario</h1>
-      
+
 
       <div class="hero__chips" aria-label="Filtros rápidos">
         <span class="chip chip--active" role="button" tabindex="0" aria-pressed="true" data-filter="all">Todos</span>
@@ -55,6 +64,7 @@
         </div>
 
         <div class="panel__tools" aria-label="Acciones de la vista">
+          <button class="btn btn--primary" type="button" data-open-modal="modal-inventario-stock">Añadir Stock</button>
           <button class="btn btn--ghost" type="button">Filtrar</button>
           <button class="btn btn--ghost" type="button">Exportar</button>
         </div>
@@ -62,6 +72,7 @@
 
       <div class="table-wrap" role="region" aria-label="Tabla principal de inventario">
         <table class="table inventory-table">
+              <th>Imagen</th>
           <thead>
             <tr>
               <th>Clase</th>
@@ -74,7 +85,7 @@
               <th>Estado</th>
             </tr>
           </thead>
-          <tbody id="inventario-tbody">
+              <td colspan="9">Cargando inventario…</td>
             <tr>
               <td colspan="8">Cargando inventario…</td>
             </tr>
@@ -82,141 +93,142 @@
         </table>
       </div>
 
+  </section>
       <p class="table-note" id="inventario-note">La tabla une inventario, producto, marca, clase y atributos.</p>
+  <section class="inventory-extras" aria-label="Detalles del inventario">
+    <article class="panel panel--stacked">
+      <h2 class="panel__title">Piezas consumidas en reparaciones</h2>
+      <article class="panel panel--stacked panel--form" aria-label="Formulario de stock">
+      <div class="repuestos">
+        <div class="repuesto">
+          <div>
+            <strong>Mica</strong>
+            <span>Orden #1 · ID producto 1</span>
+          </div>
+          <strong class="repuesto__qty">1</strong>
+            <strong class="repuesto__qty">1</strong>
+        <div class="repuesto">
+          <div>
+            <strong>Puerto de carga</strong>
+            <span>Orden #4 · ID producto 2</span>
+          </div>
+          <strong class="repuesto__qty">1</strong>
+          </div>
+        <div class="repuesto">
+          <div>
+            <strong>Altavoz</strong>
+            <span>Orden #5 · ID producto 7</span>
+          </div>
+          <strong class="repuesto__qty">1</strong>
+          <div class="progress"><span class="progress__accent" style="width: 22%"></span></div>
+      </div>
     </article>
 
-    <aside class="sidebar" aria-label="Detalles del inventario">
-      <article class="panel panel--stacked panel--form" aria-label="Formulario de stock">
-        <h2 class="panel__title">Registrar stock</h2>
-
-        <form id="inventario-form" class="inventory-form" autocomplete="off">
-          <label class="field">
-            <span class="field__label">Clase</span>
-            <select id="inv-clase" name="id_clase" aria-label="Clase" required>
-              <option value="">Selecciona una clase</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Marca</span>
-            <select id="inv-marca" name="id_marca" aria-label="Marca" required>
-              <option value="">Selecciona una marca</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Producto</span>
-            <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
-              <option value="">Selecciona un producto</option>
-            </select>
-          </label>
-
-          <div class="inventory-form__grid">
-            <label class="field">
-              <span class="field__label">Capacidad</span>
-              <input id="inv-capacidad" name="capacidad" type="text" placeholder="512GB" aria-label="Capacidad">
-            </label>
-
-            <label class="field">
-              <span class="field__label">Color</span>
-              <input id="inv-color" name="color" type="text" placeholder="Negro" aria-label="Color">
-            </label>
+    <article class="panel panel--stacked panel--soft">
+      <h2 class="panel__title">Resumen visual del inventario</h2>
+      <div class="progress-list" aria-label="Indicadores rápidos">
+        <div class="progress-row">
+          <span>Stock saludable</span>
+          <span>78%</span>
           </div>
+        <div class="progress"><span style="width: 78%"></span></div>
 
-          <div class="inventory-form__grid">
-            <label class="field">
-              <span class="field__label">Existencia</span>
-              <input id="inv-existencia" name="existencia" type="number" min="0" placeholder="0" aria-label="Existencia" required>
-            </label>
-
-            <label class="field">
-              <span class="field__label">Costo venta</span>
-              <input id="inv-costo" name="costo_venta" type="text" placeholder="0" inputmode="numeric" aria-label="Costo venta" required>
-            </label>
-          </div>
-
-          <div class="inventory-form__actions">
-            <button id="inv-guardar" class="btn btn--primary" type="submit">Guardar stock</button>
-            <button id="inv-limpiar" class="btn btn--ghost" type="button">Limpiar</button>
-          </div>
-        </form>
-      </article>
-      
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Piezas consumidas en reparaciones</h2>
-
-        <div class="repuestos">
-          <div class="repuesto">
-            <div>
-              <strong>Mica</strong>
-              <span>Orden #1 · ID producto 1</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
-          </div>
-          <div class="repuesto">
-            <div>
-              <strong>Puerto de carga</strong>
-              <span>Orden #4 · ID producto 2</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
-          </div>
-          <div class="repuesto">
-            <div>
-              <strong>Altavoz</strong>
-              <span>Orden #5 · ID producto 7</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
-          </div>
+        <div class="progress-row">
+          <span>Productos críticos</span>
+          <span>22%</span>
         </div>
-      </article>
+        <div class="progress"><span class="progress__accent" style="width: 22%"></span></div>
+      </div>
+    </article>
 
-      <article class="panel panel--stacked panel--soft">
-        <h2 class="panel__title">Resumen visual del inventario</h2>
-        <div class="progress-list" aria-label="Indicadores rápidos">
-          <div class="progress-row">
-            <span>Stock saludable</span>
-            <span>78%</span>
-          </div>
-          <div class="progress"><span style="width: 78%"></span></div>
+    <article class="panel panel--stacked">
+      <h2 class="panel__title">Jerarquía de clase, marca y producto</h2>
 
-          <div class="progress-row">
-            <span>Productos críticos</span>
-            <span>22%</span>
-          </div>
-          <div class="progress"><span class="progress__accent" style="width: 22%"></span></div>
+      <div class="hierarchy">
+        <div class="hierarchy__group">
+          <span class="hierarchy__label">Clase</span>
+          <strong>Telefonos</strong>
+          <span class="hierarchy__meta">ID_clase: 1</span>
         </div>
-      </article>
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Jerarquía de clase, marca y producto</h2>
-
-        <div class="hierarchy">
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Clase</span>
-            <strong>Telefonos</strong>
-            <span class="hierarchy__meta">ID_clase: 1</span>
-          </div>
-          <div class="hierarchy__arrow">↓</div>
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Marca</span>
-            <strong>Samsung</strong>
-            <span class="hierarchy__meta">ID_marca: 1</span>
-          </div>
-          <div class="hierarchy__arrow">↓</div>
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Producto</span>
-            <strong>Galaxy S23 Ultra</strong>
-            <span class="hierarchy__meta">ID_producto: 1</span>
-          </div>
+        <div class="hierarchy__arrow">↓</div>
+        <div class="hierarchy__group">
+          <span class="hierarchy__label">Marca</span>
+          <strong>Samsung</strong>
+          <span class="hierarchy__meta">ID_marca: 1</span>
         </div>
+        <div class="hierarchy__arrow">↓</div>
+        <div class="hierarchy__group">
+          <span class="hierarchy__label">Producto</span>
+          <strong>Galaxy S23 Ultra</strong>
+          <span class="hierarchy__meta">ID_producto: 1</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel panel--stacked">
+      <h2 class="panel__title">Atributos clave por producto</h2>
+
+      <ul class="mini-list" aria-label="Lista de caracteristicas" id="inventario-mini-list"></ul>
+    </article>
+  </section>
       </article>
 
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Atributos clave por producto</h2>
+  {% call modal('modal-inventario-stock', 'Añadir stock', 'lg') %}
+    <form id="inventario-form" class="inventory-form" autocomplete="off" enctype="multipart/form-data">
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="ui-field">
+          <span>Clase *</span>
+          <select id="inv-clase" name="id_clase" aria-label="Clase" required>
+            <option value="">Selecciona una clase</option>
+          </select>
+        </label>
 
-        <ul class="mini-list" aria-label="Lista de caracteristicas" id="inventario-mini-list"></ul>
-      </article>
+        <label class="ui-field">
+          <span>Marca *</span>
+          <select id="inv-marca" name="id_marca" aria-label="Marca" required>
+            <option value="">Selecciona una marca</option>
+          </select>
+        </label>
 
-    </aside>
+        <label class="ui-field ui-field--full">
+          <span>Producto *</span>
+          <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
+            <option value="">Selecciona un producto</option>
+          </select>
+        </label>
+
+        <label class="ui-field">
+          <span>Capacidad</span>
+          <input id="inv-capacidad" name="capacidad" type="text" placeholder="512GB" aria-label="Capacidad">
+        </label>
+
+        <label class="ui-field">
+          <span>Color</span>
+          <input id="inv-color" name="color" type="text" placeholder="Negro" aria-label="Color">
+        </label>
+
+        <label class="ui-field ui-field--full">
+          <span>Foto *</span>
+          <input id="inv-foto" name="foto_inventario" type="file" accept="image/*" required>
+        </label>
+
+        <label class="ui-field">
+          <span>Existencia *</span>
+          <input id="inv-existencia" name="existencia" type="number" min="0" placeholder="0" aria-label="Existencia" required>
+        </label>
+
+        <label class="ui-field">
+          <span>Costo venta *</span>
+          <input id="inv-costo" name="costo_venta" type="text" placeholder="0" inputmode="numeric" aria-label="Costo venta" required>
+        </label>
+      </div>
+
+      <div class="ui-form__actions">
+        <button id="inv-guardar" class="ui-btn ui-btn--primary" type="submit">Guardar stock</button>
+        <button id="inv-limpiar" class="ui-btn ui-btn--ghost" type="button">Limpiar</button>
+      </div>
+    </form>
+  {% endcall %}
   </section>
 </main>
 {% endblock %}
