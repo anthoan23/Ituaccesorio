@@ -397,3 +397,100 @@ body {
     padding: 1rem;
   }
 }
+
+/* Agregar al final del archivo tradein.css */
+.tradein-result__messages .error {
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.tradein-result__messages .warning {
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.tradein-result__messages .success {
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+/* Agregar al final del archivo tradein.css */
+
+/* Estadísticas */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.stat-card .value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--yellow);
+}
+
+.stat-card .label {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+/* Pestañas */
+.gestion-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.5rem;
+}
+
+.gestion-tab {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.gestion-tab:hover {
+    background: rgba(243, 197, 0, 0.1);
+}
+
+.gestion-tab.active {
+    background: var(--yellow);
+    color: #111;
+}
+
+/* Modal más ancho para el formulario */
+#modal-tradein .modal__dialog {
+    width: min(800px, 95vw);
+}
+
+/* Cotización manual */
+.cotizacion-manual {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.cotizacion-manual h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+}

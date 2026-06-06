@@ -1,10 +1,24 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, g
 from app.models.tradein import TradeIn
+from app.models.bitacora import registrar_en_bitacora
+from app.utils.decorators import jwt_required, tiene_permiso
 
 tradein_blueprint = Blueprint("tradein", __name__)
 
 
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "CLIENTE"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "CLIENTE")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "CLIENTE")
+
+
 @tradein_blueprint.route("/trade-in", methods=["GET"])
+@jwt_required
+@tiene_permiso('Trade-in', 'consultar')
 def pagina_tradein():
     modelo = TradeIn()
     return render_template(
@@ -18,6 +32,8 @@ def pagina_tradein():
 
 
 @tradein_blueprint.route("/api/trade-in", methods=["GET"])
+@jwt_required
+@tiene_permiso('Trade-in', 'consultar')
 def obtener_tradein_json():
     modelo = TradeIn()
     return jsonify({
@@ -28,26 +44,34 @@ def obtener_tradein_json():
 
 
 @tradein_blueprint.route("/api/trade-in/cotizar", methods=["POST"])
+@jwt_required
+@tiene_permiso('Trade-in', 'registrar')
 def cotizar_tradein():
     datos = request.get_json(silent=True) or {}
     modelo = TradeIn()
+    usuario_id = _usuario_actual()
 
+    # Validar liberación del equipo
     liberado = str(datos.get("liberado", "")).strip().lower()
     if liberado not in ("si", "s", "sí", "1", "true", "on", "yes"):
         return jsonify({
             "success": False,
-            "error": "Lo sentimos, el equipo debe estar liberado para calificar",
+            "error": "Lo sentimos, el equipo debe estar liberado para calificar"
         }), 400
 
     id_producto = datos.get("id_producto")
     if id_producto in (None, ""):
         return jsonify({
             "success": False,
-            "error": "Debes seleccionar un equipo para cotizar.",
+            "error": "Debes seleccionar un equipo para cotizar."
         }), 400
 
     try:
-        resultado = modelo.calcular_cotizacion(int(id_producto), datos.get("fallas") or [])
+        resultado = modelo.calcular_cotizacion(
+            int(id_producto), 
+            datos.get("fallas") or [],
+            usuario_id=usuario_id
+        )
     except ValueError:
         return jsonify({
             "success": False,

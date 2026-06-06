@@ -4,6 +4,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tradein.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -40,7 +41,7 @@
         <input type="hidden" id="tradein-csrf-token" value="{{ csrf_token() }}">
 
         <label class="tradein-field">
-          <span class="tradein-field__label">Equipo</span>
+          <span class="tradein-field__label">Equipo *</span>
           <select class="tradein-field__input" id="tradein-equipo" name="id_producto" required>
             <option value="">Selecciona un equipo</option>
             {% for equipo in equipos %}
@@ -52,10 +53,10 @@
         </label>
 
         <fieldset class="tradein-fieldset">
-          <legend class="tradein-field__label">Liberación del equipo</legend>
+          <legend class="tradein-field__label">Liberación del equipo *</legend>
           <div class="tradein-choice-group">
             <label class="tradein-choice">
-              <input type="radio" name="liberado" value="si" checked>
+              <input type="radio" name="liberado" value="si" checked required>
               <span>Sí, está liberado</span>
             </label>
             <label class="tradein-choice">
@@ -129,5 +130,6 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tradein.js') }}"></script>
 {% endblock %}
