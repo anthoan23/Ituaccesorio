@@ -45,9 +45,9 @@ class Empleados(conectar):
                 e.Celular_empleado AS celular,
                 e.Correo_empleado AS correo,
                 e.Direccion_empleado AS direccion,
-                c.N_cargo AS cargo_nombre,
+                c.Nombre_cargo AS cargo_nombre,
                 GROUP_CONCAT(DISTINCT esp.ID_especialidad) AS especialidades_ids,
-                GROUP_CONCAT(DISTINCT esp.N_especialidad) AS especialidades_nombres
+                GROUP_CONCAT(DISTINCT esp.Nombre_especialidad) AS especialidades_nombres
             FROM Empleado e
             JOIN Cargo c ON e.ID_cargo = c.ID_cargo
             LEFT JOIN Capacitacion cap ON e.ID_empleado = cap.ID_empleado
@@ -205,7 +205,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT INTO Especialidad (N_especialidad) VALUES (%s)",
+                "INSERT INTO Especialidad (Nombre_especialidad) VALUES (%s)",
                 (especialidad,),
             )
             db.commit()
@@ -251,7 +251,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "DELETE FROM Especialidad WHERE N_especialidad = %s",
+                "DELETE FROM Especialidad WHERE Nombre_especialidad = %s",
                 (n_especialidad,),
             )
             db.commit()
@@ -362,7 +362,7 @@ class Empleados(conectar):
         cursor = db.cursor()
         try:
             cursor.execute(
-                "UPDATE Especialidad SET N_especialidad = %s WHERE ID_especialidad = %s",
+                "UPDATE Especialidad SET Nombre_especialidad = %s WHERE ID_especialidad = %s",
                 (especialidad_n, id_especialidad),
             )
             db.commit()
@@ -384,7 +384,7 @@ class Empleados(conectar):
 
     def verificar_espesialidad(self, especialidad: str) -> bool:
         datos = self._consultar(
-            "SELECT 1 FROM Especialidad WHERE N_especialidad = %s LIMIT 1",
+            "SELECT 1 FROM Especialidad WHERE Nombre_especialidad = %s LIMIT 1",
             (especialidad,),
         )
         return bool(datos)

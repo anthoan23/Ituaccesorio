@@ -27,6 +27,21 @@ def _parse_int_field(nombre_campo: str, valor, required: bool = True) -> int | N
     return num
 
 
+def _parse_id_field(nombre_campo: str, valor, required: bool = True) -> str | None:
+    if valor in (None, ""):
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    texto = str(valor).strip()
+    if not texto:
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    if len(texto) > 10:
+        raise ValueError(f"{nombre_campo} no puede exceder 10 caracteres.")
+    return texto
+
+
 @productos_blueprint.route("/productos", methods=["GET"])
 @jwt_required
 def pagina_productos():
@@ -41,7 +56,8 @@ def pagina_productos():
 @productos_blueprint.route("/api/productos/clases", methods=["GET"])
 @jwt_required
 def api_listar_clases():
-    clases = productos_modelo.listar_clases() or []
+    modelo = Productos()
+    clases = modelo.listar_clases() or []
     return jsonify({"success": True, "clases": clases})
 
 
@@ -64,16 +80,17 @@ def api_crear_clase():
     except Exception:
         return jsonify({"success": False, "error": "Num_i debe ser un número."}), 400
 
+    modelo = Productos()
     try:
-        new_id = productos_modelo.crear_clase(nombre=nombre, num_i=num_i_val)
+        new_id = modelo.crear_clase(nombre=nombre, num_i=num_i_val)
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/clases/<int:id_clase>", methods=["PUT"])
+@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
 @jwt_required
-def api_actualizar_clase(id_clase: int):
+def api_actualizar_clase(id_clase: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
     num_i = datos.get("num_i")
@@ -90,18 +107,20 @@ def api_actualizar_clase(id_clase: int):
     except Exception:
         return jsonify({"success": False, "error": "Num_i debe ser un número."}), 400
 
+    modelo = Productos()
     try:
-        ok = productos_modelo.actualizar_clase(id_clase=id_clase, nombre=nombre, num_i=num_i_val)
+        ok = modelo.actualizar_clase(id_clase=id_clase, nombre=nombre, num_i=num_i_val)
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/clases/<int:id_clase>", methods=["DELETE"])
+@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
 @jwt_required
-def api_eliminar_clase(id_clase: int):
+def api_eliminar_clase(id_clase: str):
+    modelo = Productos()
     try:
-        ok = productos_modelo.eliminar_clase(id_clase=id_clase)
+        ok = modelo.eliminar_clase(id_clase=id_clase)
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -110,8 +129,9 @@ def api_eliminar_clase(id_clase: int):
 @productos_blueprint.route("/api/productos/marcas", methods=["GET"])
 @jwt_required
 def api_listar_marcas():
-    id_clase = request.args.get("clase_id", default=None, type=int)
-    marcas = productos_modelo.listar_marcas(id_clase=id_clase) or []
+    id_clase = request.args.get("clase_id", default=None, type=str)
+    modelo = Productos()
+    marcas = modelo.listar_marcas(id_clase=id_clase) or []
     return jsonify({"success": True, "marcas": marcas})
 
 
@@ -130,23 +150,22 @@ def api_crear_marca():
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
-    id_clase_val = None
-    if id_clase not in (None, ""):
-        try:
-            id_clase_val = int(id_clase)
-        except Exception:
-            return jsonify({"success": False, "error": "La clase debe ser un número."}), 400
-
     try:
-        new_id = productos_modelo.crear_marca(id_clase=id_clase_val, nombre=nombre)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=False)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        new_id = modelo.crear_marca(id_clase=id_clase_val, nombre=nombre)
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/marcas/<int:id_marca>", methods=["PUT"])
+@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
 @jwt_required
-def api_actualizar_marca(id_marca: int):
+def api_actualizar_marca(id_marca: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
     id_clase = datos.get("id_clase")
@@ -159,25 +178,25 @@ def api_actualizar_marca(id_marca: int):
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
-    id_clase_val = None
-    if id_clase not in (None, ""):
-        try:
-            id_clase_val = int(id_clase)
-        except Exception:
-            return jsonify({"success": False, "error": "La clase debe ser un número."}), 400
-
     try:
-        ok = productos_modelo.actualizar_marca(id_marca=id_marca, id_clase=id_clase_val, nombre=nombre)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=False)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        ok = modelo.actualizar_marca(id_marca=id_marca, id_clase=id_clase_val, nombre=nombre)
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/marcas/<int:id_marca>", methods=["DELETE"])
+@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
 @jwt_required
-def api_eliminar_marca(id_marca: int):
+def api_eliminar_marca(id_marca: str):
+    modelo = Productos()
     try:
-        ok = productos_modelo.eliminar_marca(id_marca=id_marca)
+        ok = modelo.eliminar_marca(id_marca=id_marca)
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -186,10 +205,11 @@ def api_eliminar_marca(id_marca: int):
 @productos_blueprint.route("/api/productos/modelos", methods=["GET"])
 @jwt_required
 def api_listar_modelos():
-    id_marca = request.args.get("marca_id", default=None, type=int)
-    id_clase = request.args.get("clase_id", default=None, type=int)
+    id_marca = request.args.get("marca_id", default=None, type=str)
+    id_clase = request.args.get("clase_id", default=None, type=str)
     q = request.args.get("q", default=None, type=str)
-    modelos = productos_modelo.listar_modelos(id_marca=id_marca, id_clase=id_clase, q=q) or []
+    modelo = Productos()
+    modelos = modelo.listar_modelos(id_marca=id_marca, id_clase=id_clase, q=q) or []
     return jsonify({"success": True, "modelos": modelos})
 
 
@@ -207,8 +227,8 @@ def api_crear_modelo():
 
     try:
         _validate_len("Producto", nombre, 30)
-        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
-        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+        id_marca_val = _parse_id_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=True)
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
@@ -220,16 +240,17 @@ def api_crear_modelo():
         except Exception as error:
             return jsonify({"success": False, "error": str(error)}), 400
 
+    modelo = Productos()
     try:
-        new_id = productos_modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
+        new_id = modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/modelos/<int:id_modelo>", methods=["PUT"])
+@productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["PUT"])
 @jwt_required
-def api_actualizar_modelo(id_modelo: int):
+def api_actualizar_modelo(id_modelo: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
     id_marca = datos.get("id_marca")
@@ -241,8 +262,8 @@ def api_actualizar_modelo(id_modelo: int):
 
     try:
         _validate_len("Producto", nombre, 30)
-        id_marca_val = _parse_int_field("La marca", id_marca, required=True)
-        id_clase_val = _parse_int_field("La clase", id_clase, required=True)
+        id_marca_val = _parse_id_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=True)
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
@@ -254,8 +275,9 @@ def api_actualizar_modelo(id_modelo: int):
         except Exception as error:
             return jsonify({"success": False, "error": str(error)}), 400
 
+    modelo = Productos()
     try:
-        ok = productos_modelo.actualizar_modelo(
+        ok = modelo.actualizar_modelo(
             id_modelo=id_modelo,
             id_clase=id_clase_val,
             id_marca=id_marca_val,
@@ -267,11 +289,12 @@ def api_actualizar_modelo(id_modelo: int):
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/modelos/<int:id_modelo>", methods=["DELETE"])
+@productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["DELETE"])
 @jwt_required
-def api_eliminar_modelo(id_modelo: int):
+def api_eliminar_modelo(id_modelo: str):
+    modelo = Productos()
     try:
-        ok = productos_modelo.eliminar_modelo(id_modelo=id_modelo)
+        ok = modelo.eliminar_modelo(id_modelo=id_modelo)
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400

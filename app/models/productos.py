@@ -4,6 +4,20 @@ from app.models.database import conectar
 
 
 class Productos(conectar):
+    def _siguiente_id_texto(self, tabla: str, columna: str) -> str:
+        db = self.conexion1()
+        if not db:
+            raise RuntimeError("No se pudo conectar a la base de datos.")
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(f"SELECT COALESCE(MAX(CAST({columna} AS UNSIGNED)), 0) + 1 FROM {tabla}")
+            row = cursor.fetchone()
+            return str(int(row[0] or 0))
+        finally:
+            cursor.close()
+            db.close()
+
     def _consultar(self, query: str, params: tuple | list | None = None):
         db = self.conexion1()
         if not db:
@@ -42,31 +56,32 @@ class Productos(conectar):
                 Nombre_Clase AS nombre,
                 NULL AS num_i
             FROM Clase_producto
-            ORDER BY Nombre_Clase ASC
+            ORDER BY CAST(ID_Clase AS UNSIGNED) ASC, Nombre_Clase ASC
             """
         )
 
-    def crear_clase(self, nombre: str, num_i: int | None = None) -> int:
-        new_id = self._ejecutar(
-            "INSERT INTO Clase_producto (Nombre_Clase) VALUES (%s)",
-            (nombre,),
+    def crear_clase(self, nombre: str, num_i: int | None = None) -> str:
+        new_id = self._siguiente_id_texto("Clase_producto", "ID_Clase")
+        resultado = self._ejecutar(
+            "INSERT INTO Clase_producto (ID_Clase, Nombre_Clase) VALUES (%s, %s)",
+            (new_id, nombre),
         )
-        if new_id is None:
+        if resultado is None:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        return int(new_id)
+        return new_id
 
-    def actualizar_clase(self, id_clase: int, nombre: str, num_i: int | None = None) -> bool:
+    def actualizar_clase(self, id_clase: str, nombre: str, num_i: int | None = None) -> bool:
         resultado = self._ejecutar(
             "UPDATE Clase_producto SET Nombre_Clase=%s WHERE ID_Clase=%s",
             (nombre, id_clase),
         )
         return bool(resultado and resultado > 0)
 
-    def eliminar_clase(self, id_clase: int) -> bool:
+    def eliminar_clase(self, id_clase: str) -> bool:
         resultado = self._ejecutar("DELETE FROM Clase_producto WHERE ID_Clase=%s", (id_clase,))
         return bool(resultado and resultado > 0)
 
-    def listar_marcas(self, id_clase: int | None = None):
+    def listar_marcas(self, id_clase: str | None = None):
         if id_clase:
             return self._consultar(
                 """
@@ -78,7 +93,7 @@ class Productos(conectar):
                 JOIN Producto p ON p.ID_marca = ma.ID_marca
                 WHERE p.ID_Clase = %s
                 GROUP BY ma.ID_marca, ma.Nombre_marca
-                ORDER BY ma.Nombre_marca ASC
+                ORDER BY CAST(ma.ID_marca AS UNSIGNED) ASC, ma.Nombre_marca ASC
                 """,
                 (id_clase, id_clase),
             )
@@ -90,31 +105,32 @@ class Productos(conectar):
                 NULL AS id_clase,
                 Nombre_marca AS nombre
             FROM Marca_producto
-            ORDER BY Nombre_marca ASC
+            ORDER BY CAST(ID_marca AS UNSIGNED) ASC, Nombre_marca ASC
             """
         )
 
-    def crear_marca(self, id_clase: int | None, nombre: str) -> int:
-        new_id = self._ejecutar(
-            "INSERT INTO Marca_producto (Nombre_marca) VALUES (%s)",
-            (nombre,),
+    def crear_marca(self, id_clase: str | None, nombre: str) -> str:
+        new_id = self._siguiente_id_texto("Marca_producto", "ID_marca")
+        resultado = self._ejecutar(
+            "INSERT INTO Marca_producto (ID_marca, Nombre_marca) VALUES (%s, %s)",
+            (new_id, nombre),
         )
-        if new_id is None:
+        if resultado is None:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        return int(new_id)
+        return new_id
 
-    def actualizar_marca(self, id_marca: int, id_clase: int | None, nombre: str) -> bool:
+    def actualizar_marca(self, id_marca: str, id_clase: str | None, nombre: str) -> bool:
         resultado = self._ejecutar(
             "UPDATE Marca_producto SET Nombre_marca=%s WHERE ID_marca=%s",
             (nombre, id_marca),
         )
         return bool(resultado and resultado > 0)
 
-    def eliminar_marca(self, id_marca: int) -> bool:
+    def eliminar_marca(self, id_marca: str) -> bool:
         resultado = self._ejecutar("DELETE FROM Marca_producto WHERE ID_marca=%s", (id_marca,))
         return bool(resultado and resultado > 0)
 
-    def listar_modelos(self, id_marca: int | None = None, id_clase: int | None = None, q: str | None = None):
+    def listar_modelos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
         where = []
         params: list = []
 
@@ -144,28 +160,28 @@ class Productos(conectar):
             LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
             LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
             {where_sql}
-            ORDER BY cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
+            ORDER BY CAST(cl.ID_Clase AS UNSIGNED) ASC, CAST(ma.ID_marca AS UNSIGNED) ASC, p.Nombre_producto ASC
             """,
             tuple(params),
         )
 
-    def crear_modelo(self, id_clase: int, id_marca: int, nombre: str, descripcion: str | None = None) -> int:
+    def crear_modelo(self, id_clase: str, id_marca: str, nombre: str, descripcion: str | None = None) -> str:
         db = self.conexion1()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
 
         cursor = db.cursor()
         try:
+            id_producto = self._siguiente_id_texto("Producto", "ID_producto")
             cursor.execute(
-                "INSERT INTO Producto (ID_Clase, ID_marca, Nombre_producto, Descripcion) VALUES (%s, %s, %s, %s)",
-                (id_clase, id_marca, nombre, descripcion),
+                "INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion) VALUES (%s, %s, %s, %s, %s)",
+                (id_producto, id_clase, id_marca, nombre, descripcion),
             )
-            id_producto = int(cursor.lastrowid)
 
-            # Al registrar un producto nuevo, crear un inventario base en 0.
+            id_inventario = self._siguiente_id_texto("Inventario", "ID_inventario")
             cursor.execute(
-                "INSERT INTO Inventario (ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s)",
-                (id_producto, 0, 0, None),
+                "INSERT INTO Inventario (ID_inventario, ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s, %s)",
+                (id_inventario, id_producto, 0, 0, None),
             )
 
             db.commit()
@@ -179,9 +195,9 @@ class Productos(conectar):
 
     def actualizar_modelo(
         self,
-        id_modelo: int,
-        id_clase: int,
-        id_marca: int,
+        id_modelo: str,
+        id_clase: str,
+        id_marca: str,
         nombre: str,
         descripcion: str | None = None,
     ) -> bool:
@@ -191,7 +207,7 @@ class Productos(conectar):
         )
         return bool(resultado and resultado > 0)
 
-    def eliminar_modelo(self, id_modelo: int) -> bool:
+    def eliminar_modelo(self, id_modelo: str) -> bool:
         db = self.conexion1()
         if not db:
             return False

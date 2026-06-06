@@ -14,6 +14,7 @@ services:
       - DB_PORT=3306
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PASSWORD2=${DB_PASSWORD2}
       - DB_NAME1=${DB_NAME1}
       - DB_NAME2=${DB_NAME2}
     depends_on:
@@ -53,7 +54,7 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_NAME2}
       MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD2}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3308:3306"
