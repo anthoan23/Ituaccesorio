@@ -13,16 +13,17 @@ class conectar:
         self.__port = int(os.getenv("DB_PORT"))
         self.__user = os.getenv("DB_USER")
         self.__password = os.getenv("DB_PASSWORD")
+        self.__password2 = os.getenv("DB_PASSWORD2", self.__password)
         self.__database1 = os.getenv("DB_NAME1")
         self.__database2 = os.getenv("DB_NAME2")
 
-    def _crear_conexion(self, host, port, database):
+    def _crear_conexion(self, host, port, database, password=None):
         try:
             return mysql.connector.connect(
                 host=host,
                 port=port,
                 user=self.__user,
-                password=self.__password,
+                password=password if password is not None else self.__password,
                 database=database
             )
         except mysql.connector.Error as err:
@@ -33,4 +34,4 @@ class conectar:
         return self._crear_conexion(self.__host1, self.__port, self.__database1)
         
     def conexion2(self): 
-        return self._crear_conexion(self.__host2, self.__port, self.__database2)
+        return self._crear_conexion(self.__host2, self.__port, self.__database2, password=self.__password2)

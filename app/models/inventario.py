@@ -6,6 +6,20 @@ from app.models.database import conectar
 
 class Inventario(conectar):
 
+    def _siguiente_id_texto(self, tabla: str, columna: str) -> str:
+        db = self.conexion1()
+        if not db:
+            raise RuntimeError("No se pudo conectar a la base de datos.")
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(f"SELECT COALESCE(MAX(CAST({columna} AS UNSIGNED)), 0) + 1 FROM {tabla}")
+            row = cursor.fetchone()
+            return str(int(row[0] or 0))
+        finally:
+            cursor.close()
+            db.close()
+
     _BASE_SELECT = (
         "SELECT "
         "  cl.Nombre_Clase AS tipo, "
@@ -29,8 +43,8 @@ class Inventario(conectar):
     def _listar(
         self,
         *,
-        id_clase: int | None = None,
-        id_marca: int | None = None,
+        id_clase: str | None = None,
+        id_marca: str | None = None,
         N_modelo: str | None = None,
     ):
         db = self.conexion1()
@@ -43,10 +57,10 @@ class Inventario(conectar):
             params = []
             if id_clase is not None:
                 where.append("p.ID_Clase = %s")
-                params.append(int(id_clase))
+                params.append(str(id_clase))
             if id_marca is not None:
                 where.append("p.ID_marca = %s")
-                params.append(int(id_marca))
+                params.append(str(id_marca))
             if N_modelo is not None and str(N_modelo).strip() != "":
                 where.append("p.Nombre_producto = %s")
                 params.append(str(N_modelo).strip())
@@ -89,12 +103,12 @@ class Inventario(conectar):
     def registrar_stock(
         self,
         *,
-        id_producto: int,
+        id_producto: str,
         existencia: int,
         costo_venta: Decimal,
         capacidad: str | None = None,
         color: str | None = None,
-    ) -> int | None:
+    ) -> str | None:
         db = self.conexion1()
         if not db:
             return None
@@ -104,22 +118,22 @@ class Inventario(conectar):
             # Mantener 1 registro de inventario por producto: actualizar si existe, si no insertar.
             cursor.execute(
                 "SELECT ID_inventario FROM Inventario WHERE ID_producto=%s ORDER BY ID_inventario DESC LIMIT 1",
-                (int(id_producto),),
+                (str(id_producto),),
             )
             row = cursor.fetchone()
 
             if row:
-                id_inventario = int(row[0])
+                id_inventario = str(row[0])
                 cursor.execute(
                     "UPDATE Inventario SET Existencia=%s, Costo_venta=%s WHERE ID_inventario=%s",
                     (int(existencia), costo_venta, id_inventario),
                 )
             else:
+                id_inventario = self._siguiente_id_texto("Inventario", "ID_inventario")
                 cursor.execute(
-                    "INSERT INTO Inventario (ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s)",
-                    (int(id_producto), int(existencia), costo_venta, None),
+                    "INSERT INTO Inventario (ID_inventario, ID_producto, Existencia, Costo_venta, Numero_inventario) VALUES (%s, %s, %s, %s, %s)",
+                    (id_inventario, str(id_producto), int(existencia), costo_venta, None),
                 )
-                id_inventario = int(cursor.lastrowid)
 
             cap_val = None
             if capacidad is not None:
@@ -139,7 +153,7 @@ class Inventario(conectar):
                 if foto:
                     cursor.execute(
                         "UPDATE Fotos_inventario SET Capacidad=%s, Color=%s WHERE ID_foto_inventario=%s",
-                        (cap_val, color_val, int(foto[0])),
+                        (cap_val, color_val, str(foto[0])),
                     )
                 else:
                     cursor.execute(

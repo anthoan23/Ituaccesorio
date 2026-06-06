@@ -39,9 +39,8 @@ def api_registrar_stock():
     capacidad = datos.get("capacidad")
     color = datos.get("color")
 
-    try:
-        id_producto_val = int(id_producto)
-    except Exception:
+    id_producto_val = str(id_producto).strip() if id_producto not in (None, "") else ""
+    if not id_producto_val:
         return jsonify({"success": False, "error": "id_producto es obligatorio."}), 400
 
     try:
@@ -71,6 +70,6 @@ def api_registrar_stock():
         )
         if not id_inventario:
             return jsonify({"success": False, "error": "No se pudo conectar a la base de datos."}), 500
-        return jsonify({"success": True, "id_inventario": int(id_inventario)})
+        return jsonify({"success": True, "id_inventario": id_inventario})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
