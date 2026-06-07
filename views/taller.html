@@ -246,7 +246,14 @@
 						</div>
 						<label class="field field--full">
 							<span>Observaciones</span>
-							<textarea name="observaciones" rows="4" placeholder="Notas adicionales de la revisión" required></textarea>
+							<textarea name="observaciones" 
+							          rows="4" 
+							          placeholder="Notas adicionales de la revisión" 
+							          required
+							          maxlength="500"
+							          data-validation-rules="sinCaracteresEspeciales"
+							          title="Sin caracteres especiales"></textarea>
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
 						</label>
 
 						
@@ -286,7 +293,15 @@
 
 				<label class="field field--full" style="margin-top:1rem;">
 					<span>Reparación</span>
-					<textarea id="reparacion-textarea" class="field__input" name="reparacion" rows="5" placeholder="Escribe lo que se le hizo al teléfono"></textarea>
+					<textarea id="reparacion-textarea" 
+					          class="field__input" 
+					          name="reparacion" 
+					          rows="5" 
+					          placeholder="Escribe lo que se le hizo al teléfono"
+					          maxlength="500"
+					          data-validation-rules="sinCaracteresEspeciales"
+					          title="Sin caracteres especiales"></textarea>
+					<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
 				</label>
 
 				<div class="service-form__actions" style="margin-top:1rem;">
@@ -348,4 +363,3 @@
 </div>
 <div id="modal-repuestos-body"></div>
 {% endcall %}
-

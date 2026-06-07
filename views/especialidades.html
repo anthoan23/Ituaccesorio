@@ -70,12 +70,26 @@
           
           <label class="especialidad-form__field especialidad-form__field--full">
             <span>Nombre de la especialidad</span>
-            <input type="text" name="nombre_especialidad" placeholder="Ej: Soporte Técnico" required maxlength="30">
+            <input type="text" 
+                   name="nombre_especialidad" 
+                   placeholder="Ej: Soporte Técnico" 
+                   required 
+                   maxlength="30"
+                   data-validation-rules="soloLetras,capitalizar"
+                   title="Solo letras, espacios, acentos y ñ">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
           </label>
           
           <label class="especialidad-form__field especialidad-form__field--full">
             <span>Descripción</span>
-            <textarea name="descripcion_especialidad" rows="4" placeholder="Ej: Responsable de la reparación y mantenimiento de equipos" required maxlength="255"></textarea>
+            <textarea name="descripcion_especialidad" 
+                      rows="4" 
+                      placeholder="Ej: Responsable de la reparación y mantenimiento de equipos" 
+                      required 
+                      maxlength="255"
+                      data-validation-rules="sinNumeros,sinSimbolos"
+                      title="No se permiten números ni símbolos especiales"></textarea>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (máximo 255 caracteres)</small>
           </label>
           
           <div class="especialidad-form__actions especialidad-form__actions--top">
@@ -93,11 +107,25 @@
         <div class="ui-form__grid ui-form__grid--one">
           <label class="especialidad-form__field especialidad-form__field--full">
             <span>Nombre</span>
-            <input id="editar-nombre-especialidad" type="text" name="nombre_especialidad" required maxlength="30">
+            <input id="editar-nombre-especialidad" 
+                   type="text" 
+                   name="nombre_especialidad" 
+                   required 
+                   maxlength="30"
+                   data-validation-rules="soloLetras,capitalizar"
+                   title="Solo letras, espacios, acentos y ñ">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
           </label>
           <label class="especialidad-form__field especialidad-form__field--full">
             <span>Descripción</span>
-            <textarea id="editar-descripcion-especialidad" name="descripcion_especialidad" rows="4" required maxlength="255"></textarea>
+            <textarea id="editar-descripcion-especialidad" 
+                      name="descripcion_especialidad" 
+                      rows="4" 
+                      required 
+                      maxlength="255"
+                      data-validation-rules="sinNumeros,sinSimbolos"
+                      title="No se permiten números ni símbolos especiales"></textarea>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (máximo 255 caracteres)</small>
           </label>
         </div>
 

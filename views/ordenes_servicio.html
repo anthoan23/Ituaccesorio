@@ -49,33 +49,74 @@
 						<div class="field-row">
 							<label class="field">
 								<span>Cédula</span>
-								<input id="cliente-cedula" name="cedula_cliente" type="text" inputmode="numeric"
-									placeholder="12345678" required>
+								<input id="cliente-cedula" 
+								       name="cedula_cliente" 
+								       type="text" 
+								       inputmode="numeric"
+								       placeholder="12345678" 
+								       required
+								       maxlength="8"
+								       data-validation-rules="soloNumeros"
+								       title="Solo números, 8 dígitos">
+								<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (máximo 8 dígitos)</small>
 							</label>
 							<button id="btn-verificar-cliente" class="btn btn--ghost" type="button">Verificar
 								cliente</button>
 						</div>
 						<label class="field">
 							<span>Nombre</span>
-							<input id="cliente-nombre" name="cliente_nombre" type="text" placeholder="María">
+							<input id="cliente-nombre" 
+							       name="cliente_nombre" 
+							       type="text" 
+							       placeholder="María"
+							       maxlength="30"
+							       data-validation-rules="soloLetras,capitalizar"
+							       title="Solo letras, espacios, acentos y ñ">
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
 						</label>
 						<label class="field">
 							<span>Apellido</span>
-							<input id="cliente-apellido" name="cliente_apellido" type="text" placeholder="González">
+							<input id="cliente-apellido" 
+							       name="cliente_apellido" 
+							       type="text" 
+							       placeholder="González"
+							       maxlength="30"
+							       data-validation-rules="soloLetras,capitalizar"
+							       title="Solo letras, espacios, acentos y ñ">
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
 						</label>
 						<label class="field">
 							<span>Celular</span>
-							<input id="cliente-celular" name="cliente_celular" type="text" placeholder="0414-1234567">
+							<input id="cliente-celular" 
+							       name="cliente_celular" 
+							       type="text" 
+							       placeholder="0414-1234567"
+							       maxlength="11"
+							       data-validation-rules="telefono"
+							       title="Formato: 04141234567 (11 dígitos)">
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
 						</label>
 						<label class="field">
 							<span>Correo</span>
-							<input id="cliente-correo" name="cliente_correo" type="email"
-								placeholder="cliente@example.com">
+							<input id="cliente-correo" 
+							       name="cliente_correo" 
+							       type="email"
+							       placeholder="cliente@example.com"
+							       maxlength="120"
+							       data-validation-rules="email"
+							       title="Correo electrónico válido">
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
 						</label>
 						<label class="field">
 							<span>Dirección</span>
-							<input id="cliente-direccion" name="cliente_direccion" type="text"
-								placeholder="Calle 1, Ciudad">
+							<input id="cliente-direccion" 
+							       name="cliente_direccion" 
+							       type="text"
+							       placeholder="Calle 1, Ciudad"
+							       maxlength="40"
+							       data-validation-rules="sinCaracteresEspeciales"
+							       title="Sin caracteres especiales">
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
 						</label>
 						<label class="field">
 							<span>Tipo</span>
@@ -108,23 +149,50 @@
 						<div class="field-row">
 							<label class="field">
 								<span>Patrón</span>
-								<input id="orden-patron" name="orden_patron" type="text" inputmode="numeric"
-									placeholder="1234">
+								<input id="orden-patron" 
+								       name="orden_patron" 
+								       type="text" 
+								       inputmode="numeric"
+								       placeholder="1234"
+								       maxlength="4"
+								       data-validation-rules="soloNumeros"
+								       title="Solo números">
+								<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (máximo 4 dígitos)</small>
 							</label>
 							<label class="field">
 								<span>Clave</span>
-								<input id="orden-clave" name="orden_clave" type="text" placeholder="0000">
+								<input id="orden-clave" 
+								       name="orden_clave" 
+								       type="text" 
+								       placeholder="0000"
+								       maxlength="4"
+								       data-validation-rules="soloNumeros"
+								       title="Solo números">
+								<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (máximo 4 dígitos)</small>
 							</label>
 						</div>
 						<label class="field">
 							<span>Descripción del cliente</span>
-							<textarea id="orden-descripcion" name="orden_descripcion" rows="4"
-								placeholder="Describe el problema reportado por el cliente" required></textarea>
+							<textarea id="orden-descripcion" 
+							          name="orden_descripcion" 
+							          rows="4"
+							          placeholder="Describe el problema reportado por el cliente" 
+							          required
+							          maxlength="500"
+							          data-validation-rules="sinCaracteresEspeciales"
+							          title="Sin caracteres especiales"></textarea>
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
 						</label>
 						<label class="field">
 							<span>Nota del empleado</span>
-							<textarea id="orden-nota" name="orden_nota" rows="3"
-								placeholder="Notas internas"></textarea>
+							<textarea id="orden-nota" 
+							          name="orden_nota" 
+							          rows="3"
+							          placeholder="Notas internas"
+							          maxlength="500"
+							          data-validation-rules="sinCaracteresEspeciales"
+							          title="Sin caracteres especiales"></textarea>
+							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
 						</label>
 					</div>
 				</div>
@@ -385,11 +453,24 @@
 	</div>
 	<label class="field">
 		<span>Observaciones</span>
-		<textarea name="Observaciones" rows="4" placeholder="Notas de la revisión"></textarea>
+		<textarea name="Observaciones" 
+		          rows="4" 
+		          placeholder="Notas de la revisión"
+		          maxlength="500"
+		          data-validation-rules="sinCaracteresEspeciales"
+		          title="Sin caracteres especiales"></textarea>
+		<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
 	</label>
 	<label class="field">
 		<span>Cotización</span>
-		<input name="Costo" type="number" min="0" step="1" placeholder="Costo estimado">
+		<input name="Costo" 
+		       type="number" 
+		       min="0" 
+		       step="1" 
+		       placeholder="Costo estimado"
+		       data-validation-rules="soloNumeros"
+		       title="Solo números enteros positivos">
+		<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números enteros (mínimo 0)</small>
 	</label>
 	<div class="form__actions">
 		<button class="btn btn--ghost" type="button" data-close-modal>Cancelar</button>
@@ -405,6 +486,7 @@
 	<label class="field">
 		<span>Selecciona fotos</span>
 		<input id="input-fotos-orden" name="fotos" type="file" accept="image/*" multiple required>
+		<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (puede seleccionar múltiples archivos)</small>
 	</label>
 	<div id="preview-fotos" class="photo-grid"></div>
 	<div class="form__actions">

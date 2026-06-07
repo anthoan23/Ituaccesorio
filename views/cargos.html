@@ -78,18 +78,10 @@
                     placeholder="Ej: Gerente de Ventas" 
                     minlength="4"
                     maxlength="30"
-                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                    title="Solo letras y espacios"
                     required
-                    data-validator-config='{
-                        "required": {"enabled": true},
-                        "minLength": {"value": 4},
-                        "maxLength": {"value": 30},
-                        "customRules": [{
-                            "validate": "function(value) { return /^[a-zA-Z\\s]+$/.test(value); }",
-                            "message": "El nombre solo puede contener letras y espacios"
-                        }]
-                    }'>
+                    data-validation-rules="soloLetras,capitalizar"
+                    title="Solo letras, espacios, acentos y ñ">
+              <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (mínimo 4 caracteres)</small>
             </label>
 
             <label class="cargo-form__field cargo-form__field--full">
@@ -99,15 +91,10 @@
                         placeholder="Ej: Responsable de la gestión de ventas y el desarrollo de estrategias de marketing"
                         minlength="4"
                         maxlength="250"
-                        data-validator-config='{
-                            "required": {"enabled": true},
-                            "minLength": {"value": 4},
-                            "maxLength": {"value": 250},
-                            "customRules": [{
-                                "validate": "function(value) { return value.trim().length >= 4 && value.length <= 250; }",
-                                "message": "La descripción debe tener entre 4 y 250 caracteres"
-                            }]
-                        }'></textarea>
+                        required
+                        data-validation-rules="sinNumeros,sinSimbolos"
+                        title="No se permiten números ni símbolos especiales"></textarea>
+              <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (mínimo 4 caracteres)</small>
             </label>
           <div class="cargo-form__actions cargo-form__actions--top">
             <button class="ui-btn ui-btn--primary" type="submit">Registrar nuevo cargo</button>
@@ -124,11 +111,27 @@
         <div class="ui-form__grid ui-form__grid--one">
           <label class="cargo-form__field">
             <span>Nombre</span>
-            <input id="editar-nombre-cargo" type="text" name="nombre_cargo" required>
+            <input id="editar-nombre-cargo" 
+                   type="text" 
+                   name="nombre_cargo" 
+                   required
+                   minlength="4"
+                   maxlength="30"
+                   data-validation-rules="soloLetras,capitalizar"
+                   title="Solo letras, espacios, acentos y ñ">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (mínimo 4 caracteres)</small>
           </label>
           <label class="cargo-form__field cargo-form__field--full">
             <span>Descripción</span>
-            <textarea id="editar-descripcion-cargo" name="descripcion_cargo" rows="4" required></textarea>
+            <textarea id="editar-descripcion-cargo" 
+                      name="descripcion_cargo" 
+                      rows="4" 
+                      required
+                      minlength="4"
+                      maxlength="250"
+                      data-validation-rules="sinNumeros,sinSimbolos"
+                      title="No se permiten números ni símbolos especiales"></textarea>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (mínimo 4 caracteres)</small>
           </label>
         </div>
 

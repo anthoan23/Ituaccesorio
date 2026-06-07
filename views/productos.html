@@ -70,7 +70,7 @@
         <h3 class="filters-panel__title">Búsqueda</h3>
         <label class="field">
           <span class="field__label">Texto</span>
-          <input id="f-texto" type="search" placeholder="Buscar texto" aria-label="Buscar">
+          <input id="f-texto" type="search" placeholder="Buscar texto" aria-label="Buscar" maxlength="50">
         </label>
         <div class="filters-panel__actions">
           <button id="btn-aplicar" class="btn btn--yellow" type="button">Aplicar</button>
@@ -111,14 +111,9 @@
                    placeholder="Ej: Pantallas" 
                    aria-label="Nombre de la clase"
                    maxlength="30"
-                   pattern="^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$"
-                   data-validator-config='{
-                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true},
-                     "customRules": [{
-                       "validate": "function(value) { return /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\\s]+$/.test(value); }",
-                       "message": "La clase solo puede contener letras y espacios"
-                     }]
-                   }'>
+                   data-validation-rules="soloLetras,capitalizar"
+                   title="Solo letras, espacios, acentos y ñ">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
             <div class="filters-panel__actions" aria-label="Acciones de clase">
               <button id="btn-guardar-clase" class="btn btn--yellow" type="button">Guardar clase</button>
             </div>
@@ -145,14 +140,9 @@
                    placeholder="Ej: Samsung" 
                    aria-label="Nombre de la marca"
                    maxlength="30"
-                   pattern="^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\s]+$"
-                   data-validator-config='{
-                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true},
-                     "customRules": [{
-                       "validate": "function(value) { return /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\\s]+$/.test(value); }",
-                       "message": "La marca solo puede contener letras, números y espacios"
-                     }]
-                   }'>
+                   data-validation-rules="soloLetrasNumeros,capitalizar"
+                   title="Solo letras, números, espacios, acentos y ñ">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
             <div class="filters-panel__actions" aria-label="Acciones de marca">
               <button id="btn-guardar-marca" class="btn btn--yellow" type="button">Guardar marca</button>
             </div>
@@ -166,10 +156,10 @@
                    placeholder="Ej: Galaxy A52 (SM-A525F)" 
                    aria-label="Producto" 
                    required
-                   maxlength="30"
-                   data-validator-config='{
-                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true}
-                   }'>
+                   maxlength="50"
+                   data-validation-rules="soloLetrasNumeros,sinCaracteresEspeciales"
+                   title="Solo letras, números, espacios, guiones y paréntesis">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
           </label>
 
           <label class="field">
@@ -180,9 +170,9 @@
                       placeholder="Descripción del producto" 
                       aria-label="Descripción"
                       maxlength="300"
-                      data-validator-config='{
-                        "maxLength": {"value": 300, "showCounter": true, "blockInput": true}
-                      }'></textarea>
+                      data-validation-rules="sinCaracteresEspeciales"
+                      title="Sin caracteres especiales"></textarea>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 300 caracteres)</small>
           </label>
 
           <div class="filters-panel__actions" aria-label="Acciones del formulario">

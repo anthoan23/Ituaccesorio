@@ -39,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		backdrop.addEventListener('click', closeMenu);
 	}
 	
-	// Cerrar menú al hacer click en un enlace del drawer
-	const drawerLinks = document.querySelectorAll('.drawer__link');
+	// Cerrar menú SOLO al hacer click en enlaces de navegación (no en botones de grupo)
+	const drawerLinks = document.querySelectorAll('.drawer__link:not(.drawer__group-toggle)');
 	drawerLinks.forEach(link => {
 		link.addEventListener('click', closeMenu);
 	});
@@ -59,7 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 
 		sync(toggle.getAttribute("aria-expanded") === "true");
-		toggle.addEventListener("click", () => {
+		toggle.addEventListener("click", (e) => {
+			// Prevenir que el evento se propague y cierre el menú
+			e.stopPropagation();
 			sync(group.hasAttribute("hidden"));
 		});
 	});

@@ -198,16 +198,36 @@
         <label class="ui-field ui-field--full">
           <span>Foto *</span>
           <input id="inv-foto" name="foto_inventario" type="file" accept="image/*" required>
+          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
         </label>
 
         <label class="ui-field">
           <span>Existencia *</span>
-          <input id="inv-existencia" name="existencia" type="number" min="0" placeholder="0" aria-label="Existencia" required>
+          <input id="inv-existencia" 
+                 name="existencia" 
+                 type="number" 
+                 min="0" 
+                 placeholder="0" 
+                 aria-label="Existencia" 
+                 required
+                 data-validation-rules="soloNumeros"
+                 title="Solo números enteros positivos">
+          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números enteros (mínimo 0)</small>
         </label>
 
         <label class="ui-field">
           <span>Costo venta *</span>
-          <input id="inv-costo" name="costo_venta" type="text" placeholder="0" inputmode="numeric" aria-label="Costo venta" required>
+          <input id="inv-costo" 
+                 name="costo_venta" 
+                 type="text" 
+                 placeholder="0.00" 
+                 inputmode="decimal" 
+                 aria-label="Costo venta" 
+                 required
+                 data-validation-rules="soloNumeros"
+                 title="Solo números, puede incluir punto decimal"
+                 pattern="^\d+(\.\d{1,2})?$">
+          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (ej: 100, 150.50, 99.99)</small>
         </label>
       </div>
 

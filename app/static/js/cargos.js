@@ -75,10 +75,6 @@ const Utils = {
 
     showMessage(message, isError = false) {
         if (!message) return;
-        if (isError) {
-            alert(message);
-            return;
-        }
         console.info(message);
     },
 
