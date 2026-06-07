@@ -1,75 +1,133 @@
 from __future__ import annotations
 from app.models.database import conectar
+from datetime import datetime
+
 
 class OrdenCompra(conectar):
     
     def enlistar_ordenes_compra(self):
         db = self.conexion1()
         if not db:
-            return None
+            return []
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute(
-                """
-                SELECT o.ID_orden_c, p.N_proveedor, o.Fecha_o,  SUM(pp.Costo * oc.Cantidad_p) as Costo_venta, o.Estado
-                FROM orden_compra o
-                JOIN proveedor p ON o.ID_proveedor = p.ID_proveedor
-                JOIN productos_orden oc On o.ID_orden_c = oc.ID_orden_c
-                Join proveedores_productos pp On oc.ID_modelo = pp.ID_modelo
-                WHERE o.Estado = 'Pendiente' OR o.Estado = 'Incompleto'
-                GROUP BY o.ID_orden_c, p.N_proveedor, o.Fecha_o, o.Estado;
-                """
-            )
+            cursor.execute("""
+                SELECT 
+                    o.ID_orden_compra as ID_orden_c,
+                    o.ID_proveedor,
+                    p.Nombre_proveedor as N_proveedor,
+                    o.Fecha_orden_compra as Fecha_o,
+                    o.Estado_orden_compra as Estado
+                FROM Orden_compra o
+                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                WHERE o.Estado_orden_compra = 'Pendiente'
+                ORDER BY o.Fecha_orden_compra DESC
+            """)
             return cursor.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+    
+    def enlistar_ordenes_compra_todas(self):
+        db = self.conexion1()
+        if not db:
+            return []
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    o.ID_orden_compra as ID_orden_c,
+                    o.ID_proveedor,
+                    p.Nombre_proveedor as N_proveedor,
+                    o.Fecha_orden_compra as Fecha_o,
+                    o.Estado_orden_compra as Estado
+                FROM Orden_compra o
+                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                ORDER BY o.Fecha_orden_compra DESC
+            """)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+    
+    def enlistar_ordenes_entregadas(self):
+        db = self.conexion1()
+        if not db:
+            return []
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    o.ID_orden_compra as ID_orden_c,
+                    p.Nombre_proveedor as N_proveedor,
+                    o.Fecha_orden_compra as Fecha_o,
+                    o.Estado_orden_compra as Estado
+                FROM Orden_compra o
+                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                WHERE o.Estado_orden_compra = 'Completada'
+                ORDER BY o.Fecha_orden_compra DESC
+            """)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
 
-
-    def obtener_detalles_orden(self, ID_orden_c: int):
+    def obtener_detalles_orden(self, ID_orden_c: str):
         db = self.conexion1()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            consulta1 = (
-                """
-                SELECT o.ID_orden_c, p.N_proveedor, o.Fecha_o,  SUM(pp.Costo * oc.Cantidad_p) as Costo_venta, o.Estado, em.Nombre_em, em.Apellido_em
-                FROM orden_compra o
-                JOIN proveedor p ON o.ID_proveedor = p.ID_proveedor
-                JOIN productos_orden oc On o.ID_orden_c = oc.ID_orden_c
-                Join proveedores_productos pp On oc.ID_modelo = pp.ID_modelo
-                JOIN empleado em ON o.ID_em = em.ID_em
-                WHERE o.ID_orden_c = %s 
-                GROUP BY o.ID_orden_c, p.N_proveedor, o.Fecha_o, o.Estado, em.Nombre_em, em.Apellido_em;
-                """
-            )
-
-            consulta2 = (
-                """
-                SELECT mp.N_marca ,m.N_modelo, p.Cantidad_p, pp.Costo, p.Cantidad_p * pp.Costo as sup_total FROM productos_orden p
-                Join orden_compra o ON p.ID_orden_c = o.ID_orden_c
-                JOin modelo_producto m On p.ID_modelo = m.ID_modelo
-                Join proveedor pr On o.ID_proveedor = pr.ID_proveedor
-                JOIN proveedores_productos pp on m.ID_modelo = pp.ID_modelo
-                Join marca_producto mp ON m.ID_marca = mp.ID_marca
-                where p.ID_orden_c = %s
-                """
-            )
-
-            cursor.execute(consulta1, (ID_orden_c,))
-            datos = cursor.fetchall()
-            datos_orden = datos[0] if datos else None
-
-            cursor.execute(consulta2, (ID_orden_c,))
+            cursor.execute("""
+                SELECT 
+                    o.ID_orden_compra as ID_orden_c,
+                    o.ID_proveedor,
+                    p.Nombre_proveedor as N_proveedor,
+                    o.Fecha_orden_compra as Fecha_o,
+                    o.Estado_orden_compra as Estado,
+                    e.Nombre_empleado as Nombre_em,
+                    e.Apellido_empleado as Apellido_em
+                FROM Orden_compra o
+                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                LEFT JOIN Empleado e ON o.ID_empleado = e.ID_empleado
+                WHERE o.ID_orden_compra = %s
+            """, (ID_orden_c,))
+            datos_orden = cursor.fetchone()
+            
+            cursor.execute("""
+                SELECT 
+                    prod.Nombre_producto as N_modelo,
+                    mp.Nombre_marca as N_marca,
+                    d.Cantidad_producto as Cantidad_p,
+                    s.Costo_producto as Costo
+                FROM Detalle_orden d
+                JOIN Producto prod ON d.ID_producto = prod.ID_producto
+                JOIN Suministra s ON d.ID_producto = s.ID_producto AND d.ID_orden_compra = s.ID_proveedor
+                JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
+                WHERE d.ID_orden_compra = %s
+            """, (ID_orden_c,))
             productos_orden = cursor.fetchall()
 
             return {
                 "datos_orden": datos_orden,
                 "productos_orden": productos_orden
             }
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
         finally:
             cursor.close()
             db.close()
@@ -77,12 +135,15 @@ class OrdenCompra(conectar):
     def enlistar_proveedores(self):
         db = self.conexion1()
         if not db:
-            return None
+            return []
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT ID_proveedor, N_proveedor FROM proveedor")
+            cursor.execute("SELECT ID_proveedor, Nombre_proveedor as N_proveedor FROM Proveedor ORDER BY Nombre_proveedor ASC")
             return cursor.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
@@ -90,140 +151,129 @@ class OrdenCompra(conectar):
     def obtener_productos_proveedor(self, ID_proveedor: int):
         db = self.conexion1()
         if not db:
-            return None
+            return []
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute(
-                """
-                SELECT p.ID_modelo, m.N_modelo, ma.N_marca, c.N_Clase, p.Costo  FROM proveedores_productos p join modelo_producto m On p.ID_modelo = m.ID_modelo
-                Join marca_producto ma On m.ID_marca = ma.ID_marca
-                Join clase_producto c on ma.ID_marca = c.ID_clase
-                where p.ID_proveedor = %s
-                """,
-                (ID_proveedor,)
-            )
+            cursor.execute("""
+                SELECT 
+                    s.ID_producto as ID_modelo, 
+                    p.Nombre_producto as N_modelo, 
+                    mp.Nombre_marca as N_marca, 
+                    s.Costo_producto as Costo  
+                FROM Suministra s 
+                JOIN Producto p ON s.ID_producto = p.ID_producto
+                JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
+                WHERE s.ID_proveedor = %s
+            """, (ID_proveedor,))
             return cursor.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
 
-
-    def agregar_orden_compra(self, ID_em: int, ID_proveedor: int, productos: list | None = None):
+    def agregar_orden_compra(self, ID_em: int, ID_proveedor: int, productos: list):
         db = self.conexion1()
         if not db:
             return False
 
         cursor = db.cursor()
         try:
-            consulta1 = (
-                """
-                INSERT INTO orden_compra (ID_em, ID_proveedor, Fecha_o, Estado) 
-                VALUES (%s, %s, DATE_FORMAT(NOW(), '%Y-%m-%d'), 'Pendiente')
-                """
-            )
-
-            consultar2 = (
-                """
-                INSERT INTO productos_orden (ID_orden_c, ID_modelo, Cantidad_p)
-                VALUES (%s, %s, %s)
-                """
-            )  
-
-            cursor.execute(consulta1, (ID_em, ID_proveedor))
-            ID_orden_c = cursor.lastrowid
-            # Insert each product row if an array of products was provided.
-            # Each item in `productos` should be a dict-like object with keys
-            # `ID_modelo` and `Cantidad_p`, or a tuple/list with those values.
-            if productos:
-                for p in productos:
-                    try:
-                        if isinstance(p, (list, tuple)):
-                            mid, qty = p[0], p[1]
-                        else:
-                            mid = p.get('ID_modelo') if hasattr(p, 'get') else None
-                            qty = p.get('Cantidad_p') if hasattr(p, 'get') else None
-                        cursor.execute(consultar2, (ID_orden_c, mid, qty))
-                    except Exception:
-                        # If one product fails, roll back the whole transaction
-                        raise
+            # Generar ID para la orden (formato: OC0000001)
+            cursor.execute("SELECT MAX(ID_orden_compra) FROM Orden_compra")
+            last_id = cursor.fetchone()[0]
+            if last_id:
+                num = int(last_id[2:]) + 1
+                ID_orden = f"OC{str(num).zfill(7)}"
+            else:
+                ID_orden = "OC0000001"
+            
+            # Insertar orden
+            cursor.execute("""
+                INSERT INTO Orden_compra (ID_orden_compra, ID_empleado, ID_proveedor, Fecha_orden_compra, Estado_orden_compra) 
+                VALUES (%s, %s, %s, NOW(), 'Pendiente')
+            """, (ID_orden, ID_em, ID_proveedor))
+            
+            # Insertar detalles
+            for mid, qty in productos:
+                cursor.execute("""
+                    INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
+                    VALUES (%s, %s, %s)
+                """, (ID_orden, str(mid), qty))
+            
             db.commit()
-
-        
             return True
         except Exception as e:
-            print(f"Error al agregar orden de compra: {e}")
+            print(f"Error: {e}")
             db.rollback()
             return False
         finally:
             cursor.close()
             db.close()
 
-    
-
-    def actualizar_productos_orden(self, ID_orden_c: int, productos: list | None = None):
+    def actualizar_productos_orden(self, ID_orden_c: str, productos: list):
         db = self.conexion1()
         if not db:
             return False
 
         cursor = db.cursor()
         try:
-            # First delete existing products for the order
-            cursor.execute("DELETE FROM productos_orden WHERE ID_orden_c = %s", (ID_orden_c,))
+            cursor.execute("DELETE FROM Detalle_orden WHERE ID_orden_compra = %s", (ID_orden_c,))
 
-            # Then insert the new products if provided
-            if productos:
-                for p in productos:
-                    try:
-                        if isinstance(p, (list, tuple)):
-                            mid, qty = p[0], p[1]
-                        else:
-                            mid = p.get('ID_modelo') if hasattr(p, 'get') else None
-                            qty = p.get('Cantidad_p') if hasattr(p, 'get') else None
-                        cursor.execute(
-                            """
-                            INSERT INTO productos_orden (ID_orden_c, ID_modelo, Cantidad_p)
-                            VALUES (%s, %s, %s)
-                            """,
-                            (ID_orden_c, mid, qty)
-                        )
-                    except Exception:
-                        raise
+            for mid, qty in productos:
+                cursor.execute("""
+                    INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
+                    VALUES (%s, %s, %s)
+                """, (ID_orden_c, str(mid), qty))
+            
             db.commit()
             return True
         except Exception as e:
-            print(f"Error al actualizar productos de la orden: {e}")
+            print(f"Error: {e}")
             db.rollback()
             return False
         finally:
             cursor.close()
             db.close()
 
-
-    def anular_orden_compra(self, ID_orden_c: int):
+    def anular_orden_compra(self, ID_orden_c: str):
         db = self.conexion1()
         if not db:
             return False
 
         cursor = db.cursor()
         try:
-            cursor.execute("UPDATE orden_compra SET Estado = 'Anulada' WHERE ID_orden_c = %s", (ID_orden_c,))
+            cursor.execute("UPDATE Orden_compra SET Estado_orden_compra = 'Anulada' WHERE ID_orden_compra = %s", (ID_orden_c,))
             db.commit()
             return True
         except Exception as e:
-            print(f"Error al anular la orden de compra: {e}")
+            print(f"Error: {e}")
             db.rollback()
             return False
         finally:
             cursor.close()
             db.close()
-
-
     
+    def registrar_entrega(self, ID_orden_c: str, recibido_por: str, fecha_entrega: str):
+        db = self.conexion1()
+        if not db:
+            return False
 
-
-      
-
-    
-
-    
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                UPDATE Orden_compra 
+                SET Estado_orden_compra = 'Completada'
+                WHERE ID_orden_compra = %s
+            """, (ID_orden_c,))
+            db.commit()
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            db.rollback()
+            return False
+        finally:
+            cursor.close()
+            db.close()

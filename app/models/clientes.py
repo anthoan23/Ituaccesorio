@@ -1,174 +1,418 @@
+from __future__ import annotations
 from app.models.database import conectar
 
+class Clientes():
+    def __init__(self, ID_cliente=None, Direccion_cliente=None, Celular_cliente=None, Correo_cliente=None, **kwargs):
+        self.ID_cliente = ID_cliente
+        self.Direccion_cliente = Direccion_cliente
+        self.Celular_cliente = Celular_cliente
+        self.Correo_cliente = Correo_cliente
+       
+        self._conexion_bd = conectar()
 
-class GestionClientes(conectar):
-    def _consultar(self, query, params=None):
-        db = self.conexion1()
+    """" Inicio de metodos"""
+
+    def listar_clientes(self):
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return "Error al conectar a la base de datos."
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.ID_cliente AS id,
+                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
+                    c.Direccion_cliente AS direccion,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    p.Apellido_cliente AS apellido,
+                    j.Razon_social AS razon_social,
+                    j.Rif_cliente AS rif,
+                    CASE
+                        WHEN p.ID_cliente IS NOT NULL THEN 'natural'
+                        WHEN j.ID_cliente IS NOT NULL THEN 'juridico'
+                        ELSE 'natural'
+                    END AS tipo
+                FROM Cliente c
+                LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+                LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+                WHERE p.ID_cliente IS NOT NULL OR j.ID_cliente IS NOT NULL
+                ORDER BY c.ID_cliente ASC
+                """
+            )
+            return cursor.fetchall()
+        except Exception as e:
+            return f"Error en consulta: {e}"
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_cliente_por_id(self, id_cliente):
+        if not id_cliente:
+            return None
+
+        db = self._conexion_bd.conexion1()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute(query, params or ())
-            return cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT
+                    c.ID_cliente AS id,
+                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
+                    c.Direccion_cliente AS direccion,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    p.Apellido_cliente AS apellido,
+                    j.Razon_social AS razon_social,
+                    j.Rif_cliente AS rif,
+                    CASE
+                        WHEN p.ID_cliente IS NOT NULL THEN 'natural'
+                        WHEN j.ID_cliente IS NOT NULL THEN 'juridico'
+                        ELSE 'natural'
+                    END AS tipo
+                FROM Cliente c
+                LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+                LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+                WHERE c.ID_cliente = %s
+                LIMIT 1
+                """,
+                (id_cliente,)
+            )
+            return cursor.fetchone()
+        except Exception:
+            return None
         finally:
             cursor.close()
             db.close()
 
-    def _ejecutar(self, query, params=None):
-        db = self.conexion1()
+    def eliminar_cliente(self) -> str:
+        Id_cliente = self.ID_cliente.strip()
+
+        #Inicio de validaciones
+
+        if not Id_cliente:
+            mensaje = "La cedula del cliente no puede estar vacío."
+            return mensaje
+        
+        if not Id_cliente.isdigit():
+            mensaje = "La cedula del cliente debe contener solo números."
+            return mensaje
+        
+        if len(Id_cliente) > 8:
+            mensaje = "La cedula del cliente no puede exceder los 8 caracteres."
+            return mensaje
+    
+        #Final de validaciones
+
+        db = self._conexion_bd.conexion1()
         if not db:
-            return None
+            mensaje = "Error al conectar a la base de datos."
+            return mensaje
+        
+        cursor = db.cursor()
+        try: 
+            sql = "DELETE FROM Persona_natural WHERE ID_cliente = %s"
+            cursor.execute(sql, (Id_cliente,))
+            db.commit()
+
+            sql = "DELETE FROM Cliente_juridico WHERE ID_cliente = %s"
+            cursor.execute(sql, (Id_cliente,))
+            db.commit()
+
+            sql = "DELETE FROM Cliente WHERE ID_cliente = %s"
+            cursor.execute(sql, (Id_cliente,))
+            db.commit()
+            mensaje = f"El cliente de cédula '{Id_cliente}' ha sido eliminado exitosamente."
+            return mensaje
+        except Exception as e:
+            mensaje = f"Error al eliminar cliente: {e}"
+            return mensaje
+        finally:
+            cursor.close()
+            db.close()
+        
+    """Fin de metodos"""
+
+class Persona_natural(Clientes):
+    def __init__(
+        self,
+        Cedula_cliente=None,
+        Apellido_cliente=None,
+        Nombre_cliente=None,
+        Direccion_cliente=None,
+        Telefono_cliente=None,
+        Correo_cliente=None,
+        **kwargs,
+    ):
+        super().__init__(
+            ID_cliente=Cedula_cliente,
+            Direccion_cliente=Direccion_cliente,
+            Celular_cliente=Telefono_cliente,
+            Correo_cliente=Correo_cliente,
+        )
+        self.Cedula_cliente = Cedula_cliente
+        self.Apellido_cliente = Apellido_cliente
+        self.Nombre_cliente = Nombre_cliente
+        
+    """ Inicio de metodos"""
+
+    def registrar_persona_natural(self) -> str:
+        cedula = self.Cedula_cliente.strip()
+        apellido = self.Apellido_cliente.strip()
+        nombre = self.Nombre_cliente.strip()
+
+        #Inicio de validaciones
+
+        if not cedula:
+            return "La cédula del cliente no puede estar vacía."
+        
+        if not apellido:
+            return "El apellido del cliente no puede estar vacío."
+        
+        if not nombre:
+            return "El nombre del cliente no puede estar vacío."
+        
+        if not cedula.isdigit():
+            return "La cédula del cliente debe contener solo números."
+        
+        if len(nombre) > 20:
+            return "El nombre del cliente no puede exceder los 20 caracteres."
+        
+        if len(apellido) > 20:
+            return "El apellido del cliente no puede exceder los 20 caracteres."
+        
+        if len(cedula) > 8:
+            return "La cédula del cliente no puede exceder los 8 caracteres."
+        
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return "Error al conectar a la base de datos."
+        
+        cursor = db.cursor()
+        try:
+            # Verificar existencia previa del cliente
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (cedula,))
+            if cursor.fetchone():
+                return f"El cliente con cédula '{cedula}' ya existe."
+
+            cursor.execute(
+                "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
+                (cedula, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+            )
+            cursor.execute(
+                "INSERT INTO Persona_natural (ID_cliente, Apellido_cliente, Nombre_cliente) VALUES (%s, %s, %s)",
+                (cedula, apellido, nombre)
+            )
+            db.commit()
+            return f"El cliente '{nombre} {apellido}' se registró exitosamente."
+        except Exception as e:
+            db.rollback()
+            return f"Error al registrar cliente: {e}"
+        finally:
+            cursor.close()
+            db.close()
+    
+    def actualizar_persona_natural(self):
+        cedula = self.Cedula_cliente.strip()
+        apellido = self.Apellido_cliente.strip()
+        nombre = self.Nombre_cliente.strip()
+
+        #Inicio de validaciones
+
+        if not cedula:
+            mensaje = "La cédula del cliente no puede estar vacía."
+            return mensaje
+        
+        if not apellido:
+            mensaje = "El apellido del cliente no puede estar vacío."
+            return mensaje
+        
+        if not nombre:
+            mensaje = "El nombre del cliente no puede estar vacío."
+            return mensaje
+        
+        if not cedula.isdigit():
+            mensaje = "La cédula del cliente debe contener solo números."
+            return mensaje
+        
+        if len(nombre) > 20:
+            mensaje = "El nombre del cliente no puede exceder los 20 caracteres."
+            return mensaje
+        
+        if len(apellido) > 20:
+            mensaje = "El apellido del cliente no puede exceder los 20 caracteres."
+            return mensaje
+        
+        if len(cedula) > 8:
+            mensaje = "La cédula del cliente no puede exceder los 8 caracteres."
+            return mensaje
+        
+        #final de validaciones
+        
+        db = self._conexion_bd.conexion1()
+        if not db:
+            mensaje = "Error al conectar a la base de datos."
+            return mensaje
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, cedula)
+            )
+            cursor.execute(
+                "UPDATE Persona_natural SET Nombre_cliente = %s, Apellido_cliente = %s WHERE ID_cliente = %s",
+                (nombre, apellido, cedula)
+            )
+            db.commit()
+            mensaje = f"El cliente '{nombre} {apellido}' se actualizó exitosamente."
+            return mensaje
+        except Exception as e:
+            print(f"Error al actualizar cliente: {e}")
+            db.rollback()
+            return f"Error al actualizar cliente: {e}"
+        finally:
+            cursor.close()
+            db.close()
+
+    """Fin de metodos"""
+
+
+class Cliente_juridico(Clientes):
+    def __init__(
+        self,
+        Id_cliente=None,
+        Razon_social=None,
+        Rif_cliente=None,
+        RIF=None,
+        Direccion_cliente=None,
+        Telefono_cliente=None,
+        Correo_cliente=None,
+        **kwargs,
+    ):
+        codigo = Id_cliente or Rif_cliente or RIF
+        super().__init__(
+            ID_cliente=codigo,
+            Direccion_cliente=Direccion_cliente,
+            Celular_cliente=Telefono_cliente,
+            Correo_cliente=Correo_cliente,
+        )
+        self.Id_cliente = codigo
+        self.Razon_social = Razon_social
+        self.Rif_cliente = Rif_cliente or RIF
+       
+    """ Inicio de metodos"""
+
+    def registrar_cliente_juridico(self) -> str:
+        razon_social = self.Razon_social.strip()
+        rif = self.Rif_cliente.strip()
+
+        #Inicio de validaciones
+        
+        if not razon_social:
+            return "La razón social del cliente no puede estar vacía."
+        
+        if len(razon_social) > 50:
+            return "La razón social del cliente no puede exceder los 50 caracteres."
+        
+        if not rif:
+            return "El RIF del cliente no puede estar vacío."
+        
+        if not rif.isalnum():
+            return "El RIF del cliente debe contener solo caracteres alfanuméricos."
+        
+        if len(rif) > 9:
+            return "El RIF del cliente no puede exceder los 9 caracteres."
+ 
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return "Error al conectar a la base de datos."
 
         cursor = db.cursor()
         try:
-            cursor.execute(query, params or ())
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif,))
+            if cursor.fetchone():
+                return f"El cliente jurídico con RIF '{rif}' ya existe."
+
+            cursor.execute(
+                "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
+                (rif, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+            )
+            cursor.execute(
+                "INSERT INTO Cliente_juridico (ID_cliente, Razon_social, Rif_cliente) VALUES (%s, %s, %s)",
+                (rif, razon_social, rif)
+            )
             db.commit()
-            return cursor.lastrowid if cursor.lastrowid else cursor.rowcount
+            return f"El cliente jurídico '{razon_social}' se registró exitosamente."
+        except Exception as e:
+            db.rollback()
+            return f"Error al registrar cliente jurídico: {e}"
         finally:
             cursor.close()
             db.close()
 
-    def listar_clientes(self):
-        """Lista todos los clientes (personas naturales) con nombre completo"""
-        return self._consultar(
-            """
-            SELECT 
-                c.ID_cliente AS id,
-                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre,
-                p.Nombre_cliente AS nombre_solo,
-                p.Apellido_cliente AS apellido,
-                c.Direccion_cliente AS direccion,
-                c.Celular_cliente AS celular,
-                c.Correo_cliente AS correo
-            FROM Cliente c
-            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            ORDER BY c.ID_cliente DESC
-            """
-        )
+    def actualizar_cliente_juridico(self):
+        razon_social = self.Razon_social.strip()
+        rif = self.Rif_cliente.strip()
 
-    def listar_clientes_para_select(self):
-        """Lista clientes para usar en selects (solo ID y nombre completo)"""
-        return self._consultar(
-            """
-            SELECT 
-                c.ID_cliente AS cedula,
-                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
-                p.Nombre_cliente AS nombre,
-                p.Apellido_cliente AS apellido
-            FROM Cliente c
-            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            ORDER BY p.Nombre_cliente ASC
-            """
-        )
-
-    def obtener_cliente_por_id(self, cliente_id):
-        """Obtiene un cliente por su ID con datos separados"""
-        datos = self._consultar(
-            """
-            SELECT 
-                c.ID_cliente AS id,
-                p.Nombre_cliente AS nombre,
-                p.Apellido_cliente AS apellido,
-                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
-                c.Direccion_cliente AS direccion,
-                c.Celular_cliente AS celular,
-                c.Correo_cliente AS correo
-            FROM Cliente c
-            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            WHERE c.ID_cliente = %s
-            LIMIT 1
-            """,
-            (cliente_id,),
-        )
-        return datos[0] if datos else None
-
-    def obtener_nombre_completo(self, cliente_id):
-        """Obtiene solo el nombre completo del cliente"""
-        datos = self._consultar(
-            """
-            SELECT CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo
-            FROM Cliente c
-            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            WHERE c.ID_cliente = %s
-            LIMIT 1
-            """,
-            (cliente_id,),
-        )
-        return datos[0]["nombre_completo"] if datos else None
-
-    def crear_cliente(self, cliente_id, nombre, apellido, celular=None, correo=None, direccion=None):
-        """Crea un nuevo cliente (persona natural)"""
+        #Inicio de validaciones
         
-        # Primero insertar en la tabla Cliente
-        resultado = self._ejecutar(
-            """
-            INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (cliente_id, direccion, celular, correo),
-        )
+        if not razon_social:
+            mensaje = "La razón social del cliente no puede estar vacía."
+            return mensaje
         
-        if not resultado:
-            return None
+        if len(razon_social) > 50:
+            mensaje = "La razón social del cliente no puede exceder los 50 caracteres."
+            return mensaje
         
-        # Insertar en Persona_natural
-        self._ejecutar(
-            """
-            INSERT INTO Persona_natural (ID_cliente, Nombre_cliente, Apellido_cliente)
-            VALUES (%s, %s, %s)
-            """,
-            (cliente_id, nombre, apellido)
-        )
+        if not rif:
+            mensaje = "El RIF del cliente no puede estar vacío."
+            return mensaje
         
-        return cliente_id
-
-    def crear_cliente_con_id(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None):
-        """Crea un cliente (compatible con la estructura anterior)"""
-        return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion)
-
-    def actualizar_cliente(self, cliente_id_actual, nuevo_cliente_id, nombre, apellido, celular=None, correo=None, direccion=None, tipo=None):
-        """Actualiza un cliente existente"""
+        if not rif.isalnum():
+            mensaje = "El RIF del cliente debe contener solo caracteres alfanuméricos."
+            return mensaje
         
-        # Actualizar tabla Cliente
-        self._ejecutar(
-            """
-            UPDATE Cliente
-            SET ID_cliente = %s,
-                Direccion_cliente = %s,
-                Celular_cliente = %s,
-                Correo_cliente = %s
-            WHERE ID_cliente = %s
-            """,
-            (nuevo_cliente_id, direccion, celular, correo, cliente_id_actual),
-        )
-        
-        # Actualizar Persona_natural
-        return self._ejecutar(
-            """
-            UPDATE Persona_natural
-            SET Nombre_cliente = %s,
-                Apellido_cliente = %s
-            WHERE ID_cliente = %s
-            """,
-            (nombre, apellido, nuevo_cliente_id),
-        )
+        if len(rif) > 9:
+            mensaje = "El RIF del cliente no puede exceder los 9 caracteres."
+            return mensaje
+ 
+        #Final de validaciones
 
-    def eliminar_cliente(self, cliente_id):
-        """Elimina un cliente (las tablas hijas se eliminan por CASCADE)"""
-        return self._ejecutar("DELETE FROM Cliente WHERE ID_cliente = %s", (cliente_id,))
+        db = self._conexion_bd.conexion1()
+        if not db:
+            mensaje = "Error al conectar a la base de datos."
+            return mensaje
 
-    def existe_cliente(self, cliente_id):
-        """Verifica si un cliente existe"""
-        datos = self._consultar(
-            "SELECT 1 FROM Cliente WHERE ID_cliente = %s LIMIT 1",
-            (cliente_id,)
-        )
-        return len(datos) > 0
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif)
+            )
+            cursor.execute(
+                "UPDATE Cliente_juridico SET Razon_social = %s, Rif_cliente = %s WHERE ID_cliente = %s",
+                (razon_social, rif, rif)
+            )
+            db.commit()
+            mensaje = f"El cliente jurídico '{razon_social}' se actualizó exitosamente."
+            return mensaje
+        except Exception as e:
+            print(f"Error al actualizar cliente jurídico: {e}")
+            db.rollback()
+            return f"Error al actualizar cliente jurídico: {e}"
+        finally:
+            cursor.close()
+            db.close()
 
-    def obtener_cliente_completo(self, cliente_id):
-        """Obtiene un cliente con información adicional según su tipo"""
-        cliente = self.obtener_cliente_por_id(cliente_id)
-        if not cliente:
-            return None
-        return cliente
+    """Fin de metodos"""
+
+
+class GestionClientes(Clientes):
+    """Compatibilidad con controladores que importan GestionClientes."""
+    pass

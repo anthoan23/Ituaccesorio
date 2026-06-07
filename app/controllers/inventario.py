@@ -185,3 +185,67 @@ def api_eliminar_foto_inventario(id_foto: str):
         return jsonify({"success": False, "error": "Foto no encontrada."}), 404
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
+
+# ==================== REPORTES ====================
+
+@inventario_blueprint.route("/api/inventario/reportes", methods=["POST"])
+@jwt_required
+@tiene_permiso('Inventario', 'consultar')
+def api_reportes_inventario():
+    """Obtiene inventario para reportes con filtros avanzados"""
+    from datetime import datetime
+    
+    datos = request.get_json(silent=True) or {}
+    
+    filtros = {
+        "tipo": datos.get("tipo"),
+        "marca": datos.get("marca"),
+        "stock_min": datos.get("stock_min"),
+        "stock_max": datos.get("stock_max"),
+        "q": datos.get("q", "").strip(),
+    }
+    
+    inv = Inventario()
+    inventario = inv.listar_inventario_general() or []
+    
+    # Aplicar filtros
+    inventario_filtrado = []
+    for item in inventario:
+        # Filtrar por tipo (clase)
+        if filtros["tipo"] and item.get("nombre_clase", "").lower() != filtros["tipo"].lower():
+            continue
+        
+        # Filtrar por marca
+        if filtros["marca"] and item.get("nombre_marca", "").lower() != filtros["marca"].lower():
+            continue
+        
+        # Filtrar por búsqueda
+        if filtros["q"]:
+            q_lower = filtros["q"].lower()
+            nombre = item.get("nombre_producto", "").lower()
+            marca = item.get("nombre_marca", "").lower()
+            clase = item.get("nombre_clase", "").lower()
+            if q_lower not in nombre and q_lower not in marca and q_lower not in clase:
+                continue
+        
+        # Filtrar por stock
+        stock = item.get("existencia", 0)
+        if filtros["stock_min"] is not None and stock < int(filtros["stock_min"]):
+            continue
+        if filtros["stock_max"] is not None and stock > int(filtros["stock_max"]):
+            continue
+        
+        inventario_filtrado.append(item)
+    
+    # Obtener clases y marcas únicas para los filtros
+    clases_unicas = sorted(set(item.get("nombre_clase", "") for item in inventario if item.get("nombre_clase")))
+    marcas_unicas = sorted(set(item.get("nombre_marca", "") for item in inventario if item.get("nombre_marca")))
+    
+    return jsonify({
+        "success": True,
+        "inventario": inventario_filtrado,
+        "total": len(inventario_filtrado),
+        "clases": clases_unicas,
+        "marcas": marcas_unicas,
+        "fecha_reporte": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })

@@ -1,16 +1,17 @@
 from flask import Blueprint, jsonify, render_template, request, g, redirect
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.bitacora import registrar_en_bitacora
-from app.models.ventas import VentasModel
-from app.models.clientes import GestionClientes
-from app.models.productos import Producto  # Cambiado de Productos a Producto
+from app.models.catalogo import CatalogoModel
+from app.models.carrito import CarritoModel
+from app.models.venta import VentaModel
+from app.models.pago_validacion import ValidacionPagosModel
+from app.models.entrega import EntregaModel
 import requests
-import os
 
 ventas_blueprint = Blueprint("ventas", __name__)
 
 
-def _usuario_actual():
+def _usuario_actual() -> str:
     """Obtiene el ID del usuario actual"""
     user = getattr(g, 'user', None)
     if not user:
@@ -20,54 +21,37 @@ def _usuario_actual():
     return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
-def _obtener_id_empleado():
-    """Obtiene el ID del empleado actual"""
+def _obtener_id_empleado() -> str:
+    """Obtiene el ID del empleado actual (cédula como string)"""
     user = getattr(g, 'user', None)
     if not user:
         return None
+    
     if isinstance(user, dict):
         cedula = user.get("cedula_personal") or user.get("cedula")
     else:
         cedula = getattr(user, "cedula_personal", None) or getattr(user, "cedula", None)
-    try:
-        return int(cedula) if cedula else None
-    except Exception:
-        return None
+    
+    return str(cedula) if cedula else None
 
 
-def obtener_cliente_id_actual() -> int | None:
+def obtener_cliente_id_actual() -> str:
+    """Obtiene el ID del cliente actual (cédula como string)"""
     usuario = getattr(g, "user", {}) or {}
     cliente_id = usuario.get("cedula") or usuario.get("cedula_personal") or usuario.get("id_c") or usuario.get("id_cliente")
-    if cliente_id is None:
+    
+    if not cliente_id:
         return None
-
-    try:
-        cliente_id_int = int(cliente_id)
-    except (TypeError, ValueError):
-        return None
-
+    
+    cliente_id_str = str(cliente_id)
+    
     modelo_clientes = GestionClientes()
-    existente = modelo_clientes.obtener_cliente_por_id(cliente_id_int)
-    if existente:
-        return cliente_id_int
-
-    return None
+    existente = modelo_clientes.obtener_cliente_por_id(cliente_id_str)
+    
+    return cliente_id_str if existente else None
 
 
-def _obtener_nombre_cliente(cliente_id):
-    """Obtiene el nombre de un cliente por su ID"""
-    try:
-        modelo_clientes = GestionClientes()
-        cliente = modelo_clientes.obtener_cliente_por_id(cliente_id)
-        if cliente:
-            return cliente.get("nombre", str(cliente_id))
-        return str(cliente_id)
-    except Exception:
-        return str(cliente_id)
-
-
-# --- Helper para obtener tasas de cambio ---
-def get_dolar_rates():
+def get_dolar_rates() -> dict:
     """Obtiene tasas oficial y paralelo del dólar"""
     oficial_url = "https://ve.dolarapi.com/v1/dolares/oficial"
     paralelo_url = "https://ve.dolarapi.com/v1/dolares/paralelo"
@@ -84,12 +68,15 @@ def get_dolar_rates():
         return {"oficial": 520.91, "paralelo": 710.12}
 
 
-def calcular_precios_bs(productos):
-    """Calcula precios en bolívares usando tasa paralelo y oficial"""
-    tasas = get_dolar_rates()
+def calcular_precios_bs(productos: list, tasas: dict = None) -> list:
+    """Calcula precios en bolívares"""
+    if tasas is None:
+        tasas = get_dolar_rates()
+    
     for p in productos:
         p["precio_bs_oficial"] = round(p["precio_usd"] * tasas["oficial"], 2)
         p["precio_bs_paralelo"] = round(p["precio_usd"] * tasas["paralelo"], 2)
+    
     return productos
 
 
@@ -109,26 +96,26 @@ def pagina_catalogo():
 @ventas_blueprint.route("/api/catalogo/productos")
 def api_listar_productos_catalogo():
     """API para obtener productos del catálogo con filtros"""
-    modelo_ventas = VentasModel()
-    modelo_productos = Producto()  # Cambiado de Productos() a Producto()
+    modelo_catalogo = CatalogoModel()
     
-    clase_id = request.args.get("clase_id", type=int)
-    marca_id = request.args.get("marca_id", type=int)
+    clase_id = request.args.get("clase_id", type=str)
+    marca_id = request.args.get("marca_id", type=str)
     q = request.args.get("q", "")
     
-    productos = modelo_ventas.listar_productos_catalogo(
+    productos = modelo_catalogo.listar_productos_catalogo(
         clase_id=clase_id,
         marca_id=marca_id,
-        q=q
+        q=q if q else None
     )
     
-    productos = calcular_precios_bs(productos)
+    tasas = get_dolar_rates()
+    productos = calcular_precios_bs(productos, tasas)
     
-    mas_vendidos = modelo_ventas.productos_mas_vendidos(limite=5)
-    mas_vendidos = calcular_precios_bs(mas_vendidos)
+    mas_vendidos = modelo_catalogo.productos_mas_vendidos(limite=5)
+    mas_vendidos = calcular_precios_bs(mas_vendidos, tasas)
     
-    clases = modelo_productos.listar_clases() or []
-    marcas = modelo_productos.listar_marcas() or []
+    clases = modelo_catalogo.listar_clases()
+    marcas = modelo_catalogo.listar_marcas()
     
     return jsonify({
         "success": True,
@@ -136,11 +123,14 @@ def api_listar_productos_catalogo():
         "mas_vendidos": mas_vendidos,
         "clases": clases,
         "marcas": marcas,
-        "tasas": get_dolar_rates()
+        "tasas": tasas
     })
 
 
+# ==================== CARRITO ====================
+
 @ventas_blueprint.route("/api/carrito", methods=["GET"])
+@jwt_required
 def api_obtener_carrito():
     """Obtener el carrito del cliente actual"""
     if not hasattr(g, 'user') or not g.user:
@@ -150,9 +140,11 @@ def api_obtener_carrito():
     if not cliente_id:
         return jsonify({"success": False, "error": "Cliente no identificado"}), 400
     
-    modelo = VentasModel()
-    carrito = modelo.obtener_carrito(cliente_id)
-    carrito = calcular_precios_bs(carrito)
+    modelo_carrito = CarritoModel()
+    carrito = modelo_carrito.obtener_carrito(cliente_id)
+    
+    tasas = get_dolar_rates()
+    carrito = calcular_precios_bs(carrito, tasas)
     
     total_usd = sum(p["precio_usd"] * p["cantidad"] for p in carrito)
     total_bs_paralelo = sum(p["precio_bs_paralelo"] * p["cantidad"] for p in carrito)
@@ -164,7 +156,7 @@ def api_obtener_carrito():
         "total_usd": round(total_usd, 2),
         "total_bs_paralelo": round(total_bs_paralelo, 2),
         "total_bs_oficial": round(total_bs_oficial, 2),
-        "cantidad_items": len(carrito)
+        "tasas": tasas
     })
 
 
@@ -187,9 +179,9 @@ def api_agregar_carrito():
     if not producto_id:
         return jsonify({"success": False, "error": "Producto no especificado"}), 400
     
-    modelo = VentasModel()
+    modelo_carrito = CarritoModel()
     try:
-        modelo.agregar_carrito(cliente_id, producto_id, cantidad)
+        modelo_carrito.agregar_al_carrito(cliente_id, str(producto_id), cantidad)
         registrar_en_bitacora(
             accion="Agregar al carrito",
             descripcion=f"Cliente ID: {cliente_id} agregó producto ID: {producto_id} - Cantidad: {cantidad}",
@@ -201,7 +193,7 @@ def api_agregar_carrito():
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@ventas_blueprint.route("/api/carrito/<int:producto_id>", methods=["DELETE"])
+@ventas_blueprint.route("/api/carrito/<string:producto_id>", methods=["DELETE"])
 @jwt_required
 @tiene_permiso('Carrito', 'modificar')
 def api_eliminar_carrito(producto_id):
@@ -213,8 +205,8 @@ def api_eliminar_carrito(producto_id):
     if not cliente_id:
         return jsonify({"success": False, "error": "Cliente no identificado"}), 400
     
-    modelo = VentasModel()
-    modelo.eliminar_carrito_item(cliente_id, producto_id)
+    modelo_carrito = CarritoModel()
+    modelo_carrito.eliminar_item(cliente_id, producto_id)
     return jsonify({"success": True})
 
 
@@ -234,9 +226,12 @@ def api_actualizar_cantidad():
     producto_id = datos.get("producto_id")
     cantidad = datos.get("cantidad", 1)
     
-    modelo = VentasModel()
-    modelo.actualizar_carrito_cantidad(cliente_id, producto_id, cantidad)
-    return jsonify({"success": True})
+    modelo_carrito = CarritoModel()
+    try:
+        modelo_carrito.actualizar_cantidad(cliente_id, str(producto_id), cantidad)
+        return jsonify({"success": True})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
 
 
 @ventas_blueprint.route("/api/carrito/vaciar", methods=["DELETE"])
@@ -251,8 +246,8 @@ def api_vaciar_carrito():
     if not cliente_id:
         return jsonify({"success": False, "error": "Cliente no identificado"}), 400
     
-    modelo = VentasModel()
-    modelo.vaciar_carrito(cliente_id)
+    modelo_carrito = CarritoModel()
+    modelo_carrito.vaciar_carrito(cliente_id)
     return jsonify({"success": True})
 
 
@@ -270,8 +265,8 @@ def pagina_pagos():
     if not cliente_id:
         return redirect("/catalogo")
     
-    modelo = VentasModel()
-    carrito = modelo.obtener_carrito(cliente_id)
+    modelo_carrito = CarritoModel()
+    carrito = modelo_carrito.obtener_carrito(cliente_id)
     
     if not carrito:
         return redirect("/catalogo")
@@ -317,37 +312,35 @@ def api_procesar_pago():
     if not metodo_pago:
         return jsonify({"success": False, "error": "Método de pago no seleccionado"}), 400
     
-    modelo = VentasModel()
+    modelo_carrito = CarritoModel()
+    modelo_venta = VentaModel()
     
-    carrito = modelo.obtener_carrito(cliente_id)
+    carrito = modelo_carrito.obtener_carrito(cliente_id)
     if not carrito:
         return jsonify({"success": False, "error": "Carrito vacío"}), 400
     
-    tasas = get_dolar_rates()
-    total_usd = sum(p["precio_usd"] * p["cantidad"] for p in carrito)
-    total_bs = total_usd * tasas["paralelo"]
-    
-    factura_id = modelo.crear_venta(
+    # Crear la venta
+    factura_id = modelo_venta.crear_venta_desde_carrito(
         cliente_id=cliente_id,
         items=carrito,
-        total_usd=total_usd,
-        total_bs=total_bs,
         metodo_pago=metodo_pago,
-        estado_pago="Por Verificar" if metodo_pago != "efectivo_bs" and metodo_pago != "efectivo_usd" else "Pendiente"
+        estado_pago="Pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
     )
     
-    if metodo_pago != "efectivo_bs" and metodo_pago != "efectivo_usd":
-        modelo.guardar_reporte_pago(
+    # Guardar registro de pago (solo para métodos que no son efectivo)
+    if metodo_pago not in ("efectivo_bs", "efectivo_usd"):
+        modelo_venta.guardar_registro_pago(
             factura_id=factura_id,
             metodo_pago=metodo_pago,
-            datos=datos_pago
+            datos_pago=datos_pago
         )
     
-    modelo.vaciar_carrito(cliente_id)
+    # Vaciar el carrito
+    modelo_carrito.vaciar_carrito(cliente_id)
     
     registrar_en_bitacora(
         accion="Realizar venta",
-        descripcion=f"Cliente ID: {cliente_id} realizó venta ID: {factura_id} - Total: ${total_usd} USD - Método: {metodo_pago}",
+        descripcion=f"Cliente ID: {cliente_id} realizó venta ID: {factura_id} - Método: {metodo_pago}",
         usuario_id=_usuario_actual(),
         modulo_nombre="Ventas"
     )
@@ -359,7 +352,7 @@ def api_procesar_pago():
     })
 
 
-# ==================== VALIDACIÓN DE PAGOS (EMPLEADOS) ====================
+# ==================== VALIDACIÓN DE PAGOS ====================
 
 @ventas_blueprint.route("/admin/validar-pagos")
 @jwt_required
@@ -379,7 +372,7 @@ def pagina_validar_pagos():
 @tiene_permiso('Ventas', 'consultar')
 def api_pagos_pendientes():
     """Obtener pagos pendientes de verificación"""
-    modelo = VentasModel()
+    modelo = ValidacionPagosModel()
     pagos = modelo.obtener_pagos_pendientes()
     return jsonify({"success": True, "pagos": pagos})
 
@@ -389,7 +382,7 @@ def api_pagos_pendientes():
 @tiene_permiso('Ventas', 'consultar')
 def api_pagos_aprobados():
     """Obtener pagos aprobados"""
-    modelo = VentasModel()
+    modelo = ValidacionPagosModel()
     pagos = modelo.obtener_pagos_aprobados()
     return jsonify({"success": True, "pagos": pagos})
 
@@ -399,7 +392,7 @@ def api_pagos_aprobados():
 @tiene_permiso('Ventas', 'consultar')
 def api_pagos_rechazados():
     """Obtener pagos rechazados"""
-    modelo = VentasModel()
+    modelo = ValidacionPagosModel()
     pagos = modelo.obtener_pagos_rechazados()
     return jsonify({"success": True, "pagos": pagos})
 
@@ -414,7 +407,7 @@ def api_aprobar_pago(factura_id):
     
     empleado_id = _obtener_id_empleado()
     
-    modelo = VentasModel()
+    modelo = ValidacionPagosModel()
     modelo.aprobar_pago(factura_id, empleado_id)
     
     registrar_en_bitacora(
@@ -443,7 +436,7 @@ def api_rechazar_pago(factura_id):
     
     empleado_id = _obtener_id_empleado()
     
-    modelo = VentasModel()
+    modelo = ValidacionPagosModel()
     modelo.rechazar_pago(factura_id, empleado_id, motivo)
     
     registrar_en_bitacora(
@@ -456,49 +449,54 @@ def api_rechazar_pago(factura_id):
     return jsonify({"success": True, "mensaje": "Pago rechazado"})
 
 
+# ==================== VENTAS LOCALES ====================
+
+@ventas_blueprint.route("/api/clientes")
+@jwt_required
+def api_listar_clientes():
+    """Listar clientes para autocompletado"""
+    modelo_clientes = GestionClientes()
+    clientes = modelo_clientes.listar_clientes()
+    
+    return jsonify({
+        "success": True,
+        "clientes": clientes
+    })
+
+
 @ventas_blueprint.route("/api/admin/ventas-local", methods=["POST"])
 @jwt_required
 @tiene_permiso('Ventas', 'registrar')
 def api_registrar_venta_local():
-    """Registrar venta realizada en el local (efectivo)"""
+    """Registrar venta realizada en el local"""
     if not hasattr(g, 'user') or not g.user:
         return jsonify({"success": False, "error": "No autorizado"}), 401
     
     empleado_id = _obtener_id_empleado()
     datos = request.get_json(silent=True) or {}
     
-    cliente_id = datos.get("cliente_id")
+    cliente_id = str(datos.get("cliente_id"))
     items = datos.get("items", [])
-    total_pagado = datos.get("total_pagado")
     metodo_pago = datos.get("metodo_pago", "efectivo_usd")
+    
+    if not cliente_id:
+        return jsonify({"success": False, "error": "Cliente no especificado"}), 400
     
     if not items:
         return jsonify({"success": False, "error": "Debe seleccionar al menos un producto"}), 400
     
-    modelo = VentasModel()
-    tasas = get_dolar_rates()
+    modelo_venta = VentaModel()
     
-    total_usd = 0
-    for item in items:
-        producto = modelo.obtener_producto(item["producto_id"])
-        if producto:
-            total_usd += producto["precio_usd"] * item["cantidad"]
-    
-    total_bs = total_usd * tasas["paralelo"]
-    
-    factura_id = modelo.crear_venta_local(
+    factura_id = modelo_venta.crear_venta_local(
         cliente_id=cliente_id,
         empleado_id=empleado_id,
         items=items,
-        total_usd=total_usd,
-        total_bs=total_bs,
-        metodo_pago=metodo_pago,
-        total_pagado=total_pagado
+        metodo_pago=metodo_pago
     )
     
     registrar_en_bitacora(
         accion="Registrar venta local",
-        descripcion=f"Venta local registrada - Factura ID: {factura_id} - Total: ${total_usd} USD - Cliente ID: {cliente_id}",
+        descripcion=f"Venta local registrada - Factura ID: {factura_id} - Cliente ID: {cliente_id}",
         usuario_id=_usuario_actual(),
         modulo_nombre="Ventas"
     )
@@ -522,17 +520,28 @@ def api_registrar_entrega():
     
     datos = request.get_json(silent=True) or {}
     factura_id = datos.get("factura_id")
-    empleado_delivery_id = datos.get("empleado_delivery_id")
+    cedula_delivery = datos.get("cedula_delivery")
     direccion = datos.get("direccion")
     
-    modelo = VentasModel()
-    modelo.registrar_entrega(factura_id, empleado_delivery_id, direccion)
+    if not factura_id or not cedula_delivery or not direccion:
+        return jsonify({"success": False, "error": "Faltan datos requeridos"}), 400
+    
+    modelo_entrega = EntregaModel()
+    entrega_id = modelo_entrega.registrar_entrega(
+        factura_id=factura_id,
+        cedula_delivery=cedula_delivery,
+        direccion=direccion
+    )
     
     registrar_en_bitacora(
         accion="Registrar entrega",
-        descripcion=f"Se registró entrega para factura ID: {factura_id}",
+        descripcion=f"Se registró entrega ID: {entrega_id} para factura ID: {factura_id}",
         usuario_id=_usuario_actual(),
         modulo_nombre="Ventas"
     )
     
-    return jsonify({"success": True, "mensaje": "Entrega registrada"})
+    return jsonify({
+        "success": True,
+        "entrega_id": entrega_id,
+        "mensaje": "Entrega registrada"
+    })

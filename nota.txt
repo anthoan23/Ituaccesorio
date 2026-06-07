@@ -6,7 +6,7 @@ docker-compose up --build
 
 docker-compose up
 
-//Si quiere si quieres apagar el contenedor
+//si quieres apagar el contenedor
 
 docker-compose stop
 

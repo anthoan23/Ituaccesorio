@@ -20,6 +20,14 @@
                 <span class="stat-card__label">Clientes registrados</span>
                 <strong id="stat-clientes" class="stat-card__value">0</strong>
             </article>
+            <article class="stat-card">
+                <span class="stat-card__label">Persona Natural</span>
+                <strong id="stat-natural" class="stat-card__value">0</strong>
+            </article>
+            <article class="stat-card">
+                <span class="stat-card__label">Persona Jurídica</span>
+                <strong id="stat-juridico" class="stat-card__value">0</strong>
+            </article>
         </div>
     </section>
 
@@ -31,6 +39,20 @@
                 </div>
                 <button id="btn-nuevo-cliente" class="btn btn--yellow" type="button"
                     data-open-modal="modal-cliente">Nuevo cliente</button>
+            </div>
+            <div class="clientes-toolbar">
+                <label class="form__field clientes-toolbar__field">
+                    <span>Buscar clientes</span>
+                    <input id="input-buscar-clientes" type="search" placeholder="Buscar por cédula, nombre, RIF o correo">
+                </label>
+                <label class="form__field clientes-toolbar__field">
+                    <span>Filtrar por tipo</span>
+                    <select id="filtro-tipo-cliente">
+                        <option value="">Todos</option>
+                        <option value="natural">Persona Natural</option>
+                        <option value="juridico">Persona Jurídica</option>
+                    </select>
+                </label>
             </div>
 
             <div class="table-wrap" role="region" aria-label="Tabla de clientes">
@@ -151,7 +173,7 @@
                 <input name="rif" 
                        type="text" 
                        placeholder="J-12345678-9" 
-                       maxlength="12"
+                       maxlength="9"
                        data-validation-rules="sinEspacios"
                        title="Formato: J-12345678-9">
                 <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formato: J-12345678-9</small>

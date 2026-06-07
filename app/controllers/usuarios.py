@@ -12,51 +12,17 @@ from app.utils.jwt_utils import set_auth_cookies
 usuarios_blueprint = Blueprint("usuarios", __name__)
 
 
-def _respuesta_error(mensaje, status=400):
-    return jsonify({"success": False, "error": mensaje}), status
-
-
-def _respuesta_por_excepcion(error):
-    if isinstance(error, (ValueError, TypeError)):
-        return _respuesta_error("Hay datos invalidos en la solicitud.", 400)
-
-    if isinstance(error, mysql.connector.IntegrityError):
-        errno = getattr(error, "errno", None)
-        mensajes = {
-            1062: "Ya existe un registro con esos datos.",
-            1048: "Hay campos obligatorios sin completar.",
-            1451: "No se puede eliminar porque el registro esta siendo usado.",
-            1452: "La relacion indicada no existe o no es valida.",
-        }
-        return _respuesta_error(mensajes.get(errno, "No se pudo guardar la informacion por una restriccion de datos."), 409)
-
-    if isinstance(error, mysql.connector.DataError):
-        return _respuesta_error("El formato o tamaño de los datos no es valido.", 400)
-
-    if isinstance(error, mysql.connector.ProgrammingError):
-        return _respuesta_error("Ocurrio un error interno al procesar la solicitud.", 500)
-
-    if isinstance(error, mysql.connector.OperationalError):
-        return _respuesta_error("No fue posible conectar con la base de datos en este momento.", 503)
-
-    if isinstance(error, mysql.connector.DatabaseError):
-        return _respuesta_error("Se produjo un error al consultar la base de datos.", 500)
-
-    return _respuesta_error("Ocurrio un error inesperado.", 500)
-
-
-def _bool(valor):
-    if isinstance(valor, bool):
-        return valor
-    if valor is None:
-        return 0
-    if isinstance(valor, (int, float)):
-        return 1 if int(valor) != 0 else 0
-    texto = str(valor).strip().lower()
-    return 1 if texto in {"1", "true", "on", "si", "yes"} else 0
-
-
 def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
+
+
+def _usuario_actual_datos():
     usuario = getattr(g, "user", None)
     if not usuario:
         return {}
@@ -65,20 +31,11 @@ def _usuario_actual():
     return {
         "usuario_id": getattr(usuario, "usuario_id", None),
         "usuario_nombre": getattr(usuario, "usuario_nombre", None),
-        "cedula": getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None),
-        "cedula_personal": getattr(usuario, "cedula_personal", None),
+        "cedula": getattr(usuario, "cedula", None),
         "rol_id": getattr(usuario, "rol_id", None),
         "nombre_rol": getattr(usuario, "nombre_rol", None),
         "foto_perfil": getattr(usuario, "foto_perfil", None),
-        "perfil_completo": getattr(usuario, "perfil_completo", True),
     }
-
-
-def _datos_solicitud():
-    datos = request.get_json(silent=True)
-    if datos is not None:
-        return datos
-    return request.form.to_dict()
 
 
 def _guardar_foto_perfil(archivo):
@@ -122,7 +79,7 @@ def pagina_usuarios():
         show_navbar=True,
         show_notifications=True,
         active_page="usuarios",
-        current_user=_usuario_actual(),
+        current_user=_usuario_actual_datos(),
     )
 
 
@@ -131,565 +88,195 @@ def pagina_usuarios():
 @usuarios_blueprint.route("/api/usuarios", methods=["GET"])
 @jwt_required
 @tiene_permiso('Usuarios', 'consultar')
-def listar_usuarios():
-    modelo = Usuarios()
-    datos = modelo.listar_usuarios() or []
-    return jsonify({"success": True, "usuarios": datos})
+def api_listar_usuarios():
+    usuario_model = Usuarios()
+    usuarios = usuario_model.listar_usuarios()
+    return jsonify({"success": True, "usuarios": usuarios or []})
 
 
 @usuarios_blueprint.route("/api/usuarios/empleados", methods=["GET"])
 @jwt_required
 @tiene_permiso('Usuarios', 'consultar')
-def listar_empleados():
-    modelo = Usuarios()
-    datos = modelo.listar_empleados() or []
-    return jsonify({"success": True, "empleados": datos})
+def api_listar_empleados():
+    usuario_model = Usuarios()
+    empleados = usuario_model.listar_empleados()
+    return jsonify({"success": True, "empleados": empleados or []})
 
 
 @usuarios_blueprint.route("/api/usuarios/clientes", methods=["GET"])
 @jwt_required
 @tiene_permiso('Usuarios', 'consultar')
-def listar_clientes():
-    """Lista todos los clientes (personas naturales) para asignar como usuarios"""
-    from app.models.clientes import GestionClientes
-    
-    modelo_clientes = GestionClientes()
-    clientes = modelo_clientes.listar_clientes() or []
-    
-    # Filtrar solo clientes que son personas naturales (ID numérico)
-    clientes_naturales = []
-    for cliente in clientes:
-        if str(cliente.get("id", "")).isdigit():
-            clientes_naturales.append({
-                "cedula": cliente.get("id"),
-                "nombre_completo": cliente.get("nombre", ""),
-                "celular": cliente.get("celular", ""),
-                "correo": cliente.get("correo", "")
-            })
-    
-    return jsonify({"success": True, "clientes": clientes_naturales})
+def api_listar_clientes():
+    usuario_model = Usuarios()
+    clientes = usuario_model.listar_clientes()
+    return jsonify({"success": True, "clientes": clientes or []})
 
 
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
 @jwt_required
-def obtener_mi_perfil():
-    usuario_actual = _usuario_actual()
-    usuario_id = usuario_actual.get("usuario_id")
-    if not usuario_id:
-        return _respuesta_error("No se pudo identificar al usuario actual.", 401)
+def api_obtener_mi_perfil():
+    usuario_id = _usuario_actual()
+    if usuario_id == "SYSTEM":
+        return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
-    modelo = Usuarios()
-    usuario = modelo.obtener_usuario_por_id(usuario_id)
+    usuario_model = Usuarios()
+    usuario = usuario_model.obtener_usuario_por_id(usuario_id)
+
     if not usuario:
-        return _respuesta_error("El usuario actual no existe.", 404)
+        return jsonify({"success": False, "error": "El usuario actual no existe."}), 404
 
     return jsonify({"success": True, "usuario": usuario})
 
 
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["PUT"])
 @jwt_required
-def actualizar_mi_perfil():
-    usuario_actual = _usuario_actual()
-    usuario_id = usuario_actual.get("usuario_id")
-    if not usuario_id:
-        return _respuesta_error("No se pudo identificar al usuario actual.", 401)
+def api_actualizar_mi_perfil():
+    usuario_id = _usuario_actual()
+    if usuario_id == "SYSTEM":
+        return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
-    datos = _datos_solicitud() or {}
-    nombre = (datos.get("nombre") or "").strip()
-    password = (datos.get("password") or "").strip()
+    data = request.get_json(silent=True) or request.form
+    nombre = data.get("nombre", "").strip()
+    password = data.get("password", "").strip()
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil"))
 
     if not nombre:
-        return _respuesta_error("El nombre es obligatorio.")
+        return jsonify({"success": False, "error": "El nombre es obligatorio."}), 400
 
-    modelo = Usuarios()
-    usuario_db_actual = modelo.obtener_usuario_por_id(usuario_id)
-    if not usuario_db_actual:
-        return _respuesta_error("El usuario actual no existe.", 404)
+    usuario_model = Usuarios()
+    usuario_actual_db = usuario_model.obtener_usuario_por_id(usuario_id)
 
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or usuario_db_actual.get("foto_perfil")
+    if not usuario_actual_db:
+        return jsonify({"success": False, "error": "El usuario actual no existe."}), 404
 
-    try:
-        modelo.actualizar_perfil_actual(usuario_id, nombre, password if password else None, foto_perfil)
-        usuario_actualizado = modelo.obtener_usuario_por_id(usuario_id)
-        if not usuario_actualizado:
-            return _respuesta_error("No se pudo actualizar el perfil.", 500)
+    if not foto_perfil:
+        foto_perfil = usuario_actual_db.get("foto_perfil")
+
+    mensaje = usuario_model.actualizar_perfil(
+        usuario_id, nombre, password if password else None, foto_perfil
+    )
+
+    if "exitosamente" in mensaje:
+        usuario_actualizado = usuario_model.obtener_usuario_por_id(usuario_id)
 
         registrar_en_bitacora(
             accion="Actualizar perfil",
-            descripcion=f"Usuario {usuario_actual.get('usuario_nombre')} actualizó su perfil",
+            descripcion=f"Usuario actualizó su perfil",
             usuario_id=usuario_id,
             modulo_nombre="Usuarios"
         )
 
-        resp = jsonify({"success": True, "message": "Perfil actualizado.", "usuario": usuario_actualizado})
-        return _actualizar_cookie_usuario(resp, usuario_actual, usuario_actualizado)
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
+        resp = jsonify({"success": True, "message": mensaje, "usuario": usuario_actualizado})
+        return _actualizar_cookie_usuario(resp, _usuario_actual_datos(), usuario_actualizado)
+
+    return jsonify({"success": False, "error": mensaje}), 400
 
 
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
 @jwt_required
 @tiene_permiso('Usuarios', 'registrar')
-def crear_usuario():
-    datos = _datos_solicitud() or {}
-    nombre = (datos.get("nombre") or "").strip()
-    cedula_personal = datos.get("cedula") or datos.get("cedula_personal")
-    password = (datos.get("password") or "").strip()
-    rol_id = datos.get("rol_id")
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
+def api_crear_usuario():
+    data = request.get_json(silent=True) or request.form
+    nombre = data.get("nombre", "").strip()
+    cedula = data.get("cedula_personal") or data.get("cedula")
+    password = data.get("password", "").strip()
+    rol_id = data.get("rol_id", "").strip()
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
 
-    if not nombre or not cedula_personal or not password or not rol_id:
-        return _respuesta_error("Nombre, cedula, password y rol son obligatorios.")
+    if not nombre or not cedula or not password or not rol_id:
+        return jsonify({"success": False, "error": "Nombre, cédula, contraseña y rol son obligatorios."}), 400
 
-    modelo = Usuarios()
-    
-    # Verificar si la cédula pertenece a un empleado o a un cliente según el rol
-    rol = modelo.obtener_rol_por_id(int(rol_id)) if rol_id else None
-    es_rol_cliente = rol and rol.get("nombre", "").lower() == "cliente"
-    
-    if es_rol_cliente:
-        # Para clientes, verificar que la cédula exista en Persona_natural
-        from app.models.clientes import GestionClientes
-        modelo_clientes = GestionClientes()
-        cliente = modelo_clientes.obtener_cliente_por_id(int(cedula_personal))
-        if not cliente:
-            return _respuesta_error("La cédula no pertenece a un cliente registrado.")
-    else:
-        # Para otros roles, verificar empleado
-        if not modelo.verificar_empleado(cedula_personal):
-            return _respuesta_error("La cedula no pertenece a un empleado registrado.")
-    
-    try:
-        nuevo_id = modelo.crear_usuario(nombre, int(cedula_personal), password, int(rol_id), foto_perfil)
-        if not nuevo_id:
-            return _respuesta_error("No se pudo crear el usuario.")
-        
+    usuario_model = Usuarios(
+        nombre=nombre,
+        cedula=cedula,
+        password=password,
+        rol_id=rol_id,
+        foto_perfil=foto_perfil
+    )
+    mensaje = usuario_model.agregar_usuario()
+
+    if "exitosamente" in mensaje:
         registrar_en_bitacora(
             accion="Crear usuario",
-            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula_personal} - Rol ID: {rol_id}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula} - Rol ID: {rol_id}",
+            usuario_id=_usuario_actual(),
             modulo_nombre="Usuarios"
         )
-        
-        return jsonify({"success": True, "message": "Usuario creado.", "id": nuevo_id})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
+        return jsonify({"success": True, "message": mensaje, "id": usuario_model.id}), 201
+
+    return jsonify({"success": False, "error": mensaje}), 400
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
 @jwt_required
 @tiene_permiso('Usuarios', 'modificar')
-def actualizar_usuario(usuario_id):
-    datos = _datos_solicitud() or {}
-    nombre = (datos.get("nombre") or "").strip()
-    cedula_personal = datos.get("cedula") or datos.get("cedula_personal")
-    password = (datos.get("password") or "").strip()
-    rol_id = datos.get("rol_id")
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or (datos.get("foto_perfil_actual") or datos.get("foto_perfil") or None)
+def api_actualizar_usuario(usuario_id):
+    data = request.get_json(silent=True) or request.form
+    nombre = data.get("nombre", "").strip()
+    cedula = data.get("cedula_personal") or data.get("cedula")
+    password = data.get("password", "").strip()
+    rol_id = data.get("rol_id", "").strip()
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
 
-    if not nombre or not cedula_personal or not rol_id:
-        return _respuesta_error("Nombre, cedula y rol son obligatorios.")
+    if not nombre or not cedula or not rol_id:
+        return jsonify({"success": False, "error": "Nombre, cédula y rol son obligatorios."}), 400
 
-    modelo = Usuarios()
-    
-    # Verificar si la cédula pertenece a un empleado o a un cliente según el rol
-    rol = modelo.obtener_rol_por_id(int(rol_id)) if rol_id else None
-    es_rol_cliente = rol and rol.get("nombre", "").lower() == "cliente"
-    
-    if es_rol_cliente:
-        from app.models.clientes import GestionClientes
-        modelo_clientes = GestionClientes()
-        cliente = modelo_clientes.obtener_cliente_por_id(int(cedula_personal))
-        if not cliente:
-            return _respuesta_error("La cédula no pertenece a un cliente registrado.")
-    else:
-        if not modelo.verificar_empleado(cedula_personal):
-            return _respuesta_error("La cedula no pertenece a un empleado registrado.")
-    
-    try:
-        if password:
-            resultado = modelo.actualizar_usuario_con_password(
-                usuario_id,
-                nombre,
-                int(cedula_personal),
-                password,
-                int(rol_id),
-                foto_perfil,
-            )
-        else:
-            resultado = modelo.actualizar_usuario(
-                usuario_id,
-                nombre,
-                int(cedula_personal),
-                int(rol_id),
-                foto_perfil,
-            )
-        
+    usuario_model = Usuarios(
+        id=usuario_id,
+        nombre=nombre,
+        cedula=cedula,
+        password=password,
+        rol_id=rol_id,
+        foto_perfil=foto_perfil
+    )
+    mensaje = usuario_model.actualizar_usuario()
+
+    if "exitosamente" in mensaje:
         registrar_en_bitacora(
             accion="Actualizar usuario",
             descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
+            usuario_id=_usuario_actual(),
             modulo_nombre="Usuarios"
         )
-        
-        return jsonify({"success": True, "message": "Usuario actualizado.", "result": resultado})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
 @jwt_required
 @tiene_permiso('Usuarios', 'eliminar')
-def eliminar_usuario(usuario_id):
-    modelo = Usuarios()
-    try:
-        usuario_actual = _usuario_actual()
-        usuario_objetivo = modelo.obtener_usuario_por_id(usuario_id)
+def api_eliminar_usuario(usuario_id):
+    usuario_actual_id = _usuario_actual()
 
-        if not usuario_objetivo:
-            return _respuesta_error("El usuario no existe.", 404)
+    if usuario_actual_id == usuario_id:
+        return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
 
-        if str(usuario_actual.get("usuario_id", "")).strip() == str(usuario_id).strip():
-            return _respuesta_error("No puedes eliminar tu propio usuario.", 403)
+    # Verificar el rol del usuario a eliminar
+    usuario_model = Usuarios()
+    usuario_objetivo = usuario_model.obtener_usuario_por_id(usuario_id)
 
-        rol_actual = str(usuario_actual.get("nombre_rol", "")).strip().lower()
-        rol_objetivo = str((usuario_objetivo or {}).get("rol_nombre", "")).strip().lower()
+    if not usuario_objetivo:
+        return jsonify({"success": False, "error": "El usuario no existe."}), 404
 
-        if rol_objetivo == "admin" and rol_actual != "admin":
-            return _respuesta_error("Solo otro admin puede eliminar este usuario.", 403)
+    nombre_usuario = usuario_objetivo.get("nombre", "N/A")
+    rol_objetivo = usuario_objetivo.get("rol_nombre", "").lower()
 
-        modelo.eliminar_usuario(usuario_id)
-        
+    # Verificar permisos para eliminar admin
+    usuario_actual_rol = _usuario_actual_datos().get("nombre_rol", "").lower()
+    if rol_objetivo == "admin" and usuario_actual_rol != "admin":
+        return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
+
+    usuario_model.id = usuario_id
+    mensaje = usuario_model.eliminar_usuario()
+
+    if "exitosamente" in mensaje:
         registrar_en_bitacora(
             accion="Eliminar usuario",
-            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {usuario_objetivo.get('nombre', 'N/A')}",
-            usuario_id=usuario_actual.get("usuario_id", "SYSTEM"),
+            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {nombre_usuario}",
+            usuario_id=usuario_actual_id,
             modulo_nombre="Usuarios"
         )
-        
-        return jsonify({"success": True, "message": "Usuario eliminado."})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
+        return jsonify({"success": True, "message": mensaje}), 200
 
-
-# ==================== ROLES ====================
-
-@usuarios_blueprint.route("/api/roles", methods=["GET"])
-@jwt_required
-@tiene_permiso('Usuarios', 'consultar')
-def listar_roles():
-    modelo = Usuarios()
-    datos = modelo.listar_roles() or []
-    return jsonify({"success": True, "roles": datos})
-
-
-@usuarios_blueprint.route("/api/roles", methods=["POST"])
-@jwt_required
-@tiene_permiso('Usuarios', 'registrar')
-def crear_rol():
-    datos = request.get_json(silent=True) or {}
-    nombre = (datos.get("nombre") or "").strip()
-    descripcion = (datos.get("descripcion") or "").strip()
-
-    if not nombre:
-        return _respuesta_error("El nombre del rol es obligatorio.")
-
-    modelo = Usuarios()
-    try:
-        nuevo_id = modelo.crear_rol(nombre, descripcion)
-        
-        registrar_en_bitacora(
-            accion="Crear rol",
-            descripcion=f"Se creó el rol: {nombre}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Rol creado.", "id": nuevo_id})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Usuarios', 'modificar')
-def actualizar_rol(rol_id):
-    datos = request.get_json(silent=True) or {}
-    nombre = (datos.get("nombre") or "").strip()
-    descripcion = (datos.get("descripcion") or "").strip()
-
-    if not nombre:
-        return _respuesta_error("El nombre del rol es obligatorio.")
-
-    modelo = Usuarios()
-    try:
-        resultado = modelo.actualizar_rol(rol_id, nombre, descripcion)
-        
-        registrar_en_bitacora(
-            accion="Actualizar rol",
-            descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Rol actualizado.", "result": resultado})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Usuarios', 'eliminar')
-def eliminar_rol(rol_id):
-    modelo = Usuarios()
-    try:
-        roles = modelo.listar_roles() or []
-        rol = next((item for item in roles if int(item.get("id", 0)) == int(rol_id)), None)
-        nombre_rol = (rol or {}).get("nombre", "")
-        if str(nombre_rol).strip().lower() in {"admin", "cliente"}:
-            return _respuesta_error("El rol Admin y Cliente no se pueden eliminar.", 403)
-
-        modelo.eliminar_rol(rol_id)
-        
-        registrar_en_bitacora(
-            accion="Eliminar rol",
-            descripcion=f"Se eliminó el rol ID: {rol_id} - Nombre: {nombre_rol}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Rol eliminado."})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-# ==================== MÓDULOS ====================
-
-@usuarios_blueprint.route("/api/modulos", methods=["GET"])
-@jwt_required
-@tiene_permiso('Usuarios', 'consultar')
-def listar_modulos():
-    modelo = Usuarios()
-    datos = modelo.listar_modulos() or []
-    return jsonify({"success": True, "modulos": datos})
-
-
-@usuarios_blueprint.route("/api/modulos", methods=["POST"])
-@jwt_required
-@tiene_permiso('Usuarios', 'registrar')
-def crear_modulo():
-    datos = request.get_json(silent=True) or {}
-    nombre = (datos.get("nombre") or "").strip()
-    descripcion = (datos.get("descripcion") or "").strip()
-
-    if not nombre:
-        return _respuesta_error("El nombre del modulo es obligatorio.")
-
-    modelo = Usuarios()
-    try:
-        nuevo_id = modelo.crear_modulo(nombre, descripcion)
-        
-        registrar_en_bitacora(
-            accion="Crear módulo",
-            descripcion=f"Se creó el módulo: {nombre}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Modulo creado.", "id": nuevo_id})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Usuarios', 'modificar')
-def actualizar_modulo(modulo_id):
-    datos = request.get_json(silent=True) or {}
-    nombre = (datos.get("nombre") or "").strip()
-    descripcion = (datos.get("descripcion") or "").strip()
-
-    if not nombre:
-        return _respuesta_error("El nombre del modulo es obligatorio.")
-
-    modelo = Usuarios()
-    try:
-        resultado = modelo.actualizar_modulo(modulo_id, nombre, descripcion)
-        
-        registrar_en_bitacora(
-            accion="Actualizar módulo",
-            descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Modulo actualizado.", "result": resultado})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Usuarios', 'eliminar')
-def eliminar_modulo(modulo_id):
-    modelo = Usuarios()
-    try:
-        modelo.eliminar_modulo(modulo_id)
-        
-        registrar_en_bitacora(
-            accion="Eliminar módulo",
-            descripcion=f"Se eliminó el módulo ID: {modulo_id}",
-            usuario_id=_usuario_actual().get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({"success": True, "message": "Modulo eliminado."})
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-# ==================== PERMISOS POR ROL ====================
-
-@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["GET"])
-@jwt_required
-@tiene_permiso('Usuarios', 'consultar')
-def obtener_permisos_por_rol(rol_id):
-    """Obtiene todos los permisos de un rol específico"""
-    modelo = Usuarios()
-    try:
-        modulos = modelo.listar_modulos() or []
-        permisos_existentes = modelo.listar_permisos_por_rol(rol_id) or []
-        
-        permisos_dict = {p["modulo_id"]: p for p in permisos_existentes}
-        
-        permisos_completos = []
-        for modulo in modulos:
-            permiso = permisos_dict.get(modulo["id"], {})
-            permisos_completos.append({
-                "modulo_id": modulo["id"],
-                "modulo_nombre": modulo["nombre"],
-                "modulo_descripcion": modulo.get("descripcion", ""),
-                "registrar": permiso.get("registrar", False),
-                "modificar": permiso.get("modificar", False),
-                "eliminar": permiso.get("eliminar", False),
-                "consultar": permiso.get("consultar", True),
-            })
-        
-        return jsonify({
-            "success": True,
-            "rol_id": rol_id,
-            "permisos": permisos_completos
-        })
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Usuarios', 'modificar')
-def actualizar_permisos_rol(rol_id):
-    """Actualiza todos los permisos de un rol específico"""
-    datos = request.get_json(silent=True) or {}
-    permisos = datos.get("permisos", [])
-    
-    if not permisos:
-        return _respuesta_error("Se requiere la lista de permisos.")
-    
-    modelo = Usuarios()
-    roles = modelo.listar_roles() or []
-    rol_existente = next((r for r in roles if r["id"] == rol_id), None)
-    
-    if not rol_existente:
-        return _respuesta_error(f"El rol con ID {rol_id} no existe.", 404)
-    
-    usuario_actual = _usuario_actual()
-    es_admin = str(usuario_actual.get("nombre_rol", "")).strip().lower() == "admin"
-    nombre_rol = str(rol_existente.get("nombre", "")).strip().lower()
-    
-    if nombre_rol == "admin" and not es_admin:
-        return _respuesta_error("No tienes permisos para modificar los permisos del rol Admin.", 403)
-    
-    try:
-        resultados = []
-        for permiso in permisos:
-            modulo_id = permiso.get("modulo_id")
-            registrar = _bool(permiso.get("registrar", False))
-            modificar = _bool(permiso.get("modificar", False))
-            eliminar = _bool(permiso.get("eliminar", False))
-            
-            if modulo_id:
-                resultado = modelo.guardar_permiso(
-                    rol_id, modulo_id, registrar, modificar, eliminar
-                )
-                resultados.append(resultado)
-        
-        registrar_en_bitacora(
-            accion="Actualizar permisos de rol",
-            descripcion=f"Se actualizaron {len(resultados)} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
-            usuario_id=usuario_actual.get("usuario_id", "SYSTEM"),
-            modulo_nombre="Usuarios"
-        )
-        
-        return jsonify({
-            "success": True,
-            "message": "Permisos actualizados correctamente.",
-            "actualizados": len(resultados)
-        })
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-
-
-@usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>/modulo/<int:modulo_id>", methods=["GET"])
-@jwt_required
-@tiene_permiso('Usuarios', 'consultar')
-def obtener_permiso_especifico(rol_id, modulo_id):
-    """Obtiene un permiso específico de un rol para un módulo"""
-    modelo = Usuarios()
-    try:
-        permisos = modelo.listar_permisos_por_rol(rol_id) or []
-        permiso = next((p for p in permisos if p["modulo_id"] == modulo_id), None)
-        
-        modulos = modelo.listar_modulos() or []
-        modulo = next((m for m in modulos if m["id"] == modulo_id), None)
-        
-        if not modulo:
-            return _respuesta_error(f"El módulo con ID {modulo_id} no existe.", 404)
-        
-        return jsonify({
-            "success": True,
-            "permiso": {
-                "rol_id": rol_id,
-                "modulo_id": modulo_id,
-                "modulo_nombre": modulo["nombre"],
-                "registrar": permiso.get("registrar", False) if permiso else False,
-                "modificar": permiso.get("modificar", False) if permiso else False,
-                "eliminar": permiso.get("eliminar", False) if permiso else False,
-                "consultar": permiso.get("consultar", True) if permiso else True,
-            }
-        })
-    except Exception as error:
-        return _respuesta_por_excepcion(error)
-    
-
-@usuarios_blueprint.route("/api/usuarios/mis-permisos", methods=["GET"])
-@jwt_required
-def obtener_mis_permisos():
-    """Obtiene todos los permisos del usuario actual para el frontend"""
-    from app.utils.decorators import obtener_permisos_usuario_actual
-    permisos = obtener_permisos_usuario_actual()
-    return jsonify({"success": True, "permisos": permisos})
-
-
-# ==================== MÉTODO AUXILIAR ====================
-
-def obtener_rol_por_id(self, rol_id):
-    """Obtiene un rol por su ID (para el modelo Usuarios)"""
-    return self._consultar(
-        """
-        SELECT id, nombre, descripcion
-        FROM rol
-        WHERE id = %s
-        LIMIT 1
-        """,
-        (rol_id,),
-    )
+    return jsonify({"success": False, "error": mensaje}), 400
