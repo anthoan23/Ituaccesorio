@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
-from app.utils.decorators import jwt_required
+from app.utils.decorators import jwt_required, tiene_permiso
 
 from app.models.bitacora import registrar_en_bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto

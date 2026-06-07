@@ -6,6 +6,9 @@ from werkzeug.utils import secure_filename
 
 from decimal import Decimal, InvalidOperation
 
+from app.models.inventario import Inventario, FotosInventario
+from app.models.productos import Producto
+from app.utils.decorators import jwt_required
 from app.models.inventario import Inventario
 from app.models.bitacora import registrar_en_bitacora
 from app.utils.decorators import jwt_required, tiene_permiso
@@ -53,21 +56,30 @@ def _guardar_foto_inventario(archivo):
 @jwt_required
 @tiene_permiso('Inventario', 'consultar')
 def api_listar_inventario():
-    """Listado de inventario (stock + modelo + marca + clase + caracteristica).
-
-    Query params opcionales:
-    - modelo: filtra por Producto.Nombre_producto (match exacto)
-    """
-
+    """Listado de inventario (stock + modelo + marca + clase)"""
     modelo = request.args.get("modelo")
-
+    
     if modelo is not None:
         modelo = str(modelo).strip()
         if modelo == "":
             modelo = None
 
     inv = Inventario()
-    inventario = inv.listar_inventario_filtrado(N_modelo=modelo) or []
+    
+    if modelo:
+        inventario = inv.listar_inventario_general_modelo(modelo) or []
+    else:
+        inventario = inv.listar_inventario_general() or []
+    
+    # Transformar keys para el frontend
+    for item in inventario:
+        item["tipo"] = item.get("nombre_clase", "")
+        item["N_marca"] = item.get("nombre_marca", "")
+        item["N_modelo"] = item.get("nombre_producto", "")
+        item["Existencia"] = item.get("existencia", 0)
+        item["Costo_venta"] = item.get("costo_venta", 0)
+        item["Foto_inventario"] = item.get("foto_inventario", "")
+    
     return jsonify({"success": True, "inventario": inventario})
 
 
@@ -133,124 +145,43 @@ def api_registrar_stock():
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@inventario_blueprint.route("/api/inventario/stock/<string:id_inventario>", methods=["PUT"])
+@inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
 @jwt_required
-@tiene_permiso('Inventario', 'modificar')
-def api_actualizar_stock(id_inventario: str):
-    """Actualiza el stock de un producto en inventario"""
+def api_listar_fotos_inventario(id_inventario: str):
+    """Lista todas las fotos de un inventario"""
+    fotos = FotosInventario()
+    lista = fotos.listar_fotos(id_inventario)
+    return jsonify({"success": True, "fotos": lista})
+
+
+@inventario_blueprint.route("/api/inventario/fotos", methods=["POST"])
+@jwt_required
+def api_agregar_foto_inventario():
+    """Agrega una nueva foto a un inventario"""
     datos = request.get_json(silent=True) or {}
-    existencia = datos.get("existencia")
-    costo_venta = datos.get("costo_venta")
-
-    if existencia is None and costo_venta is None:
-        return jsonify({"success": False, "error": "Debe proporcionar existencia o costo_venta para actualizar."}), 400
-
-    inv = Inventario()
+    id_inventario = datos.get("id_inventario")
+    foto_url = datos.get("foto_url")
+    
+    if not id_inventario or not foto_url:
+        return jsonify({"success": False, "error": "id_inventario y foto_url son requeridos."}), 400
+    
+    fotos = FotosInventario()
     try:
-        # Obtener información actual antes de actualizar
-        stock_actual = inv.obtener_stock_por_id(id_inventario)
-        if not stock_actual:
-            return jsonify({"success": False, "error": "Stock no encontrado."}), 404
-        
-        nombre_producto = stock_actual.get("nombre_producto", id_inventario)
-        existencia_actual = stock_actual.get("existencia", 0)
-        costo_actual = stock_actual.get("costo_venta", 0)
-        
-        if existencia is not None:
-            existencia_val = int(existencia)
-            if existencia_val < 0:
-                return jsonify({"success": False, "error": "existencia no puede ser negativa."}), 400
-        else:
-            existencia_val = None
-        
-        if costo_venta is not None:
-            costo_raw = str(costo_venta).strip().replace(",", ".")
-            costo_val = Decimal(costo_raw)
-            if costo_val < 0:
-                return jsonify({"success": False, "error": "costo_venta no puede ser negativo."}), 400
-        else:
-            costo_val = None
-        
-        ok = inv.actualizar_stock(
-            id_inventario=id_inventario,
-            existencia=existencia_val,
-            costo_venta=costo_val,
-        )
-        
-        if not ok:
-            return jsonify({"success": False, "error": "No se pudo actualizar el stock."}), 500
-        
-        # Registrar en bitácora
-        cambios = []
-        if existencia_val is not None and existencia_val != existencia_actual:
-            cambios.append(f"cantidad: {existencia_actual} → {existencia_val}")
-        if costo_val is not None and costo_val != costo_actual:
-            cambios.append(f"costo: {costo_actual} → {costo_val}")
-        
-        if cambios:
-            registrar_en_bitacora(
-                accion="Actualizar stock",
-                descripcion=f"Se actualizó stock para producto: {nombre_producto} (ID Inventario: {id_inventario}) - Cambios: {', '.join(cambios)}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Inventario"
-            )
-        
-        return jsonify({"success": True, "message": "Stock actualizado correctamente."})
+        new_id = fotos.insertar_foto(id_inventario, foto_url)
+        return jsonify({"success": True, "id": new_id})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@inventario_blueprint.route("/api/inventario/stock/<string:id_inventario>", methods=["DELETE"])
+@inventario_blueprint.route("/api/inventario/fotos/<string:id_foto>", methods=["DELETE"])
 @jwt_required
-@tiene_permiso('Inventario', 'eliminar')
-def api_eliminar_stock(id_inventario: str):
-    """Elimina un registro de stock del inventario"""
-    inv = Inventario()
+def api_eliminar_foto_inventario(id_foto: str):
+    """Elimina una foto de inventario"""
+    fotos = FotosInventario()
     try:
-        # Obtener información antes de eliminar
-        stock_actual = inv.obtener_stock_por_id(id_inventario)
-        if not stock_actual:
-            return jsonify({"success": False, "error": "Stock no encontrado."}), 404
-        
-        nombre_producto = stock_actual.get("nombre_producto", id_inventario)
-        existencia = stock_actual.get("existencia", 0)
-        costo = stock_actual.get("costo_venta", 0)
-        
-        ok = inv.eliminar_stock(id_inventario=id_inventario)
-        
-        if not ok:
-            return jsonify({"success": False, "error": "No se pudo eliminar el stock."}), 500
-        
-        # Registrar en bitácora
-        registrar_en_bitacora(
-            accion="Eliminar stock",
-            descripcion=f"Se eliminó stock del producto: {nombre_producto} (ID Inventario: {id_inventario}) - Cantidad: {existencia} - Costo: {costo}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Inventario"
-        )
-        
-        return jsonify({"success": True, "message": "Stock eliminado correctamente."})
+        ok = fotos.eliminar_foto(id_foto)
+        if ok:
+            return jsonify({"success": True, "message": "Foto eliminada."})
+        return jsonify({"success": False, "error": "Foto no encontrada."}), 404
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
-
-
-@inventario_blueprint.route("/api/inventario/productos", methods=["GET"])
-@jwt_required
-@tiene_permiso('Inventario', 'consultar')
-def api_listar_productos_para_inventario():
-    """Lista productos disponibles para agregar a inventario"""
-    inv = Inventario()
-    productos = inv.listar_productos_sin_inventario() or []
-    return jsonify({"success": True, "productos": productos})
-
-
-@inventario_blueprint.route("/api/inventario/stock/<string:id_inventario>", methods=["GET"])
-@jwt_required
-@tiene_permiso('Inventario', 'consultar')
-def api_obtener_stock(id_inventario: str):
-    """Obtiene un registro de stock específico"""
-    inv = Inventario()
-    stock = inv.obtener_stock_por_id(id_inventario)
-    if not stock:
-        return jsonify({"success": False, "error": "Stock no encontrado."}), 404
-    return jsonify({"success": True, "stock": stock})
