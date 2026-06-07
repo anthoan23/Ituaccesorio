@@ -345,3 +345,67 @@ def api_eliminar_modelo(id_modelo: str):
         return jsonify({"success": True, "deleted": ok})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
+
+# ==================== REPORTES ====================
+
+@productos_blueprint.route("/api/productos/reportes", methods=["POST"])
+@jwt_required
+def api_reportes_productos():
+    """Obtiene productos para reportes con filtros avanzados"""
+    from datetime import datetime
+    from app.models.inventario import Inventario
+    
+    datos = request.get_json(silent=True) or {}
+    
+    filtros = {
+        "clase_id": datos.get("clase_id"),
+        "marca_id": datos.get("marca_id"),
+        "q": datos.get("q", "").strip(),
+        "stock_min": datos.get("stock_min"),
+        "stock_max": datos.get("stock_max"),
+    }
+    
+    modelo = Producto()
+    productos = modelo.listar(
+        id_marca=filtros["marca_id"],
+        id_clase=filtros["clase_id"],
+        q=filtros["q"]
+    )
+    
+    # Obtener stock de cada producto
+    inv_modelo = Inventario()
+    inventario_lista = inv_modelo.listar_inventario() or []
+    
+    # Crear diccionario de stock por id_producto
+    stock_dict = {}
+    for item in inventario_lista:
+        id_prod = str(item.get("id_producto", ""))
+        if id_prod:
+            stock_dict[id_prod] = item.get("existencia", 0)
+    
+    # Filtrar por stock y agregar stock a cada producto
+    productos_filtrados = []
+    for p in productos:
+        stock = stock_dict.get(str(p.get("id", "")), 0)
+        
+        # Aplicar filtros de stock
+        if filtros["stock_min"] is not None and stock < int(filtros["stock_min"]):
+            continue
+        if filtros["stock_max"] is not None and stock > int(filtros["stock_max"]):
+            continue
+        
+        p["stock"] = stock
+        productos_filtrados.append(p)
+    
+    # Obtener clases y marcas para los filtros del modal
+    clases_modelo = ClaseProducto()
+    marcas_modelo = MarcaProducto()
+    
+    return jsonify({
+        "success": True,
+        "productos": productos_filtrados,
+        "total": len(productos_filtrados),
+        "clases": clases_modelo.listar(),
+        "marcas": marcas_modelo.listar(),
+        "fecha_reporte": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })

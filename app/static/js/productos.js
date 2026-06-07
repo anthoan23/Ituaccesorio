@@ -144,7 +144,6 @@
     const firstInput = modal.querySelector("input, select");
     if (firstInput) firstInput.focus({ preventScroll: true });
     
-    // Inicializar validadores después de abrir el modal
     if (window.FieldValidator) {
       setTimeout(() => window.FieldValidator.init(), 100);
     }
@@ -157,7 +156,6 @@
     if (btnNuevo) btnNuevo.setAttribute("aria-expanded", "false");
     setBodyScrollLocked();
     
-    // Limpiar validaciones al cerrar
     if (formProducto && window.FieldValidator) {
       window.FieldValidator.resetForm(formProducto);
     }
@@ -175,7 +173,6 @@
     if (btnGuardarClase) btnGuardarClase.disabled = false;
     if (btnGuardarMarca) btnGuardarMarca.disabled = false;
     
-    // Resetear validadores
     if (window.FieldValidator) {
       window.FieldValidator.resetForm(formProducto);
     }
@@ -190,7 +187,6 @@
     }
     if (btnNuevaClase) btnNuevaClase.textContent = isNew ? "Cancelar" : "Nueva clase";
     
-    // Reinicializar validadores después de mostrar/ocultar campos
     if (window.FieldValidator) {
       setTimeout(() => window.FieldValidator.init(), 100);
     }
@@ -205,7 +201,6 @@
     }
     if (btnNuevaMarca) btnNuevaMarca.textContent = isNew ? "Cancelar" : "Nueva marca";
     
-    // Reinicializar validadores después de mostrar/ocultar campos
     if (window.FieldValidator) {
       setTimeout(() => window.FieldValidator.init(), 100);
     }
@@ -305,28 +300,28 @@
     tabla.innerHTML = modelos
       .map(
         (m) => `
-        <tr>
-          <td><span class="product-thumb" aria-hidden="true"></span></td>
-          <td>
-            <div class="product-meta">
-              <strong class="product-name">${escapeHtml(m.nombre || "")}</strong>
-              <span class="product-sku">Código: PRO${escapeHtml(m.id ?? "")}</span>
-            </div>
-           </td>
-          <td>${escapeHtml(m.marca_nombre || "")}</td>
-          <td><span class="chip">${escapeHtml(m.clase_nombre || "")}</span></td>
-          <td class="table__actions">
-            <div class="row-actions" aria-label="Acciones del producto">
-              <button class="icon-action" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
-              </button>
-              <button class="icon-action" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
-              </button>
-            </div>
-           </td>
-        </tr>
-      `,
+          <tr>
+            <td><span class="product-thumb" aria-hidden="true"></span></td>
+            <td>
+              <div class="product-meta">
+                <strong class="product-name">${escapeHtml(m.nombre || "")}</strong>
+                <span class="product-sku">Código: PRO${escapeHtml(m.id ?? "")}</span>
+              </div>
+            </td>
+            <td>${escapeHtml(m.marca_nombre || "")}</td>
+            <td><span class="chip">${escapeHtml(m.clase_nombre || "")}</span></td>
+            <td class="table__actions">
+              <div class="row-actions" aria-label="Acciones del producto">
+                <button class="icon-action" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                </button>
+                <button class="icon-action" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `,
       )
       .join("");
   }
@@ -430,7 +425,6 @@
     if (!formProducto) return;
     if (isSubmitting) return;
 
-    // Validar formulario antes de enviar
     if (!validarFormularioAntesDeEnviar(formProducto, 'producto')) {
       return;
     }
@@ -480,6 +474,7 @@
 
       closeModal();
       await recargarModelosSegunFiltros();
+      notify("success", "Producto guardado correctamente.");
     } catch (err) {
       notify("error", err?.message || "No se pudo guardar.");
     } finally {
@@ -504,7 +499,6 @@
 
       validateMaxLen("Clase", nombreClase, MAX.clase);
 
-      // Validar solo letras
       const soloLetrasRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/;
       if (!soloLetrasRegex.test(nombreClase)) {
         throw new Error("La clase solo puede contener letras y espacios.");
@@ -547,7 +541,6 @@
 
       validateMaxLen("Marca", nombreMarca, MAX.marca);
 
-      // Validar letras, números y espacios
       const letrasNumerosRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\s]+$/;
       if (!letrasNumerosRegex.test(nombreMarca)) {
         throw new Error("La marca solo puede contener letras, números y espacios.");
@@ -601,6 +594,316 @@
       }
     }
   }
+
+  // ==================== REPORTES ====================
+  
+  let reporteDatosActuales = [];
+  let reporteFiltrosActuales = {};
+
+  const btnReportes = document.getElementById("btn-reportes");
+  const modalReportes = document.getElementById("modal-reportes");
+  const reporteClase = document.getElementById("reporte-clase");
+  const reporteMarca = document.getElementById("reporte-marca");
+  const reporteBusqueda = document.getElementById("reporte-busqueda");
+  const reporteStockMin = document.getElementById("reporte-stock-min");
+  const reporteStockMax = document.getElementById("reporte-stock-max");
+  const btnGenerarReporte = document.getElementById("btn-generar-reporte");
+  const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
+  const btnExportarExcel = document.getElementById("btn-exportar-excel");
+  const btnExportarPdf = document.getElementById("btn-exportar-pdf");
+  const btnImprimir = document.getElementById("btn-imprimir");
+  const reportePreview = document.getElementById("reporte-preview");
+  const reporteTotal = document.getElementById("reporte-total");
+  const reporteTabla = document.getElementById("reporte-tabla");
+
+  function cargarClasesMarcasReporte() {
+      if (reporteClase) {
+          fetchJson("/api/productos/clases", { method: "GET" }).then(data => {
+              const clases = data.clases || [];
+              reporteClase.innerHTML = '<option value="">Todas</option>' + 
+                  clases.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join("");
+          }).catch(() => {});
+      }
+      
+      if (reporteMarca) {
+          fetchJson("/api/productos/marcas", { method: "GET" }).then(data => {
+              const marcas = data.marcas || [];
+              reporteMarca.innerHTML = '<option value="">Todas</option>' + 
+                  marcas.map(m => `<option value="${m.id}">${escapeHtml(m.nombre)}</option>`).join("");
+          }).catch(() => {});
+      }
+  }
+
+  function limpiarFiltrosReporte() {
+      if (reporteClase) reporteClase.value = "";
+      if (reporteMarca) reporteMarca.value = "";
+      if (reporteBusqueda) reporteBusqueda.value = "";
+      if (reporteStockMin) reporteStockMin.value = "";
+      if (reporteStockMax) reporteStockMax.value = "";
+  }
+
+  async function generarReporte() {
+      const filtros = {
+          clase_id: reporteClase?.value || null,
+          marca_id: reporteMarca?.value || null,
+          q: reporteBusqueda?.value || "",
+          stock_min: reporteStockMin?.value ? parseInt(reporteStockMin.value) : null,
+          stock_max: reporteStockMax?.value ? parseInt(reporteStockMax.value) : null,
+          clase_nombre: reporteClase?.options[reporteClase.selectedIndex]?.text || null,
+          marca_nombre: reporteMarca?.options[reporteMarca.selectedIndex]?.text || null
+      };
+      
+      reporteFiltrosActuales = filtros;
+      
+      btnGenerarReporte.disabled = true;
+      btnGenerarReporte.textContent = "Cargando...";
+      
+      try {
+          const data = await fetchJson("/api/productos/reportes", {
+              method: "POST",
+              body: JSON.stringify(filtros)
+          });
+          
+          reporteDatosActuales = data.productos || [];
+          const total = data.total || 0;
+          
+          if (reportePreview) reportePreview.style.display = "block";
+          if (reporteTotal) reporteTotal.textContent = `Total de productos: ${total}`;
+          
+          if (reporteTabla) {
+              if (reporteDatosActuales.length === 0) {
+                  reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
+              } else {
+                  reporteTabla.innerHTML = reporteDatosActuales.map(p => `
+                      <tr>
+                          <td>${escapeHtml(p.id || '')}</td>
+                          <td>${escapeHtml(p.nombre || '')}</td>
+                          <td>${escapeHtml(p.marca_nombre || '-')}</td>
+                          <td>${escapeHtml(p.clase_nombre || '-')}</td>
+                          <td>${p.stock === 0 ? '<span style="color:#f44336;">Sin stock</span>' : (p.stock <= 5 ? '<span style="color:#ff9800;">' + p.stock + ' uds</span>' : p.stock)}</td>
+                      </tr>
+                  `).join("");
+              }
+          }
+          
+          if (btnExportarExcel) btnExportarExcel.disabled = false;
+          if (btnExportarPdf) btnExportarPdf.disabled = false;
+          if (btnImprimir) btnImprimir.disabled = false;
+          
+      } catch (err) {
+          notify("error", err.message || "Error al generar el reporte");
+      } finally {
+          btnGenerarReporte.disabled = false;
+          btnGenerarReporte.textContent = "🔍 Generar reporte";
+      }
+  }
+
+  function exportarAExcel() {
+      if (reporteDatosActuales.length === 0) {
+          notify("error", "No hay datos para exportar");
+          return;
+      }
+      
+      const datos = reporteDatosActuales.map(p => ({
+          "ID": p.id || "",
+          "Nombre": p.nombre || "",
+          "Marca": p.marca_nombre || "",
+          "Clase": p.clase_nombre || "",
+          "Stock": p.stock || 0,
+          "Descripción": p.descripcion || ""
+      }));
+      
+      if (typeof XLSX === 'undefined') {
+          notify("info", "Cargando librería de Excel, espera un momento...");
+          const script = document.createElement('script');
+          script.src = 'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js';
+          script.onload = () => exportarAExcel();
+          document.head.appendChild(script);
+          return;
+      }
+      
+      const ws = XLSX.utils.json_to_sheet(datos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Productos");
+      
+      ws['!cols'] = [
+          {wch:10}, {wch:35}, {wch:20}, {wch:20}, {wch:10}, {wch:50}
+      ];
+      
+      XLSX.writeFile(wb, `productos_${new Date().toISOString().slice(0,19)}.xlsx`);
+      notify("success", "Reporte exportado a Excel");
+  }
+
+  function exportarAPdf() {
+      if (reporteDatosActuales.length === 0) {
+          notify("error", "No hay datos para exportar");
+          return;
+      }
+      
+      if (typeof window.jspdf === 'undefined') {
+          notify("info", "Cargando librería de PDF, espera un momento...");
+          const script1 = document.createElement('script');
+          script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          const script2 = document.createElement('script');
+          script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js';
+          script1.onload = () => exportarAPdf();
+          document.head.appendChild(script1);
+          document.head.appendChild(script2);
+          return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      
+      doc.setFontSize(18);
+      doc.text("REPORTE DE PRODUCTOS", 14, 15);
+      
+      doc.setFontSize(10);
+      doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 25);
+      
+      const filtrosTexto = [];
+      if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
+      if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
+      if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+      if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
+      if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
+      
+      doc.setFontSize(9);
+      doc.text(`Filtros: ${filtrosTexto.join(" | ") || "Todos los productos"}`, 14, 32);
+      doc.text(`Total productos: ${reporteDatosActuales.length}`, 14, 39);
+      
+      const columns = ["ID", "Nombre", "Marca", "Clase", "Stock", "Descripción"];
+      const rows = reporteDatosActuales.map(p => [
+          p.id || "",
+          p.nombre || "",
+          p.marca_nombre || "",
+          p.clase_nombre || "",
+          p.stock === 0 ? "Sin stock" : String(p.stock),
+          (p.descripcion || "").substring(0, 60)
+      ]);
+      
+      doc.autoTable({
+          head: [columns],
+          body: rows,
+          startY: 45,
+          theme: 'striped',
+          headStyles: { fillColor: [243, 197, 0], textColor: [0, 0, 0], fontStyle: 'bold' },
+          margin: { top: 45 },
+          didDrawPage: (data) => {
+              doc.setFontSize(8);
+              doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.getWidth() - 20, doc.internal.pageSize.getHeight() - 10);
+          }
+      });
+      
+      doc.save(`productos_${new Date().toISOString().slice(0,19)}.pdf`);
+      notify("success", "Reporte exportado a PDF");
+  }
+
+  function imprimirReporte() {
+      if (reporteDatosActuales.length === 0) {
+          notify("error", "No hay datos para imprimir");
+          return;
+      }
+      
+      const ventana = window.open("", "_blank");
+      const fecha = new Date().toLocaleString();
+      const filtrosTexto = [];
+      if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
+      if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
+      if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+      if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
+      if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
+      
+      ventana.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <title>Reporte de Productos</title>
+              <style>
+                  @media print {
+                      body { margin: 0; padding: 20px; }
+                      .no-print { display: none; }
+                      table { page-break-inside: avoid; }
+                  }
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  h1 { color: #333; text-align: center; border-bottom: 2px solid #f3c500; padding-bottom: 10px; }
+                  .info { margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+                  .filters { margin-bottom: 20px; padding: 10px; background: #fff3cd; border-left: 4px solid #f3c500; }
+                  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                  th { background-color: #f3c500; color: #333; }
+                  tr:nth-child(even) { background-color: #f9f9f9; }
+                  .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+                  .btn-print { margin-bottom: 20px; padding: 10px 20px; background: #f3c500; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+                  .badge-out { color: #f44336; font-weight: bold; }
+                  .badge-low { color: #ff9800; font-weight: bold; }
+              </style>
+          </head>
+          <body>
+              <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
+              <h1>REPORTE DE PRODUCTOS</h1>
+              <div class="info">
+                  <strong>Fecha:</strong> ${fecha}<br>
+                  <strong>Total productos:</strong> ${reporteDatosActuales.length}
+              </div>
+              <div class="filters">
+                  <strong>Filtros aplicados:</strong><br>
+                  ${filtrosTexto.length ? filtrosTexto.join("<br>") : "Todos los productos"}
+              </div>
+              <table>
+                  <thead>
+                      <tr>
+                          <th>ID</th>
+                          <th>Nombre</th>
+                          <th>Marca</th>
+                          <th>Clase</th>
+                          <th>Stock</th>
+                          <th>Descripción</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${reporteDatosActuales.map(p => `
+                          <tr>
+                              <td>${escapeHtml(p.id || '')}</td>
+                              <td>${escapeHtml(p.nombre || '')}</td>
+                              <td>${escapeHtml(p.marca_nombre || '-')}</td>
+                              <td>${escapeHtml(p.clase_nombre || '-')}</td>
+                              <td class="${p.stock === 0 ? 'badge-out' : (p.stock <= 5 ? 'badge-low' : '')}">${p.stock === 0 ? 'Sin stock' : p.stock + ' uds'}</td>
+                              <td>${escapeHtml(p.descripcion || '-')}</td>
+                          </tr>
+                      `).join('')}
+                  </tbody>
+              </table>
+              <div class="footer">
+                  Reporte generado por Sistema de Gestión ItuAccesorio
+              </div>
+          </body>
+          </html>
+      `);
+      ventana.document.close();
+  }
+
+  // Eventos de reportes
+  if (btnReportes) {
+      btnReportes.addEventListener("click", () => {
+          cargarClasesMarcasReporte();
+          limpiarFiltrosReporte();
+          reportePreview.style.display = "none";
+          if (btnExportarExcel) btnExportarExcel.disabled = true;
+          if (btnExportarPdf) btnExportarPdf.disabled = true;
+          if (btnImprimir) btnImprimir.disabled = true;
+          if (modalReportes) modalReportes.classList.remove("is-hidden");
+      });
+  }
+
+  if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
+  if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
+  if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarAExcel);
+  if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarAPdf);
+  if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporte);
+
+  // ==================== FIN REPORTES ====================
 
   async function init() {
     closeModal();
