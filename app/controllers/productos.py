@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
+from datetime import datetime
 
 from app.models.bitacora import registrar_en_bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto
+from app.models.inventario import Inventario
 
 productos_blueprint = Blueprint("productos", __name__)
 
@@ -52,7 +54,7 @@ def pagina_productos():
 @tiene_permiso('Productos', 'consultar')
 def api_listar_clases():
     modelo = ClaseProducto()
-    clases = modelo.listar()  # Cambiado de listar_clases() a listar()
+    clases = modelo.listar()
     return jsonify({"success": True, "clases": clases})
 
 
@@ -147,7 +149,7 @@ def api_eliminar_clase(id_clase: str):
 def api_listar_marcas():
     id_clase = request.args.get("clase_id", default=None, type=str)
     modelo = MarcaProducto()
-    marcas = modelo.listar(id_clase=id_clase)  # Cambiado de listar_marcas() a listar()
+    marcas = modelo.listar(id_clase=id_clase)
     return jsonify({"success": True, "marcas": marcas})
 
 
@@ -346,13 +348,14 @@ def api_eliminar_modelo(id_modelo: str):
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
+
 # ==================== REPORTES ====================
 
 @productos_blueprint.route("/api/productos/reportes", methods=["POST"])
 @jwt_required
+@tiene_permiso('Productos', 'consultar')
 def api_reportes_productos():
     """Obtiene productos para reportes con filtros avanzados"""
-    from datetime import datetime
     from app.models.inventario import Inventario
     
     datos = request.get_json(silent=True) or {}
@@ -397,15 +400,9 @@ def api_reportes_productos():
         p["stock"] = stock
         productos_filtrados.append(p)
     
-    # Obtener clases y marcas para los filtros del modal
-    clases_modelo = ClaseProducto()
-    marcas_modelo = MarcaProducto()
-    
     return jsonify({
         "success": True,
         "productos": productos_filtrados,
         "total": len(productos_filtrados),
-        "clases": clases_modelo.listar(),
-        "marcas": marcas_modelo.listar(),
         "fecha_reporte": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
