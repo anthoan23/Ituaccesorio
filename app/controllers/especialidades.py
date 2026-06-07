@@ -64,7 +64,7 @@ def api_agregar_especialidad():
         )
         return jsonify({"success": True, "message": mensaje}), 201
     else:
-        return jsonify({"success": False, "message": mensaje}), 201
+        return jsonify({"success": False, "message": mensaje}), 400
 
 
 @especialidades_blueprint.route("/api/especialidades", methods=["PUT"])
@@ -98,7 +98,7 @@ def api_actualizar_especialidad():
         )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
-        return jsonify({"success": False, "message": mensaje}), 201
+        return jsonify({"success": False, "message": mensaje}), 400
 
 
 @especialidades_blueprint.route("/api/especialidades", methods=["DELETE"])
@@ -135,4 +135,4 @@ def api_eliminar_especialidad():
         )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
-        return jsonify({"success": False, "message": mensaje}), 201
+        return jsonify({"success": False, "message": mensaje}), 400
