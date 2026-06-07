@@ -44,6 +44,30 @@
     descripcion: 300,
   };
 
+  // Validar formulario antes de enviar
+  function validarFormularioAntesDeEnviar(form, nombreFormulario) {
+    if (!window.FieldValidator) {
+      console.warn('FieldValidator no disponible');
+      return true;
+    }
+    
+    const isValid = window.FieldValidator.validateForm(form);
+    
+    if (!isValid) {
+      notify("error", `Por favor, corrige los errores en el formulario de ${nombreFormulario}.`);
+      
+      const primerError = form.querySelector('.field-error');
+      if (primerError) {
+        primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        primerError.focus();
+      }
+      
+      return false;
+    }
+    
+    return true;
+  }
+
   function notify(type, message) {
     if (window.FeedbackModal && typeof window.FeedbackModal.show === "function") {
       window.FeedbackModal.show({
@@ -53,7 +77,6 @@
       });
       return;
     }
-    // fallback
     alert(message);
   }
 
@@ -120,6 +143,11 @@
 
     const firstInput = modal.querySelector("input, select");
     if (firstInput) firstInput.focus({ preventScroll: true });
+    
+    // Inicializar validadores después de abrir el modal
+    if (window.FieldValidator) {
+      setTimeout(() => window.FieldValidator.init(), 100);
+    }
   }
 
   function closeModal() {
@@ -128,6 +156,11 @@
     modal.setAttribute("aria-hidden", "true");
     if (btnNuevo) btnNuevo.setAttribute("aria-expanded", "false");
     setBodyScrollLocked();
+    
+    // Limpiar validaciones al cerrar
+    if (formProducto && window.FieldValidator) {
+      window.FieldValidator.resetForm(formProducto);
+    }
   }
 
   function resetFormToCreate() {
@@ -141,20 +174,41 @@
     setNewBrandMode(false);
     if (btnGuardarClase) btnGuardarClase.disabled = false;
     if (btnGuardarMarca) btnGuardarMarca.disabled = false;
+    
+    // Resetear validadores
+    if (window.FieldValidator) {
+      window.FieldValidator.resetForm(formProducto);
+    }
   }
 
   function setNewClassMode(isNew) {
     isCreatingNewClass = Boolean(isNew);
     if (pClaseNuevaWrap) pClaseNuevaWrap.classList.toggle("is-hidden", !isNew);
-    if (pClaseNueva) pClaseNueva.required = Boolean(isNew);
+    if (pClaseNueva) {
+      pClaseNueva.required = Boolean(isNew);
+      if (!isNew && pClaseNueva.value) pClaseNueva.value = "";
+    }
     if (btnNuevaClase) btnNuevaClase.textContent = isNew ? "Cancelar" : "Nueva clase";
+    
+    // Reinicializar validadores después de mostrar/ocultar campos
+    if (window.FieldValidator) {
+      setTimeout(() => window.FieldValidator.init(), 100);
+    }
   }
 
   function setNewBrandMode(isNew) {
     isCreatingNewBrand = Boolean(isNew);
     if (pMarcaNuevaWrap) pMarcaNuevaWrap.classList.toggle("is-hidden", !isNew);
-    if (pMarcaNueva) pMarcaNueva.required = Boolean(isNew);
+    if (pMarcaNueva) {
+      pMarcaNueva.required = Boolean(isNew);
+      if (!isNew && pMarcaNueva.value) pMarcaNueva.value = "";
+    }
     if (btnNuevaMarca) btnNuevaMarca.textContent = isNew ? "Cancelar" : "Nueva marca";
+    
+    // Reinicializar validadores después de mostrar/ocultar campos
+    if (window.FieldValidator) {
+      setTimeout(() => window.FieldValidator.init(), 100);
+    }
   }
 
   function renderSelect(select, items, { includeAll = false, allLabel = "Todos", placeholder = "Selecciona" } = {}) {
@@ -258,7 +312,7 @@
               <strong class="product-name">${escapeHtml(m.nombre || "")}</strong>
               <span class="product-sku">Código: PRO${escapeHtml(m.id ?? "")}</span>
             </div>
-          </td>
+           </td>
           <td>${escapeHtml(m.marca_nombre || "")}</td>
           <td><span class="chip">${escapeHtml(m.clase_nombre || "")}</span></td>
           <td class="table__actions">
@@ -270,7 +324,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
               </button>
             </div>
-          </td>
+           </td>
         </tr>
       `,
       )
@@ -323,9 +377,7 @@
     const idInput = formProducto.querySelector("input[name='id_modelo']");
     if (idInput) idInput.value = String(modelo.id || "");
 
-    // Asegurar selects cargados
     if (!state.clases.length) await cargarClases();
-
     if (!state.marcas.length) await cargarMarcas();
 
     if (pClase) pClase.value = String(modelo.id_clase || "");
@@ -378,9 +430,15 @@
     if (!formProducto) return;
     if (isSubmitting) return;
 
+    // Validar formulario antes de enviar
+    if (!validarFormularioAntesDeEnviar(formProducto, 'producto')) {
+      return;
+    }
+
     const idModelo = String(formProducto.querySelector("input[name='id_modelo']")?.value || "").trim();
     const nombreModelo = String(pModelo?.value || "").trim();
     const descripcion = String(pDescripcion?.value || "").trim();
+    
     if (!nombreModelo) {
       notify("error", "El nombre del producto es obligatorio.");
       return;
@@ -391,12 +449,10 @@
       const submitBtn = formProducto.querySelector("button[type='submit']");
       if (submitBtn) submitBtn.disabled = true;
 
-      // Si el usuario está creando una marca nueva, debe guardarla primero
       if (isCreatingNewBrand) {
         throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
       }
 
-      // Si el usuario está creando una clase nueva, debe guardarla primero
       if (isCreatingNewClass) {
         throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
       }
@@ -448,6 +504,12 @@
 
       validateMaxLen("Clase", nombreClase, MAX.clase);
 
+      // Validar solo letras
+      const soloLetrasRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/;
+      if (!soloLetrasRegex.test(nombreClase)) {
+        throw new Error("La clase solo puede contener letras y espacios.");
+      }
+
       const data = await fetchJson("/api/productos/clases", {
         method: "POST",
         body: JSON.stringify({ nombre: nombreClase, num_i: null }),
@@ -457,11 +519,12 @@
       renderClaseFormSelect();
       if (pClase) pClase.value = String(data.id || "");
 
-      // Al cambiar/crear clase, limpiar marca actual para que el usuario elija explícitamente.
       if (pMarca) pMarca.value = "";
 
       setNewClassMode(false);
       if (pClaseNueva) pClaseNueva.value = "";
+      
+      notify("success", `Clase "${nombreClase}" creada correctamente.`);
     } catch (err) {
       notify("error", err?.message || "No se pudo guardar la clase.");
     } finally {
@@ -473,7 +536,6 @@
     try {
       if (btnGuardarMarca) btnGuardarMarca.disabled = true;
 
-      // Debe estar en modo nueva marca para guardar
       if (!isCreatingNewBrand) {
         setNewBrandMode(true);
       }
@@ -485,6 +547,12 @@
 
       validateMaxLen("Marca", nombreMarca, MAX.marca);
 
+      // Validar letras, números y espacios
+      const letrasNumerosRegex = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\s]+$/;
+      if (!letrasNumerosRegex.test(nombreMarca)) {
+        throw new Error("La marca solo puede contener letras, números y espacios.");
+      }
+
       const data = await fetchJson("/api/productos/marcas", {
         method: "POST",
         body: JSON.stringify({ nombre: nombreMarca }),
@@ -493,9 +561,10 @@
       await cargarMarcas();
       if (pMarca) pMarca.value = String(data.id || "");
 
-      // cerrar modo nueva marca
       setNewBrandMode(false);
       if (pMarcaNueva) pMarcaNueva.value = "";
+      
+      notify("success", `Marca "${nombreMarca}" creada correctamente.`);
     } catch (err) {
       notify("error", err?.message || "No se pudo guardar la marca.");
     } finally {
@@ -526,6 +595,7 @@
       try {
         await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
         await recargarModelosSegunFiltros();
+        notify("success", "Producto eliminado correctamente.");
       } catch (err) {
         notify("error", err?.message || "No se pudo eliminar.");
       }
@@ -533,7 +603,6 @@
   }
 
   async function init() {
-    // iniciar modal cerrado
     closeModal();
 
     if (btnNuevo) {
@@ -550,7 +619,6 @@
         setNewClassMode(!isCreatingNewClass);
         if (isCreatingNewClass) {
           if (pClase) pClase.value = "";
-          // Al crear una nueva clase, marcas no aplican todavía
           renderMarcaFormSelect([]);
           setNewBrandMode(false);
           if (pClaseNueva) pClaseNueva.focus({ preventScroll: true });
@@ -618,15 +686,11 @@
 
     if (pClase) {
       pClase.addEventListener("change", async () => {
-        // Si elige una clase existente, apagamos modo nueva clase
         if (isCreatingNewClass) setNewClassMode(false);
-
-        // Cambiar clase invalida marca actual (el usuario debe elegir explícitamente).
         if (pMarca) pMarca.value = "";
       });
     }
 
-    // Carga inicial
     try {
       await cargarClases();
       await cargarMarcas();

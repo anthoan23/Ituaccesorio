@@ -123,6 +123,7 @@ body::before {
 	z-index: 1;
 	width: min(1240px, calc(100% - 2.2rem));
 	margin: 0 auto;
+	margin-top: 4rem;
 	display: grid;
 	gap: 0.85rem;
 }
@@ -148,7 +149,6 @@ body::before {
 	line-height: 1.7;
 	font-weight: 600;
 	color: rgba(255, 255, 255, 0.82);
-    margin-top: 5rem;
 }
 
 .catalog-hero__actions {
