@@ -1,21 +1,17 @@
 (() => {
   // Función para verificar si un elemento está dentro del navbar
   function isInsideNavbar(element) {
-    // Verificar si está en el drawer o topbar
     const inDrawerOrTopbar = element.closest('.drawer') !== null || 
                               element.closest('.topbar') !== null;
     
-    // Si está en el user-menu pero dentro del modal de perfil, NO ignorar
     if (inDrawerOrTopbar && element.closest('#modal-mi-perfil')) {
       return false;
     }
     
-    // Si está en el user-menu pero NO es parte del modal, ignorar
     if (element.closest('.user-menu') !== null && !element.closest('#modal-mi-perfil')) {
       return true;
     }
     
-    // Si está en notificaciones, ignorar
     if (element.closest('.notifications') !== null) {
       return true;
     }
@@ -42,6 +38,11 @@
       numeric: /^\d+$/,
       alpha: /^[a-zA-Z\s]+$/,
       alphanumeric: /^[a-zA-Z0-9\s]+$/,
+      soloLetras: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+      soloNumeros: /^\d+$/,
+      soloLetrasNumeros: /^[A-Za-z0-9\s]+$/,
+      emailSimple: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      url: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
     },
     liveValidation: true,
     showErrorsInline: true,
@@ -50,6 +51,84 @@
   };
 
   const fieldStates = new WeakMap();
+
+  // Reglas predefinidas para bloquear entrada en tiempo real
+  const INPUT_FILTER_RULES = {
+    // Solo letras (incluye acentos y ñ)
+    soloLetras: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/.test(value),
+      message: 'Solo se permiten letras, espacios, acentos y ñ'
+    },
+    // Solo números
+    soloNumeros: {
+      filter: (value) => value.replace(/[^\d]/g, ''),
+      validate: (value) => /^\d*$/.test(value),
+      message: 'Solo se permiten números'
+    },
+    // Solo letras y números
+    soloLetrasNumeros: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
+      message: 'Solo se permiten letras, números y espacios'
+    },
+    // Solo letras (sin espacios)
+    soloLetrasSinEspacios: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ]*$/.test(value),
+      message: 'Solo se permiten letras (sin espacios)'
+    },
+    // Sin números
+    sinNumeros: {
+      filter: (value) => value.replace(/[\d]/g, ''),
+      validate: (value) => !/[\d]/.test(value),
+      message: 'No se permiten números'
+    },
+    // Sin símbolos (solo letras, números y espacios)
+    sinSimbolos: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
+      message: 'No se permiten símbolos especiales'
+    },
+    // Email (filtra caracteres no válidos para email)
+    email: {
+      filter: (value) => value.replace(/[^a-zA-Z0-9@._\-]/g, ''),
+      validate: (value) => /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(value),
+      message: 'Ingrese un correo electrónico válido'
+    },
+    // Teléfono (solo números, espacios, guiones y paréntesis)
+    telefono: {
+      filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),
+      validate: (value) => /^[\d\s\-+()]{7,20}$/.test(value),
+      message: 'Ingrese un número de teléfono válido'
+    },
+    // Cédula/Venezuela (solo números y guiones)
+    cedula: {
+      filter: (value) => value.replace(/[^\d\-]/g, ''),
+      validate: (value) => /^[\d\-]{6,15}$/.test(value),
+      message: 'Ingrese una cédula válida (solo números y guiones)'
+    },
+    // Sin espacios
+    sinEspacios: {
+      filter: (value) => value.replace(/\s/g, ''),
+      validate: (value) => !/\s/.test(value),
+      message: 'No se permiten espacios'
+    },
+    // Mayúsculas iniciales automáticas
+    capitalizar: {
+      filter: (value) => {
+        return value.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+      },
+      validate: () => true,
+      message: ''
+    },
+    // Sin caracteres especiales
+    sinCaracteresEspeciales: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
+      message: 'No se permiten caracteres especiales'
+    }
+  };
 
   // Reglas predefinidas
   const PREDEFINED_RULES = {
@@ -74,6 +153,7 @@
       this.warningElement = null;
       this.initialized = false;
       this.customValidators = [];
+      this.inputFilters = [];
       
       this.init();
     }
@@ -97,13 +177,13 @@
         customRules: customRules,
         onValidate: config.onValidate || null,
         onLimitReached: config.onLimitReached || null,
+        inputFilters: config.inputFilters || [],
       };
     }
 
     init() {
       if (this.initialized) return;
       
-      // IGNORAR campos dentro del navbar (excepto modal de perfil)
       if (isInsideNavbar(this.field)) {
         return;
       }
@@ -114,6 +194,9 @@
       this.minLength = this.field.getAttribute('minlength') ? parseInt(this.field.getAttribute('minlength')) : null;
       this.minValue = this.field.getAttribute('min') ? parseFloat(this.field.getAttribute('min')) : null;
       this.maxValue = this.field.getAttribute('max') ? parseFloat(this.field.getAttribute('max')) : null;
+      
+      // Cargar reglas de filtro desde data-validation-rules
+      this.loadValidationRules();
       
       if (this.config.maxLength.enabled && this.maxLength && !this.field.hasAttribute('maxlength')) {
         this.field.setAttribute('maxlength', this.maxLength);
@@ -128,6 +211,38 @@
       
       this.initialized = true;
       fieldStates.set(this.field, this);
+    }
+
+    loadValidationRules() {
+      const rulesAttr = this.field.dataset.validationRules;
+      if (rulesAttr) {
+        try {
+          // Puede ser JSON o string separado por comas
+          let rules = [];
+          if (rulesAttr.startsWith('{')) {
+            const parsed = JSON.parse(rulesAttr);
+            rules = Array.isArray(parsed) ? parsed : [parsed];
+          } else {
+            rules = rulesAttr.split(',').map(r => r.trim());
+          }
+          
+          rules.forEach(rule => {
+            if (typeof rule === 'string' && INPUT_FILTER_RULES[rule]) {
+              this.inputFilters.push(INPUT_FILTER_RULES[rule]);
+            } else if (typeof rule === 'object' && rule.filter) {
+              this.inputFilters.push(rule);
+            }
+          });
+        } catch(e) {
+          console.warn('Error parsing validation rules:', e);
+        }
+      }
+      
+      // También soportar data-validation-filter para compatibilidad
+      const filterAttr = this.field.dataset.validationFilter;
+      if (filterAttr && INPUT_FILTER_RULES[filterAttr]) {
+        this.inputFilters.push(INPUT_FILTER_RULES[filterAttr]);
+      }
     }
 
     getMaxLength() {
@@ -213,9 +328,57 @@
       }
     }
 
+    applyInputFilters() {
+      if (this.inputFilters.length === 0) return;
+      
+      let newValue = this.field.value;
+      let wasModified = false;
+      
+      this.inputFilters.forEach(filter => {
+        if (filter.filter && typeof filter.filter === 'function') {
+          const filtered = filter.filter(newValue);
+          if (filtered !== newValue) {
+            newValue = filtered;
+            wasModified = true;
+          }
+        }
+      });
+      
+      if (wasModified) {
+        const cursorPos = this.field.selectionStart;
+        this.field.value = newValue;
+        // Mantener la posición del cursor aproximadamente
+        const newPos = Math.min(cursorPos, newValue.length);
+        this.field.setSelectionRange(newPos, newPos);
+      }
+    }
+
+    validateInputFilters() {
+      if (this.inputFilters.length === 0) return { valid: true, errors: [] };
+      
+      let isValid = true;
+      const errors = [];
+      
+      this.inputFilters.forEach(filter => {
+        if (filter.validate && typeof filter.validate === 'function') {
+          if (!filter.validate(this.field.value)) {
+            isValid = false;
+            if (filter.message) {
+              errors.push(filter.message);
+            }
+          }
+        }
+      });
+      
+      return { valid: isValid, errors };
+    }
+
     bindEvents() {
       if (this.config.liveValidation) {
         this.field.addEventListener('input', (e) => {
+          // Aplicar filtros de entrada primero
+          this.applyInputFilters();
+          
           if (this.config.maxLength.enabled && this.config.maxLength.blockInput && this.maxLength) {
             if (this.field.value.length > this.maxLength) {
               this.field.value = this.field.value.slice(0, this.maxLength);
@@ -230,10 +393,13 @@
       }
       
       this.field.addEventListener('blur', () => {
+        // Aplicar filtros nuevamente al salir
+        this.applyInputFilters();
         this.validate(true);
       });
       
       this.field.addEventListener('change', () => {
+        this.applyInputFilters();
         this.validate();
       });
     }
@@ -243,6 +409,13 @@
       const errors = [];
       const value = this.field.value;
       const trimmedValue = typeof value === 'string' ? value.trim() : value;
+      
+      // Validar reglas de filtro
+      const filterValidation = this.validateInputFilters();
+      if (!filterValidation.valid) {
+        isValid = false;
+        errors.push(...filterValidation.errors);
+      }
       
       if (this.isRequired && this.config.required.enabled) {
         if (!trimmedValue || trimmedValue === '') {
@@ -415,7 +588,6 @@
     const fields = document.querySelectorAll(selectors.join(','));
     
     fields.forEach((field) => {
-      // IGNORAR campos dentro del navbar (excepto modal de perfil)
       if (isInsideNavbar(field)) {
         return;
       }
@@ -512,7 +684,6 @@
     });
   }
 
-  // Función para inicializar campos dentro de un modal cuando se abre
   function initModalFields(modalElement) {
     if (!modalElement) return;
     
@@ -530,7 +701,6 @@
     });
   }
 
-  // Observer solo para detectar modales, no para interferir con el sidebar
   const modalObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
@@ -543,14 +713,12 @@
       if (mutation.type === 'childList' && mutation.addedNodes.length) {
         for (const node of mutation.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Solo procesar modales, no el sidebar
             if (node.classList && node.classList.contains('ui-modal')) {
               if (node.style.display !== 'none') {
                 setTimeout(() => initModalFields(node), 50);
               }
             }
             
-            // Solo inicializar validadores para campos que NO están en el navbar
             if (node.matches && (node.matches('input, textarea, select'))) {
               if (!isInsideNavbar(node)) {
                 setTimeout(() => {
@@ -569,7 +737,6 @@
     }
   });
   
-  // Observar solo cambios en el body, pero sin ser demasiado agresivo
   modalObserver.observe(document.body, {
     childList: true,
     subtree: true,
@@ -590,5 +757,7 @@
     resetForm: resetForm,
     initModalFields: initModalFields,
     FieldValidator: FieldValidator,
+    addFilterRule: (name, rule) => { INPUT_FILTER_RULES[name] = rule; },
+    getFilterRules: () => ({ ...INPUT_FILTER_RULES }),
   };
 })();
