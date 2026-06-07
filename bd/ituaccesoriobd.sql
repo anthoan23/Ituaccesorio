@@ -114,7 +114,7 @@ CREATE TABLE `Cliente` (
 
 LOCK TABLES `Cliente` WRITE;
 /*!40000 ALTER TABLE `Cliente` DISABLE KEYS */;
-INSERT INTO `Cliente` VALUES ('1','Barquisimeto','04145675567','ejemplo@gmail.com'),('30548845','Barquisimeto','04142342121','ejemplotest@gmail.com');
+INSERT INTO `Cliente` VALUES ('1','Barquisimeto','04145675567','ejemplo@gmail.com'),('30548845','Barquisimeto','04142342121','ejemplotest@gmail.com'),('31143265','Rio claro','04246667263','prueba@gmail.com'),('91754623','Barquisimeto','04243124554','ejemplo@gmail.com');
 /*!40000 ALTER TABLE `Cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -221,6 +221,7 @@ CREATE TABLE `Detalle_venta` (
 
 LOCK TABLES `Detalle_venta` WRITE;
 /*!40000 ALTER TABLE `Detalle_venta` DISABLE KEYS */;
+INSERT INTO `Detalle_venta` VALUES ('1','FAC-202606-080A3A',1),('1','FAC-202606-6993F3',1),('1','FAC-202606-8D8B04',1),('1','FAC-202606-B1475D',1),('1','FAC-202606-DA0967',4),('1','FAC-202606-EB6A95',2),('1','FAC-202606-FDD009',2);
 /*!40000 ALTER TABLE `Detalle_venta` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -384,8 +385,6 @@ DROP TABLE IF EXISTS `Fotos_inventario`;
 CREATE TABLE `Fotos_inventario` (
   `ID_foto_inventario` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
-  `Capacidad` varchar(10) DEFAULT NULL,
-  `Color` varchar(15) DEFAULT NULL,
   `Foto_inventario` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID_foto_inventario`),
   KEY `ID_inventario` (`ID_inventario`),
@@ -399,7 +398,7 @@ CREATE TABLE `Fotos_inventario` (
 
 LOCK TABLES `Fotos_inventario` WRITE;
 /*!40000 ALTER TABLE `Fotos_inventario` DISABLE KEYS */;
-INSERT INTO `Fotos_inventario` VALUES ('1','1',NULL,NULL,'/static/img/evidencias/inventario/1f33501ad0a140d59f4fd2bfe24a9459.jpeg');
+INSERT INTO `Fotos_inventario` VALUES ('1','1','/static/img/evidencias/inventario/1f33501ad0a140d59f4fd2bfe24a9459.jpeg');
 /*!40000 ALTER TABLE `Fotos_inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -579,7 +578,18 @@ CREATE TABLE `Metodo_pago` (
   `Moneda` varchar(10) DEFAULT NULL,
   `Fecha_pago` datetime DEFAULT NULL,
   `Capture` varchar(255) DEFAULT NULL,
+  `Estado_pago` varchar(10) DEFAULT NULL,
+  `Metodo` varchar(30) DEFAULT NULL,
+  `Referencia` varchar(100) DEFAULT NULL,
+  `Monto` decimal(12,2) DEFAULT NULL,
+  `Aprobado_por` varchar(20) DEFAULT NULL,
+  `Fecha_aprobacion` datetime DEFAULT NULL,
+  `Motivo_rechazo` varchar(255) DEFAULT NULL,
+  `Fecha_rechazo` datetime DEFAULT NULL,
+  `Rechazado_por` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`ID_factura`),
+  KEY `idx_estado_pago` (`Estado_pago`),
+  KEY `idx_factura` (`ID_factura`),
   CONSTRAINT `Metodo_pago_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -590,6 +600,7 @@ CREATE TABLE `Metodo_pago` (
 
 LOCK TABLES `Metodo_pago` WRITE;
 /*!40000 ALTER TABLE `Metodo_pago` DISABLE KEYS */;
+INSERT INTO `Metodo_pago` VALUES ('FAC-202606-080A3A','USDT','2026-06-07 22:32:41','/static/img/capturas/capture_37ea939d175d47c39ebbd80720b44bc8.png','aprobado','binance','123321',607010.00,'32014004','2026-06-07 22:32:42',NULL,NULL,NULL);
 /*!40000 ALTER TABLE `Metodo_pago` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -637,8 +648,6 @@ CREATE TABLE `Orden_servicio` (
   `ID_cliente` varchar(10) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
-  `Patron` int DEFAULT NULL,
-  `Clave` varchar(60) DEFAULT NULL,
   `Costo_reparacion` decimal(10,2) DEFAULT NULL,
   `Nota_orden_servicio` varchar(300) DEFAULT NULL,
   `Fecha_entrada` datetime DEFAULT NULL,
@@ -708,7 +717,7 @@ CREATE TABLE `Persona_natural` (
 
 LOCK TABLES `Persona_natural` WRITE;
 /*!40000 ALTER TABLE `Persona_natural` DISABLE KEYS */;
-INSERT INTO `Persona_natural` VALUES ('1','Sinforoza','Petra'),('30548845','Test','Cliente');
+INSERT INTO `Persona_natural` VALUES ('1','Sinforoza','Petra'),('30548845','Test','Cliente'),('31143265','Rodriguez','Manuel'),('91754623','Test','Prueba');
 /*!40000 ALTER TABLE `Persona_natural` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -793,6 +802,33 @@ CREATE TABLE `Proveedor` (
 LOCK TABLES `Proveedor` WRITE;
 /*!40000 ALTER TABLE `Proveedor` DISABLE KEYS */;
 /*!40000 ALTER TABLE `Proveedor` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Repuestos_usados`
+--
+
+DROP TABLE IF EXISTS `Repuestos_usados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Repuestos_usados` (
+  `ID_orden_servicio` varchar(10) NOT NULL,
+  `ID_inventario` varchar(10) NOT NULL,
+  `Cantidad_usada` int NOT NULL,
+  PRIMARY KEY (`ID_orden_servicio`,`ID_inventario`),
+  KEY `ID_inventario` (`ID_inventario`),
+  CONSTRAINT `Repuestos_usados_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
+  CONSTRAINT `Repuestos_usados_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Repuestos_usados`
+--
+
+LOCK TABLES `Repuestos_usados` WRITE;
+/*!40000 ALTER TABLE `Repuestos_usados` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Repuestos_usados` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -963,6 +999,7 @@ CREATE TABLE `Venta` (
 
 LOCK TABLES `Venta` WRITE;
 /*!40000 ALTER TABLE `Venta` DISABLE KEYS */;
+INSERT INTO `Venta` VALUES ('FAC-202606-080A3A',NULL,'30548845','USDT','2026-06-07 22:25:27'),('FAC-202606-6993F3',NULL,'30548845','VES','2026-06-07 21:30:03'),('FAC-202606-8D8B04',NULL,'30548845','VES','2026-06-07 22:17:23'),('FAC-202606-B1475D',NULL,'30548845','USD','2026-06-07 21:35:57'),('FAC-202606-DA0967',NULL,'30548845','VES','2026-06-07 20:12:28'),('FAC-202606-EB6A95',NULL,'30548845','VES','2026-06-07 20:50:37'),('FAC-202606-FDD009',NULL,'30548845','USD','2026-06-07 22:09:06');
 /*!40000 ALTER TABLE `Venta` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1070,4 +1107,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-07  2:22:12
+-- Dump completed on 2026-06-07 19:00:22

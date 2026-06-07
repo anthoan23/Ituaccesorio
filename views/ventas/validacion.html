@@ -3,14 +3,25 @@
 {% block title %}Ituaccesorio - Validación de Pagos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/ventas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/validacion_pagos.css') }}">
 {% endblock %}
 
 {% block content %}
-<main class="page ventas-validacion">
-    <header class="products-hero">
-        <h1 class="products-hero__title">Validación de Pagos</h1>
-        <button id="btn-venta-local" class="btn btn--yellow">Registrar venta local</button>
+<main class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li aria-current="page">
+                <span class="breadcrumb__current">Validación de Pagos</span>
+            </li>
+        </ol>
+    </nav>
+
+    <header class="validacion-header">
+        <div class="validacion-header__copy">
+            <h1 class="validacion-header__title">Validación de Pagos</h1>
+            <p class="validacion-header__subtitle">Revisa los comprobantes de pago y aprueba o rechaza las transacciones</p>
+        </div>
     </header>
 
     <div class="tabs">
@@ -20,69 +31,30 @@
     </div>
 
     <div id="pendientes-tab" class="tab-content">
-        <div id="pendientes-list"></div>
+        <div id="pendientes-list" class="pagos-grid"></div>
     </div>
     <div id="aprobados-tab" class="tab-content is-hidden">
-        <div id="aprobados-list"></div>
+        <div id="aprobados-list" class="pagos-grid"></div>
     </div>
     <div id="rechazados-tab" class="tab-content is-hidden">
-        <div id="rechazados-list"></div>
+        <div id="rechazados-list" class="pagos-grid"></div>
     </div>
 </main>
 
+<!-- Modal de rechazo -->
 <div id="rechazo-modal" class="modal-rechazo is-hidden">
     <div class="modal-panel">
         <h3>Rechazar pago</h3>
-        <textarea id="motivo-rechazo" class="motivo-rechazo" placeholder="Motivo del rechazo..." rows="3"></textarea>
-        <div class="filters-panel__actions rechazo-actions">
+        <p style="font-size: 0.85rem; color: #666;">Motivo del rechazo:</p>
+        <textarea id="motivo-rechazo" class="motivo-rechazo" placeholder="Ej: Comprobante ilegible, Monto incorrecto..." rows="3"></textarea>
+        <div class="rechazo-actions">
             <button id="cancelar-rechazo" class="btn btn--ghost">Cancelar</button>
             <button id="confirmar-rechazo" class="btn btn--yellow">Confirmar rechazo</button>
         </div>
     </div>
 </div>
-
-<div id="venta-local-modal" class="modal is-hidden">
-    <div class="modal__backdrop" data-modal-close="true"></div>
-    <div class="modal__panel card venta-local-panel">
-        <h2 class="card__title">Registrar venta local</h2>
-        <form id="form-venta-local">
-            <label class="field">
-                <span class="field__label">Cliente (ID o escribir nombre)</span>
-                <input type="text" id="cliente-id" list="clientes-list" placeholder="Escribe ID o nombre..." required>
-                <datalist id="clientes-list"></datalist>
-            </label>
-            <label class="field">
-                <span class="field__label">Producto</span>
-                <select id="producto-select" required></select>
-            </label>
-            <label class="field">
-                <span class="field__label">Cantidad</span>
-                <input type="number" id="cantidad-local" value="1" min="1" required>
-            </label>
-            <button type="button" id="agregar-producto-local" class="btn btn--ghost">Agregar producto</button>
-            <div id="items-local-list"></div>
-            <label class="field">
-                <span class="field__label">Método de pago</span>
-                <select id="metodo-local" required>
-                    <option value="efectivo_usd">Efectivo USD</option>
-                    <option value="efectivo_bs">Efectivo Bs</option>
-                    <option value="pago_movil">Pago Móvil</option>
-                    <option value="zelle">Zelle</option>
-                </select>
-            </label>
-            <label class="field">
-                <span class="field__label">Total pagado</span>
-                <input type="number" id="total-pagado" step="0.01" required>
-            </label>
-            <div class="filters-panel__actions">
-                <button type="submit" class="btn btn--yellow">Registrar venta</button>
-                <button type="button" data-modal-close="true" class="btn btn--ghost">Cancelar</button>
-            </div>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script defer src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/validacion_pagos.js') }}"></script>
 {% endblock %}

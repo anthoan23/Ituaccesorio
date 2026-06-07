@@ -223,12 +223,28 @@ def registro_cliente_paso_1():
 def registro_cliente_paso_2():
     """Segundo paso: completar perfil del cliente"""
     try:
-        usuario = getattr(g, "user", {}) or {}
+        # Obtener usuario del contexto (g.user)
+        usuario = getattr(g, 'user', None)
+        if not usuario:
+            return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        if not _es_rol_cliente(usuario.get("nombre_rol")):
+        # Si es diccionario, acceder con .get()
+        if isinstance(usuario, dict):
+            nombre_rol = usuario.get("nombre_rol", "")
+            cedula = usuario.get("cedula", "")
+            usuario_id = usuario.get("usuario_id", "")
+            usuario_nombre = usuario.get("usuario_nombre", "")
+        else:
+            nombre_rol = getattr(usuario, "nombre_rol", "")
+            cedula = getattr(usuario, "cedula", "")
+            usuario_id = getattr(usuario, "usuario_id", "")
+            usuario_nombre = getattr(usuario, "usuario_nombre", "")
+        
+        print(f"Usuario autenticado paso-2: id={usuario_id}, rol={nombre_rol}, cedula={cedula}")
+        
+        if not _es_rol_cliente(nombre_rol):
             return jsonify({"success": False, "error": "Solo clientes pueden completar este registro."}), 403
 
-        cedula = usuario.get("cedula")
         if not cedula:
             return jsonify({"success": False, "error": "No se encontró la cédula."}), 400
 
@@ -238,6 +254,8 @@ def registro_cliente_paso_2():
         celular = datos.get("celular", "").strip()
         correo = datos.get("correo", "").strip()
         direccion = datos.get("direccion", "").strip()
+
+        print(f"Datos recibidos: nombre={nombre}, apellido={apellido}, celular={celular}")
 
         if not nombre or not apellido:
             return jsonify({"success": False, "error": "Nombre y apellido son obligatorios."}), 400
@@ -256,42 +274,55 @@ def registro_cliente_paso_2():
             if not re.match(email_pattern, correo):
                 return jsonify({"success": False, "error": "Ingrese un correo electrónico válido."}), 400
 
-        login_manager = LoginManager()
+        from app.models.clientes import Clientes as GestionClientes
+        modelo_clientes = GestionClientes()
+        
+        # Verificar si el cliente ya existe
+        existente = modelo_clientes.obtener_cliente_por_id(int(cedula))
+        if existente:
+            payload = {
+                "usuario_id": usuario_id,
+                "usuario_nombre": usuario_nombre,
+                "cedula": int(cedula),
+                "rol_id": usuario.get("rol_id") if isinstance(usuario, dict) else getattr(usuario, "rol_id", None),
+                "nombre_rol": nombre_rol,
+                "foto_perfil": usuario.get("foto_perfil") if isinstance(usuario, dict) else getattr(usuario, "foto_perfil", None),
+                "perfil_completo": True,
+            }
+            resp = make_response(jsonify({"success": True, "message": "Perfil ya completado."}))
+            return set_auth_cookies(resp, payload)
 
-        # Crear perfil de cliente
-        cliente_creado = login_manager.crear_cliente_natural(
-            cedula=str(cedula),
+        # Crear el cliente como PERSONA NATURAL
+        cliente_creado = modelo_clientes.crear_cliente(
+            cliente_id=int(cedula),
             nombre=nombre,
             apellido=apellido,
             celular=celular_limpio,
             correo=correo if correo else None,
             direccion=direccion if direccion else None
         )
-
+        
         if not cliente_creado:
             return jsonify({"success": False, "error": "No se pudo crear el perfil del cliente."}), 500
-
-        # Actualizar payload
+        
+        print(f"Cliente creado con ID: {cedula}")
+        
         payload = {
-            "usuario_id": usuario.get("usuario_id"),
-            "usuario_nombre": usuario.get("usuario_nombre"),
+            "usuario_id": usuario_id,
+            "usuario_nombre": usuario_nombre,
             "cedula": int(cedula),
-            "rol_id": usuario.get("rol_id"),
-            "nombre_rol": usuario.get("nombre_rol"),
-            "foto_perfil": usuario.get("foto_perfil"),
+            "rol_id": usuario.get("rol_id") if isinstance(usuario, dict) else getattr(usuario, "rol_id", None),
+            "nombre_rol": nombre_rol,
+            "foto_perfil": usuario.get("foto_perfil") if isinstance(usuario, dict) else getattr(usuario, "foto_perfil", None),
             "perfil_completo": True,
         }
-        
-        resp = make_response(jsonify({
-            "success": True,
-            "message": "Perfil completado correctamente."
-        }))
-        
+        resp = make_response(jsonify({"success": True, "message": "Perfil completado correctamente."}))
         return set_auth_cookies(resp, payload)
         
     except Exception as error:
-        return _respuesta_error_por_excepcion(error)
-
+        print(f"Error en paso-2: {error}")
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(error)}), 500
 
 @login_blueprint.route('/logout', methods=['GET'])
 def logout():

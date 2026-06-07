@@ -22,7 +22,7 @@ class CarritoModel:
             row = cursor.fetchone()
             ultimo_id = row[0] if row else None
             
-            if ultimo_id:
+            if ultimo_id and ultimo_id.startswith('LST'):
                 num = int(ultimo_id[3:]) + 1
             else:
                 num = 1
@@ -47,7 +47,14 @@ class CarritoModel:
                     i.Costo_venta AS precio_usd,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Existencia AS stock_disponible
+                    i.Existencia AS stock_disponible,
+                    COALESCE((
+                        SELECT fi.Foto_inventario
+                        FROM Fotos_inventario fi
+                        WHERE fi.ID_inventario = i.ID_inventario
+                        ORDER BY fi.ID_foto_inventario DESC
+                        LIMIT 1
+                    ), '') AS imagen
                 FROM Lista_compra lc
                 JOIN Inventario i ON lc.ID_inventario = i.ID_inventario
                 JOIN Producto p ON i.ID_producto = p.ID_producto

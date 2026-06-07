@@ -1,853 +1,77 @@
 (() => {
-    "use strict";
+  "use strict";
 
-    const state = {
-        productos: [],
-        masVendidos: [],
-        carrito: [],
-        filtros: { clase_id: "", marca_id: "", q: "" },
-        paginacion: { pagina: 1, por_pagina: 12 },
-        tasas: { oficial: 520.91, paralelo: 710.12 }
+  const state = {
+    productos: [],
+    masVendidos: [],
+    carrito: [],
+    filtros: { clase_id: "", marca_id: "", q: "" },
+    paginacion: { pagina: 1, por_pagina: 12 },
+    tasas: { oficial: 520.91, paralelo: 710.12 },
+  };
+
+  let facturaPendiente = null;
+  let carritoItems = [];
+
+  function getAuthToken() {
+    return (
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token") ||
+      ""
+    );
+  }
+
+  function getCsrfToken() {
+    return document.querySelector("input[name='_csrf_token']")?.value || "";
+  }
+
+  async function fetchJson(url, options = {}) {
+    const authToken = getAuthToken();
+    const csrfToken = getCsrfToken();
+
+    const headers = {
+      Accept: "application/json",
+      ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
 
-    let facturaPendiente = null;
-
-    function getAuthToken() {
-        return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
+    // Si es FormData, no establecer Content-Type (el navegador lo hace)
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
     }
 
-    async function fetchJson(url, options = {}) {
-        const authToken = getAuthToken();
-        const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
-        
-        const response = await fetch(url, {
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-                ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {})
-            },
-            credentials: "same-origin",
-            ...options
-        });
-        
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.success === false) {
-            throw new Error(data.error || "Error en la operación");
-        }
-        return data;
+    const response = await fetch(url, {
+      headers,
+      credentials: "same-origin",
+      method: options.method || "GET",
+      body: options.body,
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || `Error ${response.status}`);
     }
 
-    function formatUSD(amount) {
-        return `$${Number(amount).toFixed(2)}`;
-    }
+    return data;
+  }
 
-    function formatVES(amount) {
-        return `Bs ${Number(amount).toFixed(2)}`;
-    }
+  function formatUSD(amount) {
+    return `$${Number(amount).toFixed(2)}`;
+  }
 
-    function setCatalogStatus(message, type = "loading", actionsHtml = "") {
-        const status = document.getElementById("catalog-status");
-        if (!status) return;
+  function formatVES(amount) {
+    return `Bs ${Number(amount).toFixed(2)}`;
+  }
 
-        if (!message) {
-            status.className = "catalog-status";
-            status.innerHTML = "";
-            return;
-        }
+  function mostrarToast(mensaje, tipo = "success") {
+    const toastExistente = document.querySelector(".custom-toast");
+    if (toastExistente) toastExistente.remove();
 
-        const spinner = type === "loading" ? '<span class="catalog-spinner" aria-hidden="true"></span>' : "";
-        status.className = `catalog-status is-visible catalog-status--${type}`;
-        status.innerHTML = `
-            <div class="catalog-status__content">
-                ${spinner}
-                <span>${escapeHtml(message)}</span>
-            </div>
-            ${actionsHtml ? `<div class="catalog-status__actions">${actionsHtml}</div>` : ""}
-        `;
-    }
-
-    function renderCatalogLoading() {
-        const container = document.getElementById("productos-grid");
-        if (!container) return;
-
-        container.innerHTML = Array.from({ length: 8 }).map(() => `
-            <article class="producto-card producto-card--skeleton" aria-hidden="true">
-                <div class="skeleton-block skeleton-block--image"></div>
-                <div class="skeleton-block skeleton-block--line"></div>
-                <div class="skeleton-block skeleton-block--line short"></div>
-                <div class="skeleton-block skeleton-block--line"></div>
-            </article>
-        `).join("");
-    }
-
-    function renderCatalogError(message) {
-        const container = document.getElementById("productos-grid");
-        if (!container) return;
-
-        container.innerHTML = `
-            <div class="catalog-error-box">
-                <p>No fue posible cargar el catálogo.</p>
-                <p>${escapeHtml(message)}</p>
-                <button class="btn btn--yellow" id="catalog-retry" type="button">Reintentar</button>
-            </div>
-        `;
-
-        const retry = document.getElementById("catalog-retry");
-        if (retry) {
-            retry.addEventListener("click", () => cargarCatalogo());
-        }
-    }
-
-    async function cargarCatalogo() {
-        setCatalogStatus("Cargando productos...", "loading");
-        renderCatalogLoading();
-
-        const params = new URLSearchParams();
-        if (state.filtros.clase_id) params.set("clase_id", state.filtros.clase_id);
-        if (state.filtros.marca_id) params.set("marca_id", state.filtros.marca_id);
-        if (state.filtros.q) params.set("q", state.filtros.q);
-
-        try {
-            const data = await fetchJson(`/api/catalogo/productos?${params}`);
-            state.productos = data.productos || [];
-            state.masVendidos = data.mas_vendidos || [];
-            state.tasas = data.tasas || state.tasas;
-
-            renderProductos();
-            renderTasas();
-            renderFiltros(data.clases, data.marcas);
-            setCatalogStatus("");
-        } catch (err) {
-            state.productos = [];
-            state.masVendidos = [];
-            renderCatalogError(err.message);
-            const fallbackMessage = err.message === "Autenticación requerida." 
-                ? "Inicia sesión para ver el catálogo completo."
-                : "No pudimos cargar el catálogo.";
-            setCatalogStatus(
-                fallbackMessage,
-                "error",
-                '<button class="catalog-retry" type="button" id="catalog-status-retry">Reintentar</button>'
-            );
-
-            const retry = document.getElementById("catalog-status-retry");
-            if (retry) {
-                retry.addEventListener("click", () => cargarCatalogo());
-            }
-        }
-    }
-
-    function renderProductos() {
-        const container = document.getElementById("productos-grid");
-        const count = document.getElementById("productos-count");
-        if (!container) return;
-
-        if (count) {
-            count.textContent = `${state.productos.length} producto${state.productos.length === 1 ? "" : "s"}`;
-        }
-        
-        if (!state.productos.length) {
-            container.innerHTML = '<div class="catalog-empty"><p>No se encontraron productos con esos filtros.</p></div>';
-            return;
-        }
-        
-        container.innerHTML = state.productos.map(p => {
-            const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
-            const usdAjustado = bsFinal / (state.tasas.oficial || 1);
-            const imagenSrc = p.imagen ? p.imagen : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
-            const stockNum = Number(p.stock);
-            const avisoStockBajo = Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 5
-                ? '<div class="producto-stock producto-stock--low">Pocas unidades disponibles</div>'
-                : '';
-            return `
-            <div class="producto-card">
-                <div class="producto-imagen">
-                    <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
-                </div>
-                <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
-                <div class="producto-marca">${escapeHtml(p.marca)}</div>
-                <div class="producto-precios">
-                    <div class="precio-usd">${formatUSD(usdAjustado)}</div>
-                    <div class="precio-bs">${formatVES(bsFinal)}</div>
-                </div>
-                ${avisoStockBajo}
-                <button class="btn btn--yellow btn-agregar" data-id="${p.id}" ${p.stock <= 0 ? 'disabled' : ''}>
-                    ${p.stock > 0 ? 'Agregar al carrito' : 'Agotado'}
-                </button>
-            </div>
-        `}).join("");
-        
-        document.querySelectorAll(".btn-agregar").forEach(btn => {
-            btn.addEventListener("click", async (e) => {
-                const id = btn.dataset.id;
-                await agregarCarrito(id, 1);
-            });
-        });
-    }
-
-    function renderMasVendidos() {
-        const container = document.getElementById("mas-vendidos");
-        if (!container) return;
-        
-        if (!state.masVendidos.length) {
-            container.innerHTML = "<p>Sin datos</p>";
-            return;
-        }
-        
-        container.innerHTML = state.masVendidos.map(p => {
-            const bsFinal = Number(p.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
-            const usdAjustado = bsFinal / (state.tasas.oficial || 1);
-            return `
-            <div class="mas-vendido-item">
-                <span>${escapeHtml(p.nombre)}</span>
-                <strong>${formatUSD(usdAjustado)}</strong>
-            </div>
-        `}).join("");
-    }
-
-    function renderTasas() {
-        const container = document.getElementById("tasas-info");
-        if (!container) return;
-        
-        container.innerHTML = `
-            <div>Oficial: 1 USD = ${formatVES(state.tasas.oficial)}</div>
-            <small>Los precios se calculan al momento del pago</small>
-        `;
-    }
-
-    function setupCatalogSearchToggle() {
-        const searchToggle = document.getElementById("catalog-search-toggle");
-        const searchBox = document.getElementById("catalog-search-box");
-        const searchInput = document.getElementById("f-texto");
-        if (!searchToggle || !searchBox) return;
-
-        const abrirBusqueda = () => {
-            searchBox.classList.add("is-open");
-            searchBox.setAttribute("aria-hidden", "false");
-            searchToggle.setAttribute("aria-expanded", "true");
-            window.setTimeout(() => {
-                searchInput?.focus();
-            }, 220);
-        };
-
-        const cerrarBusqueda = () => {
-            searchBox.classList.remove("is-open");
-            searchBox.setAttribute("aria-hidden", "true");
-            searchToggle.setAttribute("aria-expanded", "false");
-        };
-
-        searchToggle.addEventListener("click", () => {
-            const abierta = searchBox.classList.contains("is-open");
-            if (abierta) {
-                cerrarBusqueda();
-            } else {
-                abrirBusqueda();
-            }
-        });
-    }
-
-    function renderFiltros(clases, marcas) {
-        const claseSelect = document.getElementById("f-clase");
-        const marcaSelect = document.getElementById("f-marca");
-        
-        if (claseSelect && clases) {
-            claseSelect.innerHTML = '<option value="">Todas</option>' + 
-                clases.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join("");
-        }
-        
-        if (marcaSelect && marcas) {
-            marcaSelect.innerHTML = '<option value="">Todas</option>' + 
-                marcas.map(m => `<option value="${m.id}">${escapeHtml(m.nombre)}</option>`).join("");
-        }
-    }
-
-    async function cargarCarrito() {
-        const container = document.getElementById("cart-items");
-        if (container) {
-            container.innerHTML = '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
-        }
-
-        try {
-            const data = await fetchJson("/api/carrito");
-            state.carrito = data.items || [];
-            actualizarBadgeCarrito();
-            renderCarritoModal();
-            return data;
-        } catch (err) {
-            if (container) {
-                const carritoMsg = err.message === "Autenticación requerida."
-                    ? "Inicia sesión para guardar y consultar tu carrito."
-                    : err.message;
-                container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
-            }
-            actualizarBadgeCarrito();
-            return null;
-        }
-    }
-
-    async function agregarCarrito(productoId, cantidad) {
-        try {
-            await fetchJson("/api/carrito", {
-                method: "POST",
-                body: JSON.stringify({ producto_id: productoId, cantidad })
-            });
-            await cargarCarrito();
-        } catch (err) {
-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
-        }
-    }
-
-    async function actualizarCantidadCarrito(productoId, cantidad) {
-        if (cantidad <= 0) {
-            await fetchJson(`/api/carrito/${productoId}`, { method: "DELETE" });
-        } else {
-            await fetchJson("/api/carrito", {
-                method: "PUT",
-                body: JSON.stringify({ producto_id: productoId, cantidad })
-            });
-        }
-        await cargarCarrito();
-    }
-
-    async function vaciarCarrito() {
-        if (confirm("¿Vaciar todo el carrito?")) {
-            await fetchJson("/api/carrito/vaciar", { method: "DELETE" });
-            await cargarCarrito();
-        }
-    }
-
-    function actualizarBadgeCarrito() {
-        // Actualizar badge del botón original (hero)
-        const badge = document.getElementById("cart-count");
-        if (badge) {
-            const total = state.carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            badge.textContent = total;
-            badge.style.display = total > 0 ? "flex" : "none";
-        }
-        
-        // Actualizar badge del botón en navbar
-        const navBadge = document.getElementById("cart-nav-count");
-        if (navBadge) {
-            const total = state.carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            navBadge.textContent = total;
-            navBadge.style.display = total > 0 ? "flex" : "none";
-        }
-    }
-
-    function renderCarritoModal() {
-        const container = document.getElementById("cart-items");
-        const totalUsdSpan = document.getElementById("cart-total-usd");
-        const totalBsSpan = document.getElementById("cart-total-bs");
-        
-        if (!container) return;
-        
-        if (!state.carrito.length) {
-            container.innerHTML = '<p class="carrito-vacio">Tu carrito está vacío</p>';
-            if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(0);
-            if (totalBsSpan) totalBsSpan.textContent = formatVES(0);
-            return;
-        }
-        
-        container.innerHTML = state.carrito.map(item => {
-            const bsItem = Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial);
-            const usdItem = bsItem / (state.tasas.oficial || 1);
-            return `
-            <div class="cart-item">
-                <div class="cart-item-info">
-                    <div class="cart-item-name">${escapeHtml(item.nombre)}</div>
-                    <div class="cart-item-price">${formatUSD(usdItem)} / ${formatVES(bsItem)}</div>
-                </div>
-                <div class="cart-item-controls">
-                    <button class="icon-action" data-action="decrement" data-id="${item.producto_id}">-</button>
-                    <span class="cart-item-qty">${item.cantidad}</span>
-                    <button class="icon-action" data-action="increment" data-id="${item.producto_id}">+</button>
-                    <button class="icon-action" data-action="remove" data-id="${item.producto_id}" aria-label="Eliminar producto">X</button>
-                </div>
-            </div>
-        `}).join("");
-        
-        const totalBs = state.carrito.reduce((sum, item) => sum + (Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad), 0);
-        const totalUsdAjustado = totalBs / (state.tasas.oficial || 1);
-
-        if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(totalUsdAjustado);
-        if (totalBsSpan) totalBsSpan.textContent = formatVES(totalBs);
-        
-        container.querySelectorAll("[data-action='increment']").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt(btn.dataset.id);
-                const item = state.carrito.find(i => i.producto_id === id);
-                if (item) actualizarCantidadCarrito(id, item.cantidad + 1);
-            });
-        });
-        
-        container.querySelectorAll("[data-action='decrement']").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt(btn.dataset.id);
-                const item = state.carrito.find(i => i.producto_id === id);
-                if (item) actualizarCantidadCarrito(id, item.cantidad - 1);
-            });
-        });
-        
-        container.querySelectorAll("[data-action='remove']").forEach(btn => {
-            btn.addEventListener("click", () => {
-                actualizarCantidadCarrito(parseInt(btn.dataset.id), 0);
-            });
-        });
-    }
-
-    function openCartModal() {
-        const modal = document.getElementById("cart-modal");
-        if (modal) {
-            modal.classList.remove("is-hidden");
-            document.body.style.overflow = "hidden";
-        }
-    }
-
-    function closeModal() {
-        document.querySelectorAll(".modal:not(.is-hidden)").forEach(modal => {
-            modal.classList.add("is-hidden");
-        });
-        document.body.style.overflow = "";
-    }
-
-    async function iniciarCheckout() {
-        if (!state.carrito.length) {
-            mostrarNotificacion("El carrito está vacío", "error");
-            return;
-        }
-        window.location.href = "/pagar";
-    }
-
-    async function cargarMetodosPago() {
-        const data = await fetchJson("/api/metodos-pago");
-        const select = document.getElementById("metodo-pago");
-        if (select) {
-            select.innerHTML = '<option value="">-- Selecciona --</option>' +
-                data.metodos.map(m => `<option value="${m.id}">${m.nombre} (${m.moneda})</option>`).join("");
-        }
-    }
-
-    function getFormularioPagoHtml(metodo) {
-        const formularios = {
-            pago_movil: `
-                <div class="form-pago">
-                    <h4>Pago Móvil (Bolívares)</h4>
-                    <label class="field"><span class="field__label">Banco de Origen</span>
-                        <select name="banco" required>
-                            <option value="">Selecciona</option>
-                            <option>Banesco</option><option>Mercantil</option>
-                            <option>Provincial</option><option>BDV</option>
-                            <option>Venezuela</option><option>Bancaribe</option>
-                        </select>
-                    </label>
-                    <label class="field"><span class="field__label">Teléfono del Emisor</span>
-                        <input type="tel" name="telefono" required placeholder="0412-XXX-XXXX">
-                    </label>
-                    <label class="field"><span class="field__label">Número de Referencia</span>
-                        <input type="text" name="referencia" required placeholder="Últimos 6 dígitos">
-                    </label>
-                    <label class="field"><span class="field__label">Monto Pagado (Bs)</span>
-                        <input type="number" name="monto" step="0.01" required>
-                    </label>
-                    <div class="pago-info">Adjunta el comprobante en el próximo paso</div>
-                </div>
-            `,
-            zelle: `
-                <div class="form-pago">
-                    <h4>Zelle (Dólares)</h4>
-                    <label class="field"><span class="field__label">Titular de la Cuenta</span>
-                        <input type="text" name="titular" required placeholder="Nombre completo">
-                    </label>
-                    <label class="field"><span class="field__label">Correo o Teléfono Zelle</span>
-                        <input type="text" name="correo" required>
-                    </label>
-                    <label class="field"><span class="field__label">Referencia / Confirmación</span>
-                        <input type="text" name="referencia">
-                    </label>
-                    <label class="field"><span class="field__label">Monto Pagado (USD)</span>
-                        <input type="number" name="monto" step="0.01" required>
-                    </label>
-                </div>
-            `,
-            binance: `
-                <div class="form-pago">
-                    <h4>Binance (USDT)</h4>
-                    <label class="field"><span class="field__label">UID o Correo Binance</span>
-                        <input type="text" name="uid" required>
-                    </label>
-                    <label class="field"><span class="field__label">Pay ID / Order ID</span>
-                        <input type="text" name="pay_id" required>
-                    </label>
-                    <label class="field"><span class="field__label">Monto Pagado (USDT)</span>
-                        <input type="number" name="monto" step="0.01" required>
-                    </label>
-                </div>
-            `,
-            efectivo_bs: `
-                <div class="form-pago">
-                    <h4>Efectivo (Bolívares)</h4>
-                    <div class="pago-info">Pago en efectivo seleccionado. El monto se confirma al momento de la entrega.</div>
-                </div>
-            `,
-            efectivo_usd: `
-                <div class="form-pago">
-                    <h4>Efectivo (Dólares)</h4>
-                    <div class="pago-info">Pago en efectivo seleccionado. El monto se confirma al momento de la entrega.</div>
-                </div>
-            `
-        };
-        return formularios[metodo] || '<div class="form-pago">Método no disponible</div>';
-    }
-
-    function setupFormularioDinamico() {
-        const select = document.getElementById("metodo-pago");
-        const container = document.getElementById("form-pago-container");
-        
-        if (select && container) {
-            select.addEventListener("change", () => {
-                const metodo = select.value;
-                if (metodo) {
-                    container.innerHTML = getFormularioPagoHtml(metodo);
-                } else {
-                    container.innerHTML = "";
-                }
-            });
-        }
-    }
-
-    async function procesarPago() {
-        const metodoSelect = document.getElementById("metodo-pago");
-        const metodo = metodoSelect?.value;
-        
-        if (!metodo) {
-            mostrarNotificacion("Selecciona un método de pago", "error");
-            return;
-        }
-        
-        const datosPago = {};
-        const formContainer = document.getElementById("form-pago-container");
-        if (formContainer) {
-            formContainer.querySelectorAll("input, select").forEach(input => {
-                if (input.name) datosPago[input.name] = input.value;
-            });
-        }
-        
-        const requiredFields = formContainer?.querySelectorAll("[required]") || [];
-        for (const field of requiredFields) {
-            if (!field.value) {
-                mostrarNotificacion(`El campo "${field.placeholder || field.name}" es obligatorio`, "error");
-                return;
-            }
-        }
-        
-        try {
-            const data = await fetchJson("/api/procesar-pago", {
-                method: "POST",
-                body: JSON.stringify({ metodo_pago: metodo, datos_pago: datosPago })
-            });
-            
-            facturaPendiente = data.factura_id;
-            window.setTimeout(() => {
-                window.location.href = "/catalogo";
-            }, 600);
-        } catch (err) {
-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
-        }
-    }
-
-    async function cargarPagosPendientes() {
-        const data = await fetchJson("/api/admin/pagos-pendientes");
-        renderPagosList(data.pagos, "pendientes");
-    }
-
-    async function cargarPagosAprobados() {
-        const data = await fetchJson("/api/admin/pagos-aprobados");
-        renderPagosList(data.pagos, "aprobados");
-    }
-
-    async function cargarPagosRechazados() {
-        const data = await fetchJson("/api/admin/pagos-rechazados");
-        renderPagosList(data.pagos, "rechazados");
-    }
-
-    function renderPagosList(pagos, tipo) {
-        const container = document.getElementById(`${tipo}-list`);
-        if (!container) return;
-        
-        if (!pagos.length) {
-            container.innerHTML = '<p class="sin-resultados">No hay pagos en esta lista</p>';
-            return;
-        }
-        
-        const valorVisible = (valor) => valor !== undefined && valor !== null && String(valor).trim() !== "" && String(valor).trim().toLowerCase() !== "n/a";
-
-        const renderCamposMetodo = (pago) => {
-            const metodo = String(pago.metodo_pago || "").toLowerCase();
-
-            if (metodo === "pago_movil") {
-                return [
-                    valorVisible(pago.banco) ? `<div class="info-row"><strong>Banco:</strong> <span>${escapeHtml(pago.banco)}</span></div>` : "",
-                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
-                ].join("");
-            }
-
-            if (metodo === "zelle") {
-                return [
-                    valorVisible(pago.titular) ? `<div class="info-row"><strong>Titular:</strong> <span>${escapeHtml(pago.titular)}</span></div>` : "",
-                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>Correo / Teléfono:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
-                ].join("");
-            }
-
-            if (metodo === "binance") {
-                return [
-                    valorVisible(pago.contacto) ? `<div class="info-row"><strong>UID / Correo:</strong> <span>${escapeHtml(pago.contacto)}</span></div>` : "",
-                    valorVisible(pago.referencia) ? `<div class="info-row"><strong>Pay ID:</strong> <span>${escapeHtml(pago.referencia)}</span></div>` : ""
-                ].join("");
-            }
-
-            if (metodo === "efectivo_bs") {
-                return valorVisible(pago.billete)
-                    ? `<div class="info-row"><strong>Billete:</strong> <span>${escapeHtml(pago.billete)}</span></div>`
-                    : `<div class="info-row"><strong>Pago:</strong> <span>Efectivo en bolívares</span></div>`;
-            }
-
-            if (metodo === "efectivo_usd") {
-                return valorVisible(pago.billete)
-                    ? `<div class="info-row"><strong>Billete:</strong> <span>${escapeHtml(pago.billete)}</span></div>`
-                    : `<div class="info-row"><strong>Pago:</strong> <span>Efectivo en dólares</span></div>`;
-            }
-
-            return "";
-        };
-
-        container.innerHTML = pagos.map(p => `
-            <div class="pago-card" data-factura="${p.factura_id}">
-                <div class="info-row"><strong>Factura:</strong> <span>${escapeHtml(p.factura_id)}</span></div>
-                <div class="info-row"><strong>Fecha:</strong> <span>${escapeHtml(p.fecha)}</span></div>
-                <div class="info-row"><strong>Cliente:</strong> <span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || '')}</span></div>
-                <div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(p.cliente_celular || 'N/A')}</span></div>
-                <div class="info-row"><strong>Total:</strong> <span>${formatVES(p.total_bs)}</span></div>
-                <div class="info-row"><strong>Método:</strong> <span>${escapeHtml(p.metodo_pago)}</span></div>
-                ${valorVisible(p.referencia) ? `<div class="info-row"><strong>Referencia:</strong> <span>${escapeHtml(p.referencia)}</span></div>` : ""}
-                ${renderCamposMetodo(p)}
-                ${tipo === "pendientes" ? `
-                    <div class="pago-actions">
-                        <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">Aprobar</button>
-                        <button class="btn btn--ghost btn-rechazar" data-factura="${p.factura_id}">Rechazar</button>
-                    </div>
-                ` : ''}
-            </div>
-        `).join("");
-        
-        if (tipo === "pendientes") {
-            document.querySelectorAll(".btn-aprobar").forEach(btn => {
-                btn.addEventListener("click", () => aprobarPago(btn.dataset.factura));
-            });
-            document.querySelectorAll(".btn-rechazar").forEach(btn => {
-                btn.addEventListener("click", () => mostrarModalRechazo(btn.dataset.factura));
-            });
-        }
-    }
-
-    async function aprobarPago(facturaId) {
-        if (confirm("¿Aprobar este pago?")) {
-            try {
-                await fetchJson(`/api/admin/aprobar-pago/${facturaId}`, { method: "POST" });
-                cargarPagosPendientes();
-                cargarPagosAprobados();
-            } catch (err) {
-                mostrarNotificacion(err.message, "error");
-            }
-        }
-    }
-
-    let facturaRechazoActual = null;
-    
-    function mostrarModalRechazo(facturaId) {
-        facturaRechazoActual = facturaId;
-        const modal = document.getElementById("rechazo-modal");
-        if (modal) {
-            modal.classList.remove("is-hidden");
-            document.getElementById("motivo-rechazo").value = "";
-        }
-    }
-
-    async function confirmarRechazo() {
-        const motivo = document.getElementById("motivo-rechazo")?.value.trim();
-        if (!motivo) {
-            mostrarNotificacion("Debes escribir un motivo", "error");
-            return;
-        }
-        
-        try {
-            await fetchJson(`/api/admin/rechazar-pago/${facturaRechazoActual}`, {
-                method: "POST",
-                body: JSON.stringify({ motivo })
-            });
-            cerrarModalRechazo();
-            cargarPagosPendientes();
-            cargarPagosRechazados();
-        } catch (err) {
-            mostrarNotificacion(err.message, "error");
-        }
-    }
-    
-    function cerrarModalRechazo() {
-        const modal = document.getElementById("rechazo-modal");
-        if (modal) modal.classList.add("is-hidden");
-        facturaRechazoActual = null;
-    }
-
-    async function cargarProductosParaSelect() {
-        const data = await fetchJson("/api/catalogo/productos");
-        const select = document.getElementById("producto-select");
-        if (select) {
-            select.innerHTML = '<option value="">-- Selecciona --</option>' +
-                (data.productos || []).map(p => `<option value="${p.id}" data-precio="${p.precio_usd}">${p.nombre} - ${formatUSD(p.precio_usd)}</option>`).join("");
-        }
-    }
-
-    let clientesMap = {};
-    async function cargarClientesParaDatalist() {
-        try {
-            const data = await fetchJson('/api/clientes');
-            const list = document.getElementById('clientes-list');
-            if (!list) return;
-            clientesMap = {};
-            const clientes = data.clientes || [];
-            list.innerHTML = clientes.map(c => {
-                const text = `${c.ID_c} - ${c.nombre} ${c.apellido}`.trim();
-                clientesMap[String(c.ID_c)] = c.ID_c;
-                clientesMap[(c.nombre + ' ' + (c.apellido || '')).trim().toLowerCase()] = c.ID_c;
-                return `<option value="${escapeHtml(text)}"></option>`;
-            }).join('');
-        } catch (err) {
-            // ignore silently
-        }
-    }
-    
-    let itemsLocal = [];
-    
-    function agregarItemLocal() {
-        const select = document.getElementById("producto-select");
-        const cantidad = parseInt(document.getElementById("cantidad-local")?.value || 1);
-        const productoId = select?.value;
-        
-        if (!productoId) {
-            mostrarNotificacion("Selecciona un producto", "error");
-            return;
-        }
-        
-        const option = select.options[select.selectedIndex];
-        const nombre = option.text.split(" - ")[0];
-        const precio = parseFloat(option.dataset.precio);
-        
-        const existente = itemsLocal.find(i => i.producto_id == productoId);
-        if (existente) {
-            existente.cantidad += cantidad;
-        } else {
-            itemsLocal.push({ producto_id: parseInt(productoId), nombre, precio_usd: precio, cantidad });
-        }
-        
-        renderItemsLocal();
-        select.value = "";
-        document.getElementById("cantidad-local").value = 1;
-    }
-    
-    function renderItemsLocal() {
-        const container = document.getElementById("items-local-list");
-        if (!container) return;
-        
-        if (!itemsLocal.length) {
-            container.innerHTML = '<p class="sin-resultados">No hay productos agregados</p>';
-            return;
-        }
-        
-        const totalBs = itemsLocal.reduce((sum, i) => sum + (Number(i.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * i.cantidad), 0);
-        const totalUsd = totalBs / (state.tasas.oficial || 1);
-        
-        container.innerHTML = `
-            <div class="items-local">
-                ${itemsLocal.map((item, idx) => `
-                    <div class="cart-item">
-                        <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
-                        <span>${formatUSD((Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial)) / (state.tasas.oficial || 1) * item.cantidad)} / ${formatVES(Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad)}</span>
-                        <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">X</button>
-                    </div>
-                `).join('')}
-                <div class="cart-total">
-                    <strong>Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</strong>
-                </div>
-            </div>
-        `;
-        
-        document.querySelectorAll("[data-remove]").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const idx = parseInt(btn.dataset.remove);
-                itemsLocal.splice(idx, 1);
-                renderItemsLocal();
-            });
-        });
-    }
-    
-    async function registrarVentaLocal(event) {
-        event.preventDefault();
-        
-        const clienteInput = document.getElementById("cliente-id")?.value || '';
-        let clienteId = null;
-        const v = String(clienteInput).trim();
-        if (/^\d+$/.test(v)) {
-            clienteId = parseInt(v);
-        } else if (v.includes(' - ')) {
-            const parts = v.split(' - ');
-            if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
-        } else {
-            const lookup = v.toLowerCase();
-            if (clientesMap[lookup]) clienteId = clientesMap[lookup];
-        }
-        const metodoPago = document.getElementById("metodo-local")?.value;
-        const totalPagado = parseFloat(document.getElementById("total-pagado")?.value || 0);
-        
-        if (!clienteId) {
-            mostrarNotificacion("Cliente no encontrado. Escribe ID o selecciona un cliente válido.", "error");
-            return;
-        }
-        if (!itemsLocal.length) {
-            mostrarNotificacion("Agrega al menos un producto", "error");
-            return;
-        }
-        
-        try {
-            await fetchJson("/api/admin/ventas-local", {
-                method: "POST",
-                body: JSON.stringify({
-                    cliente_id: parseInt(clienteId),
-                    items: itemsLocal,
-                    total_pagado: totalPagado,
-                    metodo_pago: metodoPago
-                })
-            });
-            
-            itemsLocal = [];
-            renderItemsLocal();
-            closeModal();
-            document.getElementById("form-venta-local")?.reset();
-        } catch (err) {
-            if (!window.FeedbackModal) mostrarNotificacion(err.message, "error");
-        }
-    }
-
-    function mostrarNotificacion(msg, tipo = "success") {
-        if (window.FeedbackModal) {
-            if (tipo === "error") window.FeedbackModal.showError(msg);
-            else window.FeedbackModal.showSuccess(msg);
-            return;
-        }
-        const notif = document.createElement("div");
-        notif.className = `notificacion notificacion--${tipo}`;
-        notif.textContent = msg;
-        notif.style.cssText = `
+    const toast = document.createElement("div");
+    toast.className = `custom-toast custom-toast--${tipo}`;
+    toast.textContent = mensaje;
+    toast.style.cssText = `
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -855,167 +79,1159 @@
             color: white;
             padding: 12px 24px;
             border-radius: 12px;
-            z-index: 1000;
-            animation: fadeOut 3s forwards;
+            z-index: 10000;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         `;
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 3000);
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity 0.3s";
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // ==================== CATÁLOGO ====================
+
+  function setCatalogStatus(message, type = "loading", actionsHtml = "") {
+    const status = document.getElementById("catalog-status");
+    if (!status) return;
+
+    if (!message) {
+      status.className = "catalog-status";
+      status.innerHTML = "";
+      return;
     }
 
-    function escapeHtml(str) {
-        if (!str) return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+    const spinner =
+      type === "loading"
+        ? '<span class="catalog-spinner" aria-hidden="true"></span>'
+        : "";
+    status.className = `catalog-status is-visible catalog-status--${type}`;
+    status.innerHTML = `
+            <div class="catalog-status__content">
+                ${spinner}
+                <span>${escapeHtml(message)}</span>
+            </div>
+            ${actionsHtml ? `<div class="catalog-status__actions">${actionsHtml}</div>` : ""}
+        `;
+  }
+
+  function renderCatalogLoading() {
+    const container = document.getElementById("productos-grid");
+    if (!container) return;
+
+    container.innerHTML = Array.from({ length: 8 })
+      .map(
+        () => `
+            <article class="producto-card producto-card--skeleton" aria-hidden="true">
+                <div class="skeleton-block skeleton-block--image"></div>
+                <div class="skeleton-block skeleton-block--line"></div>
+                <div class="skeleton-block skeleton-block--line short"></div>
+                <div class="skeleton-block skeleton-block--line"></div>
+            </article>
+        `,
+      )
+      .join("");
+  }
+
+  function renderCatalogError(message) {
+    const container = document.getElementById("productos-grid");
+    if (!container) return;
+
+    container.innerHTML = `
+            <div class="catalog-error-box">
+                <p>No fue posible cargar el catálogo.</p>
+                <p>${escapeHtml(message)}</p>
+                <button class="btn btn--yellow" id="catalog-retry" type="button">Reintentar</button>
+            </div>
+        `;
+
+    const retry = document.getElementById("catalog-retry");
+    if (retry) {
+      retry.addEventListener("click", () => cargarCatalogo());
+    }
+  }
+
+  async function cargarCatalogo() {
+    setCatalogStatus("Cargando productos...", "loading");
+    renderCatalogLoading();
+
+    const params = new URLSearchParams();
+    if (state.filtros.clase_id) params.set("clase_id", state.filtros.clase_id);
+    if (state.filtros.marca_id) params.set("marca_id", state.filtros.marca_id);
+    if (state.filtros.q) params.set("q", state.filtros.q);
+
+    try {
+      const data = await fetchJson(`/api/catalogo/productos?${params}`);
+      state.productos = data.productos || [];
+      state.masVendidos = data.mas_vendidos || [];
+      state.tasas = data.tasas || state.tasas;
+      window.tasas = state.tasas;
+
+      renderProductos();
+      renderMasVendidos();
+      renderTasas();
+      renderFiltros(data.clases, data.marcas);
+      setCatalogStatus("");
+    } catch (err) {
+      state.productos = [];
+      state.masVendidos = [];
+      renderCatalogError(err.message);
+      setCatalogStatus(
+        err.message === "Autenticación requerida."
+          ? "Inicia sesión para ver el catálogo completo."
+          : "No pudimos cargar el catálogo.",
+        "error",
+        '<button class="catalog-retry" type="button" id="catalog-status-retry">Reintentar</button>',
+      );
+
+      const retry = document.getElementById("catalog-status-retry");
+      if (retry) {
+        retry.addEventListener("click", () => cargarCatalogo());
+      }
+    }
+  }
+
+  async function handleAgregarClick(e) {
+    const btn = e.currentTarget;
+    const productoId = btn.dataset.id;
+    if (productoId) {
+      await agregarCarrito(productoId, 1);
+    }
+  }
+
+  function renderProductos() {
+    const container = document.getElementById("productos-grid");
+    const count = document.getElementById("productos-count");
+    if (!container) return;
+
+    if (count) {
+      count.textContent = `${state.productos.length} producto${state.productos.length === 1 ? "" : "s"}`;
     }
 
-    async function init() {
-        const path = window.location.pathname;
-        
-        document.addEventListener("click", (e) => {
-            if (e.target.closest("[data-modal-close]")) {
-                closeModal();
-            }
-        });
-        
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") closeModal();
-        });
-        
-        // ==================== INTEGRACIÓN CARRITO EN NAVBAR ====================
-        // Configurar botón del carrito en navbar
-        const navCartBtn = document.getElementById("cart-nav-btn");
-        if (navCartBtn) {
-            navCartBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                openCartModal();
+    if (!state.productos.length) {
+      container.innerHTML =
+        '<div class="catalog-empty"><p>No se encontraron productos con esos filtros.</p></div>';
+      return;
+    }
+
+    container.innerHTML = state.productos
+      .map((p) => {
+        const precioUsd = Number(p.precio_usd || 0);
+        const bsFinal =
+          precioUsd * (state.tasas.paralelo || state.tasas.oficial);
+        const imagenSrc =
+          p.imagen && p.imagen.trim()
+            ? p.imagen
+            : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+        const stockNum = Number(p.stock);
+        const avisoStockBajo =
+          Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 5
+            ? '<div class="producto-stock producto-stock--low">Pocas unidades disponibles</div>'
+            : "";
+
+        return `
+                <div class="producto-card">
+                    <div class="producto-imagen">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
+                    </div>
+                    <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
+                    <div class="producto-marca">${escapeHtml(p.marca)}</div>
+                    <div class="producto-precios">
+                        <div class="precio-usd">${formatUSD(precioUsd)}</div>
+                        <div class="precio-bs">${formatVES(bsFinal)}</div>
+                    </div>
+                    ${avisoStockBajo}
+                    <button class="btn btn--yellow btn-agregar" data-id="${p.id}" ${p.stock <= 0 ? "disabled" : ""}>
+                        ${p.stock > 0 ? "Agregar al carrito" : "Agotado"}
+                    </button>
+                </div>
+            `;
+      })
+      .join("");
+
+    document.querySelectorAll(".btn-agregar").forEach((btn) => {
+      btn.removeEventListener("click", handleAgregarClick);
+      btn.addEventListener("click", handleAgregarClick);
+    });
+  }
+
+  function renderMasVendidos() {
+    const container = document.getElementById("mas-vendidos");
+    if (!container) return;
+
+    if (!state.masVendidos.length) {
+      container.innerHTML = "<p>Sin datos</p>";
+      return;
+    }
+
+    container.innerHTML = state.masVendidos
+      .map((p) => {
+        const precioUsd = Number(p.precio_usd || 0);
+        return `
+                <div class="mas-vendido-item">
+                    <span>${escapeHtml(p.nombre)}</span>
+                    <strong>${formatUSD(precioUsd)}</strong>
+                </div>
+            `;
+      })
+      .join("");
+  }
+
+  function renderTasas() {
+    const container = document.getElementById("tasas-info");
+    if (!container) return;
+
+    container.innerHTML = `
+            <div>Oficial: 1 USD = ${formatVES(state.tasas.oficial)}</div>
+            <small>Los precios se calculan al momento del pago</small>
+        `;
+  }
+
+  function setupCatalogSearchToggle() {
+    const searchToggle = document.getElementById("catalog-search-toggle");
+    const searchBox = document.getElementById("catalog-search-box");
+    const searchInput = document.getElementById("f-texto");
+    if (!searchToggle || !searchBox) return;
+
+    const abrirBusqueda = () => {
+      searchBox.classList.add("is-open");
+      searchBox.setAttribute("aria-hidden", "false");
+      searchToggle.setAttribute("aria-expanded", "true");
+      window.setTimeout(() => {
+        searchInput?.focus();
+      }, 220);
+    };
+
+    const cerrarBusqueda = () => {
+      searchBox.classList.remove("is-open");
+      searchBox.setAttribute("aria-hidden", "true");
+      searchToggle.setAttribute("aria-expanded", "false");
+    };
+
+    searchToggle.addEventListener("click", () => {
+      const abierta = searchBox.classList.contains("is-open");
+      if (abierta) {
+        cerrarBusqueda();
+      } else {
+        abrirBusqueda();
+      }
+    });
+  }
+
+  function renderFiltros(clases, marcas) {
+    const claseSelect = document.getElementById("f-clase");
+    const marcaSelect = document.getElementById("f-marca");
+
+    if (claseSelect && clases) {
+      claseSelect.innerHTML =
+        '<option value="">Todas</option>' +
+        clases
+          .map(
+            (c) => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`,
+          )
+          .join("");
+    }
+
+    if (marcaSelect && marcas) {
+      marcaSelect.innerHTML =
+        '<option value="">Todas</option>' +
+        marcas
+          .map(
+            (m) => `<option value="${m.id}">${escapeHtml(m.nombre)}</option>`,
+          )
+          .join("");
+    }
+  }
+
+  // ==================== CARRITO ====================
+
+  async function cargarCarrito() {
+    const container = document.getElementById("cart-items");
+    if (container) {
+      container.innerHTML =
+        '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
+    }
+
+    try {
+      const data = await fetchJson("/api/carrito");
+      carritoItems = data.items || [];
+      actualizarBadgeCarrito();
+      renderCarritoModal();
+      return data;
+    } catch (err) {
+      if (container) {
+        const carritoMsg =
+          err.message === "Autenticación requerida."
+            ? "Inicia sesión para guardar y consultar tu carrito."
+            : err.message;
+        container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
+      }
+      actualizarBadgeCarrito();
+      return null;
+    }
+  }
+
+  async function agregarCarrito(productoId, cantidad) {
+    try {
+      await fetchJson("/api/carrito", {
+        method: "POST",
+        body: JSON.stringify({ producto_id: productoId, cantidad: cantidad }),
+      });
+      await cargarCarrito();
+      mostrarToast("Producto agregado al carrito", "success");
+    } catch (err) {
+      mostrarToast(err.message, "error");
+    }
+  }
+
+  async function actualizarCantidadCarrito(productoId, cantidad) {
+    if (cantidad <= 0) {
+      await fetchJson(`/api/carrito/${productoId}`, { method: "DELETE" });
+    } else {
+      await fetchJson("/api/carrito", {
+        method: "PUT",
+        body: JSON.stringify({ producto_id: productoId, cantidad: cantidad }),
+      });
+    }
+    await cargarCarrito();
+  }
+
+  async function vaciarCarrito() {
+    if (confirm("¿Vaciar todo el carrito?")) {
+      await fetchJson("/api/carrito/vaciar", { method: "DELETE" });
+      await cargarCarrito();
+    }
+  }
+
+  function actualizarBadgeCarrito() {
+    const badges = document.querySelectorAll("#cart-count, #cart-nav-count");
+    const total = carritoItems.reduce(
+      (sum, item) => sum + (item.cantidad || 0),
+      0,
+    );
+
+    badges.forEach((badge) => {
+      if (badge) {
+        badge.textContent = total;
+        badge.style.display = total > 0 ? "flex" : "none";
+      }
+    });
+  }
+
+  async function handleIncrement(e) {
+    const btn = e.currentTarget;
+    const productoId = btn.dataset.id;
+    const item = carritoItems.find(
+      (i) => String(i.producto_id) === String(productoId),
+    );
+    if (item) {
+      const nuevaCantidad = (item.cantidad || 0) + 1;
+      await actualizarCantidadCarrito(productoId, nuevaCantidad);
+    }
+  }
+
+  async function handleDecrement(e) {
+    const btn = e.currentTarget;
+    const productoId = btn.dataset.id;
+    const item = carritoItems.find(
+      (i) => String(i.producto_id) === String(productoId),
+    );
+    if (item) {
+      const nuevaCantidad = (item.cantidad || 0) - 1;
+      if (nuevaCantidad >= 0) {
+        await actualizarCantidadCarrito(productoId, nuevaCantidad);
+      }
+    }
+  }
+
+  async function handleRemove(e) {
+    const btn = e.currentTarget;
+    const productoId = btn.dataset.id;
+    await actualizarCantidadCarrito(productoId, 0);
+  }
+
+  function renderCarritoModal() {
+    const container = document.getElementById("cart-items");
+    const totalUsdSpan = document.getElementById("cart-total-usd");
+    const totalBsSpan = document.getElementById("cart-total-bs");
+
+    if (!container) return;
+
+    if (!carritoItems.length) {
+      container.innerHTML =
+        '<p class="carrito-vacio">Tu carrito está vacío</p>';
+      if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(0);
+      if (totalBsSpan) totalBsSpan.textContent = formatVES(0);
+      return;
+    }
+
+    const tasas = window.tasas || state.tasas;
+    let totalUsd = 0;
+
+    container.innerHTML = carritoItems
+      .map((item) => {
+        const precioUsd = Number(item.precio_usd || 0);
+        const cantidad = Number(item.cantidad || 0);
+        const subtotalUsd = precioUsd * cantidad;
+
+        totalUsd += subtotalUsd;
+
+        const imagenSrc =
+          item.imagen && item.imagen.trim()
+            ? item.imagen
+            : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+
+        return `
+                <div class="cart-item" data-producto-id="${item.producto_id}">
+                    <div class="cart-item-imagen">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(item.nombre)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'">
+                    </div>
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${escapeHtml(item.nombre)}</div>
+                        <div class="cart-item-marca">${escapeHtml(item.marca || "")}</div>
+                        <div class="cart-item-price">${formatUSD(precioUsd)}</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="icon-action cart-decrement" data-id="${item.producto_id}" title="Disminuir cantidad">-</button>
+                        <span class="cart-item-qty">${cantidad}</span>
+                        <button class="icon-action cart-increment" data-id="${item.producto_id}" title="Aumentar cantidad">+</button>
+                        <button class="icon-action icon-action--danger cart-remove" data-id="${item.producto_id}" title="Eliminar producto">🗑</button>
+                    </div>
+                </div>
+            `;
+      })
+      .join("");
+
+    const totalBs = totalUsd * (tasas.paralelo || tasas.oficial);
+
+    if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(totalUsd);
+    if (totalBsSpan) totalBsSpan.textContent = formatVES(totalBs);
+
+    setTimeout(() => {
+      document.querySelectorAll(".cart-increment").forEach((btn) => {
+        btn.removeEventListener("click", handleIncrement);
+        btn.addEventListener("click", handleIncrement);
+      });
+
+      document.querySelectorAll(".cart-decrement").forEach((btn) => {
+        btn.removeEventListener("click", handleDecrement);
+        btn.addEventListener("click", handleDecrement);
+      });
+
+      document.querySelectorAll(".cart-remove").forEach((btn) => {
+        btn.removeEventListener("click", handleRemove);
+        btn.addEventListener("click", handleRemove);
+      });
+    }, 10);
+  }
+
+  function openCartModal() {
+    const modal = document.getElementById("cart-modal");
+    if (modal) {
+      modal.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  function closeModal() {
+    document.querySelectorAll(".modal:not(.is-hidden)").forEach((modal) => {
+      modal.classList.add("is-hidden");
+    });
+    document.body.style.overflow = "";
+  }
+
+  async function iniciarCheckout() {
+    if (!carritoItems.length) {
+      mostrarToast("El carrito está vacío", "error");
+      return;
+    }
+    window.location.href = "/pagar";
+  }
+
+  // ==================== PROCESO DE PAGO ====================
+
+  async function cargarMetodosPago() {
+    const data = await fetchJson("/api/metodos-pago");
+    const select = document.getElementById("metodo-pago");
+    if (select) {
+      select.innerHTML =
+        '<option value="">-- Selecciona --</option>' +
+        data.metodos
+          .map(
+            (m) => `<option value="${m.id}">${m.nombre} (${m.moneda})</option>`,
+          )
+          .join("");
+    }
+  }
+
+  // Previsualizar imagen seleccionada
+  let previewUrl = null;
+
+  function previewImagen(input) {
+    const previewContainer = document.getElementById("capture-preview");
+    if (!previewContainer) return;
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    const file = input.files[0];
+    if (file) {
+      previewUrl = URL.createObjectURL(file);
+      previewContainer.innerHTML = `
+                <img src="${previewUrl}" alt="Vista previa del comprobante" style="max-width: 100%; max-height: 150px; border-radius: 8px; margin-top: 8px;">
+                <small style="display: block; color: #666;">${file.name} (${(file.size / 1024).toFixed(2)} KB)</small>
+            `;
+    } else {
+      previewContainer.innerHTML = "";
+    }
+  }
+
+  function getFormularioPagoHtml(metodo) {
+    const today = new Date().toISOString().split("T")[0];
+
+    let formHtml = `
+        <div class="form-pago">
+            <h4>${
+              metodo === "pago_movil"
+                ? "Pago Móvil (Bolívares)"
+                : metodo === "zelle"
+                  ? "Zelle (Dólares)"
+                  : metodo === "binance"
+                    ? "Binance (USDT)"
+                    : metodo === "efectivo_bs"
+                      ? "Efectivo (Bolívares)"
+                      : metodo === "efectivo_usd"
+                        ? "Efectivo (Dólares)"
+                        : "Método de pago"
+            }</h4>
+            
+            <label class="field">
+                <span class="field__label">Fecha del Pago</span>
+                <input type="date" name="fecha_pago" value="${today}" required>
+            </label>
+            
+            <label class="field">
+                <span class="field__label">Número de Referencia / Transacción</span>
+                <input type="text" name="referencia" placeholder="Ej: REF-123456789" required>
+                <small class="field-hint">Número de operación, referencia bancaria o ID de transacción</small>
+            </label>
+            
+            <label class="field">
+                <span class="field__label">Monto Pagado</span>
+                <input type="number" name="monto" step="0.01" placeholder="0.00" required>
+                <small class="field-hint">Monto exacto que pagaste</small>
+            </label>`;
+
+    // Para métodos que requieren comprobante (no efectivo)
+    if (metodo !== "efectivo_bs" && metodo !== "efectivo_usd") {
+      formHtml += `
+            <label class="field">
+                <span class="field__label">Comprobante de Pago (Capture)</span>
+                <input type="file" name="capture" accept="image/*" data-capture-input required>
+                <small class="field-hint">Sube una imagen del comprobante (JPG, PNG, máximo 5MB)</small>
+            </label>
+            <div id="capture-preview" class="capture-preview"></div>`;
+    }
+
+    formHtml += `
+            <div class="pago-info">${metodo !== "efectivo_bs" && metodo !== "efectivo_usd" ? "El comprobante será verificado por nuestro equipo." : "Pago confirmado al momento de la entrega."}</div>
+        </div>
+    `;
+
+    return formHtml;
+  }
+
+  function setupFormularioDinamico() {
+    const select = document.getElementById("metodo-pago");
+    const container = document.getElementById("form-pago-container");
+
+    if (select && container) {
+      select.addEventListener("change", () => {
+        const metodo = select.value;
+        if (metodo) {
+          container.innerHTML = getFormularioPagoHtml(metodo);
+
+          // Configurar preview de imagen
+          const captureInput = container.querySelector("[data-capture-input]");
+          if (captureInput) {
+            captureInput.addEventListener("change", function () {
+              previewImagen(this);
             });
+          }
+        } else {
+          container.innerHTML = "";
         }
-        
-        if (path === "/catalogo") {
-            const cartToggle = document.getElementById("cart-toggle");
-            const cartVaciar = document.getElementById("cart-vaciar");
-            const cartCheckout = document.getElementById("cart-checkout");
-            const fClase = document.getElementById("f-clase");
-            const fMarca = document.getElementById("f-marca");
-            const fTexto = document.getElementById("f-texto");
+      });
+    }
+  }
 
-            const aplicarFiltros = () => {
-                state.filtros.clase_id = fClase?.value || "";
-                state.filtros.marca_id = fMarca?.value || "";
-                state.filtros.q = (fTexto?.value || "").trim();
-                cargarCatalogo();
-            };
-            
-            if (cartToggle) cartToggle.addEventListener("click", () => openCartModal());
-            if (cartVaciar) cartVaciar.addEventListener("click", () => vaciarCarrito());
-            if (cartCheckout) cartCheckout.addEventListener("click", () => iniciarCheckout());
-            setupCatalogSearchToggle();
-            
-            if (fClase) {
-                fClase.addEventListener("change", () => {
-                    aplicarFiltros();
-                });
-            }
+  async function procesarPago() {
+    const metodoSelect = document.getElementById("metodo-pago");
+    const metodo = metodoSelect?.value;
 
-            if (fMarca) {
-                fMarca.addEventListener("change", () => {
-                    aplicarFiltros();
-                });
-            }
+    if (!metodo) {
+      mostrarToast("Selecciona un método de pago", "error");
+      return;
+    }
 
-            if (fTexto) {
-                fTexto.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        aplicarFiltros();
-                    }
-                });
-            }
-            
-            await cargarCatalogo();
-            await cargarCarrito();
+    const formData = new FormData();
+    const formContainer = document.getElementById("form-pago-container");
+
+    if (formContainer) {
+      // Fecha del pago
+      const fechaInput = formContainer.querySelector(
+        "input[name='fecha_pago']",
+      );
+      if (fechaInput && fechaInput.value) {
+        formData.append("fecha_pago", fechaInput.value);
+      }
+
+      // Referencia
+      const referenciaInput = formContainer.querySelector(
+        "input[name='referencia']",
+      );
+      if (referenciaInput && referenciaInput.value) {
+        formData.append("referencia", referenciaInput.value);
+        console.log("Referencia capturada:", referenciaInput.value);
+      } else {
+        mostrarToast("Debes ingresar el número de referencia", "error");
+        return;
+      }
+
+      // Monto
+      const montoInput = formContainer.querySelector("input[name='monto']");
+      if (montoInput && montoInput.value) {
+        formData.append("monto", montoInput.value);
+        console.log("Monto capturado:", montoInput.value);
+      } else {
+        mostrarToast("Debes ingresar el monto pagado", "error");
+        return;
+      }
+
+      // Para métodos que requieren comprobante
+      if (metodo !== "efectivo_bs" && metodo !== "efectivo_usd") {
+        const captureFile = formContainer.querySelector("[data-capture-input]")
+          ?.files[0];
+        if (!captureFile) {
+          mostrarToast("Debes subir el comprobante de pago", "error");
+          return;
         }
-        
-        if (path === "/pagar") {
-            await cargarMetodosPago();
-            setupFormularioDinamico();
-            
-            const btnPagar = document.getElementById("btn-pagar");
-            const btnVolver = document.getElementById("btn-volver");
-            
-            if (btnPagar) btnPagar.addEventListener("click", () => procesarPago());
-            if (btnVolver) btnVolver.addEventListener("click", () => window.location.href = "/catalogo");
-            
-            const carritoData = await fetchJson("/api/carrito");
-            const resumenContainer = document.getElementById("resumen-carrito");
-            if (resumenContainer && carritoData.items?.length) {
-                    const totalBs = (carritoData.items || []).reduce((sum, i) => sum + (Number(i.precio_usd) * (carritoData.tasas?.paralelo || state.tasas.paralelo || state.tasas.oficial) * i.cantidad), 0);
-                    const totalUsd = totalBs / (carritoData.tasas?.oficial || state.tasas.oficial || 1);
-                    resumenContainer.innerHTML = `
+
+        if (!captureFile.type.startsWith("image/")) {
+          mostrarToast("Solo se permiten archivos de imagen", "error");
+          return;
+        }
+
+        if (captureFile.size > 5 * 1024 * 1024) {
+          mostrarToast("La imagen no puede superar los 5MB", "error");
+          return;
+        }
+
+        formData.append("capture", captureFile);
+      }
+    }
+
+    formData.append("metodo_pago", metodo);
+
+    try {
+      const authToken = getAuthToken();
+      const csrfToken = getCsrfToken();
+
+      const response = await fetch("/api/procesar-pago", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        credentials: "same-origin",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || "Error al procesar el pago");
+      }
+
+      facturaPendiente = data.factura_id;
+      mostrarToast("¡Pago registrado! Redirigiendo...", "success");
+      window.setTimeout(() => {
+        window.location.href = "/catalogo";
+      }, 2000);
+    } catch (err) {
+      mostrarToast(err.message, "error");
+    }
+  }
+
+  // ==================== VALIDACIÓN DE PAGOS ====================
+
+  async function cargarPagosPendientes() {
+    try {
+      const data = await fetchJson("/api/admin/pagos-pendientes");
+      renderPagosList(data.pagos, "pendientes");
+    } catch (err) {
+      console.warn("Error cargando pagos pendientes:", err);
+    }
+  }
+
+  function renderPagosList(pagos, tipo) {
+    const container = document.getElementById(`${tipo}-list`);
+    if (!container) return;
+
+    if (!pagos || !pagos.length) {
+      container.innerHTML =
+        '<p class="sin-resultados">No hay pagos en esta lista</p>';
+      return;
+    }
+
+    container.innerHTML = pagos
+      .map(
+        (p) => `
+            <div class="pago-card" data-factura="${p.factura_id}">
+                <div class="info-row"><strong>Factura:</strong> <span>${escapeHtml(p.factura_id)}</span></div>
+                <div class="info-row"><strong>Fecha:</strong> <span>${escapeHtml(p.fecha)}</span></div>
+                <div class="info-row"><strong>Cliente:</strong> <span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || "")}</span></div>
+                <div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(p.cliente_celular || "N/A")}</span></div>
+                <div class="info-row"><strong>Método:</strong> <span>${escapeHtml(p.metodo_pago)}</span></div>
+                ${p.capture ? `<div class="info-row"><strong>Comprobante:</strong> <a href="${p.capture}" target="_blank">Ver imagen</a></div>` : ""}
+                ${
+                  tipo === "pendientes"
+                    ? `
+                    <div class="pago-actions">
+                        <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">Aprobar</button>
+                        <button class="btn btn--ghost btn-rechazar" data-factura="${p.factura_id}">Rechazar</button>
+                    </div>
+                `
+                    : ""
+                }
+            </div>
+        `,
+      )
+      .join("");
+
+    if (tipo === "pendientes") {
+      document.querySelectorAll(".btn-aprobar").forEach((btn) => {
+        btn.addEventListener("click", () => aprobarPago(btn.dataset.factura));
+      });
+      document.querySelectorAll(".btn-rechazar").forEach((btn) => {
+        btn.addEventListener("click", () =>
+          mostrarModalRechazo(btn.dataset.factura),
+        );
+      });
+    }
+  }
+
+  async function aprobarPago(facturaId) {
+    if (confirm("¿Aprobar este pago?")) {
+      try {
+        await fetchJson(`/api/admin/aprobar-pago/${facturaId}`, {
+          method: "POST",
+        });
+        mostrarToast("Pago aprobado", "success");
+        cargarPagosPendientes();
+      } catch (err) {
+        mostrarToast(err.message, "error");
+      }
+    }
+  }
+
+  let facturaRechazoActual = null;
+
+  function mostrarModalRechazo(facturaId) {
+    facturaRechazoActual = facturaId;
+    const modal = document.getElementById("rechazo-modal");
+    if (modal) {
+      modal.classList.remove("is-hidden");
+      document.getElementById("motivo-rechazo").value = "";
+    }
+  }
+
+  async function confirmarRechazo() {
+    const motivo = document.getElementById("motivo-rechazo")?.value.trim();
+    if (!motivo) {
+      mostrarToast("Debes escribir un motivo", "error");
+      return;
+    }
+
+    try {
+      await fetchJson(`/api/admin/rechazar-pago/${facturaRechazoActual}`, {
+        method: "POST",
+        body: JSON.stringify({ motivo }),
+      });
+      mostrarToast("Pago rechazado", "success");
+      cerrarModalRechazo();
+      cargarPagosPendientes();
+    } catch (err) {
+      mostrarToast(err.message, "error");
+    }
+  }
+
+  function cerrarModalRechazo() {
+    const modal = document.getElementById("rechazo-modal");
+    if (modal) modal.classList.add("is-hidden");
+    facturaRechazoActual = null;
+  }
+
+  // ==================== VENTA LOCAL ====================
+
+  let itemsLocal = [];
+  let clientesMap = {};
+
+  async function cargarProductosParaSelect() {
+    try {
+      const data = await fetchJson("/api/catalogo/productos");
+      const select = document.getElementById("producto-select");
+      if (select) {
+        select.innerHTML =
+          '<option value="">-- Selecciona --</option>' +
+          (data.productos || [])
+            .map(
+              (p) =>
+                `<option value="${p.id}" data-precio="${p.precio_usd}">${p.nombre} - ${formatUSD(p.precio_usd)}</option>`,
+            )
+            .join("");
+      }
+    } catch (err) {
+      console.warn("Error cargando productos:", err);
+    }
+  }
+
+  async function cargarClientesParaDatalist() {
+    try {
+      const data = await fetchJson("/api/clientes");
+      const list = document.getElementById("clientes-list");
+      if (!list) return;
+      clientesMap = {};
+      const clientes = data.clientes || [];
+      list.innerHTML = clientes
+        .map((c) => {
+          const text = `${c.id} - ${c.nombre} ${c.apellido || ""}`.trim();
+          clientesMap[String(c.id)] = c.id;
+          clientesMap[
+            (c.nombre + " " + (c.apellido || "")).trim().toLowerCase()
+          ] = c.id;
+          return `<option value="${escapeHtml(text)}"></option>`;
+        })
+        .join("");
+    } catch (err) {
+      console.warn("Error cargando clientes:", err);
+    }
+  }
+
+  function agregarItemLocal() {
+    const select = document.getElementById("producto-select");
+    const cantidad = parseInt(
+      document.getElementById("cantidad-local")?.value || 1,
+    );
+    const productoId = select?.value;
+
+    if (!productoId) {
+      mostrarToast("Selecciona un producto", "error");
+      return;
+    }
+
+    const option = select.options[select.selectedIndex];
+    const nombre = option.text.split(" - ")[0];
+    const precio = parseFloat(option.dataset.precio);
+
+    const existente = itemsLocal.find((i) => i.producto_id == productoId);
+    if (existente) {
+      existente.cantidad += cantidad;
+    } else {
+      itemsLocal.push({
+        producto_id: parseInt(productoId),
+        nombre,
+        precio_usd: precio,
+        cantidad,
+      });
+    }
+
+    renderItemsLocal();
+    select.value = "";
+    document.getElementById("cantidad-local").value = 1;
+  }
+
+  function renderItemsLocal() {
+    const container = document.getElementById("items-local-list");
+    if (!container) return;
+
+    if (!itemsLocal.length) {
+      container.innerHTML =
+        '<p class="sin-resultados">No hay productos agregados</p>';
+      return;
+    }
+
+    const totalBs = itemsLocal.reduce(
+      (sum, i) =>
+        sum +
+        Number(i.precio_usd) *
+          (state.tasas.paralelo || state.tasas.oficial) *
+          i.cantidad,
+      0,
+    );
+    const totalUsd = totalBs / (state.tasas.oficial || 1);
+
+    container.innerHTML = `
+            <div class="items-local">
+                ${itemsLocal
+                  .map(
+                    (item, idx) => `
+                    <div class="cart-item">
+                        <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
+                        <span>${formatUSD(Number(item.precio_usd) * item.cantidad)} / ${formatVES(Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad)}</span>
+                        <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">🗑</button>
+                    </div>
+                `,
+                  )
+                  .join("")}
+                <div class="cart-total">
+                    <strong>Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</strong>
+                </div>
+            </div>
+        `;
+
+    document.querySelectorAll("[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.remove);
+        itemsLocal.splice(idx, 1);
+        renderItemsLocal();
+      });
+    });
+  }
+
+  async function registrarVentaLocal(event) {
+    event.preventDefault();
+
+    const clienteInput = document.getElementById("cliente-id")?.value || "";
+    let clienteId = null;
+    const v = String(clienteInput).trim();
+    if (/^\d+$/.test(v)) {
+      clienteId = parseInt(v);
+    } else if (v.includes(" - ")) {
+      const parts = v.split(" - ");
+      if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
+    } else {
+      const lookup = v.toLowerCase();
+      if (clientesMap[lookup]) clienteId = clientesMap[lookup];
+    }
+    const metodoPago = document.getElementById("metodo-local")?.value;
+
+    if (!clienteId) {
+      mostrarToast(
+        "Cliente no encontrado. Escribe ID o selecciona un cliente válido.",
+        "error",
+      );
+      return;
+    }
+    if (!itemsLocal.length) {
+      mostrarToast("Agrega al menos un producto", "error");
+      return;
+    }
+
+    try {
+      await fetchJson("/api/admin/ventas-local", {
+        method: "POST",
+        body: JSON.stringify({
+          cliente_id: parseInt(clienteId),
+          items: itemsLocal,
+          metodo_pago: metodoPago,
+        }),
+      });
+
+      mostrarToast("Venta registrada exitosamente", "success");
+      itemsLocal = [];
+      renderItemsLocal();
+      closeModal();
+      document.getElementById("form-venta-local")?.reset();
+    } catch (err) {
+      mostrarToast(err.message, "error");
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // ==================== INICIALIZACIÓN ====================
+
+  async function init() {
+    const path = window.location.pathname;
+
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-modal-close]")) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    const navCartBtn = document.getElementById("cart-nav-btn");
+    if (navCartBtn) {
+      navCartBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openCartModal();
+      });
+    }
+
+    if (path === "/catalogo") {
+      const cartToggle = document.getElementById("cart-toggle");
+      const cartVaciar = document.getElementById("cart-vaciar");
+      const cartCheckout = document.getElementById("cart-checkout");
+      const fClase = document.getElementById("f-clase");
+      const fMarca = document.getElementById("f-marca");
+      const fTexto = document.getElementById("f-texto");
+
+      const aplicarFiltros = () => {
+        state.filtros.clase_id = fClase?.value || "";
+        state.filtros.marca_id = fMarca?.value || "";
+        state.filtros.q = (fTexto?.value || "").trim();
+        cargarCatalogo();
+      };
+
+      if (cartToggle)
+        cartToggle.addEventListener("click", () => openCartModal());
+      if (cartVaciar)
+        cartVaciar.addEventListener("click", () => vaciarCarrito());
+      if (cartCheckout)
+        cartCheckout.addEventListener("click", () => iniciarCheckout());
+      setupCatalogSearchToggle();
+
+      if (fClase) fClase.addEventListener("change", aplicarFiltros);
+      if (fMarca) fMarca.addEventListener("change", aplicarFiltros);
+      if (fTexto) {
+        fTexto.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            aplicarFiltros();
+          }
+        });
+      }
+
+      await cargarCatalogo();
+      await cargarCarrito();
+    }
+
+    if (path === "/pagar") {
+      await cargarMetodosPago();
+      setupFormularioDinamico();
+
+      const btnPagar = document.getElementById("btn-pagar");
+      const btnVolver = document.getElementById("btn-volver");
+
+      if (btnPagar) btnPagar.addEventListener("click", () => procesarPago());
+      if (btnVolver)
+        btnVolver.addEventListener(
+          "click",
+          () => (window.location.href = "/catalogo"),
+        );
+
+      try {
+        const carritoData = await fetchJson("/api/carrito");
+        const resumenContainer = document.getElementById("resumen-carrito");
+        if (resumenContainer && carritoData.items?.length) {
+          const tasas = carritoData.tasas || state.tasas;
+          const totalBs = carritoData.items.reduce(
+            (sum, i) =>
+              sum +
+              Number(i.precio_usd) *
+                (tasas.paralelo || tasas.oficial) *
+                i.cantidad,
+            0,
+          );
+          const totalUsd = totalBs / (tasas.oficial || 1);
+          resumenContainer.innerHTML = `
                         <div class="resumen-card">
                             <h3>Resumen de compra</h3>
                             <ul>
-                                ${carritoData.items.map(i => {
-                                    const bsItem = Number(i.precio_usd) * (carritoData.tasas?.paralelo || state.tasas.paralelo || state.tasas.oficial) * i.cantidad;
-                                    const usdItem = bsItem / (carritoData.tasas?.oficial || state.tasas.oficial || 1);
+                                ${carritoData.items
+                                  .map((i) => {
+                                    const bsItem =
+                                      Number(i.precio_usd) *
+                                      (tasas.paralelo || tasas.oficial) *
+                                      i.cantidad;
+                                    const usdItem =
+                                      bsItem / (tasas.oficial || 1);
                                     return `<li>${i.cantidad}x ${i.nombre} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
-                                }).join('')}
+                                  })
+                                  .join("")}
                             </ul>
                             <div class="resumen-total">Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</div>
                         </div>
                     `;
-            }
         }
-        
-        if (path === "/admin/validar-pagos") {
-            await cargarProductosParaSelect();
-            await cargarClientesParaDatalist();
-            
-            const btnVentaLocal = document.getElementById("btn-venta-local");
-            const ventaLocalModal = document.getElementById("venta-local-modal");
-            const formVentaLocal = document.getElementById("form-venta-local");
-            const btnAgregarProducto = document.getElementById("agregar-producto-local");
-            
-            if (btnVentaLocal) {
-                btnVentaLocal.addEventListener("click", () => {
-                    if (ventaLocalModal) ventaLocalModal.classList.remove("is-hidden");
-                });
-            }
-            
-            if (btnAgregarProducto) {
-                btnAgregarProducto.addEventListener("click", () => agregarItemLocal());
-            }
-            
-            if (formVentaLocal) {
-                formVentaLocal.addEventListener("submit", registrarVentaLocal);
-            }
-            
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    
-                    const tab = btn.dataset.tab;
-                    document.querySelectorAll(".tab-content").forEach(content => content.classList.add("is-hidden"));
-                    document.getElementById(`${tab}-tab`)?.classList.remove("is-hidden");
-                    
-                    if (tab === "pendientes") cargarPagosPendientes();
-                    else if (tab === "aprobados") cargarPagosAprobados();
-                    else if (tab === "rechazados") cargarPagosRechazados();
-                });
-            });
-            
-            document.getElementById("cancelar-rechazo")?.addEventListener("click", cerrarModalRechazo);
-            document.getElementById("confirmar-rechazo")?.addEventListener("click", confirmarRechazo);
-            
-            await cargarPagosPendientes();
-        }
+      } catch (err) {
+        console.warn("Error cargando resumen:", err);
+      }
     }
-    
-    document.addEventListener("DOMContentLoaded", init);
+
+    if (path === "/admin/validar-pagos") {
+      await cargarProductosParaSelect();
+      await cargarClientesParaDatalist();
+
+      const btnVentaLocal = document.getElementById("btn-venta-local");
+      const ventaLocalModal = document.getElementById("venta-local-modal");
+      const formVentaLocal = document.getElementById("form-venta-local");
+      const btnAgregarProducto = document.getElementById(
+        "agregar-producto-local",
+      );
+
+      if (btnVentaLocal) {
+        btnVentaLocal.addEventListener("click", () => {
+          if (ventaLocalModal) ventaLocalModal.classList.remove("is-hidden");
+        });
+      }
+
+      if (btnAgregarProducto) {
+        btnAgregarProducto.addEventListener("click", () => agregarItemLocal());
+      }
+
+      if (formVentaLocal) {
+        formVentaLocal.addEventListener("submit", registrarVentaLocal);
+      }
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          const tab = btn.dataset.tab;
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((content) => content.classList.add("is-hidden"));
+          document.getElementById(`${tab}-tab`)?.classList.remove("is-hidden");
+
+          if (tab === "pendientes") cargarPagosPendientes();
+        });
+      });
+
+      document
+        .getElementById("cancelar-rechazo")
+        ?.addEventListener("click", cerrarModalRechazo);
+      document
+        .getElementById("confirmar-rechazo")
+        ?.addEventListener("click", confirmarRechazo);
+
+      await cargarPagosPendientes();
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
 })();

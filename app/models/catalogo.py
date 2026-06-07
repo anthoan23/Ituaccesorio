@@ -147,11 +147,11 @@ class CatalogoModel:
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
                     i.Costo_venta AS precio_usd,
-                    SUM(dv.Cantidad_articulo) AS veces_vendido
-                FROM Detalle_venta dv
-                JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+                    COALESCE(SUM(dv.Cantidad_articulo), 0) AS veces_vendido
+                FROM Inventario i
                 JOIN Producto p ON i.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Detalle_venta dv ON dv.ID_inventario = i.ID_inventario
                 GROUP BY i.ID_inventario, p.Nombre_producto, ma.Nombre_marca, i.Costo_venta
                 ORDER BY veces_vendido DESC
                 LIMIT %s

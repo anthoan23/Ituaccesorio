@@ -1,0 +1,631 @@
+:root {
+    --bg: #1e1e1e;
+    --card: #ffffff;
+    --ink: #121212;
+    --muted: rgba(18, 18, 18, 0.68);
+    --line: rgba(0, 0, 0, 0.12);
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+    --radius: 22px;
+    --yellow: #f3c500;
+    --yellow-soft: #f8dd69;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Manrope", sans-serif;
+    color: #ffffff;
+    background: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%),
+        radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
+        linear-gradient(135deg, #1e1e1e, #2a2a2a);
+}
+
+.page {
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding: 1.4rem 1.1rem 2.2rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    font-size: 14px;
+    margin: 0.75rem 0 1rem;
+}
+
+.breadcrumb__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.62);
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.breadcrumb__list li + li:before {
+    content: ">";
+    margin: 0 0.5rem;
+    color: var(--yellow);
+    font-weight: 800;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.15s ease;
+}
+
+.breadcrumb a:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* Header */
+.validacion-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.1rem;
+    margin-bottom: 1.1rem;
+}
+
+.validacion-header__title {
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+}
+
+.validacion-header__subtitle {
+    margin: 0.35rem 0 0;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 600;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    border-radius: 40px;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn.active {
+    background: var(--yellow);
+    color: var(--ink);
+}
+
+.tab-content.is-hidden {
+    display: none;
+}
+
+/* Tarjetas de pago */
+.pagos-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.pago-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pago-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+.pago-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.pago-factura {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: var(--ink);
+}
+
+.pago-estado {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pago-estado.pendiente {
+    background: #fff3e0;
+    color: #f5a623;
+}
+
+.pago-estado.aprobados {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.pago-estado.rechazados {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.pago-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-row strong {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+}
+
+.info-row span {
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.capture-image {
+    margin: 1rem 0;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+.capture-image img {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.capture-image img:hover {
+    transform: scale(1.02);
+}
+
+.productos-list {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 0.75rem;
+    margin: 1rem 0;
+}
+
+.producto-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.85rem;
+}
+
+.producto-item:last-child {
+    border-bottom: none;
+}
+
+.producto-item span:first-child {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.producto-item span:last-child {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    color: var(--yellow);
+}
+
+.btn-ver-detalle {
+    background: none;
+    border: none;
+    color: var(--yellow);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity 0.2s ease;
+}
+
+.btn-ver-detalle:hover {
+    opacity: 0.8;
+}
+
+.pago-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 40px;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn--yellow {
+    background: var(--yellow);
+    color: var(--ink);
+}
+
+.btn--yellow:hover {
+    background: #e0b000;
+    transform: translateY(-1px);
+}
+
+.btn--ghost {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.btn--ghost:hover {
+    background: rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+/* Modal de rechazo */
+.modal-rechazo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-rechazo.is-hidden {
+    display: none;
+}
+
+.modal-panel {
+    background: white;
+    border-radius: 24px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+}
+
+.modal-panel h3 {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    margin: 0 0 1rem;
+    color: var(--ink);
+}
+
+.motivo-rechazo {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    font-family: "Manrope", sans-serif;
+    resize: vertical;
+    margin: 1rem 0;
+}
+
+.motivo-rechazo:focus {
+    outline: none;
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.2);
+}
+
+.rechazo-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-weight: 600;
+}
+
+/* Toast personalizado */
+.custom-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page {
+        padding: 1rem;
+    }
+    
+    .validacion-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pago-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .tab-btn {
+        white-space: nowrap;
+    }
+}
+/* Estilos para el detalle de productos */
+.productos-list {
+    background: #f8f9fa;
+    border-radius: 16px;
+    margin: 1rem 0;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.productos-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--yellow);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.productos-items {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.producto-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    align-items: center;
+}
+
+.producto-item:last-child {
+    border-bottom: none;
+}
+
+.producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.producto-info strong {
+    font-size: 0.9rem;
+    color: var(--ink);
+}
+
+.producto-marca {
+    font-size: 0.7rem;
+    color: var(--muted);
+}
+
+.producto-cantidad {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: center;
+    min-width: 80px;
+}
+
+.producto-precio {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--yellow);
+    text-align: right;
+    min-width: 120px;
+}
+
+.producto-precio .subtotal {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-left: 0.5rem;
+}
+
+.productos-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #eef2f6;
+    border-top: 2px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.9rem;
+}
+
+.total-amount {
+    color: var(--yellow);
+    font-size: 1.1rem;
+}
+
+.loading-productos {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--muted);
+}
+
+.empty-detalle {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--muted);
+}
+
+.error-detalle {
+    text-align: center;
+    padding: 1rem;
+    color: #dc2626;
+    background: #fee2e2;
+    margin: 0.5rem;
+    border-radius: 8px;
+}
+
+.btn-ver-detalle {
+    background: none;
+    border: none;
+    color: var(--yellow);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-ver-detalle:hover {
+    opacity: 0.8;
+    transform: translateX(4px);
+}
+
+.btn-ver-detalle.active {
+    color: var(--ink);
+}
+
+.metodo-pago {
+    text-transform: capitalize;
+}
+
+/* Estilos para el motivo de rechazo */
+.motivo-rechazo-info {
+    background: #ffebee;
+    padding: 0.75rem;
+    border-radius: 12px;
+    margin: 0.5rem 0;
+    border-left: 3px solid #c62828;
+}
+
+.motivo-rechazo-info strong {
+    color: #c62828;
+}
+
+/* Responsive para el detalle */
+@media (max-width: 768px) {
+    .productos-header,
+    .producto-item {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .productos-header {
+        display: none;
+    }
+    
+    .producto-cantidad,
+    .producto-precio {
+        text-align: left;
+        padding-left: 0.5rem;
+    }
+    
+    .producto-precio .subtotal {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.25rem;
+    }
+}
