@@ -4,9 +4,7 @@ from app.utils.decorators import jwt_required
 from app.models.bitacora import registrar_en_bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto
 
-# ========== BLUEPRINT - NO BORRAR ESTA LÍNEA ==========
 productos_blueprint = Blueprint("productos", __name__)
-# =====================================================
 
 
 def _resolver_usuario_actual():
@@ -54,7 +52,7 @@ def pagina_productos():
 @tiene_permiso('Productos', 'consultar')
 def api_listar_clases():
     modelo = ClaseProducto()
-    clases = modelo.listar()
+    clases = modelo.listar()  # Cambiado de listar_clases() a listar()
     return jsonify({"success": True, "clases": clases})
 
 
@@ -149,7 +147,7 @@ def api_eliminar_clase(id_clase: str):
 def api_listar_marcas():
     id_clase = request.args.get("clase_id", default=None, type=str)
     modelo = MarcaProducto()
-    marcas = modelo.listar(id_clase=id_clase)
+    marcas = modelo.listar(id_clase=id_clase)  # Cambiado de listar_marcas() a listar()
     return jsonify({"success": True, "marcas": marcas})
 
 
