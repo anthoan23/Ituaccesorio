@@ -710,4 +710,452 @@ function renderDetalleCompraProductos(productos) {
 	}
 
 	cargarProveedores();
+
+// ==================== REPORTES ORDENES DE COMPRA ====================
+
+let reporteDatosActuales = [];
+let reporteFiltrosActuales = {};
+
+const btnReportes = document.getElementById("btn-reportes");
+const modalReportes = document.getElementById("modal-reportes");
+const reporteProveedor = document.getElementById("reporte-proveedor");
+const reporteEstado = document.getElementById("reporte-estado");
+const reporteFechaDesde = document.getElementById("reporte-fecha-desde");
+const reporteFechaHasta = document.getElementById("reporte-fecha-hasta");
+const reporteCostoMin = document.getElementById("reporte-costo-min");
+const reporteCostoMax = document.getElementById("reporte-costo-max");
+const btnGenerarReporte = document.getElementById("btn-generar-reporte");
+const btnLimpiarFiltrosReporte = document.getElementById("btn-limpiar-filtros");
+const btnExportarExcel = document.getElementById("btn-exportar-excel");
+const btnExportarPdf = document.getElementById("btn-exportar-pdf");
+const btnImprimir = document.getElementById("btn-imprimir");
+const reportePreview = document.getElementById("reporte-preview");
+const reporteTotal = document.getElementById("reporte-total");
+const reporteTabla = document.getElementById("reporte-tabla");
+
+function notifyReportes(type, message) {
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === "function") {
+        window.FeedbackModal.show({
+            type: type === "error" ? "error" : "success",
+            title: type === "error" ? "No se pudo completar" : "Acción exitosa",
+            message: message,
+        });
+        return;
+    }
+    if (type === "error") {
+        alert(message);
+    } else {
+        console.log(message);
+    }
+}
+
+async function fetchJsonReportes(url, options = {}) {
+    const csrfTokenInput = document.querySelector('input[name="_csrf_token"]')?.value || "";
+    const authToken = localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
+    
+    const response = await fetch(url, {
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            ...(csrfTokenInput ? { "X-CSRFToken": csrfTokenInput } : {}),
+            ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+        },
+        credentials: "same-origin",
+        ...options,
+    });
+    
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+        throw new Error(data.error || "Error en la operación");
+    }
+    return data;
+}
+
+function escapeHtmlReportes(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function formatMoneyReportes(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "0";
+    return n.toLocaleString("es-VE");
+}
+
+function limpiarFiltrosReporte() {
+    if (reporteProveedor) reporteProveedor.value = "";
+    if (reporteEstado) reporteEstado.value = "";
+    if (reporteFechaDesde) reporteFechaDesde.value = "";
+    if (reporteFechaHasta) reporteFechaHasta.value = "";
+    if (reporteCostoMin) reporteCostoMin.value = "";
+    if (reporteCostoMax) reporteCostoMax.value = "";
+}
+
+async function cargarProveedoresReporte() {
+    if (!reporteProveedor) return;
+    
+    try {
+        const data = await fetchJsonReportes("/api/proveedores", { method: "GET" });
+        const proveedores = Array.isArray(data) ? data : (data.proveedores || []);
+        reporteProveedor.innerHTML = '<option value="">Todos</option>' + 
+            proveedores.map(p => `<option value="${escapeHtmlReportes(p.ID_proveedor)}">${escapeHtmlReportes(p.N_proveedor)}</option>`).join("");
+    } catch (err) {
+        console.error("Error cargando proveedores:", err);
+    }
+}
+
+async function generarReporteOrdenes() {
+    const filtros = {
+        proveedor_id: reporteProveedor?.value || null,
+        estado: reporteEstado?.value || null,
+        fecha_desde: reporteFechaDesde?.value || null,
+        fecha_hasta: reporteFechaHasta?.value || null,
+        costo_min: reporteCostoMin?.value ? parseFloat(reporteCostoMin.value) : null,
+        costo_max: reporteCostoMax?.value ? parseFloat(reporteCostoMax.value) : null,
+    };
+    
+    reporteFiltrosActuales = filtros;
+    
+    if (btnGenerarReporte) {
+        btnGenerarReporte.disabled = true;
+        btnGenerarReporte.textContent = "Cargando...";
+    }
+    
+    try {
+        const data = await fetchJsonReportes("/api/ordenes_compra/reportes", {
+            method: "POST",
+            body: JSON.stringify(filtros)
+        });
+        
+        reporteDatosActuales = data.ordenes || [];
+        const total = data.total || 0;
+        
+        if (reportePreview) reportePreview.style.display = "block";
+        if (reporteTotal) reporteTotal.textContent = `Total de órdenes: ${total}`;
+        
+        if (reporteTabla) {
+            if (reporteDatosActuales.length === 0) {
+                reporteTabla.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes con esos filtros</td></tr>';
+            } else {
+                reporteTabla.innerHTML = reporteDatosActuales.map(p => `
+                    <tr>
+                        <td>${escapeHtmlReportes(p.ID_orden_c || "-")}</td>
+                        <td><strong>${escapeHtmlReportes(p.N_proveedor || "-")}</strong></td>
+                        <td>${escapeHtmlReportes(p.Fecha_o || "-")}</td>
+                        <td><span class="status-badge status-${(p.Estado || "Pendiente").toLowerCase()}">${escapeHtmlReportes(p.Estado || "Pendiente")}</span></td>
+                        <td>$${formatMoneyReportes(p.Costo_venta || 0)}</td>
+                        <td>${escapeHtmlReportes(p.Recibido_por || "-")}</td>
+                    </tr>
+                `).join("");
+            }
+        }
+        
+        if (btnExportarExcel) btnExportarExcel.disabled = false;
+        if (btnExportarPdf) btnExportarPdf.disabled = false;
+        if (btnImprimir) btnImprimir.disabled = false;
+        
+    } catch (err) {
+        notifyReportes("error", err.message || "Error al generar el reporte");
+    } finally {
+        if (btnGenerarReporte) {
+            btnGenerarReporte.disabled = false;
+            btnGenerarReporte.textContent = "Generar reporte";
+        }
+    }
+}
+
+function exportarOrdenesExcel() {
+    if (reporteDatosActuales.length === 0) {
+        notifyReportes("error", "No hay datos para exportar");
+        return;
+    }
+    
+    const datos = reporteDatosActuales.map(p => ({
+        "ID Orden": p.ID_orden_c || "",
+        "Proveedor": p.N_proveedor || "",
+        "Fecha": p.Fecha_o || "",
+        "Estado": p.Estado || "",
+        "Costo Total": p.Costo_venta || 0,
+        "Recibido Por": p.Recibido_por || ""
+    }));
+    
+    if (typeof XLSX === "undefined") {
+        notifyReportes("info", "Cargando librería de Excel...");
+        const script = document.createElement("script");
+        script.src = "/static/js/libs/xlsx.full.min.js";
+        script.onload = () => exportarOrdenesExcel();
+        document.head.appendChild(script);
+        return;
+    }
+    
+    const ws = XLSX.utils.json_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "OrdenesCompra");
+    
+    ws["!cols"] = [
+        {wch: 10}, {wch: 35}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 20}
+    ];
+    
+    XLSX.writeFile(wb, `ordenes_compra_${new Date().toISOString().slice(0,19)}.xlsx`);
+    notifyReportes("success", "Reporte exportado a Excel");
+}
+
+function exportarOrdenesPdf() {
+    if (reporteDatosActuales.length === 0) {
+        notifyReportes("error", "No hay datos para exportar");
+        return;
+    }
+    
+    if (typeof window.jspdf === "undefined" || typeof window.jspdf.jsPDF === "undefined") {
+        notifyReportes("info", "Cargando librería de PDF...");
+        const script1 = document.createElement("script");
+        script1.src = "/static/js/libs/jspdf.umd.min.js";
+        script1.onload = () => {
+            const script2 = document.createElement("script");
+            script2.src = "/static/js/libs/jspdf.plugin.autotable.min.js";
+            script2.onload = () => {
+                setTimeout(() => exportarOrdenesPdf(), 100);
+            };
+            document.head.appendChild(script2);
+        };
+        document.head.appendChild(script1);
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    const colors = {
+        dark: [18, 18, 18],
+        primary: [243, 197, 0],
+        white: [255, 255, 255],
+        grayLight: [248, 249, 250],
+        grayText: [102, 102, 106]
+    };
+    
+    const logoUrl = window.location.origin + "/static/img/LOGO COMPLETO.png";
+    try {
+        doc.addImage(logoUrl, "PNG", (pageWidth - 45) / 2, 8, 45, 14);
+    } catch(e) {}
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.text("REPORTE DE ORDENES DE COMPRA", pageWidth / 2, 30, { align: "center" });
+    
+    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+    doc.setLineWidth(0.8);
+    doc.line(pageWidth / 2 - 45, 34, pageWidth / 2 + 45, 34);
+    
+    const now = new Date();
+    const fechaStr = now.toLocaleDateString("es-ES");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    doc.text(`Generado: ${fechaStr} • Total órdenes: ${reporteDatosActuales.length}`, pageWidth / 2, 44, { align: "center" });
+    
+    const filtrosTexto = [];
+    if (reporteFiltrosActuales.proveedor_id) filtrosTexto.push(`Proveedor ID: ${reporteFiltrosActuales.proveedor_id}`);
+    if (reporteFiltrosActuales.estado) filtrosTexto.push(`Estado: ${reporteFiltrosActuales.estado}`);
+    if (reporteFiltrosActuales.fecha_desde) filtrosTexto.push(`Desde: ${reporteFiltrosActuales.fecha_desde}`);
+    if (reporteFiltrosActuales.fecha_hasta) filtrosTexto.push(`Hasta: ${reporteFiltrosActuales.fecha_hasta}`);
+    if (reporteFiltrosActuales.costo_min) filtrosTexto.push(`Costo ≥ $${reporteFiltrosActuales.costo_min}`);
+    if (reporteFiltrosActuales.costo_max) filtrosTexto.push(`Costo ≤ $${reporteFiltrosActuales.costo_max}`);
+    
+    const filterY = 52;
+    doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
+    doc.rect(15, filterY, pageWidth - 30, 10, "F");
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    doc.text(filtrosTexto.length ? `Filtros: ${filtrosTexto.join(" • ")}` : "Filtros: Todas las órdenes", 18, filterY + 7);
+    
+    const columns = ["ID", "PROVEEDOR", "FECHA", "ESTADO", "COSTO", "RECIBIDO POR"];
+    const rows = reporteDatosActuales.map(p => [
+        p.ID_orden_c || "",
+        p.N_proveedor || "",
+        p.Fecha_o || "",
+        p.Estado || "Pendiente",
+        `$${Number(p.Costo_venta || 0).toLocaleString("es-VE")}`,
+        p.Recibido_por || "-"
+    ]);
+    
+    doc.autoTable({
+        head: [columns],
+        body: rows,
+        startY: filterY + 14,
+        theme: "grid",
+        headStyles: {
+            fillColor: colors.dark,
+            textColor: colors.white,
+            fontStyle: "bold",
+            fontSize: 9,
+            halign: "center"
+        },
+        bodyStyles: { fontSize: 8.5, cellPadding: 4 },
+        alternateRowStyles: { fillColor: colors.grayLight },
+        margin: { left: 15, right: 15 },
+        didDrawPage: (data) => {
+            doc.setFontSize(7);
+            doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+            doc.text("ItuAccesorio System - Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+            doc.text(`Página ${data.pageNumber}`, pageWidth - 15, doc.internal.pageSize.getHeight() - 8, { align: "right" });
+        }
+    });
+    
+    doc.save(`ordenes_compra_${now.toISOString().slice(0,19)}.pdf`);
+    notifyReportes("success", "Reporte exportado a PDF");
+}
+
+function imprimirReporteOrdenes() {
+    if (reporteDatosActuales.length === 0) {
+        notifyReportes("error", "No hay datos para imprimir");
+        return;
+    }
+    
+    const ventana = window.open("", "_blank");
+    const fecha = new Date().toLocaleString();
+    const logoUrl = window.location.origin + "/static/img/LOGO COMPLETO.png";
+    
+    const filtrosTexto = [];
+    if (reporteFiltrosActuales.proveedor_id) filtrosTexto.push(`Proveedor ID: ${reporteFiltrosActuales.proveedor_id}`);
+    if (reporteFiltrosActuales.estado) filtrosTexto.push(`Estado: ${reporteFiltrosActuales.estado}`);
+    if (reporteFiltrosActuales.fecha_desde) filtrosTexto.push(`Desde: ${reporteFiltrosActuales.fecha_desde}`);
+    if (reporteFiltrosActuales.fecha_hasta) filtrosTexto.push(`Hasta: ${reporteFiltrosActuales.fecha_hasta}`);
+    if (reporteFiltrosActuales.costo_min) filtrosTexto.push(`Costo ≥ $${reporteFiltrosActuales.costo_min}`);
+    if (reporteFiltrosActuales.costo_max) filtrosTexto.push(`Costo ≤ $${reporteFiltrosActuales.costo_max}`);
+    
+    ventana.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Reporte de Ordenes de Compra</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+                @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
+                body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
+                h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+                .logo { text-align: center; margin-bottom: 20px; }
+                .logo img { height: 50px; }
+                .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
+                .filters { background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-left: 4px solid #f3c500; font-size: 12px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background: #121212; color: white; font-weight: bold; }
+                tr:nth-child(even) { background: #f8f9fa; }
+                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+                .btn-print { background: #f3c500; border: none; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; }
+                .status-pendiente { color: #f59e0b; font-weight: bold; }
+                .status-completada { color: #10b981; font-weight: bold; }
+                .status-anulada { color: #dc2626; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <button class="btn-print no-print" onclick="window.print()">Imprimir</button>
+            <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+            <h1>REPORTE DE ORDENES DE COMPRA</h1>
+            <div class="info">Generado: ${fecha} • Total órdenes: ${reporteDatosActuales.length}</div>
+            ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ""}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Proveedor</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Costo</th>
+                        <th>Recibido por</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reporteDatosActuales.map(p => {
+                        let estadoClass = "";
+                        if (p.Estado === "Pendiente") estadoClass = "status-pendiente";
+                        else if (p.Estado === "Completada") estadoClass = "status-completada";
+                        else if (p.Estado === "Anulada") estadoClass = "status-anulada";
+                        return `
+                            <tr>
+                                <td>${escapeHtmlReportes(p.ID_orden_c || "-")}</td>
+                                <td><strong>${escapeHtmlReportes(p.N_proveedor || "-")}</strong></td>
+                                <td>${escapeHtmlReportes(p.Fecha_o || "-")}</td>
+                                <td class="${estadoClass}">${escapeHtmlReportes(p.Estado || "Pendiente")}</td>
+                                <td>$${Number(p.Costo_venta || 0).toLocaleString("es-VE")}</td>
+                                <td>${escapeHtmlReportes(p.Recibido_por || "-")}</td>
+                            </tr>
+                        `;
+                    }).join("")}
+                </tbody>
+            </table>
+            <div class="footer">ItuAccesorio System - Reporte Generado Exclusivamente Para ituaccesorio</div>
+        </body>
+        </html>
+    `);
+    ventana.document.close();
+}
+
+// Eventos de reportes
+if (btnReportes) {
+    btnReportes.addEventListener("click", async () => {
+        limpiarFiltrosReporte();
+        await cargarProveedoresReporte();
+        if (reportePreview) reportePreview.style.display = "none";
+        if (btnExportarExcel) btnExportarExcel.disabled = true;
+        if (btnExportarPdf) btnExportarPdf.disabled = true;
+        if (btnImprimir) btnImprimir.disabled = true;
+        if (window.UiModal && typeof window.UiModal.openById === "function") {
+            window.UiModal.openById("modal-reportes");
+        } else if (modalReportes) {
+            modalReportes.hidden = false;
+            modalReportes.setAttribute("aria-hidden", "false");
+        }
+    });
+}
+
+if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporteOrdenes);
+if (btnLimpiarFiltrosReporte) btnLimpiarFiltrosReporte.addEventListener("click", limpiarFiltrosReporte);
+if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarOrdenesExcel);
+if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarOrdenesPdf);
+if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporteOrdenes);
+
+if (modalReportes) {
+    modalReportes.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        if (target.dataset.modalClose === "true") {
+            if (window.UiModal && typeof window.UiModal.closeById === "function") {
+                window.UiModal.closeById("modal-reportes");
+            } else {
+                modalReportes.hidden = true;
+                modalReportes.setAttribute("aria-hidden", "true");
+            }
+            return;
+        }
+
+        if (target === modalReportes) {
+            if (window.UiModal && typeof window.UiModal.closeById === "function") {
+                window.UiModal.closeById("modal-reportes");
+            } else {
+                modalReportes.hidden = true;
+                modalReportes.setAttribute("aria-hidden", "true");
+            }
+        }
+    });
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (window.UiModal && typeof window.UiModal.closeById === "function") {
+        window.UiModal.closeById("modal-reportes");
+    } else if (modalReportes && !modalReportes.hidden) {
+        modalReportes.hidden = true;
+        modalReportes.setAttribute("aria-hidden", "true");
+    }
+});
 });
