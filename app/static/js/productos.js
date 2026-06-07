@@ -740,6 +740,7 @@
         return;
     }
     
+    // Verificar disponibilidad de jsPDF
     if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
         notify("info", "Cargando librería de PDF...");
         
@@ -749,7 +750,7 @@
             const script2 = document.createElement('script');
             script2.src = '/static/js/libs/jspdf.plugin.autotable.min.js';
             script2.onload = () => {
-                setTimeout(() => exportarAPdf(), 100);
+                setTimeout(() => exportarAPdf(), 150);
             };
             document.head.appendChild(script2);
         };
@@ -758,128 +759,245 @@
     }
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     
-    // Colores de la marca
-    const primaryColor = [243, 197, 0]; // Amarillo ItuAccesorio
-    const darkColor = [17, 17, 17];
-    const grayColor = [102, 102, 102];
-    const lightGray = [245, 245, 245];
+    // ============================================
+    // CONFIGURACIÓN INICIAL
+    // ============================================
+    const doc = new jsPDF({ 
+        orientation: 'landscape', 
+        unit: 'mm', 
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
+    });
     
-    // ========== HEADER CON LOGO ==========
-    // Logo (usar imagen desde el servidor)
-    const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Intentar cargar el logo como imagen
-    const img = new Image();
-    img.src = logoUrl;
+    // ============================================
+    // PALETA DE COLORES OFICIAL iTuAccesorio
+    // ============================================
+    const colors = {
+        primary: [243, 197, 0],      // Amarillo Principal - #f3c500
+        dark: [18, 18, 18],          // Negro Dominante - #121212
+        white: [255, 255, 255],      // Blanco Puro
+        grayLight: [248, 249, 250],  // Gris muy sutil - #f8f9fa
+        grayMedium: [245, 246, 248], // Gris medio para filas alternas
+        grayText: [102, 102, 106],   // Texto secundario - #66666a
+        border: [225, 226, 230]      // Borde suave
+    };
     
-    // Título principal con fuente Space Grotesk
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.text("REPORTE DE PRODUCTOS", 14, 20);
+    // ============================================
+    // 1. ENCABEZADO
+    // ============================================
+    const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
+    const logoWidth = 45;
+    const logoHeight = 8;
+    const logoX = (pageWidth - logoWidth) / 2;
     
-    // Línea decorativa amarilla
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setLineWidth(1.5);
-    doc.line(14, 25, 60, 25);
-    
-    // ========== INFO DEL REPORTE ==========
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
-    doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 33);
-    doc.text(`Total productos: ${reporteDatosActuales.length}`, 14, 39);
-    
-    // ========== FILTROS APLICADOS ==========
-    const filtrosTexto = [];
-    if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
-    if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
-    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
-    if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
-    if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
-    
-    if (filtrosTexto.length > 0) {
-        doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-        doc.rect(14, 45, 270, 12, 'F');
-        doc.setFont("helvetica", "italic");
-        doc.setFontSize(8);
-        doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
-        doc.text(`Filtros aplicados: ${filtrosTexto.join(" • ")}`, 16, 54);
+    try {
+        doc.addImage(logoUrl, 'PNG', logoX, 8, logoWidth, logoHeight);
+    } catch(e) {
+        console.warn('Logo no cargado:', e);
     }
     
-    // ========== TABLA DE PRODUCTOS ==========
-    const columns = [
-        { header: "ID", dataKey: "id", width: 20 },
-        { header: "Nombre", dataKey: "nombre", width: 55 },
-        { header: "Marca", dataKey: "marca", width: 35 },
-        { header: "Clase", dataKey: "clase", width: 35 },
-        { header: "Stock", dataKey: "stock", width: 20 },
-        { header: "Descripción", dataKey: "descripcion", width: 95 }
+    // ============================================
+    // 2. TÍTULO PRINCIPAL
+    // ============================================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.text("REPORTE DE PRODUCTOS", pageWidth / 2, 30, { align: 'center' });
+    
+    // Línea decorativa amarilla
+    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+    doc.setLineWidth(0.8);
+    doc.line(pageWidth / 2 - 35, 34, pageWidth / 2 + 35, 34);
+    
+    // ============================================
+    // 3. METADATOS
+    // ============================================
+    const now = new Date();
+    const fechaStr = now.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+    const horaStr = now.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    
+    const metadata = [
+        `Generado: ${fechaStr}`,
+        `Hora: ${horaStr}`,
+        `Total productos: ${reporteDatosActuales.length}`
     ];
     
-    const rows = reporteDatosActuales.map(p => ({
-        id: p.id || "",
-        nombre: p.nombre || "",
-        marca: p.marca_nombre || "",
-        clase: p.clase_nombre || "",
-        stock: p.stock === 0 ? "Sin stock" : String(p.stock),
-        descripcion: (p.descripcion || "").substring(0, 80)
-    }));
+    const metadataText = metadata.join(" • ");
+    doc.text(metadataText, pageWidth / 2, 44, { align: 'center' });
+    
+    // ============================================
+    // 4. CAJA DE FILTROS APLICADOS
+    // ============================================
+    const filtrosActivos = [];
+    if (reporteFiltrosActuales.clase_nombre) filtrosActivos.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
+    if (reporteFiltrosActuales.marca_nombre) filtrosActivos.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
+    if (reporteFiltrosActuales.q) filtrosActivos.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+    if (reporteFiltrosActuales.stock_min) filtrosActivos.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
+    if (reporteFiltrosActuales.stock_max) filtrosActivos.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
+    
+    const filtrosText = filtrosActivos.length > 0 
+        ? `Filtros activos: ${filtrosActivos.join(" • ")}` 
+        : "Filtros activos: Todos los productos";
+    
+    const filterBoxY = 54;
+    const filterBoxHeight = 10;
+    
+    // Fondo de la caja de filtros
+    doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
+    doc.rect(15, filterBoxY, pageWidth - 30, filterBoxHeight, 'F');
+    
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    doc.text(filtrosText, 20, filterBoxY + 7);
+    
+    // ============================================
+    // 5. TABLA DE PRODUCTOS
+    // ============================================
+    const startY = filterBoxY + filterBoxHeight + 12;
+    
+    // Preparar datos para la tabla
+    const tableRows = reporteDatosActuales.map(p => {
+        let stockDisplay = '';
+        let stockColor = colors.dark;
+        
+        if (p.stock === 0) {
+            stockDisplay = 'Sin stock';
+            stockColor = [220, 38, 38];
+        } else if (p.stock <= 5) {
+            stockDisplay = `${p.stock} uds`;
+            stockColor = colors.primary;
+        } else {
+            stockDisplay = `${p.stock} uds`;
+            stockColor = [34, 197, 94];
+        }
+        
+        return [
+            p.id || '-',
+            p.nombre || '-',
+            p.marca_nombre || '-',
+            p.clase_nombre || '-',
+            stockDisplay,
+            (p.descripcion || '-').substring(0, 70) + ((p.descripcion || '').length > 70 ? '...' : '')
+        ];
+    });
     
     doc.autoTable({
-        columns: columns,
-        body: rows,
-        startY: filtrosTexto.length > 0 ? 62 : 48,
+        startY: startY,
+        head: [['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']],
+        body: tableRows,
         theme: 'grid',
+        
+        // Estilos del encabezado
         headStyles: {
-            fillColor: primaryColor,
-            textColor: darkColor,
+            fillColor: colors.primary,
+            textColor: colors.white,
             fontStyle: 'bold',
-            fontSize: 9,
-            halign: 'center'
-        },
-        bodyStyles: {
             fontSize: 8,
-            textColor: darkColor,
-            cellPadding: 3
+            halign: 'center',
+            valign: 'middle',
+            cellPadding: 6,
+            lineWidth: 0,
+            lineColor: colors.dark
         },
+        
+        // Estilos del cuerpo
+        bodyStyles: {
+            fontSize: 8.5,
+            textColor: colors.dark,
+            cellPadding: 5,
+            valign: 'middle',
+            lineColor: colors.border,
+            lineWidth: 0.3
+        },
+        
+        // Estilos de filas alternas (zebra)
         alternateRowStyles: {
-            fillColor: [250, 250, 250]
+            fillColor: colors.grayMedium
         },
+        
+        // Estilo específico para la columna STOCK
         columnStyles: {
-            id: { halign: 'center', cellWidth: 20 },
-            nombre: { cellWidth: 55 },
-            marca: { cellWidth: 35 },
-            clase: { cellWidth: 35 },
-            stock: { halign: 'center', cellWidth: 20 },
-            descripcion: { cellWidth: 95 }
+            0: { cellWidth: 18, halign: 'center' },
+            1: { cellWidth: 55, fontStyle: 'bold' },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 35 },
+            4: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+            5: { cellWidth: 'auto' }
         },
-        margin: { left: 14, right: 14 },
+        
+        // Colores de la tabla
+        tableLineColor: colors.border,
+        tableLineWidth: 0.5,
+        
+        // Márgenes
+        margin: { left: 15, right: 15 },
+        
+        // Hook para aplicar colores dinámicos al stock
+        didParseCell: (data) => {
+            // Colorear la celda de stock según su valor
+            if (data.column.index === 4 && data.row.index >= 0 && data.cell) {
+                const stockValue = data.cell.raw;
+                if (stockValue === 'Sin stock') {
+                    data.cell.styles.textColor = [220, 38, 38];
+                } else if (stockValue.includes('uds') && parseInt(stockValue) <= 5) {
+                    data.cell.styles.textColor = [243, 197, 0];
+                } else if (stockValue !== '-' && stockValue !== 'Sin stock') {
+                    data.cell.styles.textColor = [34, 197, 94];
+                }
+            }
+        },
+        
+        // Función para dibujar pie de página
         didDrawPage: (data) => {
-            // Número de página
-            doc.setFontSize(7);
-            doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
-            doc.text(
-                `Página ${data.pageNumber}`,
-                doc.internal.pageSize.getWidth() - 20,
-                doc.internal.pageSize.getHeight() - 10
-            );
+            const currentPage = data.pageNumber;
             
-            // Pie de página
+            // Línea divisoria
+            doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
+            doc.setLineWidth(0.3);
+            doc.line(15, pageHeight - 12, pageWidth - 15, pageHeight - 12);
+            
+            // Texto de cierre centrado
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(7);
-            doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+            doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
             doc.text(
-                "ItuAccesorio - Sistema de Gestión",
-                doc.internal.pageSize.getWidth() / 2,
-                doc.internal.pageSize.getHeight() - 10,
+                "ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio",
+                pageWidth / 2,
+                pageHeight - 6,
                 { align: 'center' }
             );
+            
+            // Numeración
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7);
+            doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+            doc.text(`Página ${currentPage}`, pageWidth - 15, pageHeight - 6, { align: 'right' });
         }
     });
     
-    doc.save(`productos_${new Date().toISOString().slice(0,19)}.pdf`);
+    // ============================================
+    // 6. GUARDAR PDF
+    // ============================================
+    const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+    doc.save(`productos_${timestamp}.pdf`);
     notify("success", "Reporte exportado a PDF");
 }
 
@@ -891,7 +1009,7 @@ function imprimirReporte() {
     
     const ventana = window.open("", "_blank");
     const fecha = new Date().toLocaleString();
-    const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+    const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
     
     const filtrosTexto = [];
     if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
