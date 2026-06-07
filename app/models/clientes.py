@@ -8,12 +8,12 @@ class Clientes():
         self.Celular_cliente = Celular_cliente
         self.Correo_cliente = Correo_cliente
        
-        self.__conexion_bd = conectar()
+        self._conexion_bd = conectar()
 
     """" Inicio de metodos"""
 
     def listar_clientes(self):
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
         
@@ -23,12 +23,12 @@ class Clientes():
                 """
                 SELECT
                     c.ID_cliente AS id,
-                    c.Nombre_cliente AS nombre,
+                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
                     c.Direccion_cliente AS direccion,
                     c.Celular_cliente AS celular,
                     c.Correo_cliente AS correo,
                     p.Apellido_cliente AS apellido,
-                    j.Razon_social_cliente AS razon_social,
+                    j.Razon_social AS razon_social,
                     j.Rif_cliente AS rif,
                     CASE
                         WHEN p.ID_cliente IS NOT NULL THEN 'natural'
@@ -53,7 +53,7 @@ class Clientes():
         if not id_cliente:
             return None
 
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
             return None
 
@@ -63,12 +63,12 @@ class Clientes():
                 """
                 SELECT
                     c.ID_cliente AS id,
-                    c.Nombre_cliente AS nombre,
+                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
                     c.Direccion_cliente AS direccion,
                     c.Celular_cliente AS celular,
                     c.Correo_cliente AS correo,
                     p.Apellido_cliente AS apellido,
-                    j.Razon_social_cliente AS razon_social,
+                    j.Razon_social AS razon_social,
                     j.Rif_cliente AS rif,
                     CASE
                         WHEN p.ID_cliente IS NOT NULL THEN 'natural'
@@ -109,13 +109,21 @@ class Clientes():
     
         #Final de validaciones
 
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
             mensaje = "Error al conectar a la base de datos."
             return mensaje
         
         cursor = db.cursor()
-        try:
+        try: 
+            sql = "DELETE FROM Persona_natural WHERE ID_cliente = %s"
+            cursor.execute(sql, (Id_cliente,))
+            db.commit()
+
+            sql = "DELETE FROM Cliente_juridico WHERE ID_cliente = %s"
+            cursor.execute(sql, (Id_cliente,))
+            db.commit()
+
             sql = "DELETE FROM Cliente WHERE ID_cliente = %s"
             cursor.execute(sql, (Id_cliente,))
             db.commit()
@@ -161,52 +169,50 @@ class Persona_natural(Clientes):
         #Inicio de validaciones
 
         if not cedula:
-            mensaje = "La cédula del cliente no puede estar vacía."
-            return mensaje
+            return "La cédula del cliente no puede estar vacía."
         
         if not apellido:
-            mensaje = "El apellido del cliente no puede estar vacío."
-            return mensaje
+            return "El apellido del cliente no puede estar vacío."
         
         if not nombre:
-            mensaje = "El nombre del cliente no puede estar vacío."
-            return mensaje
+            return "El nombre del cliente no puede estar vacío."
         
         if not cedula.isdigit():
-            mensaje = "La cédula del cliente debe contener solo números."
-            return mensaje
+            return "La cédula del cliente debe contener solo números."
         
         if len(nombre) > 20:
-            mensaje = "El nombre del cliente no puede exceder los 20 caracteres."
-            return mensaje
+            return "El nombre del cliente no puede exceder los 20 caracteres."
         
         if len(apellido) > 20:
-            mensaje = "El apellido del cliente no puede exceder los 20 caracteres."
-            return mensaje
+            return "El apellido del cliente no puede exceder los 20 caracteres."
         
         if len(cedula) > 8:
-            mensaje = "La cédula del cliente no puede exceder los 8 caracteres."
-            return mensaje
+            return "La cédula del cliente no puede exceder los 8 caracteres."
         
-        #final de validaciones
-
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return "Error al conectar a la base de datos."
         
         cursor = db.cursor()
-        try: 
-            sql = 'CALL Crear_cliente_natural(%s, %s, %s)'
-            cursor.execute(sql, (cedula, nombre, apellido))
-            while cursor.nextset():
-                pass
+        try:
+            # Verificar existencia previa del cliente
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (cedula,))
+            if cursor.fetchone():
+                return f"El cliente con cédula '{cedula}' ya existe."
+
+            cursor.execute(
+                "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
+                (cedula, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+            )
+            cursor.execute(
+                "INSERT INTO Persona_natural (ID_cliente, Apellido_cliente, Nombre_cliente) VALUES (%s, %s, %s)",
+                (cedula, apellido, nombre)
+            )
             db.commit()
-            mensaje = f"El cliente '{nombre} {apellido}' se registrado exitosamente."
-            return mensaje
+            return f"El cliente '{nombre} {apellido}' se registró exitosamente."
         except Exception as e:
-            mensaje = f"Error al registrar cliente: {e}"
-            return mensaje 
+            db.rollback()
+            return f"Error al registrar cliente: {e}"
         finally:
             cursor.close()
             db.close()
@@ -248,19 +254,21 @@ class Persona_natural(Clientes):
         
         #final de validaciones
         
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
             mensaje = "Error al conectar a la base de datos."
             return mensaje
         
         cursor = db.cursor()
         try:
-            sql = """
-            UPDATE Cliente
-            SET Nombre_cliente = %s
-            WHERE ID_cliente = %s
-            """
-            cursor.execute(sql, (f"{nombre} {apellido}", cedula))
+            cursor.execute(
+                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, cedula)
+            )
+            cursor.execute(
+                "UPDATE Persona_natural SET Nombre_cliente = %s, Apellido_cliente = %s WHERE ID_cliente = %s",
+                (nombre, apellido, cedula)
+            )
             db.commit()
             mensaje = f"El cliente '{nombre} {apellido}' se actualizó exitosamente."
             return mensaje
@@ -307,44 +315,43 @@ class Cliente_juridico(Clientes):
         #Inicio de validaciones
         
         if not razon_social:
-            mensaje = "La razón social del cliente no puede estar vacía."
-            return mensaje
+            return "La razón social del cliente no puede estar vacía."
         
         if len(razon_social) > 50:
-            mensaje = "La razón social del cliente no puede exceder los 50 caracteres."
-            return mensaje
+            return "La razón social del cliente no puede exceder los 50 caracteres."
         
         if not rif:
-            mensaje = "El RIF del cliente no puede estar vacío."
-            return mensaje
+            return "El RIF del cliente no puede estar vacío."
         
         if not rif.isalnum():
-            mensaje = "El RIF del cliente debe contener solo caracteres alfanuméricos."
-            return mensaje
+            return "El RIF del cliente debe contener solo caracteres alfanuméricos."
         
         if len(rif) > 9:
-            mensaje = "El RIF del cliente no puede exceder los 9 caracteres."
-            return mensaje
+            return "El RIF del cliente no puede exceder los 9 caracteres."
  
-        #Final de validaciones
-
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return "Error al conectar a la base de datos."
 
         cursor = db.cursor()
         try:
-            sql = 'CALL Crear_cliente_juridico(%s, %s)'
-            cursor.execute(sql, (razon_social, rif))
-            while cursor.nextset():
-                pass
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif,))
+            if cursor.fetchone():
+                return f"El cliente jurídico con RIF '{rif}' ya existe."
+
+            cursor.execute(
+                "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
+                (rif, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+            )
+            cursor.execute(
+                "INSERT INTO Cliente_juridico (ID_cliente, Razon_social, Rif_cliente) VALUES (%s, %s, %s)",
+                (rif, razon_social, rif)
+            )
             db.commit()
-            mensaje = f"El cliente jurídico '{razon_social}' se registró exitosamente."
-            return mensaje
+            return f"El cliente jurídico '{razon_social}' se registró exitosamente."
         except Exception as e:
-            mensaje = f"Error al registrar cliente jurídico: {e}"
-            return mensaje
+            db.rollback()
+            return f"Error al registrar cliente jurídico: {e}"
         finally:
             cursor.close()
             db.close()
@@ -377,19 +384,21 @@ class Cliente_juridico(Clientes):
  
         #Final de validaciones
 
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion_bd.conexion1()
         if not db:
             mensaje = "Error al conectar a la base de datos."
             return mensaje
 
         cursor = db.cursor()
         try:
-            sql = """
-            UPDATE Cliente
-            SET Nombre_cliente = %s
-            WHERE ID_cliente = %s
-            """
-            cursor.execute(sql, (razon_social, rif))
+            cursor.execute(
+                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif)
+            )
+            cursor.execute(
+                "UPDATE Cliente_juridico SET Razon_social = %s, Rif_cliente = %s WHERE ID_cliente = %s",
+                (razon_social, rif, rif)
+            )
             db.commit()
             mensaje = f"El cliente jurídico '{razon_social}' se actualizó exitosamente."
             return mensaje

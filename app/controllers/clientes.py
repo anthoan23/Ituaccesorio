@@ -3,7 +3,7 @@ from app.utils.decorators import jwt_required
 from app.models.clientes import Clientes
 from app.models.clientes import Persona_natural
 from app.models.clientes import Cliente_juridico
-from app.models.bitacora import registrar_en_bitacora
+#from app.models.bitacora import registrar_en_bitacora
 
 clientes_blueprint = Blueprint("clientes", __name__)
 

@@ -88,6 +88,9 @@ function toggleCamposPorTipo() {
     // Reinicializar validadores
     if (window.FieldValidator) {
         setTimeout(() => window.FieldValidator.init(), 50);
+        if (typeof window.FieldValidator.resetForm === 'function') {
+            window.FieldValidator.resetForm(formCliente);
+        }
     }
 }
 
@@ -143,7 +146,10 @@ function onTablaClick(event) {
 async function cargarClientes() {
     try {
         const data = await fetchJson("/api/clientes");
-        clientes = data.clientes || [];
+        clientes = Array.isArray(data.clientes) ? data.clientes : [];
+        if (!Array.isArray(data.clientes)) {
+            console.warn('La respuesta de /api/clientes no regresó un arreglo válido:', data.clientes);
+        }
         renderClientes();
     } catch (error) {
         mostrarToast(error.message || "No se pudo cargar la lista de clientes.", true);
@@ -152,6 +158,9 @@ async function cargarClientes() {
 
 function renderClientes() {
     if (!tablaClientes) return;
+    if (!Array.isArray(clientes)) {
+        clientes = [];
+    }
 
     const listaFiltrada = clientes.filter(cliente => {
         const tipo = getTipoCliente(cliente);
@@ -405,6 +414,10 @@ function limpiarFormulario() {
         clienteIdInput.value = "";
     }
     delete formCliente.dataset.editing;
+
+    if (window.FieldValidator) {
+        window.FieldValidator.resetForm(formCliente);
+    }
     
     // Limpiar campos condicionales
     const camposNatural = document.getElementById("campos-natural");

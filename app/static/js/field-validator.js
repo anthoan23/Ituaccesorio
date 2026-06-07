@@ -347,9 +347,17 @@
       if (wasModified) {
         const cursorPos = this.field.selectionStart;
         this.field.value = newValue;
-        // Mantener la posición del cursor aproximadamente
+        // Mantener la posición del cursor aproximadamente solo si el tipo lo soporta
         const newPos = Math.min(cursorPos, newValue.length);
-        this.field.setSelectionRange(newPos, newPos);
+        const supportedTypes = ['text', 'search', 'tel', 'url', 'password', 'textarea'];
+        if (typeof this.field.setSelectionRange === 'function' && supportedTypes.includes(this.field.type)) {
+          try {
+            this.field.setSelectionRange(newPos, newPos);
+          } catch (e) {
+            // Algunos navegadores pueden rechazar la selección en campos no compatibles
+            console.warn('No se pudo ajustar la selección del cursor:', e);
+          }
+        }
       }
     }
 
@@ -405,6 +413,7 @@
     }
 
     validate(showAllErrors = false) {
+      this.isRequired = this.field.hasAttribute('required') || this.field.dataset.required === 'true';
       let isValid = true;
       const errors = [];
       const value = this.field.value;
@@ -641,6 +650,19 @@
     const errors = {};
     
     fields.forEach((field) => {
+      if (field.disabled || field.type === 'hidden' || field.hidden) {
+        return;
+      }
+
+      if (field.offsetParent === null) {
+        return;
+      }
+
+      const style = window.getComputedStyle(field);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return;
+      }
+
       const validator = fieldStates.get(field);
       if (validator) {
         const fieldIsValid = validator.validate(true);
