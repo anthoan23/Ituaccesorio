@@ -73,6 +73,22 @@
       .replaceAll("'", '&#039;');
   }
 
+  function notify(type, message, title) {
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+      window.FeedbackModal.show({
+        type: type === 'error' ? 'error' : 'success',
+        title: title || (type === 'error' ? 'No se pudo completar' : 'Acción exitosa'),
+        message: message,
+      });
+      return;
+    }
+    if (type === 'error') {
+      alert(message);
+    } else {
+      console.log(message);
+    }
+  }
+
   function iconEye() {
     return `
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -280,7 +296,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="4" class="table__empty">Este proveedor no tiene productos asignados.</td>
-        </table>`;
+        </tr>`;
       return;
     }
 
@@ -509,7 +525,7 @@
       try {
         await cargarProveedores((inputTexto?.value || '').trim());
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo cargar el listado de proveedores.');
       }
     });
 
@@ -518,7 +534,7 @@
         if (inputTexto) inputTexto.value = '';
         await cargarProveedores('');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo limpiar el filtro.');
       }
     });
 
@@ -528,7 +544,7 @@
       try {
         await cargarProveedores((inputTexto.value || '').trim());
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo cargar el listado de proveedores.');
       }
     });
 
@@ -546,7 +562,7 @@
         if (action === 'editar') await abrirEditarProveedor(id);
         if (action === 'eliminar') abrirEliminarProveedor(id);
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo abrir la acción solicitada.');
       }
     });
 
@@ -560,8 +576,9 @@
         formCrear.reset();
         state.productosCrear = [];
         renderProductosCrear();
+        notify('success', 'Proveedor creado correctamente.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo crear el proveedor.');
       }
     });
 
@@ -572,8 +589,9 @@
         agregarProductoCrearFromForm();
         closeModal('modal-proveedor-agregar-producto-crear');
         formAgregarProductoCrear.reset();
+        notify('success', 'Producto agregado al proveedor inicial.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo agregar el producto.');
       }
     });
 
@@ -594,8 +612,9 @@
         await editarProveedorFromForm();
         closeModal('modal-proveedor-editar');
         await cargarProveedores((inputTexto?.value || '').trim());
+        notify('success', 'Proveedor actualizado correctamente.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo actualizar el proveedor.');
       }
     });
 
@@ -605,8 +624,9 @@
         await eliminarProveedorActual();
         closeModal('modal-proveedor-eliminar');
         await cargarProveedores((inputTexto?.value || '').trim());
+        notify('success', 'Proveedor eliminado correctamente.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo eliminar el proveedor.');
       }
     });
 
@@ -618,8 +638,9 @@
         closeModal('modal-proveedor-agregar-producto');
         await cargarProductosProveedorEditar(state.currentProveedorId);
         formAgregarProducto.reset();
+        notify('success', 'Producto agregado correctamente.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo agregar el producto.');
       }
     });
 
@@ -635,8 +656,9 @@
 
       try {
         await guardarCostoProductoProveedor(idModelo, costo);
+        notify('success', 'Costo actualizado correctamente.');
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudo actualizar el costo.');
       }
     });
 
@@ -649,7 +671,7 @@
         const modelos = await cargarModelos();
         fillSelectModelos($id('ap-id-modelo'), modelos);
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudieron cargar los productos.');
       }
     });
 
@@ -661,7 +683,7 @@
         const modelos = await cargarModelos();
         fillSelectModelos($id('cp-id-modelo'), modelos);
       } catch (e) {
-        alert(e.message);
+        notify('error', e.message || 'No se pudieron cargar los productos.');
       }
     });
   }
@@ -702,6 +724,23 @@ const btnImprimir = document.getElementById("btn-imprimir");
 const reportePreview = document.getElementById("reporte-preview");
 const reporteTotal = document.getElementById("reporte-total");
 const reporteTabla = document.getElementById("reporte-tabla");
+
+// Función global de notificación
+function notifyReportes(type, message) {
+  if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+    window.FeedbackModal.show({
+      type: type === 'error' ? 'error' : 'success',
+      title: type === 'error' ? 'No se pudo completar' : 'Acción exitosa',
+      message: message,
+    });
+    return;
+  }
+  if (type === 'error') {
+    alert(message);
+  } else {
+    console.log(message);
+  }
+}
 
 // Función global fetch para reportes
 async function fetchJsonReportes(url, options = {}) {
@@ -797,18 +836,18 @@ async function generarReporteProveedores() {
     if (btnImprimir) btnImprimir.disabled = false;
     
   } catch (err) {
-    alert(err.message || "Error al generar el reporte");
+    notifyReportes('error', err.message || "Error al generar el reporte");
   } finally {
     if (btnGenerarReporte) {
       btnGenerarReporte.disabled = false;
-      btnGenerarReporte.textContent = "🔍 Generar reporte";
+      btnGenerarReporte.textContent = "Generar reporte";
     }
   }
 }
 
 function exportarProveedoresExcel() {
   if (reporteDatosActuales.length === 0) {
-    alert("No hay datos para exportar");
+    notifyReportes('error', "No hay datos para exportar");
     return;
   }
   
@@ -824,7 +863,7 @@ function exportarProveedoresExcel() {
   }));
   
   if (typeof XLSX === 'undefined') {
-    alert("Cargando librería de Excel...");
+    notifyReportes('info', "Cargando librería de Excel...");
     const script = document.createElement('script');
     script.src = '/static/js/libs/xlsx.full.min.js';
     script.onload = () => exportarProveedoresExcel();
@@ -841,17 +880,17 @@ function exportarProveedoresExcel() {
   ];
   
   XLSX.writeFile(wb, `proveedores_${new Date().toISOString().slice(0,19)}.xlsx`);
-  alert("Reporte exportado a Excel");
+  notifyReportes('success', "Reporte exportado a Excel");
 }
 
 function exportarProveedoresPdf() {
   if (reporteDatosActuales.length === 0) {
-    alert("No hay datos para exportar");
+    notifyReportes('error', "No hay datos para exportar");
     return;
   }
   
   if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
-    alert("Cargando librería de PDF...");
+    notifyReportes('info', "Cargando librería de PDF...");
     const script1 = document.createElement('script');
     script1.src = '/static/js/libs/jspdf.umd.min.js';
     script1.onload = () => {
@@ -878,7 +917,7 @@ function exportarProveedoresPdf() {
     grayText: [102, 102, 106]
   };
   
-  const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+  const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
   try {
     doc.addImage(logoUrl, 'PNG', (pageWidth - 45) / 2, 8, 45, 14);
   } catch(e) {}
@@ -947,18 +986,18 @@ function exportarProveedoresPdf() {
   });
   
   doc.save(`proveedores_${now.toISOString().slice(0,19)}.pdf`);
-  alert("Reporte exportado a PDF");
+  notifyReportes('success', "Reporte exportado a PDF");
 }
 
 function imprimirReporteProveedores() {
   if (reporteDatosActuales.length === 0) {
-    alert("No hay datos para imprimir");
+    notifyReportes('error', "No hay datos para imprimir");
     return;
   }
   
   const ventana = window.open("", "_blank");
   const fecha = new Date().toLocaleString();
-  const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+  const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
   
   const filtrosTexto = [];
   if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
@@ -1017,7 +1056,7 @@ function imprimirReporteProveedores() {
   ventana.document.close();
 }
 
-// Eventos de reportes
+// Abrir modal con UiModal
 if (btnReportes) {
   btnReportes.addEventListener("click", () => {
     limpiarFiltrosReporte();
@@ -1025,14 +1064,55 @@ if (btnReportes) {
     if (btnExportarExcel) btnExportarExcel.disabled = true;
     if (btnExportarPdf) btnExportarPdf.disabled = true;
     if (btnImprimir) btnImprimir.disabled = true;
-    if (modalReportes) {
-      modalReportes.classList.remove("is-hidden");
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+      window.UiModal.openById('modal-reportes');
+    } else if (modalReportes) {
+      modalReportes.hidden = false;
+      modalReportes.setAttribute("aria-hidden", "false");
     }
   });
 }
 
+// Eventos de los botones
 if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporteProveedores);
 if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
 if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarProveedoresExcel);
 if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarProveedoresPdf);
 if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporteProveedores);
+
+// Cerrar modal con click en backdrop o botón close
+if (modalReportes) {
+  modalReportes.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target.dataset.modalClose === "true") {
+      if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+        window.UiModal.closeById('modal-reportes');
+      } else {
+        modalReportes.hidden = true;
+        modalReportes.setAttribute("aria-hidden", "true");
+      }
+      return;
+    }
+
+    if (target === modalReportes) {
+      if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+        window.UiModal.closeById('modal-reportes');
+      } else {
+        modalReportes.hidden = true;
+        modalReportes.setAttribute("aria-hidden", "true");
+      }
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+    window.UiModal.closeById('modal-reportes');
+  } else if (modalReportes && !modalReportes.hidden) {
+    modalReportes.hidden = true;
+    modalReportes.setAttribute("aria-hidden", "true");
+  }
+});
