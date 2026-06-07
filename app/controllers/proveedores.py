@@ -2,11 +2,11 @@ from flask import Blueprint, jsonify, render_template, request
 from app.utils.decorators import jwt_required
 
 from app.models.proveedores import Proveedores
-from app.models.productos import Productos
+from app.models.productos import Producto
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
 proveedores_modelo = Proveedores()
-productos_modelo = Productos()
+productos_modelo = Producto()
 
 
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
@@ -228,6 +228,6 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
 @jwt_required
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
-    modelo = Productos()
+    modelo = Producto()
     modelos = modelo.listar_modelos(q=q) or []
     return jsonify({"success": True, "modelos": modelos})

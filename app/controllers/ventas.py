@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, g, redirect
 from app.utils.decorators import jwt_required
 from app.models.ventas import VentasModel
 from app.models.clientes import GestionClientes
-from app.models.productos import Productos
+from app.models.productos import Producto  # Cambiado de Productos a Producto
 import requests
 import os
 
@@ -71,7 +71,7 @@ def pagina_catalogo():
 def api_listar_productos_catalogo():
     """API para obtener productos del catálogo con filtros"""
     modelo_ventas = VentasModel()
-    modelo_productos = Productos()
+    modelo_productos = Producto()  # Cambiado de Productos() a Producto()
     
     # Obtener filtros
     clase_id = request.args.get("clase_id", type=int)
