@@ -168,11 +168,11 @@
 		</label>
 		<label class="ui-field">
 			<span>Cédula</span>
-			<input id="mi-perfil-cedula" type="text" value="{{ g.user.cedula or g.user.cedula_personal or '' }}" readonly>
+			<input id="mi-perfil-cedula" type="text" value="{{ g.user.cedula or g.user.cedula_personal or '' }}" readonly data-validator-disabled="true">
 		</label>
 		<label class="ui-field">
 			<span>Rol</span>
-			<input id="mi-perfil-rol" type="text" value="{{ g.user.nombre_rol or '' }}" readonly>
+			<input id="mi-perfil-rol" type="text" value="{{ g.user.nombre_rol or '' }}" readonly data-validator-disabled="true">
 		</label>
 		<label class="ui-field">
 			<span>Nueva contraseña (opcional)</span>
@@ -190,7 +190,7 @@
 		</label>
 		<label class="ui-field">
 			<span>Foto de perfil</span>
-			<input id="mi-perfil-foto-input" name="foto_perfil" type="file" accept="image/*" hidden>
+			<input id="mi-perfil-foto-input" name="foto_perfil" type="file" accept="image/*" hidden data-validator-disabled="true">
 			<button id="mi-perfil-foto-btn" class="ui-btn ui-btn--ghost" type="button">Subir foto</button>
 			<small id="mi-perfil-foto-name" class="user-menu__hint">Ningún archivo seleccionado</small>
 			<div class="user-menu__avatar-preview">
@@ -204,5 +204,3 @@
 	</form>
 {% endcall %}
 {% endif %}
-
-<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>

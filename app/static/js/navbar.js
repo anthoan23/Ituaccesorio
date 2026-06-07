@@ -262,10 +262,42 @@ document.addEventListener("DOMContentLoaded", () => {
 		fotoPreview.src = "/static/img/LOGO.png";
 	};
 
+	// Función para inicializar validadores en el modal
+	const initModalValidators = () => {
+		if (window.FieldValidator && window.FieldValidator.initModalFields) {
+			const modal = document.getElementById('modal-mi-perfil');
+			if (modal && modal.style.display !== 'none') {
+				window.FieldValidator.initModalFields(modal);
+			}
+		}
+		
+		// También asegurar que los campos existentes tengan validación
+		const modalFields = document.querySelectorAll('#modal-mi-perfil input, #modal-mi-perfil select, #modal-mi-perfil textarea');
+		modalFields.forEach(field => {
+			if (!field.closest('.field-validator-wrapper') && field.id !== 'mi-perfil-cedula' && field.id !== 'mi-perfil-rol') {
+				if (window.FieldValidator && window.FieldValidator.FieldValidator) {
+					try {
+						new window.FieldValidator.FieldValidator(field, {
+							liveValidation: true,
+							required: { enabled: field.hasAttribute('required') }
+						});
+					} catch(e) {
+						console.warn('Error initializing validator:', e);
+					}
+				}
+			}
+		});
+	};
+
 	document.querySelector('[data-open-modal="modal-mi-perfil"]')?.addEventListener("click", async () => {
 		try {
 			const usuario = await loadProfile();
 			syncForm(usuario);
+			
+			// Inicializar validadores después de que el modal se abra
+			setTimeout(() => {
+				initModalValidators();
+			}, 100);
 		} catch (error) {
 			alert(error.message || "No se pudo cargar tu perfil.");
 		}

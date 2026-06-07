@@ -1,10 +1,26 @@
 (() => {
   // Función para verificar si un elemento está dentro del navbar
   function isInsideNavbar(element) {
-    return element.closest('.drawer') !== null || 
-           element.closest('.topbar') !== null ||
-           element.closest('.user-menu') !== null ||
-           element.closest('.notifications') !== null;
+    // Verificar si está en el drawer o topbar
+    const inDrawerOrTopbar = element.closest('.drawer') !== null || 
+                              element.closest('.topbar') !== null;
+    
+    // Si está en el user-menu pero dentro del modal de perfil, NO ignorar
+    if (inDrawerOrTopbar && element.closest('#modal-mi-perfil')) {
+      return false;
+    }
+    
+    // Si está en el user-menu pero NO es parte del modal, ignorar
+    if (element.closest('.user-menu') !== null && !element.closest('#modal-mi-perfil')) {
+      return true;
+    }
+    
+    // Si está en notificaciones, ignorar
+    if (element.closest('.notifications') !== null) {
+      return true;
+    }
+    
+    return inDrawerOrTopbar;
   }
 
   const DEFAULT_CONFIG = {
@@ -87,7 +103,7 @@
     init() {
       if (this.initialized) return;
       
-      // IGNORAR campos dentro del navbar
+      // IGNORAR campos dentro del navbar (excepto modal de perfil)
       if (isInsideNavbar(this.field)) {
         return;
       }
@@ -399,7 +415,7 @@
     const fields = document.querySelectorAll(selectors.join(','));
     
     fields.forEach((field) => {
-      // IGNORAR campos dentro del navbar
+      // IGNORAR campos dentro del navbar (excepto modal de perfil)
       if (isInsideNavbar(field)) {
         return;
       }
@@ -496,32 +512,69 @@
     });
   }
 
-  const dynamicFieldObserver = new MutationObserver((mutations) => {
-    let shouldInit = false;
+  // Función para inicializar campos dentro de un modal cuando se abre
+  function initModalFields(modalElement) {
+    if (!modalElement) return;
     
+    const fields = modalElement.querySelectorAll('input:not([data-validator-disabled]), textarea:not([data-validator-disabled]), select:not([data-validator-disabled])');
+    
+    fields.forEach((field) => {
+      if (!fieldStates.has(field) && field.dataset.validator !== 'false') {
+        const config = getFieldConfig(field);
+        try {
+          new FieldValidator(field, config);
+        } catch (e) {
+          console.warn('Error initializing validator for modal field:', field, e);
+        }
+      }
+    });
+  }
+
+  // Observer solo para detectar modales, no para interferir con el sidebar
+  const modalObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+        const modal = mutation.target;
+        if (modal.classList && modal.classList.contains('ui-modal') && modal.style.display !== 'none') {
+          setTimeout(() => initModalFields(modal), 50);
+        }
+      }
+      
       if (mutation.type === 'childList' && mutation.addedNodes.length) {
         for (const node of mutation.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            if (node.matches && (node.matches('input, textarea, select') || 
-                (node.querySelector && node.querySelector('input, textarea, select')))) {
-              shouldInit = true;
-              break;
+            // Solo procesar modales, no el sidebar
+            if (node.classList && node.classList.contains('ui-modal')) {
+              if (node.style.display !== 'none') {
+                setTimeout(() => initModalFields(node), 50);
+              }
+            }
+            
+            // Solo inicializar validadores para campos que NO están en el navbar
+            if (node.matches && (node.matches('input, textarea, select'))) {
+              if (!isInsideNavbar(node)) {
+                setTimeout(() => {
+                  if (!fieldStates.has(node) && node.dataset.validator !== 'false') {
+                    const config = getFieldConfig(node);
+                    try {
+                      new FieldValidator(node, config);
+                    } catch(e) {}
+                  }
+                }, 50);
+              }
             }
           }
         }
       }
-      if (shouldInit) break;
-    }
-    
-    if (shouldInit) {
-      setTimeout(initAllFields, 100);
     }
   });
   
-  dynamicFieldObserver.observe(document.body, {
+  // Observar solo cambios en el body, pero sin ser demasiado agresivo
+  modalObserver.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class']
   });
 
   if (document.readyState === 'loading') {
@@ -535,6 +588,7 @@
     validateForm: validateForm,
     validateField: validateField,
     resetForm: resetForm,
+    initModalFields: initModalFields,
     FieldValidator: FieldValidator,
   };
 })();
