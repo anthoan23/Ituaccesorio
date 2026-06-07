@@ -166,10 +166,13 @@
 					<tr>
 						<th>ID</th>
 						<th>Proveedor</th>
+						<th>RIF</th>
+						<th>Teléfono</th>
+						<th>Correo</th>
 					</tr>
 				</thead>
 				<tbody id="lista-proveedores">
-					<tr><td colspan="2" class="table__empty">Cargando proveedores...</td></tr>
+					<tr><td colspan="5" class="table__empty">Cargando proveedores...</td></tr>
 				</tbody>
 			</table>
 		</div>
@@ -184,12 +187,33 @@
 						<th>Marca</th>
 						<th>Producto</th>
 						<th>Costo</th>
+						<th class="table__actions">Seleccionar</th>
 					</tr>
 				</thead>
 				<tbody id="lista-productos">
-					<tr><td colspan="4" class="table__empty">Selecciona un proveedor primero.</td></tr>
+					<tr><td colspan="5" class="table__empty">Selecciona un proveedor primero.</td></tr>
 				</tbody>
 			</table>
+		</div>
+		
+		<!-- Campos para cantidad al seleccionar producto -->
+		<div id="cantidad-producto-container" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-soft); border-radius: 12px;">
+			<div class="form__group form__group--inline">
+				<div class="form__field">
+					<label for="cantidad-seleccionada">Cantidad *</label>
+					<input id="cantidad-seleccionada" 
+					       type="number" 
+					       min="1" 
+					       value="1"
+					       data-validation-rules="soloNumeros"
+					       title="Solo números enteros positivos">
+					<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números enteros (mínimo 1)</small>
+				</div>
+				<div class="form__field form__field--auto">
+					<label>&nbsp;</label>
+					<button id="btn-agregar-cantidad" class="btn btn--primary" type="button">Agregar producto</button>
+				</div>
+			</div>
 		</div>
 	{% endcall %}
 
