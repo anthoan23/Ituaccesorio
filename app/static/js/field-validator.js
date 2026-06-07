@@ -99,13 +99,13 @@
     // Teléfono (solo números, espacios, guiones y paréntesis)
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),
-      validate: (value) => /^[\d\s\-+()]{7,20}$/.test(value),
+      validate: (value) => /^[\d\s\-+()]{11,11}$/.test(value),
       message: 'Ingrese un número de teléfono válido'
     },
     // Cédula/Venezuela (solo números y guiones)
     cedula: {
       filter: (value) => value.replace(/[^\d\-]/g, ''),
-      validate: (value) => /^[\d\-]{6,15}$/.test(value),
+      validate: (value) => /^[\d\-]{6,8}$/.test(value),
       message: 'Ingrese una cédula válida (solo números y guiones)'
     },
     // Sin espacios
