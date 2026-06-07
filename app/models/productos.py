@@ -400,3 +400,62 @@ class Producto(conectar):
         finally:
             cursor.close()
             db.close()
+
+
+class Productos(conectar):
+    """Capa de compatibilidad para controladores antiguos que usan el nombre Productos."""
+
+    def listar_clases(self):
+        return ClaseProducto().listar()
+
+    def crear_clase(self, nombre: str, num_i: int | None = None):
+        return ClaseProducto(nombre=nombre).crear()
+
+    def actualizar_clase(self, id_clase: str, nombre: str, num_i: int | None = None):
+        return ClaseProducto(id_clase=id_clase, nombre=nombre).actualizar()
+
+    def eliminar_clase(self, id_clase: str):
+        return ClaseProducto(id_clase=id_clase).eliminar()
+
+    def listar_marcas(self, id_clase: str | None = None):
+        return MarcaProducto().listar(id_clase=id_clase)
+
+    def crear_marca(self, id_clase: str | None = None, nombre: str = ""):
+        return MarcaProducto(nombre=nombre, id_clase=id_clase).crear()
+
+    def actualizar_marca(self, id_marca: str, id_clase: str | None = None, nombre: str = ""):
+        return MarcaProducto(id_marca=id_marca, nombre=nombre, id_clase=id_clase).actualizar()
+
+    def eliminar_marca(self, id_marca: str):
+        return MarcaProducto(id_marca=id_marca).eliminar()
+
+    def listar_modelos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
+        return Producto().listar(id_marca=id_marca, id_clase=id_clase, q=q)
+
+    def crear_modelo(
+        self,
+        id_clase: str,
+        id_marca: str,
+        nombre: str,
+        descripcion: str | None = None,
+    ):
+        return Producto(id_clase=id_clase, id_marca=id_marca, nombre=nombre, descripcion=descripcion).crear()
+
+    def actualizar_modelo(
+        self,
+        id_modelo: str,
+        id_clase: str,
+        id_marca: str,
+        nombre: str,
+        descripcion: str | None = None,
+    ):
+        return Producto(
+            id_producto=id_modelo,
+            id_clase=id_clase,
+            id_marca=id_marca,
+            nombre=nombre,
+            descripcion=descripcion,
+        ).actualizar()
+
+    def eliminar_modelo(self, id_modelo: str):
+        return Producto(id_producto=id_modelo).eliminar()
