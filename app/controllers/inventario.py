@@ -6,7 +6,8 @@ from werkzeug.utils import secure_filename
 
 from decimal import Decimal, InvalidOperation
 
-from app.models.inventario import Inventario
+from app.models.inventario import Inventario, FotosInventario
+from app.models.productos import Producto
 from app.utils.decorators import jwt_required
 
 inventario_blueprint = Blueprint("inventario", __name__)
@@ -41,21 +42,30 @@ def _guardar_foto_inventario(archivo):
 @inventario_blueprint.route("/api/inventario", methods=["GET"])
 @jwt_required
 def api_listar_inventario():
-    """Listado de inventario (stock + modelo + marca + clase + caracteristica).
-
-    Query params opcionales:
-    - modelo: filtra por Producto.Nombre_producto (match exacto)
-    """
-
+    """Listado de inventario (stock + modelo + marca + clase)"""
     modelo = request.args.get("modelo")
-
+    
     if modelo is not None:
         modelo = str(modelo).strip()
         if modelo == "":
             modelo = None
 
     inv = Inventario()
-    inventario = inv.listar_inventario_filtrado(N_modelo=modelo) or []
+    
+    if modelo:
+        inventario = inv.listar_inventario_general_modelo(modelo) or []
+    else:
+        inventario = inv.listar_inventario_general() or []
+    
+    # Transformar keys para el frontend
+    for item in inventario:
+        item["tipo"] = item.get("nombre_clase", "")
+        item["N_marca"] = item.get("nombre_marca", "")
+        item["N_modelo"] = item.get("nombre_producto", "")
+        item["Existencia"] = item.get("existencia", 0)
+        item["Costo_venta"] = item.get("costo_venta", 0)
+        item["Foto_inventario"] = item.get("foto_inventario", "")
+    
     return jsonify({"success": True, "inventario": inventario})
 
 
@@ -102,5 +112,47 @@ def api_registrar_stock():
         if not id_inventario:
             return jsonify({"success": False, "error": "No se pudo conectar a la base de datos."}), 500
         return jsonify({"success": True, "id_inventario": id_inventario})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
+@jwt_required
+def api_listar_fotos_inventario(id_inventario: str):
+    """Lista todas las fotos de un inventario"""
+    fotos = FotosInventario()
+    lista = fotos.listar_fotos(id_inventario)
+    return jsonify({"success": True, "fotos": lista})
+
+
+@inventario_blueprint.route("/api/inventario/fotos", methods=["POST"])
+@jwt_required
+def api_agregar_foto_inventario():
+    """Agrega una nueva foto a un inventario"""
+    datos = request.get_json(silent=True) or {}
+    id_inventario = datos.get("id_inventario")
+    foto_url = datos.get("foto_url")
+    
+    if not id_inventario or not foto_url:
+        return jsonify({"success": False, "error": "id_inventario y foto_url son requeridos."}), 400
+    
+    fotos = FotosInventario()
+    try:
+        new_id = fotos.insertar_foto(id_inventario, foto_url)
+        return jsonify({"success": True, "id": new_id})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@inventario_blueprint.route("/api/inventario/fotos/<string:id_foto>", methods=["DELETE"])
+@jwt_required
+def api_eliminar_foto_inventario(id_foto: str):
+    """Elimina una foto de inventario"""
+    fotos = FotosInventario()
+    try:
+        ok = fotos.eliminar_foto(id_foto)
+        if ok:
+            return jsonify({"success": True, "message": "Foto eliminada."})
+        return jsonify({"success": False, "error": "Foto no encontrada."}), 404
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
