@@ -4,6 +4,7 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/productos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -33,8 +34,6 @@
 
   <section class="products-grid" aria-label="Catálogo de productos">
     <article class="card card--table" aria-label="Listado de productos">
-      
-
       <div class="table-wrap" role="region" aria-label="Tabla de productos">
         <table class="table products-table">
           <thead>
@@ -52,7 +51,7 @@
     </article>
 
     <aside class="card filters-panel" aria-label="Filtros de catálogo">
-      <h2 class="card__title">Filtros del catálogo y búsqueda por categoría</h2>
+      <h2 class="card__title">Filtros y Búsqueda</h2>
 
       <div class="filters-panel__section" aria-label="Clase y marca">
         <h3 class="filters-panel__title">Clase y marca</h3>
@@ -93,8 +92,10 @@
 
           <div class="filters-panel__row">
             <label class="field">
-              <span class="field__label">Clase</span>
-              <select id="p-clase" name="id_clase" aria-label="Clase" required></select>
+              <span class="field__label">Clase <span class="required-indicator">*</span></span>
+              <select id="p-clase" name="id_clase" aria-label="Clase" required>
+                <option value="">Selecciona una clase</option>
+              </select>
             </label>
             <div class="field" aria-label="Acciones de clase">
               <span class="field__label">&nbsp;</span>
@@ -103,8 +104,21 @@
           </div>
 
           <label id="p-clase-nueva-wrap" class="field is-hidden">
-            <span class="field__label">Nombre de la clase</span>
-            <input id="p-clase-nueva" type="text" name="clase_nueva" placeholder="Ej: Pantallas" aria-label="Nombre de la clase">
+            <span class="field__label">Nombre de la clase <span class="required-indicator">*</span></span>
+            <input id="p-clase-nueva" 
+                   type="text" 
+                   name="clase_nueva" 
+                   placeholder="Ej: Pantallas" 
+                   aria-label="Nombre de la clase"
+                   maxlength="30"
+                   pattern="^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$"
+                   data-validator-config='{
+                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true},
+                     "customRules": [{
+                       "validate": "function(value) { return /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\\s]+$/.test(value); }",
+                       "message": "La clase solo puede contener letras y espacios"
+                     }]
+                   }'>
             <div class="filters-panel__actions" aria-label="Acciones de clase">
               <button id="btn-guardar-clase" class="btn btn--yellow" type="button">Guardar clase</button>
             </div>
@@ -112,8 +126,10 @@
 
           <div class="filters-panel__row">
             <label class="field">
-              <span class="field__label">Marca</span>
-              <select id="p-marca" name="id_marca" aria-label="Marca" required></select>
+              <span class="field__label">Marca <span class="required-indicator">*</span></span>
+              <select id="p-marca" name="id_marca" aria-label="Marca" required>
+                <option value="">Selecciona una marca</option>
+              </select>
             </label>
             <div class="field" aria-label="Acciones de marca">
               <span class="field__label">&nbsp;</span>
@@ -122,21 +138,51 @@
           </div>
 
           <label id="p-marca-nueva-wrap" class="field is-hidden">
-            <span class="field__label">Nombre de la marca</span>
-            <input id="p-marca-nueva" type="text" name="marca_nueva" placeholder="Ej: Samsung" aria-label="Nombre de la marca">
+            <span class="field__label">Nombre de la marca <span class="required-indicator">*</span></span>
+            <input id="p-marca-nueva" 
+                   type="text" 
+                   name="marca_nueva" 
+                   placeholder="Ej: Samsung" 
+                   aria-label="Nombre de la marca"
+                   maxlength="30"
+                   pattern="^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\s]+$"
+                   data-validator-config='{
+                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true},
+                     "customRules": [{
+                       "validate": "function(value) { return /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9\\s]+$/.test(value); }",
+                       "message": "La marca solo puede contener letras, números y espacios"
+                     }]
+                   }'>
             <div class="filters-panel__actions" aria-label="Acciones de marca">
               <button id="btn-guardar-marca" class="btn btn--yellow" type="button">Guardar marca</button>
             </div>
           </label>
 
           <label class="field">
-            <span class="field__label">Producto</span>
-            <input id="p-modelo" type="text" name="modelo" placeholder="Ej: Galaxy A52 (SM-A525F)" aria-label="Producto" required>
+            <span class="field__label">Producto <span class="required-indicator">*</span></span>
+            <input id="p-modelo" 
+                   type="text" 
+                   name="modelo" 
+                   placeholder="Ej: Galaxy A52 (SM-A525F)" 
+                   aria-label="Producto" 
+                   required
+                   maxlength="30"
+                   data-validator-config='{
+                     "maxLength": {"value": 30, "showCounter": true, "blockInput": true}
+                   }'>
           </label>
 
           <label class="field">
             <span class="field__label">Descripción</span>
-            <textarea id="p-descripcion" name="descripcion" rows="3" placeholder="Descripción del producto" aria-label="Descripción"></textarea>
+            <textarea id="p-descripcion" 
+                      name="descripcion" 
+                      rows="3" 
+                      placeholder="Descripción del producto" 
+                      aria-label="Descripción"
+                      maxlength="300"
+                      data-validator-config='{
+                        "maxLength": {"value": 300, "showCounter": true, "blockInput": true}
+                      }'></textarea>
           </label>
 
           <div class="filters-panel__actions" aria-label="Acciones del formulario">
@@ -152,5 +198,6 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/productos.js') }}"></script>
 {% endblock %}
