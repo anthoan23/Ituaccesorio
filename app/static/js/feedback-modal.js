@@ -98,6 +98,10 @@
       if (m === "DELETE") return "Marca eliminada satisfactoriamente.";
     }
 
+    if (path.includes("/api/empleados/consultar")) {
+      if (m === "POST") return "Empleado registrado satisfactoriamente.";
+    }
+
     if (m === "POST") return "Registro realizado satisfactoriamente.";
     if (m === "PUT" || m === "PATCH") return "Actualización realizada satisfactoriamente.";
     if (m === "DELETE") return "Eliminación realizada satisfactoriamente.";
@@ -113,10 +117,13 @@
 
     // Evitar modales en auth/login
     if (u.includes("/api/login") || u.includes("/api/auth") || u.includes("/api/token")) return false;
+    
+    // 🔴 NUEVO: Evitar modal para consultar empleados
+    if (u.includes("/api/empleados/consultar")) return false;
 
     return true;
   }
-
+  
   function attachFetchInterceptor() {
     if (window.__feedbackFetchPatched) return;
     window.__feedbackFetchPatched = true;

@@ -4,7 +4,7 @@ from flask_talisman import Talisman
 from dotenv import load_dotenv
 from flask_seasurf import SeaSurf
 from app.controllers.home_controller import home_blueprint
-from app.controllers.empleados_view import empleados_blueprint
+from app.controllers.empleados import empleados_blueprint
 from app.controllers.tradein import tradein_blueprint
 from app.controllers.productos import productos_blueprint
 from app.controllers.proveedores import proveedores_blueprint

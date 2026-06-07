@@ -101,116 +101,166 @@
 
     </section>
 
-  {% call modal('modal-registrar-empleado', 'Registrar nuevo empleado', 'md') %}
-    <form id="form-registrar-empleado" class="ui-form" autocomplete="off">
-      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+{% call modal('modal-registrar-empleado', 'Registrar nuevo empleado', 'md') %}
+  <form id="form-registrar-empleado" class="ui-form" autocomplete="off" data-mode="register">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" id="edit-id-empleado" name="edit_id_empleado" value="">
 
-      <div class="ui-form__grid ui-form__grid--two">
-        <label class="empleado-form__field">
-          <span>Cédula *</span>
-          <input type="text" 
-                 name="cedula_empleado" 
-                 id="reg-cedula-empleado" 
-                 required 
-                 placeholder="Ej: 12345678"
-                 maxlength="8"
-                 data-validation-rules="soloNumeros"
-                 title="Solo números, 8 dígitos">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (máximo 8 dígitos)</small>
-        </label>
+    <div class="ui-form__grid ui-form__grid--two">
+      <label class="empleado-form__field">
+        <span>Cédula *</span>
+        <input type="text" 
+              name="cedula_empleado" 
+              id="reg-cedula-empleado" 
+              required 
+              placeholder="Ej: 12345678"
+              maxlength="8"
+              data-validation-rules="soloNumeros"
+              title="Solo números, 8 dígitos">
+        <small class="field-hint">Solo números (máximo 8 dígitos)</small>
+      </label>
 
-        <label class="empleado-form__field">
-          <span>Nombre *</span>
-          <input type="text" 
-                 name="nombre_empleado" 
-                 id="reg-nombre-empleado" 
-                 required
-                 maxlength="30"
-                 data-validation-rules="soloLetras,capitalizar"
-                 title="Solo letras, espacios, acentos y ñ">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
-        </label>
+      <label class="empleado-form__field">
+        <span>Nombre *</span>
+        <input type="text" 
+              name="nombre_empleado" 
+              id="reg-nombre-empleado" 
+              required
+              maxlength="30"
+              data-validation-rules="soloLetras,capitalizar"
+              title="Solo letras, espacios, acentos y ñ">
+        <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+      </label>
 
-        <label class="empleado-form__field">
-          <span>Apellido *</span>
-          <input type="text" 
-                 name="apellido_empleado" 
-                 id="reg-apellido-empleado" 
-                 required
-                 maxlength="30"
-                 data-validation-rules="soloLetras,capitalizar"
-                 title="Solo letras, espacios, acentos y ñ">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
-        </label>
+      <label class="empleado-form__field">
+        <span>Apellido *</span>
+        <input type="text" 
+              name="apellido_empleado" 
+              id="reg-apellido-empleado" 
+              required
+              maxlength="30"
+              data-validation-rules="soloLetras,capitalizar"
+              title="Solo letras, espacios, acentos y ñ">
+        <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+      </label>
 
-        <label class="empleado-form__field">
-          <span>Cargo *</span>
-          <select name="id_cargo" id="reg-cargo-empleado" required>
+      <label class="empleado-form__field">
+        <span>Cargo *</span>
+        <select name="id_cargo" id="reg-cargo-empleado" required>
+        </select>
+      </label>
+
+      <label class="empleado-form__field">
+        <span>Celular</span>
+        <input type="tel" 
+              name="celular_empleado" 
+              id="reg-celular-empleado" 
+              placeholder="Ej: 04141234567"
+              maxlength="11"
+              data-validation-rules="telefono"
+              title="Formato: 04141234567 (11 dígitos)">
+        <small class="field-hint">11 dígitos (ej: 04141234567)</small>
+      </label>
+
+      <label class="empleado-form__field empleado-form__field--full">
+        <span>Correo electrónico</span>
+        <input type="email" 
+              name="correo_empleado" 
+              id="reg-correo-empleado" 
+              placeholder="ejemplo@empresa.com"
+              maxlength="120"
+              data-validation-rules="email"
+              title="Correo electrónico válido">
+        <small class="field-hint">ejemplo@dominio.com</small>
+      </label>
+
+      <label class="empleado-form__field empleado-form__field--full">
+        <span>Dirección</span>
+        <input type="text" 
+              name="direccion_empleado" 
+              id="reg-direccion-empleado" 
+              placeholder="Calle, número, colonia"
+              maxlength="40"
+              data-validation-rules="sinCaracteresEspeciales"
+              title="Sin caracteres especiales">
+        <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
+      </label>
+    </div>
+
+    <!-- Sección de especialidades (solo para técnicos) -->
+    <div id="especialidades-container" style="display: none;">
+      <div class="ui-form__section">
+        <h3 class="ui-form__subtitle">Especialidades</h3>
+        
+        <div class="ui-form__field">
+          <label class="ui-label">Seleccionar especialidad</label>
+          <select id="select-especialidad" class="ui-select">
           </select>
-        </label>
+        </div>
 
-        <label class="empleado-form__field">
-          <span>Celular</span>
-          <input type="tel" 
-                 name="celular_empleado" 
-                 id="reg-celular-empleado" 
-                 placeholder="Ej: 04141234567"
-                 maxlength="11"
-                 data-validation-rules="telefono"
-                 title="Formato: 04141234567 (11 dígitos)">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
-        </label>
-
-        <label class="empleado-form__field empleado-form__field--full">
-          <span>Correo electrónico</span>
-          <input type="email" 
-                 name="correo_empleado" 
-                 id="reg-correo-empleado" 
-                 placeholder="ejemplo@empresa.com"
-                 maxlength="120"
-                 data-validation-rules="email"
-                 title="Correo electrónico válido">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
-        </label>
-
-        <label class="empleado-form__field empleado-form__field--full">
-          <span>Dirección</span>
-          <input type="text" 
-                 name="direccion_empleado" 
-                 id="reg-direccion-empleado" 
-                 placeholder="Calle, número, colonia"
-                 maxlength="40"
-                 data-validation-rules="sinCaracteresEspeciales"
-                 title="Sin caracteres especiales">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
-        </label>
+        <div id="lista-especialidades" class="especialidades-list">
+          <!-- Aquí se mostrarán las especialidades agregadas -->
+        </div>
+        
+        <input type="hidden" name="especialidades" id="especialidades-hidden">
       </div>
+    </div>
 
-      <!-- Sección de especialidades (solo para técnicos) -->
-      <div id="especialidades-container" style="display: none;">
-        <div class="ui-form__section">
-          <h3 class="ui-form__subtitle">Especialidades</h3>
-          
-          <div class="ui-form__field">
-            <label class="ui-label">Seleccionar especialidad</label>
-            <select id="select-especialidad" class="ui-select">
-            </select>
-          </div>
+    <div class="ui-form__actions">
+      <button type="submit" class="ui-btn ui-btn--primary" id="modal-submit-btn">Guardar empleado</button>
+    </div>
+  </form>
+{% endcall %}
 
-          <div id="lista-especialidades" class="especialidades-list">
-            <!-- Aquí se mostrarán las especialidades agregadas -->
+    <!-- Modal solo para mostrar información del empleado (READ ONLY) -->
+    {% call modal('modal-ver-empleado', 'Detalles del empleado', 'md') %}
+      <div class="empleado-detalle">
+        <div class="empleado-detalle__avatar">
+          <span class="avatar-inicial" id="detalle-inicial"></span>
+        </div>
+        
+        <div class="empleado-detalle__grid">
+          <div class="detalle-item">
+            <label>Cédula</label>
+            <p id="detalle-cedula">-</p>
           </div>
           
-          <input type="hidden" name="especialidades" id="especialidades-hidden">
+          <div class="detalle-item">
+            <label>Nombre completo</label>
+            <p id="detalle-nombre-completo">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Cargo</label>
+            <p id="detalle-cargo">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Celular</label>
+            <p id="detalle-celular">-</p>
+          </div>
+          
+          <div class="detalle-item detalle-item--full">
+            <label>Correo electrónico</label>
+            <p id="detalle-correo">-</p>
+          </div>
+          
+          <div class="detalle-item detalle-item--full">
+            <label>Dirección</label>
+            <p id="detalle-direccion">-</p>
+          </div>
+          
+          <div class="detalle-item detalle-item--full" id="detalle-especialidades-container" style="display: none;">
+            <label>Especialidades</label>
+            <div id="detalle-especialidades" class="especialidades-tags"></div>
+          </div>
         </div>
       </div>
-
+      
       <div class="ui-form__actions">
-        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-        <button type="submit" class="ui-btn ui-btn--primary">Guardar empleado</button>
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
       </div>
-    </form>
-  {% endcall %}
+    {% endcall %}
 
     {% call modal('modal-eliminar-empleado', 'Eliminar empleado', 'sm') %}
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

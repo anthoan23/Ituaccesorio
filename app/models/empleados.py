@@ -3,10 +3,31 @@ from datetime import date
 from app.models.database import conectar
 
 
-class Empleados(conectar):
+class Empleados():
+    
+    def __init__(self, 
+                 id_empleado: str = "",
+                 id_cargo: str = "",
+                 nombre_empleado: str = "",
+                 apellido_empleado: str = "",
+                 celular_empleado: str = "",
+                 correo_empleado: str = "",
+                 direccion_empleado: str = "",
+                 especialidades: list | None = None):
+        
+        self.id_empleado = id_empleado
+        self.id_cargo = id_cargo
+        self.nombre_empleado = nombre_empleado
+        self.apellido_empleado = apellido_empleado
+        self.celular_empleado = celular_empleado
+        self.correo_empleado = correo_empleado
+        self.direccion_empleado = direccion_empleado
+        self.especialidades = especialidades if especialidades is not None else []
+        
+        self.__conexion_bd = conectar()
     
     def listar_empleados(self):
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -31,7 +52,7 @@ class Empleados(conectar):
 
     def listar_cargos(self):
         """Lista todos los cargos disponibles"""
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -51,7 +72,7 @@ class Empleados(conectar):
 
     def listar_especialidades(self):
         """Lista todas las especialidades disponibles"""
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -71,7 +92,7 @@ class Empleados(conectar):
 
     def listar_empleados_por_cargo(self):
         """Obtiene cantidad de empleados por cargo para gráficos"""
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -95,7 +116,7 @@ class Empleados(conectar):
 
     def listar_empleados_por_especialidad(self):
         """Obtiene cantidad de empleados por especialidad para gráficos"""
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -117,9 +138,14 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def consultar_empleado(self, cedula):
-        """Obtiene un empleado por su cédula"""
-        db = self.conexion1()
+    def consultar_empleado(self):
+        """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
+        cedula = self.id_empleado.strip()
+        
+        if not cedula:
+            return None
+            
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -148,9 +174,14 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def consultar_especialidades_empleado(self, cedula):
-        """Obtiene las especialidades de un empleado"""
-        db = self.conexion1()
+    def consultar_especialidades_empleado(self):
+        """Obtiene las especialidades de un empleado (usa el atributo id_empleado)"""
+        cedula = self.id_empleado.strip()
+        
+        if not cedula:
+            return None
+            
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -174,9 +205,14 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def verificar_empleado(self, cedula):
-        """Verifica si un empleado existe"""
-        db = self.conexion1()
+    def verificar_empleado(self) -> bool:
+        """Verifica si un empleado existe (usa el atributo id_empleado)"""
+        cedula = self.id_empleado.strip()
+        
+        if not cedula:
+            return False
+            
+        db = self.__conexion_bd.conexion1()
         if not db:
             return False
 
@@ -191,22 +227,26 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def agregar_empleado(
-        self,
-        cedula: str,
-        cargo_id: str,
-        nombre: str,
-        apellido: str,
-        celular: str,
-        correo: str,
-        direccion: str,
-        especialidades: list | None = None,
-    ) -> str:
-        """Agrega un nuevo empleado"""
-        if self.verificar_empleado(cedula):
+    def agregar_empleado(self) -> str:
+        """Agrega un nuevo empleado usando los atributos de la instancia"""
+        # Usar los atributos de la instancia
+        cedula = self.id_empleado.strip()
+        cargo_id = self.id_cargo.strip()
+        nombre = self.nombre_empleado.strip()
+        apellido = self.apellido_empleado.strip()
+        celular = self.celular_empleado.strip()
+        correo = self.correo_empleado.strip()
+        direccion = self.direccion_empleado.strip()
+        especialidades = self.especialidades
+
+        # Validaciones
+        if not cedula or not cargo_id or not nombre or not apellido:
+            return "La cédula, cargo, nombre y apellido son obligatorios."
+
+        if self.verificar_empleado():
             return f"El empleado con cédula {cedula} ya existe."
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
@@ -240,22 +280,26 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def actualizar_empleado(
-        self,
-        id_empleado: str,
-        cargo_id: str,
-        nombre: str,
-        apellido: str,
-        celular: str,
-        correo: str,
-        direccion: str,
-        especialidades: list | None = None,
-    ) -> str:
-        """Actualiza un empleado existente"""
-        if not self.verificar_empleado(id_empleado):
+    def actualizar_empleado(self) -> str:
+        """Actualiza un empleado existente usando los atributos de la instancia"""
+        # Usar los atributos de la instancia
+        id_empleado = self.id_empleado.strip()
+        cargo_id = self.id_cargo.strip()
+        nombre = self.nombre_empleado.strip()
+        apellido = self.apellido_empleado.strip()
+        celular = self.celular_empleado.strip()
+        correo = self.correo_empleado.strip()
+        direccion = self.direccion_empleado.strip()
+        especialidades = self.especialidades
+
+        # Validaciones
+        if not id_empleado:
+            return "El identificador del empleado es obligatorio."
+
+        if not self.verificar_empleado():
             return f"El empleado con identificador {id_empleado} no existe."
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
@@ -303,12 +347,17 @@ class Empleados(conectar):
             cursor.close()
             db.close()
 
-    def eliminar_empleado(self, id_empleado: str) -> str:
-        """Elimina un empleado"""
-        if not self.verificar_empleado(id_empleado):
+    def eliminar_empleado(self) -> str:
+        """Elimina un empleado usando el atributo id_empleado"""
+        id_empleado = self.id_empleado.strip()
+
+        if not id_empleado:
+            return "El identificador del empleado no puede estar vacío."
+
+        if not self.verificar_empleado():
             return f"El empleado con identificador {id_empleado} no existe."
 
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
@@ -336,7 +385,7 @@ class Empleados(conectar):
 
     def listar_tecnicos(self):
         """Lista empleados con cargo Técnico"""
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -357,4 +406,4 @@ class Empleados(conectar):
             return cursor.fetchall()
         finally:
             cursor.close()
-            db.close() 
+            db.close()

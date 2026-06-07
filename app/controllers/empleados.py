@@ -1,13 +1,24 @@
-from flask import Blueprint, jsonify, render_template, request
-from app.utils.decorators import jwt_required
-
+from flask import Blueprint, jsonify, render_template, request, g
+from app.utils.decorators import jwt_required, tiene_permiso
+from app.models.bitacora import registrar_en_bitacora
 from app.models.empleados import Empleados
 
 empleados_blueprint = Blueprint("empleados", __name__)
 
 
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
+
+
 @empleados_blueprint.route("/empleados", methods=["GET"])
 @jwt_required
+@tiene_permiso('Empleados', 'consultar')
 def pagina_empleados():
     return render_template(
         "empleados.html",
@@ -16,49 +27,71 @@ def pagina_empleados():
         active_page="empleados",
     )
 
+
 @empleados_blueprint.route("/api/empleados", methods=["GET"])
 @jwt_required
+@tiene_permiso('Empleados', 'consultar')
 def api_listar_empleados():
-    empleados = Empleados()
-    resultado = empleados.listar_empleados()
+    empleados_model = Empleados()
+    resultado = empleados_model.listar_empleados()
     return jsonify(resultado)
+
 
 @empleados_blueprint.route("/api/empleados/lista", methods=["GET"])
 @jwt_required
+@tiene_permiso('Empleados', 'consultar')
 def api_listar_empleados_cargos():
-    empleados = Empleados()
-    resultado1 = empleados.lista_crgos()
-    resultado2 = empleados.lista_especialidades()
+    empleados_model = Empleados()
+    resultado1 = empleados_model.listar_cargos()
+    resultado2 = empleados_model.listar_especialidades()
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
 
 
 @empleados_blueprint.route("/api/empleados/graficos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Empleados', 'consultar')
 def api_listar_empleados_graficos():
-    empleados = Empleados()
-    resultado1 = empleados.listar_empleados_cargos()
-    resultado2 = empleados.listar_empleados_especialidades()
+    empleados_model = Empleados()
+    resultado1 = empleados_model.listar_empleados_por_cargo()
+    resultado2 = empleados_model.listar_empleados_por_especialidad()
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
+
 
 @empleados_blueprint.route("/api/empleados/consultar", methods=["POST"])
 @jwt_required
+@tiene_permiso('Empleados', 'consultar')
 def api_consultar_empleado():
     datos = request.get_json(silent=True) or {}
     cedula = str(datos.get("cedula", "")).strip()
-    empleados = Empleados()
-    resultado1 = empleados.consultar_empleado(cedula)
+    
+    if not cedula:
+        return jsonify({"success": False, "error": "La cédula es obligatoria."}), 400
+    
+    empleados_model = Empleados(id_empleado=cedula)
+    resultado1 = empleados_model.consultar_empleado()
     
     if not resultado1:
         return jsonify({"success": False, "error": "Empleado no encontrado."}), 404
     
+    # Registrar en bitácora la consulta
+    registrar_en_bitacora(
+        accion="Consultar empleado",
+        descripcion=f"Se consultó el empleado con cédula: {cedula}",
+        usuario_id=_usuario_actual(),
+        modulo_nombre="Empleados"
+    )
+    
     if resultado1['cargo'] == 'Técnico':
-        resultado2 = empleados.consultar_especialidades_empleado(cedula)
+        empleados_model = Empleados(id_empleado=cedula)
+        resultado2 = empleados_model.consultar_especialidades_empleado()
         return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
     
     return jsonify({"success": True, "empleado": resultado1})
 
+
 @empleados_blueprint.route("/api/empleados", methods=["POST"])
 @jwt_required
+@tiene_permiso('Empleados', 'registrar')
 def api_agregar_empleado():
     datos = request.get_json(silent=True) or {}
 
@@ -69,6 +102,7 @@ def api_agregar_empleado():
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
+    
     # especialidades may be sent as a list of ids
     especialidades = datos.get('especialidades') or []
     if isinstance(especialidades, str):
@@ -80,58 +114,44 @@ def api_agregar_empleado():
             # comma separated
             especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
 
-    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Todos los campos son obligatorios.",
-                }
-            ),
-            400,
-        )
+    if not all([cedula, cargo_id, nombre, apellido]):
+        return jsonify({
+            "success": False,
+            "error": "La cédula, cargo, nombre y apellido son obligatorios.",
+        }), 400
 
-    modelo = Empleados()
-
-    try:
-        mensaje = modelo.agregar_empleado(
-            cedula=cedula,
-            cargo_id=cargo_id,
-            nombre=nombre,
-            apellido=apellido,
-            celular=celular,
-            correo=correo,
-            direccion=direccion,
-            especialidades=especialidades,
-        )
-
-        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 201
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo agregar el empleado."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
-
-@empleados_blueprint.route("/api/empleados", methods=["DELETE"])
-@jwt_required
-def api_eliminar_empleado():
-    datos = request.get_json(silent=True) or {}
-    id_empleado = str(datos.get("id_empleado", "")).strip()
-    modelo = Empleados()
-    try:
-        mensaje = modelo.eliminar_empleado(id_empleado)
-
-        if isinstance(mensaje, str) and "eliminado" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo eliminar el empleado."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
+    empleados_model = Empleados(
+        id_empleado=cedula,
+        id_cargo=cargo_id,
+        nombre_empleado=nombre,
+        apellido_empleado=apellido,
+        celular_empleado=celular,
+        correo_empleado=correo,
+        direccion_empleado=direccion,
+        especialidades=especialidades
+    )
     
+    mensaje = empleados_model.agregar_empleado()
+
+    if "exitosamente" in mensaje:
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear empleado",
+            descripcion=f"Se creó el empleado: {cedula} - {nombre} {apellido}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Empleados"
+        )
+        return jsonify({"success": True, "message": mensaje}), 201
+    
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
 @empleados_blueprint.route("/api/empleados", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Empleados', 'modificar')
 def api_actualizar_empleado():
     datos = request.get_json(silent=True) or {}
+    
     id_empleado = str(datos.get("id_empleado", "")).strip()
     cedula = str(datos.get("cedula", "")).strip()
     cargo_id = str(datos.get("id_cargo", "")).strip()
@@ -140,6 +160,7 @@ def api_actualizar_empleado():
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
+    
     especialidades = datos.get('especialidades') or []
     if isinstance(especialidades, str):
         try:
@@ -148,37 +169,79 @@ def api_actualizar_empleado():
         except Exception:
             especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
 
-    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Todos los campos son obligatorios.",
-                }
-            ),
-            400,
+    # Validaciones
+    if not id_empleado:
+        return jsonify({"success": False, "error": "El ID del empleado es obligatorio."}), 400
+    
+    if not all([cedula, cargo_id, nombre, apellido]):
+        return jsonify({
+            "success": False,
+            "error": "La cédula, cargo, nombre y apellido son obligatorios.",
+        }), 400
+
+    empleados_model = Empleados(
+        id_empleado=id_empleado,
+        id_cargo=cargo_id,
+        nombre_empleado=nombre,
+        apellido_empleado=apellido,
+        celular_empleado=celular,
+        correo_empleado=correo,
+        direccion_empleado=direccion,
+        especialidades=especialidades
+    )
+    
+    mensaje = empleados_model.actualizar_empleado()
+
+    if "exitosamente" in mensaje:
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar empleado",
+            descripcion=f"Se actualizó el empleado ID: {id_empleado} - {nombre} {apellido}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Empleados"
         )
+        return jsonify({"success": True, "message": mensaje}), 200
+    
+    return jsonify({"success": False, "error": mensaje}), 400
 
-    modelo = Empleados()
 
-    try:
-        mensaje = modelo.actualizar_empleado(
-            id_empleado=id_empleado,
-            cargo_id=cargo_id,
-            nombre=nombre,
-            apellido=apellido,
-            celular=celular,
-            correo=correo,
-            direccion=direccion,
-            especialidades=especialidades,
+@empleados_blueprint.route("/api/empleados", methods=["DELETE"])
+@jwt_required
+@tiene_permiso('Empleados', 'eliminar')
+def api_eliminar_empleado():
+    datos = request.get_json(silent=True) or {}
+    id_empleado = str(datos.get("id_empleado", "")).strip()
+
+    if not id_empleado:
+        return jsonify({"success": False, "error": "El ID del empleado es obligatorio."}), 400
+
+    # Obtener los datos del empleado antes de eliminar para la bitácora
+    empleados_model = Empleados(id_empleado=id_empleado)
+    empleado_existente = empleados_model.consultar_empleado()
+    nombre_completo = f"{empleado_existente.get('nombre', '')} {empleado_existente.get('apellido', '')}" if empleado_existente else id_empleado
+
+    mensaje = empleados_model.eliminar_empleado()
+
+    if "exitosamente" in mensaje:
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Eliminar empleado",
+            descripcion=f"Se eliminó el empleado ID: {id_empleado} - Nombre: {nombre_completo}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Empleados"
         )
+        return jsonify({"success": True, "message": mensaje}), 200
+    
+    return jsonify({"success": False, "error": mensaje}), 400
 
-        if isinstance(mensaje, str) and "actualizado" in mensaje.lower():
-            return jsonify({"success": True, "message": mensaje}), 200
 
-        return jsonify({"success": False, "error": mensaje or "No se pudo actualizar el empleado."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
+@empleados_blueprint.route("/api/empleados/tecnicos", methods=["GET"])
+@jwt_required
+@tiene_permiso('Empleados', 'consultar')
+def api_listar_tecnicos():
+    empleados_model = Empleados()
+    tecnicos = empleados_model.listar_tecnicos()
+    return jsonify(tecnicos)
 
 
 
