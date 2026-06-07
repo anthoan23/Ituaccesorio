@@ -411,6 +411,29 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
+.clientes-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: end;
+}
+
+.clientes-toolbar__field {
+    margin: 0;
+}
+
+.clientes-toolbar input,
+.clientes-toolbar select {
+    width: 100%;
+}
+
+@media (max-width: 920px) {
+    .clientes-toolbar {
+        grid-template-columns: 1fr;
+    }
+}
+
 body.modal-open {
     overflow: hidden;
 }
