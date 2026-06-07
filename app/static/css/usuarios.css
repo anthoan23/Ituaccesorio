@@ -689,3 +689,102 @@ textarea {
 body.modal-open {
     overflow: hidden;
 }
+
+/* Estilos para permisos - consultar automático */
+.permiso-consultar {
+    opacity: 0.75;
+    position: relative;
+}
+
+.permiso-consultar .permiso-hint {
+    font-size: 0.65rem;
+    color: #6c757d;
+    margin-left: 0.25rem;
+    font-weight: normal;
+}
+
+.permiso-consultar input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    background-color: #e9ecef;
+    opacity: 0.7;
+}
+
+/* Mejora para los checkboxes de permisos */
+.permiso-checkboxes {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.permiso-checkboxes label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.permiso-checkboxes label:first-child {
+    background: rgba(243, 197, 0, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+}
+
+.permiso-checkboxes input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--yellow);
+}
+
+.permiso-checkboxes input[type="checkbox"]:disabled {
+    accent-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Animación sutil para cambios en permisos */
+.permiso-item {
+    transition: all 0.2s ease;
+}
+
+.permiso-item:has(input:checked) {
+    border-left: 3px solid var(--yellow);
+    background: linear-gradient(90deg, rgba(243, 197, 0, 0.05), transparent);
+}
+
+/* Indicador visual de que consultar es automático */
+.permiso-consultar::after {
+    content: "⚡";
+    position: absolute;
+    right: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+/* Tooltip para explicar la funcionalidad */
+.permiso-consultar {
+    position: relative;
+    cursor: help;
+}
+
+.permiso-consultar:hover::before {
+    content: "El permiso de consultar se activa automáticamente cuando tienes al menos un permiso activo (Registrar, Modificar o Eliminar)";
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #333;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    white-space: normal;
+    width: 200px;
+    z-index: 10;
+    pointer-events: none;
+    font-weight: normal;
+}

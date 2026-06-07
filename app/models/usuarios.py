@@ -1,72 +1,71 @@
-from app.models.database import conectar
+from __future__ import annotations
+
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from app.models.database import conectar
 
 
-class Usuarios(conectar):
-    def _hash_password(self, password):
+class Usuarios:
+    def __init__(
+        self,
+        id: str = "",
+        nombre: str = "",
+        cedula: str = "",
+        password: str = "",
+        rol_id: str = "",
+        foto_perfil: str = "",
+        activo: bool = True,
+        fecha_creacion: datetime = None,
+    ):
+        self.id = id
+        self.nombre = nombre
+        self.cedula = cedula
+        self.password = password
+        self.rol_id = rol_id
+        self.foto_perfil = foto_perfil
+        self.activo = activo
+        self.fecha_creacion = fecha_creacion
+
+        self.__conexion_bd = conectar()
+
+    def _hash_password(self, password: str) -> str:
         """Genera un hash de la contraseña"""
         return generate_password_hash(password)
 
-    def _verify_password(self, password, password_hash):
+    def _verify_password(self, password: str, password_hash: str) -> bool:
         """Verifica si la contraseña coincide con el hash"""
         return check_password_hash(password_hash, password)
 
-    def validar(self, nombre, password):
-        db = self.conexion2()
-        if db:
-            cursor = db.cursor(dictionary=True)
-            try:
-                cursor.execute(
-                    "SELECT usuario.*, usuario.cedula AS cedula_personal, rol.nombre AS nombre_rol"
-                    " FROM usuario"
-                    " JOIN rol ON usuario.rol_id = rol.id"
-                    " WHERE usuario.nombre = %s",
-                    (nombre,),
-                )
-                resultados = cursor.fetchall()
-                
-                # Verificar contraseña con hash
-                if resultados:
-                    usuario = resultados[0]
-                    if self._verify_password(password, usuario.get("password", "")):
-                        return [usuario]
-                
-                return []
-            finally:
-                cursor.close()
-                db.close()
-        else:
-            return None
-
-    def _consultar(self, query, params=None):
-        db = self.conexion2()
+    def listar_usuarios(self):
+        db = self.__conexion_bd.conexion2()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute(query, params or ())
+            cursor.execute(
+                """
+                SELECT
+                    u.id,
+                    u.nombre,
+                    u.cedula AS cedula_personal,
+                    u.rol_id,
+                    r.nombre AS rol_nombre,
+                    u.activo,
+                    u.fecha_creacion,
+                    u.foto_perfil
+                FROM usuario u
+                INNER JOIN rol r ON r.id = u.rol_id
+                ORDER BY u.fecha_creacion DESC, u.id DESC
+                """
+            )
             return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
 
-    def _ejecutar(self, query, params=None):
-        db = self.conexion2()
-        if not db:
-            return None
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(query, params or ())
-            db.commit()
-            return cursor.lastrowid if cursor.lastrowid else cursor.rowcount
-        finally:
-            cursor.close()
-            db.close()
-
     def listar_empleados(self):
-        db = self.conexion1()
+        db = self.__conexion_bd.conexion1()
         if not db:
             return None
 
@@ -88,8 +87,32 @@ class Usuarios(conectar):
             cursor.close()
             db.close()
 
-    def verificar_empleado(self, cedula):
-        db = self.conexion1()
+    def listar_clientes(self):
+        """Lista todos los clientes (personas naturales)"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    pn.ID_persona_natural AS cedula,
+                    CONCAT(pn.Nombres_persona_natural, ' ', pn.Apellidos_persona_natural) AS nombre_completo,
+                    pn.Celular_persona_natural AS celular,
+                    pn.Correo_persona_natural AS correo
+                FROM Persona_natural pn
+                ORDER BY pn.ID_persona_natural ASC
+                """
+            )
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
+    def verificar_empleado(self, cedula: str) -> bool:
+        db = self.__conexion_bd.conexion1()
         if not db:
             return False
 
@@ -104,298 +127,381 @@ class Usuarios(conectar):
             cursor.close()
             db.close()
 
-    def listar_usuarios(self):
-        return self._consultar(
-            """
-            SELECT
-                u.id,
-                u.nombre,
-                u.cedula AS cedula_personal,
-                u.rol_id,
-                r.nombre AS rol_nombre,
-                u.activo,
-                u.fecha_creacion,
-                u.foto_perfil
-            FROM usuario u
-            INNER JOIN rol r ON r.id = u.rol_id
-            ORDER BY u.fecha_creacion DESC, u.id DESC
-            """
-        )
-
-    def crear_usuario(self, nombre, cedula_personal, password, rol_id, foto_perfil=None):
-        db = self.conexion2()
+    def verificar_cliente(self, cedula: str) -> bool:
+        """Verifica si una cédula pertenece a un cliente registrado"""
+        db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return False
 
         cursor = db.cursor()
         try:
-            # Hashear la contraseña antes de guardar
-            password_hash = self._hash_password(password)
-            
-            cursor.callproc(
-                "sp_registrar_usuario_con_prefijo",
-                [nombre, cedula_personal, password_hash, rol_id, foto_perfil],
+            cursor.execute(
+                "SELECT 1 FROM Persona_natural WHERE ID_persona_natural = %s LIMIT 1",
+                (cedula,),
             )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
 
+    def verificar_usuario_por_id(self) -> bool:
+        if not self.id:
+            return False
+
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT 1 FROM usuario WHERE id = %s LIMIT 1",
+                (self.id,),
+            )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def verificar_usuario_por_nombre(self) -> bool:
+        if not self.nombre:
+            return False
+
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT 1 FROM usuario WHERE nombre = %s LIMIT 1",
+                (self.nombre,),
+            )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def verificar_cedula_en_uso(self, cedula: str, usuario_id: str = None) -> bool:
+        """Verifica si una cédula ya está asignada a otro usuario"""
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return False
+
+        cursor = db.cursor()
+        try:
+            if usuario_id:
+                cursor.execute(
+                    "SELECT 1 FROM usuario WHERE cedula = %s AND id != %s LIMIT 1",
+                    (cedula, usuario_id),
+                )
+            else:
+                cursor.execute(
+                    "SELECT 1 FROM usuario WHERE cedula = %s LIMIT 1",
+                    (cedula,),
+                )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def agregar_usuario(self) -> str:
+        nombre = self.nombre.strip()
+        cedula = self.cedula.strip()
+        password = self.password.strip()
+        rol_id = self.rol_id.strip()
+        foto_perfil = self.foto_perfil or None
+
+        # Validaciones
+        if not nombre or not cedula or not password or not rol_id:
+            return "Nombre, cédula, contraseña y rol son obligatorios."
+
+        if len(nombre) > 50:
+            return "El nombre no puede exceder los 50 caracteres."
+
+        if len(password) < 6:
+            return "La contraseña debe tener al menos 6 caracteres."
+
+        if len(password) > 50:
+            return "La contraseña no puede exceder los 50 caracteres."
+
+        if self.verificar_usuario_por_nombre():
+            return f"El nombre de usuario '{nombre}' ya existe."
+
+        if self.verificar_cedula_en_uso(cedula):
+            return f"La cédula '{cedula}' ya está asignada a otro usuario."
+
+        # Verificar si la cédula pertenece a un empleado o cliente según el rol
+        if not self.verificar_rol_y_cedula():
+            return "La cédula no corresponde al tipo de rol seleccionado."
+
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return "Error al conectar a la base de datos."
+
+        cursor = db.cursor()
+        try:
+            password_hash = self._hash_password(password)
+            cursor.execute(
+                """
+                INSERT INTO usuario (nombre, cedula, password, rol_id, foto_perfil)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (nombre, cedula, password_hash, rol_id, foto_perfil),
+            )
             db.commit()
-            for resultado in cursor.stored_results():
-                fila = resultado.fetchone()
-                if fila:
-                    if isinstance(fila, dict):
-                        return fila.get("id_generado")
-                    return fila[0]
+            self.id = str(cursor.lastrowid)
+            return f"Usuario agregado exitosamente."
+        except Exception as e:
+            print(f"Error al agregar usuario: {e}")
+            db.rollback()
+            return "Error al agregar usuario."
+        finally:
+            cursor.close()
+            db.close()
+
+    def actualizar_usuario(self) -> str:
+        usuario_id = self.id.strip()
+        nombre = self.nombre.strip()
+        cedula = self.cedula.strip()
+        rol_id = self.rol_id.strip()
+        foto_perfil = self.foto_perfil or None
+        password = self.password.strip() if self.password else None
+
+        if not usuario_id or not nombre or not cedula or not rol_id:
+            return "ID, nombre, cédula y rol son obligatorios."
+
+        if len(nombre) > 50:
+            return "El nombre no puede exceder los 50 caracteres."
+
+        if not self.verificar_usuario_por_id():
+            return f"El usuario con ID {usuario_id} no existe."
+
+        if self.verificar_cedula_en_uso(cedula, usuario_id):
+            return f"La cédula '{cedula}' ya está asignada a otro usuario."
+
+        # Verificar si la cédula pertenece a un empleado o cliente según el rol
+        if not self.verificar_rol_y_cedula():
+            return "La cédula no corresponde al tipo de rol seleccionado."
+
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return "Error al conectar a la base de datos."
+
+        cursor = db.cursor()
+        try:
+            if password:
+                password_hash = self._hash_password(password)
+                cursor.execute(
+                    """
+                    UPDATE usuario
+                    SET nombre = %s, cedula = %s, password = %s, rol_id = %s, foto_perfil = %s
+                    WHERE id = %s
+                    """,
+                    (nombre, cedula, password_hash, rol_id, foto_perfil, usuario_id),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE usuario
+                    SET nombre = %s, cedula = %s, rol_id = %s, foto_perfil = %s
+                    WHERE id = %s
+                    """,
+                    (nombre, cedula, rol_id, foto_perfil, usuario_id),
+                )
+            db.commit()
+            return "Usuario actualizado exitosamente."
+        except Exception as e:
+            print(f"Error al actualizar usuario: {e}")
+            db.rollback()
+            return "Error al actualizar usuario."
+        finally:
+            cursor.close()
+            db.close()
+
+    def eliminar_usuario(self) -> str:
+        usuario_id = self.id.strip()
+
+        if not usuario_id:
+            return "El identificador del usuario no puede estar vacío."
+
+        if not self.verificar_usuario_por_id():
+            return f"El usuario con identificador {usuario_id} no existe."
+
+        # Verificar que no sea el último admin
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return "Error al conectar a la base de datos."
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Verificar si es admin y si es el único
+            cursor.execute(
+                """
+                SELECT COUNT(*) as total
+                FROM usuario u
+                INNER JOIN rol r ON r.id = u.rol_id
+                WHERE r.nombre = 'admin'
+                """
+            )
+            result = cursor.fetchone()
+            total_admins = result["total"] if result else 0
+
+            cursor.execute(
+                """
+                SELECT r.nombre as rol_nombre
+                FROM usuario u
+                INNER JOIN rol r ON r.id = u.rol_id
+                WHERE u.id = %s
+                """,
+                (usuario_id,),
+            )
+            usuario_rol = cursor.fetchone()
+
+            if usuario_rol and usuario_rol["rol_nombre"].lower() == "admin" and total_admins <= 1:
+                return "No se puede eliminar el único administrador del sistema."
+
+            cursor.execute("DELETE FROM usuario WHERE id = %s", (usuario_id,))
+            db.commit()
+            return "Usuario eliminado exitosamente."
+        except Exception as e:
+            print(f"Error al eliminar usuario: {e}")
+            db.rollback()
+            return "Error al eliminar usuario. Verifica que no esté en uso."
+        finally:
+            cursor.close()
+            db.close()
+
+    def verificar_rol_y_cedula(self) -> bool:
+        """Verifica que la cédula corresponda al tipo de rol seleccionado"""
+        if not self.cedula or not self.rol_id:
+            return False
+
+        db_usuarios = self.__conexion_bd.conexion2()
+        if not db_usuarios:
+            return False
+
+        cursor = db_usuarios.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT nombre FROM rol WHERE id = %s",
+                (self.rol_id,),
+            )
+            rol = cursor.fetchone()
+            if not rol:
+                return False
+
+            nombre_rol = rol["nombre"].lower()
+
+            if nombre_rol == "cliente":
+                return self.verificar_cliente(self.cedula)
+            else:
+                return self.verificar_empleado(self.cedula)
+        finally:
+            cursor.close()
+            db_usuarios.close()
+
+    def validar_login(self, nombre: str, password: str):
+        """Valida las credenciales de un usuario"""
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT u.id, u.nombre, u.cedula, u.password, u.rol_id, u.foto_perfil, r.nombre AS rol_nombre
+                FROM usuario u
+                INNER JOIN rol r ON u.rol_id = r.id
+                WHERE u.nombre = %s AND u.activo = 1
+                """,
+                (nombre,),
+            )
+            usuario = cursor.fetchone()
+
+            if usuario and self._verify_password(password, usuario.get("password", "")):
+                # No devolver el hash de la contraseña
+                usuario.pop("password", None)
+                return usuario
 
             return None
         finally:
             cursor.close()
             db.close()
 
-    def obtener_rol_por_id(self, rol_id):
-        """Obtiene un rol por su ID"""
-        datos = self._consultar(
-            """
-            SELECT id, nombre, descripcion
-            FROM rol
-            WHERE id = %s
-            LIMIT 1
-            """,
-            (rol_id,),
-        )
-        return datos[0] if datos else None
+    def obtener_usuario_por_id(self, usuario_id: str = None):
+        id_buscar = usuario_id or self.id
+        if not id_buscar:
+            return None
 
-    def actualizar_usuario(self, usuario_id, nombre, cedula_personal, rol_id, foto_perfil=None):
-        return self._ejecutar(
-            """
-            UPDATE usuario
-            SET nombre = %s,
-                cedula = %s,
-                rol_id = %s,
-                foto_perfil = %s
-            WHERE id = %s
-            """,
-            (nombre, cedula_personal, rol_id, foto_perfil, usuario_id),
-        )
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return None
 
-    def actualizar_usuario_con_password(self, usuario_id, nombre, cedula_personal, password, rol_id, foto_perfil=None):
-        # Hashear la nueva contraseña
-        password_hash = self._hash_password(password)
-        
-        return self._ejecutar(
-            """
-            UPDATE usuario
-            SET nombre = %s,
-                cedula = %s,
-                password = %s,
-                rol_id = %s,
-                foto_perfil = %s
-            WHERE id = %s
-            """,
-            (nombre, cedula_personal, password_hash, rol_id, foto_perfil, usuario_id),
-        )
-
-    def eliminar_usuario(self, usuario_id):
-        return self._ejecutar("DELETE FROM usuario WHERE id = %s", (usuario_id,))
-
-    def obtener_usuario_por_id(self, usuario_id):
-        datos = self._consultar(
-            """
-            SELECT
-                u.id,
-                u.nombre,
-                u.cedula AS cedula_personal,
-                u.rol_id,
-                u.foto_perfil,
-                r.nombre AS rol_nombre
-            FROM usuario u
-            INNER JOIN rol r ON r.id = u.rol_id
-            WHERE u.id = %s
-            LIMIT 1
-            """,
-            (usuario_id,),
-        )
-        return datos[0] if datos else None
-
-    def actualizar_perfil_actual(self, usuario_id, nombre, password=None, foto_perfil=None):
-        if password:
-            # Hashear la nueva contraseña
-            password_hash = self._hash_password(password)
-            return self._ejecutar(
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
                 """
-                UPDATE usuario
-                SET nombre = %s,
-                    password = %s,
-                    foto_perfil = %s
-                WHERE id = %s
+                SELECT
+                    u.id,
+                    u.nombre,
+                    u.cedula AS cedula_personal,
+                    u.rol_id,
+                    u.foto_perfil,
+                    u.activo,
+                    u.fecha_creacion,
+                    r.nombre AS rol_nombre
+                FROM usuario u
+                INNER JOIN rol r ON r.id = u.rol_id
+                WHERE u.id = %s
+                LIMIT 1
                 """,
-                (nombre, password_hash, foto_perfil, usuario_id),
+                (id_buscar,),
             )
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
 
-        return self._ejecutar(
-            """
-            UPDATE usuario
-            SET nombre = %s,
-                foto_perfil = %s
-            WHERE id = %s
-            """,
-            (nombre, foto_perfil, usuario_id),
-        )
+    def actualizar_perfil(self, usuario_id: str, nombre: str, password: str = None, foto_perfil: str = None) -> str:
+        if not usuario_id or not nombre:
+            return "ID y nombre son obligatorios."
 
-    def listar_roles(self):
-        return self._consultar(
-            """
-            SELECT id, nombre, descripcion
-            FROM rol
-            ORDER BY nombre
-            """
-        )
+        if len(nombre) > 50:
+            return "El nombre no puede exceder los 50 caracteres."
 
-    def crear_rol(self, nombre, descripcion):
-        return self._ejecutar(
-            "INSERT INTO rol (nombre, descripcion) VALUES (%s, %s)",
-            (nombre, descripcion),
-        )
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return "Error al conectar a la base de datos."
 
-    def actualizar_rol(self, rol_id, nombre, descripcion):
-        return self._ejecutar(
-            "UPDATE rol SET nombre = %s, descripcion = %s WHERE id = %s",
-            (nombre, descripcion, rol_id),
-        )
-
-    def eliminar_rol(self, rol_id):
-        return self._ejecutar("DELETE FROM rol WHERE id = %s", (rol_id,))
-
-    def listar_modulos(self):
-        return self._consultar(
-            """
-            SELECT id, nombre, descripcion
-            FROM modulo
-            ORDER BY nombre
-            """
-        )
-
-    def crear_modulo(self, nombre, descripcion):
-        return self._ejecutar(
-            "INSERT INTO modulo (nombre, descripcion) VALUES (%s, %s)",
-            (nombre, descripcion),
-        )
-
-    def actualizar_modulo(self, modulo_id, nombre, descripcion):
-        return self._ejecutar(
-            "UPDATE modulo SET nombre = %s, descripcion = %s WHERE id = %s",
-            (nombre, descripcion, modulo_id),
-        )
-
-    def eliminar_modulo(self, modulo_id):
-        return self._ejecutar("DELETE FROM modulo WHERE id = %s", (modulo_id,))
-
-    def listar_permisos(self):
-        return self._consultar(
-            """
-            SELECT
-                p.rol_id,
-                r.nombre AS rol_nombre,
-                p.modulo_id,
-                m.nombre AS modulo_nombre,
-                p.consultar,
-                p.registrar,
-                p.modificar,
-                p.eliminar
-            FROM permiso p
-            INNER JOIN rol r ON r.id = p.rol_id
-            INNER JOIN modulo m ON m.id = p.modulo_id
-            ORDER BY r.nombre, m.nombre
-            """
-        )
-
-    def listar_permisos_por_rol(self, rol_id):
-        """Obtiene todos los permisos de un rol específico"""
-        return self._consultar(
-            """
-            SELECT
-                p.rol_id,
-                p.modulo_id,
-                m.nombre AS modulo_nombre,
-                m.descripcion AS modulo_descripcion,
-                p.consultar,
-                p.registrar,
-                p.modificar,
-                p.eliminar
-            FROM permiso p
-            INNER JOIN modulo m ON m.id = p.modulo_id
-            WHERE p.rol_id = %s
-            ORDER BY m.nombre
-            """,
-            (rol_id,)
-        )
-    
-    def guardar_permiso(self, rol_id, modulo_id, registrar, modificar, eliminar):
-        return self._ejecutar(
-            """
-            INSERT INTO permiso (rol_id, modulo_id, registrar, modificar, eliminar)
-            VALUES (%s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                registrar = VALUES(registrar),
-                modificar = VALUES(modificar),
-                eliminar = VALUES(eliminar)
-            """,
-            (rol_id, modulo_id, registrar, modificar, eliminar),
-        )
-    
-    def eliminar_permiso(self, rol_id, modulo_id):
-        return self._ejecutar(
-            "DELETE FROM permiso WHERE rol_id = %s AND modulo_id = %s",
-            (rol_id, modulo_id),
-        )
-
-    def verificar_permiso(self, rol_id, modulo_nombre, permiso):
-        """
-        Verifica si un rol tiene un permiso específico en un módulo.
-        
-        Args:
-            rol_id (int): ID del rol
-            modulo_nombre (str): Nombre del módulo
-            permiso (str): Tipo de permiso ('consultar', 'registrar', 'modificar', 'eliminar')
-        
-        Returns:
-            bool: True si tiene el permiso, False si no
-        """
-        resultado = self._consultar(
-            f"""
-            SELECT p.{permiso} 
-            FROM permiso p
-            INNER JOIN modulo m ON m.id = p.modulo_id
-            WHERE p.rol_id = %s AND m.nombre = %s
-            LIMIT 1
-            """,
-            (rol_id, modulo_nombre)
-        )
-        if not resultado:
-            return False
-        return bool(resultado[0].get(permiso, 0))
-
-    def obtener_permisos_usuario(self, usuario_id):
-        """
-        Obtiene todos los permisos de un usuario.
-        
-        Args:
-            usuario_id (str): ID del usuario
-        
-        Returns:
-            list: Lista de permisos del usuario
-        """
-        return self._consultar(
-            """
-            SELECT 
-                m.nombre AS modulo_nombre,
-                COALESCE(p.consultar, 0) AS consultar,
-                COALESCE(p.registrar, 0) AS registrar,
-                COALESCE(p.modificar, 0) AS modificar,
-                COALESCE(p.eliminar, 0) AS eliminar
-            FROM modulo m
-            LEFT JOIN permiso p ON p.modulo_id = m.id AND p.rol_id = (
-                SELECT rol_id FROM usuario WHERE id = %s
-            )
-            ORDER BY m.nombre
-            """,
-            (usuario_id,)
-        )
+        cursor = db.cursor()
+        try:
+            if password:
+                password_hash = self._hash_password(password)
+                cursor.execute(
+                    """
+                    UPDATE usuario
+                    SET nombre = %s, password = %s, foto_perfil = %s
+                    WHERE id = %s
+                    """,
+                    (nombre, password_hash, foto_perfil, usuario_id),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE usuario
+                    SET nombre = %s, foto_perfil = %s
+                    WHERE id = %s
+                    """,
+                    (nombre, foto_perfil, usuario_id),
+                )
+            db.commit()
+            return "Perfil actualizado exitosamente."
+        except Exception as e:
+            print(f"Error al actualizar perfil: {e}")
+            db.rollback()
+            return "Error al actualizar perfil."
+        finally:
+            cursor.close()
+            db.close()
