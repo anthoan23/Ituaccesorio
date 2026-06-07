@@ -1,7 +1,7 @@
+from __future__ import annotations
 from app.models.database import conectar
 
-
-class GestionClientes(conectar):
+class Clientes(conectar):
     def _consultar(self, query, params=None):
         db = self.conexion1()
         if not db:
@@ -25,12 +25,24 @@ class GestionClientes(conectar):
             cursor.execute(query, params or ())
             db.commit()
             return cursor.lastrowid if cursor.lastrowid else cursor.rowcount
+        except Exception:
+            db.rollback()
+            raise
         finally:
             cursor.close()
             db.close()
 
+
+class Persona_natural(Clientes):
+    pass
+
+
+class Cliente_juridico(Clientes):
     def listar_clientes(self):
+<<<<<<< Updated upstream
         """Lista todos los clientes (personas naturales) con nombre completo"""
+=======
+>>>>>>> Stashed changes
         return self._consultar(
             """
             SELECT 
@@ -42,6 +54,7 @@ class GestionClientes(conectar):
                 c.Celular_cliente AS celular,
                 c.Correo_cliente AS correo
             FROM Cliente c
+<<<<<<< Updated upstream
             INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             ORDER BY c.ID_cliente DESC
             """
@@ -59,9 +72,93 @@ class GestionClientes(conectar):
             FROM Cliente c
             INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
             ORDER BY p.Nombre_cliente ASC
+=======
+            LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+            LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+            WHERE p.ID_cliente IS NOT NULL OR j.ID_cliente IS NOT NULL
+            ORDER BY c.ID_cliente ASC
             """
         )
 
+
+    def crear_cliente(
+        self,
+        cliente_id,
+        nombre,
+        tipo="natural",
+        apellido=None,
+        rif=None,
+        razon_social=None,
+        celular=None,
+        correo=None,
+        direccion=None,
+    ):
+        """Crea un cliente natural o jurídico usando el ID_cliente para unir las tablas."""
+        if not cliente_id or not nombre:
+            raise ValueError("ID de cliente y nombre son obligatorios.")
+
+        tipo = (tipo or "natural").strip().lower()
+        if tipo == "juridico":
+            if not rif or not razon_social:
+                raise ValueError("RIF y razón social son obligatorios para cliente jurídico.")
+        elif tipo == "natural":
+            if not apellido:
+                raise ValueError("Apellido es obligatorio para cliente natural.")
+        else:
+            raise ValueError("Tipo de cliente inválido. Use 'natural' o 'juridico'.")
+
+        resultado = self._ejecutar(
+>>>>>>> Stashed changes
+            """
+        )
+
+<<<<<<< Updated upstream
+=======
+        if not resultado:
+            return None
+
+        if tipo == "natural":
+            self._ejecutar(
+                """
+                INSERT INTO Persona_natural (ID_cliente, Apellido_cliente)
+                VALUES (%s, %s)
+                """,
+                (cliente_id, apellido),
+            )
+        else:
+            self._ejecutar(
+                """
+                INSERT INTO Cliente_juridico (ID_cliente, Razon_social_cliente, Rif_cliente)
+                VALUES (%s, %s, %s)
+                """,
+                (cliente_id, razon_social, rif),
+            )
+
+        return cliente_id
+
+
+
+
+
+
+
+
+
+    def crear_cliente_con_id(self, cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None, rif=None, razon_social=None):
+        """Crea un cliente (compatible con la estructura anterior)"""
+        return self.crear_cliente(
+            cliente_id=cliente_id,
+            nombre=nombre,
+            tipo=tipo or "natural",
+            apellido=apellido,
+            rif=rif,
+            razon_social=razon_social,
+            celular=celular,
+            correo=correo,
+            direccion=direccion,
+        )
+
+>>>>>>> Stashed changes
     def obtener_cliente_por_id(self, cliente_id):
         """Obtiene un cliente por su ID con datos separados"""
         datos = self._consultar(
@@ -171,4 +268,12 @@ class GestionClientes(conectar):
         cliente = self.obtener_cliente_por_id(cliente_id)
         if not cliente:
             return None
+<<<<<<< Updated upstream
         return cliente
+=======
+        return cliente
+
+
+GestionClientes = Cliente_juridico
+
+>>>>>>> Stashed changes
