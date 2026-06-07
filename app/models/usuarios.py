@@ -387,7 +387,7 @@ class Usuarios(conectar):
             """
             SELECT 
                 m.nombre AS modulo_nombre,
-                COALESCE(p.consultar, 1) AS consultar,
+                COALESCE(p.consultar, 0) AS consultar,
                 COALESCE(p.registrar, 0) AS registrar,
                 COALESCE(p.modificar, 0) AS modificar,
                 COALESCE(p.eliminar, 0) AS eliminar

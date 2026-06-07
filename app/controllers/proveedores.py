@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request
-from app.utils.decorators import jwt_required
-
+from flask import Blueprint, jsonify, render_template, request, g
+from app.utils.decorators import jwt_required, tiene_permiso
+from app.models.bitacora import registrar_en_bitacora
 from app.models.proveedores import Proveedores
 from app.models.productos import Productos
 
@@ -9,8 +9,29 @@ proveedores_modelo = Proveedores()
 productos_modelo = Productos()
 
 
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
+
+
+def _obtener_nombre_proveedor(proveedor_id):
+    """Obtiene el nombre de un proveedor por su ID"""
+    try:
+        modelo = Proveedores()
+        proveedor = modelo.obtener_proveedor(id_proveedor=proveedor_id)
+        return proveedor.get("nombre", str(proveedor_id)) if proveedor else str(proveedor_id)
+    except Exception:
+        return str(proveedor_id)
+
+
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
 @jwt_required
+@tiene_permiso('Proveedores', 'consultar')
 def pagina_proveedores():
     return render_template(
         "proveedores.html",
@@ -22,6 +43,7 @@ def pagina_proveedores():
 
 @proveedores_blueprint.route("/api/proveedores", methods=["GET"])
 @jwt_required
+@tiene_permiso('Proveedores', 'consultar')
 def api_listar_proveedores():
     q = request.args.get("q", default=None, type=str)
     modelo = Proveedores()
@@ -31,6 +53,7 @@ def api_listar_proveedores():
 
 @proveedores_blueprint.route("/api/proveedores", methods=["POST"])
 @jwt_required
+@tiene_permiso('Proveedores', 'registrar')
 def api_crear_proveedor():
     datos = request.get_json(silent=True) or {}
     id_proveedor = datos.get("id")
@@ -106,6 +129,15 @@ def api_crear_proveedor():
                 direccion=direccion,
                 limite_credito=limite_val,
             )
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear proveedor",
+            descripcion=f"Se creó el proveedor: {nombre} - Tipo: {tipo or 'N/A'} - Límite crédito: {limite_val or 0}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Proveedores"
+        )
+        
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -113,6 +145,7 @@ def api_crear_proveedor():
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Proveedores', 'consultar')
 def api_obtener_proveedor(id_proveedor: int):
     modelo = Proveedores()
     proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
@@ -125,6 +158,7 @@ def api_obtener_proveedor(id_proveedor: int):
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Proveedores', 'modificar')
 def api_actualizar_proveedor(id_proveedor: int):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -156,6 +190,16 @@ def api_actualizar_proveedor(id_proveedor: int):
             direccion=direccion,
             limite_credito=limite_val,
         )
+        
+        if ok:
+            # Registrar en bitácora
+            registrar_en_bitacora(
+                accion="Actualizar proveedor",
+                descripcion=f"Se actualizó el proveedor ID: {id_proveedor} - Nuevo nombre: {nombre}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Proveedores"
+            )
+        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -163,10 +207,24 @@ def api_actualizar_proveedor(id_proveedor: int):
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Proveedores', 'eliminar')
 def api_eliminar_proveedor(id_proveedor: int):
     modelo = Proveedores()
     try:
+        # Obtener nombre antes de eliminar
+        nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+        
         ok = modelo.eliminar_proveedor(id_proveedor=id_proveedor)
+        
+        if ok:
+            # Registrar en bitácora
+            registrar_en_bitacora(
+                accion="Eliminar proveedor",
+                descripcion=f"Se eliminó el proveedor ID: {id_proveedor} - Nombre: {nombre_proveedor}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Proveedores"
+            )
+        
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -174,6 +232,7 @@ def api_eliminar_proveedor(id_proveedor: int):
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>/productos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Proveedores', 'consultar')
 def api_listar_productos_proveedor(id_proveedor: int):
     modelo = Proveedores()
     productos = modelo.listar_productos_por_proveedor(id_proveedor=id_proveedor) or []
@@ -182,6 +241,7 @@ def api_listar_productos_proveedor(id_proveedor: int):
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>/productos", methods=["POST"])
 @jwt_required
+@tiene_permiso('Proveedores', 'modificar')
 def api_upsert_producto_proveedor(id_proveedor: int):
     datos = request.get_json(silent=True) or {}
     id_modelo = datos.get("id_modelo")
@@ -206,6 +266,17 @@ def api_upsert_producto_proveedor(id_proveedor: int):
             id_modelo=id_modelo_val,
             costo=costo_val,
         )
+        
+        if ok:
+            # Registrar en bitácora
+            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+            registrar_en_bitacora(
+                accion="Actualizar producto de proveedor",
+                descripcion=f"Se actualizó producto para proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo_val} - Costo: {costo_val}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Proveedores"
+            )
+        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -215,10 +286,22 @@ def api_upsert_producto_proveedor(id_proveedor: int):
     "/api/proveedores/<int:id_proveedor>/productos/<string:id_modelo>", methods=["DELETE"]
 )
 @jwt_required
+@tiene_permiso('Proveedores', 'modificar')
 def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
     modelo = Proveedores()
     try:
         ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
+        
+        if ok:
+            # Registrar en bitácora
+            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+            registrar_en_bitacora(
+                accion="Eliminar producto de proveedor",
+                descripcion=f"Se eliminó producto del proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Proveedores"
+            )
+        
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -226,6 +309,7 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
 
 @proveedores_blueprint.route("/api/proveedores/modelos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Proveedores', 'consultar')
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
     modelo = Productos()

@@ -165,3 +165,92 @@ class Inventario(conectar):
     def listar_inventario_modelo(self, N_modelo: str):
         return self._listar(N_modelo=N_modelo)
 
+# app/models/inventario.py - Agregar estos métodos
+
+def obtener_producto_por_id(self, id_producto):
+    """Obtiene información de un producto por su ID"""
+    db = self.conexion1()
+    if not db:
+        return None
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT ID_producto, Nombre_producto FROM Producto WHERE ID_producto = %s LIMIT 1",
+            (id_producto,)
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        db.close()
+
+
+def obtener_stock_por_id(self, id_inventario):
+    """Obtiene un registro de stock por su ID"""
+    db = self.conexion1()
+    if not db:
+        return None
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """SELECT i.ID_inventario, i.ID_producto, i.Existencia, i.Costo_venta, 
+                      p.Nombre_producto
+               FROM Inventario i
+               INNER JOIN Producto p ON p.ID_producto = i.ID_producto
+               WHERE i.ID_inventario = %s
+               LIMIT 1""",
+            (id_inventario,)
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        db.close()
+
+
+def actualizar_stock(self, id_inventario, existencia=None, costo_venta=None):
+    """Actualiza un registro de stock"""
+    if existencia is None and costo_venta is None:
+        return False
+    
+    db = self.conexion1()
+    if not db:
+        return False
+    
+    cursor = db.cursor()
+    try:
+        updates = []
+        params = []
+        
+        if existencia is not None:
+            updates.append("Existencia = %s")
+            params.append(existencia)
+        
+        if costo_venta is not None:
+            updates.append("Costo_venta = %s")
+            params.append(costo_venta)
+        
+        params.append(id_inventario)
+        
+        query = f"UPDATE Inventario SET {', '.join(updates)} WHERE ID_inventario = %s"
+        cursor.execute(query, params)
+        db.commit()
+        return cursor.rowcount > 0
+    finally:
+        cursor.close()
+        db.close()
+
+
+    def eliminar_stock(self, id_inventario):
+        """Elimina un registro de stock"""
+        return self._ejecutar("DELETE FROM Inventario WHERE ID_inventario = %s", (id_inventario,))
+
+
+    def listar_productos_sin_inventario(self):
+        """Lista productos que no tienen registro en inventario"""
+        return self._consultar(
+            """SELECT ID_producto, Nombre_producto, ID_marca, ID_Clase
+            FROM Producto
+            WHERE ID_producto NOT IN (SELECT ID_producto FROM Inventario)
+            ORDER BY Nombre_producto"""
+        )

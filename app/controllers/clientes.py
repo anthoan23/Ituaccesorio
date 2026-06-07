@@ -1,11 +1,22 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, g
 import mysql.connector
 import re
 
 from app.models.clientes import GestionClientes
-from app.utils.decorators import jwt_required
+from app.models.bitacora import registrar_en_bitacora
+from app.utils.decorators import jwt_required, tiene_permiso
 
 clientes_blueprint = Blueprint("clientes", __name__)
+
+
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
 def _respuesta_error(mensaje, status=400):
@@ -55,6 +66,7 @@ def _validar_celular(celular):
 
 @clientes_blueprint.route("/clientes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Clientes', 'consultar')
 def pagina_clientes():
     return render_template(
         "clientes.html",
@@ -66,6 +78,7 @@ def pagina_clientes():
 
 @clientes_blueprint.route("/api/clientes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Clientes', 'consultar')
 def listar_clientes():
     modelo = GestionClientes()
     datos = modelo.listar_clientes() or []
@@ -74,6 +87,7 @@ def listar_clientes():
 
 @clientes_blueprint.route("/api/clientes", methods=["POST"])
 @jwt_required
+@tiene_permiso('Clientes', 'registrar')
 def crear_cliente():
     datos = request.get_json(silent=True) or {}
     cedula = (datos.get("cedula") or "").strip()
@@ -98,13 +112,13 @@ def crear_cliente():
 
     modelo = GestionClientes()
     try:
-        # Convertir cédula a entero y crear cliente
         cliente_id = int(cedula)
         nombre_completo = f"{nombre} {apellido}".strip()
         
         cliente_creado = modelo.crear_cliente(
             cliente_id=cliente_id,
             nombre=nombre_completo,
+            apellido=apellido,
             celular=celular,
             correo=correo if correo else None,
             direccion=direccion if direccion else None
@@ -112,6 +126,14 @@ def crear_cliente():
         
         if not cliente_creado:
             return _respuesta_error("No se pudo crear el cliente.", 500)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Crear cliente",
+            descripcion=f"Se creó el cliente: {nombre} {apellido} - Cédula: {cedula} - Celular: {celular}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Clientes"
+        )
             
         return jsonify({"success": True, "message": "Cliente creado.", "id": cliente_creado})
     except Exception as error:
@@ -120,6 +142,7 @@ def crear_cliente():
 
 @clientes_blueprint.route("/api/clientes/<int:cliente_id>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Clientes', 'consultar')
 def obtener_cliente(cliente_id):
     modelo = GestionClientes()
     cliente = modelo.obtener_cliente_por_id(cliente_id)
@@ -130,6 +153,7 @@ def obtener_cliente(cliente_id):
 
 @clientes_blueprint.route("/api/clientes/<int:cliente_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Clientes', 'modificar')
 def actualizar_cliente(cliente_id):
     datos = request.get_json(silent=True) or {}
     cedula = (datos.get("cedula") or "").strip()
@@ -161,10 +185,20 @@ def actualizar_cliente(cliente_id):
             cliente_id_actual=cliente_id,
             nuevo_cliente_id=int(cedula),
             nombre=nombre_completo,
+            apellido=apellido,
             celular=celular,
             correo=correo if correo else None,
             direccion=direccion if direccion else None,
         )
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar cliente",
+            descripcion=f"Se actualizó el cliente ID: {cliente_id} - Nuevo nombre: {nombre} {apellido} - Nuevo ID: {cedula}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Clientes"
+        )
+        
         return jsonify({"success": True, "message": "Cliente actualizado."})
     except Exception as error:
         return _respuesta_por_excepcion(error)
@@ -172,6 +206,7 @@ def actualizar_cliente(cliente_id):
 
 @clientes_blueprint.route("/api/clientes/<int:cliente_id>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Clientes', 'eliminar')
 def eliminar_cliente(cliente_id):
     modelo = GestionClientes()
     cliente_existente = modelo.obtener_cliente_por_id(cliente_id)
@@ -179,7 +214,18 @@ def eliminar_cliente(cliente_id):
         return _respuesta_error("Cliente no encontrado.", 404)
 
     try:
+        nombre_cliente = f"{cliente_existente.get('nombre', '')} {cliente_existente.get('apellido', '')}".strip()
+        
         modelo.eliminar_cliente(cliente_id)
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Eliminar cliente",
+            descripcion=f"Se eliminó el cliente ID: {cliente_id} - Nombre: {nombre_cliente}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Clientes"
+        )
+        
         return jsonify({"success": True, "message": "Cliente eliminado."})
     except Exception as error:
         return _respuesta_por_excepcion(error)

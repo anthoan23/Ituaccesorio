@@ -30,28 +30,13 @@ class GestionClientes(conectar):
             db.close()
 
     def listar_clientes(self):
-        """Lista todos los clientes (personas naturales)"""
+        """Lista todos los clientes (personas naturales) con nombre completo"""
         return self._consultar(
             """
             SELECT 
                 c.ID_cliente AS id,
                 CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre,
-                c.Direccion_cliente AS direccion,
-                c.Celular_cliente AS celular,
-                c.Correo_cliente AS correo
-            FROM Cliente c
-            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-            ORDER BY c.ID_cliente DESC
-            """
-        )
-
-    def listar_clientes_completo(self):
-        """Lista todos los clientes (personas naturales) con todos los datos"""
-        return self._consultar(
-            """
-            SELECT 
-                c.ID_cliente AS id,
-                p.Nombre_cliente AS nombre,
+                p.Nombre_cliente AS nombre_solo,
                 p.Apellido_cliente AS apellido,
                 c.Direccion_cliente AS direccion,
                 c.Celular_cliente AS celular,
@@ -62,13 +47,30 @@ class GestionClientes(conectar):
             """
         )
 
+    def listar_clientes_para_select(self):
+        """Lista clientes para usar en selects (solo ID y nombre completo)"""
+        return self._consultar(
+            """
+            SELECT 
+                c.ID_cliente AS cedula,
+                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
+                p.Nombre_cliente AS nombre,
+                p.Apellido_cliente AS apellido
+            FROM Cliente c
+            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+            ORDER BY p.Nombre_cliente ASC
+            """
+        )
+
     def obtener_cliente_por_id(self, cliente_id):
-        """Obtiene un cliente por su ID"""
+        """Obtiene un cliente por su ID con datos separados"""
         datos = self._consultar(
             """
             SELECT 
                 c.ID_cliente AS id,
-                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre,
+                p.Nombre_cliente AS nombre,
+                p.Apellido_cliente AS apellido,
+                CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
                 c.Direccion_cliente AS direccion,
                 c.Celular_cliente AS celular,
                 c.Correo_cliente AS correo
@@ -80,6 +82,20 @@ class GestionClientes(conectar):
             (cliente_id,),
         )
         return datos[0] if datos else None
+
+    def obtener_nombre_completo(self, cliente_id):
+        """Obtiene solo el nombre completo del cliente"""
+        datos = self._consultar(
+            """
+            SELECT CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo
+            FROM Cliente c
+            INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+            WHERE c.ID_cliente = %s
+            LIMIT 1
+            """,
+            (cliente_id,),
+        )
+        return datos[0]["nombre_completo"] if datos else None
 
     def crear_cliente(self, cliente_id, nombre, apellido, celular=None, correo=None, direccion=None):
         """Crea un nuevo cliente (persona natural)"""
@@ -111,7 +127,7 @@ class GestionClientes(conectar):
         """Crea un cliente (compatible con la estructura anterior)"""
         return self.crear_cliente(cliente_id, nombre, apellido, celular, correo, direccion)
 
-    def actualizar_cliente(self, cliente_id_actual, nuevo_cliente_id, nombre, apellido=None, celular=None, correo=None, direccion=None, tipo=None):
+    def actualizar_cliente(self, cliente_id_actual, nuevo_cliente_id, nombre, apellido, celular=None, correo=None, direccion=None, tipo=None):
         """Actualiza un cliente existente"""
         
         # Actualizar tabla Cliente
@@ -141,6 +157,14 @@ class GestionClientes(conectar):
     def eliminar_cliente(self, cliente_id):
         """Elimina un cliente (las tablas hijas se eliminan por CASCADE)"""
         return self._ejecutar("DELETE FROM Cliente WHERE ID_cliente = %s", (cliente_id,))
+
+    def existe_cliente(self, cliente_id):
+        """Verifica si un cliente existe"""
+        datos = self._consultar(
+            "SELECT 1 FROM Cliente WHERE ID_cliente = %s LIMIT 1",
+            (cliente_id,)
+        )
+        return len(datos) > 0
 
     def obtener_cliente_completo(self, cliente_id):
         """Obtiene un cliente con información adicional según su tipo"""

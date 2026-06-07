@@ -1,12 +1,22 @@
 from flask import Blueprint, jsonify, render_template, request, g
-
+from app.models.bitacora import registrar_en_bitacora
 from app.models.empleados import Empleados
 from app.models.ordenes_servicio import OrdenServicio
 from app.models.test import Tests
-from app.utils.decorators import jwt_required
+from app.utils.decorators import jwt_required, tiene_permiso
 import traceback
 
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
+
+
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
 def _obtener_id_empleado() -> int:
@@ -21,8 +31,23 @@ def _obtener_id_empleado() -> int:
         return 1004
 
 
+def _obtener_nombre_cliente(cliente_id):
+    """Obtiene el nombre de un cliente por su ID"""
+    try:
+        orden = OrdenServicio()
+        # Buscar en órdenes existentes o llamar a un método específico
+        ordenes = orden.listado_ordenes_servicio()
+        for o in ordenes:
+            if o.get("ID_cliente") == cliente_id:
+                return o.get("Nombre_cliente", str(cliente_id))
+    except Exception:
+        pass
+    return str(cliente_id)
+
+
 @ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def pagina_ordenes_servicio():
     return render_template(
         "ordenes_servicio.html",
@@ -34,6 +59,7 @@ def pagina_ordenes_servicio():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_ordenes_servicio():
     estado = (request.args.get("estado") or "").strip()
     estados = [s.strip() for s in estado.split(",") if s.strip()] if estado else []
@@ -56,6 +82,7 @@ def listar_ordenes_servicio():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def detalle_orden_servicio(id_orden):
     ordenes = OrdenServicio()
     tests = Tests()
@@ -78,6 +105,7 @@ def detalle_orden_servicio(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'registrar')
 def crear_orden_servicio():
     datos = request.get_json(silent=True) or {}
     id_cliente = datos.get("id_cliente")
@@ -120,11 +148,20 @@ def crear_orden_servicio():
     id_empleado = _obtener_id_empleado()
     modelo.registrar_interaccion(nueva_id, id_empleado, "Recepcion")
 
+    # Registrar en bitácora
+    registrar_en_bitacora(
+        accion="Crear orden de servicio",
+        descripcion=f"Se creó orden de servicio ID: {nueva_id} - Cliente ID: {id_cliente_val} - Modelo ID: {id_modelo_val}",
+        usuario_id=_usuario_actual(),
+        modulo_nombre="Órdenes de servicio"
+    )
+
     return jsonify({"success": True, "id": nueva_id})
 
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/asignar", methods=["POST"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def asignar_orden_servicio(id_orden):
     datos = request.get_json(silent=True) or {}
     id_empleado = datos.get("id_empleado")
@@ -137,11 +174,21 @@ def asignar_orden_servicio(id_orden):
     ok = modelo.asignar_orden_empleado(id_orden, id_empleado_val)
     if not ok:
         return jsonify({"success": False, "error": "No se pudo asignar la orden."}), 400
+    
+    # Registrar en bitácora
+    registrar_en_bitacora(
+        accion="Asignar orden de servicio",
+        descripcion=f"Se asignó la orden ID: {id_orden} al empleado ID: {id_empleado_val}",
+        usuario_id=_usuario_actual(),
+        modulo_nombre="Órdenes de servicio"
+    )
+    
     return jsonify({"success": True})
 
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_tecnicos():
     modelo = Empleados()
     tecnicos = modelo.listar_tecnicos() or []
@@ -150,6 +197,7 @@ def listar_tecnicos():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos/<int:id_empleado>/ordenes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_ordenes_tecnico(id_empleado):
     modelo = OrdenServicio()
     ordenes = modelo.ordenes_asignadas_tecnico(id_empleado) or []
@@ -158,43 +206,105 @@ def listar_ordenes_tecnico(id_empleado):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/revision", methods=["POST"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def registrar_test_orden(id_orden):
-	# Espera JSON con los campos del test. ID_em y Fecha se gestionan en el servidor.
-	datos = request.get_json() or {}
+    datos = request.get_json() or {}
+    
+    empleado_id = _obtener_id_empleado()
+    usuario_actual = _usuario_actual()
 
-	# empleado por defecto (cambiar para usar usuario real)
-	id_empleado = 1004
+    campos = [
+        'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
+        'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+        'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
+    ]
 
-	# Campos en el mismo orden que la función registrar_test espera
-	campos = [
-		'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
-		'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
-		'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
-	]
+    valores = []
+    for campo in campos:
+        if campo == 'ID_em':
+            valores.append(empleado_id)
+            continue
 
-	valores = []
-	for campo in campos:
-		if campo == 'ID_em':
-			valores.append(id_empleado)
-			continue
+        if campo in datos:
+            v = datos.get(campo)
+            if v is None or v == '':
+                valores.append(None)
+            else:
+                if campo == 'Observaciones':
+                    valores.append(str(v))
+                else:
+                    try:
+                        valores.append(int(v))
+                    except Exception:
+                        valores.append(None)
+        else:
+            valores.append(None)
 
-		if campo in datos:
-			v = datos.get(campo)
-			# Empty string -> None (no revisado)
-			if v is None or v == '':
-				valores.append(None)
-			else:
-				# Observaciones is text
-				if campo == 'Observaciones':
-					valores.append(str(v))
-				else:
-					try:
-						valores.append(int(v))
-					except Exception:
-						valores.append(None)
-		else:
-			valores.append(None)
+    test_model = Tests()
+    ok = test_model.registrar_test(tuple(valores), id_orden)
+    
+    if ok:
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Registrar test de orden",
+            descripcion=f"Se registró test para la orden de servicio ID: {id_orden}",
+            usuario_id=usuario_actual,
+            modulo_nombre="Órdenes de servicio"
+        )
+    
+    return jsonify({"ok": bool(ok)})
 
-	test_model = Tests()
-	ok = test_model.registrar_test(tuple(valores), id_orden)
-	return jsonify({"ok": bool(ok)})
+
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/estado", methods=["PUT"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'modificar')
+def actualizar_estado_orden(id_orden):
+    """Actualiza el estado de una orden de servicio"""
+    datos = request.get_json(silent=True) or {}
+    nuevo_estado = datos.get("estado", "").strip()
+    
+    if not nuevo_estado:
+        return jsonify({"success": False, "error": "El estado es obligatorio."}), 400
+    
+    modelo = OrdenServicio()
+    ok = modelo.actualizar_estado(id_orden, nuevo_estado)
+    
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo actualizar el estado."}), 400
+    
+    # Registrar en bitácora
+    registrar_en_bitacora(
+        accion="Actualizar estado de orden",
+        descripcion=f"Se actualizó el estado de la orden ID: {id_orden} a: {nuevo_estado}",
+        usuario_id=_usuario_actual(),
+        modulo_nombre="Órdenes de servicio"
+    )
+    
+    return jsonify({"success": True, "message": "Estado actualizado"})
+
+
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>", methods=["DELETE"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'eliminar')
+def eliminar_orden_servicio(id_orden):
+    """Elimina una orden de servicio"""
+    modelo = OrdenServicio()
+    
+    # Obtener información de la orden antes de eliminar
+    detalle = modelo.detalles_orden(id_orden)
+    nombre_cliente = detalle.get("Nombre_cliente", "N/A") if detalle else "N/A"
+    
+    ok = modelo.eliminar_orden(id_orden)
+    
+    if not ok:
+        return jsonify({"success": False, "error": "No se pudo eliminar la orden."}), 400
+    
+    # Registrar en bitácora
+    registrar_en_bitacora(
+        accion="Eliminar orden de servicio",
+        descripcion=f"Se eliminó la orden de servicio ID: {id_orden} - Cliente: {nombre_cliente}",
+        usuario_id=_usuario_actual(),
+        modulo_nombre="Órdenes de servicio"
+    )
+    
+    return jsonify({"success": True, "message": "Orden eliminada"})
