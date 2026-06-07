@@ -4,7 +4,7 @@ from app.models.database import conectar
 from app.models.productos import Producto
 
 
-class Inventario(conectar):
+class Inventario:
     """Modelo para la tabla Inventario"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
@@ -13,9 +13,13 @@ class Inventario(conectar):
         self.id_producto = id_producto
         self.existencia = existencia
         self.costo_venta = costo_venta
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
 
     def _siguiente_id(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -29,7 +33,7 @@ class Inventario(conectar):
 
     def listar_inventario(self):
         """Lista todo el inventario con sus relaciones"""
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         
@@ -69,7 +73,7 @@ class Inventario(conectar):
 
     def listar_inventario_general_modelo(self, nombre_modelo: str):
         """Lista inventario filtrado por modelo"""
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         
@@ -105,7 +109,7 @@ class Inventario(conectar):
 
     def listar_inventario_filtrado(self, num_i: int | None = None, N_modelo: str | None = None):
         """Lista inventario con filtros opcionales"""
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         
@@ -158,7 +162,7 @@ class Inventario(conectar):
         if not id_producto:
             raise ValueError("ID del producto es requerido")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -202,7 +206,7 @@ class Inventario(conectar):
             db.close()
 
 
-class FotosInventario(conectar):
+class FotosInventario:
     """Modelo para la tabla Fotos_inventario"""
     
     def __init__(self, id_foto_inventario: str = "", id_inventario: str = "", 
@@ -210,9 +214,13 @@ class FotosInventario(conectar):
         self.id_foto_inventario = id_foto_inventario
         self.id_inventario = id_inventario
         self.foto_inventario = foto_inventario
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
 
     def _siguiente_id(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -226,7 +234,7 @@ class FotosInventario(conectar):
 
     def listar_fotos(self, id_inventario: str):
         """Lista todas las fotos de un inventario"""
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         
@@ -249,7 +257,7 @@ class FotosInventario(conectar):
         if not id_inventario or not foto_inventario:
             raise ValueError("ID de inventario y foto son requeridos")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -274,7 +282,7 @@ class FotosInventario(conectar):
         if not id_foto_inventario or not foto_inventario:
             raise ValueError("ID de foto y foto son requeridos")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -299,7 +307,7 @@ class FotosInventario(conectar):
         if not id_foto_inventario:
             raise ValueError("ID de foto es requerido")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -317,7 +325,7 @@ class FotosInventario(conectar):
 
     def obtener_ultima_foto(self, id_inventario: str) -> dict | None:
         """Obtiene la última foto de un inventario"""
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return None
         

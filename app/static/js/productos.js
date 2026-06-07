@@ -694,7 +694,7 @@
           notify("error", err.message || "Error al generar el reporte");
       } finally {
           btnGenerarReporte.disabled = false;
-          btnGenerarReporte.textContent = "🔍 Generar reporte";
+          btnGenerarReporte.textContent = "Generar reporte";
       }
   }
 
@@ -704,17 +704,11 @@
         return;
     }
     
-    const datos = reporteDatosActuales.map(p => ({
-        "ID": p.id || "",
-        "Nombre": p.nombre || "",
-        "Marca": p.marca_nombre || "",
-        "Clase": p.clase_nombre || "",
-        "Stock": p.stock || 0,
-        "Descripción": p.descripcion || ""
-    }));
-    
+    // Verificar si XLSX está disponible
     if (typeof XLSX === 'undefined') {
         notify("info", "Cargando librería de Excel...");
+        
+        // Cargar XLSX (SheetJS)
         const script = document.createElement('script');
         script.src = '/static/js/libs/xlsx.full.min.js';
         script.onload = () => exportarAExcel();
@@ -722,15 +716,239 @@
         return;
     }
     
-    const ws = XLSX.utils.json_to_sheet(datos);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    // ============================================
+    // PALETA DE COLORES OFICIAL iTuAccesorio
+    // ============================================
+    const colors = {
+        dark: '121212',      // Negro Dominante
+        primary: 'F3C500',   // Amarillo Acento
+        white: 'FFFFFF',     // Blanco Puro
+        grayLight: 'F8F9FA', // Gris Claro (zebra)
+        grayBorder: 'E0E0E0' // Gris Bordes
+    };
     
+    // ============================================
+    // DATOS PARA EL EXCEL
+    // ============================================
+    const now = new Date();
+    const fechaReporte = now.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+    
+    // Datos de la tabla
+    const tableData = reporteDatosActuales.map(p => ({
+        id: p.id || '-',
+        nombre: p.nombre || '-',
+        marca: p.marca_nombre || '-',
+        clase: p.clase_nombre || '-',
+        stock: p.stock || 0,
+        descripcion: p.descripcion || '-'
+    }));
+    
+    // ============================================
+    // CONSTRUCCIÓN DE LA HOJA CON ESTILOS
+    // ============================================
+    // Crear libro y hoja de trabajo
+    const wb = XLSX.utils.book_new();
+    const wsData = [];
+    
+    // ========== ENCABEZADO DEL REPORTE ==========
+    // Título principal
+    wsData.push(['REPORTE DE PRODUCTOS']);
+    wsData.push(['']);
+    wsData.push([`Generado: ${fechaReporte}`]);
+    wsData.push([`Total productos: ${tableData.length}`]);
+    
+    // Filtros aplicados
+    const filtrosTexto = [];
+    if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
+    if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
+    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+    if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
+    if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
+    
+    const filtrosLine = filtrosTexto.length > 0 ? `Filtros aplicados: ${filtrosTexto.join(' | ')}` : 'Filtros aplicados: Todos los productos';
+    wsData.push([filtrosLine]);
+    wsData.push(['']);
+    
+    // ========== ENCABEZADOS DE LA TABLA ==========
+    wsData.push(['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']);
+    
+    // ========== DATOS DE LA TABLA ==========
+    tableData.forEach(item => {
+        wsData.push([
+            item.id,
+            item.nombre,
+            item.marca,
+            item.clase,
+            item.stock === 0 ? 'SIN STOCK' : String(item.stock),
+            item.descripcion
+        ]);
+    });
+    
+    // Convertir a hoja de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // ========== APLICAR ESTILOS CELDA POR CELDA ==========
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    
+    // Estilos por defecto
+    const defaultStyle = {
+        font: { name: 'Segoe UI', sz: 10 },
+        alignment: { vertical: 'center', horizontal: 'left' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const headerStyle = {
+        fill: { fgColor: { rgb: colors.dark }, patternType: 'solid' },
+        font: { name: 'Segoe UI', sz: 11, bold: true, color: { rgb: colors.white } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+            top: { style: 'thin', color: { rgb: colors.grayBorder } },
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const titleStyle = {
+        font: { name: 'Segoe UI', sz: 18, bold: true, color: { rgb: colors.dark } },
+        alignment: { vertical: 'center', horizontal: 'center' }
+    };
+    
+    const subtitleStyle = {
+        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
+        alignment: { vertical: 'center', horizontal: 'left' }
+    };
+    
+    const lightStyle = {
+        fill: { fgColor: { rgb: colors.white }, patternType: 'solid' },
+        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
+        alignment: { vertical: 'center', horizontal: 'left' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const darkStyle = {
+        fill: { fgColor: { rgb: colors.grayLight }, patternType: 'solid' },
+        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
+        alignment: { vertical: 'center', horizontal: 'left' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const stockGoodStyle = {
+        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: '16A34A' } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const stockLowStyle = {
+        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: colors.primary } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    const stockZeroStyle = {
+        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: 'DC2626' } },
+        alignment: { vertical: 'center', horizontal: 'center' },
+        border: {
+            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+        }
+    };
+    
+    // Aplicar estilos a cada celda
+    for (let row = range.s.r; row <= range.e.r; row++) {
+        for (let col = range.s.c; col <= range.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+            if (!ws[cellAddress]) continue;
+            
+            ws[cellAddress].s = {};
+            const cellValue = ws[cellAddress].v;
+            
+            // Título principal (fila 0)
+            if (row === 0 && col === 0) {
+                // Fusionar celdas para el título
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+                ws[cellAddress].s = titleStyle;
+            }
+            // Fecha y total (filas 2, 3)
+            else if ((row === 2 || row === 3) && col === 0) {
+                if (!ws['!merges']) ws['!merges'] = [];
+                const existingMerge = ws['!merges'].find(m => m.s.r === row && m.s.c === 0 && m.e.r === row && m.e.c === 5);
+                if (!existingMerge) {
+                    ws['!merges'].push({ s: { r: row, c: 0 }, e: { r: row, c: 5 } });
+                }
+                ws[cellAddress].s = subtitleStyle;
+            }
+            // Filtros (fila 4)
+            else if (row === 4 && col === 0) {
+                if (!ws['!merges']) ws['!merges'] = [];
+                const existingMerge = ws['!merges'].find(m => m.s.r === row && m.s.c === 0 && m.e.r === row && m.e.c === 5);
+                if (!existingMerge) {
+                    ws['!merges'].push({ s: { r: row, c: 0 }, e: { r: row, c: 5 } });
+                }
+                // Fondo de la celda de filtros
+                ws[cellAddress].s = {
+                    fill: { fgColor: { rgb: colors.grayLight }, patternType: 'solid' },
+                    font: { name: 'Segoe UI', sz: 9, italic: true, color: { rgb: '666666' } },
+                    alignment: { vertical: 'center', horizontal: 'left' },
+                    border: {
+                        top: { style: 'thin', color: { rgb: colors.grayBorder } },
+                        bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
+                    }
+                };
+            }
+            // Encabezados de tabla (fila 6)
+            else if (row === 6 && col >= 0 && col <= 5) {
+                ws[cellAddress].s = headerStyle;
+            }
+            // Filas de datos (desde fila 7)
+            else if (row >= 7) {
+                const dataRowIndex = row - 7;
+                const isEven = dataRowIndex % 2 === 0;
+                const isStockColumn = (col === 4);
+                const stockValue = tableData[dataRowIndex]?.stock;
+                
+                if (isStockColumn) {
+                    if (stockValue === 0) {
+                        ws[cellAddress].s = stockZeroStyle;
+                    } else if (stockValue <= 5) {
+                        ws[cellAddress].s = stockLowStyle;
+                    } else {
+                        ws[cellAddress].s = stockGoodStyle;
+                    }
+                } else {
+                    ws[cellAddress].s = isEven ? lightStyle : darkStyle;
+                }
+            }
+        }
+    }
+    
+    // ========== AJUSTAR ANCHOS DE COLUMNA ==========
     ws['!cols'] = [
-        {wch:10}, {wch:35}, {wch:20}, {wch:20}, {wch:10}, {wch:50}
+        { wch: 8 },   // ID
+        { wch: 30 },  // NOMBRE
+        { wch: 20 },  // MARCA
+        { wch: 20 },  // CLASE
+        { wch: 12 },  // STOCK
+        { wch: 45 }   // DESCRIPCIÓN
     ];
     
-    XLSX.writeFile(wb, `productos_${new Date().toISOString().slice(0,19)}.xlsx`);
+    // ========== AGREGAR LIBRO Y DESCARGAR ==========
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    
+    const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+    XLSX.writeFile(wb, `productos_${timestamp}.xlsx`);
     notify("success", "Reporte exportado a Excel");
 }
 

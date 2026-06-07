@@ -3,9 +3,15 @@ from __future__ import annotations
 from app.models.database import conectar
 
 
-class Proveedores(conectar):
+class Proveedores:
+    def __init__(self):
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
+
     def _consultar(self, query, params=None):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return None
 
@@ -18,7 +24,7 @@ class Proveedores(conectar):
             db.close()
 
     def _ejecutar(self, query, params=None):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return None
 
@@ -78,7 +84,7 @@ class Proveedores(conectar):
         return datos[0] if datos else None
 
     def siguiente_id_proveedor(self) -> int:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
 
@@ -125,7 +131,7 @@ class Proveedores(conectar):
         limite_credito: int | None = None,
         productos: list[dict] | None = None,
     ) -> int:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
 

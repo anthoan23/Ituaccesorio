@@ -2,15 +2,19 @@ from __future__ import annotations
 from app.models.database import conectar
 
 
-class ClaseProducto(conectar):
+class ClaseProducto:
     """Modelo para la tabla Clase_producto"""
     
     def __init__(self, id_clase: str = "", nombre: str = ""):
         self.id_clase = id_clase
         self.nombre = nombre
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
 
     def _siguiente_id(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -23,7 +27,7 @@ class ClaseProducto(conectar):
             db.close()
 
     def listar(self):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         cursor = db.cursor(dictionary=True)
@@ -42,7 +46,7 @@ class ClaseProducto(conectar):
         if not self.nombre:
             raise ValueError("El nombre de la clase es obligatorio.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -66,7 +70,7 @@ class ClaseProducto(conectar):
         if not self.id_clase or not self.nombre:
             raise ValueError("ID y nombre son requeridos.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -89,7 +93,7 @@ class ClaseProducto(conectar):
         if not self.id_clase:
             raise ValueError("ID es requerido.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -106,16 +110,20 @@ class ClaseProducto(conectar):
             db.close()
 
 
-class MarcaProducto(conectar):
+class MarcaProducto:
     """Modelo para la tabla Marca_producto"""
     
     def __init__(self, id_marca: str = "", nombre: str = "", id_clase: str | None = None):
         self.id_marca = id_marca
         self.nombre = nombre
         self.id_clase = id_clase
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
 
     def _siguiente_id(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -128,7 +136,7 @@ class MarcaProducto(conectar):
             db.close()
 
     def listar(self, id_clase: str | None = None):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         cursor = db.cursor(dictionary=True)
@@ -156,7 +164,7 @@ class MarcaProducto(conectar):
         if not self.nombre:
             raise ValueError("El nombre de la marca es obligatorio.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -180,7 +188,7 @@ class MarcaProducto(conectar):
         if not self.id_marca or not self.nombre:
             raise ValueError("ID y nombre son requeridos.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -203,7 +211,7 @@ class MarcaProducto(conectar):
         if not self.id_marca:
             raise ValueError("ID es requerido.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -220,7 +228,7 @@ class MarcaProducto(conectar):
             db.close()
 
 
-class Producto(conectar):
+class Producto:
     """Modelo para la tabla Producto"""
     
     def __init__(self, id_producto: str = "", id_clase: str = "", id_marca: str = "", 
@@ -230,9 +238,13 @@ class Producto(conectar):
         self.id_marca = id_marca
         self.nombre = nombre
         self.descripcion = descripcion
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
 
     def _siguiente_id(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -245,7 +257,7 @@ class Producto(conectar):
             db.close()
 
     def _siguiente_id_inventario(self) -> str:
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         cursor = db.cursor()
@@ -258,7 +270,7 @@ class Producto(conectar):
             db.close()
 
     def listar(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return []
         cursor = db.cursor(dictionary=True)
@@ -301,7 +313,7 @@ class Producto(conectar):
         if not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("Clase, marca y nombre son obligatorios.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -333,7 +345,7 @@ class Producto(conectar):
         if not self.id_producto or not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("ID, clase, marca y nombre son requeridos.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -357,7 +369,7 @@ class Producto(conectar):
         if not self.id_producto:
             raise ValueError("ID es requerido.")
         
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
@@ -377,7 +389,7 @@ class Producto(conectar):
             db.close()
 
     def obtener_por_id(self, id_producto: str):
-        db = self.conexion1()
+        db = self._conexion()
         if not db:
             return None
         cursor = db.cursor(dictionary=True)
