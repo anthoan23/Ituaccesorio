@@ -1,0 +1,189 @@
+{% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
+
+{% block title %}Ituaccesorio - Copias de Seguridad{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gestion_bd.css') }}">
+{% endblock %}
+
+{% block content %}
+  <main class="page seguridad-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol class="breadcrumb__list">
+        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+        <li aria-current="page">
+          <span class="breadcrumb__current">Copias de Seguridad</span>
+        </li>
+      </ol>
+    </nav>
+
+    <header class="seguridad-hero">
+      <div class="seguridad-hero__copy">
+        <p class="seguridad-hero__eyebrow">Mantenimiento de datos</p>
+        <h1 class="seguridad-hero__title">Copias de Seguridad</h1>
+        <p class="seguridad-hero__description">Realiza y gestiona copias de seguridad de las bases de datos del sistema.</p>
+      </div>
+
+      <div class="stats stats--single" aria-label="Resumen de bases de datos">
+        <article class="stat-card">
+          <span class="stat-card__label">Bases de Datos</span>
+          <strong class="stat-card__value">2</strong>
+          <small class="stat-card__meta">Disponibles para backup</small>
+        </article>
+      </div>
+    </header>
+
+    <section class="content seguridad-grid" aria-label="Gestión de copias de seguridad">
+      <!-- Card 1: Hacer copia de seguridad -->
+      <article class="card card--backup backup-create-card" aria-label="Hacer copia de seguridad">
+        <div class="card__header">
+          <div class="card__header-left">
+            <h2 class="card__title">💾 Hacer copia de seguridad</h2>
+            <p class="card__subtitle">Genera un respaldo de la base de datos seleccionada.</p>
+          </div>
+        </div>
+
+        <div class="backup-options">
+          <div class="backup-option" data-db="ituaccesorio-bd">
+            <div class="backup-option__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 7H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 11V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M9 14L12 17L15 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-option__info">
+              <h3 class="backup-option__title">ituaccesorio-bd</h3>
+              <p class="backup-option__desc">Base de datos principal del sistema</p>
+            </div>
+            <button class="btn btn--primary btn-backup" data-db="ituaccesorio-bd" data-action="backup">
+              Respaldo
+            </button>
+          </div>
+
+          <div class="backup-option" data-db="bd-seguridad">
+            <div class="backup-option__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3L3 8L12 13L21 8L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 16L12 21L21 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 12L12 17L21 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-option__info">
+              <h3 class="backup-option__title">bd-seguridad</h3>
+              <p class="backup-option__desc">Base de datos de autenticación y seguridad</p>
+            </div>
+            <button class="btn btn--primary btn-backup" data-db="bd-seguridad" data-action="backup">
+              Respaldo
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2: Subir copia de seguridad -->
+      <article class="card card--backup backup-restore-card" aria-label="Subir copia de seguridad">
+        <div class="card__header">
+          <div class="card__header-left">
+            <h2 class="card__title">📤 Subir copia de seguridad</h2>
+            <p class="card__subtitle">Restaura una base de datos desde un archivo de respaldo.</p>
+          </div>
+        </div>
+
+        <div class="backup-options">
+          <div class="backup-option" data-db="ituaccesorio-bd">
+            <div class="backup-option__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 7H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 11V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M9 14L12 17L15 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-option__info">
+              <h3 class="backup-option__title">ituaccesorio-bd</h3>
+              <p class="backup-option__desc">Restaurar base de datos principal</p>
+            </div>
+            <button class="btn btn--primary btn-restore" data-db="ituaccesorio-bd" data-action="restore">
+              Subir respaldo
+            </button>
+          </div>
+
+          <div class="backup-option" data-db="bd-seguridad">
+            <div class="backup-option__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3L3 8L12 13L21 8L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 16L12 21L21 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 12L12 17L21 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-option__info">
+              <h3 class="backup-option__title">bd-seguridad</h3>
+              <p class="backup-option__desc">Restaurar base de datos de seguridad</p>
+            </div>
+            <button class="btn btn--primary btn-restore" data-db="bd-seguridad" data-action="restore">
+              Subir respaldo
+            </button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Modal para hacer respaldo (descargar) -->
+    {% call modal('modal-backup', 'Confirmar respaldo', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <div id="backup-modal-content">
+        <p class="confirm-text">
+          ¿Estás seguro de que quieres hacer una copia de seguridad de la base de datos 
+          <strong id="backup-db-name"></strong>?
+        </p>
+        <p class="confirm-text-hint" style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">
+          Se descargará un archivo .sql con el respaldo completo de la base de datos.
+        </p>
+      </div>
+      <div class="ui-form__actions">
+        <button id="btn-confirmar-backup" type="button" class="ui-btn ui-btn--primary">Sí, descargar respaldo</button>
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      </div>
+    {% endcall %}
+
+    <!-- Modal para subir respaldo (restaurar) -->
+    {% call modal('modal-restore', 'Subir copia de seguridad', 'md') %}
+      <form id="form-restore" class="ui-form" autocomplete="off" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="database_name" id="restore-db-name">
+        
+        <div class="restore-info">
+          <p class="confirm-text">
+            Restaurando base de datos: <strong id="restore-db-name-display"></strong>
+          </p>
+          <p class="confirm-text-hint" style="font-size: 0.85rem; color: #6c757d; margin-bottom: 1rem;">
+            ⚠️ Esta acción sobrescribirá los datos actuales. Asegúrate de tener un respaldo previo.
+          </p>
+        </div>
+
+        <label class="cargo-form__field cargo-form__field--full">
+          <span>Seleccionar archivo de respaldo</span>
+          <input type="file" 
+                 name="backup_file" 
+                 accept=".sql,.gz,.zip"
+                 required
+                 data-validation-rules="archivoSQL">
+          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">
+            Formatos permitidos: .sql, .gz, .zip (máximo 50MB)
+          </small>
+        </label>
+
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Subir y restaurar</button>
+        </div>
+      </form>
+    {% endcall %}
+  </main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/gestion_bd.js') }}"></script>
+{% endblock %}

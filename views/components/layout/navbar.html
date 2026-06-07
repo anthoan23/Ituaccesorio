@@ -146,6 +146,8 @@
 
 			<!-- Bitácora -->
 			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+
+			<a class="drawer__link {% if active_page == 'seguridad_bd' %}is-active{% endif %}" href="{{ url_for('gestion_bd.pagina_gestion_bd') }}">Seguridad de BD</a>
 		</nav>
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
