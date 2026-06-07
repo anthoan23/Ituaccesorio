@@ -152,6 +152,16 @@ async function cargarOpcionesCedula(rolId) {
 
 // ==================== FUNCIONES DE PERMISOS ====================
 
+function actualizarConsultarAutomatico(item) {
+    const checkboxes = item.querySelectorAll('input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]');
+    const consultarCheckbox = item.querySelector('input[data-permiso="consultar"]');
+    
+    if (consultarCheckbox) {
+        const tieneAlgunPermiso = Array.from(checkboxes).some(cb => cb.checked);
+        consultarCheckbox.checked = tieneAlgunPermiso;
+    }
+}
+
 async function cargarPermisosPorRol(rolId) {
     const container = document.getElementById("permisos-rol-container");
     const grid = document.getElementById("permisos-grid");
@@ -194,25 +204,53 @@ async function cargarPermisosPorRol(rolId) {
             grid.innerHTML = '<div class="permiso-item disabled">No hay módulos disponibles para configurar permisos</div>';
             if (btnGuardar) btnGuardar.style.display = "none";
         } else {
-            grid.innerHTML = permisos.map(permiso => `
-                <div class="permiso-item" data-modulo-id="${permiso.modulo_id}">
-                    <span class="permiso-modulo">${escapeHtml(permiso.modulo_nombre || "Módulo")}</span>
-                    <div class="permiso-checkboxes">
-                        <label>
-                            <input type="checkbox" ${permiso.registrar ? 'checked' : ''} data-permiso="registrar">
-                            Registrar
-                        </label>
-                        <label>
-                            <input type="checkbox" ${permiso.modificar ? 'checked' : ''} data-permiso="modificar">
-                            Modificar
-                        </label>
-                        <label>
-                            <input type="checkbox" ${permiso.eliminar ? 'checked' : ''} data-permiso="eliminar">
-                            Eliminar
-                        </label>
+            grid.innerHTML = permisos.map(permiso => {
+                // Calcular consultar basado en los permisos existentes
+                const consultarChecked = permiso.consultar || false;
+                const registrarChecked = permiso.registrar || false;
+                const modificarChecked = permiso.modificar || false;
+                const eliminarChecked = permiso.eliminar || false;
+                
+                return `
+                    <div class="permiso-item" data-modulo-id="${permiso.modulo_id}">
+                        <span class="permiso-modulo">${escapeHtml(permiso.modulo_nombre || "Módulo")}</span>
+                        <div class="permiso-checkboxes">
+                            <label class="permiso-consultar" title="El permiso de consultar se activa automáticamente cuando tienes al menos un permiso activo">
+                                <input type="checkbox" ${consultarChecked ? 'checked' : ''} disabled data-permiso="consultar">
+                                Consultar <span class="permiso-hint">(automático)</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" ${registrarChecked ? 'checked' : ''} data-permiso="registrar">
+                                Registrar
+                            </label>
+                            <label>
+                                <input type="checkbox" ${modificarChecked ? 'checked' : ''} data-permiso="modificar">
+                                Modificar
+                            </label>
+                            <label>
+                                <input type="checkbox" ${eliminarChecked ? 'checked' : ''} data-permiso="eliminar">
+                                Eliminar
+                            </label>
+                        </div>
                     </div>
-                </div>
-            `).join("");
+                `;
+            }).join("");
+            
+            // Agregar event listeners para actualizar automáticamente el checkbox de consultar
+            document.querySelectorAll(".permiso-item").forEach(item => {
+                const checkboxes = item.querySelectorAll('input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]');
+                
+                const handleChange = () => actualizarConsultarAutomatico(item);
+                
+                checkboxes.forEach(cb => {
+                    cb.removeEventListener('change', handleChange);
+                    cb.addEventListener('change', handleChange);
+                });
+                
+                // Inicializar estado
+                actualizarConsultarAutomatico(item);
+            });
+            
             if (btnGuardar) btnGuardar.style.display = "flex";
         }
         container.style.display = "block";
@@ -251,6 +289,7 @@ async function guardarPermisosRol(rolId) {
                 registrar: registrar,
                 modificar: modificar,
                 eliminar: eliminar
+                // No enviamos consultar porque se calcula en el backend
             });
         }
     });
@@ -274,6 +313,9 @@ async function guardarPermisosRol(rolId) {
         }
         
         mostrarToast("Permisos actualizados correctamente");
+        
+        // Recargar los permisos para actualizar la vista de consultar
+        await cargarPermisosPorRol(rolId);
     } catch (error) {
         console.error("Error guardando permisos:", error);
         mostrarToast("Error al guardar permisos: " + error.message, true);
@@ -891,17 +933,19 @@ async function onModuloSubmit(event) {
 
 async function cargarTodo() {
     try {
-        const [usuarios, roles, modulos, empleados] = await Promise.all([
+        const [usuarios, roles, modulos, empleados, clientes] = await Promise.all([
             fetchJson("/api/usuarios"),
             fetchJson("/api/roles"),
             fetchJson("/api/modulos"),
             fetchJson("/api/usuarios/empleados"),
+            fetchJson("/api/usuarios/clientes").catch(() => ({ clientes: [] }))
         ]);
 
         state.usuarios = usuarios.usuarios || [];
         state.roles = roles.roles || [];
         state.modulos = modulos.modulos || [];
         state.empleados = empleados.empleados || [];
+        state.clientes = clientes.clientes || [];
 
         renderTodo();
     } catch (error) {

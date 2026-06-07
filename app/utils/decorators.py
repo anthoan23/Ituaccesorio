@@ -2,6 +2,7 @@ from functools import wraps
 from flask import request, jsonify, g, make_response, render_template
 from app.utils.jwt_utils import decode_token, set_auth_cookies
 from app.models.usuarios import Usuarios
+from app.models.permisos import Permiso
 
 
 def _get_bearer_token():
@@ -37,19 +38,7 @@ def jwt_required(func):
 
 
 def tiene_permiso(modulo_nombre, permiso_requerido):
-    """
-    Decorador para verificar si el usuario tiene un permiso específico.
-    
-    Uso:
-        @jwt_required
-        @tiene_permiso('Productos', 'consultar')
-        def mi_endpoint():
-            pass
-    
-    Args:
-        modulo_nombre (str): Nombre del módulo (ej: 'Productos', 'Usuarios', 'Ventas')
-        permiso_requerido (str): Tipo de permiso ('consultar', 'registrar', 'modificar', 'eliminar')
-    """
+   
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -76,9 +65,9 @@ def tiene_permiso(modulo_nombre, permiso_requerido):
             if rol_id == 1 or nombre_rol == 'admin':
                 return f(*args, **kwargs)
             
-            # Verificar permiso en la base de datos
-            modelo = Usuarios()
-            tiene_permiso = modelo.verificar_permiso(rol_id, modulo_nombre, permiso_requerido)
+            # Verificar permiso en la base de datos usando el nuevo modelo Permiso
+            permiso_model = Permiso()
+            tiene_permiso = permiso_model.verificar_permiso(rol_id, modulo_nombre, permiso_requerido)
             
             if not tiene_permiso:
                 # Para peticiones AJAX devolver JSON, para páginas normales devolver 403.html
@@ -95,18 +84,7 @@ def tiene_permiso(modulo_nombre, permiso_requerido):
 
 
 def solo_roles(roles_permitidos):
-    """
-    Decorador para restringir acceso a ciertos roles.
-    
-    Uso:
-        @jwt_required
-        @solo_roles(['admin', 'ventas'])
-        def mi_endpoint():
-            pass
-    
-    Args:
-        roles_permitidos (list): Lista de nombres de roles permitidos
-    """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -139,16 +117,7 @@ def solo_roles(roles_permitidos):
 
 
 def verificar_permiso_en_ruta(modulo_nombre, permiso_requerido):
-    """
-    Función para verificar permisos dentro de una función (no como decorador).
     
-    Uso dentro de una función:
-        if not verificar_permiso_en_ruta('Productos', 'eliminar'):
-            return jsonify({"error": "Sin permiso"}), 403
-    
-    Returns:
-        bool: True si tiene permiso, False si no
-    """
     user = getattr(g, 'user', None)
     
     if not user:
@@ -164,13 +133,17 @@ def verificar_permiso_en_ruta(modulo_nombre, permiso_requerido):
     if not rol_id:
         return False
     
-    modelo = Usuarios()
-    return modelo.verificar_permiso(rol_id, modulo_nombre, permiso_requerido)
+    # Usar el nuevo modelo Permiso
+    permiso_model = Permiso()
+    return permiso_model.verificar_permiso(rol_id, modulo_nombre, permiso_requerido)
 
 
 def obtener_permisos_usuario_actual():
     """
-    Obtiene todos los permisos del usuario actual.
+    Obtiene todos los permisos del usuario actual aplicando la regla de negocio.
+    
+    Regla de negocio:
+    - consultar = registrar OR modificar OR eliminar
     
     Returns:
         dict: Diccionario con los permisos del usuario
@@ -186,8 +159,9 @@ def obtener_permisos_usuario_actual():
     
     # ADMIN tiene todos los permisos (devolver todos los módulos con True)
     if rol_id == 1 or nombre_rol == 'admin':
-        modelo = Usuarios()
-        modulos = modelo.listar_modulos() or []
+        from app.models.modulos import Modulo
+        modulo_model = Modulo()
+        modulos = modulo_model.listar_modulos() or []
         permisos = {}
         for modulo in modulos:
             permisos[modulo['nombre']] = {
@@ -198,16 +172,48 @@ def obtener_permisos_usuario_actual():
             }
         return permisos
     
-    modelo = Usuarios()
-    permisos_db = modelo.obtener_permisos_usuario(usuario_id) if usuario_id else []
+    if not usuario_id:
+        return {}
+    
+    # Usar el nuevo modelo Permiso
+    permiso_model = Permiso()
+    permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
     
     permisos = {}
     for p in permisos_db:
+        # Los datos ya vienen con la regla de negocio aplicada desde el modelo
         permisos[p['modulo_nombre']] = {
-            'consultar': bool(p.get('consultar', 1)),
-            'registrar': bool(p.get('registrar', 0)),
-            'modificar': bool(p.get('modificar', 0)),
-            'eliminar': bool(p.get('eliminar', 0))
+            'consultar': bool(p.get('consultar', False)),
+            'registrar': bool(p.get('registrar', False)),
+            'modificar': bool(p.get('modificar', False)),
+            'eliminar': bool(p.get('eliminar', False))
         }
     
     return permisos
+
+
+def tiene_permiso_ruta(modulo_nombre, permiso_requerido):
+    
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            user = getattr(g, 'user', None)
+            
+            if not user:
+                return render_template('401.html'), 401
+            
+            rol_id = user.get('rol_id')
+            nombre_rol = user.get('nombre_rol', '').lower()
+            
+            if rol_id == 1 or nombre_rol == 'admin':
+                return f(*args, **kwargs)
+            
+            permiso_model = Permiso()
+            tiene_permiso = permiso_model.verificar_permiso(rol_id, modulo_nombre, permiso_requerido)
+            
+            if not tiene_permiso:
+                return render_template('403.html'), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
