@@ -4,8 +4,7 @@ import re
 import requests
 import mysql.connector
 import traceback
-
-from app.models.clientes import GestionClientes
+from app.models.clientes import Clientes as GestionClientes
 from app.models.usuarios import Usuarios
 from app.utils.decorators import jwt_required
 from app.utils.jwt_utils import clear_auth_cookies, set_auth_cookies
