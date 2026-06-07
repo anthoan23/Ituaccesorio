@@ -357,4 +357,4 @@ class Empleados(conectar):
             return cursor.fetchall()
         finally:
             cursor.close()
-            db.close()
+            db.close() 
