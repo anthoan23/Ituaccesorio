@@ -64,7 +64,7 @@ def api_agregar_cargo():
         )
         return jsonify({"success": True, "message": mensaje}), 201
     else:
-        return jsonify({"success": False, "message": mensaje}), 400
+        return jsonify({"success": False, "message": mensaje}), 201
 
 
 @cargos_blueprint.route("/api/cargos", methods=["PUT"])
@@ -128,4 +128,4 @@ def api_eliminar_cargo():
         )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
-        return jsonify({"success": False, "message": mensaje}), 400
+        return jsonify({"success": False, "message": mensaje}), 201
