@@ -27,7 +27,7 @@
         <span class="btn__icon" aria-hidden="true">+</span>
         Registrar producto
       </button>
-      <button class="btn btn--ghost" type="button">Reportes</button>
+      <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
       <button class="btn btn--ghost" type="button">Filtros</button>
     </div>
   </header>
@@ -181,6 +181,88 @@
             <button class="btn btn--ghost" type="reset">Limpiar</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Reportes -->
+  <div id="modal-reportes" class="modal is-hidden" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
+    <div class="modal__panel card" style="max-width: 800px; width: 90%;" role="dialog" aria-modal="true" aria-label="Reportes de productos">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="card__title">📊 Reporte de Productos</h2>
+        <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="filters-panel__section">
+        <h3 class="filters-panel__title">Filtros avanzados</h3>
+        
+        <div class="filters-panel__row">
+          <label class="field">
+            <span class="field__label">Clase</span>
+            <select id="reporte-clase">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          
+          <label class="field">
+            <span class="field__label">Marca</span>
+            <select id="reporte-marca">
+              <option value="">Todas</option>
+            </select>
+          </label>
+        </div>
+        
+        <div class="filters-panel__row">
+          <label class="field">
+            <span class="field__label">Búsqueda por nombre</span>
+            <input type="text" id="reporte-busqueda" placeholder="Nombre del producto...">
+          </label>
+        </div>
+        
+        <div class="filters-panel__row">
+          <label class="field">
+            <span class="field__label">Stock mínimo</span>
+            <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0">
+          </label>
+          
+          <label class="field">
+            <span class="field__label">Stock máximo</span>
+            <input type="number" id="reporte-stock-max" min="0" placeholder="Ej: 100">
+          </label>
+        </div>
+      </div>
+
+      <div class="filters-panel__section">
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1rem;">
+          <button id="btn-generar-reporte" class="btn btn--yellow">Generar reporte</button>
+          <button id="btn-limpiar-filtros" class="btn btn--ghost">🗑 Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div id="reporte-preview" class="filters-panel__section" style="display: none;">
+        <h3 class="filters-panel__title">Previsualización</h3>
+        <div id="reporte-total" style="margin-bottom: 0.75rem; font-weight: bold;"></div>
+        <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+          <table class="table" style="min-width: 500px;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Marca</th>
+                <th>Clase</th>
+                <th>Stock</th>
+              </tr>
+            </thead>
+            <tbody id="reporte-tabla"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="filters-panel__actions" style="margin-top: 1rem; justify-content: flex-end;">
+        <button id="btn-exportar-excel" class="btn btn--yellow" disabled>Exportar Excel</button>
+        <button id="btn-exportar-pdf" class="btn btn--yellow" disabled>Exportar PDF</button>
+        <button id="btn-imprimir" class="btn btn--ghost" disabled>Imprimir</button>
       </div>
     </div>
   </div>

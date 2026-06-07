@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
+from datetime import datetime
 
 from app.models.bitacora import registrar_en_bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto
+from app.models.inventario import Inventario
 
 productos_blueprint = Blueprint("productos", __name__)
 
@@ -52,7 +54,7 @@ def pagina_productos():
 @tiene_permiso('Productos', 'consultar')
 def api_listar_clases():
     modelo = ClaseProducto()
-    clases = modelo.listar()  # Cambiado de listar_clases() a listar()
+    clases = modelo.listar()
     return jsonify({"success": True, "clases": clases})
 
 
@@ -147,7 +149,7 @@ def api_eliminar_clase(id_clase: str):
 def api_listar_marcas():
     id_clase = request.args.get("clase_id", default=None, type=str)
     modelo = MarcaProducto()
-    marcas = modelo.listar(id_clase=id_clase)  # Cambiado de listar_marcas() a listar()
+    marcas = modelo.listar(id_clase=id_clase)
     return jsonify({"success": True, "marcas": marcas})
 
 
@@ -345,3 +347,62 @@ def api_eliminar_modelo(id_modelo: str):
         return jsonify({"success": True, "deleted": ok})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
+
+
+# ==================== REPORTES ====================
+
+@productos_blueprint.route("/api/productos/reportes", methods=["POST"])
+@jwt_required
+@tiene_permiso('Productos', 'consultar')
+def api_reportes_productos():
+    """Obtiene productos para reportes con filtros avanzados"""
+    from app.models.inventario import Inventario
+    
+    datos = request.get_json(silent=True) or {}
+    
+    filtros = {
+        "clase_id": datos.get("clase_id"),
+        "marca_id": datos.get("marca_id"),
+        "q": datos.get("q", "").strip(),
+        "stock_min": datos.get("stock_min"),
+        "stock_max": datos.get("stock_max"),
+    }
+    
+    modelo = Producto()
+    productos = modelo.listar(
+        id_marca=filtros["marca_id"],
+        id_clase=filtros["clase_id"],
+        q=filtros["q"]
+    )
+    
+    # Obtener stock de cada producto
+    inv_modelo = Inventario()
+    inventario_lista = inv_modelo.listar_inventario() or []
+    
+    # Crear diccionario de stock por id_producto
+    stock_dict = {}
+    for item in inventario_lista:
+        id_prod = str(item.get("id_producto", ""))
+        if id_prod:
+            stock_dict[id_prod] = item.get("existencia", 0)
+    
+    # Filtrar por stock y agregar stock a cada producto
+    productos_filtrados = []
+    for p in productos:
+        stock = stock_dict.get(str(p.get("id", "")), 0)
+        
+        # Aplicar filtros de stock
+        if filtros["stock_min"] is not None and stock < int(filtros["stock_min"]):
+            continue
+        if filtros["stock_max"] is not None and stock > int(filtros["stock_max"]):
+            continue
+        
+        p["stock"] = stock
+        productos_filtrados.append(p)
+    
+    return jsonify({
+        "success": True,
+        "productos": productos_filtrados,
+        "total": len(productos_filtrados),
+        "fecha_reporte": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
