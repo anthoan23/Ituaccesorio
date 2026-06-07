@@ -142,7 +142,7 @@ class Clientes():
     def crear_cliente(self, cliente_id: int, nombre: str, apellido: str, celular: str, 
                       correo: str = None, direccion: str = None) -> bool:
         """
-        Crea un nuevo cliente como persona natural
+        Crea un nuevo cliente como persona natural(para el login)
         """
         from app.models.clientes import Persona_natural
         

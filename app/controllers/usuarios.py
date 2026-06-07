@@ -107,10 +107,32 @@ def api_listar_empleados():
 @jwt_required
 @tiene_permiso('Usuarios', 'consultar')
 def api_listar_clientes():
-    usuario_model = Usuarios()
-    clientes = usuario_model.listar_clientes()
-    return jsonify({"success": True, "clientes": clientes or []})
-
+    from app.models.clientes import Clientes
+    cliente_model = Clientes()
+    clientes_raw = cliente_model.listar_clientes()
+    
+    # Verificar si hubo error en la consulta
+    if not clientes_raw or isinstance(clientes_raw, str):
+        return jsonify({"success": True, "clientes": []})
+    
+    # Transformar los datos al formato esperado por el frontend
+    clientes_transformados = []
+    for cliente in clientes_raw:
+        if not isinstance(cliente, dict):
+            continue
+            
+        clientes_transformados.append({
+            "cedula": cliente.get("id", ""),  # El campo 'id' se convierte en 'cedula'
+            "nombre_completo": cliente.get("nombre", ""),  # El campo 'nombre' se convierte en 'nombre_completo'
+            "celular": cliente.get("celular", ""),
+            "correo": cliente.get("correo", ""),
+            "tipo": cliente.get("tipo", "natural"),
+            "apellido": cliente.get("apellido", ""),
+            "razon_social": cliente.get("razon_social", ""),
+            "rif": cliente.get("rif", "")
+        })
+    
+    return jsonify({"success": True, "clientes": clientes_transformados})
 
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
 @jwt_required

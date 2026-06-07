@@ -372,6 +372,27 @@ class Usuarios:
             cursor.close()
             db.close()
 
+    def obtener_rol_por_nombre(self, nombre_rol: str = None):
+        """Obtiene un rol por su nombre"""
+        nombre_buscar = nombre_rol or self.nombre
+        if not nombre_buscar:
+            return None
+        
+        db = self.__conexion_bd.conexion2()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT id, nombre, descripcion FROM rol WHERE nombre = %s LIMIT 1",
+                (nombre_buscar,)
+            )
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
     def verificar_rol_y_cedula(self) -> bool:
         """Verifica que la cédula corresponda al tipo de rol seleccionado"""
         if not self.cedula or not self.rol_id:
