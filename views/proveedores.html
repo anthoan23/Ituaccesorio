@@ -26,7 +26,7 @@
         <span class="btn__icon" aria-hidden="true">+</span>
         Registrar proveedor
       </button>
-      <button class="btn btn--ghost" type="button" disabled aria-disabled="true">Reportes</button>
+      <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
     </div>
   </header>
 
@@ -77,6 +77,7 @@
     </aside>
   </section>
 
+  <!-- Modal Registrar Proveedor -->
   <div id="modal-proveedor-crear" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-crear-title">
       <div class="ui-modal__header">
@@ -206,6 +207,7 @@
     </div>
   </div>
 
+  <!-- Modal Editar Proveedor -->
   <div id="modal-proveedor-editar" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-editar-title">
       <div class="ui-modal__header">
@@ -327,6 +329,7 @@
     </div>
   </div>
 
+  <!-- Modal Agregar Producto a Proveedor Existente -->
   <div id="modal-proveedor-agregar-producto" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-agregar-producto-title">
       <div class="ui-modal__header">
@@ -369,6 +372,7 @@
     </div>
   </div>
 
+  <!-- Modal Agregar Producto Inicial (Creación) -->
   <div id="modal-proveedor-agregar-producto-crear" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-agregar-producto-crear-title">
       <div class="ui-modal__header">
@@ -410,6 +414,7 @@
     </div>
   </div>
 
+  <!-- Modal Ver Proveedor -->
   <div id="modal-proveedor-ver" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="proveedor-ver-title">
       <div class="ui-modal__header">
@@ -449,6 +454,7 @@
     </div>
   </div>
 
+  <!-- Modal Eliminar Proveedor -->
   <div id="modal-proveedor-eliminar" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="proveedor-eliminar-title">
       <div class="ui-modal__header">
@@ -464,6 +470,83 @@
       </div>
     </div>
   </div>
+
+  <!-- ==================== MODAL DE REPORTES ==================== -->
+  <div id="modal-reportes" class="ui-modal" data-modal hidden aria-hidden="true">
+    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-title">
+      <div class="ui-modal__header">
+        <h3 id="reportes-title" class="ui-modal__title">📊 Reporte de Proveedores</h3>
+        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+      </div>
+      <div class="ui-modal__body">
+        <div class="filters-panel__section">
+          <h3 class="filters-panel__title">Filtros avanzados</h3>
+          
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">Búsqueda</span>
+              <input type="text" id="reporte-busqueda" placeholder="Nombre o ID..." class="field__input">
+            </label>
+            
+            <label class="field">
+              <span class="field__label">Tipo</span>
+              <select id="reporte-tipo" class="field__input">
+                <option value="">Todos</option>
+                <option value="Nacional">Nacional</option>
+                <option value="Internacional">Internacional</option>
+              </select>
+            </label>
+          </div>
+          
+          <div class="filters-panel__row">
+            <label class="field">
+              <span class="field__label">Límite crédito mínimo</span>
+              <input type="number" id="reporte-limite-min" min="0" placeholder="Ej: 0" class="field__input">
+            </label>
+            
+            <label class="field">
+              <span class="field__label">Límite crédito máximo</span>
+              <input type="number" id="reporte-limite-max" min="0" placeholder="Ej: 10000000" class="field__input">
+            </label>
+          </div>
+        </div>
+
+        <div class="filters-panel__section">
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1rem;">
+            <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">🔍 Generar reporte</button>
+            <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">🗑 Limpiar filtros</button>
+          </div>
+        </div>
+
+        <div id="reporte-preview" class="filters-panel__section" style="display: none;">
+          <h3 class="filters-panel__title">Previsualización</h3>
+          <div id="reporte-total" style="margin-bottom: 0.75rem; font-weight: bold;"></div>
+          <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+            <table class="table" style="min-width: 600px;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Proveedor</th>
+                  <th>Tipo</th>
+                  <th>Teléfono</th>
+                  <th>Productos</th>
+                  <th>Crédito</th>
+                </tr>
+              </thead>
+              <tbody id="reporte-tabla"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ui-form__actions" style="margin-top: 1rem; justify-content: flex-end;">
+          <button id="btn-exportar-excel" class="ui-btn ui-btn--primary" disabled>📊 Exportar Excel</button>
+          <button id="btn-exportar-pdf" class="ui-btn ui-btn--primary" disabled>📄 Exportar PDF</button>
+          <button id="btn-imprimir" class="ui-btn ui-btn--ghost" disabled>🖨 Imprimir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 {% endblock %}
 

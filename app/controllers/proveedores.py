@@ -315,3 +315,64 @@ def api_listar_modelos_para_proveedores():
     modelo = Producto()
     modelos = modelo.listar_modelos(q=q) or []
     return jsonify({"success": True, "modelos": modelos})
+
+# ==================== REPORTES ====================
+
+@proveedores_blueprint.route("/api/proveedores/reportes", methods=["POST"])
+@jwt_required
+@tiene_permiso('Proveedores', 'consultar')
+def api_reportes_proveedores():
+    """Obtiene proveedores para reportes con filtros avanzados"""
+    from datetime import datetime
+    
+    datos = request.get_json(silent=True) or {}
+    
+    filtros = {
+        "q": datos.get("q", "").strip(),
+        "tipo": datos.get("tipo"),
+        "limite_credito_min": datos.get("limite_credito_min"),
+        "limite_credito_max": datos.get("limite_credito_max"),
+    }
+    
+    modelo = Proveedores()
+    proveedores = modelo.listar_proveedores(q=filtros["q"] if filtros["q"] else None) or []
+    
+    # Aplicar filtros adicionales
+    proveedores_filtrados = []
+    for p in proveedores:
+        # Filtrar por tipo
+        if filtros["tipo"] and p.get("tipo") != filtros["tipo"]:
+            continue
+        
+        # Filtrar por límite de crédito
+        limite = p.get("limite_credito") or 0
+        if filtros["limite_credito_min"] is not None and limite < int(filtros["limite_credito_min"]):
+            continue
+        if filtros["limite_credito_max"] is not None and limite > int(filtros["limite_credito_max"]):
+            continue
+        
+        proveedores_filtrados.append(p)
+    
+    # Contar productos por proveedor
+    for p in proveedores_filtrados:
+        productos = modelo.listar_productos_por_proveedor(int(p["id"])) or []
+        p["total_productos"] = len(productos)
+        p["costo_total"] = sum(item.get("costo", 0) or 0 for item in productos)
+    
+    return jsonify({
+        "success": True,
+        "proveedores": proveedores_filtrados,
+        "total": len(proveedores_filtrados),
+        "fecha_reporte": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+
+@proveedores_blueprint.route("/api/proveedores/tipos", methods=["GET"])
+@jwt_required
+@tiene_permiso('Proveedores', 'consultar')
+def api_listar_tipos_proveedores():
+    """Lista los tipos de proveedores disponibles para filtros"""
+    return jsonify({
+        "success": True,
+        "tipos": ["Nacional", "Internacional"]
+    })

@@ -16,8 +16,6 @@
   }
 
   function getAccessToken() {
-    // Si el backend usa JWT en cookie, no hace falta header.
-    // Si el frontend guarda un token, intenta leerlo.
     return (
       localStorage.getItem('access_token') ||
       localStorage.getItem('token') ||
@@ -111,7 +109,6 @@
       return;
     }
 
-    // Fallback básico
     const el = $id(id);
     if (el) {
       el.hidden = false;
@@ -283,7 +280,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="4" class="table__empty">Este proveedor no tiene productos asignados.</td>
-        </tr>`;
+        </table>`;
       return;
     }
 
@@ -643,7 +640,6 @@
       }
     });
 
-    // Cuando se abra el modal de agregar producto, precargar modelos y setear proveedor.
     document.addEventListener('click', async (ev) => {
       const btn = ev.target?.closest?.('[data-open-modal="modal-proveedor-agregar-producto"]');
       if (!btn) return;
@@ -676,7 +672,6 @@
     try {
       await cargarProveedores('');
     } catch (e) {
-      // No rompas la página si no hay sesión
       console.error(e);
     }
   }
@@ -687,3 +682,357 @@
     void init();
   }
 })();
+
+// ==================== REPORTES (FUERA DE LA FUNCIÓN ANÓNIMA) ====================
+
+let reporteDatosActuales = [];
+let reporteFiltrosActuales = {};
+
+const btnReportes = document.getElementById("btn-reportes");
+const modalReportes = document.getElementById("modal-reportes");
+const reporteBusqueda = document.getElementById("reporte-busqueda");
+const reporteTipo = document.getElementById("reporte-tipo");
+const reporteLimiteMin = document.getElementById("reporte-limite-min");
+const reporteLimiteMax = document.getElementById("reporte-limite-max");
+const btnGenerarReporte = document.getElementById("btn-generar-reporte");
+const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
+const btnExportarExcel = document.getElementById("btn-exportar-excel");
+const btnExportarPdf = document.getElementById("btn-exportar-pdf");
+const btnImprimir = document.getElementById("btn-imprimir");
+const reportePreview = document.getElementById("reporte-preview");
+const reporteTotal = document.getElementById("reporte-total");
+const reporteTabla = document.getElementById("reporte-tabla");
+
+// Función global fetch para reportes
+async function fetchJsonReportes(url, options = {}) {
+  const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || "";
+  const authToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || "";
+  
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+      ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+    },
+    credentials: "same-origin",
+    ...options,
+  });
+  
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || "Error en la operación");
+  }
+  return data;
+}
+
+function escapeHtmlReportes(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatMoneyReportes(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '';
+  return n.toLocaleString('es-VE');
+}
+
+function limpiarFiltrosReporte() {
+  if (reporteBusqueda) reporteBusqueda.value = "";
+  if (reporteTipo) reporteTipo.value = "";
+  if (reporteLimiteMin) reporteLimiteMin.value = "";
+  if (reporteLimiteMax) reporteLimiteMax.value = "";
+}
+
+async function generarReporteProveedores() {
+  const filtros = {
+    q: reporteBusqueda?.value || "",
+    tipo: reporteTipo?.value || null,
+    limite_credito_min: reporteLimiteMin?.value ? parseInt(reporteLimiteMin.value) : null,
+    limite_credito_max: reporteLimiteMax?.value ? parseInt(reporteLimiteMax.value) : null,
+  };
+  
+  reporteFiltrosActuales = filtros;
+  
+  if (btnGenerarReporte) {
+    btnGenerarReporte.disabled = true;
+    btnGenerarReporte.textContent = "Cargando...";
+  }
+  
+  try {
+    const data = await fetchJsonReportes("/api/proveedores/reportes", {
+      method: "POST",
+      body: JSON.stringify(filtros)
+    });
+    
+    reporteDatosActuales = data.proveedores || [];
+    const total = data.total || 0;
+    
+    if (reportePreview) reportePreview.style.display = "block";
+    if (reporteTotal) reporteTotal.textContent = `Total de proveedores: ${total}`;
+    
+    if (reporteTabla) {
+      if (reporteDatosActuales.length === 0) {
+        reporteTabla.innerHTML = '<tr><td colspan="6" class="table__empty">No hay proveedores con esos filtros</td></tr>';
+      } else {
+        reporteTabla.innerHTML = reporteDatosActuales.map(p => `
+          <tr>
+            <td>${escapeHtmlReportes(p.id || '')}</td>
+            <td><strong>${escapeHtmlReportes(p.nombre || '')}</strong></td>
+            <td>${escapeHtmlReportes(p.tipo || '-')}</td>
+            <td>${escapeHtmlReportes(p.celular || '-')}</td>
+            <td>${p.total_productos || 0} productos<br><small>${formatMoneyReportes(p.costo_total || 0)} Bs</small></td>
+            <td>${p.limite_credito ? formatMoneyReportes(p.limite_credito) + ' Bs' : '-'}</td>
+          </tr>
+        `).join("");
+      }
+    }
+    
+    if (btnExportarExcel) btnExportarExcel.disabled = false;
+    if (btnExportarPdf) btnExportarPdf.disabled = false;
+    if (btnImprimir) btnImprimir.disabled = false;
+    
+  } catch (err) {
+    alert(err.message || "Error al generar el reporte");
+  } finally {
+    if (btnGenerarReporte) {
+      btnGenerarReporte.disabled = false;
+      btnGenerarReporte.textContent = "🔍 Generar reporte";
+    }
+  }
+}
+
+function exportarProveedoresExcel() {
+  if (reporteDatosActuales.length === 0) {
+    alert("No hay datos para exportar");
+    return;
+  }
+  
+  const datos = reporteDatosActuales.map(p => ({
+    "ID": p.id || "",
+    "Proveedor": p.nombre || "",
+    "Tipo": p.tipo || "",
+    "Teléfono": p.celular || "",
+    "Correo": p.correo || "",
+    "Dirección": p.direccion || "",
+    "Límite Crédito": p.limite_credito || 0,
+    "Productos": p.total_productos || 0
+  }));
+  
+  if (typeof XLSX === 'undefined') {
+    alert("Cargando librería de Excel...");
+    const script = document.createElement('script');
+    script.src = '/static/js/libs/xlsx.full.min.js';
+    script.onload = () => exportarProveedoresExcel();
+    document.head.appendChild(script);
+    return;
+  }
+  
+  const ws = XLSX.utils.json_to_sheet(datos);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Proveedores");
+  
+  ws['!cols'] = [
+    {wch: 8}, {wch: 35}, {wch: 12}, {wch: 15}, {wch: 30}, {wch: 35}, {wch: 15}, {wch: 10}
+  ];
+  
+  XLSX.writeFile(wb, `proveedores_${new Date().toISOString().slice(0,19)}.xlsx`);
+  alert("Reporte exportado a Excel");
+}
+
+function exportarProveedoresPdf() {
+  if (reporteDatosActuales.length === 0) {
+    alert("No hay datos para exportar");
+    return;
+  }
+  
+  if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+    alert("Cargando librería de PDF...");
+    const script1 = document.createElement('script');
+    script1.src = '/static/js/libs/jspdf.umd.min.js';
+    script1.onload = () => {
+      const script2 = document.createElement('script');
+      script2.src = '/static/js/libs/jspdf.plugin.autotable.min.js';
+      script2.onload = () => {
+        setTimeout(() => exportarProveedoresPdf(), 100);
+      };
+      document.head.appendChild(script2);
+    };
+    document.head.appendChild(script1);
+    return;
+  }
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  const colors = {
+    dark: [18, 18, 18],
+    primary: [243, 197, 0],
+    white: [255, 255, 255],
+    grayLight: [248, 249, 250],
+    grayText: [102, 102, 106]
+  };
+  
+  const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+  try {
+    doc.addImage(logoUrl, 'PNG', (pageWidth - 45) / 2, 8, 45, 14);
+  } catch(e) {}
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+  doc.text("REPORTE DE PROVEEDORES", pageWidth / 2, 30, { align: 'center' });
+  
+  doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  doc.setLineWidth(0.8);
+  doc.line(pageWidth / 2 - 35, 34, pageWidth / 2 + 35, 34);
+  
+  const now = new Date();
+  const fechaStr = now.toLocaleDateString('es-ES');
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+  doc.text(`Generado: ${fechaStr} • Total proveedores: ${reporteDatosActuales.length}`, pageWidth / 2, 44, { align: 'center' });
+  
+  const filtrosTexto = [];
+  if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+  if (reporteFiltrosActuales.tipo) filtrosTexto.push(`Tipo: ${reporteFiltrosActuales.tipo}`);
+  if (reporteFiltrosActuales.limite_credito_min) filtrosTexto.push(`Crédito ≥ ${reporteFiltrosActuales.limite_credito_min}`);
+  if (reporteFiltrosActuales.limite_credito_max) filtrosTexto.push(`Crédito ≤ ${reporteFiltrosActuales.limite_credito_max}`);
+  
+  const filterY = 52;
+  doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
+  doc.rect(15, filterY, pageWidth - 30, 10, 'F');
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8.5);
+  doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+  doc.text(filtrosTexto.length ? `Filtros: ${filtrosTexto.join(" • ")}` : "Filtros: Todos los proveedores", 18, filterY + 7);
+  
+  const columns = ["ID", "PROVEEDOR", "TIPO", "TELÉFONO", "PRODUCTOS", "CRÉDITO"];
+  const rows = reporteDatosActuales.map(p => [
+    p.id || "",
+    p.nombre || "",
+    p.tipo || "-",
+    p.celular || "-",
+    `${p.total_productos || 0} uds`,
+    p.limite_credito ? `${Number(p.limite_credito).toLocaleString('es-VE')} Bs` : "-"
+  ]);
+  
+  doc.autoTable({
+    head: [columns],
+    body: rows,
+    startY: filterY + 14,
+    theme: 'grid',
+    headStyles: {
+      fillColor: colors.dark,
+      textColor: colors.white,
+      fontStyle: 'bold',
+      fontSize: 9,
+      halign: 'center'
+    },
+    bodyStyles: { fontSize: 8.5, cellPadding: 4 },
+    alternateRowStyles: { fillColor: colors.grayLight },
+    margin: { left: 15, right: 15 },
+    didDrawPage: (data) => {
+      doc.setFontSize(7);
+      doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+      doc.text("ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+      doc.text(`Página ${data.pageNumber}`, pageWidth - 15, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+    }
+  });
+  
+  doc.save(`proveedores_${now.toISOString().slice(0,19)}.pdf`);
+  alert("Reporte exportado a PDF");
+}
+
+function imprimirReporteProveedores() {
+  if (reporteDatosActuales.length === 0) {
+    alert("No hay datos para imprimir");
+    return;
+  }
+  
+  const ventana = window.open("", "_blank");
+  const fecha = new Date().toLocaleString();
+  const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
+  
+  const filtrosTexto = [];
+  if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+  if (reporteFiltrosActuales.tipo) filtrosTexto.push(`Tipo: ${reporteFiltrosActuales.tipo}`);
+  if (reporteFiltrosActuales.limite_credito_min) filtrosTexto.push(`Crédito ≥ ${reporteFiltrosActuales.limite_credito_min}`);
+  if (reporteFiltrosActuales.limite_credito_max) filtrosTexto.push(`Crédito ≤ ${reporteFiltrosActuales.limite_credito_max}`);
+  
+  ventana.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Reporte de Proveedores</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
+        body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
+        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { height: 50px; }
+        .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
+        .filters { background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-left: 4px solid #f3c500; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #121212; color: white; font-weight: bold; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+        .btn-print { background: #f3c500; border: none; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
+      <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+      <h1>REPORTE DE PROVEEDORES</h1>
+      <div class="info">Generado: ${fecha} • Total proveedores: ${reporteDatosActuales.length}</div>
+      ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
+      <table>
+        <thead><tr><th>ID</th><th>Proveedor</th><th>Tipo</th><th>Teléfono</th><th>Productos</th><th>Límite Crédito</th></tr></thead>
+        <tbody>
+          ${reporteDatosActuales.map(p => `
+            <tr>
+              <td>${escapeHtmlReportes(p.id || '')}</td>
+              <td><strong>${escapeHtmlReportes(p.nombre || '')}</strong></td>
+              <td>${escapeHtmlReportes(p.tipo || '-')}</td>
+              <td>${escapeHtmlReportes(p.celular || '-')}</td>
+              <td>${p.total_productos || 0} productos}</td>
+              <td>${p.limite_credito ? Number(p.limite_credito).toLocaleString('es-VE') + ' Bs' : '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="footer">ItuAccesorio System - Reporte Generado Exclusivamente Para ituaccesorio</div>
+    </body>
+    </html>
+  `);
+  ventana.document.close();
+}
+
+// Eventos de reportes
+if (btnReportes) {
+  btnReportes.addEventListener("click", () => {
+    limpiarFiltrosReporte();
+    if (reportePreview) reportePreview.style.display = "none";
+    if (btnExportarExcel) btnExportarExcel.disabled = true;
+    if (btnExportarPdf) btnExportarPdf.disabled = true;
+    if (btnImprimir) btnImprimir.disabled = true;
+    if (modalReportes) {
+      modalReportes.classList.remove("is-hidden");
+    }
+  });
+}
+
+if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporteProveedores);
+if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
+if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarProveedoresExcel);
+if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarProveedoresPdf);
+if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporteProveedores);
