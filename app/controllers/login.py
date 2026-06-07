@@ -97,20 +97,21 @@ def validar_login():
         if not nombre or not password:
             return jsonify({"success": False, "error": "El nombre y la contraseña son obligatorios."}), 400
 
-        resultados = modelo.validar(nombre, password)
-        if resultados:
-            usuario = resultados[0]
+        # CORREGIDO: usar validar_login en lugar de validar
+        usuario = modelo.validar_login(nombre, password)
+        
+        if usuario:
             perfil_completo = True
             
-            if _es_rol_cliente(usuario.get("nombre_rol")):
-                perfil_completo = _perfil_cliente_completo(usuario.get("cedula_personal"))
+            if _es_rol_cliente(usuario.get("rol_nombre")):  # Nota: usar 'rol_nombre' en lugar de 'nombre_rol'
+                perfil_completo = _perfil_cliente_completo(usuario.get("cedula"))
             
             payload = {
                 "usuario_id": usuario.get("id"),
                 "usuario_nombre": usuario.get("nombre"),
-                "cedula": usuario.get("cedula_personal"),
+                "cedula": usuario.get("cedula"),
                 "rol_id": usuario.get("rol_id"),
-                "nombre_rol": usuario.get("nombre_rol"),
+                "nombre_rol": usuario.get("rol_nombre"),
                 "foto_perfil": usuario.get("foto_perfil"),
                 "perfil_completo": perfil_completo,
             }
@@ -119,7 +120,7 @@ def validar_login():
                     {
                         "success": True,
                         "message": "Inicio de sesión exitoso.",
-                        "require_profile_completion": _es_rol_cliente(usuario.get("nombre_rol")) and not perfil_completo,
+                        "require_profile_completion": _es_rol_cliente(usuario.get("rol_nombre")) and not perfil_completo,
                     }
                 )
             )
@@ -128,7 +129,6 @@ def validar_login():
             return jsonify({"success": False, "error": "Credenciales inválidas."}), 401
     except Exception as error:
         return _respuesta_error_por_excepcion(error)
-
 
 @login_blueprint.route("/api/registro/cliente/paso-1", methods=["POST"])
 def registro_cliente_paso_1():
