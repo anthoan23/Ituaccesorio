@@ -693,6 +693,195 @@ body {
   background: linear-gradient(180deg, #f7e07b, #f3c500);
 }
 
+/* ==================== ESTILOS PARA MODAL DE REPORTES ==================== */
+
+#modal-reportes .field__input {
+  width: 100%;
+  border: 1px solid rgba(18, 18, 18, 0.12);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.95rem;
+  font-family: "Manrope", sans-serif;
+  outline: none;
+  background: #ffffff;
+  color: #121212;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#modal-reportes .field__input:focus {
+  border-color: rgba(243, 197, 0, 0.7);
+  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
+}
+
+#modal-reportes select.field__input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+
+#modal-reportes .filters-panel__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+#modal-reportes .filters-panel__section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+#modal-reportes .filters-panel__title {
+  margin: 0 0 0.75rem;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 900;
+  font-size: 0.98rem;
+  color: rgba(18, 18, 18, 0.78);
+}
+
+#modal-reportes .field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+#modal-reportes .field__label {
+  font-size: 0.78rem;
+  color: rgba(18, 18, 18, 0.6);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+#modal-reportes .ui-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+/* Botones dentro del modal */
+#modal-reportes .ui-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  transition: transform 0.15s ease, filter 0.2s ease;
+}
+
+#modal-reportes .ui-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+#modal-reportes .ui-btn--primary {
+  color: #111111;
+  background: linear-gradient(180deg, #f3c500, #f8dd69);
+  box-shadow: 0 14px 30px rgba(243, 197, 0, 0.2);
+}
+
+#modal-reportes .ui-btn--ghost {
+  background: #eef0f4;
+  color: #121212;
+  border: 1px solid rgba(20, 22, 26, 0.14);
+}
+
+#modal-reportes .ui-btn--ghost:hover {
+  background: #eef0f4;
+  color: #121212;
+  border: 1px solid rgba(20, 22, 26, 0.14);
+}
+
+#modal-reportes .ui-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Tabla de previsualización */
+#modal-reportes .table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+}
+
+#modal-reportes .table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+#modal-reportes .table th,
+#modal-reportes .table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+#modal-reportes .table th {
+  background: #f8f9fa;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #121212;
+}
+
+#modal-reportes .table td {
+  font-size: 0.85rem;
+  color: #121212;
+}
+
+#modal-reportes .table__empty {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+/* Badges de estado */
+#modal-reportes .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+#modal-reportes .status-out {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+#modal-reportes .status-low {
+  background: #ffedd5;
+  color: #f59e0b;
+}
+
+#modal-reportes .status-good {
+  background: #dcfce7;
+  color: #10b981;
+}
+
+#modal-reportes .status-normal {
+  background: #e0e7ff;
+  color: #3b82f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  #modal-reportes .filters-panel__row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1100px) {
   .hero,
   .layout,
