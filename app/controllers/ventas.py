@@ -96,8 +96,6 @@ def calcular_precios_bs(productos):
 # ==================== VISTAS CLIENTE ====================
 
 @ventas_blueprint.route("/catalogo")
-@jwt_required
-@tiene_permiso('Catálogo', 'consultar')
 def pagina_catalogo():
     """Página principal del catálogo de productos"""
     return render_template(
@@ -109,8 +107,6 @@ def pagina_catalogo():
 
 
 @ventas_blueprint.route("/api/catalogo/productos")
-@jwt_required
-@tiene_permiso('Catálogo', 'consultar')
 def api_listar_productos_catalogo():
     """API para obtener productos del catálogo con filtros"""
     modelo_ventas = VentasModel()
@@ -145,8 +141,6 @@ def api_listar_productos_catalogo():
 
 
 @ventas_blueprint.route("/api/carrito", methods=["GET"])
-@jwt_required
-@tiene_permiso('Carrito', 'consultar')
 def api_obtener_carrito():
     """Obtener el carrito del cliente actual"""
     if not hasattr(g, 'user') or not g.user:
@@ -292,7 +286,6 @@ def pagina_pagos():
 
 @ventas_blueprint.route("/api/metodos-pago")
 @jwt_required
-@tiene_permiso('Ventas', 'consultar')
 def api_metodos_pago():
     """Obtener métodos de pago disponibles"""
     metodos = [
