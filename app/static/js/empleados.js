@@ -253,11 +253,9 @@ function closeModal(id) {
 }
 
 function mostrarDetalleEmpleado(empleado, especialidades = null) {
-  // CORRECCIÓN: Normalizar los datos del empleado (puede venir directamente o dentro de un objeto 'empleado')
   let empleadoData = empleado;
   let especialidadesData = especialidades;
   
-  // Si el empleado viene con la estructura { empleado: {...}, especialidades: [...] }
   if (empleado && empleado.empleado && !especialidades) {
     empleadoData = empleado.empleado;
     especialidadesData = empleado.especialidades || [];
@@ -337,11 +335,9 @@ function habilitarCamposFormulario(habilitar) {
 }
 
 function cargarDatosEnFormulario(empleado, especialidades = null) {
-  // CORRECCIÓN: Normalizar los datos del empleado
   let empleadoData = empleado;
   let especialidadesData = especialidades;
   
-  // Si el empleado viene con la estructura { empleado: {...}, especialidades: [...] }
   if (empleado && empleado.empleado && !especialidades) {
     empleadoData = empleado.empleado;
     especialidadesData = empleado.especialidades || [];
@@ -373,7 +369,6 @@ function cargarDatosEnFormulario(empleado, especialidades = null) {
     if (option) cargoSelect.value = option.value;
   }
   
-  // Cargar especialidades
   if (especialidadesData && especialidadesData.length > 0) {
     const especialidadesIds = especialidadesData.map(e => e.id || e.ID_especialidad);
     if (especialidadesIds.length > 0) {
@@ -383,7 +378,6 @@ function cargarDatosEnFormulario(empleado, especialidades = null) {
     limpiarEspecialidades();
   }
   
-  // Mostrar/ocultar contenedor de especialidades según el cargo
   if (cargoSelect && cargoSelect.value) {
     const selectedOption = cargoSelect.options[cargoSelect.selectedIndex];
     const cargoNombre = selectedOption?.textContent;
@@ -405,7 +399,6 @@ async function verEmpleado(cedula) {
     console.log('Respuesta completa del servidor (ver):', response);
     
     if (response.success) {
-      // CORRECCIÓN: Pasar tanto el empleado como las especialidades
       openModal('modal-ver-empleado', 'view', response);
     } else {
       Utils.showMessage('No se encontró el empleado', true);
@@ -426,7 +419,6 @@ async function editarEmpleado(cedula) {
     console.log('Respuesta completa del servidor (editar):', response);
     
     if (response.success) {
-      // CORRECCIÓN: Pasar toda la respuesta que contiene empleado y especialidades
       openModal('modal-registrar-empleado', 'edit', response);
       setTimeout(() => {
         toggleEspecialidades();
@@ -847,9 +839,22 @@ async function registrarEmpleado(event) {
     let response;
     
     if (mode === 'edit' && editId) {
-      response = await Utils.fetchJson(`${CONFIG.API.EMPLEADOS}/${editId}`, {
+      // CORRECCIÓN: Enviar el ID dentro del cuerpo de la petición, no en la URL
+      const updateData = {
+        id_empleado: editId,  // Campo requerido por el backend
+        cedula: formData.cedula,
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        id_cargo: formData.id_cargo,
+        celular: formData.celular,
+        correo: formData.correo,
+        direccion: formData.direccion,
+        especialidades: formData.especialidades
+      };
+      
+      response = await Utils.fetchJson(CONFIG.API.EMPLEADOS, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(updateData)
       });
       
       if (response.success) {
@@ -883,8 +888,9 @@ async function registrarEmpleado(event) {
 
 async function eliminarEmpleado(cedula) {
   try {
-    const response = await Utils.fetchJson(`${CONFIG.API.EMPLEADOS}/${cedula}`, {
-      method: 'DELETE'
+    const response = await Utils.fetchJson(CONFIG.API.EMPLEADOS, {
+      method: 'DELETE',
+      body: JSON.stringify({ id_empleado: cedula })
     });
     
     if (response.success) {
@@ -910,7 +916,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Cerrar modal con tecla ESC
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const modalesAbiertos = document.querySelectorAll('.modal[aria-hidden="false"]');
@@ -928,35 +933,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   await cargarEmpleados();
   await cargarGraficos();
   
-  // Formulario de registro/edición
   const formEmpleado = document.getElementById('form-registrar-empleado');
   if (formEmpleado) {
     formEmpleado.removeEventListener('submit', registrarEmpleado);
     formEmpleado.addEventListener('submit', registrarEmpleado);
   }
   
-  // Select de cargo
   const cargoSelect = document.getElementById('reg-cargo-empleado');
   if (cargoSelect) {
     cargoSelect.removeEventListener('change', toggleEspecialidades);
     cargoSelect.addEventListener('change', toggleEspecialidades);
   }
   
-  // Botón actualizar empleados
   const btnActualizar = document.getElementById('btn-actualizar-empleados');
   if (btnActualizar) {
     btnActualizar.removeEventListener('click', cargarEmpleados);
     btnActualizar.addEventListener('click', cargarEmpleados);
   }
   
-  // Botón nuevo empleado
   const btnNuevo = document.querySelector('[data-open-modal="modal-registrar-empleado"]');
   if (btnNuevo) {
     btnNuevo.removeEventListener('click', () => openModal('modal-registrar-empleado', 'register'));
     btnNuevo.addEventListener('click', () => openModal('modal-registrar-empleado', 'register'));
   }
   
-  // Botón confirmar eliminar
   const confirmarEliminar = document.getElementById('btn-confirmar-eliminar-empleado');
   if (confirmarEliminar) {
     confirmarEliminar.removeEventListener('click', () => {
@@ -969,7 +969,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
-  // Botones de cerrar modal
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const modal = btn.closest('.modal');
@@ -979,10 +978,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
   
-  // Validación de campos en tiempo real
   const reglasValidacion = Utils.validarCampos();
   
-  // Validación para cédula (solo números)
   const cedulaInput = document.getElementById('reg-cedula-empleado');
   if (cedulaInput) {
     cedulaInput.addEventListener('input', (e) => {
@@ -997,7 +994,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
-  // Validación para nombre y apellido (solo letras)
   const nombreInput = document.getElementById('reg-nombre-empleado');
   const apellidoInput = document.getElementById('reg-apellido-empleado');
   
@@ -1011,7 +1007,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           e.target.style.borderColor = '';
           e.target.setCustomValidity('');
-          // Capitalizar automáticamente
           if (valor.length > 0 && e.inputType !== 'deleteContentBackward') {
             const palabras = valor.split(' ');
             const capitalizado = palabras.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
@@ -1024,7 +1019,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
   
-  // Validación para celular
   const celularInput = document.getElementById('reg-celular-empleado');
   if (celularInput) {
     celularInput.addEventListener('input', (e) => {
@@ -1039,7 +1033,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
-  // Validación para correo
   const correoInput = document.getElementById('reg-correo-empleado');
   if (correoInput) {
     correoInput.addEventListener('input', (e) => {
@@ -1054,7 +1047,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
-  // Validación para dirección
   const direccionInput = document.getElementById('reg-direccion-empleado');
   if (direccionInput) {
     direccionInput.addEventListener('input', (e) => {
@@ -1070,9 +1062,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ============================================
-// 10. EXPORTAR FUNCIONES GLOBALES (si es necesario)
-// ============================================
 window.empleadosApp = {
   openModal,
   closeModal,
