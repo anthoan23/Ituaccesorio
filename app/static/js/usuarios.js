@@ -85,8 +85,15 @@ function validarFormularioAntesDeEnviar(form, nombreFormulario) {
 
 // ==================== CARGAR OPCIONES DE CÉDULA POR ROL ====================
 
-async function cargarOpcionesCedula(rolId) {
+async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
     if (!selectUsuarioCedula) return;
+    
+    // Si no hay rol seleccionado, mostrar opción por defecto
+    if (!rolId) {
+        selectUsuarioCedula.innerHTML = '<option value="">Primero seleccione un rol</option>';
+        selectUsuarioCedula.disabled = true;
+        return;
+    }
     
     // Buscar el rol seleccionado para saber si es Cliente
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
@@ -114,7 +121,8 @@ async function cargarOpcionesCedula(rolId) {
                     const nombre = cliente.nombre_completo || "";
                     const celular = cliente.celular || "";
                     const label = `${cedula} - ${nombre} ${celular ? `(${celular})` : ''}`.trim();
-                    options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(label)}</option>`);
+                    const selected = valorSeleccionado && String(cedula) === String(valorSeleccionado) ? 'selected' : '';
+                    options.push(`<option value="${escapeHtml(String(cedula))}" ${selected}>${escapeHtml(label)}</option>`);
                 });
                 selectUsuarioCedula.innerHTML = options.join("");
             } else {
@@ -135,7 +143,8 @@ async function cargarOpcionesCedula(rolId) {
                 data.empleados.forEach(empleado => {
                     const cedula = empleado.cedula;
                     const nombre = empleado.nombre_completo || "";
-                    options.push(`<option value="${escapeHtml(String(cedula))}">${escapeHtml(`${cedula} - ${nombre}`)}</option>`);
+                    const selected = valorSeleccionado && String(cedula) === String(valorSeleccionado) ? 'selected' : '';
+                    options.push(`<option value="${escapeHtml(String(cedula))}" ${selected}>${escapeHtml(`${cedula} - ${nombre}`)}</option>`);
                 });
                 selectUsuarioCedula.innerHTML = options.join("");
             } else {
@@ -332,8 +341,12 @@ function setupRolChangeListener() {
             const rolId = e.target.value;
             const container = document.getElementById("permisos-rol-container");
             
+            // Guardar el valor de cédula actual para restaurarlo después
+            const currentCedula = selectUsuarioCedula?.value;
+            
             if (rolId) {
-                await cargarOpcionesCedula(rolId);
+                // Cargar opciones de cédula sin selección previa (el formulario está en modo creación)
+                await cargarOpcionesCedula(rolId, null);
                 await cargarPermisosPorRol(rolId);
             } else {
                 if (container) container.style.display = "none";
@@ -550,10 +563,6 @@ function renderSelects() {
             selectUsuarioRol.value = currentValue;
         }
     }
-    if (selectUsuarioCedula) {
-        selectUsuarioCedula.innerHTML = '<option value="">Seleccione un rol primero</option>';
-        selectUsuarioCedula.disabled = true;
-    }
 }
 
 function renderOptions(items) {
@@ -672,7 +681,7 @@ function bindTableActions(table, items, type) {
                 if (type === "usuario") {
                     setActiveTableTab("usuarios");
                     openAdminModal("usuarios");
-                    llenarFormularioUsuario(item);
+                    await llenarFormularioUsuario(item);
                 }
                 if (type === "rol") {
                     setActiveTableTab("roles");
@@ -737,12 +746,11 @@ function bindTableActions(table, items, type) {
 
 // ==================== FORMULARIOS ====================
 
-function llenarFormularioUsuario(usuario) {
+async function llenarFormularioUsuario(usuario) {
     if (!formUsuario || !usuario) return;
     
     formUsuario.id.value = usuario.id ?? "";
     formUsuario.nombre.value = usuario.nombre ?? "";
-    formUsuario.cedula_personal.value = usuario.cedula_personal ?? "";
     formUsuario.password.required = false;
     formUsuario.password.placeholder = "Dejar vacío para conservar";
     formUsuario.password.value = "";
@@ -753,13 +761,16 @@ function llenarFormularioUsuario(usuario) {
         selectUsuarioRol.setAttribute("data-current-value", usuario.rol_id);
     }
     
+    // Primero cargar los permisos
     if (usuario.rol_id) {
-        cargarOpcionesCedula(usuario.rol_id).then(() => {
-            if (selectUsuarioCedula && usuario.cedula_personal) {
-                selectUsuarioCedula.value = usuario.cedula_personal;
-            }
-        });
-        cargarPermisosPorRol(usuario.rol_id);
+        await cargarPermisosPorRol(usuario.rol_id);
+    }
+    
+    // Luego cargar las opciones de cédula con el valor seleccionado
+    if (usuario.rol_id && usuario.cedula_personal) {
+        await cargarOpcionesCedula(usuario.rol_id, usuario.cedula_personal);
+    } else if (usuario.rol_id) {
+        await cargarOpcionesCedula(usuario.rol_id, null);
     } else {
         const container = document.getElementById("permisos-rol-container");
         if (container) container.style.display = "none";

@@ -49,47 +49,6 @@ class Clientes():
             cursor.close()
             db.close()
 
-    def obtener_cliente_por_id(self, id_cliente):
-        if not id_cliente:
-            return None
-
-        db = self._conexion_bd.conexion1()
-        if not db:
-            return None
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute(
-                """
-                SELECT
-                    c.ID_cliente AS id,
-                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
-                    c.Direccion_cliente AS direccion,
-                    c.Celular_cliente AS celular,
-                    c.Correo_cliente AS correo,
-                    p.Apellido_cliente AS apellido,
-                    j.Razon_social AS razon_social,
-                    j.Rif_cliente AS rif,
-                    CASE
-                        WHEN p.ID_cliente IS NOT NULL THEN 'natural'
-                        WHEN j.ID_cliente IS NOT NULL THEN 'juridico'
-                        ELSE 'natural'
-                    END AS tipo
-                FROM Cliente c
-                LEFT JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-                LEFT JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
-                WHERE c.ID_cliente = %s
-                LIMIT 1
-                """,
-                (id_cliente,)
-            )
-            return cursor.fetchone()
-        except Exception:
-            return None
-        finally:
-            cursor.close()
-            db.close()
-
     def eliminar_cliente(self) -> str:
         Id_cliente = self.ID_cliente.strip()
 
@@ -138,6 +97,251 @@ class Clientes():
         
     """Fin de metodos"""
 
+    """Nuevos métodos añadidos por Eduin"""
+    
+    def obtener_cliente_por_id(self, cliente_id: int = None):
+        """
+        Obtiene un cliente por su ID (cédula para persona natural)
+        """
+        id_buscar = cliente_id or self.ID_cliente
+        if not id_buscar:
+            return None
+        
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.ID_cliente AS id,
+                    p.Nombre_cliente AS nombre,
+                    p.Apellido_cliente AS apellido,
+                    CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
+                    c.Direccion_cliente AS direccion,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    'natural' AS tipo
+                FROM Cliente c
+                INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+                WHERE c.ID_cliente = %s
+                LIMIT 1
+                """,
+                (str(id_buscar),)
+            )
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error al obtener cliente por ID: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+    
+    def crear_cliente(self, cliente_id: int, nombre: str, apellido: str, celular: str, 
+                      correo: str = None, direccion: str = None) -> bool:
+        """
+        Crea un nuevo cliente como persona natural
+        """
+        from app.models.clientes import Persona_natural
+        
+        if not cliente_id or not nombre or not apellido or not celular:
+            return False
+        
+        persona = Persona_natural(
+            Cedula_cliente=str(cliente_id),
+            Nombre_cliente=nombre,
+            Apellido_cliente=apellido,
+            Telefono_cliente=celular,
+            Correo_cliente=correo,
+            Direccion_cliente=direccion
+        )
+        
+        resultado = persona.registrar_persona_natural()
+        return "exitosamente" in resultado.lower()
+    
+    def verificar_cliente_existe(self, cliente_id: int) -> bool:
+        """
+        Verifica si un cliente existe en la base de datos
+        """
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT 1 FROM Cliente WHERE ID_cliente = %s LIMIT 1",
+                (str(cliente_id),)
+            )
+            return cursor.fetchone() is not None
+        except Exception as e:
+            print(f"Error al verificar cliente: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+    
+    def obtener_datos_cliente_completo(self, cliente_id: int = None):
+        """
+        Obtiene todos los datos de un cliente incluyendo información específica según su tipo
+        """
+        id_buscar = cliente_id or self.ID_cliente
+        if not id_buscar:
+            return None
+        
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.ID_cliente AS id,
+                    c.Direccion_cliente AS direccion,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    p.Nombre_cliente AS nombre,
+                    p.Apellido_cliente AS apellido,
+                    NULL AS razon_social,
+                    NULL AS rif,
+                    'natural' AS tipo
+                FROM Cliente c
+                INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+                WHERE c.ID_cliente = %s
+                
+                UNION ALL
+                
+                SELECT
+                    c.ID_cliente AS id,
+                    c.Direccion_cliente AS direccion,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    NULL AS nombre,
+                    NULL AS apellido,
+                    j.Razon_social AS razon_social,
+                    j.Rif_cliente AS rif,
+                    'juridico' AS tipo
+                FROM Cliente c
+                INNER JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
+                WHERE c.ID_cliente = %s
+                """,
+                (str(id_buscar), str(id_buscar))
+            )
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error al obtener datos completos del cliente: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+    
+    def listar_clientes_naturales(self):
+        """
+        Lista solo los clientes personas naturales
+        """
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.ID_cliente AS cedula,
+                    CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) AS nombre_completo,
+                    p.Nombre_cliente AS nombre,
+                    p.Apellido_cliente AS apellido,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo,
+                    c.Direccion_cliente AS direccion
+                FROM Cliente c
+                INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
+                ORDER BY p.Nombre_cliente ASC
+                """
+            )
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al listar clientes naturales: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+    
+    def actualizar_datos_cliente(self, cliente_id: int, nombre: str = None, apellido: str = None,
+                                  celular: str = None, correo: str = None, direccion: str = None) -> str:
+        """
+        Actualiza los datos de un cliente existente
+        """
+        if not cliente_id:
+            return "El ID del cliente es obligatorio."
+        
+        db = self._conexion_bd.conexion1()
+        if not db:
+            return "Error al conectar a la base de datos."
+        
+        cursor = db.cursor()
+        try:
+            # Actualizar tabla Cliente
+            if celular or correo or direccion:
+                updates = []
+                params = []
+                
+                if celular is not None:
+                    updates.append("Celular_cliente = %s")
+                    params.append(celular)
+                if correo is not None:
+                    updates.append("Correo_cliente = %s")
+                    params.append(correo)
+                if direccion is not None:
+                    updates.append("Direccion_cliente = %s")
+                    params.append(direccion)
+                
+                if updates:
+                    params.append(str(cliente_id))
+                    cursor.execute(
+                        f"UPDATE Cliente SET {', '.join(updates)} WHERE ID_cliente = %s",
+                        params
+                    )
+            
+            # Actualizar tabla Persona_natural si es persona natural
+            if nombre or apellido:
+                cursor.execute(
+                    "SELECT 1 FROM Persona_natural WHERE ID_cliente = %s",
+                    (str(cliente_id),)
+                )
+                if cursor.fetchone():
+                    updates = []
+                    params = []
+                    
+                    if nombre is not None:
+                        updates.append("Nombre_cliente = %s")
+                        params.append(nombre)
+                    if apellido is not None:
+                        updates.append("Apellido_cliente = %s")
+                        params.append(apellido)
+                    
+                    if updates:
+                        params.append(str(cliente_id))
+                        cursor.execute(
+                            f"UPDATE Persona_natural SET {', '.join(updates)} WHERE ID_cliente = %s",
+                            params
+                        )
+            
+            db.commit()
+            return "Cliente actualizado exitosamente."
+        except Exception as e:
+            db.rollback()
+            print(f"Error al actualizar datos del cliente: {e}")
+            return f"Error al actualizar cliente: {e}"
+        finally:
+            cursor.close()
+            db.close()
+"""Fin de los añadios de Eduin"""
 class Persona_natural(Clientes):
     def __init__(
         self,
@@ -411,8 +615,3 @@ class Cliente_juridico(Clientes):
             db.close()
 
     """Fin de metodos"""
-
-
-class GestionClientes(Clientes):
-    """Compatibilidad con controladores que importan GestionClientes."""
-    pass
