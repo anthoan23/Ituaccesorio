@@ -3,7 +3,7 @@ from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.bitacora import registrar_en_bitacora
 from app.models.ventas import VentasModel
 from app.models.clientes import GestionClientes
-from app.models.productos import Productos
+from app.models.productos import Producto  # Cambiado de Productos a Producto
 import requests
 import os
 
@@ -114,7 +114,7 @@ def pagina_catalogo():
 def api_listar_productos_catalogo():
     """API para obtener productos del catálogo con filtros"""
     modelo_ventas = VentasModel()
-    modelo_productos = Productos()
+    modelo_productos = Producto()  # Cambiado de Productos() a Producto()
     
     clase_id = request.args.get("clase_id", type=int)
     marca_id = request.args.get("marca_id", type=int)

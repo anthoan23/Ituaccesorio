@@ -131,4 +131,20 @@
   } else {
     void init();
   }
+
+  function renderizarUsuarioConFoto(usuarioId, usuarioNombre, usuarioFoto) {
+    if (usuarioFoto) {
+        return `<div class="user-cell" style="display: flex; align-items: center; gap: 8px;">
+                    <img src="${usuarioFoto}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <span>${usuarioNombre || usuarioId}</span>
+                </div>`;
+    }
+    return `<div class="user-cell" style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #f3c500; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    ${(usuarioNombre || usuarioId || 'U').charAt(0).toUpperCase()}
+                </div>
+                <span>${usuarioNombre || usuarioId}</span>
+            </div>`;
+}
 })();
+

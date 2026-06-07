@@ -41,7 +41,7 @@ class Bitacora(conectar):
         finally:
             self._cerrar_cursor_conexion(cursor, db)
 
-    def registrar(self, accion, descripcion, usuario_id="SYSTEM", modulo_nombre=None):
+    def registrar(self, accion, descripcion, usuario_id="SYSTEM", modulo_nombre=None, usuario_nombre=None, usuario_foto=None):
         db = self.conexion2()
         if not db:
             return {
@@ -59,8 +59,7 @@ class Bitacora(conectar):
             cursor.execute(sql, (usuario_id, modulo_id, accion, descripcion))
             db.commit()
 
-            # Publicamos despues del commit para que la notificacion solo salga
-            # cuando la bitacora quedo realmente persistida.
+            # Publicar notificación con información del usuario (sin guardar en BD)
             try:
                 bus_notificaciones.publicar(
                     {
@@ -70,12 +69,12 @@ class Bitacora(conectar):
                         "descripcion": descripcion,
                         "modulo_nombre": modulo_nombre or "General",
                         "usuario_id": str(usuario_id),
+                        "usuario_nombre": usuario_nombre or usuario_id,
+                        "usuario_foto": usuario_foto,
                     },
                     autor_id=usuario_id,
                 )
             except Exception:
-                # La notificacion es un extra en tiempo real; si falla, no debe
-                # impedir que la bitacora ya persistida llegue a la base.
                 pass
 
             return {"success": True}
@@ -103,5 +102,5 @@ class Bitacora(conectar):
             self._cerrar_cursor_conexion(cursor, db)
 
 
-def registrar_en_bitacora(accion, descripcion, usuario_id="SYSTEM", modulo_nombre=None):
-    return Bitacora().registrar(accion, descripcion, usuario_id=usuario_id, modulo_nombre=modulo_nombre)
+def registrar_en_bitacora(accion, descripcion, usuario_id="SYSTEM", modulo_nombre=None, usuario_nombre=None, usuario_foto=None):
+    return Bitacora().registrar(accion, descripcion, usuario_id=usuario_id, modulo_nombre=modulo_nombre, usuario_nombre=usuario_nombre, usuario_foto=usuario_foto)

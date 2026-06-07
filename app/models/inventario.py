@@ -89,10 +89,6 @@ class Inventario(conectar):
     def listar_inventario_general_modelo(self, N_modelo: str):
         return self._listar(N_modelo=N_modelo)
 
-    def listar_inventario_por_num_i(self, num_i: int):
-        # Compatibilidad: Num_i ya no existe.
-        return self._listar()
-
     def listar_inventario_filtrado(self, *, num_i: int | None = None, N_modelo: str | None = None):
         # Compatibilidad: se ignora num_i.
         return self._listar(N_modelo=N_modelo)

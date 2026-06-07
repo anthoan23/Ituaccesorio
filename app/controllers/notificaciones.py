@@ -21,27 +21,41 @@ def _usuario_autenticado_id():
     return getattr(usuario, "usuario_id", None) or getattr(usuario, "user_id", None) or getattr(usuario, "id", None)
 
 
-@notificaciones_blueprint.route("/notificaciones/stream/<int:usuario_id>")
+def _usuario_autenticado_info():
+    """Obtiene la información completa del usuario autenticado"""
+    usuario = getattr(g, "user", None)
+    if not usuario:
+        return {"id": "SYSTEM", "nombre": "SISTEMA", "foto": None}
+    
+    if isinstance(usuario, dict):
+        user_id = usuario.get("usuario_id") or usuario.get("id") or "SYSTEM"
+        user_name = usuario.get("usuario_nombre") or usuario.get("nombre") or usuario.get("username") or "USUARIO"
+        user_foto = usuario.get("foto_perfil") or None
+        return {"id": user_id, "nombre": user_name, "foto": user_foto}
+    
+    user_id = getattr(usuario, "usuario_id", None) or getattr(usuario, "id", None) or "SYSTEM"
+    user_name = getattr(usuario, "usuario_nombre", None) or getattr(usuario, "nombre", None) or getattr(usuario, "username", None) or "USUARIO"
+    user_foto = getattr(usuario, "foto_perfil", None) or None
+    return {"id": user_id, "nombre": user_name, "foto": user_foto}
+
+
+@notificaciones_blueprint.route("/notificaciones/stream/<string:usuario_id>")
 @jwt_required
 def stream_notificaciones(usuario_id):
     usuario_autenticado = _usuario_autenticado_id()
     if str(usuario_autenticado) != str(usuario_id):
-        # El cliente solo puede abrir su propio stream. Esto evita que un usuario
-        # lea eventos que no le corresponden si adivina otro identificador.
         return {"success": False, "error": "No autorizado para este stream."}, 403
 
     cola = bus_notificaciones.suscribir(usuario_id)
 
     def generar_eventos():
         try:
-            # Primer comentario SSE para que el navegador considere la conexion viva.
             yield ": conectado\n\n"
 
             while True:
                 try:
                     evento = cola.get(timeout=15)
                 except Empty:
-                    # Mantiene la conexion activa sin hacer polling agresivo.
                     yield ": ping\n\n"
                     continue
 

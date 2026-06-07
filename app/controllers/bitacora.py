@@ -69,3 +69,29 @@ def api_listar_bitacora():
     modelo = Bitacora()
     registros = modelo.listar_recientes(1000)
     return jsonify(registros), 200
+
+@bitacora_blueprint.route("/api/bitacora/ultimas-notificaciones", methods=["GET"])
+@jwt_required
+def api_ultimas_notificaciones():
+    """Obtiene las últimas 3 notificaciones para el panel"""
+    from app.models.bitacora import Bitacora
+    modelo = Bitacora()
+    registros = modelo.listar_recientes(3) or []
+    
+    # Formatear para el frontend
+    notificaciones = []
+    for reg in registros:
+        notificacion = {
+            "tipo": "bitacora",
+            "titulo": "Actividad registrada",
+            "accion": reg.get("accion", ""),
+            "descripcion": reg.get("descripcion", ""),
+            "modulo_nombre": "General",
+            "usuario_id": reg.get("usuario_id", "SYSTEM"),
+            "usuario_nombre": reg.get("usuario_id", "Sistema"),
+            "usuario_foto": None,
+            "fecha_hora": reg.get("fecha_hora", "")
+        }
+        notificaciones.append(notificacion)
+    
+    return jsonify({"success": True, "notificaciones": notificaciones}), 200
