@@ -139,7 +139,9 @@
                                placeholder="Nombre completo" 
                                required 
                                maxlength="50"
-                               data-validator-config='{"maxLength": {"value": 50}}'>
+                               data-validation-rules="soloLetras,capitalizar"
+                               title="Solo letras, espacios, acentos y ñ">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 50 caracteres)</small>
                     </label>
                     
                     <label class="form__field">
@@ -155,16 +157,11 @@
                                    placeholder="Dejar vacío para no cambiar" 
                                    minlength="6"
                                    maxlength="50"
-                                   data-validator-config='{
-                                       "required": {"enabled": false},
-                                       "maxLength": {"value": 50},
-                                       "customRules": [{
-                                           "validate": "function(value) { return value === \"\" || value.length >= 6; }",
-                                           "message": "La contraseña debe tener al menos 6 caracteres"
-                                       }]
-                                   }'>
+                                   data-validation-rules="sinEspacios"
+                                   title="Mínimo 6 caracteres, sin espacios">
                             <button class="password-toggle" type="button" data-password-toggle>Mostrar</button>
                         </div>
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Mínimo 6 caracteres, sin espacios</small>
                     </label>
                     
                     <label class="form__field">
@@ -227,7 +224,9 @@
                                placeholder="Administrador" 
                                required 
                                maxlength="50"
-                               data-validator-config='{"maxLength": {"value": 50}}'>
+                               data-validation-rules="soloLetras,capitalizar"
+                               title="Solo letras, espacios, acentos y ñ">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 50 caracteres)</small>
                     </label>
                     
                     <label class="form__field form__field--full">
@@ -236,7 +235,9 @@
                                   rows="3" 
                                   placeholder="Descripción del rol"
                                   maxlength="255"
-                                  data-validator-config='{"maxLength": {"value": 255}}'></textarea>
+                                  data-validation-rules="sinCaracteresEspeciales"
+                                  title="Sin caracteres especiales"></textarea>
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 255 caracteres)</small>
                     </label>
                 </div>
                 
@@ -272,7 +273,9 @@
                                placeholder="Nombre del módulo" 
                                required 
                                maxlength="50"
-                               data-validator-config='{"maxLength": {"value": 50}}'>
+                               data-validation-rules="soloLetrasNumeros,sinEspacios"
+                               title="Solo letras y números, sin espacios">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras y números, sin espacios (máximo 50 caracteres)</small>
                     </label>
                     
                     <label class="form__field form__field--full">
@@ -281,7 +284,9 @@
                                   rows="3" 
                                   placeholder="Descripción del módulo"
                                   maxlength="255"
-                                  data-validator-config='{"maxLength": {"value": 255}}'></textarea>
+                                  data-validation-rules="sinCaracteresEspeciales"
+                                  title="Sin caracteres especiales"></textarea>
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 255 caracteres)</small>
                     </label>
                 </div>
                 

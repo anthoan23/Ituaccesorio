@@ -80,8 +80,9 @@
                        placeholder="12345678" 
                        required 
                        maxlength="8"
-                       pattern="^\d+$"
-                       data-validator-config='{"maxLength": {"value": 8}}'>
+                       data-validation-rules="soloNumeros"
+                       title="Solo números, 8 dígitos">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (8 dígitos)</small>
             </label>
             
             <label class="form__field">
@@ -91,7 +92,9 @@
                        placeholder="María" 
                        required 
                        maxlength="15"
-                       data-validator-config='{"maxLength": {"value": 15}}'>
+                       data-validation-rules="soloLetras,capitalizar"
+                       title="Solo letras, espacios, acentos y ñ">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
             </label>
             
             <label class="form__field">
@@ -101,7 +104,9 @@
                        placeholder="González" 
                        required 
                        maxlength="15"
-                       data-validator-config='{"maxLength": {"value": 15}}'>
+                       data-validation-rules="soloLetras,capitalizar"
+                       title="Solo letras, espacios, acentos y ñ">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
             </label>
             
             <label class="form__field">
@@ -111,14 +116,9 @@
                        placeholder="04141234567" 
                        required 
                        maxlength="11"
-                       pattern="^[\d\s\-+()]{11,11}$"
-                       data-validator-config='{
-                           "maxLength": {"value": 11},
-                           "customRules": [{
-                               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 11; }",
-                               "message": "El número de celular debe tener 11 dígitos"
-                           }]
-                       }'>
+                       data-validation-rules="telefono"
+                       title="Formato: 04141234567 (11 dígitos)">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
             </label>
             
             <label class="form__field">
@@ -127,7 +127,9 @@
                        type="email" 
                        placeholder="cliente@example.com" 
                        maxlength="120"
-                       data-validator-config='{"maxLength": {"value": 120}}'>
+                       data-validation-rules="email"
+                       title="Correo electrónico válido">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
             </label>
             
             <label class="form__field form__field--full">
@@ -136,7 +138,9 @@
                        type="text" 
                        placeholder="Calle Principal #123, Ciudad" 
                        maxlength="40"
-                       data-validator-config='{"maxLength": {"value": 40}}'>
+                       data-validation-rules="sinCaracteresEspeciales"
+                       title="Sin caracteres especiales">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
             </label>
         </div>
 
@@ -147,8 +151,10 @@
                 <input name="rif" 
                        type="text" 
                        placeholder="J-12345678-9" 
-                       maxlength="10"
-                       data-validator-config='{"maxLength": {"value": 10}}'>
+                       maxlength="12"
+                       data-validation-rules="sinEspacios"
+                       title="Formato: J-12345678-9">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formato: J-12345678-9</small>
             </label>
             
             <label class="form__field form__field--full">
@@ -157,7 +163,9 @@
                        type="text" 
                        placeholder="Empresa XYZ C.A." 
                        maxlength="60"
-                       data-validator-config='{"maxLength": {"value": 60}}'>
+                       data-validation-rules="sinNumeros,sinSimbolos,capitalizar"
+                       title="Solo letras, espacios y caracteres normales">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios (sin números ni símbolos)</small>
             </label>
             
             <label class="form__field">
@@ -166,14 +174,9 @@
                        type="tel" 
                        placeholder="02121234567" 
                        maxlength="11"
-                       pattern="^[\d\s\-+()]{11,11}$"
-                       data-validator-config='{
-                           "maxLength": {"value": 11},
-                           "customRules": [{
-                               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 11; }",
-                               "message": "El teléfono debe tener 11 dígitos"
-                           }]
-                       }'>
+                       data-validation-rules="telefono"
+                       title="Formato: 02121234567 (11 dígitos)">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 02121234567)</small>
             </label>
             
             <label class="form__field">
@@ -182,7 +185,9 @@
                        type="email" 
                        placeholder="contacto@empresa.com" 
                        maxlength="120"
-                       data-validator-config='{"maxLength": {"value": 120}}'>
+                       data-validation-rules="email"
+                       title="Correo electrónico válido">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
             </label>
             
             <label class="form__field form__field--full">
@@ -191,7 +196,9 @@
                        type="text" 
                        placeholder="Zona Industrial, Calle 2" 
                        maxlength="40"
-                       data-validator-config='{"maxLength": {"value": 40}}'>
+                       data-validation-rules="sinCaracteresEspeciales"
+                       title="Sin caracteres especiales">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
             </label>
         </div>
         
