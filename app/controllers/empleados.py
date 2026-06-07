@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.bitacora import registrar_en_bitacora
-from app.models.empleados import Empleados
+from app.models.productos import Productos
 
-empleados_blueprint = Blueprint("empleados", __name__)
+productos_blueprint = Blueprint("productos", __name__)
+productos_modelo = Productos()
 
 
 def _usuario_actual():
@@ -16,213 +17,401 @@ def _usuario_actual():
     return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
-@empleados_blueprint.route("/empleados", methods=["GET"])
+def _validate_len(nombre_campo: str, valor: str, max_len: int):
+    valor = str(valor or "")
+    if len(valor) > max_len:
+        raise ValueError(f"{nombre_campo} no puede exceder {max_len} caracteres.")
+
+
+def _parse_int_field(nombre_campo: str, valor, required: bool = True) -> int | None:
+    if valor in (None, ""):
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    try:
+        num = int(valor)
+    except Exception:
+        raise ValueError(f"{nombre_campo} debe ser un número.")
+    if required and num <= 0:
+        raise ValueError(f"{nombre_campo} debe ser mayor a 0.")
+    return num
+
+
+def _parse_id_field(nombre_campo: str, valor, required: bool = True) -> str | None:
+    if valor in (None, ""):
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    texto = str(valor).strip()
+    if not texto:
+        if required:
+            raise ValueError(f"{nombre_campo} es obligatorio.")
+        return None
+    if len(texto) > 10:
+        raise ValueError(f"{nombre_campo} no puede exceder 10 caracteres.")
+    return texto
+
+
+# ==================== PÁGINAS ====================
+
+@productos_blueprint.route("/productos", methods=["GET"])
 @jwt_required
-@tiene_permiso('Empleados', 'consultar')
-def pagina_empleados():
+@tiene_permiso('Productos', 'consultar')
+def pagina_productos():
     return render_template(
-        "empleados.html",
+        "productos.html",
         show_navbar=True,
         show_notifications=True,
-        active_page="empleados",
+        active_page="productos",
     )
 
 
-@empleados_blueprint.route("/api/empleados", methods=["GET"])
+# ==================== CLASES ====================
+
+@productos_blueprint.route("/api/productos/clases", methods=["GET"])
 @jwt_required
-@tiene_permiso('Empleados', 'consultar')
-def api_listar_empleados():
-    empleados = Empleados()
-    resultado = empleados.listar_empleados()
-    return jsonify(resultado)
+@tiene_permiso('Productos', 'consultar')
+def api_listar_clases():
+    modelo = Productos()
+    clases = modelo.listar_clases() or []
+    return jsonify({"success": True, "clases": clases})
 
 
-@empleados_blueprint.route("/api/empleados/lista", methods=["GET"])
+@productos_blueprint.route("/api/productos/clases", methods=["POST"])
 @jwt_required
-@tiene_permiso('Empleados', 'consultar')
-def api_listar_empleados_cargos():
-    empleados = Empleados()
-    resultado1 = empleados.lista_crgos()
-    resultado2 = empleados.lista_especialidades()
-    return jsonify({"cargos": resultado1, "especialidades": resultado2})
-
-
-@empleados_blueprint.route("/api/empleados/graficos", methods=["GET"])
-@jwt_required
-@tiene_permiso('Empleados', 'consultar')
-def api_listar_empleados_graficos():
-    empleados = Empleados()
-    resultado1 = empleados.listar_empleados_cargos()
-    resultado2 = empleados.listar_empleados_especialidades()
-    return jsonify({"cargos": resultado1, "especialidades": resultado2})
-
-
-@empleados_blueprint.route("/api/empleados/consultar", methods=["POST"])
-@jwt_required
-@tiene_permiso('Empleados', 'consultar')
-def api_consultar_empleado():
+@tiene_permiso('Productos', 'registrar')
+def api_crear_clase():
     datos = request.get_json(silent=True) or {}
-    cedula = str(datos.get("cedula", "")).strip()
-    empleados = Empleados()
-    resultado1 = empleados.consultar_empleado(cedula)
-    
-    if not resultado1:
-        return jsonify({"success": False, "error": "Empleado no encontrado."}), 404
-    
-    if resultado1['cargo'] == 'Técnico':
-        resultado2 = empleados.consultar_especialidades_empleado(cedula)
-        return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
-    
-    return jsonify({"success": True, "empleado": resultado1})
-
-
-@empleados_blueprint.route("/api/empleados", methods=["POST"])
-@jwt_required
-@tiene_permiso('Empleados', 'registrar')
-def api_agregar_empleado():
-    datos = request.get_json(silent=True) or {}
-
-    cedula = str(datos.get("cedula", "")).strip()
-    cargo_id = str(datos.get("id_cargo", "")).strip()
     nombre = str(datos.get("nombre", "")).strip()
-    apellido = str(datos.get("apellido", "")).strip()
-    celular = str(datos.get("celular", "")).strip()
-    correo = str(datos.get("correo", "")).strip()
-    direccion = str(datos.get("direccion", "")).strip()
-    especialidades = datos.get('especialidades') or []
+    num_i = datos.get("num_i")
     
-    if isinstance(especialidades, str):
-        try:
-            import json
-            especialidades = json.loads(especialidades)
-        except Exception:
-            especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
-
-    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Todos los campos son obligatorios.",
-                }
-            ),
-            400,
-        )
-
-    modelo = Empleados()
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
     try:
-        mensaje = modelo.agregar_empleado(
-            cedula=cedula,
-            cargo_id=cargo_id,
-            nombre=nombre,
-            apellido=apellido,
-            celular=celular,
-            correo=correo,
-            direccion=direccion,
-            especialidades=especialidades,
-        )
-
-        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
-            # Registrar en bitácora
-            registrar_en_bitacora(
-                accion="Crear empleado",
-                descripcion=f"Se creó el empleado: {nombre} {apellido} - Cédula: {cedula} - Cargo ID: {cargo_id}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Empleados"
-            )
-            return jsonify({"success": True, "message": mensaje}), 201
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo agregar el empleado."}), 400
+        _validate_len("Clase", nombre, 30)
     except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
-
-
-@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Empleados', 'modificar')
-def api_actualizar_empleado(id_empleado):
-    datos = request.get_json(silent=True) or {}
-
-    cedula = str(datos.get("cedula", "")).strip()
-    cargo_id = str(datos.get("id_cargo", "")).strip()
-    nombre = str(datos.get("nombre", "")).strip()
-    apellido = str(datos.get("apellido", "")).strip()
-    celular = str(datos.get("celular", "")).strip()
-    correo = str(datos.get("correo", "")).strip()
-    direccion = str(datos.get("direccion", "")).strip()
-    especialidades = datos.get('especialidades') or []
-    
-    if isinstance(especialidades, str):
-        try:
-            import json
-            especialidades = json.loads(especialidades)
-        except Exception:
-            especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
-
-    if not all([cedula, cargo_id, nombre, apellido, celular, correo, direccion]):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Todos los campos son obligatorios.",
-                }
-            ),
-            400,
-        )
-
-    modelo = Empleados()
+        return jsonify({"success": False, "error": str(error)}), 400
 
     try:
-        mensaje = modelo.actualizar_empleado(
-            id_empleado=id_empleado,
-            cargo_id=cargo_id,
-            nombre=nombre,
-            apellido=apellido,
-            celular=celular,
-            correo=correo,
-            direccion=direccion,
-            especialidades=especialidades,
-        )
+        num_i_val = int(num_i) if num_i not in (None, "") else None
+    except Exception:
+        return jsonify({"success": False, "error": "Num_i debe ser un número."}), 400
 
-        if isinstance(mensaje, str) and "actualizado" in mensaje.lower():
-            # Registrar en bitácora
-            registrar_en_bitacora(
-                accion="Actualizar empleado",
-                descripcion=f"Se actualizó el empleado ID: {id_empleado} - Nuevo nombre: {nombre} {apellido} - Nuevo cargo ID: {cargo_id}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Empleados"
-            )
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo actualizar el empleado."}), 400
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
-
-
-@empleados_blueprint.route("/api/empleados/<id_empleado>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Empleados', 'eliminar')
-def api_eliminar_empleado(id_empleado):
-    modelo = Empleados()
-    
+    modelo = Productos()
     try:
-        # Obtener datos del empleado antes de eliminar para la bitácora
-        empleado_data = modelo.consultar_empleado(id_empleado)
-        nombre_empleado = f"{empleado_data.get('nombre', '')} {empleado_data.get('apellido', '')}".strip() if empleado_data else id_empleado
+        new_id = modelo.crear_clase(nombre=nombre, num_i=num_i_val)
         
-        mensaje = modelo.eliminar_empleado(id_empleado)
-
-        if isinstance(mensaje, str) and "exitosamente" in mensaje.lower():
-            # Registrar en bitácora
-            registrar_en_bitacora(
-                accion="Eliminar empleado",
-                descripcion=f"Se eliminó el empleado ID: {id_empleado} - Nombre: {nombre_empleado}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Empleados"
-            )
-            return jsonify({"success": True, "message": mensaje}), 200
-
-        return jsonify({"success": False, "error": mensaje or "No se pudo eliminar el empleado."}), 400
+        registrar_en_bitacora(
+            accion="Crear clase de producto",
+            descripcion=f"Se creó la clase: {nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 500
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
+@jwt_required
+@tiene_permiso('Productos', 'modificar')
+def api_actualizar_clase(id_clase: str):
+    datos = request.get_json(silent=True) or {}
+    nombre = str(datos.get("nombre", "")).strip()
+    num_i = datos.get("num_i")
+    
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
+
+    try:
+        _validate_len("Clase", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    try:
+        num_i_val = int(num_i) if num_i not in (None, "") else None
+    except Exception:
+        return jsonify({"success": False, "error": "Num_i debe ser un número."}), 400
+
+    modelo = Productos()
+    try:
+        ok = modelo.actualizar_clase(id_clase=id_clase, nombre=nombre, num_i=num_i_val)
+        
+        registrar_en_bitacora(
+            accion="Actualizar clase de producto",
+            descripcion=f"Se actualizó la clase ID: {id_clase} - Nuevo nombre: {nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "updated": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
+@jwt_required
+@tiene_permiso('Productos', 'eliminar')
+def api_eliminar_clase(id_clase: str):
+    modelo = Productos()
+    try:
+        clases = modelo.listar_clases() or []
+        clase = next((c for c in clases if c.get("id_clase") == id_clase), None)
+        nombre_clase = clase.get("nombre_clase", id_clase) if clase else id_clase
+        
+        ok = modelo.eliminar_clase(id_clase=id_clase)
+        
+        registrar_en_bitacora(
+            accion="Eliminar clase de producto",
+            descripcion=f"Se eliminó la clase ID: {id_clase} - Nombre: {nombre_clase}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "deleted": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+# ==================== MARCAS ====================
+
+@productos_blueprint.route("/api/productos/marcas", methods=["GET"])
+@jwt_required
+@tiene_permiso('Productos', 'consultar')
+def api_listar_marcas():
+    id_clase = request.args.get("clase_id", default=None, type=str)
+    modelo = Productos()
+    marcas = modelo.listar_marcas(id_clase=id_clase) or []
+    return jsonify({"success": True, "marcas": marcas})
+
+
+@productos_blueprint.route("/api/productos/marcas", methods=["POST"])
+@jwt_required
+@tiene_permiso('Productos', 'registrar')
+def api_crear_marca():
+    datos = request.get_json(silent=True) or {}
+    nombre = str(datos.get("nombre", "")).strip()
+    id_clase = datos.get("id_clase")
+
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+
+    try:
+        _validate_len("Marca", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    try:
+        id_clase_val = _parse_id_field("La clase", id_clase, required=False)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        new_id = modelo.crear_marca(id_clase=id_clase_val, nombre=nombre)
+        
+        registrar_en_bitacora(
+            accion="Crear marca",
+            descripcion=f"Se creó la marca: {nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "id": new_id}), 201
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
+@jwt_required
+@tiene_permiso('Productos', 'modificar')
+def api_actualizar_marca(id_marca: str):
+    datos = request.get_json(silent=True) or {}
+    nombre = str(datos.get("nombre", "")).strip()
+    id_clase = datos.get("id_clase")
+
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+
+    try:
+        _validate_len("Marca", nombre, 30)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    try:
+        id_clase_val = _parse_id_field("La clase", id_clase, required=False)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        ok = modelo.actualizar_marca(id_marca=id_marca, id_clase=id_clase_val, nombre=nombre)
+        
+        registrar_en_bitacora(
+            accion="Actualizar marca",
+            descripcion=f"Se actualizó la marca ID: {id_marca} - Nuevo nombre: {nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "updated": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
+@jwt_required
+@tiene_permiso('Productos', 'eliminar')
+def api_eliminar_marca(id_marca: str):
+    modelo = Productos()
+    try:
+        marcas = modelo.listar_marcas() or []
+        marca = next((m for m in marcas if m.get("id_marca") == id_marca), None)
+        nombre_marca = marca.get("nombre_marca", id_marca) if marca else id_marca
+        
+        ok = modelo.eliminar_marca(id_marca=id_marca)
+        
+        registrar_en_bitacora(
+            accion="Eliminar marca",
+            descripcion=f"Se eliminó la marca ID: {id_marca} - Nombre: {nombre_marca}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "deleted": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+# ==================== MODELOS ====================
+
+@productos_blueprint.route("/api/productos/modelos", methods=["GET"])
+@jwt_required
+@tiene_permiso('Productos', 'consultar')
+def api_listar_modelos():
+    id_marca = request.args.get("marca_id", default=None, type=str)
+    id_clase = request.args.get("clase_id", default=None, type=str)
+    q = request.args.get("q", default=None, type=str)
+    modelo = Productos()
+    modelos = modelo.listar_modelos(id_marca=id_marca, id_clase=id_clase, q=q) or []
+    return jsonify({"success": True, "modelos": modelos})
+
+
+@productos_blueprint.route("/api/productos/modelos", methods=["POST"])
+@jwt_required
+@tiene_permiso('Productos', 'registrar')
+def api_crear_modelo():
+    datos = request.get_json(silent=True) or {}
+    nombre = str(datos.get("nombre", "")).strip()
+    id_marca = datos.get("id_marca")
+    id_clase = datos.get("id_clase")
+    descripcion = datos.get("descripcion")
+
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+
+    try:
+        _validate_len("Producto", nombre, 30)
+        id_marca_val = _parse_id_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=True)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    desc_val = None
+    if descripcion not in (None, ""):
+        desc_val = str(descripcion).strip()
+        try:
+            _validate_len("Descripción", desc_val, 300)
+        except Exception as error:
+            return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        new_id = modelo.crear_modelo(id_clase=id_clase_val, id_marca=id_marca_val, nombre=nombre, descripcion=desc_val)
+        
+        registrar_en_bitacora(
+            accion="Crear producto",
+            descripcion=f"Se creó el producto: {nombre} - Marca ID: {id_marca_val} - Clase ID: {id_clase_val}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "id": new_id}), 201
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["PUT"])
+@jwt_required
+@tiene_permiso('Productos', 'modificar')
+def api_actualizar_modelo(id_modelo: str):
+    datos = request.get_json(silent=True) or {}
+    nombre = str(datos.get("nombre", "")).strip()
+    id_marca = datos.get("id_marca")
+    id_clase = datos.get("id_clase")
+    descripcion = datos.get("descripcion")
+
+    if nombre == "":
+        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+
+    try:
+        _validate_len("Producto", nombre, 30)
+        id_marca_val = _parse_id_field("La marca", id_marca, required=True)
+        id_clase_val = _parse_id_field("La clase", id_clase, required=True)
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+    desc_val = None
+    if descripcion not in (None, ""):
+        desc_val = str(descripcion).strip()
+        try:
+            _validate_len("Descripción", desc_val, 300)
+        except Exception as error:
+            return jsonify({"success": False, "error": str(error)}), 400
+
+    modelo = Productos()
+    try:
+        ok = modelo.actualizar_modelo(
+            id_modelo=id_modelo,
+            id_clase=id_clase_val,
+            id_marca=id_marca_val,
+            nombre=nombre,
+            descripcion=desc_val,
+        )
+        
+        registrar_en_bitacora(
+            accion="Actualizar producto",
+            descripcion=f"Se actualizó el producto ID: {id_modelo} - Nuevo nombre: {nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "updated": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["DELETE"])
+@jwt_required
+@tiene_permiso('Productos', 'eliminar')
+def api_eliminar_modelo(id_modelo: str):
+    modelo = Productos()
+    try:
+        modelos = modelo.listar_modelos() or []
+        producto = next((p for p in modelos if p.get("id_modelo") == id_modelo), None)
+        nombre_producto = producto.get("nombre_producto", id_modelo) if producto else id_modelo
+        
+        ok = modelo.eliminar_modelo(id_modelo=id_modelo)
+        
+        registrar_en_bitacora(
+            accion="Eliminar producto",
+            descripcion=f"Se eliminó el producto ID: {id_modelo} - Nombre: {nombre_producto}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Productos"
+        )
+        
+        return jsonify({"success": True, "deleted": bool(ok)})
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 400
