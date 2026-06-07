@@ -616,6 +616,22 @@
   const reporteTotal = document.getElementById("reporte-total");
   const reporteTabla = document.getElementById("reporte-tabla");
 
+    function abrirModalReportes() {
+      if (!modalReportes) return;
+      modalReportes.classList.remove("is-hidden");
+      modalReportes.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function cerrarModalReportes() {
+      if (!modalReportes) return;
+      modalReportes.classList.add("is-hidden");
+      modalReportes.setAttribute("aria-hidden", "true");
+      if (!document.querySelector(".modal:not(.is-hidden)")) {
+        document.body.style.overflow = "";
+      }
+    }
+
   function cargarClasesMarcasReporte() {
       if (reporteClase) {
           fetchJson("/api/productos/clases", { method: "GET" }).then(data => {
@@ -1531,9 +1547,32 @@ function imprimirReporte() {
           if (btnExportarExcel) btnExportarExcel.disabled = true;
           if (btnExportarPdf) btnExportarPdf.disabled = true;
           if (btnImprimir) btnImprimir.disabled = true;
-          if (modalReportes) modalReportes.classList.remove("is-hidden");
+        abrirModalReportes();
       });
   }
+
+    if (modalReportes) {
+      modalReportes.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        if (target.dataset.modalClose === "true") {
+          cerrarModalReportes();
+          return;
+        }
+
+        if (target === modalReportes) {
+          cerrarModalReportes();
+        }
+      });
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (modalReportes && !modalReportes.classList.contains("is-hidden")) {
+        cerrarModalReportes();
+      }
+    });
 
   if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
   if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
