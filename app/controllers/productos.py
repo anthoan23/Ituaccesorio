@@ -35,6 +35,7 @@ def _resolver_usuario_id_str():
 
 @productos_blueprint.route("/productos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Productos', 'consultar')
 def pagina_productos():
     return render_template(
         "productos.html",
@@ -48,6 +49,7 @@ def pagina_productos():
 
 @productos_blueprint.route("/api/productos/clases", methods=["GET"])
 @jwt_required
+@tiene_permiso('Productos', 'consultar')
 def api_listar_clases():
     modelo = ClaseProducto()
     clases = modelo.listar()  # Cambiado de listar_clases() a listar()
@@ -56,6 +58,7 @@ def api_listar_clases():
 
 @productos_blueprint.route("/api/productos/clases", methods=["POST"])
 @jwt_required
+@tiene_permiso('Productos', 'registrar')
 def api_crear_clase():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -84,6 +87,7 @@ def api_crear_clase():
 
 @productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Productos', 'modificar')
 def api_actualizar_clase(id_clase: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -113,6 +117,7 @@ def api_actualizar_clase(id_clase: str):
 
 @productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Productos', 'eliminar')
 def api_eliminar_clase(id_clase: str):
     modelo = ClaseProducto(id_clase=id_clase)
     try:
@@ -138,6 +143,7 @@ def api_eliminar_clase(id_clase: str):
 
 @productos_blueprint.route("/api/productos/marcas", methods=["GET"])
 @jwt_required
+@tiene_permiso('Productos', 'consultar')
 def api_listar_marcas():
     id_clase = request.args.get("clase_id", default=None, type=str)
     modelo = MarcaProducto()
@@ -147,6 +153,7 @@ def api_listar_marcas():
 
 @productos_blueprint.route("/api/productos/marcas", methods=["POST"])
 @jwt_required
+@tiene_permiso('Productos', 'registrar')
 def api_crear_marca():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -175,6 +182,7 @@ def api_crear_marca():
 
 @productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Productos', 'modificar')
 def api_actualizar_marca(id_marca: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -204,6 +212,7 @@ def api_actualizar_marca(id_marca: str):
 
 @productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Productos', 'eliminar')
 def api_eliminar_marca(id_marca: str):
     modelo = MarcaProducto(id_marca=id_marca)
     try:
@@ -229,6 +238,7 @@ def api_eliminar_marca(id_marca: str):
 
 @productos_blueprint.route("/api/productos/modelos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Productos', 'consultar')
 def api_listar_modelos():
     id_marca = request.args.get("marca_id", default=None, type=str)
     id_clase = request.args.get("clase_id", default=None, type=str)
@@ -241,6 +251,7 @@ def api_listar_modelos():
 
 @productos_blueprint.route("/api/productos/modelos", methods=["POST"])
 @jwt_required
+@tiene_permiso('Productos', 'registrar')
 def api_crear_modelo():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -276,6 +287,7 @@ def api_crear_modelo():
 
 @productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Productos', 'modificar')
 def api_actualizar_modelo(id_modelo: str):
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
@@ -313,6 +325,7 @@ def api_actualizar_modelo(id_modelo: str):
 
 @productos_blueprint.route("/api/productos/modelos/<string:id_modelo>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Productos', 'eliminar')
 def api_eliminar_modelo(id_modelo: str):
     modelo = Producto(id_producto=id_modelo)
     try:

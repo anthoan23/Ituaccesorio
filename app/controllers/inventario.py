@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, g
 from werkzeug.utils import secure_filename
 
 from decimal import Decimal, InvalidOperation
@@ -9,10 +9,23 @@ from decimal import Decimal, InvalidOperation
 from app.models.inventario import Inventario, FotosInventario
 from app.models.productos import Producto
 from app.utils.decorators import jwt_required
+from app.models.inventario import Inventario
+from app.models.bitacora import registrar_en_bitacora
+from app.utils.decorators import jwt_required, tiene_permiso
 
 inventario_blueprint = Blueprint("inventario", __name__)
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
 def _es_imagen_permitida(nombre_archivo: str) -> bool:
@@ -41,6 +54,7 @@ def _guardar_foto_inventario(archivo):
 
 @inventario_blueprint.route("/api/inventario", methods=["GET"])
 @jwt_required
+@tiene_permiso('Inventario', 'consultar')
 def api_listar_inventario():
     """Listado de inventario (stock + modelo + marca + clase)"""
     modelo = request.args.get("modelo")
@@ -71,6 +85,7 @@ def api_listar_inventario():
 
 @inventario_blueprint.route("/api/inventario/stock", methods=["POST"])
 @jwt_required
+@tiene_permiso('Inventario', 'registrar')
 def api_registrar_stock():
     datos = request.form.to_dict() if request.form else (request.get_json(silent=True) or {})
     id_producto = datos.get("id_producto")
@@ -103,14 +118,28 @@ def api_registrar_stock():
 
     inv = Inventario()
     try:
+        # Obtener información del producto para la bitácora
+        producto_info = inv.obtener_producto_por_id(id_producto_val)
+        nombre_producto = producto_info.get("nombre_producto", id_producto_val) if producto_info else id_producto_val
+        
         id_inventario = inv.registrar_stock(
             id_producto=id_producto_val,
             existencia=existencia_val,
             costo_venta=costo_val,
             foto_inventario=foto_inventario,
         )
+        
         if not id_inventario:
             return jsonify({"success": False, "error": "No se pudo conectar a la base de datos."}), 500
+        
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Registrar stock",
+            descripcion=f"Se registró stock para producto: {nombre_producto} (ID: {id_producto_val}) - Cantidad: {existencia_val} - Costo: {costo_val}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Inventario"
+        )
+        
         return jsonify({"success": True, "id_inventario": id_inventario})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400

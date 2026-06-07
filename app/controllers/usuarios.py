@@ -130,6 +130,7 @@ def pagina_usuarios():
 
 @usuarios_blueprint.route("/api/usuarios", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def listar_usuarios():
     modelo = Usuarios()
     datos = modelo.listar_usuarios() or []
@@ -138,6 +139,7 @@ def listar_usuarios():
 
 @usuarios_blueprint.route("/api/usuarios/empleados", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def listar_empleados():
     modelo = Usuarios()
     datos = modelo.listar_empleados() or []
@@ -146,6 +148,7 @@ def listar_empleados():
 
 @usuarios_blueprint.route("/api/usuarios/clientes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def listar_clientes():
     """Lista todos los clientes (personas naturales) para asignar como usuarios"""
     from app.models.clientes import GestionClientes
@@ -226,6 +229,7 @@ def actualizar_mi_perfil():
 
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
 @jwt_required
+@tiene_permiso('Usuarios', 'registrar')
 def crear_usuario():
     datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -274,6 +278,7 @@ def crear_usuario():
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Usuarios', 'modificar')
 def actualizar_usuario(usuario_id):
     datos = _datos_solicitud() or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -334,6 +339,7 @@ def actualizar_usuario(usuario_id):
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Usuarios', 'eliminar')
 def eliminar_usuario(usuario_id):
     modelo = Usuarios()
     try:
@@ -370,6 +376,7 @@ def eliminar_usuario(usuario_id):
 
 @usuarios_blueprint.route("/api/roles", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def listar_roles():
     modelo = Usuarios()
     datos = modelo.listar_roles() or []
@@ -378,6 +385,7 @@ def listar_roles():
 
 @usuarios_blueprint.route("/api/roles", methods=["POST"])
 @jwt_required
+@tiene_permiso('Usuarios', 'registrar')
 def crear_rol():
     datos = request.get_json(silent=True) or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -404,6 +412,7 @@ def crear_rol():
 
 @usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Usuarios', 'modificar')
 def actualizar_rol(rol_id):
     datos = request.get_json(silent=True) or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -430,6 +439,7 @@ def actualizar_rol(rol_id):
 
 @usuarios_blueprint.route("/api/roles/<int:rol_id>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Usuarios', 'eliminar')
 def eliminar_rol(rol_id):
     modelo = Usuarios()
     try:
@@ -457,6 +467,7 @@ def eliminar_rol(rol_id):
 
 @usuarios_blueprint.route("/api/modulos", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def listar_modulos():
     modelo = Usuarios()
     datos = modelo.listar_modulos() or []
@@ -465,6 +476,7 @@ def listar_modulos():
 
 @usuarios_blueprint.route("/api/modulos", methods=["POST"])
 @jwt_required
+@tiene_permiso('Usuarios', 'registrar')
 def crear_modulo():
     datos = request.get_json(silent=True) or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -491,6 +503,7 @@ def crear_modulo():
 
 @usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Usuarios', 'modificar')
 def actualizar_modulo(modulo_id):
     datos = request.get_json(silent=True) or {}
     nombre = (datos.get("nombre") or "").strip()
@@ -517,6 +530,7 @@ def actualizar_modulo(modulo_id):
 
 @usuarios_blueprint.route("/api/modulos/<int:modulo_id>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Usuarios', 'eliminar')
 def eliminar_modulo(modulo_id):
     modelo = Usuarios()
     try:
@@ -538,6 +552,7 @@ def eliminar_modulo(modulo_id):
 
 @usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def obtener_permisos_por_rol(rol_id):
     """Obtiene todos los permisos de un rol específico"""
     modelo = Usuarios()
@@ -571,6 +586,7 @@ def obtener_permisos_por_rol(rol_id):
 
 @usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Usuarios', 'modificar')
 def actualizar_permisos_rol(rol_id):
     """Actualiza todos los permisos de un rol específico"""
     datos = request.get_json(silent=True) or {}
@@ -625,6 +641,7 @@ def actualizar_permisos_rol(rol_id):
 
 @usuarios_blueprint.route("/api/permisos/rol/<int:rol_id>/modulo/<int:modulo_id>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Usuarios', 'consultar')
 def obtener_permiso_especifico(rol_id, modulo_id):
     """Obtiene un permiso específico de un rol para un módulo"""
     modelo = Usuarios()
@@ -661,3 +678,18 @@ def obtener_mis_permisos():
     from app.utils.decorators import obtener_permisos_usuario_actual
     permisos = obtener_permisos_usuario_actual()
     return jsonify({"success": True, "permisos": permisos})
+
+
+# ==================== MÉTODO AUXILIAR ====================
+
+def obtener_rol_por_id(self, rol_id):
+    """Obtiene un rol por su ID (para el modelo Usuarios)"""
+    return self._consultar(
+        """
+        SELECT id, nombre, descripcion
+        FROM rol
+        WHERE id = %s
+        LIMIT 1
+        """,
+        (rol_id,),
+    )

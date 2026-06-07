@@ -1,50 +1,73 @@
-from flask import Blueprint, jsonify, render_template, request
-from app.utils.decorators import jwt_required
-
+from flask import Blueprint, jsonify, render_template, request, g
+from app.utils.decorators import jwt_required, tiene_permiso
+from app.models.bitacora import registrar_en_bitacora
 from app.models.ordenes_compra import OrdenCompra
 
 ordenes_compra = Blueprint('ordenes_compra', __name__)
 
+
+def _usuario_actual():
+    """Obtiene el ID del usuario actual"""
+    user = getattr(g, 'user', None)
+    if not user:
+        return "SYSTEM"
+    if isinstance(user, dict):
+        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
+
+
+def _obtener_nombre_proveedor(proveedor_id):
+    """Obtiene el nombre de un proveedor por su ID"""
+    orden = OrdenCompra()
+    proveedores = orden.enlistar_proveedores()
+    for p in proveedores:
+        if p.get("ID_proveedor") == proveedor_id:
+            return p.get("Nombre_proveedor", str(proveedor_id))
+    return str(proveedor_id)
+
+
 @ordenes_compra.route('/ordenes_compra', methods=['GET'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
 def pagina_ordenes_compra():
     return render_template(
         "ordenes_compra.html",
         active_page="ordenes_compra",
         show_navbar=True,
         show_notifications=True,
-        )   
+    )   
 
 
 @ordenes_compra.route('/api/ordenes_compra', methods=['GET'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
 def api_ordenes_compra():
     orden = OrdenCompra()
     ordenes = orden.enlistar_ordenes_compra()
     return jsonify(ordenes)
 
+
 @ordenes_compra.route('/api/proveedores', methods=['GET'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
 def api_proveedores():
     orden = OrdenCompra()
     proveedores = orden.enlistar_proveedores()
     return jsonify(proveedores)
 
 
-
 @ordenes_compra.route('/api/productos_proveedor/<int:ID_proveedor>', methods=['POST'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
 def api_productos_proveedor(ID_proveedor):
     orden = OrdenCompra()
     productos = orden.obtener_productos_proveedor(ID_proveedor)
     return jsonify(productos)
 
 
-
-    
-
 @ordenes_compra.route('/api/detalles_orden/<int:ID_orden_c>', methods=['POST'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
 def api_detalles_orden(ID_orden_c):
     orden = OrdenCompra()
     detalles = orden.obtener_detalles_orden(ID_orden_c)
@@ -52,23 +75,23 @@ def api_detalles_orden(ID_orden_c):
         return jsonify(detalles)
     else:
         return jsonify({"error": "Orden no encontrada"}), 404
-    
+
+
 @ordenes_compra.route('/api/ordenes_compra/agregar', methods=['POST'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'registrar')
 def api_agregar_orden_compra():
     data = request.get_json()
-    ID_em = 1004
+    ID_em = 1004  # TODO: Obtener del usuario actual
     ID_proveedor = data.get('ID_proveedor')
     productos = data.get('productos')
 
     if not all([ID_em, ID_proveedor]):
         return jsonify({"error": "Faltan campos requeridos"}), 400
 
-    # Validate productos is a non-empty list
     if productos is None or not isinstance(productos, list) or len(productos) == 0:
         return jsonify({"error": "El campo 'productos' debe ser una lista no vacía"}), 400
 
-    # Normalize product entries to (ID_modelo, Cantidad_p) tuples
     normalized = []
     for idx, p in enumerate(productos, start=1):
         if isinstance(p, (list, tuple)):
@@ -94,14 +117,25 @@ def api_agregar_orden_compra():
 
     orden = OrdenCompra()
     success = orden.agregar_orden_compra(ID_em, ID_proveedor, normalized)
+    
     if success:
+        # Registrar en bitácora
+        nombre_proveedor = _obtener_nombre_proveedor(ID_proveedor)
+        cantidad_productos = len(normalized)
+        registrar_en_bitacora(
+            accion="Crear orden de compra",
+            descripcion=f"Se creó orden de compra - Proveedor: {nombre_proveedor} (ID: {ID_proveedor}) - Productos: {cantidad_productos}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Órdenes de compra"
+        )
         return jsonify({"message": "Orden de compra agregada exitosamente"}), 201
     else:
         return jsonify({"error": "Error al agregar la orden de compra"}), 500
-    
+
 
 @ordenes_compra.route('/api/ordenes_compra/actualizar_productos', methods=['POST'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'modificar')
 def api_actualizar_productos_orden():
     data = request.get_json()
     ID_orden_c = data.get('ID_orden_c')
@@ -110,11 +144,9 @@ def api_actualizar_productos_orden():
     if not ID_orden_c:
         return jsonify({"error": "Falta el campo requerido: ID_orden_c"}), 400
 
-    # Validate productos is a list if provided
     if productos is not None and (not isinstance(productos, list) or len(productos) == 0):
         return jsonify({"error": "El campo 'productos' debe ser una lista no vacía si se proporciona"}), 400
 
-    # Normalize product entries to (ID_modelo, Cantidad_p) tuples
     normalized = []
     if productos:
         for idx, p in enumerate(productos, start=1):
@@ -141,13 +173,23 @@ def api_actualizar_productos_orden():
 
     orden = OrdenCompra()
     success = orden.actualizar_productos_orden(ID_orden_c, normalized)
+    
     if success:
+        # Registrar en bitácora
+        registrar_en_bitacora(
+            accion="Actualizar productos de orden",
+            descripcion=f"Se actualizaron los productos de la orden ID: {ID_orden_c} - Productos: {len(normalized)}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Órdenes de compra"
+        )
         return jsonify({"message": "Productos de la orden actualizados exitosamente"})
     else:
         return jsonify({"error": "Error al actualizar los productos de la orden"}), 500
-    
+
+
 @ordenes_compra.route('/api/ordenes_compra/anular', methods=['POST'])
 @jwt_required
+@tiene_permiso('Órdenes de compra', 'eliminar')
 def api_anular_orden_compra():
     data = request.get_json()
     ID_orden_c = data.get('ID_orden_c')
@@ -155,9 +197,24 @@ def api_anular_orden_compra():
     if not ID_orden_c:
         return jsonify({"error": "Falta el campo requerido: ID_orden_c"}), 400
 
+    # Obtener información de la orden antes de anular
     orden = OrdenCompra()
+    detalles = orden.obtener_detalles_orden(ID_orden_c)
+    
     success = orden.anular_orden_compra(ID_orden_c)
+    
     if success:
+        # Registrar en bitácora
+        proveedor_nombre = "N/A"
+        if detalles and detalles.get("datos_orden"):
+            proveedor_nombre = detalles["datos_orden"].get("Nombre_proveedor", "N/A")
+        
+        registrar_en_bitacora(
+            accion="Anular orden de compra",
+            descripcion=f"Se anuló la orden de compra ID: {ID_orden_c} - Proveedor: {proveedor_nombre}",
+            usuario_id=_usuario_actual(),
+            modulo_nombre="Órdenes de compra"
+        )
         return jsonify({"message": "Orden de compra anulada exitosamente"})
     else:
         return jsonify({"error": "Error al anular la orden de compra"}), 500

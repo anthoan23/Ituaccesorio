@@ -203,6 +203,22 @@ class Cargo():
             cursor.close()
             db.close()
 
+
+    def obtener_cargo_por_id(self, cargo_id):
+        """Obtiene un cargo por su ID"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            query = "SELECT id_cargo, nombre_cargo, descripcion_cargo FROM Cargo WHERE id_cargo = %s LIMIT 1"
+            cursor.execute(query, (cargo_id,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
     def obtener_id_por_nombre(self) -> str | None:
         # Usar el atributo nombre_cargo
         cargo = self.nombre_cargo.strip()
