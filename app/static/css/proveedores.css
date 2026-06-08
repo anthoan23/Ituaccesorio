@@ -113,7 +113,6 @@ body {
 	border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* En cards (fondo blanco), los botones deben ser legibles */
 .card .btn--ghost {
 	background: #eef0f4;
 	color: var(--ink);
@@ -170,19 +169,18 @@ body {
 
 .table-wrap {
 	overflow-x: auto;
-	overflow-y: hidden;
+	width: 100%;
+}
+
+.providers-table {
+	width: 100%;
+	min-width: 800px;
+	border-collapse: collapse;
 }
 
 .table {
 	width: 100%;
 	border-collapse: collapse;
-	min-width: 0;
-	table-layout: fixed;
-}
-
-/* En la tabla principal (proveedores) queremos que las columnas se ajusten al contenido */
-.providers-table {
-	table-layout: auto;
 }
 
 .table th,
@@ -206,23 +204,107 @@ body {
 	font-weight: 700;
 	color: var(--ink);
 	overflow-wrap: break-word;
-	word-break: normal;
+	word-break: break-word;
 }
 
-/* Evita que ID/Tipo/Teléfono se rompan feo */
+/* Anchos de columna fijos */
 .providers-table th:nth-child(1),
-.providers-table td:nth-child(1),
-.providers-table th:nth-child(3),
-.providers-table td:nth-child(3),
-.providers-table th:nth-child(4),
-.providers-table td:nth-child(4) {
+.providers-table td:nth-child(1) {
+	width: 90px;
+	min-width: 90px;
 	white-space: nowrap;
 }
 
-/* Alternado por columna (gris/blanco) */
-.providers-table th:nth-child(even),
-.providers-table td:nth-child(even) {
+.providers-table th:nth-child(2),
+.providers-table td:nth-child(2) {
+	width: auto;
+	min-width: 180px;
+}
+
+.providers-table th:nth-child(3),
+.providers-table td:nth-child(3) {
+	width: 110px;
+	min-width: 110px;
+	white-space: nowrap;
+}
+
+.providers-table th:nth-child(4),
+.providers-table td:nth-child(4) {
+	width: 130px;
+	min-width: 130px;
+	white-space: nowrap;
+}
+
+.providers-table th:nth-child(5),
+.providers-table td:nth-child(5) {
+	width: auto;
+	min-width: 150px;
+}
+
+.providers-table th:nth-child(6),
+.providers-table td:nth-child(6) {
+	width: 120px;
+	min-width: 120px;
+	text-align: right;
+}
+
+/* Filas alternas */
+.providers-table tbody tr:nth-child(even) {
 	background: rgba(17, 24, 39, 0.03);
+}
+
+/* Columna de acciones */
+.table__actions {
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* Contenedor de botones de acción */
+.row-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: nowrap;
+}
+
+/* Botones de acción individuales */
+.icon-action {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	border: 1px solid rgba(17, 24, 39, 0.12);
+	background: #ffffff;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: rgba(17, 24, 39, 0.85);
+	transition: all 0.2s ease;
+	flex-shrink: 0;
+}
+
+.icon-action:hover {
+	transform: translateY(-2px);
+	border-color: var(--yellow);
+}
+
+.icon-action svg {
+	width: 16px;
+	height: 16px;
+	display: block;
+}
+
+/* Botón de eliminar (rojo) */
+.icon-action--danger {
+	border-color: rgba(239, 68, 68, 0.28);
+	background: rgba(239, 68, 68, 0.08);
+	color: rgba(239, 68, 68, 0.95);
+}
+
+.icon-action--danger:hover {
+	border-color: rgba(239, 68, 68, 0.6);
+	background: rgba(239, 68, 68, 0.15);
 }
 
 .table__empty {
@@ -231,49 +313,7 @@ body {
 	font-weight: 800;
 }
 
-
-.table__actions {
-	width: 180px;
-	text-align: right;
-}
-
-.row-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: 0.5rem;
-	flex-wrap: wrap;
-}
-
-.icon-action {
-	width: 38px;
-	height: 38px;
-	border-radius: 12px;
-	border: 1px solid rgba(17, 24, 39, 0.12);
-	background: #ffffff;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	color: rgba(17, 24, 39, 0.85);
-	transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
-}
-
-.icon-action:hover {
-	transform: translateY(-1px);
-	filter: brightness(1.02);
-}
-
-.icon-action svg {
-	width: 18px;
-	height: 18px;
-}
-
-.icon-action--danger {
-	border-color: rgba(239, 68, 68, 0.28);
-	background: rgba(239, 68, 68, 0.08);
-	color: rgba(239, 68, 68, 0.95);
-}
-
-
+/* Estilos adicionales */
 .col-id {
 	width: 110px;
 }
@@ -333,7 +373,8 @@ body {
 	position: sticky;
 	top: 90px;
 }
-/* Breadcrumb (copiado de empleados, adaptado) */
+
+/* Breadcrumb */
 .breadcrumb {
 	font-size: 14px;
 	margin: 0.75rem 0 1rem;
@@ -402,7 +443,6 @@ body {
 	color: inherit;
 }
 
-
 .filters-panel__section {
 	margin-top: 1rem;
 	padding-top: 1rem;
@@ -466,43 +506,43 @@ input:focus {
 
 /* Estilos para los inputs dentro del modal de reportes */
 #modal-reportes .field__input {
-  width: 100%;
-  border: 1px solid rgba(18, 18, 18, 0.12);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
-  font-size: 0.95rem;
-  font-family: "Manrope", sans-serif;
-  outline: none;
-  background: #ffffff;
-  color: #121212;
+	width: 100%;
+	border: 1px solid rgba(18, 18, 18, 0.12);
+	border-radius: 12px;
+	padding: 0.75rem 0.85rem;
+	font-size: 0.95rem;
+	font-family: "Manrope", sans-serif;
+	outline: none;
+	background: #ffffff;
+	color: #121212;
 }
 
 #modal-reportes .field__input:focus {
-  border-color: rgba(243, 197, 0, 0.7);
-  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
+	border-color: rgba(243, 197, 0, 0.7);
+	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
 }
 
 #modal-reportes select.field__input {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding-right: 2.5rem;
+	cursor: pointer;
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 1rem;
+	padding-right: 2.5rem;
 }
 
 #modal-reportes .filters-panel__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
 }
 
 @media (max-width: 640px) {
-  #modal-reportes .filters-panel__row {
-    grid-template-columns: 1fr;
-  }
+	#modal-reportes .filters-panel__row {
+		grid-template-columns: 1fr;
+	}
 }
 
 .modal-toolbar {
