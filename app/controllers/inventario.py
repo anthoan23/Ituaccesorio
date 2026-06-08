@@ -9,7 +9,6 @@ from decimal import Decimal, InvalidOperation
 from app.models.inventario import Inventario, FotosInventario
 from app.models.productos import Producto
 from app.utils.decorators import jwt_required
-from app.models.inventario import Inventario
 from app.models.bitacora import registrar_en_bitacora
 from app.utils.decorators import jwt_required, tiene_permiso
 
@@ -87,28 +86,58 @@ def api_listar_inventario():
 @jwt_required
 @tiene_permiso('Inventario', 'registrar')
 def api_registrar_stock():
-    datos = request.form.to_dict() if request.form else (request.get_json(silent=True) or {})
+    print("=== DEBUG: Iniciando registro de stock ===")
+    
+    # Verificar si es FormData o JSON
+    if request.files:
+        datos = request.form.to_dict()
+        archivo = request.files.get("foto_inventario")
+        print(f"Datos recibidos (FormData): {datos}")
+        print(f"Archivo recibido: {archivo.filename if archivo else 'No'}")
+    else:
+        datos = request.get_json(silent=True) or {}
+        archivo = None
+        print(f"Datos recibidos (JSON): {datos}")
+    
     id_producto = datos.get("id_producto")
     existencia = datos.get("existencia")
     costo_venta = datos.get("costo_venta")
-    foto_inventario = _guardar_foto_inventario(request.files.get("foto_inventario"))
+    
+    # Guardar foto
+    foto_inventario = None
+    if archivo:
+        try:
+            foto_inventario = _guardar_foto_inventario(archivo)
+            print(f"Foto guardada en: {foto_inventario}")
+        except ValueError as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+    else:
+        print("No se recibió archivo de foto")
 
     id_producto_val = str(id_producto).strip() if id_producto not in (None, "") else ""
+    print(f"ID Producto: {id_producto_val}")
+    
     if not id_producto_val:
+        print("Error: id_producto vacío")
         return jsonify({"success": False, "error": "id_producto es obligatorio."}), 400
 
     if not foto_inventario:
+        print("Error: foto_inventario vacía")
         return jsonify({"success": False, "error": "foto_inventario es obligatoria."}), 400
 
     try:
         existencia_val = int(existencia)
-    except Exception:
+        print(f"Existencia: {existencia_val}")
+    except Exception as e:
+        print(f"Error parsing existencia: {e}")
         return jsonify({"success": False, "error": "existencia debe ser un número."}), 400
 
     try:
         costo_raw = str(costo_venta).strip().replace(",", ".")
         costo_val = Decimal(costo_raw)
-    except (InvalidOperation, Exception):
+        print(f"Costo venta: {costo_val}")
+    except (InvalidOperation, Exception) as e:
+        print(f"Error parsing costo: {e}")
         return jsonify({"success": False, "error": "costo_venta debe ser un número (ej. 12.50)."}), 400
 
     if existencia_val < 0:
@@ -118,10 +147,6 @@ def api_registrar_stock():
 
     inv = Inventario()
     try:
-        # Obtener información del producto para la bitácora
-        producto_info = inv.obtener_producto_por_id(id_producto_val)
-        nombre_producto = producto_info.get("nombre_producto", id_producto_val) if producto_info else id_producto_val
-        
         id_inventario = inv.registrar_stock(
             id_producto=id_producto_val,
             existencia=existencia_val,
@@ -129,20 +154,25 @@ def api_registrar_stock():
             foto_inventario=foto_inventario,
         )
         
+        print(f"ID inventario retornado: {id_inventario}")
+        
         if not id_inventario:
-            return jsonify({"success": False, "error": "No se pudo conectar a la base de datos."}), 500
+            return jsonify({"success": False, "error": "No se pudo registrar el stock."}), 500
         
         # Registrar en bitácora
         registrar_en_bitacora(
             accion="Registrar stock",
-            descripcion=f"Se registró stock para producto: {nombre_producto} (ID: {id_producto_val}) - Cantidad: {existencia_val} - Costo: {costo_val}",
+            descripcion=f"Se registró stock para producto ID: {id_producto_val} - Cantidad: {existencia_val} - Costo: {costo_val}",
             usuario_id=_usuario_actual(),
             modulo_nombre="Inventario"
         )
         
         return jsonify({"success": True, "id_inventario": id_inventario})
     except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+        print(f"Error en api_registrar_stock: {error}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(error)}), 500
 
 
 @inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
@@ -185,6 +215,7 @@ def api_eliminar_foto_inventario(id_foto: str):
         return jsonify({"success": False, "error": "Foto no encontrada."}), 404
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
+
 
 # ==================== REPORTES ====================
 

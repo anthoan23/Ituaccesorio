@@ -398,6 +398,213 @@
 		loadInventario();
 		initFormularioStock();
 	});
+
+  // Variables para modales
+  let modalConfirmacion = null;
+  let productoAEliminar = null;
+
+  // Función para crear modal de confirmación dinámico
+  function crearModalConfirmacion() {
+      // Verificar si ya existe
+      let modal = document.getElementById('modal-confirmar-eliminar');
+      if (modal) {
+          modal.remove();
+      }
+      
+      modal = document.createElement('div');
+      modal.id = 'modal-confirmar-eliminar';
+      modal.className = 'modal is-hidden';
+      modal.setAttribute('aria-hidden', 'true');
+      
+      modal.innerHTML = `
+          <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
+          <div class="modal__panel card" style="max-width: 500px; width: 90%;" role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <h2 class="card__title" style="color: #dc2626;">⚠️ Confirmar eliminación</h2>
+                  <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
+              </div>
+              <div class="filters-panel__section">
+                  <p id="confirmar-mensaje" style="margin-bottom: 1rem; font-size: 1rem;">¿Seguro que deseas eliminar este producto?</p>
+                  <div id="confirmar-stock-warning" style="display: none; background: #fef3c7; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
+                      ⚠️ Este producto tiene stock en inventario. No se puede eliminar hasta que el stock sea 0.
+                  </div>
+                  <div class="filters-panel__actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                      <button id="btn-cancelar-eliminar" class="btn btn--ghost" type="button">Cancelar</button>
+                      <button id="btn-confirmar-eliminar" class="btn btn--danger" type="button">Eliminar</button>
+                  </div>
+              </div>
+          </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Eventos del modal
+      const closeModal = () => {
+          modal.classList.add('is-hidden');
+          modal.setAttribute('aria-hidden', 'true');
+          productoAEliminar = null;
+          document.body.style.overflow = '';
+      };
+      
+      modal.querySelectorAll('[data-modal-close="true"]').forEach(btn => {
+          btn.addEventListener('click', closeModal);
+      });
+      
+      document.getElementById('btn-cancelar-eliminar')?.addEventListener('click', closeModal);
+      
+      return modal;
+  }
+
+  // Función para abrir modal de confirmación
+  function abrirModalConfirmacion(mensaje, tieneStock = false, onConfirmar) {
+      let modal = document.getElementById('modal-confirmar-eliminar');
+      if (!modal) {
+          modal = crearModalConfirmacion();
+      }
+      
+      const mensajeEl = document.getElementById('confirmar-mensaje');
+      const warningEl = document.getElementById('confirmar-stock-warning');
+      const btnConfirmar = document.getElementById('btn-confirmar-eliminar');
+      
+      if (mensajeEl) mensajeEl.textContent = mensaje;
+      
+      if (tieneStock) {
+          if (warningEl) warningEl.style.display = 'block';
+          if (btnConfirmar) btnConfirmar.disabled = true;
+      } else {
+          if (warningEl) warningEl.style.display = 'none';
+          if (btnConfirmar) btnConfirmar.disabled = false;
+      }
+      
+      // Remover event listener anterior
+      const newBtnConfirmar = btnConfirmar.cloneNode(true);
+      btnConfirmar.parentNode.replaceChild(newBtnConfirmar, btnConfirmar);
+      
+      newBtnConfirmar.addEventListener('click', async () => {
+          if (onConfirmar) await onConfirmar();
+          modal.classList.add('is-hidden');
+          modal.setAttribute('aria-hidden', 'true');
+          productoAEliminar = null;
+          document.body.style.overflow = '';
+      });
+      
+      modal.classList.remove('is-hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+  }
+
+  // Función para mostrar modal de mensaje (éxito/error)
+  function mostrarModalMensaje(mensaje, esError = false) {
+      let modal = document.getElementById('modal-mensaje-productos');
+      if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'modal-mensaje-productos';
+          modal.className = 'modal is-hidden';
+          modal.setAttribute('aria-hidden', 'true');
+          modal.innerHTML = `
+              <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
+              <div class="modal__panel card" style="max-width: 400px; width: 90%;" role="dialog" aria-modal="true" aria-label="Mensaje">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                      <h2 class="card__title" id="modal-mensaje-title">${esError ? '❌ Error' : '✅ Éxito'}</h2>
+                      <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
+                  </div>
+                  <div class="filters-panel__section">
+                      <p id="modal-mensaje-texto" style="margin-bottom: 1rem; font-size: 1rem;">${mensaje}</p>
+                      <div class="filters-panel__actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                          <button id="btn-cerrar-mensaje" class="btn btn--primary" type="button">Aceptar</button>
+                      </div>
+                  </div>
+              </div>
+          `;
+          document.body.appendChild(modal);
+          
+          modal.querySelectorAll('[data-modal-close="true"]').forEach(btn => {
+              btn.addEventListener('click', () => {
+                  modal.classList.add('is-hidden');
+                  modal.setAttribute('aria-hidden', 'true');
+                  document.body.style.overflow = '';
+              });
+          });
+          document.getElementById('btn-cerrar-mensaje')?.addEventListener('click', () => {
+              modal.classList.add('is-hidden');
+              modal.setAttribute('aria-hidden', 'true');
+              document.body.style.overflow = '';
+          });
+      }
+      
+      const titleEl = document.getElementById('modal-mensaje-title');
+      const textoEl = document.getElementById('modal-mensaje-texto');
+      
+      if (titleEl) titleEl.textContent = esError ? '❌ Error' : '✅ Éxito';
+      if (textoEl) textoEl.textContent = mensaje;
+      
+      modal.classList.remove('is-hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      
+      // Auto cerrar después de 3 segundos
+      setTimeout(() => {
+          if (modal && !modal.classList.contains('is-hidden')) {
+              modal.classList.add('is-hidden');
+              modal.setAttribute('aria-hidden', 'true');
+              document.body.style.overflow = '';
+          }
+      }, 3000);
+  }
+
+  // Reemplazar la función onTablaClick
+  async function onTablaClick(event) {
+      const btn = event.target?.closest("button.icon-action");
+      if (!btn) return;
+
+      const action = btn.getAttribute("data-action");
+      const id = btn.getAttribute("data-id");
+      if (!action || !id) return;
+
+      if (action === "edit") {
+          await prepararFormularioEdicion(id);
+          openModal();
+          return;
+      }
+
+      if (action === "delete") {
+          const modelo = findModeloById(id);
+          const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
+          
+          // Verificar si el producto tiene stock
+          try {
+              const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' }).catch(() => null);
+              const tieneStock = data?.tiene_stock || false;
+              const stock = data?.stock || 0;
+              
+              if (tieneStock) {
+                  mostrarModalMensaje(`No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario. Primero debe eliminar o reducir el stock.`, true);
+              } else {
+                  abrirModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, false, async () => {
+                      try {
+                          await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
+                          await recargarModelosSegunFiltros();
+                          mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
+                      } catch (err) {
+                          mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
+                      }
+                  });
+              }
+          } catch (err) {
+              // Si no hay endpoint de verificación, intentar eliminar directamente
+              abrirModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, false, async () => {
+                  try {
+                      await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
+                      await recargarModelosSegunFiltros();
+                      mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
+                  } catch (err) {
+                      mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
+                  }
+              });
+          }
+          return;
+      }
+  }
 })();
 
 // ==================== REPORTES INVENTARIO ====================

@@ -331,6 +331,14 @@ def api_actualizar_modelo(id_modelo: str):
 def api_eliminar_modelo(id_modelo: str):
     modelo = Producto(id_producto=id_modelo)
     try:
+        # Verificar si el producto tiene stock
+        if modelo.tiene_stock_asociado(id_modelo):
+            stock = modelo.obtener_stock(id_modelo)
+            return jsonify({
+                "success": False, 
+                "error": f"No se puede eliminar el producto porque tiene {stock} unidades en inventario. Primero debe eliminar o reducir el stock."
+            }), 400
+        
         ok = modelo.eliminar()
         
         if ok:
@@ -347,6 +355,21 @@ def api_eliminar_modelo(id_modelo: str):
         return jsonify({"success": True, "deleted": ok})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
+
+
+@productos_blueprint.route("/api/productos/modelos/<string:id_modelo>/verificar-stock", methods=["GET"])
+@jwt_required
+@tiene_permiso('Productos', 'consultar')
+def api_verificar_stock_producto(id_modelo: str):
+    """Verifica si un producto tiene stock asociado"""
+    modelo = Producto(id_producto=id_modelo)
+    tiene_stock = modelo.tiene_stock_asociado(id_modelo)
+    stock = modelo.obtener_stock(id_modelo)
+    return jsonify({
+        "success": True,
+        "tiene_stock": tiene_stock,
+        "stock": stock
+    })
 
 
 # ==================== REPORTES ====================

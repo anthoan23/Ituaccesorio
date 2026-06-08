@@ -44,7 +44,94 @@
     descripcion: 300,
   };
 
-  // Validar formulario antes de enviar
+  // ==================== MODALES PERSONALIZADOS ====================
+  
+  function mostrarModalMensaje(mensaje, esError = false) {
+    // Eliminar modal existente si hay
+    const modalExistente = document.getElementById('modal-mensaje-global');
+    if (modalExistente) modalExistente.remove();
+    
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'modal-mensaje-global';
+    modalDiv.className = 'modal';
+    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+    modalDiv.innerHTML = `
+      <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+      <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:400px;width:90%;text-align:center;">
+        <div style="margin-bottom:1rem;">
+          <span style="font-size:3rem;">${esError ? '❌' : '✅'}</span>
+        </div>
+        <p style="margin-bottom:1.5rem;font-size:1rem;color:${esError ? '#dc2626' : '#16a34a'};">
+          ${mensaje}
+        </p>
+        <button class="btn btn--primary" id="btn-cerrar-mensaje-global" style="min-width:100px;padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#f3c500;color:#121212;font-weight:bold;cursor:pointer;">Aceptar</button>
+      </div>
+    `;
+    
+    document.body.appendChild(modalDiv);
+    document.body.style.overflow = 'hidden';
+    
+    const closeModal = () => {
+      modalDiv.remove();
+      document.body.style.overflow = '';
+    };
+    
+    document.getElementById('btn-cerrar-mensaje-global').addEventListener('click', closeModal);
+    modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
+    
+    // Auto cerrar después de 3 segundos
+    setTimeout(() => {
+      if (document.getElementById('modal-mensaje-global')) closeModal();
+    }, 3000);
+  }
+
+  function mostrarModalConfirmacion(mensaje, onConfirmar) {
+    // Eliminar modal existente si hay
+    const modalExistente = document.getElementById('modal-confirmacion-global');
+    if (modalExistente) modalExistente.remove();
+    
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'modal-confirmacion-global';
+    modalDiv.className = 'modal';
+    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+    modalDiv.innerHTML = `
+      <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+      <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:450px;width:90%;">
+        <div style="margin-bottom:1rem;">
+          <span style="font-size:2rem;">⚠️</span>
+        </div>
+        <p style="margin-bottom:1.5rem;font-size:1rem;color:#121212;">
+          ${mensaje}
+        </p>
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button class="btn btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#eef0f4;color:#121212;font-weight:bold;cursor:pointer;">Cancelar</button>
+          <button class="btn btn--danger" id="btn-confirmar-accion" style="padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#dc2626;color:white;font-weight:bold;cursor:pointer;">Eliminar</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modalDiv);
+    document.body.style.overflow = 'hidden';
+    
+    const closeModal = () => {
+      modalDiv.remove();
+      document.body.style.overflow = '';
+    };
+    
+    document.getElementById('btn-cancelar-confirmacion').addEventListener('click', closeModal);
+    modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
+    document.getElementById('btn-confirmar-accion').addEventListener('click', async () => {
+      closeModal();
+      if (onConfirmar) await onConfirmar();
+    });
+  }
+
+  // ==================== FIN MODALES ====================
+
+  function notify(type, message) {
+    mostrarModalMensaje(message, type === "error");
+  }
+
   function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     if (!window.FieldValidator) {
       console.warn('FieldValidator no disponible');
@@ -66,18 +153,6 @@
     }
     
     return true;
-  }
-
-  function notify(type, message) {
-    if (window.FeedbackModal && typeof window.FeedbackModal.show === "function") {
-      window.FeedbackModal.show({
-        type: type === "error" ? "error" : "success",
-        title: type === "error" ? "No se pudo completar" : "Acción exitosa",
-        message,
-      });
-      return;
-    }
-    alert(message);
   }
 
   function validateMaxLen(label, value, max) {
@@ -565,6 +640,8 @@
     }
   }
 
+  // ==================== ELIMINAR PRODUCTO CON MODAL (SIN ALERTS) ====================
+  
   async function onTablaClick(event) {
     const btn = event.target?.closest("button.icon-action");
     if (!btn) return;
@@ -582,18 +659,35 @@
     if (action === "delete") {
       const modelo = findModeloById(id);
       const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
-      const ok = confirm(`¿Seguro que deseas eliminar el producto ${label}?`);
-      if (!ok) return;
-
+      
       try {
-        await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
-        await recargarModelosSegunFiltros();
-        notify("success", "Producto eliminado correctamente.");
+        // Verificar si el producto tiene stock
+        const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' });
+        const tieneStock = data.tiene_stock || false;
+        const stock = data.stock || 0;
+        
+        if (tieneStock) {
+          mostrarModalMensaje(`No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario. Primero debe eliminar o reducir el stock.`, true);
+        } else {
+          mostrarModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, async () => {
+            try {
+              await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
+              await recargarModelosSegunFiltros();
+              mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
+            } catch (err) {
+              mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
+            }
+          });
+        }
       } catch (err) {
-        notify("error", err?.message || "No se pudo eliminar.");
+        // Si hay error al verificar stock, mostrar mensaje de error
+        mostrarModalMensaje("No se pudo verificar el stock del producto. Intente nuevamente.", true);
       }
+      return;
     }
   }
+
+  // ==================== FIN ELIMINAR PRODUCTO ====================
 
   // ==================== REPORTES ====================
   

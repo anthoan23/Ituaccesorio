@@ -1,4 +1,4 @@
--- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: ituaccesoriobd
 -- ------------------------------------------------------
@@ -64,7 +64,7 @@ CREATE TABLE `Cargo` (
 
 LOCK TABLES `Cargo` WRITE;
 /*!40000 ALTER TABLE `Cargo` DISABLE KEYS */;
-INSERT INTO `Cargo` VALUES ('CRG0000001','Prueba-1','Esta es la descripción detallada para la prueba'),('CRG0000002','Prueba-2','Esta es la descripción detallada para la prueba 2'),('CRG0000003','Prueba-3','Esta es la descripción detallada para la prueba 3'),('CRG0000004','Prueba-4','Esta es la descripción detallada para la prueba 4'),('CRG0000005','Prueba-5','Esta es la descripción detallada para la prueba 5'),('CRG0000006','Técnico','Encargado de las revisiones y reparaciones');
+INSERT INTO `Cargo` VALUES ('CRG0000001','Prueba-1','Esta es la descripción detallada para la prueba 1'),('CRG0000002','Prueba-2','Esta es la descripción detallada para la prueba 2'),('CRG0000003','Prueba-3','Esta es la descripción detallada para la prueba 3'),('CRG0000004','Prueba-4','Esta es la descripción detallada para la prueba 4'),('CRG0000005','Prueba-5','Esta es la descripción detallada para la prueba 5'),('CRG0000006','Técnico','Encargado de las revisiones y reparaciones'),('CRG0000007','Prueba Juan','Responsable de gerenciar');
 /*!40000 ALTER TABLE `Cargo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -88,7 +88,7 @@ CREATE TABLE `Clase_producto` (
 
 LOCK TABLES `Clase_producto` WRITE;
 /*!40000 ALTER TABLE `Clase_producto` DISABLE KEYS */;
-INSERT INTO `Clase_producto` VALUES ('1','Telefono'),('2','Pantalla');
+INSERT INTO `Clase_producto` VALUES ('1','Teléfono'),('2','Pantalla'),('3','Batería'),('4','Cargador'),('5','Funda');
 /*!40000 ALTER TABLE `Clase_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -114,7 +114,7 @@ CREATE TABLE `Cliente` (
 
 LOCK TABLES `Cliente` WRITE;
 /*!40000 ALTER TABLE `Cliente` DISABLE KEYS */;
-INSERT INTO `Cliente` VALUES ('1','Barquisimeto','04145675567','ejemplo@gmail.com'),('30548845','Barquisimeto','04142342121','ejemplotest@gmail.com'),('31143265','Rio claro','04246667263','prueba@gmail.com'),('91754623','Barquisimeto','04243124554','ejemplo@gmail.com');
+INSERT INTO `Cliente` VALUES ('31111555','cerrrrrrrrrrrrrr','04120743322','correo@correo.com');
 /*!40000 ALTER TABLE `Cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -194,6 +194,7 @@ CREATE TABLE `Detalle_orden` (
 
 LOCK TABLES `Detalle_orden` WRITE;
 /*!40000 ALTER TABLE `Detalle_orden` DISABLE KEYS */;
+INSERT INTO `Detalle_orden` VALUES ('OC0000001','12',1);
 /*!40000 ALTER TABLE `Detalle_orden` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -221,7 +222,6 @@ CREATE TABLE `Detalle_venta` (
 
 LOCK TABLES `Detalle_venta` WRITE;
 /*!40000 ALTER TABLE `Detalle_venta` DISABLE KEYS */;
-INSERT INTO `Detalle_venta` VALUES ('1','FAC-202606-080A3A',1),('1','FAC-202606-6993F3',1),('1','FAC-202606-8D8B04',1),('1','FAC-202606-B1475D',1),('1','FAC-202606-DA0967',4),('1','FAC-202606-EB6A95',2),('1','FAC-202606-FDD009',2);
 /*!40000 ALTER TABLE `Detalle_venta` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -252,7 +252,7 @@ CREATE TABLE `Empleado` (
 
 LOCK TABLES `Empleado` WRITE;
 /*!40000 ALTER TABLE `Empleado` DISABLE KEYS */;
-INSERT INTO `Empleado` VALUES (12345543,'CRG0000001','Anthonio','Alvarez','0415458632','Anthonio@gmail.com','mucho mas lejos'),(12345678,'CRG0000004','empleado','gonzalez','1234567899','ejemplo@gmail.com','Barquisimeto'),(30124556,'CRG0000005','Maria','Gonzalez','04125684514','Maria@gmail.com','Lejos'),(30548845,'CRG0000005','Manuel','Prado','041563555555','Manuel@gmail.com','ssssssssssssss'),(31111554,'CRG0000004','Pedro','Perez','0412564782','Jose2@gmail.com','Al infinito y mas alla ss'),(31111555,'CRG0000005','Jose','Gomez','0412564789','Jose@gmail.com','Al infinito y mas alla '),(32014004,'CRG0000006','Eduin','Meneses','04141233212','Prueba@gmail.com','Barquisimeto'),(1111111111,'CRG0000006','Tomas','Colina','0415478998','Tomas@gmail.com','mas lejos');
+INSERT INTO `Empleado` VALUES (1004,'CRG0000001','Anthonio','Alvarez','0415458632','Anthonio@gmail.com','mucho mas lejos'),(30124556,'CRG0000005','Maria','Gonzalez','04125684514','Maria@gmail.com','Lejos'),(30548845,'CRG0000005','Manuel','Prado','041563555555','Manuel@gmail.com','ssssssssssssss'),(31111554,'CRG0000004','Pedro','Perez','0412564782','Jose2@gmail.com','Al infinito y mas alla ss'),(31111555,'CRG0000005','Jose','Gomez','0412564789','Jose@gmail.com','Al infinito y mas alla '),(1111111111,'CRG0000006','Tomas','Colina','0415478998','Tomas@gmail.com','mas lejos');
 /*!40000 ALTER TABLE `Empleado` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -371,7 +371,7 @@ CREATE TABLE `Especialidad` (
 
 LOCK TABLES `Especialidad` WRITE;
 /*!40000 ALTER TABLE `Especialidad` DISABLE KEYS */;
-INSERT INTO `Especialidad` VALUES ('ESP0000001','Prueba-1','Esta es la descripción detallada para la prueba 1'),('ESP0000002','Prueba-2','Esta es la descripción detallada para la prueba  2'),('ESP0000003','Prueba-3','Esta es la descripción detallada para la prueba 3');
+INSERT INTO `Especialidad` VALUES ('ESP0000001','Prueba-1','Esta es la descripción detallada para la prueba 1'),('ESP0000002','Prueba-2','Esta es la descripción detallada para la prueba  2'),('ESP0000003','Prueba-3','Esta es la descripción detallada para la prueba 3'),('ESP0000004','Prueba Juan','Prueba Juan');
 /*!40000 ALTER TABLE `Especialidad` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -398,7 +398,6 @@ CREATE TABLE `Fotos_inventario` (
 
 LOCK TABLES `Fotos_inventario` WRITE;
 /*!40000 ALTER TABLE `Fotos_inventario` DISABLE KEYS */;
-INSERT INTO `Fotos_inventario` VALUES ('1','1','/static/img/evidencias/inventario/1f33501ad0a140d59f4fd2bfe24a9459.jpeg');
 /*!40000 ALTER TABLE `Fotos_inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -508,7 +507,6 @@ CREATE TABLE `Inventario` (
 
 LOCK TABLES `Inventario` WRITE;
 /*!40000 ALTER TABLE `Inventario` DISABLE KEYS */;
-INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL);
 /*!40000 ALTER TABLE `Inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -562,46 +560,8 @@ CREATE TABLE `Marca_producto` (
 
 LOCK TABLES `Marca_producto` WRITE;
 /*!40000 ALTER TABLE `Marca_producto` DISABLE KEYS */;
-INSERT INTO `Marca_producto` VALUES ('1','Iphone'),('2','Iphone');
+INSERT INTO `Marca_producto` VALUES ('1','iPhone'),('2','Samsung'),('3','Xiaomi'),('4','Motorola'),('5','Google');
 /*!40000 ALTER TABLE `Marca_producto` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Metodo_pago`
---
-
-DROP TABLE IF EXISTS `Metodo_pago`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Metodo_pago` (
-  `ID_factura` varchar(20) NOT NULL,
-  `Moneda` varchar(10) DEFAULT NULL,
-  `Fecha_pago` datetime DEFAULT NULL,
-  `Capture` varchar(255) DEFAULT NULL,
-  `Estado_pago` varchar(10) DEFAULT NULL,
-  `Metodo` varchar(30) DEFAULT NULL,
-  `Referencia` varchar(100) DEFAULT NULL,
-  `Monto` decimal(12,2) DEFAULT NULL,
-  `Aprobado_por` varchar(20) DEFAULT NULL,
-  `Fecha_aprobacion` datetime DEFAULT NULL,
-  `Motivo_rechazo` varchar(255) DEFAULT NULL,
-  `Fecha_rechazo` datetime DEFAULT NULL,
-  `Rechazado_por` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`ID_factura`),
-  KEY `idx_estado_pago` (`Estado_pago`),
-  KEY `idx_factura` (`ID_factura`),
-  CONSTRAINT `Metodo_pago_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Metodo_pago`
---
-
-LOCK TABLES `Metodo_pago` WRITE;
-/*!40000 ALTER TABLE `Metodo_pago` DISABLE KEYS */;
-INSERT INTO `Metodo_pago` VALUES ('FAC-202606-080A3A','USDT','2026-06-07 22:32:41','/static/img/capturas/capture_37ea939d175d47c39ebbd80720b44bc8.png','aprobado','binance','123321',607010.00,'32014004','2026-06-07 22:32:42',NULL,NULL,NULL);
-/*!40000 ALTER TABLE `Metodo_pago` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -632,6 +592,7 @@ CREATE TABLE `Orden_compra` (
 
 LOCK TABLES `Orden_compra` WRITE;
 /*!40000 ALTER TABLE `Orden_compra` DISABLE KEYS */;
+INSERT INTO `Orden_compra` VALUES ('OC0000001',30124556,30128926,'Pendiente','2026-06-07 23:06:44',NULL);
 /*!40000 ALTER TABLE `Orden_compra` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -648,6 +609,8 @@ CREATE TABLE `Orden_servicio` (
   `ID_cliente` varchar(10) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
+  `Patron` int DEFAULT NULL,
+  `Clave` varchar(60) DEFAULT NULL,
   `Costo_reparacion` decimal(10,2) DEFAULT NULL,
   `Nota_orden_servicio` varchar(300) DEFAULT NULL,
   `Fecha_entrada` datetime DEFAULT NULL,
@@ -717,7 +680,7 @@ CREATE TABLE `Persona_natural` (
 
 LOCK TABLES `Persona_natural` WRITE;
 /*!40000 ALTER TABLE `Persona_natural` DISABLE KEYS */;
-INSERT INTO `Persona_natural` VALUES ('1','Sinforoza','Petra'),('30548845','Test','Cliente'),('31143265','Rodriguez','Manuel'),('91754623','Test','Prueba');
+INSERT INTO `Persona_natural` VALUES ('31111555','Pediatra','Antony');
 /*!40000 ALTER TABLE `Persona_natural` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -772,7 +735,7 @@ CREATE TABLE `Producto` (
 
 LOCK TABLES `Producto` WRITE;
 /*!40000 ALTER TABLE `Producto` DISABLE KEYS */;
-INSERT INTO `Producto` VALUES ('1','1','1','Iphone 15','Iphone 15'),('2','2','2','Pantalla Generica Iphone 15','Pantalla generica para iphone 15');
+INSERT INTO `Producto` VALUES ('10','2','3','Pantalla Xiaomi 13 Pro','Pantalla original Xiaomi 13 Pro'),('11','3','1','Batería iPhone 15','Batería original iPhone 15'),('12','3','2','Batería S24','Batería original Galaxy S24'),('13','4','1','Cargador iPhone 20W','Cargador rápido USB-C 20W'),('14','4','2','Cargador Samsung 25W','Cargador rápido Super Fast Charging'),('15','5','1','Funda iPhone 15','Funda de silicona original'),('4','1','1','iPhone 15 Pro Max','iPhone 15 Pro Max tamaño grande'),('5','1','2','Samsung Galaxy S24','Galaxy S24 modelo base'),('6','1','2','Samsung Galaxy S24 Ultra','Galaxy S24 Ultra modelo premium'),('7','2','2','Pantalla S24','Pantalla original Galaxy S24'),('8','2','2','Pantalla S24 Ultra','Pantalla original Galaxy S24 Ultra'),('9','1','3','Xiaomi 13 Pro','Xiaomi 13 Pro modelo premium');
 /*!40000 ALTER TABLE `Producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -801,34 +764,8 @@ CREATE TABLE `Proveedor` (
 
 LOCK TABLES `Proveedor` WRITE;
 /*!40000 ALTER TABLE `Proveedor` DISABLE KEYS */;
+INSERT INTO `Proveedor` VALUES (30128924,'Apple Latinoamérica','Tecnología','+5078008321','ventas@apple.com','Panamá, Panamá',50000.00),(30128925,'Samsung Electronics','Tecnología','+5712345678','ventas@samsung.com','Bogotá, Colombia',40000.00),(30128926,'Distribuidora Tecno C.A.','Mayorista','04148888888','ventas@tecnodist.com','Caracas, Venezuela',25000.00),(30128927,'Cell Parts C.A.','Repuestos','04149999999','ventas@cellparts.com','Barquisimeto, Venezuela',15000.00),(30128928,'Importaciones Global S.A.','Importador','04147777777','ventas@importglobal.com','Valencia, Venezuela',30000.00),(30128929,'Xiaomi Technology','Tecnología','+50640001234','ventas@xiaomi.com','San José, Costa Rica',20000.00),(30128930,'Mobile Parts Supply','Repuestos','04145556677','ventas@mobileparts.com','Maracaibo, Venezuela',10000.00);
 /*!40000 ALTER TABLE `Proveedor` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Repuestos_usados`
---
-
-DROP TABLE IF EXISTS `Repuestos_usados`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Repuestos_usados` (
-  `ID_orden_servicio` varchar(10) NOT NULL,
-  `ID_inventario` varchar(10) NOT NULL,
-  `Cantidad_usada` int NOT NULL,
-  PRIMARY KEY (`ID_orden_servicio`,`ID_inventario`),
-  KEY `ID_inventario` (`ID_inventario`),
-  CONSTRAINT `Repuestos_usados_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
-  CONSTRAINT `Repuestos_usados_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Repuestos_usados`
---
-
-LOCK TABLES `Repuestos_usados` WRITE;
-/*!40000 ALTER TABLE `Repuestos_usados` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Repuestos_usados` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -855,6 +792,7 @@ CREATE TABLE `Suministra` (
 
 LOCK TABLES `Suministra` WRITE;
 /*!40000 ALTER TABLE `Suministra` DISABLE KEYS */;
+INSERT INTO `Suministra` VALUES (30128924,'11',45.00),(30128924,'13',25.00),(30128924,'15',35.00),(30128924,'4',950.00),(30128925,'12',40.00),(30128925,'14',28.00),(30128925,'5',600.00),(30128925,'6',800.00),(30128925,'7',110.00),(30128925,'8',140.00),(30128926,'11',50.00),(30128926,'12',45.00),(30128926,'5',630.00),(30128926,'7',120.00),(30128927,'11',38.00),(30128927,'12',35.00),(30128927,'7',95.00),(30128927,'8',125.00),(30128928,'13',27.00),(30128928,'14',30.00),(30128928,'4',970.00),(30128928,'5',620.00),(30128928,'6',820.00),(30128929,'10',100.00),(30128929,'9',550.00),(30128930,'11',42.00),(30128930,'12',38.00),(30128930,'7',100.00),(30128930,'8',130.00);
 /*!40000 ALTER TABLE `Suministra` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -973,6 +911,32 @@ LOCK TABLES `Trade_in` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Transferencia`
+--
+
+DROP TABLE IF EXISTS `Transferencia`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Transferencia` (
+  `ID_factura` varchar(20) NOT NULL,
+  `Moneda` varchar(10) DEFAULT NULL,
+  `Fecha_pago` datetime DEFAULT NULL,
+  `Capture` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_factura`),
+  CONSTRAINT `Transferencia_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Transferencia`
+--
+
+LOCK TABLES `Transferencia` WRITE;
+/*!40000 ALTER TABLE `Transferencia` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Transferencia` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Venta`
 --
 
@@ -999,104 +963,8 @@ CREATE TABLE `Venta` (
 
 LOCK TABLES `Venta` WRITE;
 /*!40000 ALTER TABLE `Venta` DISABLE KEYS */;
-INSERT INTO `Venta` VALUES ('FAC-202606-080A3A',NULL,'30548845','USDT','2026-06-07 22:25:27'),('FAC-202606-6993F3',NULL,'30548845','VES','2026-06-07 21:30:03'),('FAC-202606-8D8B04',NULL,'30548845','VES','2026-06-07 22:17:23'),('FAC-202606-B1475D',NULL,'30548845','USD','2026-06-07 21:35:57'),('FAC-202606-DA0967',NULL,'30548845','VES','2026-06-07 20:12:28'),('FAC-202606-EB6A95',NULL,'30548845','VES','2026-06-07 20:50:37'),('FAC-202606-FDD009',NULL,'30548845','USD','2026-06-07 22:09:06');
 /*!40000 ALTER TABLE `Venta` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping routines for database 'ituaccesoriobd'
---
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_cargo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_cargo`(
-    IN p_Nombre_cargo VARCHAR(30),
-    IN p_Descripcion_cargo VARCHAR(250)
-    
-)
-BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
-
-    -- 1. Buscamos el ID más alto actual en la tabla Cargo
-    SELECT MAX(`ID_cargo`) INTO ultimo_id FROM `Cargo`;
-
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
-
-    -- 3. Formateamos el nuevo ID (Ej: 'CRG' + '000004')
-    SET nuevo_id = CONCAT('CRG', LPAD(siguiente_numero, 7, '0'));
-
-    -- 4. Insertamos el registro
-    INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) 
-    VALUES (nuevo_id, p_Nombre_cargo, p_Descripcion_cargo);
-
-    -- (Opcional) Mostramos el resultado
-    SELECT * FROM `Cargo` WHERE `ID_cargo` = nuevo_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_especialidad` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_especialidad`(
-    IN p_Nombre_especialidad VARCHAR(30),
-    IN p_Descripcion_especialidad VARCHAR(250)
-)
-BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
-
-    -- 1. Buscamos el ID más alto actual en la tabla Especialidad
-    SELECT MAX(`ID_especialidad`) INTO ultimo_id FROM `Especialidad`;
-
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
-
-    -- 3. Formateamos el nuevo ID (Ej: 'ESP' + '0000001' = 'ESP0000001')
-    SET nuevo_id = CONCAT('ESP', LPAD(siguiente_numero, 7, '0'));
-
-    -- 4. Insertamos el registro
-    INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) 
-    VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
-
-    -- 5. Mostramos el resultado del registro creado
-    SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1107,4 +975,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-07 19:00:22
+-- Dump completed on 2026-06-08  8:18:31

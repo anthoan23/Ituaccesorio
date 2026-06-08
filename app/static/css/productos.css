@@ -488,6 +488,79 @@ textarea:focus {
 	flex-wrap: wrap;
 }
 
+.btn--danger {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+
+.btn--danger:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.btn--danger:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Modales globales */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal__backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+}
+
+.modal__panel {
+    position: relative;
+    z-index: 10001;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalFadeIn 0.2s ease-out;
+    padding: 1.5rem;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.btn--danger {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+
+.btn--danger:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
 @media (max-width: 1100px) {
 	.products-grid {
 		grid-template-columns: 1fr;
