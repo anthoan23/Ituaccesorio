@@ -2,10 +2,20 @@ from __future__ import annotations
 
 from app.models.database import conectar
 
-class Tests(conectar):
+class Tests():
+    def __init__(self, ID_test=None, Numero_test= None, IMEI=None, Color= None, capacidad=None, clave=None, patron=None, ID_orden=None):
+        self.ID_test = ID_test
+        self.Numero_test = Numero_test
+        self.IMEI = IMEI
+        self.Color = Color
+        self.capacidad = capacidad
+        self.clave = clave
+        self.patron = patron
+        self.ID_orden = ID_orden
 
 
-    def buscar_test(self, id_orden: int):
+    def buscar_test(self):
+        id_orden = self.ID_orden
         db = self.conexion1()
         if not db:
             return None
