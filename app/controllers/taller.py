@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, render_template, request, current_app, g
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.bitacora import registrar_en_bitacora
-from app.models.ordenes_servicio import OrdenServicio
+from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
 from app.models.inventario import Inventario
 
@@ -59,7 +59,7 @@ def pagina_taller():
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_ordenes_taller():
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     resultado = ordenes.listado_ordenes_taller()
     return jsonify(resultado)
 
@@ -68,7 +68,7 @@ def obtener_ordenes_taller():
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     resultado = ordenes.ordenes_asignadas_empleado()
     return jsonify(resultado)
 
@@ -77,7 +77,7 @@ def obtener_reparaciones_asignadas():
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_detalles_orden(id_orden):
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     test = Tests()
     detalle_orden = ordenes.detalles_orden(id_orden)
     fotos_orden = ordenes.fotos_orden(id_orden)
@@ -99,7 +99,7 @@ def obtener_detalles_orden(id_orden):
 @tiene_permiso('Taller', 'modificar')
 def asignar_estado_orden(id_orden, id_empleado):
     id_empleado = _obtener_id_empleado()
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     resultado = ordenes.asignar_orden_empleado(id_orden, id_empleado)
     
     if resultado:
@@ -118,7 +118,7 @@ def asignar_estado_orden(id_orden, id_empleado):
 @tiene_permiso('Taller', 'modificar')
 def liberar_estado_orden(id_orden, id_empleado):
     id_empleado = _obtener_id_empleado()
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     resultado = ordenes.liberar_orden(id_orden, id_empleado)
     
     if resultado:
@@ -159,7 +159,7 @@ def registrar_fotos_orden(id_orden):
         rutas_locales.append(ruta_fs)
         rutas_guardadas.append(f"/static/img/evidencias/taller/{id_orden}/{nombre_final}")
 
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     if not ordenes.registrar_fotos_orden(id_orden, rutas_guardadas):
         for ruta_local in rutas_locales:
             if os.path.exists(ruta_local):
@@ -266,7 +266,7 @@ def registrar_reparacion_orden(id_orden):
     else:
         reparacion_val = str(reparacion)
 
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     ok = ordenes.Orden_reparada(id_orden, ids, qts, id_empleado, reparacion_val)
     
     if ok:
@@ -285,7 +285,7 @@ def registrar_reparacion_orden(id_orden):
 @jwt_required
 @tiene_permiso('Taller', 'modificar')
 def eliminar_foto_orden(id_evidencia):
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     
     if not ordenes.eliminar_foto_orden(id_evidencia):
         return jsonify({"ok": False, "message": "No se pudo eliminar la imagen."}), 404
@@ -305,7 +305,7 @@ def eliminar_foto_orden(id_evidencia):
 @tiene_permiso('Taller', 'modificar')
 def finalizar_orden_taller(id_orden):
     """Finaliza una orden de taller (marca como completada)"""
-    ordenes = OrdenServicio()
+    ordenes = Orden_servicio()
     resultado = ordenes.finalizar_orden(id_orden)
     
     if resultado:

@@ -1,10 +1,23 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.models.bitacora import registrar_en_bitacora
 from app.models.empleados import Empleados
-from app.models.ordenes_servicio import OrdenServicio
+from app.models.ordenes_servicio import Orden_servicio as OrdenServicio
 from app.models.test import Tests
 from app.utils.decorators import jwt_required, tiene_permiso
 import traceback
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
 
