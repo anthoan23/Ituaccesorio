@@ -6,6 +6,19 @@ from app.models.test import Tests
 from app.utils.decorators import jwt_required, tiene_permiso
 import traceback
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
 
 

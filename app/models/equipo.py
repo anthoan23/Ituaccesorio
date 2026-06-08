@@ -13,6 +13,44 @@ class Equipo(Producto):
         self._conexion = conectar()     
 
 
+    def Consultar_equipo_por_id(self) -> dict:
+
+        id_equipo = self.ID_equipo
+       
+        if not id_equipo:
+            return {"success": False, "message": "El ID del equipo es obligatorio."}
+        
+        if not str(id_equipo).isdigit():
+            return {"success": False, "message": "El ID del equipo debe ser un número entero."}
+
+        db = self._conexion.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    ID_equipo,
+                    Color,
+                    Capacidad,
+                    Clave,
+                    Patron
+                FROM equipo
+                WHERE ID_equipo = %s
+                limit 1
+                """,
+                (str(id_equipo),)
+            )
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error al consultar el equipo: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+
     def registrar_equipo(self) -> str:
         id_equipo = self.ID_equipo.strip()
         color = self.Color.strip()

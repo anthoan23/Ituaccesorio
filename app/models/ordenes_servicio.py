@@ -48,7 +48,7 @@ class Orden_servicio():
             cursor.close()
             db.close()
     
-    def verificar_foto_existe_por_ruta(self, ruta_foto: str) -> bool:
+    def verificar_foto_existe_por_ruta(self) -> bool:
         ruta_foto = self.Foto_orden_servicio.strip()
      
         """Verifica si una foto existe por su ruta o nombre de archivo"""
