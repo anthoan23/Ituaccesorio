@@ -19,11 +19,25 @@ def _usuario_actual():
 def _obtener_id_empleado():
     user = getattr(g, 'user', None)
     if not user:
-        return 1111111111
+        return 30124556
+    
+    # Obtener el ID del empleado
     if isinstance(user, dict):
-        return user.get("usuario_id") or user.get("id") or user.get("ID_empleado") or 1111111111
-    return getattr(user, "usuario_id", None) or getattr(user, "id", None) or 1111111111
-
+        # Probar diferentes campos que podrían contener el ID
+        empleado_id = user.get('empleado_id') or user.get('ID_empleado') or user.get('id_empleado') or user.get('id')
+    else:
+        empleado_id = getattr(user, 'empleado_id', None) or getattr(user, 'ID_empleado', None) or getattr(user, 'id_empleado', None) or getattr(user, 'id', None)
+    
+    # Si es un string que contiene letras, usar un ID por defecto
+    if empleado_id and isinstance(empleado_id, str) and not empleado_id.isdigit():
+        print(f"ID de empleado no numérico: {empleado_id}, usando valor por defecto")
+        return 30124556
+    
+    try:
+        return int(empleado_id) if empleado_id else 30124556
+    except (ValueError, TypeError):
+        print(f"Error convirtiendo ID de empleado: {empleado_id}, usando valor por defecto")
+        return 1111111111
 
 @ordenes_compra.route('/ordenes_compra', methods=['GET'])
 @jwt_required

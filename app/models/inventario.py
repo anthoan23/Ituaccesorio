@@ -22,14 +22,17 @@ class Inventario:
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        cursor = db.cursor()
+        cursor = None
         try:
+            cursor = db.cursor()
             cursor.execute("SELECT COALESCE(MAX(CAST(ID_inventario AS UNSIGNED)), 0) + 1 FROM Inventario")
             row = cursor.fetchone()
             return str(int(row[0] or 0))
         finally:
-            cursor.close()
-            db.close()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
 
     def listar_inventario(self):
         """Lista todo el inventario con sus relaciones"""
@@ -58,7 +61,6 @@ class Inventario:
                 ORDER BY cl.Nombre_Clase, ma.Nombre_marca, p.Nombre_producto
             """)
             rows = cursor.fetchall() or []
-            # Convertir Decimal a float para JSON
             for row in rows:
                 if isinstance(row.get("costo_venta"), Decimal):
                     row["costo_venta"] = float(row["costo_venta"])
@@ -156,8 +158,36 @@ class Inventario:
         """Lista inventario por modelo exacto"""
         return self.listar_inventario_filtrado(N_modelo=nombre_modelo)
 
+    def obtener_producto_por_id(self, id_producto: str):
+        """Obtiene información de un producto por su ID"""
+        db = self._conexion()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    p.ID_producto as id,
+                    p.Nombre_producto as nombre_producto,
+                    p.Descripcion as descripcion,
+                    cl.Nombre_Clase as nombre_clase,
+                    ma.Nombre_marca as nombre_marca
+                FROM Producto p
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                WHERE p.ID_producto = %s
+            """, (id_producto,))
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error obtener_producto_por_id: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+
     def registrar_stock(self, id_producto: str, existencia: int, 
-                        costo_venta: Decimal, foto_inventario: str | None = None) -> str | None:
+        costo_venta: Decimal, foto_inventario: str | None = None) -> str | None:
         """Registra o actualiza stock de un producto"""
         if not id_producto:
             raise ValueError("ID del producto es requerido")
@@ -166,8 +196,10 @@ class Inventario:
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
+        cursor = None
         try:
+            cursor = db.cursor()
+            
             # Buscar si ya existe inventario para este producto
             cursor.execute(
                 "SELECT ID_inventario FROM Inventario WHERE ID_producto = %s LIMIT 1",
@@ -190,20 +222,27 @@ class Inventario:
                     VALUES (%s, %s, %s, %s, %s)
                 """, (id_inventario, str(id_producto), int(existencia), costo_venta, None))
             
-            # Guardar foto si se proporcionó
+            db.commit()
+            
+            # Guardar foto si se proporcionó (en una transacción separada)
             if foto_inventario:
                 from app.models.inventario import FotosInventario
                 fotos = FotosInventario()
                 fotos.insertar_foto(id_inventario, foto_inventario)
             
-            db.commit()
             return id_inventario
         except Exception as e:
-            db.rollback()
+            if db:
+                db.rollback()
+            print(f"Error en registrar_stock: {e}")
+            import traceback
+            traceback.print_exc()
             raise e
         finally:
-            cursor.close()
-            db.close()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
 
 
 class FotosInventario:
@@ -261,8 +300,9 @@ class FotosInventario:
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
+        cursor = None
         try:
+            cursor = db.cursor()
             new_id = self._siguiente_id()
             cursor.execute("""
                 INSERT INTO Fotos_inventario (ID_foto_inventario, ID_inventario, Foto_inventario)
@@ -271,11 +311,14 @@ class FotosInventario:
             db.commit()
             return new_id
         except Exception as e:
-            db.rollback()
+            if db:
+                db.rollback()
             raise e
         finally:
-            cursor.close()
-            db.close()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
 
     def actualizar_foto(self, id_foto_inventario: str, foto_inventario: str) -> bool:
         """Actualiza una foto existente"""

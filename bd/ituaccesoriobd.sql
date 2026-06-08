@@ -659,6 +659,8 @@ CREATE TABLE `Orden_servicio` (
   `ID_cliente` varchar(10) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
+  `Patron` int DEFAULT NULL,
+  `Clave` varchar(60) DEFAULT NULL,
   `Costo_reparacion` decimal(10,2) DEFAULT NULL,
   `Nota_orden_servicio` varchar(300) DEFAULT NULL,
   `Fecha_entrada` datetime DEFAULT NULL,
@@ -994,6 +996,32 @@ INSERT INTO `Trade_in` VALUES ('TRD000001',20123456,'22345678','1','EQ0000001',1
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Transferencia`
+--
+
+DROP TABLE IF EXISTS `Transferencia`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Transferencia` (
+  `ID_factura` varchar(20) NOT NULL,
+  `Moneda` varchar(10) DEFAULT NULL,
+  `Fecha_pago` datetime DEFAULT NULL,
+  `Capture` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID_factura`),
+  CONSTRAINT `Transferencia_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Transferencia`
+--
+
+LOCK TABLES `Transferencia` WRITE;
+/*!40000 ALTER TABLE `Transferencia` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Transferencia` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Venta`
 --
 
@@ -1023,101 +1051,6 @@ LOCK TABLES `Venta` WRITE;
 INSERT INTO `Venta` VALUES ('FAC-202606-080A3A',NULL,'30548845','USDT','2026-06-07 22:25:27'),('FAC-202606-111111',20123456,'22345678','VES','2026-06-01 10:30:00'),('FAC-202606-222222',20123456,'33456789','USD','2026-06-02 11:45:00'),('FAC-202606-333333',20345678,'44567890','USDT','2026-06-03 09:20:00'),('FAC-202606-444444',20345678,'55678901','VES','2026-06-04 14:15:00'),('FAC-202606-555555',20123456,'66789012','USD','2026-06-05 16:30:00'),('FAC-202606-666666',20345678,'30548845','VES','2026-06-06 12:00:00'),('FAC-202606-6993F3',NULL,'30548845','VES','2026-06-07 21:30:03'),('FAC-202606-777777',20123456,'31143265','USDT','2026-06-07 15:45:00'),('FAC-202606-8D8B04',NULL,'30548845','VES','2026-06-07 22:17:23'),('FAC-202606-B1475D',NULL,'30548845','USD','2026-06-07 21:35:57'),('FAC-202606-DA0967',NULL,'30548845','VES','2026-06-07 20:12:28'),('FAC-202606-EB6A95',NULL,'30548845','VES','2026-06-07 20:50:37'),('FAC-202606-FDD009',NULL,'30548845','USD','2026-06-07 22:09:06');
 /*!40000 ALTER TABLE `Venta` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping routines for database 'ituaccesoriobd'
---
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_cargo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_cargo`(
-    IN p_Nombre_cargo VARCHAR(30),
-    IN p_Descripcion_cargo VARCHAR(250)
-    
-)
-BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
-
-    -- 1. Buscamos el ID más alto actual en la tabla Cargo
-    SELECT MAX(`ID_cargo`) INTO ultimo_id FROM `Cargo`;
-
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
-
-    -- 3. Formateamos el nuevo ID (Ej: 'CRG' + '000004')
-    SET nuevo_id = CONCAT('CRG', LPAD(siguiente_numero, 7, '0'));
-
-    -- 4. Insertamos el registro
-    INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) 
-    VALUES (nuevo_id, p_Nombre_cargo, p_Descripcion_cargo);
-
-    -- (Opcional) Mostramos el resultado
-    SELECT * FROM `Cargo` WHERE `ID_cargo` = nuevo_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_especialidad` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_especialidad`(
-    IN p_Nombre_especialidad VARCHAR(30),
-    IN p_Descripcion_especialidad VARCHAR(250)
-)
-BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
-
-    -- 1. Buscamos el ID más alto actual en la tabla Especialidad
-    SELECT MAX(`ID_especialidad`) INTO ultimo_id FROM `Especialidad`;
-
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
-
-    -- 3. Formateamos el nuevo ID (Ej: 'ESP' + '0000001' = 'ESP0000001')
-    SET nuevo_id = CONCAT('ESP', LPAD(siguiente_numero, 7, '0'));
-
-    -- 4. Insertamos el registro
-    INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) 
-    VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
-
-    -- 5. Mostramos el resultado del registro creado
-    SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

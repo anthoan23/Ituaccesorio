@@ -88,15 +88,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Formatear fecha
     function formatDate(dateStr) {
-        if (!dateStr) return '';
+        if (!dateStr) return 'Fecha no disponible';
+        
+        // Si es el texto literal %Y-%m-%d, mostrar un mensaje
+        if (dateStr === '%Y-%m-%d') {
+            return 'Fecha por definir';
+        }
+        
         try {
+            // Si es un string en formato MySQL 'YYYY-MM-DD HH:MM:SS' o 'YYYY-MM-DD'
+            if (typeof dateStr === 'string') {
+                // Extraer solo la parte de la fecha (primeros 10 caracteres)
+                const datePart = dateStr.substring(0, 10);
+                if (datePart.match(/^\d{4}-\d{2}-\d{2}/)) {
+                    const [year, month, day] = datePart.split('-');
+                    return `${day}/${month}/${year}`;
+                }
+            }
+            // Si es un objeto Date
             const date = new Date(dateStr);
-            return date.toLocaleDateString('es-ES');
-        } catch {
+            if (!isNaN(date.getTime())) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
             return dateStr;
+        } catch (error) {
+            console.error("Error formateando fecha:", dateStr, error);
+            return dateStr || 'Fecha inválida';
         }
     }
-
     // Cambiar vista
     function cambiarVista(vista) {
         if (vista === 'pendientes') {
@@ -118,27 +140,35 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarOrdenesPendientes() {
         try {
             const data = await fetchJson('/api/ordenes_compra');
+            console.log("Órdenes pendientes:", data);
+            
             if (Array.isArray(data) && data.length > 0) {
-                tablaPendientes.innerHTML = data.map(orden => `
-                    <tr>
-                        <td>${escapeHtml(orden.ID_orden_c)}</td>
-                        <td><strong>${escapeHtml(orden.N_proveedor)}</strong></td>
-                        <td>${escapeHtml(formatDate(orden.Fecha_o))}</td>
-                        <td><span class="status-badge status-pendiente">${escapeHtml(orden.Estado)}</span></td>
-                        <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta))}</td>
-                        <td class="table__actions">
-                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
-                            <button class="btn btn--small btn-anular" data-id="${escapeHtml(orden.ID_orden_c)}">Anular</button>
-                            <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}">Registrar entrega</button>
-                        </td>
-                    </tr>
-                `).join('');
+                tablaPendientes.innerHTML = data.map(orden => {
+                    const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
+                    // Usar formatDate para la fecha
+                    const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
+                    
+                    return `
+                        <tr>
+                            <td>${escapeHtml(orden.ID_orden_c)}</td>
+                            <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
+                            <td>${escapeHtml(fecha)}</td>
+                            <td><span class="status-badge status-pendiente">${escapeHtml(orden.Estado || 'Pendiente')}</span></td>
+                            <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
+                            <td class="table__actions">
+                                <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
+                                <button class="btn btn--small btn-anular" data-id="${escapeHtml(orden.ID_orden_c)}">Anular</button>
+                                <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}">Registrar entrega</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
+                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.穷';
             }
         } catch (error) {
             console.error('Error cargando órdenes:', error);
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
         }
     }
 
@@ -146,25 +176,33 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarOrdenesEntregadas() {
         try {
             const data = await fetchJson('/api/ordenes_compra/entregadas');
+            console.log("Órdenes entregadas:", data);
+            
             if (Array.isArray(data) && data.length > 0) {
-                tablaEntregadas.innerHTML = data.map(orden => `
-                    <tr>
-                        <td>${escapeHtml(orden.ID_orden_c)}</td>
-                        <td><strong>${escapeHtml(orden.N_proveedor)}</strong></td>
-                        <td>${escapeHtml(formatDate(orden.Fecha_entrega))}</td>
-                        <td>${escapeHtml(orden.Recibido_por || '-')}</td>
-                        <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta))}</td>
-                        <td class="table__actions">
-                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
-                        </td>
-                    </tr>
-                `).join('');
+                tablaEntregadas.innerHTML = data.map(orden => {
+                    const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
+                    // Usar formatDate para la fecha de entrega
+                    const fechaEntrega = orden.Fecha_entrega ? formatDate(orden.Fecha_entrega) : 'Fecha no disponible';
+                    
+                    return `
+                        <tr>
+                            <td>${escapeHtml(orden.ID_orden_c)}</td>
+                            <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
+                            <td>${escapeHtml(fechaEntrega)}</td>
+                            <td>${escapeHtml(orden.Recibido_por || '-')}</td>
+                            <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
+                            <td class="table__actions">
+                                <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             } else {
-                tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.</td></tr>';
+                tablaEntregadas.innerHTML = '</table><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.穷';
             }
         } catch (error) {
             console.error('Error cargando órdenes entregadas:', error);
-            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
+            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
         }
     }
 
@@ -179,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     listaProveedores.innerHTML = proveedores.map(p => `
                         <tr data-proveedor-id="${escapeHtml(p.id)}" class="row-selectable">
                             <td>${escapeHtml(p.id)}</td>
-                            <td>${escapeHtml(p.N_proveedor)}</td>
+                            <td>${escapeHtml(p.nombre)}</td>
                             <td>${escapeHtml(p.celular || '-')}</td>
                             <td>${escapeHtml(p.correo || '-')}</td>
                         </tr>
@@ -302,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div class="detail-item">
                                 <span class="device-detail__label">Proveedor</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.N_proveedor)}</span>
+                                <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="device-detail__label">Fecha</span>
@@ -380,10 +418,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (proveedor) {
                 proveedorSeleccionado = {
                     id: proveedor.id,
-                    N_proveedor: proveedor.N_proveedor
+                    nombre: proveedor.nombre
                 };
                 if (entradaIdProveedor) entradaIdProveedor.value = proveedorSeleccionado.id;
-                if (entradaNombreProveedor) entradaNombreProveedor.value = proveedorSeleccionado.N_proveedor;
+                if (entradaNombreProveedor) entradaNombreProveedor.value = proveedorSeleccionado.nombre;
                 if (btnBuscarProductos) btnBuscarProductos.disabled = false;
                 closeModal(modalProveedores);
                 await cargarProductosProveedor(id);
@@ -418,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     productosSeleccionados.push({
                         id_modelo: id,
                         nombre: producto.N_modelo,
-                        proveedor: proveedorSeleccionado.N_proveedor,
+                        proveedor: proveedorSeleccionado.nombre,
                         costo: Number(producto.Costo),
                         cantidad: 1
                     });

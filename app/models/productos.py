@@ -365,6 +365,48 @@ class Producto:
             cursor.close()
             db.close()
 
+    def tiene_stock_asociado(self, id_producto: str) -> bool:
+        """Verifica si un producto tiene stock en inventario"""
+        db = self._conexion()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                SELECT COUNT(*) FROM Inventario 
+                WHERE ID_producto = %s AND Existencia > 0
+            """, (id_producto,))
+            result = cursor.fetchone()
+            return result[0] > 0 if result else False
+        except Exception as e:
+            print(f"Error verificando stock: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_stock(self, id_producto: str) -> int:
+        """Obtiene la cantidad de stock de un producto"""
+        db = self._conexion()
+        if not db:
+            return 0
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                SELECT COALESCE(SUM(Existencia), 0) FROM Inventario 
+                WHERE ID_producto = %s
+            """, (id_producto,))
+            result = cursor.fetchone()
+            return result[0] if result else 0
+        except Exception as e:
+            print(f"Error obteniendo stock: {e}")
+            return 0
+        finally:
+            cursor.close()
+            db.close()
+
     def eliminar(self) -> bool:
         if not self.id_producto:
             raise ValueError("ID es requerido.")
@@ -375,14 +417,27 @@ class Producto:
         
         cursor = db.cursor()
         try:
-            # Eliminar relaciones primero (FK)
+            # Primero eliminar fotos del inventario
+            cursor.execute("""
+                DELETE fi FROM Fotos_inventario fi
+                JOIN Inventario i ON fi.ID_inventario = i.ID_inventario
+                WHERE i.ID_producto = %s
+            """, (self.id_producto,))
+            
+            # Eliminar inventario
             cursor.execute("DELETE FROM Inventario WHERE ID_producto = %s", (self.id_producto,))
+            
+            # Eliminar suministra
             cursor.execute("DELETE FROM Suministra WHERE ID_producto = %s", (self.id_producto,))
+            
+            # Eliminar producto
             cursor.execute("DELETE FROM Producto WHERE ID_producto = %s", (self.id_producto,))
+            
             db.commit()
             return cursor.rowcount > 0
-        except Exception:
+        except Exception as e:
             db.rollback()
+            print(f"Error al eliminar producto: {e}")
             raise
         finally:
             cursor.close()
