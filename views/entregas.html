@@ -1,7 +1,7 @@
 {% extends 'components/layout/base.html' %}
 {% from 'components/ui/modal.html' import modal %}
 
-{% block title %}Ituaccesorio - Gestión de Entregas{% endblock %}
+{% block title %}Ituaccesorio - Entregas{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/entregas.css') }}">
@@ -9,172 +9,229 @@
 
 {% block content %}
 <main class="page entregas-page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <ol class="breadcrumb__list">
-            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-            <li aria-current="page">
-                <span class="breadcrumb__current">Entregas</span>
-            </li>
-        </ol>
-    </nav>
-
-    <header class="entregas-header">
-        <div class="entregas-header__copy">
-            <h1 class="entregas-header__title">Gestión de Entregas</h1>
-            <p class="entregas-header__subtitle">Administra el personal de delivery y las entregas a domicilio</p>
+    <section class="hero">
+        <div class="hero__copy">
+            <p class="eyebrow">Gestión de entregas</p>
+            <h1>Administración de entregas</h1>
         </div>
-    </header>
 
-    <!-- Tabs -->
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="entregas">📦 Entregas</button>
-        <button class="tab-btn" data-tab="personal">👥 Personal Delivery</button>
-    </div>
-
-    <!-- Pestaña de Entregas -->
-    <div id="entregas-tab" class="tab-content">
-        <div class="entregas-actions">
-            <button id="btn-nueva-entrega" class="btn btn--yellow">+ Registrar nueva entrega</button>
+        <div class="stats" aria-label="Resumen de entregas">
+            <article class="stat-card">
+                <span class="stat-card__label">Entregas registradas</span>
+                <strong id="stat-entregas" class="stat-card__value">0</strong>
+            </article>
+            <article class="stat-card">
+                <span class="stat-card__label">Personal Delivery</span>
+                <strong id="stat-personal" class="stat-card__value">0</strong>
+            </article>
+            <article class="stat-card">
+                <span class="stat-card__label">Facturas pendientes</span>
+                <strong id="stat-pendientes" class="stat-card__value">0</strong>
+            </article>
         </div>
-        <div id="entregas-list" class="entregas-grid"></div>
-    </div>
+    </section>
 
-    <!-- Pestaña de Personal Delivery -->
-    <div id="personal-tab" class="tab-content is-hidden">
-        <div class="personal-actions">
-            <button id="btn-nuevo-personal" class="btn btn--yellow">+ Registrar delivery</button>
-        </div>
-        <div class="card card--table">
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Cédula</th>
-                            <th>Nombre completo</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-personal"></tbody>
-                </table>
+    <section class="board">
+        <!-- Panel con pestañas -->
+        <article class="panel panel--full panel--tabs" aria-label="Tablas por pestañas">
+            <div class="tabs" role="tablist" aria-label="Pestañas de entregas">
+                <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-panel-entregas" id="tab-entregas" data-table-tab="entregas">Entregas</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-personal" id="tab-personal" data-table-tab="personal">Personal Delivery</button>
             </div>
-        </div>
+
+            <!-- Tabla de Entregas -->
+            <section id="tab-panel-entregas" class="tab-panel" role="tabpanel" aria-labelledby="tab-entregas" data-table-panel="entregas">
+                <div class="panel__header">
+                    <h2 class="panel__title">Entregas registradas</h2>
+                    <button id="btn-nueva-entrega" class="btn btn--yellow" type="button" data-admin-target="entregas">
+                        <span class="btn__icon" aria-hidden="true">+</span>
+                        Registrar entrega
+                    </button>
+                </div>
+
+                <div class="toolbar">
+                    <label class="form__field toolbar__field">
+                        <span>Buscar entregas</span>
+                        <input id="input-buscar-entregas" type="search" placeholder="Buscar por factura, delivery o dirección">
+                    </label>
+                    <label class="form__field toolbar__field">
+                        <span>Filtrar por estado</span>
+                        <select id="filtro-estado">
+                            <option value="">Todos</option>
+                            <option value="0">Pendiente</option>
+                            <option value="1">En camino</option>
+                            <option value="2">Entregado</option>
+                            <option value="3">Cancelado</option>
+                            <option value="4">Programado</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="table-wrap" role="region" aria-label="Tabla de entregas">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">ID Entrega</th>
+                                <th>Factura</th>
+                                <th>Delivery</th>
+                                <th>Estado</th>
+                                <th>Dirección</th>
+                                <th>Fecha</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-entregas"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tabla de Personal Delivery -->
+            <section id="tab-panel-personal" class="tab-panel" role="tabpanel" aria-labelledby="tab-personal" data-table-panel="personal" hidden>
+                <div class="panel__header">
+                    <h2 class="panel__title">Personal de delivery</h2>
+                    <button id="btn-nuevo-personal" class="btn btn--yellow" type="button" data-admin-target="personal">
+                        <span class="btn__icon" aria-hidden="true">+</span>
+                        Registrar delivery
+                    </button>
+                </div>
+
+                <div class="toolbar">
+                    <label class="form__field toolbar__field">
+                        <span>Buscar personal</span>
+                        <input id="input-buscar-personal" type="search" placeholder="Buscar por cédula o nombre">
+                    </label>
+                </div>
+
+                <div class="table-wrap" role="region" aria-label="Tabla de personal delivery">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">Cédula</th>
+                                <th>Nombre completo</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-personal"></tbody>
+                    </table>
+                </div>
+            </section>
+        </article>
+    </section>
+
+    <!-- Modal para registrar/editar entrega -->
+    <div id="modal-entrega" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="entrega" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-entrega-title" tabindex="-1">
+            <div class="panel__header">
+                <div>
+                    <p class="panel__eyebrow">Entregas</p>
+                    <h2 id="modal-entrega-title" class="panel__title">Registrar entrega</h2>
+                </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="entrega">✕</button>
+            </div>
+
+            <form id="form-entrega" class="form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id" value="">
+
+                <div class="form__grid">
+                    <label class="form__field form__field--full">
+                        <span>Factura *</span>
+                        <select name="factura_id" id="factura-id" required>
+                            <option value="">Seleccione una factura</option>
+                        </select>
+                    </label>
+
+                    <label class="form__field form__field--full">
+                        <span>Delivery *</span>
+                        <select name="cedula_delivery" id="delivery-cedula" required>
+                            <option value="">Seleccione un delivery</option>
+                        </select>
+                    </label>
+
+                    <label class="form__field form__field--full">
+                        <span>Dirección de entrega *</span>
+                        <textarea name="direccion" rows="3" placeholder="Dirección completa" required
+                            maxlength="60"></textarea>
+                    </label>
+
+                    <label class="form__field">
+                        <span>Estado</span>
+                        <select name="estado" id="estado-entrega">
+                            <option value="0">Pendiente</option>
+                            <option value="1">En camino</option>
+                            <option value="2">Entregado</option>
+                            <option value="3">Cancelado</option>
+                            <option value="4">Programado</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-reset-form="entrega">Limpiar</button>
+                    <button type="submit" class="btn btn--yellow">Guardar entrega</button>
+                </div>
+            </form>
+        </article>
     </div>
+
+    <!-- Modal para gestión de personal delivery -->
+    <div id="modal-personal" class="modal" hidden>
+        <div class="modal__backdrop" data-modal-close="personal" aria-hidden="true"></div>
+        <article class="panel panel--form modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-personal-title" tabindex="-1">
+            <div class="panel__header">
+                <div>
+                    <p class="panel__eyebrow">Personal Delivery</p>
+                    <h2 id="modal-personal-title" class="panel__title">Registrar delivery</h2>
+                </div>
+                <button class="icon-action modal__close" type="button" data-modal-close="personal">✕</button>
+            </div>
+
+            <form id="form-personal" class="form" autocomplete="off">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="cedula_original" id="personal-cedula-original" value="">
+
+                <div class="form__grid">
+                    <label class="form__field">
+                        <span>Cédula *</span>
+                        <input name="cedula" id="personal-cedula" type="text" placeholder="12345678" required maxlength="15">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números, máximo 15 caracteres</small>
+                    </label>
+
+                    <label class="form__field">
+                        <span>Nombre *</span>
+                        <input name="nombre" id="personal-nombre" type="text" placeholder="Carlos" required maxlength="40">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Máximo 40 caracteres</small>
+                    </label>
+
+                    <label class="form__field">
+                        <span>Apellido *</span>
+                        <input name="apellido" id="personal-apellido" type="text" placeholder="Pérez" required maxlength="40">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Máximo 40 caracteres</small>
+                    </label>
+                </div>
+
+                <div class="form__actions">
+                    <button type="button" class="btn btn--ghost" data-reset-form="personal">Limpiar</button>
+                    <button type="submit" class="btn btn--yellow">Guardar delivery</button>
+                </div>
+            </form>
+        </article>
+    </div>
+
+    <!-- Modal de confirmación para eliminar -->
+    {% call modal('modal-eliminar', 'Eliminar registro', 'sm') %}
+      <div class="ui-form__grid ui-form__grid--one">
+        <p id="confirmar-mensaje" class="confirm-text">¿Estás seguro de que quieres eliminar este registro?</p>
+      </div>
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button id="btn-confirmar-eliminar" type="button" class="ui-btn ui-btn--primary">Confirmar</button>
+      </div>
+    {% endcall %}
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </main>
-
-<!-- Modal: Registrar/Editar Personal Delivery -->
-{% call modal('modal-personal', 'Registrar Delivery', 'sm') %}
-    <form id="form-personal" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="cedula_original" id="personal-cedula-original">
-        
-        <div class="ui-form__grid ui-form__grid--one">
-            <label class="field">
-                <span>Cédula</span>
-                <input id="personal-cedula" type="text" name="cedula" placeholder="Ej: 12345678" required maxlength="15">
-            </label>
-            <label class="field">
-                <span>Nombre</span>
-                <input id="personal-nombre" type="text" name="nombre" placeholder="Nombre" required maxlength="40">
-            </label>
-            <label class="field">
-                <span>Apellido</span>
-                <input id="personal-apellido" type="text" name="apellido" placeholder="Apellido" required maxlength="40">
-            </label>
-        </div>
-        <div class="ui-form__actions">
-            <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-            <button type="submit" class="ui-btn ui-btn--primary">Guardar</button>
-        </div>
-    </form>
-{% endcall %}
-
-<!-- Modal: Registrar Entrega -->
-{% call modal('modal-entrega', 'Registrar Entrega', 'md') %}
-    <form id="form-entrega" class="ui-form" autocomplete="off">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        
-        <div class="ui-form__grid ui-form__grid--one">
-            <label class="field">
-                <span>Factura</span>
-                <select id="entrega-factura" name="factura_id" required>
-                    <option value="">Seleccione una factura</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>Delivery</span>
-                <select id="entrega-delivery" name="cedula_delivery" required>
-                    <option value="">Seleccione un delivery</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>Dirección de entrega</span>
-                <textarea id="entrega-direccion" name="direccion" rows="3" placeholder="Dirección completa" required></textarea>
-            </label>
-            <label class="field">
-                <span>Estado inicial</span>
-                <select id="entrega-estado" name="estado">
-                    <option value="0">⏳ Pendiente</option>
-                    <option value="1">🚚 En camino</option>
-                    <option value="4">📋 Programado</option>
-                </select>
-            </label>
-        </div>
-        <div class="ui-form__actions">
-            <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-            <button type="submit" class="ui-btn ui-btn--primary">Registrar entrega</button>
-        </div>
-    </form>
-{% endcall %}
-
-<!-- Modal: Actualizar Estado Entrega -->
-{% call modal('modal-estado-entrega', 'Actualizar Estado', 'sm') %}
-    <input type="hidden" id="estado-entrega-id">
-    <div class="ui-form__grid ui-form__grid--one">
-        <label class="field">
-            <span>Nuevo estado</span>
-            <select id="estado-nuevo">
-                <option value="0">⏳ Pendiente</option>
-                <option value="1">🚚 En camino</option>
-                <option value="2">✅ Entregado</option>
-                <option value="3">❌ Cancelado</option>
-                <option value="4">📋 Programado</option>
-            </select>
-        </label>
-    </div>
-    <div class="ui-form__actions">
-        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-        <button id="btn-actualizar-estado" type="button" class="ui-btn ui-btn--primary">Actualizar estado</button>
-    </div>
-{% endcall %}
-
-<!-- Modal: Ver Detalle Entrega -->
-{% call modal('modal-detalle-entrega', 'Detalle de Entrega', 'md') %}
-    <div id="detalle-entrega-content" class="detalle-entrega">
-        <div class="info-group">
-            <div class="info-row"><strong>ID Entrega:</strong> <span id="detalle-id"></span></div>
-            <div class="info-row"><strong>Factura:</strong> <span id="detalle-factura"></span></div>
-            <div class="info-row"><strong>Estado:</strong> <span id="detalle-estado"></span></div>
-            <div class="info-row"><strong>Fecha:</strong> <span id="detalle-fecha"></span></div>
-            <div class="info-row"><strong>Dirección:</strong> <span id="detalle-direccion"></span></div>
-            <div class="info-row"><strong>Delivery:</strong> <span id="detalle-delivery"></span></div>
-            <div class="info-row"><strong>Cliente:</strong> <span id="detalle-cliente"></span></div>
-            <div class="info-row"><strong>Teléfono cliente:</strong> <span id="detalle-cliente-tel"></span></div>
-        </div>
-    </div>
-    <div class="ui-form__actions">
-        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
-    </div>
-{% endcall %}
-
-<!-- Modal: Eliminar Personal -->
-{% call modal('modal-eliminar-personal', 'Eliminar Delivery', 'sm') %}
-    <input type="hidden" id="eliminar-personal-cedula">
-    <p id="texto-confirmar-eliminar-personal" class="confirm-text">¿Estás seguro de que quieres eliminar este delivery?</p>
-    <div class="ui-form__actions">
-        <button id="btn-confirmar-eliminar-personal" type="button" class="ui-btn ui-btn--primary">Sí, eliminar</button>
-        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-    </div>
-{% endcall %}
 {% endblock %}
 
 {% block scripts %}

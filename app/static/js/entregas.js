@@ -1,88 +1,85 @@
-(() => {
-    "use strict";
+// ============================================
+// 1. CONSTANTES Y CONFIGURACIÓN
+// ============================================
+const CONFIG = {
+    API: {
+        ENTREGAS: '/api/entregas',
+        PERSONAL: '/api/personal-delivery',
+        FACTURAS_PENDIENTES: '/api/facturas-pendientes'
+    }
+};
 
-    let personalPendienteEliminar = null;
+// ============================================
+// 2. UTILIDADES
+// ============================================
+const Utils = {
+    getCsrfToken() {
+        const input = document.querySelector("input[name='_csrf_token']");
+        return input ? input.value : "";
+    },
 
-    function getAuthToken() {
+    getAccessToken() {
         return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
-    }
+    },
 
-    function getCsrfToken() {
-        return document.querySelector("input[name='_csrf_token']")?.value || "";
-    }
+    async fetchJson(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set("Accept", "application/json");
 
-    async function fetchJson(url, options = {}) {
-        const authToken = getAuthToken();
-        const csrfToken = getCsrfToken();
+        if (options.body && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
 
-        const headers = {
-            "Accept": "application/json",
-            ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-            ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {})
-        };
+        const csrf = this.getCsrfToken();
+        if (csrf) {
+            headers.set("X-CSRFToken", csrf);
+        }
 
-        if (options.body && !(options.body instanceof FormData)) {
-            headers["Content-Type"] = "application/json";
+        const token = this.getAccessToken();
+        if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
         }
 
         const response = await fetch(url, {
-            headers,
             credentials: "same-origin",
-            method: options.method || "GET",
-            body: options.body,
+            ...options,
+            headers,
         });
 
-        const data = await response.json().catch(() => ({}));
+        const contentType = response.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+        const payload = isJson ? await response.json() : await response.text();
 
-        if (!response.ok || data.success === false) {
-            throw new Error(data.error || `Error ${response.status}`);
+        if (!response.ok) {
+            const msg = (isJson && payload && (payload.message || payload.error)) ||
+                String(payload || response.statusText || "Error en la solicitud");
+            throw new Error(msg);
         }
 
-        return data;
-    }
+        return payload;
+    },
 
-    function mostrarToast(mensaje, tipo = "success") {
-        const toastExistente = document.querySelector(".custom-toast");
-        if (toastExistente) toastExistente.remove();
-
-        const toast = document.createElement("div");
-        toast.className = `custom-toast custom-toast--${tipo}`;
-        toast.textContent = mensaje;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: ${tipo === "error" ? "#ef4444" : "#22c55e"};
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            z-index: 10000;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: 'Space Grotesk', sans-serif;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.opacity = "0";
-            toast.style.transition = "opacity 0.3s";
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-
-    function escapeHtml(str) {
-        if (!str) return "";
-        return String(str)
+    escapeHtml(value) {
+        return String(value ?? "")
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
-    }
+    },
 
-    function formatDate(dateString) {
+    mostrarToast(message, isError = false) {
+        const toast = document.getElementById("toast");
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.toggle("toast--error", isError);
+        toast.classList.add("is-visible");
+        setTimeout(() => {
+            toast.classList.remove("is-visible");
+        }, 3000);
+    },
+
+    formatDate(dateString) {
         if (!dateString) return "N/A";
         try {
             const date = new Date(dateString);
@@ -97,367 +94,505 @@
             return dateString;
         }
     }
+};
 
-    // ==================== PERSONAL DELIVERY ====================
+// ============================================
+// 3. MANEJADORES DE MODALES Y TABS
+// ============================================
+let activeTabKey = "entregas";
 
-    async function cargarPersonal() {
-        try {
-            const data = await fetchJson("/api/personal-delivery");
-            renderPersonalList(data.personal || []);
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
+const modals = {
+    entrega: document.getElementById("modal-entrega"),
+    personal: document.getElementById("modal-personal"),
+    eliminar: document.getElementById("modal-eliminar"),
+};
+
+const tabButtons = Array.from(document.querySelectorAll("[data-table-tab]"));
+const tabPanels = Array.from(document.querySelectorAll("[data-table-panel]"));
+
+function setActiveTab(key) {
+    activeTabKey = key;
+
+    tabButtons.forEach(btn => {
+        const isActive = btn.dataset.tableTab === key;
+        btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        btn.classList.toggle("is-active", isActive);
+    });
+
+    tabPanels.forEach(panel => {
+        panel.hidden = panel.dataset.tablePanel !== key;
+    });
+}
+
+function openModal(modalId) {
+    const modal = modals[modalId];
+    if (modal) {
+        modal.hidden = false;
+        document.body.classList.add("modal-open");
+    }
+}
+
+function closeModal(modalId) {
+    const modal = modals[modalId];
+    if (modal) {
+        modal.hidden = true;
+        document.body.classList.remove("modal-open");
+    }
+}
+
+function closeAllModals() {
+    Object.keys(modals).forEach(key => {
+        if (modals[key]) modals[key].hidden = true;
+    });
+    document.body.classList.remove("modal-open");
+}
+
+// ============================================
+// 4. MANEJADORES DE TABLA
+// ============================================
+let entregaPendienteEliminar = null;
+let personalPendienteEliminar = null;
+
+function renderizarTablaEntregas(entregas) {
+    const tbody = document.getElementById("tabla-entregas");
+    if (!tbody) return;
+
+    const stats = document.getElementById("stat-entregas");
+    if (stats) stats.textContent = entregas.length;
+
+    if (!entregas.length) {
+        tbody.innerHTML = `<tr><td colspan="7">No hay entregas registradas</td></tr>`;
+        return;
     }
 
-    function renderPersonalList(personal) {
-        const tbody = document.getElementById("tabla-personal");
-        if (!tbody) return;
-
-        if (!personal.length) {
-            tbody.innerHTML = '<tr><td colspan="3">No hay personal de delivery registrado</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = personal.map(p => `
-            <tr>
-                <td>${escapeHtml(p.cedula)}</td>
-                <td>${escapeHtml(p.nombre_completo)}</td>
-                <td class="table__actions">
-                    <div class="row-actions">
-                        <button class="icon-action btn-editar-personal" data-cedula="${escapeHtml(p.cedula)}" data-nombre="${escapeHtml(p.nombre)}" data-apellido="${escapeHtml(p.apellido)}" title="Editar">✎</button>
-                        <button class="icon-action btn-eliminar-personal" data-cedula="${escapeHtml(p.cedula)}" data-nombre="${escapeHtml(p.nombre_completo)}" title="Eliminar">🗑</button>
-                    </div>
-                </td>
-            </tr>
-        `).join("");
-
-        // Event listeners
-        document.querySelectorAll(".btn-editar-personal").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.getElementById("personal-cedula-original").value = btn.dataset.cedula;
-                document.getElementById("personal-cedula").value = btn.dataset.cedula;
-                document.getElementById("personal-nombre").value = btn.dataset.nombre;
-                document.getElementById("personal-apellido").value = btn.dataset.apellido;
-                document.getElementById("personal-cedula").disabled = true;
-                document.querySelector("#modal-personal .ui-modal__title").textContent = "Editar Delivery";
-                openModal("modal-personal");
-            });
-        });
-
-        document.querySelectorAll(".btn-eliminar-personal").forEach(btn => {
-            btn.addEventListener("click", () => {
-                personalPendienteEliminar = { cedula: btn.dataset.cedula, nombre: btn.dataset.nombre };
-                document.getElementById("texto-confirmar-eliminar-personal").textContent = `¿Estás seguro de que quieres eliminar a ${btn.dataset.nombre}?`;
-                openModal("modal-eliminar-personal");
-            });
-        });
-    }
-
-    async function guardarPersonal(event) {
-        event.preventDefault();
-        
-        const cedula = document.getElementById("personal-cedula").value.trim();
-        const nombre = document.getElementById("personal-nombre").value.trim();
-        const apellido = document.getElementById("personal-apellido").value.trim();
-        const cedulaOriginal = document.getElementById("personal-cedula-original").value;
-
-        if (!cedula || !nombre || !apellido) {
-            mostrarToast("Todos los campos son obligatorios", "error");
-            return;
-        }
-
-        try {
-            if (cedulaOriginal) {
-                // Actualizar
-                await fetchJson(`/api/personal-delivery/${cedulaOriginal}`, {
-                    method: "PUT",
-                    body: JSON.stringify({ nombre, apellido })
-                });
-                mostrarToast("Delivery actualizado correctamente", "success");
-            } else {
-                // Crear
-                await fetchJson("/api/personal-delivery", {
-                    method: "POST",
-                    body: JSON.stringify({ cedula, nombre, apellido })
-                });
-                mostrarToast("Delivery registrado correctamente", "success");
-            }
-            
-            closeModal("modal-personal");
-            document.getElementById("form-personal").reset();
-            document.getElementById("personal-cedula").disabled = false;
-            document.querySelector("#modal-personal .ui-modal__title").textContent = "Registrar Delivery";
-            await cargarPersonal();
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    async function eliminarPersonal() {
-        if (!personalPendienteEliminar) return;
-
-        try {
-            await fetchJson(`/api/personal-delivery/${personalPendienteEliminar.cedula}`, { method: "DELETE" });
-            mostrarToast("Delivery eliminado correctamente", "success");
-            closeModal("modal-eliminar-personal");
-            personalPendienteEliminar = null;
-            await cargarPersonal();
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    // ==================== ENTREGAS ====================
-
-    async function cargarEntregas() {
-        try {
-            const data = await fetchJson("/api/entregas");
-            renderEntregasList(data.entregas || []);
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    function renderEntregasList(entregas) {
-        const container = document.getElementById("entregas-list");
-        if (!container) return;
-
-        if (!entregas.length) {
-            container.innerHTML = '<div class="empty-state">📭 No hay entregas registradas</div>';
-            return;
-        }
-
-        container.innerHTML = entregas.map(e => `
-            <div class="entrega-card">
-                <div class="entrega-header">
-                    <span class="entrega-id">📦 Entrega: ${escapeHtml(e.id_entrega)}</span>
-                    <span class="entrega-estado estado-${e.estado}">${escapeHtml(e.estado_texto)}</span>
+    tbody.innerHTML = entregas.map(e => `
+        <tr>
+            <td><span class="chip">${Utils.escapeHtml(e.id)}</span></td>
+            <td>${Utils.escapeHtml(e.factura_id)}</td>
+            <td>${Utils.escapeHtml(e.delivery_nombre_completo || "No asignado")}</td>
+            <td><span class="estado-badge ${e.estado_clase}">${Utils.escapeHtml(e.estado_texto)}</span></td>
+            <td>${Utils.escapeHtml(e.direccion || "No especificada")}</td>
+            <td>${Utils.formatDate(e.fecha_entrega)}</td>
+            <td class="table__actions">
+                <div class="row-actions">
+                    <button class="icon-action" data-action="editar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
+                        data-factura="${Utils.escapeHtml(e.factura_id)}" data-cedula="${Utils.escapeHtml(e.cedula_delivery)}"
+                        data-direccion="${Utils.escapeHtml(e.direccion || '')}" data-estado="${e.estado}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--danger" data-action="eliminar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
+                        title="Eliminar">🗑</button>
                 </div>
-                <div class="entrega-info-grid">
-                    <div class="info-row">
-                        <strong>📄 Factura</strong>
-                        <span>${escapeHtml(e.factura_id)}</span>
-                    </div>
-                    <div class="info-row">
-                        <strong>👤 Delivery</strong>
-                        <span>${escapeHtml(e.delivery_nombre_completo || "No asignado")}</span>
-                    </div>
-                    <div class="info-row">
-                        <strong>📅 Fecha de entrega</strong>
-                        <span>${formatDate(e.fecha_entrega)}</span>
-                    </div>
-                    <div class="info-row">
-                        <strong>📍 Dirección</strong>
-                        <span>${escapeHtml(e.direccion || "No especificada")}</span>
-                    </div>
-                    <div class="info-row">
-                        <strong>👤 Cliente</strong>
-                        <span>${escapeHtml(e.cliente_nombre)} ${escapeHtml(e.cliente_apellido || "")}</span>
-                    </div>
-                    <div class="info-row">
-                        <strong>📞 Teléfono</strong>
-                        <span>${escapeHtml(e.cliente_celular || "N/A")}</span>
-                    </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function renderizarTablaPersonal(personal) {
+    const tbody = document.getElementById("tabla-personal");
+    if (!tbody) return;
+
+    const stats = document.getElementById("stat-personal");
+    if (stats) stats.textContent = personal.length;
+
+    if (!personal.length) {
+        tbody.innerHTML = `<tr><td colspan="3">No hay personal de delivery registrado</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = personal.map(p => `
+        <tr>
+            <td><span class="chip">${Utils.escapeHtml(p.cedula)}</span></td>
+            <td>${Utils.escapeHtml(p.nombre_completo)}</td>
+            <td class="table__actions">
+                <div class="row-actions">
+                    <button class="icon-action" data-action="editar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
+                        data-nombre="${Utils.escapeHtml(p.nombre)}" data-apellido="${Utils.escapeHtml(p.apellido)}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--danger" data-action="eliminar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
+                        data-nombre="${Utils.escapeHtml(p.nombre_completo)}" title="Eliminar">🗑</button>
                 </div>
-                <div class="entrega-actions">
-                    <button class="btn btn--ghost btn-ver-entrega" data-id="${escapeHtml(e.id_entrega)}">👁️ Ver detalle</button>
-                    <button class="btn btn--yellow btn-cambiar-estado" data-id="${escapeHtml(e.id_entrega)}" data-estado="${e.estado}">🔄 Cambiar estado</button>
-                </div>
-            </div>
-        `).join("");
+            </td>
+        </tr>
+    `).join("");
+}
 
-        document.querySelectorAll(".btn-ver-entrega").forEach(btn => {
-            btn.addEventListener("click", () => verDetalleEntrega(btn.dataset.id));
-        });
-
-        document.querySelectorAll(".btn-cambiar-estado").forEach(btn => {
-            btn.addEventListener("click", () => abrirModalEstado(btn.dataset.id, btn.dataset.estado));
-        });
+// ============================================
+// 5. CRUD DE ENTREGAS
+// ============================================
+async function cargarEntregas() {
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.ENTREGAS, { method: "GET" });
+        renderizarTablaEntregas(data.entregas || []);
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
     }
+}
 
-    async function verDetalleEntrega(entregaId) {
-        try {
-            const data = await fetchJson(`/api/entregas/${entregaId}`);
-            const e = data.entrega;
-            
-            document.getElementById("detalle-id").textContent = e.id_entrega;
-            document.getElementById("detalle-factura").textContent = e.factura_id;
-            document.getElementById("detalle-estado").textContent = e.estado_texto;
-            document.getElementById("detalle-fecha").textContent = formatDate(e.fecha_entrega);
-            document.getElementById("detalle-direccion").textContent = e.direccion || "No especificada";
-            document.getElementById("detalle-delivery").textContent = e.delivery_nombre_completo || "No asignado";
-            document.getElementById("detalle-cliente").textContent = `${e.cliente_nombre || ""} ${e.cliente_apellido || ""}`.trim() || "N/A";
-            document.getElementById("detalle-cliente-tel").textContent = e.cliente_celular || "N/A";
-            
-            openModal("modal-detalle-entrega");
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    function abrirModalEstado(entregaId, estadoActual) {
-        document.getElementById("estado-entrega-id").value = entregaId;
-        document.getElementById("estado-nuevo").value = estadoActual;
-        openModal("modal-estado-entrega");
-    }
-
-    async function actualizarEstadoEntrega() {
-        const entregaId = document.getElementById("estado-entrega-id").value;
-        const nuevoEstado = document.getElementById("estado-nuevo").value;
-
-        try {
-            await fetchJson(`/api/entregas/${entregaId}/estado`, {
-                method: "PUT",
-                body: JSON.stringify({ estado: parseInt(nuevoEstado) })
-            });
-            mostrarToast("Estado actualizado correctamente", "success");
-            closeModal("modal-estado-entrega");
-            await cargarEntregas();
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    // ==================== REGISTRAR ENTREGA ====================
-
-    async function cargarFacturasPendientes() {
-        try {
-            const data = await fetchJson("/api/entregas/facturas-pendientes");
-            const select = document.getElementById("entrega-factura");
-            const facturas = data.facturas || [];
-            
-            select.innerHTML = '<option value="">Seleccione una factura</option>' + 
-                facturas.map(f => `<option value="${escapeHtml(f.factura_id)}" data-direccion="${escapeHtml(f.cliente_direccion || "")}" data-cliente="${escapeHtml(f.cliente_nombre)} ${escapeHtml(f.cliente_apellido || "")}" data-telefono="${escapeHtml(f.cliente_celular || "")}">${escapeHtml(f.factura_id)} - ${escapeHtml(f.cliente_nombre)} ${escapeHtml(f.cliente_apellido || "")}</option>`).join("");
-            
-            select.addEventListener("change", () => {
-                const option = select.options[select.selectedIndex];
-                const direccion = option.dataset.direccion;
-                if (direccion) {
-                    document.getElementById("entrega-direccion").value = direccion;
-                }
-            });
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    async function cargarPersonalParaSelect() {
-        try {
-            const data = await fetchJson("/api/personal-delivery");
-            const select = document.getElementById("entrega-delivery");
-            const personal = data.personal || [];
-            
-            select.innerHTML = '<option value="">Seleccione un delivery</option>' + 
-                personal.map(p => `<option value="${escapeHtml(p.cedula)}">${escapeHtml(p.nombre_completo)} (${escapeHtml(p.cedula)})</option>`).join("");
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    async function registrarEntrega(event) {
-        event.preventDefault();
+async function cargarFacturasPendientes() {
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.FACTURAS_PENDIENTES, { method: "GET" });
+        const select = document.getElementById("factura-id");
+        const facturas = data.facturas || [];
         
-        const facturaId = document.getElementById("entrega-factura").value;
-        const cedulaDelivery = document.getElementById("entrega-delivery").value;
-        const direccion = document.getElementById("entrega-direccion").value.trim();
-        const estado = parseInt(document.getElementById("entrega-estado").value);
-
-        if (!facturaId || !cedulaDelivery || !direccion) {
-            mostrarToast("Todos los campos son obligatorios", "error");
-            return;
-        }
-
-        try {
-            await fetchJson("/api/entregas", {
-                method: "POST",
-                body: JSON.stringify({ factura_id: facturaId, cedula_delivery: cedulaDelivery, direccion, estado })
-            });
-            mostrarToast("Entrega registrada correctamente", "success");
-            closeModal("modal-entrega");
-            document.getElementById("form-entrega").reset();
-            await Promise.all([cargarEntregas(), cargarFacturasPendientes()]);
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    // ==================== MODALES ====================
-
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.remove("is-hidden");
-            document.body.style.overflow = "hidden";
-        }
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.add("is-hidden");
-            document.body.style.overflow = "";
-        }
-    }
-
-    // ==================== TABS ====================
-
-    function initTabs() {
-        const tabBtns = document.querySelectorAll(".tab-btn");
-        for (const btn of tabBtns) {
-            btn.addEventListener("click", () => {
-                for (const b of tabBtns) b.classList.remove("active");
-                btn.classList.add("active");
-
-                const tab = btn.dataset.tab;
-                document.querySelectorAll(".tab-content").forEach(c => c.classList.add("is-hidden"));
-                document.getElementById(`${tab}-tab`).classList.remove("is-hidden");
-
-                if (tab === "entregas") cargarEntregas();
-                else if (tab === "personal") cargarPersonal();
-            });
-        }
-    }
-
-    // ==================== INICIALIZACIÓN ====================
-
-    async function init() {
-        initTabs();
+        const statPendientes = document.getElementById("stat-pendientes");
+        if (statPendientes) statPendientes.textContent = facturas.length;
         
-        // Formularios
-        document.getElementById("form-personal")?.addEventListener("submit", guardarPersonal);
-        document.getElementById("form-entrega")?.addEventListener("submit", registrarEntrega);
-        document.getElementById("btn-actualizar-estado")?.addEventListener("click", actualizarEstadoEntrega);
-        document.getElementById("btn-confirmar-eliminar-personal")?.addEventListener("click", eliminarPersonal);
+        select.innerHTML = '<option value="">Seleccione una factura</option>' +
+            facturas.map(f => `<option value="${Utils.escapeHtml(f.factura_id)}" data-direccion="${Utils.escapeHtml(f.cliente_direccion || '')}">${Utils.escapeHtml(f.factura_id)} - ${Utils.escapeHtml(f.cliente_nombre)} ${Utils.escapeHtml(f.cliente_apellido || '')}</option>`).join("");
         
-        // Botones
-        document.getElementById("btn-nuevo-personal")?.addEventListener("click", () => {
-            document.getElementById("form-personal").reset();
-            document.getElementById("personal-cedula").disabled = false;
-            document.getElementById("personal-cedula-original").value = "";
-            document.querySelector("#modal-personal .ui-modal__title").textContent = "Registrar Delivery";
-            openModal("modal-personal");
-        });
-        
-        document.getElementById("btn-nueva-entrega")?.addEventListener("click", async () => {
-            await Promise.all([cargarFacturasPendientes(), cargarPersonalParaSelect()]);
-            document.getElementById("form-entrega").reset();
-            openModal("modal-entrega");
-        });
-        
-        // Cerrar modales con ESC
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                document.querySelectorAll(".modal:not(.is-hidden)").forEach(modal => {
-                    modal.classList.add("is-hidden");
-                    document.body.style.overflow = "";
-                });
+        select.addEventListener("change", () => {
+            const option = select.options[select.selectedIndex];
+            const direccion = option.dataset.direccion;
+            const direccionTextarea = document.querySelector("#form-entrega textarea[name='direccion']");
+            if (direccion && direccionTextarea) {
+                direccionTextarea.value = direccion;
             }
         });
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+async function cargarPersonalSelect() {
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.PERSONAL, { method: "GET" });
+        const select = document.getElementById("delivery-cedula");
+        const personal = data.personal || [];
         
-        // Cargar datos iniciales
-        await cargarEntregas();
-        await cargarPersonal();
+        select.innerHTML = '<option value="">Seleccione un delivery</option>' +
+            personal.map(p => `<option value="${Utils.escapeHtml(p.cedula)}">${Utils.escapeHtml(p.nombre_completo)} (${Utils.escapeHtml(p.cedula)})</option>`).join("");
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+async function registrarEntrega(event) {
+    event.preventDefault();
+    const form = document.getElementById("form-entrega");
+    const id = form.querySelector("input[name='id']").value;
+    
+    const payload = {
+        factura_id: form.factura_id.value,
+        cedula_delivery: form.cedula_delivery.value,
+        direccion: form.direccion.value.trim(),
+        estado: parseInt(form.estado.value)
+    };
+    
+    if (!payload.factura_id || !payload.cedula_delivery || !payload.direccion) {
+        Utils.mostrarToast("Todos los campos son obligatorios", true);
+        return;
     }
     
-    document.addEventListener("DOMContentLoaded", init);
-})();
+    try {
+        if (id) {
+            await Utils.fetchJson(`${CONFIG.API.ENTREGAS}/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            Utils.mostrarToast("Entrega actualizada exitosamente");
+        } else {
+            await Utils.fetchJson(CONFIG.API.ENTREGAS, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            Utils.mostrarToast("Entrega registrada exitosamente");
+        }
+        form.reset();
+        closeModal("entrega");
+        await Promise.all([cargarEntregas(), cargarFacturasPendientes()]);
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+function abrirModalEditarEntrega(button) {
+    const id = button.dataset.id;
+    const factura = button.dataset.factura;
+    const cedula = button.dataset.cedula;
+    const direccion = button.dataset.direccion;
+    const estado = button.dataset.estado;
+    
+    const form = document.getElementById("form-entrega");
+    const title = document.getElementById("modal-entrega-title");
+    
+    form.querySelector("input[name='id']").value = id;
+    form.factura_id.value = factura;
+    form.cedula_delivery.value = cedula;
+    form.direccion.value = direccion;
+    form.estado.value = estado;
+    
+    if (title) title.textContent = "Editar entrega";
+    openModal("entrega");
+}
+
+async function eliminarEntrega() {
+    if (!entregaPendienteEliminar) return;
+    
+    try {
+        await Utils.fetchJson(`${CONFIG.API.ENTREGAS}/${entregaPendienteEliminar}`, { method: "DELETE" });
+        Utils.mostrarToast("Entrega eliminada exitosamente");
+        closeModal("eliminar");
+        entregaPendienteEliminar = null;
+        await cargarEntregas();
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+// ============================================
+// 6. CRUD DE PERSONAL DELIVERY
+// ============================================
+async function cargarPersonal() {
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.PERSONAL, { method: "GET" });
+        renderizarTablaPersonal(data.personal || []);
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+function abrirModalEditarPersonal(button) {
+    const cedula = button.dataset.cedula;
+    const nombre = button.dataset.nombre;
+    const apellido = button.dataset.apellido;
+    
+    const form = document.getElementById("form-personal");
+    const title = document.getElementById("modal-personal-title");
+    
+    form.querySelector("input[name='cedula_original']").value = cedula;
+    form.cedula.value = cedula;
+    form.nombre.value = nombre;
+    form.apellido.value = apellido;
+    form.cedula.disabled = true;
+    
+    if (title) title.textContent = "Editar delivery";
+    openModal("personal");
+}
+
+function resetFormPersonal() {
+    const form = document.getElementById("form-personal");
+    const title = document.getElementById("modal-personal-title");
+    
+    form.reset();
+    form.cedula.disabled = false;
+    form.querySelector("input[name='cedula_original']").value = "";
+    if (title) title.textContent = "Registrar delivery";
+}
+
+async function registrarPersonal(event) {
+    event.preventDefault();
+    const form = document.getElementById("form-personal");
+    const cedulaOriginal = form.querySelector("input[name='cedula_original']").value;
+    
+    const payload = {
+        cedula: form.cedula.value,
+        nombre: form.nombre.value.trim(),
+        apellido: form.apellido.value.trim()
+    };
+    
+    if (!payload.cedula || !payload.nombre || !payload.apellido) {
+        Utils.mostrarToast("Todos los campos son obligatorios", true);
+        return;
+    }
+    
+    if (!/^\d+$/.test(payload.cedula)) {
+        Utils.mostrarToast("La cédula debe contener solo números", true);
+        return;
+    }
+    
+    try {
+        if (cedulaOriginal) {
+            await Utils.fetchJson(`${CONFIG.API.PERSONAL}/${cedulaOriginal}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            Utils.mostrarToast("Delivery actualizado exitosamente");
+        } else {
+            await Utils.fetchJson(CONFIG.API.PERSONAL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            Utils.mostrarToast("Delivery registrado exitosamente");
+        }
+        resetFormPersonal();
+        closeModal("personal");
+        await Promise.all([cargarPersonal(), cargarPersonalSelect()]);
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+async function eliminarPersonal() {
+    if (!personalPendienteEliminar) return;
+    
+    try {
+        await Utils.fetchJson(`${CONFIG.API.PERSONAL}/${personalPendienteEliminar}`, { method: "DELETE" });
+        Utils.mostrarToast("Delivery eliminado exitosamente");
+        closeModal("eliminar");
+        personalPendienteEliminar = null;
+        await Promise.all([cargarPersonal(), cargarPersonalSelect()]);
+    } catch (error) {
+        Utils.mostrarToast(error.message, true);
+    }
+}
+
+// ============================================
+// 7. FILTROS Y BÚSQUEDA
+// ============================================
+function setupFiltros() {
+    // Filtros para entregas
+    const inputBuscar = document.getElementById("input-buscar-entregas");
+    const filtroEstado = document.getElementById("filtro-estado");
+    
+    const filtrarEntregas = () => {
+        const busqueda = inputBuscar?.value.toLowerCase() || "";
+        const estado = filtroEstado?.value || "";
+        
+        const rows = document.querySelectorAll("#tabla-entregas tr");
+        rows.forEach(row => {
+            if (row.cells.length < 7) return;
+            const text = Array.from(row.cells).slice(0, 4).map(cell => cell.textContent.toLowerCase()).join(" ");
+            const estadoCell = row.cells[3]?.textContent.toLowerCase() || "";
+            
+            let estadoMatch = true;
+            if (estado) {
+                const estadoMap = { "0": "pendiente", "1": "camino", "2": "entregado", "3": "cancelado", "4": "programado" };
+                estadoMatch = estadoCell.includes(estadoMap[estado] || "");
+            }
+            
+            const searchMatch = !busqueda || text.includes(busqueda);
+            row.style.display = (estadoMatch && searchMatch) ? "" : "none";
+        });
+    };
+    
+    inputBuscar?.addEventListener("input", filtrarEntregas);
+    filtroEstado?.addEventListener("change", filtrarEntregas);
+    
+    // Filtro para personal
+    const inputBuscarPersonal = document.getElementById("input-buscar-personal");
+    
+    const filtrarPersonal = () => {
+        const busqueda = inputBuscarPersonal?.value.toLowerCase() || "";
+        
+        const rows = document.querySelectorAll("#tabla-personal tr");
+        rows.forEach(row => {
+            if (row.cells.length < 2) return;
+            const text = row.cells[0]?.textContent.toLowerCase() + " " + row.cells[1]?.textContent.toLowerCase();
+            row.style.display = !busqueda || text.includes(busqueda) ? "" : "none";
+        });
+    };
+    
+    inputBuscarPersonal?.addEventListener("input", filtrarPersonal);
+}
+
+// ============================================
+// 8. EVENTOS E INICIALIZACIÓN
+// ============================================
+function setupEventos() {
+    // Configurar tabs
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const key = btn.dataset.tableTab;
+            if (key) setActiveTab(key);
+        });
+    });
+    
+    // Botón nueva entrega
+    document.getElementById("btn-nueva-entrega")?.addEventListener("click", async () => {
+        const form = document.getElementById("form-entrega");
+        const title = document.getElementById("modal-entrega-title");
+        
+        form.reset();
+        form.querySelector("input[name='id']").value = "";
+        if (title) title.textContent = "Registrar entrega";
+        
+        await Promise.all([cargarFacturasPendientes(), cargarPersonalSelect()]);
+        openModal("entrega");
+    });
+    
+    // Botón nuevo personal
+    document.getElementById("btn-nuevo-personal")?.addEventListener("click", () => {
+        resetFormPersonal();
+        openModal("personal");
+    });
+    
+    // Eventos de la tabla de entregas
+    document.getElementById("tabla-entregas")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        if (action === "editar-entrega") {
+            abrirModalEditarEntrega(btn);
+        } else if (action === "eliminar-entrega") {
+            entregaPendienteEliminar = btn.dataset.id;
+            const confirmMessage = document.getElementById("confirmar-mensaje");
+            if (confirmMessage) confirmMessage.textContent = "¿Estás seguro de que quieres eliminar esta entrega?";
+            openModal("eliminar");
+        }
+    });
+    
+    // Eventos de la tabla de personal
+    document.getElementById("tabla-personal")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        if (action === "editar-personal") {
+            abrirModalEditarPersonal(btn);
+        } else if (action === "eliminar-personal") {
+            personalPendienteEliminar = btn.dataset.cedula;
+            const confirmMessage = document.getElementById("confirmar-mensaje");
+            if (confirmMessage) confirmMessage.textContent = `¿Estás seguro de que quieres eliminar a ${btn.dataset.nombre}?`;
+            openModal("eliminar");
+        }
+    });
+    
+    // Formularios
+    document.getElementById("form-entrega")?.addEventListener("submit", registrarEntrega);
+    document.getElementById("form-personal")?.addEventListener("submit", registrarPersonal);
+    
+    // Botón confirmar eliminar
+    document.getElementById("btn-confirmar-eliminar")?.addEventListener("click", () => {
+        if (entregaPendienteEliminar) eliminarEntrega();
+        else if (personalPendienteEliminar) eliminarPersonal();
+    });
+    
+    // Botones de reset
+    document.querySelectorAll("[data-reset-form]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.resetForm;
+            if (target === "entrega") {
+                document.getElementById("form-entrega")?.reset();
+            } else if (target === "personal") {
+                resetFormPersonal();
+            }
+        });
+    });
+    
+    // Cerrar modales con backdrop
+    document.querySelectorAll("[data-modal-close]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.modalClose;
+            if (target && modals[target]) {
+                closeModal(target);
+            } else {
+                closeAllModals();
+            }
+        });
+    });
+    
+    // Cerrar modales con ESC
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeAllModals();
+        }
+    });
+}
+
+async function init() {
+    setActiveTab("entregas");
+    await Promise.all([cargarEntregas(), cargarPersonal(), cargarFacturasPendientes(), cargarPersonalSelect()]);
+    setupFiltros();
+    setupEventos();
+}
+
+document.addEventListener("DOMContentLoaded", init);
