@@ -37,7 +37,6 @@ def pagina_entregas():
 
 @entregas_blueprint.route("/api/personal-delivery", methods=["GET"])
 @jwt_required
-@tiene_permiso('Entregas', 'consultar')
 def api_listar_personal():
     """Listar todo el personal de delivery"""
     try:
@@ -52,14 +51,13 @@ def api_listar_personal():
 
 @entregas_blueprint.route("/api/personal-delivery", methods=["POST"])
 @jwt_required
-@tiene_permiso('Entregas', 'registrar')
 def api_crear_personal():
     """Registrar nuevo delivery"""
     try:
-        datos = request.get_json(silent=True) or {}
-        cedula = datos.get("cedula", "").strip()
-        nombre = datos.get("nombre", "").strip()
-        apellido = datos.get("apellido", "").strip()
+        data = request.get_json(silent=True) or request.form
+        cedula = data.get("cedula", "").strip()
+        nombre = data.get("nombre", "").strip()
+        apellido = data.get("apellido", "").strip()
         
         if not cedula or not nombre or not apellido:
             return jsonify({"success": False, "error": "Cédula, nombre y apellido son obligatorios"}), 400
@@ -74,7 +72,7 @@ def api_crear_personal():
                 usuario_id=_usuario_actual(),
                 modulo_nombre="Entregas"
             )
-            return jsonify({"success": True, "message": mensaje})
+            return jsonify({"success": True, "message": mensaje}), 201
         else:
             return jsonify({"success": False, "error": mensaje}), 400
     except Exception as e:
@@ -84,13 +82,12 @@ def api_crear_personal():
 
 @entregas_blueprint.route("/api/personal-delivery/<cedula>", methods=["PUT"])
 @jwt_required
-@tiene_permiso('Entregas', 'modificar')
 def api_actualizar_personal(cedula):
     """Actualizar delivery existente"""
     try:
-        datos = request.get_json(silent=True) or {}
-        nombre = datos.get("nombre", "").strip()
-        apellido = datos.get("apellido", "").strip()
+        data = request.get_json(silent=True) or request.form
+        nombre = data.get("nombre", "").strip()
+        apellido = data.get("apellido", "").strip()
         
         if not nombre or not apellido:
             return jsonify({"success": False, "error": "Nombre y apellido son obligatorios"}), 400
@@ -105,7 +102,7 @@ def api_actualizar_personal(cedula):
                 usuario_id=_usuario_actual(),
                 modulo_nombre="Entregas"
             )
-            return jsonify({"success": True, "message": mensaje})
+            return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400
     except Exception as e:
@@ -115,7 +112,6 @@ def api_actualizar_personal(cedula):
 
 @entregas_blueprint.route("/api/personal-delivery/<cedula>", methods=["DELETE"])
 @jwt_required
-@tiene_permiso('Entregas', 'eliminar')
 def api_eliminar_personal(cedula):
     """Eliminar delivery"""
     try:
@@ -129,7 +125,7 @@ def api_eliminar_personal(cedula):
                 usuario_id=_usuario_actual(),
                 modulo_nombre="Entregas"
             )
-            return jsonify({"success": True, "message": mensaje})
+            return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400
     except Exception as e:
@@ -141,44 +137,27 @@ def api_eliminar_personal(cedula):
 
 @entregas_blueprint.route("/api/entregas", methods=["GET"])
 @jwt_required
-@tiene_permiso('Entregas', 'consultar')
 def api_listar_entregas():
     """Listar todas las entregas"""
     try:
-        estado = request.args.get("estado", type=int)
         modelo = EntregaModel()
-        entregas = modelo.listar_entregas(estado=estado)
+        entregas = modelo.listar_entregas()
         return jsonify({"success": True, "entregas": entregas})
     except Exception as e:
         print(f"Error en api_listar_entregas: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@entregas_blueprint.route("/api/entregas/facturas-pendientes", methods=["GET"])
-@jwt_required
-@tiene_permiso('Entregas', 'consultar')
-def api_facturas_pendientes():
-    """Obtener facturas que necesitan entrega"""
-    try:
-        modelo = EntregaModel()
-        facturas = modelo.obtener_facturas_pendientes_entrega()
-        return jsonify({"success": True, "facturas": facturas})
-    except Exception as e:
-        print(f"Error en api_facturas_pendientes: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
 @entregas_blueprint.route("/api/entregas", methods=["POST"])
 @jwt_required
-@tiene_permiso('Entregas', 'registrar')
 def api_registrar_entrega():
     """Registrar nueva entrega"""
     try:
-        datos = request.get_json(silent=True) or {}
-        factura_id = datos.get("factura_id", "").strip()
-        cedula_delivery = datos.get("cedula_delivery", "").strip()
-        direccion = datos.get("direccion", "").strip()
-        estado = datos.get("estado", 0)
+        data = request.get_json(silent=True) or request.form
+        factura_id = data.get("factura_id", "").strip()
+        cedula_delivery = data.get("cedula_delivery", "").strip()
+        direccion = data.get("direccion", "").strip()
+        estado = int(data.get("estado", 0))
         
         if not factura_id:
             return jsonify({"success": False, "error": "La factura es obligatoria"}), 400
@@ -197,7 +176,7 @@ def api_registrar_entrega():
             modulo_nombre="Entregas"
         )
         
-        return jsonify({"success": True, "message": "Entrega registrada exitosamente", "entrega_id": entrega_id})
+        return jsonify({"success": True, "message": "Entrega registrada exitosamente", "id": entrega_id}), 201
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
@@ -205,73 +184,67 @@ def api_registrar_entrega():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@entregas_blueprint.route("/api/entregas/<entrega_id>/estado", methods=["PUT"])
+@entregas_blueprint.route("/api/entregas/<string:entrega_id>", methods=["PUT"])
 @jwt_required
-@tiene_permiso('Entregas', 'modificar')
-def api_actualizar_estado(entrega_id):
-    """Actualizar estado de una entrega"""
+def api_actualizar_entrega(entrega_id):
+    """Actualizar entrega existente"""
     try:
-        datos = request.get_json(silent=True) or {}
-        nuevo_estado = datos.get("estado")
-        
-        if nuevo_estado is None:
-            return jsonify({"success": False, "error": "El estado es obligatorio"}), 400
-        
-        modelo = EntregaModel()
-        resultado = modelo.actualizar_estado(entrega_id, nuevo_estado)
-        
-        if resultado["success"]:
-            registrar_en_bitacora(
-                accion="Actualizar estado entrega",
-                descripcion=f"Se actualizó el estado de la entrega ID: {entrega_id} a {nuevo_estado}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Entregas"
-            )
-            return jsonify({"success": True, "message": resultado["message"]})
-        else:
-            return jsonify({"success": False, "error": resultado["error"]}), 400
-    except Exception as e:
-        print(f"Error en api_actualizar_estado: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@entregas_blueprint.route("/api/entregas/<entrega_id>/direccion", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Entregas', 'modificar')
-def api_actualizar_direccion(entrega_id):
-    """Actualizar dirección de una entrega"""
-    try:
-        datos = request.get_json(silent=True) or {}
-        direccion = datos.get("direccion", "").strip()
+        data = request.get_json(silent=True) or request.form
+        direccion = data.get("direccion", "").strip()
+        estado = int(data.get("estado", 0))
         
         if not direccion:
             return jsonify({"success": False, "error": "La dirección es obligatoria"}), 400
         
         modelo = EntregaModel()
-        resultado = modelo.actualizar_direccion(entrega_id, direccion)
+        mensaje = modelo.actualizar_entrega(entrega_id, direccion, estado)
         
-        if resultado["success"]:
-            return jsonify({"success": True, "message": resultado["message"]})
+        if "exitosamente" in mensaje:
+            registrar_en_bitacora(
+                accion="Actualizar entrega",
+                descripcion=f"Se actualizó la entrega ID: {entrega_id}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Entregas"
+            )
+            return jsonify({"success": True, "message": mensaje}), 200
         else:
-            return jsonify({"success": False, "error": resultado["error"]}), 400
+            return jsonify({"success": False, "error": mensaje}), 400
     except Exception as e:
-        print(f"Error en api_actualizar_direccion: {e}")
+        print(f"Error en api_actualizar_entrega: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@entregas_blueprint.route("/api/entregas/<entrega_id>", methods=["GET"])
+@entregas_blueprint.route("/api/entregas/<string:entrega_id>", methods=["DELETE"])
 @jwt_required
-@tiene_permiso('Entregas', 'consultar')
-def api_obtener_entrega(entrega_id):
-    """Obtener detalles de una entrega"""
+def api_eliminar_entrega(entrega_id):
+    """Eliminar entrega"""
     try:
         modelo = EntregaModel()
-        entrega = modelo.obtener_entrega(entrega_id)
+        mensaje = modelo.eliminar_entrega(entrega_id)
         
-        if not entrega:
-            return jsonify({"success": False, "error": "Entrega no encontrada"}), 404
-        
-        return jsonify({"success": True, "entrega": entrega})
+        if "exitosamente" in mensaje:
+            registrar_en_bitacora(
+                accion="Eliminar entrega",
+                descripcion=f"Se eliminó la entrega ID: {entrega_id}",
+                usuario_id=_usuario_actual(),
+                modulo_nombre="Entregas"
+            )
+            return jsonify({"success": True, "message": mensaje}), 200
+        else:
+            return jsonify({"success": False, "error": mensaje}), 400
     except Exception as e:
-        print(f"Error en api_obtener_entrega: {e}")
+        print(f"Error en api_eliminar_entrega: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@entregas_blueprint.route("/api/facturas-pendientes", methods=["GET"])
+@jwt_required
+def api_facturas_pendientes():
+    """Obtener facturas que necesitan entrega"""
+    try:
+        modelo = EntregaModel()
+        facturas = modelo.obtener_facturas_pendientes()
+        return jsonify({"success": True, "facturas": facturas})
+    except Exception as e:
+        print(f"Error en api_facturas_pendientes: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
