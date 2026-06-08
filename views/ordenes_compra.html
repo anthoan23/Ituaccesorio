@@ -1,48 +1,45 @@
 {% extends 'components/layout/base.html' %}
-{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Órdenes de compra{% endblock %}
 
 {% block head_extra %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ordenes_compra.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
-    <main class="page orders-page">
-        <nav class="breadcrumb" aria-label="Breadcrumb">
-            <ol class="breadcrumb__list">
-                <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-                <li class="breadcrumb__separator" aria-hidden="true">></li>
-                <li aria-current="page"><button class="breadcrumb__current" type="button" data-view-target="vista-1">Órdenes de compra</button><span class="breadcrumb__separator" id="breadcrumb-separator">/</span><span class="breadcrumb__section" id="breadcrumb-section"></span></li>
-            </ol>
+<main class="page orders-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li class="breadcrumb__separator">></li>
+            <li aria-current="page">Órdenes de compra</li>
+        </ol>
+    </nav>
+
+    <header class="orders-hero">
+        <div class="orders-hero__copy">
+            <p class="orders-hero__eyebrow">Gestión de compras</p>
+            <h1 class="orders-hero__title">Órdenes de compra</h1>
+            <p class="orders-hero__description">Consulta pendientes, entregadas y la recepción de artículos.</p>
+        </div>
+        <div class="hero__actions">
+            <button id="btn-registrar-entrada" class="btn btn--primary">Registrar orden</button>
+        </div>
+    </header>
+
+    <section class="content">
+        <nav class="vista-switcher">
+            <button class="vista-switcher__btn is-active" id="btn-pendientes">Órdenes pendientes</button>
+            <button class="vista-switcher__btn" id="btn-entregadas">Órdenes entregadas</button>
         </nav>
 
-        <header class="orders-hero">
-            <div class="orders-hero__copy">
-                <p class="orders-hero__eyebrow">Gestión de compras</p>
-                <h1 class="orders-hero__title">Órdenes de compra</h1>
-                <p class="orders-hero__description">Consulta pendientes, entregadas y la recepción de artículos en una sola vista.</p>
-            </div>
-            <div class="hero__actions">
-                <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
-            </div>
-        </header>
-
-        <section class="content vista-1" aria-label="Órdenes de compra pendientes">
-            <nav class="vista-switcher" aria-label="Seleccionar vista de órdenes de compra">
-                <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Órdenes pendientes</button>
-                <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Órdenes entregadas</button>
-            </nav>
-
-            <article class="card card--table" aria-label="Órdenes de compra pendientes">
+        <!-- Vista Pendientes -->
+        <div id="vista-pendientes">
+            <article class="card card--table">
                 <div class="card__header">
                     <div class="card__header-left">
                         <h2 class="card__title">Órdenes de compra pendientes</h2>
                         <p class="card__subtitle">Órdenes registradas y aún sin entregar.</p>
-                    </div>
-                    <div class="card__actions">
-                        <button id="btn-registrar-entrada" type="button" class="btn btn--primary">Registrar orden</button>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -58,26 +55,20 @@
                             </tr>
                         </thead>
                         <tbody id="tabla-ordenes-pendientes">
-                            <tr>
-                                <td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td>
-                            </tr>
+                            <tr><td colspan="6" class="table__empty">Cargando...</td</tr>
                         </tbody>
                     </table>
                 </div>
             </article>
-        </section>
+        </div>
 
-        <section class="content vista-2" aria-label="Órdenes de compra entregadas" hidden>
-            <nav class="vista-switcher" aria-label="Seleccionar vista de órdenes de compra">
-                <button class="vista-switcher__btn" type="button" data-view-target="vista-1">Órdenes pendientes</button>
-                <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-2">Órdenes entregadas</button>
-            </nav>
-
-            <article class="card card--table" aria-label="Órdenes de compra entregadas">
+        <!-- Vista Entregadas -->
+        <div id="vista-entregadas" class="hidden">
+            <article class="card card--table">
                 <div class="card__header">
                     <div class="card__header-left">
                         <h2 class="card__title">Órdenes de compra entregadas</h2>
-                        <p class="card__subtitle">Historial de compras que ya fueron recibidas.</p>
+                        <p class="card__subtitle">Historial de compras recibidas.</p>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -93,246 +84,260 @@
                             </tr>
                         </thead>
                         <tbody id="tabla-ordenes-entregadas">
-                            <tr>
-                                <td colspan="6" class="table__empty">No hay órdenes de compra entregadas.</td>
-                            </tr>
+                            <tr><td colspan="6" class="table__empty">Cargando...</td</tr>
                         </tbody>
                     </table>
                 </div>
             </article>
-        </section>
-    </main>
-
-    {% call modal('modal-registrar-entrada', 'Registrar orden', 'lg') %}
-        <form id="form-registrar-entrada" class="form" autocomplete="off">
-            <input type="hidden" id="ordenes-compra-csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
-            <div class="form__group form__group--inline">
-                <div class="form__field">
-                    <label for="entrada-id-proveedor">ID de proveedor</label>
-                    <input id="entrada-id-proveedor" name="ID_proveedor" type="text" readonly required>
-                </div>
-                <div class="form__field form__field--grow">
-                    <label for="entrada-nombre-proveedor">Proveedor</label>
-                    <input id="entrada-nombre-proveedor" type="text" readonly>
-                </div>
-                <div class="form__field form__field--auto">
-                    <label>&nbsp;</label>
-                    <button id="btn-desplegar-proveedores" class="btn btn--ghost" type="button">Buscar proveedor</button>
-                </div>
-            </div>
-
-            <div class="form__group">
-                <button id="btn-desplegar-productos" class="btn btn--ghost" type="button" data-open-modal="modal-seleccionar-productos" disabled title="Selecciona un proveedor primero">Registrar productos</button>
-            </div>
-
-            <div class="form__group">
-                <label>Productos agregados</label>
-                <div class="table-wrap">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Proveedor</th>
-                                <th>Cantidad</th>
-                                <th>Costo</th>
-                                <th class="table__actions">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-productos-seleccionados">
-                            <tr>
-                                <td colspan="5" class="table__empty">Aún no hay productos seleccionados.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="form__actions form__actions--inline form__actions--end">
-                <p class="form__total">Costo total: <strong><span id="entrada-costo-total">0</span></strong></p>
-                <input id="entrada-costo-total-input" name="Costo_venta" type="hidden" value="0">
-            </div>
-
-            <div class="form__actions form__actions--inline">
-                <button class="btn btn--primary" type="submit" id="btn-guardar-entrada" disabled>Registrar orden</button>
-            </div>
-        </form>
-    {% endcall %}
-
-    {% call modal('modal-seleccionar-proveedor', 'Seleccionar proveedor', 'md') %}
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Proveedor</th>
-                        <th>Teléfono</th>
-                        <th>Correo</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-proveedores">
-                    <tr><td colspan="4" class="table__empty">Cargando proveedores...</td></tr>
-                </tbody>
-            </table>
         </div>
-    {% endcall %}
+    </section>
+</main>
 
-    {% call modal('modal-seleccionar-productos', 'Seleccionar productos', 'lg') %}
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Clase</th>
-                        <th>Marca</th>
-                        <th>Producto</th>
-                        <th>Costo</th>
-                        <th class="table__actions">Seleccionar</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-productos">
-                    <tr><td colspan="5" class="table__empty">Selecciona un proveedor primero.</td></tr>
-                </tbody>
-            </table>
+<!-- Modal Registrar Orden -->
+<div id="modal-registrar-entrada" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog ui-modal__dialog--lg">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Registrar orden de compra</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
         </div>
-        
-        <div id="cantidad-producto-container" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 12px;">
-            <div class="form__group form__group--inline">
-                <div class="form__field">
-                    <label for="cantidad-seleccionada">Cantidad</label>
-                    <input id="cantidad-seleccionada" type="number" min="1" value="1" data-validation-rules="soloNumeros" title="Solo números enteros positivos">
-                    <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números enteros (mínimo 1)</small>
-                </div>
-                <div class="form__field form__field--auto">
-                    <label>&nbsp;</label>
-                    <button id="btn-agregar-cantidad" class="btn btn--primary" type="button">Agregar producto</button>
-                </div>
-            </div>
-        </div>
-    {% endcall %}
-
-    {% call modal('modal-detalle-orden', 'Detalle de orden', 'md') %}
-        <div id="detalle-orden-info">
-            <p>Cargando...</p>
-        </div>
-        <div class="table-wrap" style="margin-top:1rem;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Marca</th>
-                        <th>Modelo</th>
-                        <th>Cantidad</th>
-                        <th>Costo</th>
-                        <th>Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody id="detalle-orden-productos">
-                    <tr><td colspan="5" class="table__empty">No hay productos.</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p class="form__total" id="detalle-orden-total" style="margin-top:1rem;">Costo total: <strong><span id="detalle-orden-total-value">0</span></strong></p>
-    {% endcall %}
-
-    {% call modal('modal-confirmar-anular-orden', 'Confirmar anulación', 'sm') %}
-        <p id="texto-confirmar-anular-orden">¿Seguro de que quieres anular la orden?</p>
-        <div class="form__actions form__actions--inline form__actions--end" style="margin-top:1rem;">
-            <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-            <button type="button" class="btn btn--primary" id="btn-confirmar-anular-orden">Sí, anular</button>
-        </div>
-    {% endcall %}
-
-    <!-- Modal de Reportes -->
-    <div id="modal-reportes" class="ui-modal" data-modal hidden aria-hidden="true">
-        <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-title">
-            <div class="ui-modal__header">
-                <h3 id="reportes-title" class="ui-modal__title">Reporte de Órdenes de Compra</h3>
-                <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
-            </div>
-            <div class="ui-modal__body">
-                <div class="filters-panel__section">
-                    <h3 class="filters-panel__title">Filtros avanzados</h3>
-                    
-                    <div class="filters-panel__row">
-                        <label class="field">
-                            <span class="field__label">Proveedor</span>
-                            <select id="reporte-proveedor" class="field__input">
-                                <option value="">Todos</option>
-                            </select>
-                        </label>
-                        
-                        <label class="field">
-                            <span class="field__label">Estado</span>
-                            <select id="reporte-estado" class="field__input">
-                                <option value="">Todos</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Completada">Completada</option>
-                                <option value="Anulada">Anulada</option>
-                            </select>
-                        </label>
+        <div class="ui-modal__body">
+            <form id="form-registrar-entrada">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form__group form__group--inline">
+                    <div class="form__field">
+                        <label>ID Proveedor</label>
+                        <input id="entrada-id-proveedor" type="text" readonly>
                     </div>
-                    
-                    <div class="filters-panel__row">
-                        <label class="field">
-                            <span class="field__label">Fecha desde</span>
-                            <input type="date" id="reporte-fecha-desde" class="field__input">
-                        </label>
-                        
-                        <label class="field">
-                            <span class="field__label">Fecha hasta</span>
-                            <input type="date" id="reporte-fecha-hasta" class="field__input">
-                        </label>
+                    <div class="form__field form__field--grow">
+                        <label>Proveedor</label>
+                        <input id="entrada-nombre-proveedor" type="text" readonly>
                     </div>
-                    
-                    <div class="filters-panel__row">
-                        <label class="field">
-                            <span class="field__label">Costo mínimo</span>
-                            <input type="number" id="reporte-costo-min" min="0" placeholder="Ej: 0" class="field__input">
-                        </label>
-                        
-                        <label class="field">
-                            <span class="field__label">Costo máximo</span>
-                            <input type="number" id="reporte-costo-max" min="0" placeholder="Ej: 1000000" class="field__input">
-                        </label>
+                    <div class="form__field form__field--auto">
+                        <label>&nbsp;</label>
+                        <button id="btn-desplegar-proveedores" class="btn btn--ghost" type="button">Buscar proveedor</button>
                     </div>
                 </div>
 
-                <div class="filters-panel__section">
-                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1rem;">
-                        <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
-                        <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
-                    </div>
+                <div class="form__group">
+                    <button id="btn-desplegar-productos" class="btn btn--ghost" type="button" disabled>Agregar productos</button>
                 </div>
 
-                <div id="reporte-preview" class="filters-panel__section" style="display: none;">
-                    <h3 class="filters-panel__title">Previsualización</h3>
-                    <div id="reporte-total" style="margin-bottom: 0.75rem; font-weight: bold;"></div>
-                    <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-                        <table class="table" style="min-width: 700px;">
+                <div class="form__group">
+                    <label>Productos seleccionados</label>
+                    <div class="table-wrap">
+                        <table class="table">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Producto</th>
                                     <th>Proveedor</th>
-                                    <th>Fecha</th>
-                                    <th>Estado</th>
-                                    <th>Costo</th>
-                                    <th>Recibido por</th>
+                                    <th>Cantidad</th>
+                                    <th>Costo unitario</th>
+                                    <th class="table__actions">Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="reporte-tabla"></tbody>
+                            <tbody id="tabla-productos-seleccionados">
+                                <tr><td colspan="5" class="table__empty">No hay productos seleccionados</td</tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="ui-form__actions" style="margin-top: 1rem; justify-content: flex-end;">
-                    <button id="btn-exportar-excel" class="ui-btn ui-btn--primary" disabled>Exportar Excel</button>
-                    <button id="btn-exportar-pdf" class="ui-btn ui-btn--primary" disabled>Exportar PDF</button>
-                    <button id="btn-imprimir" class="ui-btn ui-btn--ghost" disabled>Imprimir</button>
+                <div class="form__actions form__actions--end">
+                    <p class="form__total">Costo total: <strong>Bs. <span id="entrada-costo-total">0</span></strong></p>
+                    <button id="btn-guardar-entrada" class="btn btn--primary" type="submit" disabled>Registrar orden</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Seleccionar Proveedor -->
+<div id="modal-seleccionar-proveedor" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog ui-modal__dialog--lg">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Seleccionar proveedor</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Correo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-proveedores">
+                        <tr><td colspan="4" class="table__empty">Cargando proveedores...</td</tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal Seleccionar Productos -->
+<div id="modal-seleccionar-productos" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog ui-modal__dialog--lg">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Seleccionar productos</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Clase</th>
+                            <th>Marca</th>
+                            <th>Producto</th>
+                            <th>Costo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-productos">
+                        <tr><td colspan="4" class="table__empty">Seleccione un proveedor primero</td</tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Orden -->
+<div id="modal-detalle-orden" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Detalle de orden</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div id="detalle-orden-info">Cargando...</div>
+            <div class="table-wrap" style="margin-top: 1rem;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Costo</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalle-orden-productos">
+                        <tr><td colspan="5" class="table__empty">No hay productos</td</tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="form__total" style="margin-top: 1rem;">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Anulación -->
+<div id="modal-confirmar-anular-orden" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Confirmar anulación</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <p id="texto-confirmar-anular-orden">¿Seguro que desea anular esta orden?</p>
+            <div class="form__actions form__actions--end" style="margin-top: 1rem;">
+                <button class="btn btn--ghost" data-close-modal>Cancelar</button>
+                <button id="btn-confirmar-anular-orden" class="btn btn--primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registrar Entrega -->
+<div id="modal-registrar-entrega" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Registrar entrega</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div class="form__group">
+                <label class="form__label">Recibido por:</label>
+                <input type="text" id="entrega-recibido-por" class="form__input" placeholder="Nombre de quien recibe">
+            </div>
+            <div class="form__group">
+                <label class="form__label">Fecha de entrega:</label>
+                <input type="date" id="entrega-fecha" class="form__input">
+            </div>
+            <div class="form__actions form__actions--end" style="margin-top: 1rem;">
+                <button class="btn btn--ghost" data-close-modal>Cancelar</button>
+                <button id="btn-confirmar-entrega" class="btn btn--primary">Registrar entrega</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mensaje -->
+<div id="modal-mensaje" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog ui-modal__dialog--sm">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Notificación</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <p id="mensaje-texto" style="text-align: center; font-size: 1rem;"></p>
+            <div class="form__actions form__actions--center" style="margin-top: 1rem;">
+                <button id="btn-cerrar-mensaje" class="btn btn--primary">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hidden { display: none !important; }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-pendiente {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    .btn--small {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        margin: 0 0.15rem;
+        cursor: pointer;
+    }
+    .cantidad-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-cantidad {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .btn-cantidad:hover {
+        background: #e0e0e0;
+    }
+    .cantidad-valor {
+        min-width: 30px;
+        text-align: center;
+        font-weight: 600;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/ordenes_compra.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ordenes_compra.js') }}"></script>
 {% endblock %}
