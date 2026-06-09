@@ -396,61 +396,6 @@ body {
     font-weight: 600;
 }
 
-/* Toast personalizado */
-.custom-toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000;
-    animation: slideInRight 0.3s ease;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .page {
-        padding: 1rem;
-    }
-    
-    .validacion-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .pago-info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .tabs {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
-    
-    .tab-btn {
-        white-space: nowrap;
-    }
-}
 /* Estilos para el detalle de productos */
 .productos-list {
     background: #f8f9fa;
@@ -592,7 +537,6 @@ body {
     text-transform: capitalize;
 }
 
-/* Estilos para el motivo de rechazo */
 .motivo-rechazo-info {
     background: #ffebee;
     padding: 0.75rem;
@@ -605,8 +549,79 @@ body {
     color: #c62828;
 }
 
-/* Responsive para el detalle */
+/* Botón ver detalle en reportes */
+.btn-ver-detalle-reporte {
+    background: var(--yellow);
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.2s ease;
+}
+
+.btn-ver-detalle-reporte:hover {
+    background: #e0b000;
+    transform: scale(1.05);
+}
+
+/* Modal de detalle de venta */
+.detail-info {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 0.75rem;
+}
+
+.detail-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-info-item strong {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.detail-info-item span {
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
+    .page {
+        padding: 1rem;
+    }
+    
+    .validacion-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pago-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .tab-btn {
+        white-space: nowrap;
+    }
+
     .productos-header,
     .producto-item {
         grid-template-columns: 1fr;
@@ -628,4 +643,278 @@ body {
         margin-left: 0;
         margin-top: 0.25rem;
     }
+}
+/* ==================== ESTILOS PARA FILTROS DEL MODAL DE REPORTES ==================== */
+
+.filters-panel__section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.filters-panel__title {
+    margin: 0 0 0.75rem;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 900;
+    font-size: 0.98rem;
+    color: rgba(18, 18, 18, 0.78);
+}
+
+.filters-panel__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.field {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.field__label {
+    font-size: 0.78rem;
+    color: rgba(18, 18, 18, 0.6);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.field__input {
+    width: 100%;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    font-size: 0.95rem;
+    font-family: "Manrope", sans-serif;
+    outline: none;
+    background: #ffffff;
+    color: #121212;
+}
+
+.field__input:focus {
+    border-color: rgba(243, 197, 0, 0.7);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
+}
+
+.field__input::placeholder {
+    color: rgba(18, 18, 18, 0.4);
+}
+
+.field-hint {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Estilos específicos para selects dentro de los filtros */
+select.field__input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+/* Estilos para inputs de tipo date */
+input[type="date"].field__input {
+    padding-right: 0.5rem;
+}
+
+input[type="date"].field__input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+input[type="date"].field__input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Estilos para inputs de tipo number */
+input[type="number"].field__input {
+    -moz-appearance: textfield;
+}
+
+input[type="number"].field__input::-webkit-inner-spin-button,
+input[type="number"].field__input::-webkit-outer-spin-button {
+    opacity: 0.5;
+}
+
+/* Botones dentro del modal de reportes */
+#modal-reportes-pagos .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 40px;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+#modal-reportes-pagos .ui-btn--primary {
+    background: var(--yellow);
+    color: var(--ink);
+}
+
+#modal-reportes-pagos .ui-btn--primary:hover:not(:disabled) {
+    background: #e0b000;
+    transform: translateY(-1px);
+}
+
+#modal-reportes-pagos .ui-btn--primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#modal-reportes-pagos .ui-btn--ghost {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+#modal-reportes-pagos .ui-btn--ghost:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+/* Contenedor de botones */
+#modal-reportes-pagos .ui-form__actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Tabla dentro del modal de reportes */
+#modal-reportes-pagos .table-wrap {
+    overflow-x: auto;
+    width: 100%;
+}
+
+#modal-reportes-pagos .table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#modal-reportes-pagos .table th,
+#modal-reportes-pagos .table td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.1);
+    text-align: left;
+    vertical-align: middle;
+}
+
+#modal-reportes-pagos .table th {
+    color: rgba(18, 18, 18, 0.62);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 900;
+    background: rgba(17, 24, 39, 0.03);
+}
+
+#modal-reportes-pagos .table td {
+    font-weight: 700;
+    color: var(--ink);
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+#modal-reportes-pagos .table__empty {
+    text-align: center;
+    color: rgba(18, 18, 18, 0.65);
+    font-weight: 800;
+    padding: 2rem;
+}
+
+/* Método de pago en la tabla */
+#modal-reportes-pagos .metodo-pago {
+    text-transform: capitalize;
+}
+
+/* Botón ver detalle en reportes */
+.btn-ver-detalle-reporte {
+    background: var(--yellow);
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.2s ease;
+    font-family: "Space Grotesk", sans-serif;
+}
+
+.btn-ver-detalle-reporte:hover {
+    background: #e0b000;
+    transform: scale(1.02);
+}
+
+/* Responsive para filtros */
+@media (max-width: 640px) {
+    .filters-panel__row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    #modal-reportes-pagos .table {
+        min-width: 700px;
+    }
+}
+
+/* Estilos para el modal de detalle de venta */
+#modal-detalle-venta .detail-info {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+#modal-detalle-venta .detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 0.75rem;
+}
+
+#modal-detalle-venta .detail-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+#modal-detalle-venta .detail-info-item strong {
+    font-size: 0.7rem;
+    color: rgba(18, 18, 18, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+}
+
+#modal-detalle-venta .detail-info-item span {
+    font-size: 0.9rem;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+#modal-detalle-venta .table th {
+    background: var(--yellow);
+    color: var(--ink);
+}
+
+#modal-detalle-venta .table td {
+    color: var(--ink);
+}
+
+#modal-detalle-venta .table tfoot td {
+    background: rgba(243, 197, 0, 0.1);
+    font-weight: bold;
 }
