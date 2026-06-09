@@ -198,6 +198,82 @@ class Proveedores:
         )
         return bool(resultado and resultado > 0)
 
+    # ==================== VERIFICACIÓN DE RELACIONES ====================
+    
+    def tiene_relaciones_activas(self, id_proveedor: int) -> tuple[bool, str]:
+        """Verifica si el proveedor tiene relaciones activas en otros módulos"""
+        db = self._conexion()
+        if not db:
+            return True, "No se pudo conectar a la base de datos"
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Verificar órdenes de compra pendientes o completadas
+            cursor.execute("""
+                SELECT COUNT(*) as total FROM Orden_compra 
+                WHERE ID_proveedor = %s 
+                AND Estado_orden_compra IN ('Pendiente', 'Completada')
+            """, (id_proveedor,))
+            ordenes = cursor.fetchone()
+            if ordenes and ordenes['total'] > 0:
+                return True, f"No se puede eliminar el proveedor porque tiene {ordenes['total']} órdenes de compra asociadas. Primero debe anular o completar esas órdenes."
+            
+            # Verificar productos suministrados
+            cursor.execute("""
+                SELECT COUNT(*) as total FROM Suministra 
+                WHERE ID_proveedor = %s
+            """, (id_proveedor,))
+            suministros = cursor.fetchone()
+            if suministros and suministros['total'] > 0:
+                return True, f"No se puede eliminar el proveedor porque tiene {suministros['total']} productos asociados en el catálogo. Primero debe eliminar esos productos de la relación."
+            
+            return False, ""
+        except Exception as e:
+            print(f"Error verificando relaciones: {e}")
+            return True, "Error al verificar relaciones del proveedor"
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_detalle_relaciones(self, id_proveedor: int) -> dict:
+        """Obtiene el detalle de las relaciones activas del proveedor"""
+        db = self._conexion()
+        if not db:
+            return {}
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Obtener órdenes de compra
+            cursor.execute("""
+                SELECT ID_orden_compra as id, Estado_orden_compra as estado, DATE(Fecha_orden_compra) as fecha
+                FROM Orden_compra 
+                WHERE ID_proveedor = %s 
+                AND Estado_orden_compra IN ('Pendiente', 'Completada')
+            """, (id_proveedor,))
+            ordenes = cursor.fetchall()
+            
+            # Obtener productos suministrados
+            cursor.execute("""
+                SELECT p.ID_producto as id, p.Nombre_producto as nombre
+                FROM Suministra s
+                JOIN Producto p ON s.ID_producto = p.ID_producto
+                WHERE s.ID_proveedor = %s
+            """, (id_proveedor,))
+            productos = cursor.fetchall()
+            
+            return {
+                "ordenes": ordenes or [],
+                "productos": productos or []
+            }
+        except Exception as e:
+            print(f"Error obteniendo detalle de relaciones: {e}")
+            return {}
+        finally:
+            cursor.close()
+            db.close()
+
+    # ==================== FIN VERIFICACIÓN ====================
+
     def eliminar_proveedor(self, id_proveedor: int) -> bool:
         resultado = self._ejecutar("DELETE FROM Proveedor WHERE ID_proveedor=%s", (id_proveedor,))
         return bool(resultado and resultado > 0)

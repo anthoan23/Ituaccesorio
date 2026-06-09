@@ -1,4 +1,4 @@
-/* global UiModal */
+/* global UiModal, FeedbackModal */
 
 (function () {
   'use strict';
@@ -73,20 +73,136 @@
       .replaceAll("'", '&#039;');
   }
 
-  function notify(type, message, title) {
+  // ==================== MODAL DE FEEDBACK (éxito/error) ====================
+  function showFeedback(type, message, title) {
     if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
       window.FeedbackModal.show({
         type: type === 'error' ? 'error' : 'success',
-        title: title || (type === 'error' ? 'No se pudo completar' : 'Acción exitosa'),
+        title: title || (type === 'error' ? 'Error' : 'Éxito'),
         message: message,
       });
       return;
     }
-    if (type === 'error') {
-      alert(message);
+    
+    // Fallback si no existe FeedbackModal
+    const modal = document.getElementById('feedback-modal');
+    if (modal) {
+      const titleEl = modal.querySelector('#feedback-modal-title');
+      const messageEl = document.getElementById('feedback-modal-message');
+      const successIcon = modal.querySelector('[data-feedback-icon="success"]');
+      const errorIcon = modal.querySelector('[data-feedback-icon="error"]');
+      
+      if (titleEl) titleEl.textContent = title || (type === 'error' ? 'Error' : 'Éxito');
+      if (messageEl) messageEl.textContent = message;
+      
+      if (type === 'error') {
+        if (successIcon) successIcon.setAttribute('hidden', '');
+        if (errorIcon) errorIcon.removeAttribute('hidden');
+      } else {
+        if (successIcon) successIcon.removeAttribute('hidden');
+        if (errorIcon) errorIcon.setAttribute('hidden', '');
+      }
+      
+      modal.removeAttribute('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        if (modal && !modal.hasAttribute('hidden')) {
+          modal.setAttribute('hidden', '');
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        }
+      }, 2500);
+      
+      const closeBtn = modal.querySelector('[data-close-modal]');
+      if (closeBtn) {
+        const newCloseBtn = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        newCloseBtn.addEventListener('click', () => {
+          modal.setAttribute('hidden', '');
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        });
+      }
     } else {
-      console.log(message);
+      // Fallback final
+      if (type === 'error') alert(message);
+      else console.log(message);
     }
+  }
+
+  // ==================== MODAL DE CONFIRMACIÓN INDEPENDIENTE ====================
+  function showConfirmModal(mensaje, onConfirmar, soloInformacion = false) {
+    // Eliminar modal existente si hay
+    const modalExistente = document.getElementById('confirmacion-modal-proveedores');
+    if (modalExistente) modalExistente.remove();
+    
+    const esError = soloInformacion && mensaje.includes('No se puede');
+    const titulo = soloInformacion ? (esError ? "Error" : "Información") : "Confirmar acción";
+    const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
+    const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
+    
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'confirmacion-modal-proveedores';
+    modalDiv.className = 'ui-modal';
+    modalDiv.setAttribute('data-modal', '');
+    modalDiv.setAttribute('hidden', '');
+    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10001;display:flex;align-items:center;justify-content:center;';
+    
+    modalDiv.innerHTML = `
+      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
+        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
+          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
+        </header>
+        <div class="ui-modal__body" style="padding:1.5rem;">
+          <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;">${mensaje}</p>
+        </div>
+        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
+          ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+          <button type="button" class="ui-btn" id="btn-confirmar-accion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modalDiv);
+    document.body.style.overflow = 'hidden';
+    
+    const cerrarModal = () => {
+      modalDiv.remove();
+      document.body.style.overflow = '';
+    };
+    
+    // Botón cancelar (solo si no es solo información)
+    if (!soloInformacion) {
+      const cancelBtn = document.getElementById('btn-cancelar-confirmacion-proveedores');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', cerrarModal);
+      }
+    }
+    
+    // Botón confirmar
+    const confirmBtn = document.getElementById('btn-confirmar-accion-proveedores');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', async () => {
+        cerrarModal();
+        if (onConfirmar && !soloInformacion) {
+          await onConfirmar();
+        }
+      });
+    }
+    
+    // Botón cerrar (X)
+    const closeBtn = modalDiv.querySelector('[data-close-modal]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', cerrarModal);
+    }
+    
+    // Cerrar al hacer click en el backdrop
+    modalDiv.addEventListener('click', (e) => {
+      if (e.target === modalDiv) cerrarModal();
+    });
   }
 
   function iconEye() {
@@ -285,7 +401,43 @@
 
   function abrirEliminarProveedor(id) {
     state.currentProveedorId = id;
-    openModal('modal-proveedor-eliminar');
+    
+    // Primero verificar si se puede eliminar
+      fetchJson(`/api/proveedores/${encodeURIComponent(id)}/verificar-eliminacion`, { method: 'GET' })
+          .then(data => {
+              if (data.puede_eliminar) {
+                  showConfirmModal('¿Seguro que deseas eliminar este proveedor? Esta acción no se puede deshacer.', async () => {
+                      try {
+                          await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                          await cargarProveedores(($id('f-texto')?.value || '').trim());
+                          showFeedback('success', 'Proveedor eliminado correctamente.');
+                      } catch (e) {
+                          showFeedback('error', e.message || 'No se pudo eliminar el proveedor.');
+                      }
+                  });
+              } else {
+                  // Mostrar mensaje de error con el detalle de relaciones
+                  let mensaje = data.mensaje || 'No se puede eliminar este proveedor porque tiene registros asociados.';
+                  if (data.detalle) {
+                      if (data.detalle.ordenes && data.detalle.ordenes.length > 0) {
+                          mensaje += '\n\nÓrdenes de compra relacionadas:';
+                          data.detalle.ordenes.forEach(o => {
+                              mensaje += `\n   • ${o.id} (${o.estado}) - ${o.fecha || 'fecha no disponible'}`;
+                          });
+                      }
+                      if (data.detalle.productos && data.detalle.productos.length > 0) {
+                          mensaje += '\n\nProductos suministrados:';
+                          data.detalle.productos.forEach(p => {
+                              mensaje += `\n   • ${p.nombre} (ID: ${p.id})`;
+                          });
+                      }
+                  }
+                  showConfirmModal(mensaje, null, true);
+              }
+          })
+          .catch(e => {
+              showFeedback('error', e.message || 'No se pudo verificar el estado del proveedor.');
+          });
   }
 
   function renderProductosEditar(items) {
@@ -525,7 +677,7 @@
       try {
         await cargarProveedores((inputTexto?.value || '').trim());
       } catch (e) {
-        notify('error', e.message || 'No se pudo cargar el listado de proveedores.');
+        showFeedback('error', e.message || 'No se pudo cargar el listado de proveedores.');
       }
     });
 
@@ -534,7 +686,7 @@
         if (inputTexto) inputTexto.value = '';
         await cargarProveedores('');
       } catch (e) {
-        notify('error', e.message || 'No se pudo limpiar el filtro.');
+        showFeedback('error', e.message || 'No se pudo limpiar el filtro.');
       }
     });
 
@@ -544,7 +696,7 @@
       try {
         await cargarProveedores((inputTexto.value || '').trim());
       } catch (e) {
-        notify('error', e.message || 'No se pudo cargar el listado de proveedores.');
+        showFeedback('error', e.message || 'No se pudo cargar el listado de proveedores.');
       }
     });
 
@@ -562,7 +714,7 @@
         if (action === 'editar') await abrirEditarProveedor(id);
         if (action === 'eliminar') abrirEliminarProveedor(id);
       } catch (e) {
-        notify('error', e.message || 'No se pudo abrir la acción solicitada.');
+        showFeedback('error', e.message || 'No se pudo abrir la acción solicitada.');
       }
     });
 
@@ -576,9 +728,9 @@
         formCrear.reset();
         state.productosCrear = [];
         renderProductosCrear();
-        notify('success', 'Proveedor creado correctamente.');
+        showFeedback('success', 'Proveedor creado correctamente.');
       } catch (e) {
-        notify('error', e.message || 'No se pudo crear el proveedor.');
+        showFeedback('error', e.message || 'No se pudo crear el proveedor.');
       }
     });
 
@@ -589,9 +741,9 @@
         agregarProductoCrearFromForm();
         closeModal('modal-proveedor-agregar-producto-crear');
         formAgregarProductoCrear.reset();
-        notify('success', 'Producto agregado al proveedor inicial.');
+        showFeedback('success', 'Producto agregado al proveedor inicial.');
       } catch (e) {
-        notify('error', e.message || 'No se pudo agregar el producto.');
+        showFeedback('error', e.message || 'No se pudo agregar el producto.');
       }
     });
 
@@ -612,21 +764,9 @@
         await editarProveedorFromForm();
         closeModal('modal-proveedor-editar');
         await cargarProveedores((inputTexto?.value || '').trim());
-        notify('success', 'Proveedor actualizado correctamente.');
+        showFeedback('success', 'Proveedor actualizado correctamente.');
       } catch (e) {
-        notify('error', e.message || 'No se pudo actualizar el proveedor.');
-      }
-    });
-
-    const btnConfirmarEliminar = $id('btn-confirmar-eliminar');
-    btnConfirmarEliminar?.addEventListener('click', async () => {
-      try {
-        await eliminarProveedorActual();
-        closeModal('modal-proveedor-eliminar');
-        await cargarProveedores((inputTexto?.value || '').trim());
-        notify('success', 'Proveedor eliminado correctamente.');
-      } catch (e) {
-        notify('error', e.message || 'No se pudo eliminar el proveedor.');
+        showFeedback('error', e.message || 'No se pudo actualizar el proveedor.');
       }
     });
 
@@ -638,9 +778,9 @@
         closeModal('modal-proveedor-agregar-producto');
         await cargarProductosProveedorEditar(state.currentProveedorId);
         formAgregarProducto.reset();
-        notify('success', 'Producto agregado correctamente.');
+        showFeedback('success', 'Producto agregado correctamente.');
       } catch (e) {
-        notify('error', e.message || 'No se pudo agregar el producto.');
+        showFeedback('error', e.message || 'No se pudo agregar el producto.');
       }
     });
 
@@ -656,9 +796,9 @@
 
       try {
         await guardarCostoProductoProveedor(idModelo, costo);
-        notify('success', 'Costo actualizado correctamente.');
+        showFeedback('success', 'Costo actualizado correctamente.');
       } catch (e) {
-        notify('error', e.message || 'No se pudo actualizar el costo.');
+        showFeedback('error', e.message || 'No se pudo actualizar el costo.');
       }
     });
 
@@ -671,7 +811,7 @@
         const modelos = await cargarModelos();
         fillSelectModelos($id('ap-id-modelo'), modelos);
       } catch (e) {
-        notify('error', e.message || 'No se pudieron cargar los productos.');
+        showFeedback('error', e.message || 'No se pudieron cargar los productos.');
       }
     });
 
@@ -683,7 +823,7 @@
         const modelos = await cargarModelos();
         fillSelectModelos($id('cp-id-modelo'), modelos);
       } catch (e) {
-        notify('error', e.message || 'No se pudieron cargar los productos.');
+        showFeedback('error', e.message || 'No se pudieron cargar los productos.');
       }
     });
   }
@@ -725,27 +865,31 @@ const reportePreview = document.getElementById("reporte-preview");
 const reporteTotal = document.getElementById("reporte-total");
 const reporteTabla = document.getElementById("reporte-tabla");
 
-// Función global de notificación
-function notifyReportes(type, message) {
+function showFeedbackReportes(type, message) {
   if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
     window.FeedbackModal.show({
       type: type === 'error' ? 'error' : 'success',
-      title: type === 'error' ? 'No se pudo completar' : 'Acción exitosa',
+      title: type === 'error' ? 'Error' : 'Éxito',
       message: message,
     });
     return;
   }
-  if (type === 'error') {
-    alert(message);
-  } else {
-    console.log(message);
-  }
+  if (type === 'error') alert(message);
+  else console.log(message);
 }
 
-// Función global fetch para reportes
+function getCsrfTokenReportes() {
+  const input = document.querySelector('input[name="_csrf_token"]');
+  return input ? input.value : '';
+}
+
+function getAccessTokenReportes() {
+  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+}
+
 async function fetchJsonReportes(url, options = {}) {
-  const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || "";
-  const authToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || "";
+  const csrfToken = getCsrfTokenReportes();
+  const authToken = getAccessTokenReportes();
   
   const response = await fetch(url, {
     headers: {
@@ -836,7 +980,7 @@ async function generarReporteProveedores() {
     if (btnImprimir) btnImprimir.disabled = false;
     
   } catch (err) {
-    notifyReportes('error', err.message || "Error al generar el reporte");
+    showFeedbackReportes('error', err.message || "Error al generar el reporte");
   } finally {
     if (btnGenerarReporte) {
       btnGenerarReporte.disabled = false;
@@ -847,7 +991,7 @@ async function generarReporteProveedores() {
 
 function exportarProveedoresExcel() {
   if (reporteDatosActuales.length === 0) {
-    notifyReportes('error', "No hay datos para exportar");
+    showFeedbackReportes('error', "No hay datos para exportar");
     return;
   }
   
@@ -863,7 +1007,7 @@ function exportarProveedoresExcel() {
   }));
   
   if (typeof XLSX === 'undefined') {
-    notifyReportes('info', "Cargando librería de Excel...");
+    showFeedbackReportes('info', "Cargando librería de Excel...");
     const script = document.createElement('script');
     script.src = '/static/js/libs/xlsx.full.min.js';
     script.onload = () => exportarProveedoresExcel();
@@ -880,17 +1024,17 @@ function exportarProveedoresExcel() {
   ];
   
   XLSX.writeFile(wb, `proveedores_${new Date().toISOString().slice(0,19)}.xlsx`);
-  notifyReportes('success', "Reporte exportado a Excel");
+  showFeedbackReportes('success', "Reporte exportado a Excel");
 }
 
 function exportarProveedoresPdf() {
   if (reporteDatosActuales.length === 0) {
-    notifyReportes('error', "No hay datos para exportar");
+    showFeedbackReportes('error', "No hay datos para exportar");
     return;
   }
   
   if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
-    notifyReportes('info', "Cargando librería de PDF...");
+    showFeedbackReportes('info', "Cargando librería de PDF...");
     const script1 = document.createElement('script');
     script1.src = '/static/js/libs/jspdf.umd.min.js';
     script1.onload = () => {
@@ -986,12 +1130,12 @@ function exportarProveedoresPdf() {
   });
   
   doc.save(`proveedores_${now.toISOString().slice(0,19)}.pdf`);
-  notifyReportes('success', "Reporte exportado a PDF");
+  showFeedbackReportes('success', "Reporte exportado a PDF");
 }
 
 function imprimirReporteProveedores() {
   if (reporteDatosActuales.length === 0) {
-    notifyReportes('error', "No hay datos para imprimir");
+    showFeedbackReportes('error', "No hay datos para imprimir");
     return;
   }
   
@@ -1043,7 +1187,7 @@ function imprimirReporteProveedores() {
               <td><strong>${escapeHtmlReportes(p.nombre || '')}</strong></td>
               <td>${escapeHtmlReportes(p.tipo || '-')}</td>
               <td>${escapeHtmlReportes(p.celular || '-')}</td>
-              <td>${p.total_productos || 0} productos}</td>
+              <td>${p.total_productos || 0} productos</td>
               <td>${p.limite_credito ? Number(p.limite_credito).toLocaleString('es-VE') + ' Bs' : '-'}</td>
             </tr>
           `).join('')}

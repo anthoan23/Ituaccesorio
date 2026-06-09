@@ -19,70 +19,6 @@ class OrdenCompra(conectar):
                     o.ID_orden_compra as ID_orden_c,
                     o.ID_proveedor,
                     p.Nombre_proveedor as N_proveedor,
-                    DATE_FORMAT(o.Fecha_orden_compra, '%Y-%m-%d') as Fecha_o,
-                    o.Estado_orden_compra as Estado,
-                    COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
-                FROM Orden_compra o
-                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
-                LEFT JOIN Detalle_orden d ON o.ID_orden_compra = d.ID_orden_compra
-                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
-                WHERE o.Estado_orden_compra = 'Pendiente'
-                GROUP BY o.ID_orden_compra, o.ID_proveedor, p.Nombre_proveedor, o.Fecha_orden_compra, o.Estado_orden_compra
-                ORDER BY o.Fecha_orden_compra DESC
-            """)
-            return cursor.fetchall()
-        except Exception as e:
-            print(f"Error enlistar_ordenes_compra: {e}")
-            return []
-        finally:
-            cursor.close()
-            db.close()
-    
-    def enlistar_ordenes_compra(self):
-        """Lista órdenes pendientes"""
-        db = self.conexion1()
-        if not db:
-            return []
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    o.ID_orden_compra as ID_orden_c,
-                    o.ID_proveedor,
-                    p.Nombre_proveedor as N_proveedor,
-                    DATE(o.Fecha_orden_compra) as Fecha_o,
-                    o.Estado_orden_compra as Estado,
-                    COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
-                FROM Orden_compra o
-                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
-                LEFT JOIN Detalle_orden d ON o.ID_orden_compra = d.ID_orden_compra
-                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
-                WHERE o.Estado_orden_compra = 'Pendiente'
-                GROUP BY o.ID_orden_compra, o.ID_proveedor, p.Nombre_proveedor, o.Fecha_orden_compra, o.Estado_orden_compra
-                ORDER BY o.Fecha_orden_compra DESC
-            """)
-            return cursor.fetchall()
-        except Exception as e:
-            print(f"Error enlistar_ordenes_compra: {e}")
-            return []
-        finally:
-            cursor.close()
-            db.close()
-
-    def enlistar_ordenes_compra(self):
-        """Lista órdenes pendientes"""
-        db = self.conexion1()
-        if not db:
-            return []
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    o.ID_orden_compra as ID_orden_c,
-                    o.ID_proveedor,
-                    p.Nombre_proveedor as N_proveedor,
                     DATE(o.Fecha_orden_compra) as Fecha_o,
                     o.Estado_orden_compra as Estado,
                     COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
@@ -141,11 +77,12 @@ class OrdenCompra(conectar):
 
         cursor = db.cursor(dictionary=True)
         try:
+            # Primero obtener datos de la orden
             cursor.execute("""
                 SELECT 
                     o.ID_orden_compra as ID_orden_c,
                     o.ID_proveedor,
-                    p.Nombre_proveedor as N_proveedor,
+                    p.Nombre_proveedor as nombre,
                     DATE(o.Fecha_orden_compra) as Fecha_o,
                     o.Estado_orden_compra as Estado,
                     CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Realizado_por,
@@ -162,85 +99,27 @@ class OrdenCompra(conectar):
             """, (ID_orden_c,))
             datos_orden = cursor.fetchone()
             
-            if datos_orden:
-                cursor.execute("""
-                    SELECT 
-                        p.Nombre_producto as N_modelo,
-                        mp.Nombre_marca as N_marca,
-                        cp.Nombre_Clase as N_clase,
-                        d.Cantidad_producto as Cantidad_p,
-                        s.Costo_producto as Costo,
-                        (d.Cantidad_producto * s.Costo_producto) as sup_total
-                    FROM Detalle_orden d
-                    JOIN Producto p ON d.ID_producto = p.ID_producto
-                    JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
-                    JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-                    JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
-                    WHERE d.ID_orden_compra = %s
-                """, (datos_orden.get("ID_proveedor"), ID_orden_c))
-                productos_orden = cursor.fetchall()
-            else:
-                productos_orden = []
-
-            return {
-                "datos_orden": datos_orden,
-                "productos_orden": productos_orden
-            }
-        except Exception as e:
-            print(f"Error obtener_detalles_orden: {e}")
-            return None
-        finally:
-            cursor.close()
-            db.close()
-
-    def obtener_detalles_orden(self, ID_orden_c: str):
-        """Obtiene detalles completos de una orden"""
-        db = self.conexion1()
-        if not db:
-            return None
-
-        cursor = db.cursor(dictionary=True)
-        try:
+            if not datos_orden:
+                print(f"No se encontró la orden: {ID_orden_c}")
+                return None
+            
+            # Obtener productos de la orden
             cursor.execute("""
                 SELECT 
-                    o.ID_orden_compra as ID_orden_c,
-                    o.ID_proveedor,
-                    p.Nombre_proveedor as N_proveedor,
-                    DATE(o.Fecha_orden_compra) as Fecha_o,
-                    o.Estado_orden_compra as Estado,
-                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Realizado_por,
-                    o.Recibido_por,
-                    DATE(o.Fecha_entrega) as Fecha_entrega,
-                    COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
-                FROM Orden_compra o
-                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
-                LEFT JOIN Empleado e ON o.ID_empleado = e.ID_empleado
-                LEFT JOIN Detalle_orden d ON o.ID_orden_compra = d.ID_orden_compra
-                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
-                WHERE o.ID_orden_compra = %s
-                GROUP BY o.ID_orden_compra
-            """, (ID_orden_c,))
-            datos_orden = cursor.fetchone()
-            
-            if datos_orden:
-                cursor.execute("""
-                    SELECT 
-                        p.Nombre_producto as N_modelo,
-                        mp.Nombre_marca as N_marca,
-                        cp.Nombre_Clase as N_clase,
-                        d.Cantidad_producto as Cantidad_p,
-                        s.Costo_producto as Costo,
-                        (d.Cantidad_producto * s.Costo_producto) as sup_total
-                    FROM Detalle_orden d
-                    JOIN Producto p ON d.ID_producto = p.ID_producto
-                    JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
-                    JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-                    JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
-                    WHERE d.ID_orden_compra = %s
-                """, (datos_orden.get("ID_proveedor"), ID_orden_c))
-                productos_orden = cursor.fetchall()
-            else:
-                productos_orden = []
+                    p.Nombre_producto as N_modelo,
+                    mp.Nombre_marca as N_marca,
+                    cp.Nombre_Clase as N_clase,
+                    d.Cantidad_producto as Cantidad_p,
+                    s.Costo_producto as Costo,
+                    (d.Cantidad_producto * s.Costo_producto) as sup_total
+                FROM Detalle_orden d
+                JOIN Producto p ON d.ID_producto = p.ID_producto
+                JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
+                JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
+                JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
+                WHERE d.ID_orden_compra = %s
+            """, (datos_orden.get("ID_proveedor"), ID_orden_c))
+            productos_orden = cursor.fetchall()
 
             return {
                 "datos_orden": datos_orden,
@@ -248,6 +127,8 @@ class OrdenCompra(conectar):
             }
         except Exception as e:
             print(f"Error obtener_detalles_orden: {e}")
+            import traceback
+            traceback.print_exc()
             return None
         finally:
             cursor.close()
@@ -271,11 +152,7 @@ class OrdenCompra(conectar):
                 WHERE ID_proveedor IS NOT NULL
                 ORDER BY Nombre_proveedor ASC
             """)
-            resultados = cursor.fetchall()
-            print(f"Proveedores encontrados: {len(resultados)}")
-            for r in resultados:
-                print(f"ID: {r.get('id')}, Nombre: {r.get('N_proveedor')}")
-            return resultados
+            return cursor.fetchall()
         except Exception as e:
             print(f"Error enlistar_proveedores: {e}")
             return []
@@ -309,66 +186,6 @@ class OrdenCompra(conectar):
         except Exception as e:
             print(f"Error obtener_productos_proveedor: {e}")
             return []
-        finally:
-            cursor.close()
-            db.close()
-
-    def obtener_detalles_orden(self, ID_orden_c: str):
-        """Obtiene detalles completos de una orden"""
-        db = self.conexion1()
-        if not db:
-            return None
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT 
-                    o.ID_orden_compra as ID_orden_c,
-                    o.ID_proveedor,
-                    p.Nombre_proveedor as N_proveedor,
-                    DATE_FORMAT(o.Fecha_orden_compra, '%%Y-%%m-%%d') as Fecha_o,
-                    o.Estado_orden_compra as Estado,
-                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Realizado_por,
-                    o.Recibido_por,
-                    DATE_FORMAT(o.Fecha_entrega, '%%Y-%%m-%%d') as Fecha_entrega,
-                    COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
-                FROM Orden_compra o
-                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
-                LEFT JOIN Empleado e ON o.ID_empleado = e.ID_empleado
-                LEFT JOIN Detalle_orden d ON o.ID_orden_compra = d.ID_orden_compra
-                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
-                WHERE o.ID_orden_compra = %s
-                GROUP BY o.ID_orden_compra
-            """, (ID_orden_c,))
-            datos_orden = cursor.fetchone()
-            
-            if datos_orden:
-                cursor.execute("""
-                    SELECT 
-                        p.Nombre_producto as N_modelo,
-                        mp.Nombre_marca as N_marca,
-                        cp.Nombre_Clase as N_clase,
-                        d.Cantidad_producto as Cantidad_p,
-                        s.Costo_producto as Costo,
-                        (d.Cantidad_producto * s.Costo_producto) as sup_total
-                    FROM Detalle_orden d
-                    JOIN Producto p ON d.ID_producto = p.ID_producto
-                    JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
-                    JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-                    JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
-                    WHERE d.ID_orden_compra = %s
-                """, (datos_orden.get("ID_proveedor"), ID_orden_c))
-                productos_orden = cursor.fetchall()
-            else:
-                productos_orden = []
-
-            return {
-                "datos_orden": datos_orden,
-                "productos_orden": productos_orden
-            }
-        except Exception as e:
-            print(f"Error obtener_detalles_orden: {e}")
-            return None
         finally:
             cursor.close()
             db.close()
@@ -456,7 +273,7 @@ class OrdenCompra(conectar):
 
         cursor = db.cursor()
         try:
-            # Primero verificar si la orden existe y está pendiente
+            # Verificar si la orden existe y está pendiente
             cursor.execute("""
                 SELECT ID_orden_compra, Estado_orden_compra FROM Orden_compra 
                 WHERE ID_orden_compra = %s
@@ -473,34 +290,6 @@ class OrdenCompra(conectar):
             if estado_actual != 'Pendiente':
                 print(f"La orden no está pendiente. Estado actual: {estado_actual}")
                 return False
-            
-            # Verificar si las columnas Recibido_por y Fecha_entrega existen
-            cursor.execute("""
-                SHOW COLUMNS FROM Orden_compra LIKE 'Recibido_por'
-            """)
-            tiene_recibido = cursor.fetchone() is not None
-            
-            cursor.execute("""
-                SHOW COLUMNS FROM Orden_compra LIKE 'Fecha_entrega'
-            """)
-            tiene_fecha_entrega = cursor.fetchone() is not None
-            
-            print(f"¿Tiene columna Recibido_por? {tiene_recibido}")
-            print(f"¿Tiene columna Fecha_entrega? {tiene_fecha_entrega}")
-            
-            # Si no tienen las columnas, agregarlas
-            if not tiene_recibido:
-                cursor.execute("""
-                    ALTER TABLE Orden_compra ADD COLUMN Recibido_por VARCHAR(100) DEFAULT NULL
-                """)
-                print("Columna Recibido_por agregada")
-            
-            if not tiene_fecha_entrega:
-                cursor.execute("""
-                    ALTER TABLE Orden_compra ADD COLUMN Fecha_entrega DATE DEFAULT NULL
-                """)
-                print("Columna Fecha_entrega agregada")
-                db.commit()
             
             # Actualizar la orden
             cursor.execute("""
