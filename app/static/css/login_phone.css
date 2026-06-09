@@ -251,9 +251,10 @@ body::before {
 
 .phone__top {
 	width: 100%;
-	display: grid;
-	justify-items: center;
-	gap: 0.8rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.3rem;
 }
 
 .phone__logo {
@@ -269,7 +270,7 @@ body::before {
 	font-family: "Space Grotesk", sans-serif;
 	letter-spacing: 0.06em;
 	font-weight: 800;
-	font-size: clamp(1.55rem, 3vh, 2.05rem);
+	font-size: clamp(1.3rem, 2.5vh, 1.6rem);
 }
 
 .phone__body {
@@ -297,18 +298,18 @@ body::before {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin: 0.25rem 0;
-	transform: scale(0.7);
-	transform-origin: center center;
+	margin: 0;
+	padding: 0;
 }
 
-/* Ajuste para que el recaptcha no desborde */
 .phone__captcha > div {
-	margin: 0 auto !important;
+	zoom: 0.85;
+	-moz-transform: scale(0.85);
+	-moz-transform-origin: center center;
 }
 
 .phone__captcha .g-recaptcha {
-	transform-origin: top center;
+	transform-origin: center center;
 }
 
 .pfield {
@@ -409,7 +410,7 @@ body::before {
 	font-size: clamp(0.5rem, 1.7vh, 0.86rem);
 	letter-spacing: 0.06em;
 	cursor: pointer;
-	margin-top: 0.15rem;
+	margin-top: 0;
 	box-shadow: 0 14px 28px rgba(243, 197, 0, 0.22);
 }
 
@@ -420,9 +421,10 @@ body::before {
 
 .phone__links {
 	margin-top: 0.55rem;
-	display: grid;
-	gap: 0.20rem;
-	justify-items: center;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	align-items: center;
 }
 
 .phone__link {
@@ -491,8 +493,12 @@ body::before {
 	.phone__screen {
 		border-radius: 38px;
 		padding:
-			clamp(3.25rem, 7vh, 3.75rem)
-			clamp(1.0rem, 2.8vw, 1.35rem)
-			clamp(1.0rem, 3vh, 1.35rem);
+			clamp(2.5rem, 6vh, 3rem)
+			clamp(1rem, 2.5vw, 1.3rem)
+			clamp(0.5rem, 1.5vh, 0.8rem);
+	}
+	
+	.phone__form {
+		gap: 0.5rem;
 	}
 }
