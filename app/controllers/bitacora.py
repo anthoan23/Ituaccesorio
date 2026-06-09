@@ -1,29 +1,13 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.models.bitacora import Bitacora, registrar_en_bitacora
-from app.utils.decorators import jwt_required
-
+from app.utils.decorators import jwt_required, solo_roles
 
 bitacora_blueprint = Blueprint("bitacora", __name__)
 
 
-def _resolver_usuario_actual():
-    usuario = getattr(g, "user", None)
-    if not usuario:
-        return "SYSTEM"
-
-    if isinstance(usuario, dict):
-        return str(usuario.get("user_id") or usuario.get("id") or usuario.get("username") or "SYSTEM")
-
-    return str(
-        getattr(usuario, "user_id", None)
-        or getattr(usuario, "id", None)
-        or getattr(usuario, "username", None)
-        or "SYSTEM"
-    )
-
-
 @bitacora_blueprint.route("/bitacora", methods=["GET"])
 @jwt_required
+@solo_roles(["admin"])
 def pagina_bitacora():
     modelo = Bitacora()
     registros = modelo.listar_recientes(150)
@@ -38,6 +22,7 @@ def pagina_bitacora():
 
 @bitacora_blueprint.route("/api/bitacora/registrar", methods=["POST"])
 @jwt_required
+@solo_roles(["admin"])
 def registrar_bitacora_api():
     payload = request.get_json(silent=True) or {}
     accion = str(payload.get("accion") or "").strip()
@@ -53,32 +38,30 @@ def registrar_bitacora_api():
     resultado = registrar_en_bitacora(
         accion,
         descripcion,
-        usuario_id=_resolver_usuario_actual(),
+        usuario_id=g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM"),
         modulo_nombre=modulo_nombre,
     )
 
-    # El helper de bitacora ya publica la notificacion al bus en memoria.
-    # Esta ruta solo representa el punto de escritura que usan los modulos del sistema.
     estado = 200 if resultado.get("success") else 500
     return jsonify(resultado), estado
 
 
 @bitacora_blueprint.route("/api/bitacora/list", methods=["GET"])
 @jwt_required
+@solo_roles(["admin"])
 def api_listar_bitacora():
     modelo = Bitacora()
     registros = modelo.listar_recientes(1000)
     return jsonify(registros), 200
 
+
 @bitacora_blueprint.route("/api/bitacora/ultimas-notificaciones", methods=["GET"])
 @jwt_required
+@solo_roles(["admin"])
 def api_ultimas_notificaciones():
-    """Obtiene las últimas 3 notificaciones para el panel"""
-    from app.models.bitacora import Bitacora
     modelo = Bitacora()
     registros = modelo.listar_recientes(3) or []
     
-    # Formatear para el frontend
     notificaciones = []
     for reg in registros:
         notificacion = {

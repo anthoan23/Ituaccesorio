@@ -1,37 +1,11 @@
 from flask import Blueprint, jsonify, request, g
-from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.decorators import jwt_required, solo_roles
 from app.models.bitacora import registrar_en_bitacora
 from app.models.permisos import Permiso
 from app.models.roles import Rol
 from app.models.modulos import Modulo
 
 permisos_blueprint = Blueprint("permisos", __name__)
-
-
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _usuario_actual_datos():
-    usuario = getattr(g, "user", None)
-    if not usuario:
-        return {}
-    if isinstance(usuario, dict):
-        return usuario
-    return {
-        "usuario_id": getattr(usuario, "usuario_id", None),
-        "usuario_nombre": getattr(usuario, "usuario_nombre", None),
-        "cedula": getattr(usuario, "cedula", None),
-        "rol_id": getattr(usuario, "rol_id", None),
-        "nombre_rol": getattr(usuario, "nombre_rol", None),
-        "foto_perfil": getattr(usuario, "foto_perfil", None),
-    }
 
 
 def _bool(valor):
@@ -47,7 +21,7 @@ def _bool(valor):
 
 @permisos_blueprint.route("/api/permisos/rol/<rol_id>", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_obtener_permisos_por_rol(rol_id):
     """Obtiene todos los permisos de un rol específico aplicando la regla de negocio"""
     # Verificar que el rol existe
@@ -67,7 +41,7 @@ def api_obtener_permisos_por_rol(rol_id):
 
 @permisos_blueprint.route("/api/permisos/rol/<rol_id>", methods=["PUT"])
 @jwt_required
-@tiene_permiso('Usuarios', 'modificar')
+@solo_roles(['admin'])
 def api_actualizar_permisos_rol(rol_id):
     """Actualiza todos los permisos de un rol específico"""
     data = request.get_json(silent=True) or {}
@@ -83,11 +57,17 @@ def api_actualizar_permisos_rol(rol_id):
     if not rol_existente:
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
 
-    # Verificar permisos para modificar admin
-    usuario_actual_rol = _usuario_actual_datos().get("nombre_rol", "").lower()
+    # Verificar permisos para modificar admin (solo otro admin puede)
     nombre_rol = rol_existente.get("nombre", "").lower()
+    usuario_actual = getattr(g, 'user', None)
+    usuario_rol = ""
+    if usuario_actual:
+        if isinstance(usuario_actual, dict):
+            usuario_rol = usuario_actual.get("rol_nombre", "").lower()
+        else:
+            usuario_rol = getattr(usuario_actual, "rol_nombre", "").lower()
 
-    if nombre_rol == "admin" and usuario_actual_rol != "admin":
+    if nombre_rol == "admin" and usuario_rol != "admin":
         return jsonify({"success": False, "error": "No tienes permisos para modificar los permisos del rol Admin."}), 403
 
     # Preparar datos para guardado masivo
@@ -115,10 +95,13 @@ def api_actualizar_permisos_rol(rol_id):
             "detalles": errores
         }), 500
 
+    # Obtener ID del usuario desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+
     registrar_en_bitacora(
         accion="Actualizar permisos de rol",
         descripcion=f"Se actualizaron {exitosos} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
-        usuario_id=_usuario_actual(),
+        usuario_id=usuario_id,
         modulo_nombre="Usuarios"
     )
 
@@ -131,7 +114,7 @@ def api_actualizar_permisos_rol(rol_id):
 
 @permisos_blueprint.route("/api/permisos/rol/<rol_id>/modulo/<modulo_id>", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_obtener_permiso_especifico(rol_id, modulo_id):
     """Obtiene un permiso específico de un rol para un módulo aplicando la regla de negocio"""
     # Verificar que el rol existe
@@ -171,10 +154,13 @@ def api_obtener_permiso_especifico(rol_id, modulo_id):
 
 @permisos_blueprint.route("/api/usuarios/mis-permisos", methods=["GET"])
 @jwt_required
+@solo_roles(['admin'])
 def api_obtener_mis_permisos():
     """Obtiene todos los permisos del usuario actual aplicando la regla de negocio"""
-    usuario_id = _usuario_actual()
-    if usuario_id == "SYSTEM":
+    # Obtener ID del usuario desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+    
+    if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario."}), 401
 
     permiso_model = Permiso()

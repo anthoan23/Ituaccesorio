@@ -1,24 +1,22 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.models.tradein import TradeIn
 from app.models.bitacora import registrar_en_bitacora
-from app.utils.decorators import jwt_required, tiene_permiso
 
 tradein_blueprint = Blueprint("tradein", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
+def _obtener_usuario_actual():
+    """Obtiene el ID del usuario actual (si está logueado)"""
     user = getattr(g, 'user', None)
     if not user:
-        return "CLIENTE"
+        return "CLIENTE_NO_AUTENTICADO"
     if isinstance(user, dict):
         return str(user.get("usuario_id") or user.get("id") or "CLIENTE")
     return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "CLIENTE")
 
 
 @tradein_blueprint.route("/trade-in", methods=["GET"])
-@jwt_required
-@tiene_permiso('Trade-in', 'consultar')
+# Sin decoradores - acceso completamente público
 def pagina_tradein():
     modelo = TradeIn()
     return render_template(
@@ -32,8 +30,7 @@ def pagina_tradein():
 
 
 @tradein_blueprint.route("/api/trade-in", methods=["GET"])
-@jwt_required
-@tiene_permiso('Trade-in', 'consultar')
+# Sin decoradores - acceso completamente público
 def obtener_tradein_json():
     modelo = TradeIn()
     return jsonify({
@@ -44,12 +41,11 @@ def obtener_tradein_json():
 
 
 @tradein_blueprint.route("/api/trade-in/cotizar", methods=["POST"])
-@jwt_required
-@tiene_permiso('Trade-in', 'registrar')
+# Sin decoradores - acceso completamente público
 def cotizar_tradein():
     datos = request.get_json(silent=True) or {}
     modelo = TradeIn()
-    usuario_id = _usuario_actual()
+    usuario_id = _obtener_usuario_actual()
 
     # Validar liberación del equipo
     liberado = str(datos.get("liberado", "")).strip().lower()
