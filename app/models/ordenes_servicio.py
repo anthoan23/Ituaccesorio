@@ -3,8 +3,8 @@ from app.models.database import conectar
 
 
 class Orden_servicio():
-    def __init__(self, ID_orden_e: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio: str = None, ID_empleado: int = None):
-        self.ID_orden_e = ID_orden_e
+    def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio: str = None, ID_empleado: int = None):
+        self.ID_orden_servicio = ID_orden_servicio
         self.Estado_orden_servicio = Estado_orden_servicio
         self.Descripcion_reparacion = Descripcion_reparacion
         self.Costo_reparacion = Costo_reparacion
@@ -78,6 +78,7 @@ class Orden_servicio():
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 INNER JOIN Producto p ON e.ID_producto = p.ID_producto
+                WHERE os.Estado_orden_servicio IN ('Pendiente', 'En Proceso')
                 ORDER BY os.ID_orden_servicio DESC;
                 """
             )
@@ -123,8 +124,8 @@ class Orden_servicio():
 
 
     def consultar_orden(self,):
-        id_orden = self.ID_orden_e
-        db = self.conexion1()
+        id_orden = self.ID_orden_servicio
+        db = self._conexion.conexion1()
         if not db:
             return None
         
@@ -132,11 +133,14 @@ class Orden_servicio():
         try:
             sql =""" SELECT o.*, 
                 p.Nombre_producto AS Modelo, 
+                o.Estado_orden_servicio AS Estado,
                 CASE 
                         WHEN pn.ID_cliente IS NOT NULL THEN CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente)
                         WHEN cj.ID_cliente IS NOT NULL THEN cj.Razon_social
                         ELSE 'Cliente no especificado'
-                    END AS nombre_cliente
+                    END AS nombre_cliente,
+                o.Descripcion_reparacion AS Descripcion,
+                o.Nota_orden_servicio AS Nota
                 FROM Orden_servicio o JOIN Equipo e ON o.ID_equipo = e.ID_equipo 
                 JOIN Cliente c ON o.ID_cliente = c.ID_cliente
                 JOIN Producto p ON e.ID_producto = p.ID_producto
@@ -155,7 +159,7 @@ class Orden_servicio():
             db.close()
 
     def empleados_asignados(self, id_orden: int):
-        db = self.conexion1()
+        db = self._conexion.conexion1()
         if not db:
             return None
         
@@ -176,8 +180,8 @@ class Orden_servicio():
             db.close()
 
     def consultar_fotos_orden(self,):
-        id_orden = self.ID_orden_e
-        db = self.conexion1()
+        id_orden = self.ID_orden_servicio
+        db = self._conexion.conexion1()
         if not db:
             return None
         
@@ -201,7 +205,7 @@ class Orden_servicio():
         ruta_foto = self.Foto_orden_servicio.strip()
      
         """Verifica si una foto existe por su ruta o nombre de archivo"""
-        db = self.__conexion_bd.conexion1()
+        db = self._conexion.conexion1()
         if not db:
          return False
 
@@ -311,7 +315,7 @@ class OrdenServicio(conectar):
         try:
             sql = (
                 "SELECT o.*, "
-                "o.ID_orden_e AS ID_orden, "
+                "o.ID_orden_servicio AS ID_orden, "
                 "o.Estado_o AS Estado, "
                 "o.ID_c AS ID_cliente, "
                 "c.Nombre_c AS Nombre_cliente, "
@@ -347,7 +351,7 @@ class OrdenServicio(conectar):
 
             sql = (
                 "SELECT o.*, "
-                "o.ID_orden_e AS ID_orden, "
+                "o.ID_orden_servicio AS ID_orden, "
                 "o.Estado_o AS Estado, "
                 "o.ID_c AS ID_cliente, "
                 "c.Nombre_c AS Nombre_cliente, "
@@ -357,7 +361,7 @@ class OrdenServicio(conectar):
                 "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
                 "JOIN cliente c ON o.ID_c = c.ID_c "
                 f"{where_sql} "
-                "ORDER BY o.ID_orden_e DESC"
+                "ORDER BY o.ID_orden_servicio DESC"
             )
             cursor.execute(sql, tuple(params))
             return cursor.fetchall()
@@ -420,7 +424,7 @@ class OrdenServicio(conectar):
         try:
             sql = (
                 "SELECT i.ID_orden, m.N_modelo "
-                "FROM interaccion i JOIN orden_e o ON i.ID_orden = o.ID_orden_e "
+                "FROM interaccion i JOIN orden_e o ON i.ID_orden = o.ID_orden_servicio "
                 "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
                 "WHERE o.Estado_o IN ('Asignado', 'Revisado') AND i.ID_em = %s"
             )
@@ -442,17 +446,17 @@ class OrdenServicio(conectar):
         try:
             sql = (
                 "SELECT o.*, "
-                "o.ID_orden_e AS ID_orden, "
+                "o.ID_orden_servicio AS ID_orden, "
                 "o.Estado_o AS Estado, "
                 "m.N_modelo AS Modelo, "
                 "c.Nombre_c AS Nombre_cliente, "
                 "c.Apellido_c AS Apellido_cliente "
                 "FROM interaccion i "
-                "JOIN orden_e o ON i.ID_orden = o.ID_orden_e "
+                "JOIN orden_e o ON i.ID_orden = o.ID_orden_servicio "
                 "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
                 "JOIN cliente c ON o.ID_c = c.ID_c "
                 "WHERE i.ID_em = %s AND i.Accion = 'Asignado' "
-                "ORDER BY o.ID_orden_e DESC"
+                "ORDER BY o.ID_orden_servicio DESC"
             )
             cursor.execute(sql, (id_empleado,))
             return cursor.fetchall()
@@ -590,7 +594,7 @@ class OrdenServicio(conectar):
                 params.append(costo)
 
             params.append(id_orden)
-            sql = f"UPDATE orden_e SET {', '.join(fields)} WHERE ID_orden_e = %s"
+            sql = f"UPDATE orden_e SET {', '.join(fields)} WHERE ID_orden_servicio = %s"
             cursor.execute(sql, tuple(params))
             db.commit()
             return cursor.rowcount > 0
@@ -632,7 +636,7 @@ class OrdenServicio(conectar):
             sql_orden = (
                 "UPDATE orden_e "
                 "SET Estado_o = 'Asignado' "
-                "WHERE ID_orden_e = %s"
+                "WHERE ID_orden_servicio = %s"
             )
             cursor.execute(sql_orden, (id_orden,))
 
@@ -678,7 +682,7 @@ class OrdenServicio(conectar):
             sql_orden = (
                 "UPDATE orden_e "
                 "SET Estado_o = 'En Proceso' "
-                "WHERE ID_orden_e = %s"
+                "WHERE ID_orden_servicio = %s"
             )
             cursor.execute(sql_orden, (id_orden,))
 
@@ -705,10 +709,10 @@ class OrdenServicio(conectar):
         try:
             # Relacionamos las tablas por el ID de la orden
             sql = (
-                "SELECT o.ID_orden_e, i.ID_em, o.Estado_o, i.Accion "
+                "SELECT o.ID_orden_servicio, i.ID_em, o.Estado_o, i.Accion "
                 "FROM orden_e o "
-                "INNER JOIN interaccion i ON o.ID_orden_e = i.ID_orden "
-                "WHERE o.ID_orden_e = %s "
+                "INNER JOIN interaccion i ON o.ID_orden_servicio = i.ID_orden "
+                "WHERE o.ID_orden_servicio = %s "
                 "AND i.ID_em = %s "
                 "AND o.Estado_o = 'Asignado' "
                 "AND i.Accion = 'Asignado'"
@@ -757,7 +761,7 @@ class OrdenServicio(conectar):
             sql_update_reparacion = (
                 "UPDATE orden_e "
                 "SET Reparacion = %s "
-                "WHERE ID_orden_e = %s"
+                "WHERE ID_orden_servicio = %s"
             )
             cursor.execute(sql_update_reparacion, (reparacion, id_orden))
 
@@ -765,7 +769,7 @@ class OrdenServicio(conectar):
             sql_update = (
                 "UPDATE orden_e "
                 "SET Estado_o = 'Reparado' "
-                "WHERE ID_orden_e = %s"
+                "WHERE ID_orden_servicio = %s"
             )
             cursor.execute(sql_update, (id_orden,))
 

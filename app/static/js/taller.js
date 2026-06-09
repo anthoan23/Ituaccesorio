@@ -1,1410 +1,894 @@
-document.addEventListener("DOMContentLoaded", () => {
-	const viewButtons = Array.from(document.querySelectorAll("[data-view-target]"));
-		const viewPanels = Array.from(document.querySelectorAll(".content.vista-1, .content.vista-2, .content.vista-3, .content.vista-4, .content.vista-5"));
-	const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
-	const tablaReparacionesAsignadas = document.getElementById("tabla-reparaciones-asignadas");
-	const paginasOrdenes = document.querySelector(".pager__pages");
-	const detalleDispositivo = document.getElementById("detalle-dispositivo");
-	const detalleOrdenSubtitle = document.getElementById("detalle-orden-subtitle");
-	const breadcrumbSection = document.getElementById("breadcrumb-section");
-	const breadcrumbSeparator = document.getElementById("breadcrumb-separator");
-	const orderInfo = document.getElementById('order-info');
-	const orderPhotos = document.getElementById('order-photos');
-	const orderTests = document.getElementById('order-tests');
-	const orderPeople = document.getElementById('order-people');
-	const modalFotosBody = document.getElementById('modal-fotos-body');
-	const modalPhotoBody = document.getElementById('modal-photo-view-body');
-	const modalPhotoImg = document.getElementById('modal-photo-view-img');
-	const modalRepuestosBody = document.getElementById('modal-repuestos-body');
-	const modalRepuestosSubtitle = document.getElementById('modal-repuestos-subtitle');
-	const fotosDropzone = document.getElementById('fotos-dropzone');
-	const formFotosOrden = document.getElementById('form-fotos-orden');
-	const inputFotosOrden = document.getElementById('input-fotos-orden');
-	const modalFotosIdOrden = document.getElementById('modal-fotos-id-orden');
-	const btnRepuestosEquipo = document.getElementById('btn-repuestos-equipo');
-	const btnRepuestosInventario = document.getElementById('btn-repuestos-inventario');
-	const reparacionOrdenId = document.getElementById('reparacion-orden-id');
-	const reparacionModelo = document.getElementById('reparacion-modelo');
-	const repuestosUsadosList = document.getElementById('repuestos-usados-list');
-	const reparacionTextarea = document.getElementById('reparacion-textarea');
-	const btnConfirmDeletePhoto = document.getElementById('btn-confirm-delete-photo');
-	const btnConfirmDeleteSavedPhoto = document.getElementById('btn-confirm-delete-saved-photo');
-	// Preferir el input con id para selección fiable; fallback a nombre
-	const csrfToken = (document.getElementById('csrf-token')?.value) || document.querySelector("input[name='_csrf_token']")?.value || "";
-	let ordenesCargadas = [];
-	let fotosOrdenActual = [];
-	let testsOrdenActual = [];
-	let fotosSeleccionadas = [];
-	let fotoIndexPendienteEliminar = null;
-	let fotoGuardadaPendienteEliminar = null;
-	let ordenActualId = '';
-	let reparacionOrdenContextId = '';
-	let repuestosUsados = [];
-	let repuestosModalFuente = 'equipo';
-
-	const repuestosCatalogo = {
-		equipo: [
-			{ id: 'eq-pantalla', nombre: 'Pantalla', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-bateria', nombre: 'Batería', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-puerto', nombre: 'Puerto de carga', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-altavoz', nombre: 'Altavoz', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-microfono', nombre: 'Micrófono', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-camara-del', nombre: 'Cámara delantera', tipo: 'Equipo', stock: '-' },
-			{ id: 'eq-camara-pos', nombre: 'Cámara trasera', tipo: 'Equipo', stock: '-' },
-		],
-		inventario: [
-			{ id: 'inv-flex-carga', nombre: 'Flex de carga', tipo: 'Inventario', stock: '12' },
-			{ id: 'inv-bateria', nombre: 'Batería 4000 mAh', tipo: 'Inventario', stock: '8' },
-			{ id: 'inv-pantalla', nombre: 'Pantalla genérica', tipo: 'Inventario', stock: '5' },
-			{ id: 'inv-altavoz', nombre: 'Altavoz interno', tipo: 'Inventario', stock: '9' },
-			{ id: 'inv-microfono', nombre: 'Micrófono', tipo: 'Inventario', stock: '6' },
-			{ id: 'inv-sensor', nombre: 'Sensor de proximidad', tipo: 'Inventario', stock: '4' },
-			{ id: 'inv-flex-volumen', nombre: 'Flex de volumen', tipo: 'Inventario', stock: '7' },
-		],
-	};
-
-	if (!viewButtons.length || !viewPanels.length) {
-		return;
-	}
-
-	const escapeHtml = (value) => String(value ?? "")
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;")
-		.replaceAll("'", "&#39;");
-
-	const normalizarRutaFoto = (valor) => {
-		if (!valor) return '';
-		try {
-			return new URL(String(valor), window.location.origin).pathname;
-		} catch (_) {
-			return String(valor);
-		}
-	};
-
-	const resolverIdFotoGuardada = (target) => {
-		const wrapper = target.closest('[data-foto-path]');
-		const rutaObjetivo = normalizarRutaFoto(wrapper?.getAttribute('data-foto-path') || target.getAttribute('data-foto-path') || '');
-		if (rutaObjetivo) {
-			const encontrada = fotosOrdenActual.find((foto) => {
-				const rutaFoto = normalizarRutaFoto(foto.Foto_e || foto.foto || foto.url || foto.path || foto.ruta || '');
-				return rutaFoto === rutaObjetivo;
-			});
-
-			const idEncontrado = Number(encontrada?.ID_evidencia_e || encontrada?.ID_evidencia || encontrada?.id || encontrada?.ID);
-			if (Number.isFinite(idEncontrado) && idEncontrado > 0) {
-				return idEncontrado;
-			}
-		}
-
-		const idAttr = target.getAttribute('data-remove-saved-photo');
-		const idNumerico = Number(idAttr);
-		return Number.isFinite(idNumerico) && idNumerico > 0 ? idNumerico : null;
-	};
-
-	const formatFecha = (value) => {
-		if (!value) {
-			return "";
-		}
-
-		const fecha = new Date(value);
-		if (Number.isNaN(fecha.getTime())) {
-			return value;
-		}
-
-		return fecha.toLocaleDateString("es-ES");
-	};
-
-	const formatHora = (value) => {
-		if (!value) return "";
-		const s = String(value);
-		// Buscar un patrón de hora y devolver solo HH:MM (sin segundos)
-		const match = s.match(/([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?/);
-		if (match) {
-			const hh = match[1].padStart(2, '0');
-			const mm = match[2].padStart(2, '0');
-			return `${hh}:${mm}`;
-		}
-		// Si no se encuentra una hora, devolver la representación original
-		return s;
-	};
-
-	const renderRepuestosUsados = () => {
-		if (!repuestosUsadosList) return;
-
-		if (!repuestosUsados.length) {
-			repuestosUsadosList.innerHTML = '<p class="device-detail__empty">Aún no has agregado repuestos.</p>';
-			return;
-		}
-
-		repuestosUsadosList.innerHTML = `
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Repuesto</th>
-						<th>Origen</th>
-						<th>ID</th>
-						<th>Cantidad</th>
-						<th class="table__actions">Acción</th>
-					</tr>
-				</thead>
-				<tbody>
-					${repuestosUsados.map((repuesto) => `
-						<tr>
-							<td>${escapeHtml(repuesto.nombre)}</td>
-							<td>${escapeHtml(repuesto.tipo)}</td>
-							<td>${escapeHtml(repuesto.id)}</td>
-							<td>${escapeHtml(repuesto.cantidad)}</td>
-							<td class="table__actions">
-								<button type="button" class="table-action table-action--danger" data-remove-repuesto="${escapeHtml(repuesto.id)}">Quitar</button>
-							</td>
-						</tr>
-					`).join('')}
-				</tbody>
-			</table>
-		`;
-	};
-
-	const actualizarEncabezadoReparacion = (orden) => {
-		if (reparacionOrdenId) {
-			reparacionOrdenId.textContent = orden ? `(${String(orden)})` : '-';
-		}
-		if (reparacionModelo) {
-			reparacionModelo.textContent = '-';
-		}
-	};
-
-	const normalizarRepuesto = (repuesto) => ({
-		id: repuesto.id,
-		nombre: repuesto.nombre,
-		tipo: repuesto.tipo,
-		stock: repuesto.stock,
-	});
-
-	const fetchInventarioRepuestos = async (modelo) => {
-		try {
-			const url = `/api/taller/inventario/${encodeURIComponent(String(modelo || ''))}`;
-			const resp = await fetch(url, {
-				method: 'POST',
-				cache: 'no-store',
-				headers: {
-					'Accept': 'application/json',
-					'Content-Type': 'application/json',
-					...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
-				},
-				credentials: 'same-origin',
-			});
-			if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-			const data = await resp.json().catch(() => ({}));
-			return {
-				inventario_taller: Array.isArray(data?.inventario_taller) ? data.inventario_taller : [],
-				inventario_modelo: Array.isArray(data?.inventario_modelo) ? data.inventario_modelo : [],
-			};
-		} catch (err) {
-			console.error('Error fetch inventario:', err);
-			return { inventario_taller: [], inventario_modelo: [] };
-		}
-	};
-
-	const renderModalRepuestos = (fuente, data = { inventario_taller: [], inventario_modelo: [] }) => {
-		if (!modalRepuestosBody) return;
-		repuestosModalFuente = fuente;
-		if (modalRepuestosSubtitle) {
-			modalRepuestosSubtitle.textContent = fuente === 'inventario'
-				? 'Inventario de repuestos disponibles.'
-				: 'Piezas del equipo que puedes añadir como usadas.';
-		}
-
-		const renderTabla = (titulo, items, prefijo) => {
-			if (!Array.isArray(items) || items.length === 0) {
-				return `<div class="device-detail__empty">No hay registros en ${escapeHtml(titulo.toLowerCase())}.</div>`;
-			}
-
-			return `
-				<div style="margin-bottom:1rem;">
-					<h3 class="card__subtitle">${escapeHtml(titulo)}</h3>
-					<table class="table">
-						<thead>
-							<tr>
-								<th>Tipo</th>
-								<th>Marca</th>
-								<th>Modelo</th>
-								<th>Existencia</th>
-								<th>Costo</th>
-							</tr>
-						</thead>
-						<tbody>
-							${items.map((repuesto, index) => {
-								const tipo = repuesto.tipo ?? repuesto.N_Clase ?? '';
-								const marca = repuesto.N_marca ?? repuesto.marca ?? '';
-								const modelo = repuesto.N_modelo ?? repuesto.modelo ?? '';
-								const existencia = repuesto.Existencia ?? repuesto.existencia ?? '-';
-								const costo = repuesto.Costo_venta ?? repuesto.costo ?? '-';
-								const idProducto = repuesto.ID_producto ?? repuesto.id ?? repuesto.ID ?? '';
-								return `
-									<tr class="repuesto-row" data-repuesto-id="${escapeHtml(idProducto)}" data-repuesto-nombre="${escapeHtml(modelo)}" data-repuesto-tipo="${escapeHtml(tipo)}" data-repuesto-stock="${escapeHtml(existencia)}" style="cursor:pointer;">
-										<td>${escapeHtml(tipo)}</td>
-										<td>${escapeHtml(marca)}</td>
-										<td>${escapeHtml(modelo)}</td>
-										<td>${escapeHtml(existencia)}</td>
-										<td>${escapeHtml(costo)}</td>
-									</tr>
-								`;
-							}).join('')}
-						</tbody>
-					</table>
-				</div>
-			`;
-		};
-
-		if (fuente === 'equipo') {
-			modalRepuestosBody.innerHTML = renderTabla('Inventario del modelo', data.inventario_modelo, 'modelo');
-			return;
-		}
-
-		// fuente === 'inventario' -> mostrar inventario general
-		modalRepuestosBody.innerHTML = renderTabla('Inventario general', data.inventario_taller, 'taller');
-	};
-
-	const agregarRepuestoUsado = (repuesto) => {
-		if (!repuesto.id) {
-			alert('No se pudo identificar el ID del repuesto seleccionado.');
-			return;
-		}
-		const encontrado = repuestosUsados.find((item) => item.id === repuesto.id);
-		if (encontrado) {
-			encontrado.cantidad += 1;
-		} else {
-			repuestosUsados.push({
-				id: repuesto.id,
-				nombre: repuesto.nombre,
-				tipo: repuesto.tipo,
-				cantidad: 1,
-			});
-		}
-
-		renderRepuestosUsados();
-		if (window.UiModal && typeof window.UiModal.closeById === 'function') {
-			window.UiModal.closeById('modal-repuestos');
-		}
-	};
-
-	const abrirModalRepuestos = async (fuente) => {
-		const modelo = String(reparacionModelo?.textContent || '').replace(/[()]/g, '').trim();
-		if (fuente === 'equipo' && (!modelo || modelo === '-' )) {
-			alert('Selecciona una orden/con modelo antes de ver las piezas del equipo.');
-			return;
-		}
-		const data = await fetchInventarioRepuestos(modelo);
-		renderModalRepuestos(fuente, data);
-		if (window.UiModal && typeof window.UiModal.openById === 'function') {
-			window.UiModal.openById('modal-repuestos');
-		}
-	};
-
-	const actualizarNumeroSiguienteTest = () => {
-		const numeros = Array.isArray(testsOrdenActual)
-			? testsOrdenActual
-				.map((test) => Number(test?.Num_test ?? test?.num_test ?? 0))
-				.filter((numero) => Number.isFinite(numero))
-			: [];
-		const siguienteNumero = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
-
-		const testIdSpan = document.getElementById('test-id-form');
-		const inputNumTest = document.getElementById('input-num-test');
-		if (testIdSpan) testIdSpan.textContent = String(siguienteNumero);
-		if (inputNumTest) inputNumTest.value = String(siguienteNumero);
-
-		return siguienteNumero;
-	};
-
-	const labelPorCampo = {
-		ID_orden: "ID orden",
-		Estado: "Estado",
-		Modelo: "Modelo",
-		Des_cliente: "Descripción cliente",
-		Fecha_e: "Fecha ingreso",
-	};
-
-	const renderDetalleOrden = (orden, accion) => {
-		if (!orderInfo) return;
-
-		if (!orden || typeof orden !== 'object') {
-			orderInfo.innerHTML = '<p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>';
-			if (detalleOrdenSubtitle) detalleOrdenSubtitle.textContent = 'Selecciona una orden para ver toda su información.';
-			if (reparacionOrdenId) {
-				reparacionOrdenId.textContent = '-';
-			}
-			if (reparacionModelo) {
-				reparacionModelo.textContent = '-';
-			}
-			return;
-		}
-
-		// Helper para obtener campos con varios posibles nombres
-		const getField = (...keys) => {
-			for (const k of keys) {
-				if (k in orden && orden[k] !== null && orden[k] !== undefined && String(orden[k]).trim() !== '') {
-					return orden[k];
-				}
-			}
-			return '';
-		};
-
-		const id = getField('ID_orden', 'ID_orden_e', 'ID');
-		const fecha = getField('Fecha_e', 'Fecha', 'Fecha_ingreso');
-		const nombre = getField('Nombre_cliente', 'Nombre_c', 'Nombre', 'ClienteNombre');
-		const apellido = getField('Apellido_cliente', 'Apellido_c', 'Apellido', 'ClienteApellido');
-		const modelo = getField('Modelo', 'N_modelo', 'Modelo_producto');
-		const patron = getField('Patron', 'Patrón', 'Patron_o');
-		const clave = getField('Clave', 'Clave_o', 'Clave_acc');
-		const descripcion = getField('Des_cliente', 'Descripcion', 'Descripcion_cliente');
-		const nota = getField('Nota', 'Observaciones', 'Nota_o');
-
-		const parts = [];
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">ID orden</span>
-				<strong class="device-detail__value">${escapeHtml(id)}</strong>
-			</div>`);
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Fecha de ingreso</span>
-				<strong class="device-detail__value">${escapeHtml(fecha ? formatFecha(fecha) : '')}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Nombre cliente</span>
-				<strong class="device-detail__value">${escapeHtml(((nombre || '') + ' ' + (apellido || '')).trim())}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Modelo</span>
-				<strong class="device-detail__value">${escapeHtml(modelo)}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Patrón</span>
-				<strong class="device-detail__value">${escapeHtml(patron)}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Clave</span>
-				<strong class="device-detail__value">${escapeHtml(clave)}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Descripción cliente</span>
-				<strong class="device-detail__value">${escapeHtml(descripcion)}</strong>
-			</div>`);
-
-		parts.push(`
-			<div class="device-detail__item">
-				<span class="device-detail__label">Nota</span>
-				<strong class="device-detail__value">${escapeHtml(nota)}</strong>
-			</div>`);
-
-		orderInfo.innerHTML = parts.join('');
-		if (detalleOrdenSubtitle) detalleOrdenSubtitle.textContent = `Información de la orden ${id} (${accion}).`;
-		if (reparacionOrdenId) {
-			reparacionOrdenId.textContent = `(${String(id || '')})`;
-		}
-		if (reparacionModelo) {
-			reparacionModelo.textContent = String(modelo || '-');
-		}
-	};
-
-	const renderOrdenes = (ordenes) => {
-		if (!tablaOrdenes) {
-			return;
-		}
-
-		ordenesCargadas = Array.isArray(ordenes) ? ordenes : [];
-
-		if (!Array.isArray(ordenes) || ordenes.length === 0) {
-			tablaOrdenes.innerHTML = '<tr><td colspan="8">No hay órdenes registradas.</td></tr>';
-			if (paginasOrdenes) {
-				paginasOrdenes.textContent = "0";
-			}
-			return;
-		}
-
-		tablaOrdenes.innerHTML = ordenes.map((orden) => `
-			<tr>
-				<td>${escapeHtml(orden.id_orden)}</td>
-				<td>${escapeHtml(orden.estado)}</td>
-				<td>${escapeHtml(orden.id_cliente ?? '')}</td>
-				<td>${escapeHtml(orden.nombre_cliente ?? '')}</td>
-				<td>${escapeHtml(orden.modelo ?? '')}</td>
-				<td>${escapeHtml(orden.descripcion ?? '')}</td>
-				<td>${escapeHtml(formatFecha(orden.fecha_e))}</td>
-				<td class="table__actions">
-					<div class="row-actions">
-						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.id_orden)}">Ver</button>
-						<button type="button" class="table-action" data-accion="tomar" data-id="${escapeHtml(orden.id_orden)}">Tomar orden</button>
-					</div>
-				</td>
-			</tr>
-		`).join("");
-
-		if (paginasOrdenes) {
-			paginasOrdenes.textContent = String(ordenes.length);
-		}
-	};
-
-	const renderReparacionesAsignadas = (ordenes) => {
-		if (!tablaReparacionesAsignadas) {
-			return;
-		}
-
-		if (!Array.isArray(ordenes) || ordenes.length === 0) {
-			tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">Sin reparaciones asignadas por ahora.</td></tr>';
-			return;
-		}
-
-		tablaReparacionesAsignadas.innerHTML = ordenes.map((orden) => `
-			<tr>
-				<td>${escapeHtml(orden.id_orden)}</td> <td>${escapeHtml(orden.modelo ?? '')}</td>    <td class="table__actions">
-					<div class="row-actions">
-						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.id_orden)}">Ver</button>
-						<button type="button" class="table-action" data-accion="revisar" data-id="${escapeHtml(orden.id_orden)}">Revisar</button>
-						<button type="button" class="table-action table-action--accent" data-accion="reparar" data-id="${escapeHtml(orden.id_orden)}">Reparar</button>
-						<button type="button" class="table-action table-action--danger" data-accion="liberar" data-id="${escapeHtml(orden.id_orden)}">Liberar</button>
-					</div>
-				</td>
-			</tr>
-		`).join("");
-	};
-
-	const tomarOrden = async (idOrden) => {
-		try {
-			const response = await fetch(`/api/taller/asignar/${encodeURIComponent(idOrden)}/1004/estado`, {
-				method: "POST",
-				cache: "no-store",
-				headers: {
-					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-				},
-				credentials: "same-origin",
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			await cargarOrdenes();
-			await cargarReparacionesAsignadas();
-			await cargarDetalleOrden(idOrden, "vista-5");
-		} catch (error) {
-			console.error("Error tomando la orden:", error);
-		}
-	};
-
-	const liberarOrden = async (idOrden) => {
-		try {
-			const response = await fetch(`/api/taller/liberar/${encodeURIComponent(idOrden)}/1004/estado`, {
-				method: "POST",
-				cache: "no-store",
-				headers: {
-					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-				},
-				credentials: "same-origin",
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			await cargarOrdenes();
-			await cargarReparacionesAsignadas();			
-		} catch (error) {
-			console.error("Error liberando la orden:", error);
-		}
-	};
-
-	const manejarAccionOrden = (accion, idOrden) => {
-		if (accion === "ver") {
-			cargarDetalleOrden(idOrden);
-			return;
-		}
-
-		const ordenSeleccionada = ordenesCargadas.find((orden) => String(orden.ID_orden) === String(idOrden));
-		if (!ordenSeleccionada) {
-			return;
-		}
-
-		if (accion === "tomar" || accion === "revisar") {
-			tomarOrden(idOrden);
-			return;
-		}
-
-		if (accion === "reparar") {
-			renderDetalleOrden(ordenSeleccionada, accion);
-			activateView("vista-4");
-			return;
-		}
-
-		return;
-	};
-
-	const cargarOrdenes = async () => {
-		try {
-			const response = await fetch("/api/taller/ordenes", { cache: "no-store" });
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const data = await response.json();
-			renderOrdenes(Array.isArray(data) ? data : data.ordenes);
-		} catch (error) {
-			console.error("Error cargando órdenes del taller:", error);
-			if (tablaOrdenes) {
-				tablaOrdenes.innerHTML = '<tr><td colspan="4">No se pudieron cargar las órdenes.</td></tr>';
-			}
-		}
-	};
-
-	const cargarReparacionesAsignadas = async () => {
-		if (!tablaReparacionesAsignadas) {
-			return;
-		}
-
-		try {
-			const response = await fetch("/api/taller/reparaciones-asignadas", { cache: "no-store" });
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const data = await response.json();
-			renderReparacionesAsignadas(Array.isArray(data) ? data : data.ordenes);
-		} catch (error) {
-			console.error("Error cargando reparaciones asignadas:", error);
-			tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">No se pudieron cargar las reparaciones asignadas.</td></tr>';
-		}
-	};
-
-	const cargarDetalleOrden = async (idOrden, desiredView = 'vista-2') => {
-		try {
-			const getAuthToken = () => {
-				const fromLocal = window.localStorage ? window.localStorage.getItem('access_token') : '';
-				if (fromLocal) return fromLocal;
-				const fromSession = window.sessionStorage ? window.sessionStorage.getItem('access_token') : '';
-				if (fromSession) return fromSession;
-				return '';
-			};
-
-			const authToken = getAuthToken();
-
-			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(idOrden)}`, {
-				method: 'POST',
-				cache: 'no-store',
-				headers: {
-					'Content-Type': 'application/json',
-					...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
-					...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
-				},
-				credentials: 'same-origin',
-			});
-			if (!response.ok) throw new Error(`HTTP ${response.status}`);
-			const data = await response.json();
-
-			// detalle_orden: objeto, fotos_orden: array, test_orden: array
-			const detalle = data.detalle_orden || data.detalle || {};
-			const fotos = Array.isArray(data.fotos_orden) ? data.fotos_orden : (Array.isArray(data.fotos) ? data.fotos : []);
-			const tests = Array.isArray(data.test_orden) ? data.test_orden : (Array.isArray(data.test_orden) ? data.test_orden : []);
-			testsOrdenActual = Array.isArray(tests) ? tests : [];
-			fotosOrdenActual = fotos;
-			ordenActualId = detalle.ID_orden || idOrden;
-			if (modalFotosIdOrden) {
-				modalFotosIdOrden.value = String(ordenActualId || '');
-			}
-			if (String(reparacionOrdenContextId) !== String(ordenActualId || '')) {
-				reparacionOrdenContextId = String(ordenActualId || '');
-				repuestosUsados = [];
-				if (reparacionTextarea) {
-					reparacionTextarea.value = '';
-				}
-				renderRepuestosUsados();
-			}
-
-			// Actualizar el span en el formulario de revisión con el ID de la orden
-			const ordenIdSpan = document.getElementById('orden-id');
-			if (ordenIdSpan) {
-				ordenIdSpan.textContent = String(ordenActualId || '-');
-			}
-
-			// Render principal (todos los campos de detalle)
-			renderDetalleOrden(detalle, 'ver');
-
-			// Render fotos en contenedor específico
-			if (orderPhotos) {
-				if (!fotos || fotos.length === 0) {
-					orderPhotos.innerHTML = '<p class="device-detail__empty">No hay fotos de esta orden.</p>';
-				} else {
-					orderPhotos.innerHTML = '<h3>Fotos</h3><div class="device-photos">' + fotos.map((f, index) => {
-						let src = f.Foto_e || f.foto || f.url || f.path || f.ruta || '';
-						// Normalizar rutas antiguas o relativas guardadas en BD
-						if (src && !src.startsWith('/') && !src.startsWith('http')) {
-							// ejemplo: fotos/orden9/wifi.jpg -> extraer nombre de fichero y generar ruta estática
-							try {
-								if (src.startsWith('fotos/orden')) {
-									const parts = src.split('/');
-									const filename = parts[parts.length - 1];
-									src = `/static/img/evidencias/taller/${ordenActualId}/${filename}`;
-								} else {
-									// por si quedó una ruta relativa cualquiera, convertirla a raíz
-									src = '/' + src;
-								}
-							} catch (e) {
-								console.warn('No se pudo normalizar ruta de foto:', src, e);
-								src = '/' + src;
-							}
-						}
-						const idFoto = f.ID_evidencia_e || f.ID_evidencia || f.id || f.ID || index;
-						const titulo = f.Nombre || f.nombre || f.Nombre_e || `Foto ${index + 1}`;
-						return `
-								<div class="img-wrap" data-saved-photo-id="${escapeHtml(idFoto)}" data-foto-path="${escapeHtml(src)}">
-								<img class="order-photo order-photo--saved" data-saved-photo-id="${escapeHtml(idFoto)}" src="${escapeHtml(src)}" alt="${escapeHtml(titulo)}"/>
-									<button type="button" class="device-photo__remove" data-remove-saved-photo="${escapeHtml(idFoto)}" data-foto-path="${escapeHtml(src)}" aria-label="Eliminar ${escapeHtml(titulo)}">×</button>
-							</div>
-						`;
-					}).join('') + '</div>';
-				}
-			}
-
-			if (modalFotosBody) {
-				modalFotosBody.innerHTML = '<p class="device-detail__empty">Selecciona una o más imágenes para ver aquí solo la vista previa de las nuevas fotos.</p>';
-			}
-
-			// Render tabla de tests
-			if (orderTests) {
-				if (!tests || tests.length === 0) {
-					orderTests.innerHTML = '<p class="device-detail__empty">No hay tests relacionados.</p>';
-				} else {
-					const testsTable = `
-						<table class="table">
-							<thead>
-								<tr>
-									<th>Fecha</th>
-									<th>Número</th>
-									<th>Observaciones</th>
-									<th class="table__actions">Acciones</th>
-								</tr>
-							</thead>
-							<tbody>
-							${tests.map((t) => `
-								<tr>				
-									<td>${escapeHtml(formatFecha(t.Fecha_e ?? t.Fecha ?? t.fecha ?? t.Fecha_test ?? t.fecha_test ?? ''))}</td>
-									<td>${escapeHtml(t.Num_test ?? t.Num_test)}</td>
-									<td>${escapeHtml(t.Observaciones ?? t.Observaciones ?? '')}</td>
-									<td class="table__actions"><button type="button" class="table-action" data-test-id="${escapeHtml(t.ID_test)}">Ver detalle</button></td>
-								</tr>
-							`).join('')}
-							</tbody>
-						</table>`;
-					orderTests.innerHTML = `<h3>Tests</h3>${testsTable}`;
-
-					// delegation listener for test detail buttons
-					orderTests.addEventListener('click', (e) => {
-						const btn = e.target.closest('button[data-test-id]');
-						if (!btn) return;
-						const testId = btn.getAttribute('data-test-id');
-						const testObj = tests.find((x) => String(x.ID_test) === String(testId));
-						if (!testObj) return;
-						const modalBody = document.getElementById('modal-test-body');
-						if (modalBody) {
-								// Renderizar campos con estilo similar a los checkbox del formulario
-								const isBooleanLike = (val) => {
-									if (val === null || val === undefined) return false;
-									const s = String(val).trim().toLowerCase();
-									return ['1', 'true', 'si', 'sí', 'on', 'yes'].includes(s) || s === '0' || s === 'false' ? (s === '1' || ['1','true','si','sí','on','yes'].includes(s)) : false;
-								};
-
-								const keyToLabel = (k) => {
-									const map = {
-										'Num_test': 'Número',
-										'Observaciones': 'Observaciones',
-										'Fecha_e': 'Fecha',
-										'Fecha': 'Fecha',
-										'Fecha_test': 'Fecha',
-									};
-									return map[k] || k;
-								};
-
-								// Encabezado: Número, Fecha y Hora (mostrar arriba de los checks)
-								const numVal = testObj?.Num_test ?? testObj?.Num ?? testObj?.num_test ?? '';
-								const fechaRaw = testObj?.Fecha_e ?? testObj?.Fecha ?? testObj?.fecha ?? testObj?.Fecha_test ?? testObj?.fecha_test ?? '';
-								const horaVal = formatHora(fechaRaw);
-								const headerHtml = `<div class="modal-test-subtitle" style="margin-bottom:.25rem;font-weight:600;">Información de test</div><div class="modal-test-header" style="display:flex;gap:1rem;align-items:center;margin-bottom:.5rem;"><div><strong>Número:</strong> ${escapeHtml(String(numVal ?? ''))}</div><div><strong>Fecha:</strong> ${escapeHtml(formatFecha(fechaRaw))}</div><div><strong>Hora:</strong> ${escapeHtml(horaVal)}</div></div>`;
-
-								const entries = Object.entries(testObj || {});
-								const checkboxParts = [];
-								let observationText = '';
-
-								entries.forEach(([k, v]) => {
-									const label = keyToLabel(k);
-									if (k.toLowerCase().includes('observ') || String(k).toLowerCase() === 'observaciones') {
-										observationText = String(v || '');
-										return;
-									}
-
-									if (isBooleanLike(v) || /^(btn_|btn|cornetas|mica|lcd|tactil|wifi|puerto|cam_|flash|microfono|btn_sil|auricular|senal|sensor|face|bluetooth)/i.test(k)) {
-										const checked = isBooleanLike(v);
-										checkboxParts.push(`<label class="checkbox-card"><input type="checkbox" disabled ${checked ? 'checked' : ''}><span class="checkbox-text">${escapeHtml(label)}</span></label>`);
-										return;
-									}
-
-									// Ignorar campos no-booleanos (no los añadimos debajo de los checks)
-								});
-
-								let html = headerHtml;
-								if (checkboxParts.length) {
-									html += `<div class="modal-checkbox-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;align-items:start;">${checkboxParts.join('')}</div>`;
-								}
-
-								// Observaciones al final como campo de texto (readonly)
-								html += `<label class="field field--full" style="margin-top:.5rem;"><span>Observaciones</span><textarea class="field__input" rows="4" readonly style="width:100%;margin-top:.25rem;">${escapeHtml(observationText)}</textarea></label>`;
-
-								modalBody.innerHTML = html;
-						}
-						if (window.UiModal && typeof window.UiModal.openById === 'function') {
-							window.UiModal.openById('modal-test-detail');
-						}
-					});
-				}
-
-				actualizarNumeroSiguienteTest();
-
-			// Render revisión / reparación / costo debajo de tests
-			if (orderPeople) {
-				// Normaliza cadenas para buscar claves con/ sin acentos, guiones, espacios y mayúsculas
-				const normalize = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[_\s-]/g, '');
-
-				const getVal = (obj, ...keys) => {
-					if (!obj) return '';
-					// búsqueda directa por claves listadas
-					for (const k of keys) {
-						if (k in obj && obj[k] !== null && obj[k] !== undefined && String(obj[k]).trim() !== '') return obj[k];
-					}
-
-					// fallback: buscar por clave normalizada
-					const objKeys = Object.keys(obj);
-					for (const k of keys) {
-						const nk = normalize(k);
-						const found = objKeys.find(ok => normalize(ok) === nk);
-						if (found) {
-							const v = obj[found];
-							if (v !== null && v !== undefined && String(v).trim() !== '') return v;
-						}
-					}
-					return '';
-				};
-
-				const revisionVal = getVal(detalle, 'Revision', 'Revision_o', 'Revisión', 'revison', 'revisison');
-				const reparacionVal = getVal(detalle, 'Reparacion', 'Reparacion_o', 'Reparación', 'reparaciondesc', 'reparacion_desc');
-				const costoVal = getVal(detalle, 'Costo_reparacion', 'Costo', 'Costo_repar', 'Costo reparación');
-
-				if (!revisionVal && !reparacionVal && !costoVal) {
-					orderPeople.innerHTML = '<p class="device-detail__empty">No hay información de revisión o reparación.</p>';
-				} else {
-					orderPeople.innerHTML = `
-						${reparacionVal ? `<div class="device-detail__item"><span class="device-detail__label">Reparación</span><strong class="device-detail__value">${escapeHtml(reparacionVal)}</strong></div>` : ''}
-						${costoVal ? `<div class="device-detail__item"><span class="device-detail__label">Costo de reparación</span><strong class="device-detail__value">${escapeHtml(costoVal)}</strong></div>` : ''}
-						<div class="device-detail__actions" style="margin-top:1rem; display:flex; gap:.5rem;">
-							<button type="button" class="form-btn form-btn--ghost" data-accion-detail="revisar">Revisar</button>
-							<button type="button" class="form-btn form-btn--primary" data-accion-detail="reparar">Reparar</button>
-						</div>
-					`;
-				}
-			}
-			}
-
-			// show view requested by caller
-			activateView(desiredView);
-		} catch (error) {
-			console.error('Error cargando detalle de orden:', error);
-			if (detalleDispositivo) {
-				detalleDispositivo.innerHTML = '<p class="device-detail__empty">No se pudo cargar el detalle de la orden.</p>';
-			}
-			actualizarEncabezadoReparacion('');
-			renderRepuestosUsados();
-		}
-	};
-
-	const activateView = (targetClass) => {
-		const breadcrumbLabels = {
-			'vista-2': 'Informacion de la orden',
-			'vista-3': 'Revision',
-			'vista-4': 'Reparacion',
-			'vista-5': 'Reparaciones asignadas',
-		};
-		const showBreadcrumbSuffix = ['vista-2', 'vista-3', 'vista-4', 'vista-5'].includes(targetClass);
-
-		viewPanels.forEach((panel) => {
-			panel.hidden = !panel.classList.contains(targetClass);
-		});
-
-		if (breadcrumbSeparator) {
-			breadcrumbSeparator.hidden = !showBreadcrumbSuffix;
-		}
-
-		if (breadcrumbSection) {
-			breadcrumbSection.hidden = !showBreadcrumbSuffix;
-			breadcrumbSection.textContent = showBreadcrumbSuffix ? breadcrumbLabels[targetClass] || '' : '';
-		}
-
-		viewButtons.forEach((button) => {
-			const isActive = button.dataset.viewTarget === targetClass;
-			button.classList.toggle("is-active", isActive);
-			button.setAttribute("aria-pressed", String(isActive));
-		});
-	};
-
-	viewButtons.forEach((button) => {
-		button.addEventListener("click", () => {
-			activateView(button.dataset.viewTarget);
-		});
-	});
-
-	if (tablaOrdenes) {
-		tablaOrdenes.addEventListener("click", (event) => {
-			const button = event.target.closest("button[data-accion]");
-			if (!button) {
-				return;
-			}
-
-			manejarAccionOrden(button.dataset.accion, button.dataset.id);
-		});
-	}
-
-	if (tablaReparacionesAsignadas) {
-		tablaReparacionesAsignadas.addEventListener("click", (event) => {
-			const button = event.target.closest("button[data-accion]");
-			if (!button) return;
-
-			const accion = button.dataset.accion;
-			const id = button.dataset.id;
-
-			if (accion === 'ver') {
-				cargarDetalleOrden(id, 'vista-2');
-				return;
-			}
-
-			if (accion === 'tomar') {
-				tomarOrden(id);
-				return;
-			}
-
-			if (accion === 'revisar') {
-				cargarDetalleOrden(id, 'vista-3');
-				return;
-			}
-
-			if (accion === 'reparar') {
-				cargarDetalleOrden(id, 'vista-4');
-				return;
-			}
-
-			if (accion === 'liberar') {
-				liberarOrden(id);
-				return;
-			}
-		});
-	}
-
-	if (btnRepuestosEquipo) {
-		btnRepuestosEquipo.addEventListener('click', () => abrirModalRepuestos('equipo'));
-	}
-
-	if (btnRepuestosInventario) {
-		btnRepuestosInventario.addEventListener('click', () => abrirModalRepuestos('inventario'));
-	}
-
-	if (repuestosUsadosList) {
-		repuestosUsadosList.addEventListener('click', (event) => {
-			const button = event.target.closest('button[data-remove-repuesto]');
-			if (!button) return;
-			const repuestoId = button.getAttribute('data-remove-repuesto');
-			repuestosUsados = repuestosUsados
-				.map((item) => item.id === repuestoId ? { ...item, cantidad: item.cantidad - 1 } : item)
-				.filter((item) => item.cantidad > 0);
-			renderRepuestosUsados();
-		});
-	}
-
-	const btnGuardarReparacion = document.getElementById('btn-guardar-reparacion');
-	if (btnGuardarReparacion) {
-		btnGuardarReparacion.addEventListener('click', async () => {
-			const idOrden = String(reparacionOrdenContextId || ordenActualId || '').trim();
-			if (!idOrden) {
-				alert('No hay una orden seleccionada para guardar la reparación.');
-				return;
-			}
-
-			const reparacionTexto = String(reparacionTextarea?.value || '').trim();
-			const id_productos = repuestosUsados.map((item) => Number(item.id)).filter((id) => Number.isFinite(id) && id > 0);
-			const cantidades = repuestosUsados
-				.map((item) => Number(item.cantidad))
-				.filter((cantidad) => Number.isFinite(cantidad) && cantidad > 0);
-
-			if (id_productos.length !== cantidades.length) {
-				alert('Los repuestos seleccionados no son válidos.');
-				return;
-			}
-
-			try {
-				btnGuardarReparacion.disabled = true;
-				btnGuardarReparacion.textContent = 'Guardando...';
-
-				const response = await fetch(`/api/taller/reparacion/${encodeURIComponent(idOrden)}`, {
-					method: 'POST',
-					cache: 'no-store',
-					headers: {
-						'Content-Type': 'application/json',
-						'Accept': 'application/json',
-						...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
-					},
-					credentials: 'same-origin',
-					body: JSON.stringify({
-						id_productos,
-						cantidades,
-						id_empleado: 1004,
-						reparacion: reparacionTexto,
-					}),
-				});
-
-				if (!response.ok) {
-					let message = `HTTP ${response.status}`;
-					try {
-						const errorData = await response.json();
-						message = errorData?.message || message;
-					} catch (_) {
-						const text = await response.text();
-						if (text) message = text;
-					}
-					throw new Error(message);
-				}
-
-				const result = await response.json().catch(() => ({}));
-				if (!result.ok) {
-					throw new Error(result.message || 'No se pudo registrar la reparación.');
-				}
-
-				alert('Reparación guardada correctamente.');
-				repuestosUsados = [];
-				if (reparacionTextarea) {
-					reparacionTextarea.value = '';
-				}
-				renderRepuestosUsados();
-				await cargarDetalleOrden(idOrden, 'vista-4');
-			} catch (error) {
-				console.error('Error guardando la reparación:', error);
-				alert('No se pudo guardar la reparación.');
-			} finally {
-				btnGuardarReparacion.disabled = false;
-				btnGuardarReparacion.textContent = 'Guardar reparación';
-			}
-		});
-	}
-
-	if (modalRepuestosBody) {
-		modalRepuestosBody.addEventListener('click', (event) => {
-			const row = event.target.closest('tr[data-repuesto-id]');
-			if (!row) return;
-			const repuesto = {
-				id: row.getAttribute('data-repuesto-id') || '',
-				nombre: row.getAttribute('data-repuesto-nombre') || '',
-				tipo: row.getAttribute('data-repuesto-tipo') || repuestosModalFuente,
-				stock: row.getAttribute('data-repuesto-stock') || '-',
-			};
-			agregarRepuestoUsado(repuesto);
-		});
-	}
-
-	renderRepuestosUsados();
-
-	// Delegation listener para botones dentro del detalle de orden (Revisar / Reparar)
-	if (orderPeople) {
-		orderPeople.addEventListener('click', (e) => {
-			const btn = e.target.closest('button[data-accion-detail]');
-			if (!btn) return;
-			const accion = btn.getAttribute('data-accion-detail');
-			// obtener id de la orden desde el detalle cargado en pantalla
-			const currentId = (window.currentOrderId) ? window.currentOrderId : (document.getElementById('order-info')?.querySelector('.device-detail__value')?.textContent || '');
-			if (accion === 'revisar') {
-				activateView('vista-3');
-				return;
-			}
-			if (accion === 'reparar') {
-				activateView('vista-4');
-				return;
-			}
-		});
-	}
-
-	const renderPreviewFotos = (files) => {
-		if (!modalFotosBody) return;
-		const lista = Array.isArray(files) ? files : Array.from(files || []);
-		if (lista.length === 0) {
-			modalFotosBody.innerHTML = '<p class="device-detail__empty">Selecciona una o más imágenes para ver la vista previa.</p>';
-			return;
-		}
-
-		modalFotosBody.innerHTML = `
-			<div class="device-photos">
-				${lista.map((file, index) => `
-					<div class="img-wrap" data-preview-index="${index}">
-						<img class="preview-photo" data-preview-index="${index}" data-remove-photo="${index}" alt="${escapeHtml(file.name)}" />
-						<button type="button" class="device-photo__remove" data-remove-photo="${index}" aria-label="Eliminar ${escapeHtml(file.name)}">×</button>
-					</div>
-				`).join('')}
-			</div>
-		`;
-
-		lista.forEach((file, index) => {
-			const wrapper = modalFotosBody.querySelector(`[data-preview-index="${index}"]`);
-			if (!wrapper) return;
-			const imgEl = wrapper.querySelector('img');
-
-			const reader = new FileReader();
-			reader.onload = () => {
-				imgEl.src = reader.result;
-				imgEl.alt = escapeHtml(file.name);
-			};
-			reader.onerror = () => {
-				wrapper.innerHTML = `
-					<div class="device-detail__empty">No se pudo cargar la vista previa.</div>
-				`;
-			};
-			reader.readAsDataURL(file);
-		});
-	};
-
-	const syncInputFotos = () => {
-		if (!inputFotosOrden) {
-			return;
-		}
-
-		const dataTransfer = new DataTransfer();
-		fotosSeleccionadas.forEach((file) => dataTransfer.items.add(file));
-		inputFotosOrden.files = dataTransfer.files;
-	};
-
-	const setFotosSeleccionadas = (files) => {
-		fotosSeleccionadas = Array.from(files || []).filter((file) => file && file.type && file.type.startsWith('image/'));
-		syncInputFotos();
-		renderPreviewFotos(fotosSeleccionadas);
-	};
-
-	const eliminarFotoSeleccionada = (index) => {
-		if (index < 0 || index >= fotosSeleccionadas.length) {
-			return;
-		}
-
-		fotosSeleccionadas.splice(index, 1);
-		syncInputFotos();
-		renderPreviewFotos(fotosSeleccionadas);
-	};
-
-	if (inputFotosOrden) {
-		inputFotosOrden.addEventListener('change', () => {
-			setFotosSeleccionadas(inputFotosOrden.files);
-		});
-	}
-
-// Manejo del formulario de revisión: construir JSON con los campos requeridos y enviarlos
-const serviceForm = document.querySelector('.service-form');
-if (serviceForm) {
-	serviceForm.addEventListener('submit', async (e) => {
-		e.preventDefault();
-		if (!ordenActualId) {
-			console.error('No hay orden seleccionada');
-			return;
-		}
-
-		// Campos en el mismo orden que el backend
-		const campos = [
-			'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
-			'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
-			'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
-		];
-
-		const payload = {};
-		const findField = (baseName) => {
-			const candidates = [baseName, baseName.toLowerCase(), baseName.charAt(0).toLowerCase() + baseName.slice(1)];
-			for (const name of candidates) {
-				const el = serviceForm.querySelector(`[name="${name}"]`);
-				if (el) return el;
-			}
-			return null;
-		};
-
-		for (const campo of campos) {
-			if (campo === 'ID_em') continue; // servidor llena este campo
-			if (campo === 'Num_test') {
-				const numInput = document.getElementById('input-num-test');
-				payload['Num_test'] = numInput ? Number(numInput.value) || 1 : 1;
-				continue;
-			}
-
-			const el = findField(campo);
-			if (el) {
-				if (el.type === 'checkbox') {
-					payload[campo] = el.checked ? 1 : 0;
-				} else if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-					const val = el.value;
-					if (campo.toLowerCase() === 'observaciones') payload[campo] = String(val || '');
-					else payload[campo] = val === '' ? null : Number(val);
-				} else {
-					payload[campo] = null;
-				}
-			} else {
-				// campos no presentes en HTML -> enviar 0 excepto Observaciones -> ''
-				payload[campo] = (campo.toLowerCase() === 'observaciones') ? '' : 0;
-			}
-		}
-
-		// Extraer el costo del formulario para enviarlo al backend
-		const inputCosto = serviceForm.querySelector('[name="Costo"]');
-		if (inputCosto) {
-			payload['Costo'] = inputCosto.value;
-		}
-
-		try {
-			const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(ordenActualId)}/test`, {
-				method: 'POST',
-				cache: 'no-store',
-				headers: {
-					'Content-Type': 'application/json',
-					...(csrfToken ? { 'X-CSRFToken': csrfToken, 'X-CSRF-Token': csrfToken } : {}),
-				},
-				credentials: 'same-origin',
-				body: JSON.stringify(payload),
-			});
-
-			if (!response.ok) {
-				const txt = await response.text();
-				console.error('Error registrando test:', response.status, txt);
-				alert('Error al guardar la revisión.');
-				return;
-			}
-
-			const result = await response.json();
-			if (result && result.ok) {
-				alert('Revisión guardada correctamente.');
-				// recargar detalle para actualizar lista de tests
-				await cargarDetalleOrden(ordenActualId, 'vista-2');
-			} else {
-				console.error('Respuesta inesperada:', result);
-				alert('No se pudo guardar la revisión.');
-			}
-		} catch (err) {
-			console.error('Exception registrando test:', err);
-			alert('Error al guardar la revisión.');
-		}
-	});
+// ============================================
+// 1. CONSTANTES Y CONFIGURACIÓN
+// ============================================
+const CONFIG = {
+    API: {
+        ORDENES: '/api/taller/ordenes',
+        REPARACIONES_ASIGNADAS: '/api/taller/reparaciones-asignadas',
+        CONSULTAR_ORDEN: '/api/taller/consultar-ordene',
+        CONSULTAR_TEST: '/api/taller/consultar-test',
+        GUARDAR_REVISION: '/api/taller/guardar-revision'
+    },
+    VISTAS: {
+        ORDENES: 'vista-1',
+        REPARACIONES_ASIGNADAS: 'vista-5'
+    }
+};
+
+// ============================================
+// 2. UTILIDADES
+// ============================================
+const Utils = {
+    getCsrfToken() {
+        const input = document.querySelector("input[name='_csrf_token']");
+        return input ? input.value : "";
+    },
+
+    getAccessToken() {
+        return (
+            localStorage.getItem("access_token") ||
+            localStorage.getItem("token") ||
+            sessionStorage.getItem("access_token") ||
+            sessionStorage.getItem("token") ||
+            ""
+        );
+    },
+
+    async fetchJson(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set("Accept", "application/json");
+
+        if (options.body && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
+
+        const csrf = this.getCsrfToken();
+        if (csrf) {
+            headers.set("X-CSRFToken", csrf);
+            headers.set("X-CSRF-Token", csrf);
+        }
+
+        const token = this.getAccessToken();
+        if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
+
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            ...options,
+            headers,
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+        const payload = isJson ? await response.json() : await response.text();
+
+        if (!response.ok) {
+            const msg =
+                (isJson && payload && (payload.message || payload.error)) ||
+                String(payload || response.statusText || "Error en la solicitud");
+            throw new Error(msg);
+        }
+
+        return payload;
+    },
+
+    escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    },
+
+    showMessage(message, isError = false) {
+        if (!message) return;
+        console.info(message);
+        // Aquí puedes implementar un toast o alerta visual
+        if (isError) {
+            alert(`❌ Error: ${message}`);
+        } else {
+            alert(`✅ ${message}`);
+        }
+    },
+
+    formatDate(dateValue) {
+        if (!dateValue) return '-';
+        
+        try {
+            if (dateValue instanceof Date) {
+                const day = String(dateValue.getDate()).padStart(2, '0');
+                const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+                const year = dateValue.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            
+            let dateStr = String(dateValue);
+            
+            const rfcMatch = dateStr.match(/(\d{2})\s+(\w+)\s+(\d{4})/);
+            if (rfcMatch) {
+                const day = rfcMatch[1];
+                const monthName = rfcMatch[2];
+                const year = rfcMatch[3];
+                
+                const meses = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                };
+                const month = meses[monthName] || '01';
+                return `${day}/${month}/${year}`;
+            }
+            
+            if (dateStr.includes(' ') || dateStr.includes('T')) {
+                dateStr = dateStr.split(/[ T]/)[0];
+            }
+            
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+                const [year, month, day] = dateStr.split('-');
+                return `${day}/${month}/${year}`;
+            }
+            
+            if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+                return dateStr;
+            }
+            
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            
+            return '-';
+        } catch (e) {
+            console.error('Error formateando fecha:', e, dateValue);
+            return '-';
+        }
+    },
+
+    getEstadoClase(estado) {
+        const estadoStr = String(estado || '').toLowerCase();
+        const estados = {
+            'pendiente': 'estado-pendiente',
+            'en revisión': 'estado-revision',
+            'en reparación': 'estado-reparacion',
+            'completado': 'estado-completado',
+            'entregado': 'estado-entregado',
+            'asignada': 'estado-asignada'
+        };
+        return estados[estadoStr] || 'estado-default';
+    },
+
+    getEstadoTexto(estado) {
+        if (!estado) return 'Desconocido';
+        return estado;
+    },
+
+    obtenerIdEmpleadoActual() {
+        // MÉTODO 1: Desde localStorage/sessionStorage (si guardas el usuario al hacer login)
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                return user.id_empleado || user.ID_empleado || user.empleado_id || user.ID_empleado;
+            } catch(e) {}
+        }
+        
+        // MÉTODO 2: Desde el token JWT (decodificarlo)
+        const token = this.getAccessToken();
+        if (token) {
+            try {
+                // Decodificar JWT (solo la parte del payload)
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1]));
+                    return payload.id_empleado || payload.ID_empleado || payload.empleado_id;
+                }
+            } catch(e) {}
+        }
+        
+        // MÉTODO 3: Desde un campo oculto en el HTML
+        const campoEmpleado = document.getElementById('id_empleado_actual');
+        if (campoEmpleado && campoEmpleado.value) {
+            return campoEmpleado.value;
+        }
+        
+        // MÉTODO 4: Desde un meta tag
+        const metaEmpleado = document.querySelector('meta[name="empleado-id"]');
+        if (metaEmpleado && metaEmpleado.getAttribute('content')) {
+            return metaEmpleado.getAttribute('content');
+        }
+        
+        // Valor por defecto para pruebas (NO USAR EN PRODUCCIÓN)
+        console.warn('No se pudo obtener el ID del empleado, usando valor por defecto 32014004');
+        return 32014004;
+    }
+};
+
+// ============================================
+// 3. MANEJADORES DE VISTAS (TABS)
+// ============================================
+
+function activateView(targetClass) {
+    console.log('Activando vista:', targetClass);
+    
+    const breadcrumbLabels = {
+        'vista-1': 'Ordenes de servicio',
+        'vista-2': 'Informacion de la orden',
+        'vista-3': 'Revision',
+        'vista-4': 'Reparacion',
+        'vista-5': 'Reparaciones asignadas',
+    };
+    
+    const showBreadcrumbSuffix = ['vista-2', 'vista-3', 'vista-4', 'vista-5'].includes(targetClass);
+    
+    const viewPanels = document.querySelectorAll(".content.vista-1, .content.vista-2, .content.vista-3, .content.vista-4, .content.vista-5");
+    viewPanels.forEach((panel) => {
+        panel.hidden = !panel.classList.contains(targetClass);
+    });
+    
+    const breadcrumbSeparator = document.getElementById('breadcrumb-separator');
+    const breadcrumbSection = document.getElementById('breadcrumb-section');
+    
+    if (breadcrumbSeparator) {
+        breadcrumbSeparator.style.display = showBreadcrumbSuffix ? 'inline' : 'none';
+    }
+    
+    if (breadcrumbSection) {
+        breadcrumbSection.style.display = showBreadcrumbSuffix ? 'inline' : 'none';
+        breadcrumbSection.textContent = showBreadcrumbSuffix ? (breadcrumbLabels[targetClass] || '') : '';
+    }
+    
+    const allButtons = document.querySelectorAll('.vista-switcher__btn');
+    allButtons.forEach((button) => {
+        const isActive = button.getAttribute('data-view-target') === targetClass;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
+    
+    if (targetClass === 'vista-1') {
+        cargarOrdenesServicio();
+    } else if (targetClass === 'vista-5') {
+        cargarReparacionesAsignadas();
+    }
 }
 
-	if (fotosDropzone && inputFotosOrden) {
-		const setDropzoneActive = (isActive) => {
-			fotosDropzone.classList.toggle('is-dragover', isActive);
-		};
+function inicializarCambioVistas() {
+    const viewButtons = document.querySelectorAll("[data-view-target]");
+    
+    console.log('Botones de vista encontrados:', viewButtons.length);
+    
+    viewButtons.forEach((button) => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const targetView = newButton.getAttribute("data-view-target");
+            console.log('Click en botón, vista target:', targetView);
+            
+            if (targetView) {
+                activateView(targetView);
+            }
+        });
+    });
+}
 
-		fotosDropzone.addEventListener('dragenter', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			setDropzoneActive(true);
-		});
+// ============================================
+// 4. MANEJADORES DE TABLA (ÓRDENES)
+// ============================================
+function renderTablaOrdenes(ordenes) {
+    const tbody = document.getElementById("tabla-ordenes-servicio");
+    if (!tbody) {
+        console.error('No se encontró el elemento tabla-ordenes-servicio');
+        return;
+    }
 
-		fotosDropzone.addEventListener('dragover', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			setDropzoneActive(true);
-		});
+    if (!ordenes || !ordenes.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center;">No hay órdenes de servicio para mostrar.</td>
+            </tr>
+        `;
+        return;
+    }
 
-		fotosDropzone.addEventListener('dragleave', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			if (event.target === fotosDropzone) {
-				setDropzoneActive(false);
-			}
-		});
+    console.log('Órdenes a renderizar:', ordenes);
 
-		fotosDropzone.addEventListener('drop', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			setDropzoneActive(false);
+    tbody.innerHTML = ordenes
+        .map((raw) => {
+            const idOrden = Utils.escapeHtml(raw.id_orden);
+            const estado = Utils.escapeHtml(raw.estado);
+            const estadoClase = Utils.getEstadoClase(raw.estado);
+            const idCliente = Utils.escapeHtml(raw.id_cliente);
+            const nombreCliente = Utils.escapeHtml(raw.nombre_cliente);
+            const modelo = Utils.escapeHtml(raw.modelo);
+            const descripcion = Utils.escapeHtml(raw.descripcion || '-');
+            const fechaIngreso = Utils.formatDate(raw.fecha_e);
 
-			const files = Array.from(event.dataTransfer?.files || []).filter((file) => file.type && file.type.startsWith('image/'));
-			if (files.length === 0) {
-				return;
-			}
+            return `
+                <tr>
+                    <td data-label="ID orden">${idOrden}</td>
+                    <td data-label="Estado"><span class="estado-badge ${estadoClase}">${estado}</span></td>
+                    <td data-label="ID cliente">${idCliente}</td>
+                    <td data-label="Nombre cliente">${nombreCliente}</td>
+                    <td data-label="Modelo">${modelo}</td>
+                    <td data-label="Descripción">${descripcion}</td>
+                    <td data-label="Fecha ingreso">${fechaIngreso}</td>
+                    <td class="table__actions" data-label="Acciones">
+                        <div class="row-actions">
+                            <button type="button" class="table-action" data-accion="ver" data-id="${idOrden}">Ver detalle</button>
+                            <button type="button" class="table-action" data-accion="cambiar-estado" data-id="${idOrden}" data-estado="${estado}">Cambiar estado</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        })
+        .join("");
+    
+    console.log('Tabla de órdenes renderizada correctamente');
+}
 
-			const dataTransfer = new DataTransfer();
-			files.forEach((file) => dataTransfer.items.add(file));
-			setFotosSeleccionadas(dataTransfer.files);
-		});
-	}
+// ============================================
+// 5. MANEJADORES DE TABLA (REPARACIONES ASIGNADAS)
+// ============================================
+function renderTablaReparaciones(reparaciones) {
+    const tbody = document.getElementById("tabla-reparaciones-asignadas");
+    if (!tbody) {
+        console.error('No se encontró el elemento tabla-reparaciones-asignadas');
+        return;
+    }
 
-	if (modalFotosBody) {
-		modalFotosBody.addEventListener('click', (event) => {
-			const targetSaved = event.target.closest('[data-remove-saved-photo]');
-			if (targetSaved) {
-				const idFoto = resolverIdFotoGuardada(targetSaved);
-				if (!idFoto) {
-					console.warn('No se pudo resolver el ID real de la foto guardada para eliminar.');
-					return;
-				}
+    if (!reparaciones || !reparaciones.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center;">Sin reparaciones asignadas por ahora.</td>
+            </tr>
+        `;
+        return;
+    }
 
-				fotoGuardadaPendienteEliminar = {
-					idFoto,
-					card: targetSaved.closest('[data-saved-photo-id]') || targetSaved,
-				};
-				if (window.UiModal && typeof window.UiModal.openById === 'function') {
-					window.UiModal.openById('modal-foto-eliminar-guardada');
-				}
-				return;
-			}
+    console.log('Reparaciones a renderizar:', reparaciones);
 
-			const targetPreview = event.target.closest('[data-remove-photo]');
-			if (targetPreview) {
-				const indexPreview = Number(targetPreview.getAttribute('data-remove-photo'));
-				if (!Number.isFinite(indexPreview)) return;
-				eliminarFotoSeleccionada(indexPreview);
-				return;
-			}
+    tbody.innerHTML = reparaciones
+        .map((raw) => {
+            const idOrden = Utils.escapeHtml(raw.id_orden);
+            const modelo = Utils.escapeHtml(raw.modelo);
+            const estado = Utils.escapeHtml(raw.estado);
+            const estadoClase = Utils.getEstadoClase(raw.estado);
 
-			// Abrir vista ampliada al hacer click en la imagen de la vista previa
-			const clickedImg = event.target.closest('img.preview-photo');
-			if (clickedImg) {
-				if (modalPhotoImg) {
-					modalPhotoImg.src = clickedImg.src;
-					modalPhotoImg.alt = clickedImg.alt || '';
-				}
-				if (window.UiModal && typeof window.UiModal.openById === 'function') {
-					window.UiModal.openById('modal-photo-view');
-				}
-			}
-		});
-	}
+            return `
+                <tr>
+                    <td data-label="ID orden">${idOrden}</td>
+                    <td data-label="Modelo">${modelo}</td>
+                    <td class="table__actions" data-label="Acciones">
+                        <div class="row-actions">
+                            <button type="button" class="table-action" data-accion="ver" data-id="${idOrden}">Ver detalle</button>
+                            <button type="button" class="table-action" data-accion="iniciar-reparacion" data-id="${idOrden}">Iniciar reparación</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        })
+        .join("");
+    
+    console.log('Tabla de reparaciones renderizada correctamente');
+}
 
-	if (orderPhotos) {
-		orderPhotos.addEventListener('click', (event) => {
-			const targetSaved = event.target.closest('[data-remove-saved-photo]');
-			if (targetSaved) {
-				const idFoto = resolverIdFotoGuardada(targetSaved);
-				if (!idFoto) {
-					console.warn('No se pudo resolver el ID real de la foto guardada para eliminar.');
-					return;
-				}
+// ============================================
+// 6. CRUD DE ÓRDENES Y REPARACIONES
+// ============================================
+async function cargarOrdenesServicio() {
+    try {
+        console.log('Cargando órdenes de servicio desde:', CONFIG.API.ORDENES);
+        const data = await Utils.fetchJson(CONFIG.API.ORDENES, { method: "GET" });
+        console.log('Respuesta de la API:', data);
+        
+        let ordenes = [];
+        if (Array.isArray(data)) {
+            ordenes = data;
+        } else if (data?.ordenes && Array.isArray(data.ordenes)) {
+            ordenes = data.ordenes;
+        } else if (data?.data && Array.isArray(data.data)) {
+            ordenes = data.data;
+        }
+        
+        console.log('Órdenes procesadas:', ordenes.length);
+        renderTablaOrdenes(ordenes);
+    } catch (error) {
+        console.error('Error cargando órdenes:', error);
+        Utils.showMessage(error.message || "No fue posible cargar las órdenes de servicio.", true);
+        renderTablaOrdenes([]);
+    }
+}
 
-				fotoGuardadaPendienteEliminar = {
-					idFoto,
-					card: targetSaved.closest('[data-saved-photo-id]') || targetSaved,
-				};
+async function cargarReparacionesAsignadas() {
+    try {
+        console.log('Cargando reparaciones asignadas desde:', CONFIG.API.REPARACIONES_ASIGNADAS);
+        
+        const data = await Utils.fetchJson(CONFIG.API.REPARACIONES_ASIGNADAS, { 
+            method: "POST",
+            body: JSON.stringify({})
+        });
+        
+        console.log('Respuesta de la API reparaciones:', data);
+        
+        let reparaciones = [];
+        if (Array.isArray(data)) {
+            reparaciones = data;
+        } else if (data?.reparaciones && Array.isArray(data.reparaciones)) {
+            reparaciones = data.reparaciones;
+        } else if (data?.data && Array.isArray(data.data)) {
+            reparaciones = data.data;
+        }
+        
+        console.log('Reparaciones procesadas:', reparaciones.length);
+        renderTablaReparaciones(reparaciones);
+    } catch (error) {
+        console.error('Error cargando reparaciones:', error);
+        Utils.showMessage(error.message || "No fue posible cargar las reparaciones asignadas.", true);
+        renderTablaReparaciones([]);
+    }
+}
 
-				if (window.UiModal && typeof window.UiModal.openById === 'function') {
-					window.UiModal.openById('modal-foto-eliminar-guardada');
-				}
-				return;
-			}
+async function verDetalleOrden(idOrden) {
+    console.log(`Consultando datos combinados para la orden: ${idOrden}`);
+   
+    
+    const infoContainer = document.getElementById("order-info");
+    const testsContainer = document.getElementById("order-tests");
+    const subtitleContainer = document.getElementById("detalle-orden-subtitle");
+    
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+            method: "POST",
+            body: JSON.stringify({ id_orden: idOrden })
+        });
+        
+        console.log('Datos combinados del backend:', data);
+        
+        const orden = data.orden;
+        const listaTests = data.tests || [];
+        
+        let ultimoNumeroTest = 0;
+        if (listaTests.length > 0) {
+            ultimoNumeroTest = Math.max(...listaTests.map(t => parseInt(t.Numero_test) || 0));
+        }
+        const proximoNumeroTest = ultimoNumeroTest + 1;
 
-			// Si se clickeó la imagen misma, abrir el modal para verla ampliada
-			const clickedImg = event.target.closest('img.order-photo');
-			if (clickedImg) {
-				if (modalPhotoImg) {
-					modalPhotoImg.src = clickedImg.src;
-					modalPhotoImg.alt = clickedImg.alt || '';
-				}
-				if (window.UiModal && typeof window.UiModal.openById === 'function') {
-					window.UiModal.openById('modal-photo-view');
-				}
-			}
-		});
-	}
+        if (infoContainer && orden) {
+            const estadoOrden = orden.Estado_orden_servicio || orden.Estado || "Desconocido";
+            const estadoClase = Utils.getEstadoClase(estadoOrden);
+            
+            const descripcionTexto = orden.Descripcion_reparacion || "Sin descripción de reparación registrada.";
+            const notaTexto = orden.Nota_orden_servicio || "Ninguna nota adicional.";
+            
+            const estiloCajaUnificada = `
+                background: #f8f9fa; 
+                color: #212529; 
+                padding: 0.85rem; 
+                border-radius: 6px; 
+                border: 1px solid #dee2e6; 
+                font-size: 0.9rem; 
+                line-height: 1.5;
+                min-height: 60px;
+            `;
+            
+            infoContainer.innerHTML = `
+                <div class="detail-group">
+                    <span class="detail-label">ID de la Orden:</span>
+                    <strong class="detail-value">#${Utils.escapeHtml(orden.ID_orden_servicio || idOrden)}</strong>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Estado:</span>
+                    <span class="estado-badge ${estadoClase}">${Utils.escapeHtml(estadoOrden)}</span>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Cliente:</span>
+                    <strong class="detail-value">${Utils.escapeHtml(orden.nombre_cliente || 'No especificado')}</strong>
+                </div>
+                <div class="detail-group">
+                    <span class="detail-label">Modelo del Equipo:</span>
+                    <strong class="detail-value">${Utils.escapeHtml(orden.Modelo || 'No especificado')}</strong>
+                </div>
+                
+                <div class="detail-group field--full" style="grid-column: span 2; margin-top: 1rem;">
+                    <span class="detail-label" style="display: block; margin-bottom: 0.35rem; font-weight: 600; color: #495057;">Descripción de la Reparación:</span>
+                    <div class="detail-value-box" style="${estiloCajaUnificada}">
+                        ${Utils.escapeHtml(descripcionTexto)}
+                    </div>
+                </div>
+                
+                <div class="detail-group field--full" style="grid-column: span 2; margin-top: 1rem;">
+                    <span class="detail-label" style="display: block; margin-bottom: 0.35rem; font-weight: 600; color: #495057;">Nota de la Orden:</span>
+                    <div class="detail-value-box" style="${estiloCajaUnificada}">
+                        ${Utils.escapeHtml(notaTexto)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        const contenedorDetalleDispositivo = document.getElementById("detalle-dispositivo");
+        if (contenedorDetalleDispositivo) {
+            const botonAntiguo = document.getElementById("btn-realizar-revision-container");
+            if (botonAntiguo) botonAntiguo.remove();
 
-	if (btnConfirmDeleteSavedPhoto) {
-		btnConfirmDeleteSavedPhoto.addEventListener('click', async () => {
-			if (!fotoGuardadaPendienteEliminar?.idFoto) return;
+            const divAcciones = document.createElement("div");
+            divAcciones.id = "btn-realizar-revision-container";
+            divAcciones.style.cssText = "display: flex; justify-content: flex-end; width: 100%; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e9ecef;";
+            
+            divAcciones.innerHTML = `
+                <button type="button" 
+                        class="form-btn form-btn--primary" 
+                        id="btn-realizar-revision"
+                        data-id-orden="${idOrden}" 
+                        data-proximo-test="${proximoNumeroTest}"
+                        style="padding: 0.7rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 8px; min-width: 220px; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Realizar revisión
+                </button>
+            `;
+            
+            contenedorDetalleDispositivo.appendChild(divAcciones);
 
-			const btn = btnConfirmDeleteSavedPhoto;
-			const originalText = btn.textContent;
-			try {
-				btn.disabled = true;
-				btn.textContent = 'Eliminando...';
-				const response = await fetch(`/api/taller/fotos/${encodeURIComponent(fotoGuardadaPendienteEliminar.idFoto)}`, {
-					method: 'DELETE',
-					cache: 'no-store',
-					headers: {
-						'Accept': 'application/json',
-						...(csrfToken ? { 'X-CSRFToken': csrfToken, 'X-CSRF-Token': csrfToken } : {}),
-					},
-					credentials: 'same-origin',
-				});
+            document.getElementById("btn-realizar-revision").addEventListener("click", (e) => {
+                const btn = e.currentTarget;
+                const id = btn.getAttribute("data-id-orden");
+                const numTest = btn.getAttribute("data-proximo-test");
+                ejecutarAccionIrARevision(id, numTest);
+            });
+        }
+        
+        if (testsContainer) {
+            if (listaTests.length === 0) {
+                testsContainer.innerHTML = `
+                    <h3 class="card__subtitle" style="margin-top: 2rem; margin-bottom: 0.5rem;">Tests Realizados</h3>
+                    <p class="device-detail__empty">Esta orden no tiene ningún test registrado todavía.</p>
+                `;
+            } else {
+                const filasHtml = listaTests.map((test) => {
+                    const numTest = Utils.escapeHtml(test.Numero_test);
+                    const cantidad = Utils.escapeHtml(test.cantidad);
+                    
+                    return `
+                        <tr>
+                            <td data-label="Número de Test" style="font-weight: 600; color: #495057;">Test #${numTest}</td>
+                            <td data-label="Cantidad de Interacciones">${cantidad}</td>
+                            <td data-label="Acción" class="table__actions">
+                                <button type="button" class="table-action" data-accion="ver-test" data-id-test="${numTest}" data-id-orden="${idOrden}">Ver</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
 
-				if (!response.ok) {
-					let text = '';
-					try { text = (await response.json()).message || await response.text(); } catch (_) { text = await response.text(); }
-					throw new Error(`HTTP ${response.status} - ${text}`);
-				}
+                testsContainer.innerHTML = `
+                    <h3 class="card__subtitle" style="margin-top: 2rem; margin-bottom: 0.75rem; font-weight: 600; color: #212529;">Tests</h3>
+                    <div class="table-wrap" style="box-shadow: none; border: 1px solid #dee2e6; border-radius: 6px;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Número de test</th>
+                                    <th>Cantidad</th>
+                                    <th class="table__actions">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filasHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
 
-				const data = await response.json().catch(() => ({}));
-				// eliminar del DOM
-				fotoGuardadaPendienteEliminar.card?.remove();
-				await cargarDetalleOrden(ordenActualId, 'vista-2');
-				if (!data.ok) console.warn('Respuesta eliminación:', data);
-			} catch (error) {
-				console.error('Error eliminando foto guardada:', error);
-				alert('No se pudo eliminar la imagen. Revisa la consola para más detalles.');
-			} finally {
-				fotoGuardadaPendienteEliminar = null;
-				btn.disabled = false;
-				btn.textContent = originalText;
-				if (window.UiModal && typeof window.UiModal.closeById === 'function') {
-					window.UiModal.closeById('modal-foto-eliminar-guardada');
-				}
-			}
-		});
-	}
+        if (subtitleContainer) {
+            subtitleContainer.textContent = `Visualizando la información completa de la orden #${idOrden}`;
+        }
+        
+        activateView('vista-2');
 
-	if (formFotosOrden) {
-		formFotosOrden.addEventListener('submit', async (event) => {
-			event.preventDefault();
-			const files = inputFotosOrden?.files;
-			if (!files || files.length === 0) return;
-			const idOrden = modalFotosIdOrden?.value || ordenActualId;
-			if (!idOrden) return;
+    } catch (error) {
+        console.error('Error al consultar la orden y tests en el servidor:', error);
+        Utils.showMessage(error.message || "No se pudo obtener la información completa.", true);
+    }
+}
 
-			const formData = new FormData();
-			Array.from(files).forEach((file) => formData.append('fotos', file));
+async function verDetallesDeUnTest(idOrden, numeroTest) {
+    const modalBody = document.getElementById("modal-test-body");
+    if (!modalBody) return;
 
-			try {
-				const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(idOrden)}/fotos`, {
-					method: 'POST',
-					body: formData,
-					credentials: 'same-origin',
-					headers: {
-						...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
-					},
-				});
-				if (!response.ok) throw new Error(`HTTP ${response.status}`);
-				inputFotosOrden.value = '';
-				await cargarDetalleOrden(idOrden, 'vista-2');
-				if (window.UiModal && typeof window.UiModal.closeById === 'function') {
-					window.UiModal.closeById('modal-fotos-registrar');
-				}
-			} catch (error) {
-				console.error('Error registrando fotos:', error);
-			}
-		});
-	}
+    modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem;">Cargando componentes del test...</p>`;
+    
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-test-detail');
+    }
 
-	activateView("vista-1");
-	cargarOrdenes();
-	cargarReparacionesAsignadas();
+    try {
+        const respuesta = await Utils.fetchJson(CONFIG.API.CONSULTAR_TEST, {
+            method: "POST",
+            body: JSON.stringify({ 
+                id_orden: idOrden, 
+                numero_test: numeroTest 
+            })
+        });
+
+        console.log("Datos del test recibidos:", respuesta);
+
+        const itemsTest = Array.isArray(respuesta) ? respuesta : [respuesta];
+
+        if (!itemsTest || itemsTest.length === 0 || !itemsTest[0]) {
+            modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem; color: #6c757d;">No se encontraron registros de componentes para este test.</p>`;
+            return;
+        }
+
+        modalBody.innerHTML = itemsTest.map((item) => {
+            const nombreComponente = item.test || "Componente Desconocido";
+            const resultado = item.Resultado_test || "Sin especificar";
+            
+            const esLargo = resultado.length > 30;
+            
+            const estiloDinamico = esLargo 
+                ? `grid-column: span 4 !important; order: 999 !important; background: #f8f9fa; border-left: 4px solid #28a745;` 
+                : `background: #ffffff; order: 0;`;
+
+            return `
+                <div class="test-item-card" style="${estiloDinamico}">
+                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 700; letter-spacing: 0.5px;">
+                        ${Utils.escapeHtml(nombreComponente)}
+                    </span>
+                    <strong style="display: block; font-size: 0.95rem; color: #212529; margin-top: 0.25rem; word-break: break-word;">
+                        ${Utils.escapeHtml(resultado)}
+                    </strong>
+                </div>
+            `;
+        }).join("");
+
+    } catch (error) {
+        console.error("Error al consultar detalles del test:", error);
+        modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem; color: #dc3545; font-weight: 600;">
+            Error al cargar la información: ${Utils.escapeHtml(error.message)}
+        </p>`;
+    }
+}
+
+function ejecutarAccionIrARevision(idOrden, numeroTest) {
+    console.log(`Redireccionando a Vista 3 (Revisión) para Orden #${idOrden} y Test #${numeroTest}`);
+    
+    const inputOrden = document.getElementById("id_orden_servicio_revision");
+    const inputTest = document.getElementById("numero_test_revision");
+
+    if (inputOrden) inputOrden.value = idOrden;
+    if (inputTest) inputTest.value = numeroTest;
+
+    const spanInfoRevision = document.getElementById("orden-id");
+    if (spanInfoRevision) {
+        spanInfoRevision.textContent = idOrden;
+    }
+    
+    const testIdSpan = document.getElementById("test-id-form");
+    if (testIdSpan) {
+        testIdSpan.textContent = numeroTest;
+    }
+    
+    if (typeof activateView === "function") {
+        activateView("vista-3");
+    } else {
+        console.warn("La función activateView no está disponible en el scope.");
+    }
+    
+    
+}
+
+function cambiarEstadoOrden(idOrden, estadoActual) {
+    console.log(`Cambiar estado de orden: ${idOrden}, estado actual: ${estadoActual}`);
+    
+    // TODO: Implementar modal de cambio de estado
+}
+
+function iniciarReparacion(idOrden) {
+    console.log(`Iniciar reparación de orden: ${idOrden}`);
+    
+    // TODO: Implementar lógica de inicio de reparación
+}
+
+// ============================================
+// 7. GUARDAR REVISIÓN TÉCNICA
+// ============================================
+
+// ============================================
+// 7. GUARDAR REVISIÓN TÉCNICA
+// ============================================
+
+async function guardarRevisionTecnica(event) {
+    event.preventDefault();
+    
+    console.log('Iniciando guardado de revisión técnica...');
+    
+    // Obtener los valores básicos
+    const idOrden = document.getElementById('id_orden_servicio_revision').value;
+    const numeroTest = document.getElementById('numero_test_revision').value;
+    const observaciones = document.querySelector('textarea[name="observaciones"]').value;
+    
+    // Validar campos requeridos
+    if (!idOrden) {
+        Utils.showMessage('No se ha seleccionado una orden de servicio', true);
+        return;
+    }
+    
+    if (!numeroTest) {
+        Utils.showMessage('Número de test no válido', true);
+        return;
+    }
+    
+    // Obtener el ID del empleado (técnico actual)
+    const idEmpleado = Utils.obtenerIdEmpleadoActual();
+    
+    if (!idEmpleado) {
+        Utils.showMessage('No se pudo identificar al técnico', true);
+        return;
+    }
+    
+    console.log(`ID Empleado: ${idEmpleado}, ID Orden: ${idOrden}, Test #: ${numeroTest}`);
+    console.log(`Observaciones: ${observaciones}`);  // Debug
+    
+    // Construir el array de componentes evaluados
+    const componentesEvaluados = [];
+    
+    // Seleccionar todos los radio buttons que están marcados
+    const radiosMarcados = document.querySelectorAll('#form-revision-tecnica input[type="radio"]:checked');
+    
+    console.log(`Radios marcados encontrados: ${radiosMarcados.length}`);
+    
+    radiosMarcados.forEach(radio => {
+        // Obtener el nombre del componente del atributo data-label o del name
+        let nombreComponente = radio.getAttribute('data-label');
+        if (!nombreComponente) {
+            // Si no tiene data-label, limpiar el nombre del campo
+            nombreComponente = radio.name.replace('test_', '').replace(/_/g, ' ');
+        }
+        const resultado = radio.value;
+        
+        componentesEvaluados.push({
+            nombre: nombreComponente,
+            resultado: resultado
+        });
+    });
+    
+    // AGREGAR LAS OBSERVACIONES COMO UN COMPONENTE MÁS
+    if (observaciones && observaciones.trim() !== '') {
+        componentesEvaluados.push({
+            nombre: 'Observaciones',
+            resultado: observaciones.trim()
+        });
+    }
+    
+    // Validar que se haya evaluado al menos un componente
+    if (componentesEvaluados.length === 0) {
+        Utils.showMessage('Debes evaluar al menos un componente del dispositivo', true);
+        return;
+    }
+    
+    console.log('Componentes evaluados (incluyendo observaciones):', componentesEvaluados);
+    
+    // Preparar el payload
+    const payload = {
+        id_orden: idOrden,
+        id_empleado: parseInt(idEmpleado),
+        numero_test: parseInt(numeroTest),
+        componentes_evaluados: componentesEvaluados  // Aquí ya están incluidas las observaciones
+    };
+    
+    console.log('Payload completo a enviar:', payload);
+    
+    try {
+        Utils.showMessage('Guardando revisión técnica...');
+        
+        const response = await Utils.fetchJson(CONFIG.API.GUARDAR_REVISION, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('Respuesta del servidor:', response);
+        Utils.showMessage(response.mensaje || 'Revisión guardada exitosamente');
+        
+        // Limpiar el formulario
+        const formulario = document.getElementById('form-revision-tecnica');
+        if (formulario) {
+            formulario.reset();
+        }
+        
+        // Opcional: Volver a la vista de detalle de la orden
+        setTimeout(() => {
+            activateView('vista-2');
+            // Recargar los detalles de la orden para mostrar el nuevo test
+            verDetalleOrden(idOrden);
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error al guardar la revisión:', error);
+        Utils.showMessage(error.message || 'Error al guardar la revisión técnica', true);
+    }
+}
+
+// ============================================
+// 8. EVENTOS E INICIALIZACIÓN
+// ============================================
+document.addEventListener("DOMContentLoaded", () => {
+    console.log('DOM cargado - Inicializando taller.js');
+    
+    const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
+    const tablaReparaciones = document.getElementById("tabla-reparaciones-asignadas");
+    const contenedorTests = document.getElementById("order-tests");
+
+    inicializarCambioVistas();
+
+    if (tablaOrdenes) {
+        tablaOrdenes.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-accion]");
+            if (!button) return;
+
+            const accion = button.getAttribute("data-accion");
+            const idOrden = button.getAttribute("data-id");
+
+            console.log(`Acción en tabla órdenes: ${accion}, ID: ${idOrden}`);
+
+            if (accion === "ver") {
+                verDetalleOrden(idOrden);
+            } else if (accion === "cambiar-estado") {
+                const estadoActual = button.getAttribute("data-estado");
+                cambiarEstadoOrden(idOrden, estadoActual);
+            }
+        });
+    }
+
+    if (tablaReparaciones) {
+        tablaReparaciones.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-accion]");
+            if (!button) return;
+
+            const accion = button.getAttribute("data-accion");
+            const idOrden = button.getAttribute("data-id");
+
+            console.log(`Acción en tabla reparaciones: ${accion}, ID: ${idOrden}`);
+
+            if (accion === "ver") {
+                verDetalleOrden(idOrden);
+            } else if (accion === "iniciar-reparacion") {
+                iniciarReparacion(idOrden);
+            }
+        });
+    }
+
+    if (contenedorTests) {
+        contenedorTests.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-accion='ver-test']");
+            if (!button) return;
+
+            const numTest = button.getAttribute("data-id-test");
+            const idOrden = button.getAttribute("data-id-orden");
+
+            console.log(`Abriendo detalles del Test #${numTest} para la Orden: ${idOrden}`);
+            
+            verDetallesDeUnTest(idOrden, numTest);
+        });
+    }
+    
+    // ============================================
+    // AGREGAR EVENT LISTENER PARA EL FORMULARIO DE REVISIÓN
+    // ============================================
+    const formularioRevision = document.getElementById('form-revision-tecnica');
+    if (formularioRevision) {
+        console.log('Formulario de revisión encontrado, agregando event listener');
+        formularioRevision.addEventListener('submit', guardarRevisionTecnica);
+    } else {
+        console.warn('No se encontró el formulario de revisión');
+    }
+
+    activateView("vista-1");
 });

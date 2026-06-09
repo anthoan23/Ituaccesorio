@@ -488,7 +488,7 @@ CREATE TABLE `Interaccion` (
 
 LOCK TABLES `Interaccion` WRITE;
 /*!40000 ALTER TABLE `Interaccion` DISABLE KEYS */;
-INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',20567890,'Reparación completada'),('INT000003','OS0000002',20567890,'Diagnóstico'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software');
+INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',20567890,'Reparación completada'),('INT000003','OS0000002',20567890,'Diagnóstico'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión');
 /*!40000 ALTER TABLE `Interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -677,7 +677,7 @@ CREATE TABLE `Orden_servicio` (
 
 LOCK TABLES `Orden_servicio` WRITE;
 /*!40000 ALTER TABLE `Orden_servicio` DISABLE KEYS */;
-INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','Asignada','Cambio de pantalla rota',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-03 17:00:00'),('OS0000002','EQ0000002','33456789','Pendiente','Revisión de batería',80.00,NULL,'2026-06-02 10:30:00',NULL),('OS0000003','EQ0000003','44567890','Pendiente','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','Pendiente','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Pendiente','Actualización software',60.00,NULL,'2026-06-06 11:00:00',NULL),('OS0000006',NULL,'30548845','Pendiente','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
+INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','Asignada','Cambio de pantalla rota',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-03 17:00:00'),('OS0000002','EQ0000002','33456789','Pendiente','Revisión de batería',80.00,NULL,'2026-06-02 10:30:00',NULL),('OS0000003','EQ0000003','44567890','Pendiente','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','Pendiente','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Pendiente','Actualización software',60.00,'Dejo el cargador','2026-06-06 11:00:00',NULL),('OS0000006',NULL,'30548845','Pendiente','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
 /*!40000 ALTER TABLE `Orden_servicio` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -897,7 +897,7 @@ CREATE TABLE `Test` (
 
 LOCK TABLES `Test` WRITE;
 /*!40000 ALTER TABLE `Test` DISABLE KEYS */;
-INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Batería con 85% de vida útil'),('TST000002',2,'Prueba de Pantalla','Pantalla sin pixeles muertos'),('TST000003',3,'Prueba de Cámara','Cámara frontal y trasera operativas'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos');
+INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss');
 /*!40000 ALTER TABLE `Test` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -924,7 +924,7 @@ CREATE TABLE `Test_realizados_interaccion` (
 
 LOCK TABLES `Test_realizados_interaccion` WRITE;
 /*!40000 ALTER TABLE `Test_realizados_interaccion` DISABLE KEYS */;
-INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005');
+INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037');
 /*!40000 ALTER TABLE `Test_realizados_interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1118,6 +1118,113 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_revision_test` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_revision_test`(
+    IN p_ID_orden_servicio VARCHAR(10),
+    IN p_ID_empleado INT,
+    IN p_Num_test INT,            -- El número identificador del lote de test
+    IN p_Json_Tests JSON          -- El arreglo: [{"nombre":"Mica", "resultado":"Funciona"}, ...]
+)
+BEGIN
+    -- Variables para generar ID_interaccion (Formato 'INT0000001')
+    DECLARE v_ultimo_id_int VARCHAR(10);
+    DECLARE v_siguiente_num_int INT;
+    DECLARE v_nuevo_id_interaccion VARCHAR(10);
+    
+    -- Variables para generar ID_test dentro del ciclo (Formato 'TST0000001')
+    DECLARE v_ultimo_id_tes VARCHAR(10);
+    DECLARE v_siguiente_num_tes INT;
+    DECLARE v_nuevo_id_test VARCHAR(10);
+    
+    -- Variables para el control del Ciclo Repetitivo (Bucle WHILE)
+    DECLARE v_items_count INT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE v_nombre_comp VARCHAR(50);
+    DECLARE v_resultado_comp VARCHAR(300);
+
+    -- Manejo de errores: Si algo falla, deshace todo (Rollback)
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    -- Iniciamos la transacción segura
+    START TRANSACTION;
+
+    -- =========================================================================
+    -- PASO 1: INSERTAR EN LA TABLA Interaccion CON ID AUTOGENERADO
+    -- =========================================================================
+    SELECT MAX(`ID_interaccion`) INTO v_ultimo_id_int FROM `Interaccion`;
+
+    IF v_ultimo_id_int IS NULL THEN
+        SET v_siguiente_num_int = 1;
+    ELSE
+        SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
+    END IF;
+
+    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+
+    -- Registro inicial requerido
+    INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`)
+    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Revisión');
+
+
+    -- =========================================================================
+    -- PASO 2: CICLO REPETITIVO PARA PROCESAR EL ARREGLO E INSERTAR EN Test Y LA INTERMEDIA
+    -- =========================================================================
+    SET v_items_count = JSON_LENGTH(p_Json_Tests);
+    
+    WHILE i < v_items_count DO
+        -- 2.1 Extraer los datos del componente actual del lote JSON
+        SET v_nombre_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
+        SET v_resultado_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
+        
+        -- 2.2 Generar el ID_test dinámico (Formato 'TST0000001') para este componente específico
+        SELECT MAX(`ID_test`) INTO v_ultimo_id_tes FROM `Test`;
+        
+        IF v_ultimo_id_tes IS NULL THEN
+            SET v_siguiente_num_tes = 1;
+        ELSE
+            SET v_siguiente_num_tes = CAST(SUBSTRING(v_ultimo_id_tes, 4) AS UNSIGNED) + 1;
+        END IF;
+        
+        SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_tes, 6, '0'));
+        
+        -- 2.3 Insertar el registro en la tabla Test usando los nombres correctos de columnas
+        -- CORREGIDO: Usar 'Num_test' (parámetro) y 'Resultado_test' (columna correcta)
+        INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`)
+        VALUES (v_nuevo_id_test, p_Num_test, v_nombre_comp, v_resultado_comp);
+        
+        -- 2.4 Insertar la relación de los códigos en la tabla Test_realizados_interaccion
+        INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`)
+        VALUES (v_nuevo_id_interaccion, v_nuevo_id_test);
+        
+        -- Avanzar al siguiente elemento del arreglo
+        SET i = i + 1;
+    END WHILE;
+
+    -- Guardar de manera permanente todos los cambios
+    COMMIT;
+
+    -- Devolver resumen para tu backend
+    SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1128,4 +1235,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-08 21:09:06
+-- Dump completed on 2026-06-09  4:16:13

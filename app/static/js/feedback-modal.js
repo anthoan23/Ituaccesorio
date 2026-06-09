@@ -121,6 +121,12 @@
     // 🔴 NUEVO: Evitar modal para consultar empleados
     if (u.includes("/api/empleados/consultar")) return false;
 
+    if (u.includes("/api/taller/reparaciones-asignadas")) return false;
+
+    if (u.includes("/api/taller/consultar-ordene")) return false;
+
+    if (u.includes("/api/taller/consultar-test")) return false;
+
     return true;
   }
   
