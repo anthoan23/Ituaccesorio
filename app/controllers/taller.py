@@ -64,7 +64,7 @@ def obtener_ordenes_taller():
     return jsonify(resultado)
 
 
-@taller_blueprint.route("/api/taller/reparaciones-asignadas", methods=["GET"])
+@taller_blueprint.route("/api/taller/reparaciones-asignadas", methods=["POST"])
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
@@ -73,251 +73,89 @@ def obtener_reparaciones_asignadas():
     return jsonify(resultado)
 
 
-@taller_blueprint.route("/api/taller/detalle-orden", methods=["POST"])
+@taller_blueprint.route("/api/taller/consultar-ordene", methods=["POST"])
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
-def obtener_detalles_orden():
-    ordenes = Orden_servicio(
-        ID_orden_e=request.json.get("id_orden")
-    )
-    test = Tests()
-    
-    detalle_orden = ordenes.consultar_orden()
-    fotos_orden = ordenes.fotos_orden()
-    test_orden = test.buscar_test()
-    empleados_orden = ordenes.empleados_asignados()
+def consultar_orden():
+    id_orden = request.json.get("id_orden")
+    if not id_orden:
+        return jsonify({"error": "ID de orden no proporcionado"}), 400
+
+    ordenes = Orden_servicio(ID_orden_servicio=id_orden)
+    tests = Tests(ID_orden=id_orden)
+
+    resultado_orden = ordenes.consultar_orden()
+    resultado_tests = tests.listas_tests()
+
+    # CORRECCIÓN: Validar si la consulta de la orden falló o no encontró nada antes de armar la respuesta
+    if resultado_orden is None:
+        return jsonify({"error": "Error al consultar la orden"}), 500
+    elif not resultado_orden:
+        return jsonify({"error": "Orden no encontrada"}), 404
 
     resultado = {
-        "detalle_orden": detalle_orden,
-        "fotos_orden": fotos_orden,
-        "test_orden": test_orden,
-        "empleados_orden": empleados_orden
-    }
-
-    return jsonify(resultado)
-
-
-@taller_blueprint.route("/api/taller/asignar/<int:id_orden>/<int:id_empleado>/estado", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def asignar_estado_orden(id_orden, id_empleado):
-    id_empleado = _obtener_id_empleado()
-    ordenes = Orden_servicio()
-    resultado = ordenes.asignar_orden_empleado(id_orden, id_empleado)
-    
-    if resultado:
-        registrar_en_bitacora(
-            accion="Asignar orden taller",
-            descripcion=f"Se asignó la orden ID: {id_orden} al técnico ID: {id_empleado}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Taller"
-        )
-    
-    return jsonify(resultado)
-
-
-@taller_blueprint.route("/api/taller/liberar/<int:id_orden>/<int:id_empleado>/estado", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def liberar_estado_orden(id_orden, id_empleado):
-    id_empleado = _obtener_id_empleado()
-    ordenes = Orden_servicio()
-    resultado = ordenes.liberar_orden(id_orden, id_empleado)
-    
-    if resultado:
-        registrar_en_bitacora(
-            accion="Liberar orden taller",
-            descripcion=f"Se liberó la orden ID: {id_orden} por el técnico ID: {id_empleado}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Taller"
-        )
-    
-    return jsonify(resultado)
-
-
-@taller_blueprint.route("/api/taller/ordenes/<int:id_orden>/fotos", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def registrar_fotos_orden(id_orden):
-    files = request.files.getlist("fotos")
-    if not files:
-        return jsonify({"ok": False, "message": "No se recibieron fotos."}), 400
-
-    base_dir = os.path.join(current_app.static_folder, "img", "evidencias", "taller", str(id_orden))
-    os.makedirs(base_dir, exist_ok=True)
-
-    rutas_guardadas = []
-    rutas_locales = []
-    for file in files:
-        if not file or not file.filename:
-            continue
-        if not _is_allowed_image(file.filename):
-            return jsonify({"ok": False, "message": f"Archivo no permitido: {file.filename}"}), 400
-
-        nombre_seguro = secure_filename(file.filename)
-        ext = nombre_seguro.rsplit(".", 1)[1].lower() if "." in nombre_seguro else "jpg"
-        nombre_final = f"{uuid4().hex}.{ext}"
-        ruta_fs = os.path.join(base_dir, nombre_final)
-        file.save(ruta_fs)
-        rutas_locales.append(ruta_fs)
-        rutas_guardadas.append(f"/static/img/evidencias/taller/{id_orden}/{nombre_final}")
-
-    ordenes = Orden_servicio()
-    if not ordenes.registrar_fotos_orden(id_orden, rutas_guardadas):
-        for ruta_local in rutas_locales:
-            if os.path.exists(ruta_local):
-                os.remove(ruta_local)
-        return jsonify({"ok": False, "message": "No se pudieron registrar las fotos."}), 500
-
-    registrar_en_bitacora(
-        accion="Registrar fotos orden taller",
-        descripcion=f"Se registraron {len(rutas_guardadas)} fotos para la orden ID: {id_orden}",
-        usuario_id=_usuario_actual(),
-        modulo_nombre="Taller"
-    )
-
-    return jsonify({"ok": True, "message": "Fotos registradas correctamente.", "fotos": rutas_guardadas})
-
-
-@taller_blueprint.route("/api/taller/ordenes/<int:id_orden>/test", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def registrar_test_orden(id_orden):
-    datos = request.get_json() or {}
-
-    id_empleado = _obtener_id_empleado()
-
-    campos = [
-        'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
-        'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
-        'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
-    ]
-
-    valores = []
-    for campo in campos:
-        if campo == 'ID_em':
-            valores.append(id_empleado)
-            continue
-
-        if campo in datos:
-            v = datos.get(campo)
-            if v is None or v == '':
-                valores.append(None)
-            else:
-                if campo == 'Observaciones':
-                    valores.append(str(v))
-                else:
-                    try:
-                        valores.append(int(v))
-                    except Exception:
-                        valores.append(None)
-        else:
-            valores.append(None)
-
-    test_model = Tests()
-    ok = test_model.registrar_test(tuple(valores), id_orden)
-    
-    if ok:
-        registrar_en_bitacora(
-            accion="Registrar test orden taller",
-            descripcion=f"Se registró test para la orden ID: {id_orden}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Taller"
-        )
-    
-    return jsonify({"ok": bool(ok)})
-
-
-@taller_blueprint.route("/api/taller/inventario/<string:N_modelo>", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'consultar')
-def obtener_inventarios(N_modelo):
-    inventario = Inventario()
-    inventario_taller = inventario.listar_inventario()
-    inventario_modelo = inventario.listar_inventario_modelo(N_modelo)
-    resultado = {
-        "inventario_taller": inventario_taller,
-        "inventario_modelo": inventario_modelo
+        "orden": resultado_orden, 
+        "tests": resultado_tests
     }
     return jsonify(resultado)
 
 
-@taller_blueprint.route("/api/taller/reparacion/<int:id_orden>", methods=["POST"])
+@taller_blueprint.route("/api/taller/consultar-test", methods=["POST"])
 @jwt_required
-@tiene_permiso('Taller', 'modificar')
-def registrar_reparacion_orden(id_orden):
-    datos = request.get_json() or {}
-    id_productos = datos.get('id_productos')
-    cantidades = datos.get('cantidades')
-    id_empleado = datos.get('id_empleado', 1004)
-    reparacion = datos.get('reparacion')
+@tiene_permiso('Taller', 'consultar')
+def consultar_test():
+    id_orden = request.json.get("id_orden")
+    numero_test = request.json.get("numero_test")
+    if not id_orden or not numero_test:
+        return jsonify({"error": "ID de orden o número de test no proporcionado"}), 400
 
-    if not isinstance(id_productos, (list, tuple)) or not isinstance(cantidades, (list, tuple)):
-        return jsonify({"ok": False, "message": "id_productos y cantidades deben ser arrays."}), 400
-    if len(id_productos) != len(cantidades):
-        return jsonify({"ok": False, "message": "Las longitudes de id_productos y cantidades deben coincidir."}), 400
+    tests = Tests(ID_orden=id_orden, Numero_test=numero_test)
+    resultado_test = tests.consultar_test()
 
-    try:
-        ids = [int(x) for x in id_productos]
-        qts = [int(x) for x in cantidades]
-        id_empleado = int(id_empleado)
-    except Exception:
-        return jsonify({"ok": False, "message": "Valores inválidos en id_productos o cantidades."}), 400
+    if resultado_test is None:
+        return jsonify({"error": "Error al consultar el test"}), 500
+    elif not resultado_test:
+        return jsonify({"error": "Test no encontrado para la orden especificada"}), 404
 
-    if reparacion is None:
-        reparacion_val = None
+    return jsonify(resultado_test)
+
+@taller_blueprint.route("/api/taller/guardar-revision", methods=["POST"])
+@jwt_required
+@tiene_permiso('Taller', 'registrar')  # O el permiso que tengas configurado para guardar ('guardar', 'registrar', etc.)
+def guardar_revision_tecnica():
+    # 1. Capturar los datos provenientes de la petición JSON del frontend
+    id_orden = request.json.get("id_orden")
+    id_empleado = request.json.get("id_empleado")       # ID del técnico que realiza la revisión
+    numero_test = request.json.get("numero_test")       # Identificador del lote de pruebas (ej: 1, 2)
+    componentes = request.json.get("componentes_evaluados") # El arreglo: [{"nombre": "Mica", "resultado": "Funciona"}, ...]
+
+    # 2. Validar que los datos requeridos no vengan vacíos
+    if not id_orden or not id_empleado or not numero_test or not componentes:
+        return jsonify({"error": "Faltan datos obligatorios para registrar la revisión técnica"}), 400
+
+    # 3. Instanciar tu objeto o modelo de Tests (Ajusta el nombre de la clase si se llama distinto)
+    # Seteamos las propiedades directamente en la instancia como lo requiere tu método modificado
+    tests = Tests(
+        ID_orden=id_orden,
+        ID_empleado=id_empleado,
+        Numero_test=numero_test,
+        lista_tests=componentes
+    )
+
+    # 4. Ejecutar el método que modificaste
+    resultado_mensaje = tests.registrar_revision_test()
+
+    # 5. Evaluar la respuesta del método para retornar el código HTTP correcto
+    if "exitosamente" in resultado_mensaje:
+        return jsonify({"mensaje": resultado_mensaje}), 200
+    
+    # Si devuelve algún mensaje de validación del ID, longitud o nulos
+    elif "inválido" in resultado_mensaje or "obligatorio" in resultado_mensaje or "lista válida" in resultado_mensaje:
+        return jsonify({"error": resultado_mensaje}), 400
+        
+    # Cualquier otro error interno de base de datos o excepciones (Exceptions)
     else:
-        reparacion_val = str(reparacion)
-
-    ordenes = Orden_servicio()
-    ok = ordenes.Orden_reparada(id_orden, ids, qts, id_empleado, reparacion_val)
-    
-    if ok:
-        registrar_en_bitacora(
-            accion="Registrar reparación orden",
-            descripcion=f"Se registró reparación para la orden ID: {id_orden} - Productos usados: {len(ids)}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Taller"
-        )
-        return jsonify({"ok": True})
-    
-    return jsonify({"ok": False, "message": "No se pudo registrar la reparación."}), 500
+        return jsonify({"error": resultado_mensaje}), 500
 
 
-@taller_blueprint.route("/api/taller/fotos/<int:id_evidencia>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def eliminar_foto_orden(id_evidencia):
-    ordenes = Orden_servicio()
-    
-    if not ordenes.eliminar_foto_orden(id_evidencia):
-        return jsonify({"ok": False, "message": "No se pudo eliminar la imagen."}), 404
 
-    registrar_en_bitacora(
-        accion="Eliminar foto orden taller",
-        descripcion=f"Se eliminó la foto ID: {id_evidencia}",
-        usuario_id=_usuario_actual(),
-        modulo_nombre="Taller"
-    )
-
-    return jsonify({"ok": True, "message": "Imagen eliminada correctamente."})
-
-
-@taller_blueprint.route("/api/taller/ordenes/<int:id_orden>/finalizar", methods=["POST"])
-@jwt_required
-@tiene_permiso('Taller', 'modificar')
-def finalizar_orden_taller(id_orden):
-    """Finaliza una orden de taller (marca como completada)"""
-    ordenes = Orden_servicio()
-    resultado = ordenes.finalizar_orden(id_orden)
-    
-    if resultado:
-        registrar_en_bitacora(
-            accion="Finalizar orden taller",
-            descripcion=f"Se finalizó la orden de taller ID: {id_orden}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Taller"
-        )
-        return jsonify({"ok": True, "message": "Orden finalizada correctamente."})
-    
-    return jsonify({"ok": False, "message": "No se pudo finalizar la orden."}), 500
