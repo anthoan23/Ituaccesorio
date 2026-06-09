@@ -99,11 +99,11 @@ class Clientes():
 
     """Nuevos métodos añadidos por Eduin"""
     
-    def obtener_cliente_por_id(self):
+    def obtener_cliente_por_id(self, cliente_id=None):
         """
         Obtiene un cliente por su ID (cédula para persona natural)
         """
-        id_buscar = self.ID_cliente
+        id_buscar = cliente_id or self.ID_cliente
         if not id_buscar:
             return None
         
