@@ -6,16 +6,6 @@ from app.models.cargos import Cargo
 cargos_blueprint = Blueprint("cargos", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
 @cargos_blueprint.route("/cargos", methods=["GET"])
 @jwt_required
 @tiene_permiso('Cargos', 'consultar')
@@ -55,11 +45,12 @@ def api_agregar_cargo():
     mensaje = cargo_model.agregar_cargo()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Crear cargo",
             descripcion=f"Se creó el cargo: {nombre_cargo}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Cargos"
         )
         return jsonify({"success": True, "message": mensaje}), 201
@@ -89,11 +80,12 @@ def api_actualizar_cargo():
     mensaje = cargo_model.actualizar_cargo()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Actualizar cargo",
             descripcion=f"Se actualizó el cargo ID: {cargo_id} - Nuevo nombre: {nombre_cargo}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Cargos"
         )
         return jsonify({"success": True, "message": mensaje}), 200
@@ -110,20 +102,20 @@ def api_eliminar_cargo():
     if not cargo_id:
         return jsonify({"success": False, "message": "El ID del cargo es obligatorio."}), 400
 
-    # Obtener el nombre del cargo antes de eliminar para la bitácora
-    cargo_model = Cargo()
-    cargo_existente = cargo_model.obtener_cargo_por_id(cargo_id)
+    cargo_model_temp = Cargo()
+    cargo_existente = cargo_model_temp.obtener_cargo_por_id(cargo_id)
     nombre_cargo = cargo_existente.get("nombre_cargo") if cargo_existente else cargo_id
 
     cargo_model = Cargo(id_cargo=cargo_id)
     mensaje = cargo_model.eliminar_cargo()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Eliminar cargo",
             descripcion=f"Se eliminó el cargo ID: {cargo_id} - Nombre: {nombre_cargo}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Cargos"
         )
         return jsonify({"success": True, "message": mensaje}), 200

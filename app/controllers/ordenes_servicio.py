@@ -6,56 +6,7 @@ from app.models.test import Tests
 from app.utils.decorators import jwt_required, tiene_permiso
 import traceback
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
-
-
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_id_empleado() -> int:
-    usuario = getattr(g, "user", {}) or {}
-    if isinstance(usuario, dict):
-        cedula = usuario.get("cedula_personal")
-    else:
-        cedula = getattr(usuario, "cedula_personal", None)
-    try:
-        return int(cedula) if cedula else 1004
-    except Exception:
-        return 1004
-
-
-def _obtener_nombre_cliente(cliente_id):
-    """Obtiene el nombre de un cliente por su ID"""
-    try:
-        orden = OrdenServicio()
-        # Buscar en órdenes existentes o llamar a un método específico
-        ordenes = orden.listado_ordenes_servicio()
-        for o in ordenes:
-            if o.get("ID_cliente") == cliente_id:
-                return o.get("Nombre_cliente", str(cliente_id))
-    except Exception:
-        pass
-    return str(cliente_id)
 
 
 @ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["GET"])
@@ -158,14 +109,20 @@ def crear_orden_servicio():
     if not nueva_id:
         return jsonify({"success": False, "error": "No se pudo crear la orden."}), 500
 
-    id_empleado = _obtener_id_empleado()
+    # Obtener ID del empleado desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", 1004)
+    try:
+        id_empleado = int(usuario_id)
+    except (ValueError, TypeError):
+        id_empleado = 1004
+    
     modelo.registrar_interaccion(nueva_id, id_empleado, "Recepcion")
 
     # Registrar en bitácora
     registrar_en_bitacora(
         accion="Crear orden de servicio",
         descripcion=f"Se creó orden de servicio ID: {nueva_id} - Cliente ID: {id_cliente_val} - Modelo ID: {id_modelo_val}",
-        usuario_id=_usuario_actual(),
+        usuario_id=usuario_id,
         modulo_nombre="Órdenes de servicio"
     )
 
@@ -188,11 +145,14 @@ def asignar_orden_servicio(id_orden):
     if not ok:
         return jsonify({"success": False, "error": "No se pudo asignar la orden."}), 400
     
+    # Obtener usuario actual
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+    
     # Registrar en bitácora
     registrar_en_bitacora(
         accion="Asignar orden de servicio",
         descripcion=f"Se asignó la orden ID: {id_orden} al empleado ID: {id_empleado_val}",
-        usuario_id=_usuario_actual(),
+        usuario_id=usuario_id,
         modulo_nombre="Órdenes de servicio"
     )
     
@@ -223,8 +183,12 @@ def listar_ordenes_tecnico(id_empleado):
 def registrar_test_orden(id_orden):
     datos = request.get_json() or {}
     
-    empleado_id = _obtener_id_empleado()
-    usuario_actual = _usuario_actual()
+    # Obtener empleado ID desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", 1004)
+    try:
+        empleado_id = int(usuario_id)
+    except (ValueError, TypeError):
+        empleado_id = 1004
 
     campos = [
         'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
@@ -261,7 +225,7 @@ def registrar_test_orden(id_orden):
         registrar_en_bitacora(
             accion="Registrar test de orden",
             descripcion=f"Se registró test para la orden de servicio ID: {id_orden}",
-            usuario_id=usuario_actual,
+            usuario_id=usuario_id,
             modulo_nombre="Órdenes de servicio"
         )
     
@@ -285,11 +249,14 @@ def actualizar_estado_orden(id_orden):
     if not ok:
         return jsonify({"success": False, "error": "No se pudo actualizar el estado."}), 400
     
+    # Obtener usuario actual
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+    
     # Registrar en bitácora
     registrar_en_bitacora(
         accion="Actualizar estado de orden",
         descripcion=f"Se actualizó el estado de la orden ID: {id_orden} a: {nuevo_estado}",
-        usuario_id=_usuario_actual(),
+        usuario_id=usuario_id,
         modulo_nombre="Órdenes de servicio"
     )
     
@@ -312,11 +279,14 @@ def eliminar_orden_servicio(id_orden):
     if not ok:
         return jsonify({"success": False, "error": "No se pudo eliminar la orden."}), 400
     
+    # Obtener usuario actual
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+    
     # Registrar en bitácora
     registrar_en_bitacora(
         accion="Eliminar orden de servicio",
         descripcion=f"Se eliminó la orden de servicio ID: {id_orden} - Cliente: {nombre_cliente}",
-        usuario_id=_usuario_actual(),
+        usuario_id=usuario_id,
         modulo_nombre="Órdenes de servicio"
     )
     

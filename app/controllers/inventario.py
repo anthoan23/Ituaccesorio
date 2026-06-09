@@ -8,23 +8,12 @@ from decimal import Decimal, InvalidOperation
 
 from app.models.inventario import Inventario, FotosInventario
 from app.models.productos import Producto
-from app.utils.decorators import jwt_required
 from app.models.bitacora import registrar_en_bitacora
 from app.utils.decorators import jwt_required, tiene_permiso
 
 inventario_blueprint = Blueprint("inventario", __name__)
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
 
 
 def _es_imagen_permitida(nombre_archivo: str) -> bool:
@@ -159,11 +148,14 @@ def api_registrar_stock():
         if not id_inventario:
             return jsonify({"success": False, "error": "No se pudo registrar el stock."}), 500
         
+        # Obtener ID del usuario desde g.user
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         # Registrar en bitácora
         registrar_en_bitacora(
             accion="Registrar stock",
             descripcion=f"Se registró stock para producto ID: {id_producto_val} - Cantidad: {existencia_val} - Costo: {costo_val}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Inventario"
         )
         
@@ -177,6 +169,7 @@ def api_registrar_stock():
 
 @inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Inventario', 'consultar')
 def api_listar_fotos_inventario(id_inventario: str):
     """Lista todas las fotos de un inventario"""
     fotos = FotosInventario()
@@ -186,6 +179,7 @@ def api_listar_fotos_inventario(id_inventario: str):
 
 @inventario_blueprint.route("/api/inventario/fotos", methods=["POST"])
 @jwt_required
+@tiene_permiso('Inventario', 'registrar')
 def api_agregar_foto_inventario():
     """Agrega una nueva foto a un inventario"""
     datos = request.get_json(silent=True) or {}
@@ -198,6 +192,16 @@ def api_agregar_foto_inventario():
     fotos = FotosInventario()
     try:
         new_id = fotos.insertar_foto(id_inventario, foto_url)
+        
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Agregar foto inventario",
+            descripcion=f"Se agregó foto al inventario ID: {id_inventario}",
+            usuario_id=usuario_id,
+            modulo_nombre="Inventario"
+        )
+        
         return jsonify({"success": True, "id": new_id})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -205,12 +209,21 @@ def api_agregar_foto_inventario():
 
 @inventario_blueprint.route("/api/inventario/fotos/<string:id_foto>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Inventario', 'eliminar')
 def api_eliminar_foto_inventario(id_foto: str):
     """Elimina una foto de inventario"""
     fotos = FotosInventario()
     try:
         ok = fotos.eliminar_foto(id_foto)
         if ok:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
+            registrar_en_bitacora(
+                accion="Eliminar foto inventario",
+                descripcion=f"Se eliminó la foto ID: {id_foto} del inventario",
+                usuario_id=usuario_id,
+                modulo_nombre="Inventario"
+            )
             return jsonify({"success": True, "message": "Foto eliminada."})
         return jsonify({"success": False, "error": "Foto no encontrada."}), 404
     except Exception as error:

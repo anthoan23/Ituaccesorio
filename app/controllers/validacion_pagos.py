@@ -9,30 +9,6 @@ from decimal import Decimal
 validacion_pagos_blueprint = Blueprint("validacion_pagos", __name__)
 
 
-def _usuario_actual() -> str:
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_id_empleado() -> str:
-    """Obtiene el ID del empleado actual (cédula como string)"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return None
-    
-    if isinstance(user, dict):
-        cedula = user.get("cedula_personal") or user.get("cedula")
-    else:
-        cedula = getattr(user, "cedula_personal", None) or getattr(user, "cedula", None)
-    
-    return str(cedula) if cedula else None
-
-
 @validacion_pagos_blueprint.route("/admin/validar-pagos")
 @jwt_required
 @solo_roles(['admin', 'ventas'])
@@ -48,7 +24,7 @@ def pagina_validar_pagos():
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/pendientes", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ventas', 'consultar')
+@tiene_permiso('Validación Pagos', 'consultar')
 def api_pagos_pendientes():
     try:
         modelo = ValidacionPagosModel()
@@ -63,7 +39,7 @@ def api_pagos_pendientes():
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/aprobados", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ventas', 'consultar')
+@tiene_permiso('Validación Pagos', 'consultar')
 def api_pagos_aprobados():
     try:
         modelo = ValidacionPagosModel()
@@ -76,7 +52,7 @@ def api_pagos_aprobados():
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/rechazados", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ventas', 'consultar')
+@tiene_permiso('Validación Pagos', 'consultar')
 def api_pagos_rechazados():
     try:
         modelo = ValidacionPagosModel()
@@ -89,7 +65,7 @@ def api_pagos_rechazados():
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/venta/<factura_id>/detalle", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ventas', 'consultar')
+@tiene_permiso('Validación Pagos', 'consultar')
 def api_detalle_venta(factura_id):
     try:
         modelo = ValidacionPagosModel()
@@ -111,10 +87,13 @@ def api_detalle_venta(factura_id):
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/aprobar/<factura_id>", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ventas', 'modificar')
+@tiene_permiso('Validación Pagos', 'modificar')
 def api_aprobar_pago(factura_id):
     try:
-        empleado_id = _obtener_id_empleado()
+        # Obtener ID del empleado desde g.user
+        empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
+        empleado_id = str(empleado_id) if empleado_id else None
+        
         if not empleado_id:
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
         
@@ -127,11 +106,14 @@ def api_aprobar_pago(factura_id):
         resultado = modelo.aprobar_pago(factura_id, empleado_id)
         
         if resultado["success"]:
+            # Obtener usuario actual para bitácora
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Aprobar pago",
                 descripcion=f"Se aprobó el pago de la factura ID: {factura_id}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Ventas"
+                usuario_id=usuario_id,
+                modulo_nombre="Validación Pagos"
             )
             return jsonify({"success": True, "mensaje": "Pago aprobado correctamente", "fecha_aprobacion": datetime.now().isoformat()})
         else:
@@ -144,7 +126,7 @@ def api_aprobar_pago(factura_id):
 
 @validacion_pagos_blueprint.route("/api/validacion-pagos/rechazar/<factura_id>", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ventas', 'modificar')
+@tiene_permiso('Validación Pagos', 'modificar')
 def api_rechazar_pago(factura_id):
     try:
         datos = request.get_json(silent=True) or {}
@@ -153,7 +135,10 @@ def api_rechazar_pago(factura_id):
         if not motivo:
             return jsonify({"success": False, "error": "Debe especificar un motivo"}), 400
         
-        empleado_id = _obtener_id_empleado()
+        # Obtener ID del empleado desde g.user
+        empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
+        empleado_id = str(empleado_id) if empleado_id else None
+        
         if not empleado_id:
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
         
@@ -161,11 +146,14 @@ def api_rechazar_pago(factura_id):
         resultado = modelo.rechazar_pago(factura_id, empleado_id, motivo)
         
         if resultado["success"]:
+            # Obtener usuario actual para bitácora
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Rechazar pago",
                 descripcion=f"Se rechazó el pago de la factura ID: {factura_id} - Motivo: {motivo}",
-                usuario_id=_usuario_actual(),
-                modulo_nombre="Ventas"
+                usuario_id=usuario_id,
+                modulo_nombre="Validación Pagos"
             )
             return jsonify({"success": True, "mensaje": "Pago rechazado"})
         else:
