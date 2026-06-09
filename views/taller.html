@@ -82,7 +82,7 @@
 			</article>
 		</section>
 
-		<section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
+        <section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
 				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
@@ -114,158 +114,224 @@
 			</article>
 		</section>
 
-		<section class="content vista-3" aria-label="Formulario de revisión" hidden>
-			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
-			</nav>
-			<article class="card card--form" aria-label="Formulario de revisión">
-				<div class="form__header">
-					<h2 class="card__title">Formulario de revisión</h2>
-					<p class="form__subtitle">Revisión de la orden(<span id="orden-id">-</span>)</p>
-					<label class="field field--full">
-							<span>Número de test: <span id="test-id-form">-</span></span>
-						</label>
-				</div>
+<section class="content vista-3" aria-label="Formulario de revisión" hidden>
+    <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+        <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Información de la orden</button>
+        <button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revisión</button>
+        <button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparación</button>    
+    </nav>
+    <article class="card card--form" aria-label="Formulario de revisión">
+        <div class="form__header">
+            <h2 class="card__title">Formulario de revisión</h2>
+            <p class="form__subtitle">Revisión de la orden (<span id="orden-id">-</span>)</p>
+            <label class="field field--full">
+                <span>Número de test: <span id="test-id-form">-</span></span>
+            </label>
+        </div>
 
-				<form class="service-form" autocomplete="off">
-					<input type="hidden" id="input-num-test" name="Num_test" value="">
-					<div class="service-form__grid">
-						
-						<div class="grid-container">
-						<label class="checkbox-card">
-							<input type="checkbox" name="Btn_power">
-							<span class="checkbox-text">Botón de power</span>
-						</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Cornetas">
-								<span class="checkbox-text">Cornetas</span>
-							</label>
+        <form class="service-form" id="form-revision-tecnica" autocomplete="off">
+            <input type="hidden" id="id_orden_servicio_revision" name="id_orden" value="">
+            <input type="hidden" id="numero_test_revision" name="Num_test" value="">
+            
+            <div class="service-form__grid">
+                
+                <div class="test-options-grid">
+                    
+                    <div class="test-row-item">
+                        <span class="test-component-name">Botón de power</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success">
+                                <input type="radio" name="test_Btn_power" value="Funciona" data-label="Botón de power"> Funciona
+                            </label>
+                            <label class="radio-label radio-label--danger">
+                                <input type="radio" name="test_Btn_power" value="No funciona" data-label="Botón de power"> No funciona
+                            </label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Mica">
-								<span class="checkbox-text">Mica</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="LCD">
-								<span class="checkbox-text">LCD</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Cornetas</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cornetas" value="Funciona" data-label="Cornetas"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cornetas" value="No funciona" data-label="Cornetas"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Tactil">
-								<span class="checkbox-text">Táctil</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Btn_vol">
-								<span class="checkbox-text">Botones laterales</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Mica</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Mica" value="Funciona" data-label="Mica"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Mica" value="No funciona" data-label="Mica"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Btn_sil">
-								<span class="checkbox-text">Botones inferiores</span>
-							</label>
-							
-							<label class="checkbox-card highlighted">
-								<input type="checkbox" name="Puerto_carga">
-								<span class="checkbox-text">Puerto de carga</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">LCD</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_LCD" value="Funciona" data-label="LCD"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_LCD" value="No funciona" data-label="LCD"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Wifi">
-								<span class="checkbox-text">WiFi</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Cam_pos">
-								<span class="checkbox-text">Cámara trasera</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Táctil</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Tactil" value="Funciona" data-label="Táctil"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Tactil" value="No funciona" data-label="Táctil"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Cam_del">
-								<span class="checkbox-text">Cámara delantera</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Flash">
-								<span class="checkbox-text">Flash</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Botones laterales</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Btn_vol" value="Funciona" data-label="Botones laterales"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Btn_vol" value="No funciona" data-label="Botones laterales"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Senal">
-								<span class="checkbox-text">Señal auricular</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Microfono">
-								<span class="checkbox-text">Micrófono</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Botones inferiores</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Btn_sil" value="Funciona" data-label="Botones inferiores"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Btn_sil" value="No funciona" data-label="Botones inferiores"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Sensor_proximidad">
-								<span class="checkbox-text">Sensor de proximidad</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Puerto de carga</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Puerto_carga" value="Funciona" data-label="Puerto de carga"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Puerto_carga" value="No funciona" data-label="Puerto de carga"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Face_id">
-								<span class="checkbox-text">Face ID</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">WiFi</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Wifi" value="Funciona" data-label="WiFi"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Wifi" value="No funciona" data-label="WiFi"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Bluetooth">
-								<span class="checkbox-text">Bluetooth</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Caja">
-								<span class="checkbox-text">Caja</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Cámara trasera</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cam_pos" value="Funciona" data-label="Cámara trasera"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cam_pos" value="No funciona" data-label="Cámara trasera"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Cargador">
-								<span class="checkbox-text">Cargador</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Cable">
-								<span class="checkbox-text">Cable</span>
-							</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Cámara delantera</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cam_del" value="Funciona" data-label="Cámara delantera"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cam_del" value="No funciona" data-label="Cámara delantera"> No funciona</label>
+                        </div>
+                    </div>
 
-							<label class="checkbox-card">
-								<input type="checkbox" name="Auricular">
-								<span class="checkbox-text">Audifonos</span>
-							</label>
-							
-							<label class="checkbox-card">
-								<input type="checkbox" name="Manuales">
-								<span class="checkbox-text">Manuales</span>
-							</label>
-						</div>
-						<label class="field field--full">
-							<span>Observaciones</span>
-							<textarea name="observaciones" 
-							          rows="4" 
-							          placeholder="Notas adicionales de la revisión" 
-							          required
-							          maxlength="500"
-							          data-validation-rules="sinCaracteresEspeciales"
-							          title="Sin caracteres especiales"></textarea>
-							<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
-						</label>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Flash</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Flash" value="Funciona" data-label="Flash"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Flash" value="No funciona" data-label="Flash"> No funciona</label>
+                        </div>
+                    </div>
 
-						
-					</div>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Señal auricular</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Senal" value="Funciona" data-label="Señal auricular"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Senal" value="No funciona" data-label="Señal auricular"> No funciona</label>
+                        </div>
+                    </div>
 
-					<div class="service-form__actions">
-						<button type="button" class="form-btn form-btn--ghost">Cancelar</button>
-						<button type="submit" class="form-btn form-btn--primary">Guardar revisión</button>
-					</div>
-				</form>
-			</article>
-		</section>
+                    <div class="test-row-item">
+                        <span class="test-component-name">Micrófono</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Microfono" value="Funciona" data-label="Micrófono"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Microfono" value="No funciona" data-label="Micrófono"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Sensor proximidad</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Sensor_proximidad" value="Funciona" data-label="Sensor de proximidad"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Sensor_proximidad" value="No funciona" data-label="Sensor de proximidad"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Face ID</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Face_id" value="Funciona" data-label="Face ID"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Face_id" value="No funciona" data-label="Face ID"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Bluetooth</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Bluetooth" value="Funciona" data-label="Bluetooth"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Bluetooth" value="No funciona" data-label="Bluetooth"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Caja</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Caja" value="Funciona" data-label="Caja"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Caja" value="No funciona" data-label="Caja"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Cargador</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cargador" value="Funciona" data-label="Cargador"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cargador" value="No funciona" data-label="Cargador"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Cable</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cable" value="Funciona" data-label="Cable"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cable" value="No funciona" data-label="Cable"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Audífonos</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Auricular" value="Funciona" data-label="Audífonos"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Auricular" value="No funciona" data-label="Audífonos"> No funciona</label>
+                        </div>
+                    </div>
+
+                    <div class="test-row-item">
+                        <span class="test-component-name">Manuales</span>
+                        <div class="radio-group">
+                            <label class="radio-label radio-label--success"><input type="radio" name="test_Manuales" value="Funciona" data-label="Manuales"> Funciona</label>
+                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Manuales" value="No funciona" data-label="Manuales"> No funciona</label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <label class="field field--full" style="margin-top: 1rem;">
+                    <span>Observaciones</span>
+                    <textarea name="observaciones" rows="4" placeholder="Notas adicionales de la revisión" required maxlength="500"></textarea>
+                </label>
+            </div>
+
+            <div class="service-form__actions">
+                <button type="button" class="form-btn form-btn--ghost" onclick="activateView('vista-2')">Cancelar</button>
+                <button type="submit" class="form-btn form-btn--primary">Guardar revisión</button>
+            </div>
+        </form>
+    </article>
+</section>
 
 		<section class="content vista-4" aria-label="Reparación" hidden>
 			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
@@ -312,54 +378,25 @@
 
 		</section>
 
+		
+
 	</main>
 {% endblock %}
+
+{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
+    <div id="modal-test-body" class="test-modal-grid">
+        </div>
+{% endcall %}
 
 {% block scripts %}
 	<script src="{{ url_for('static', filename='js/taller.js') }}"></script>
 {% endblock %}
 
-{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
-<div id="modal-test-body"></div>
-{% endcall %}
-
-{% call modal('modal-fotos-registrar', 'Registrar fotos', 'lg') %}
-<form id="form-fotos-orden" class="form" autocomplete="off">
-	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-	<input type="hidden" name="id_orden" id="modal-fotos-id-orden" value="">
-	<label id="fotos-dropzone" class="photo-dropzone" for="input-fotos-orden">
-		<input id="input-fotos-orden" name="fotos" type="file" accept="image/*" multiple required>
-		<span class="photo-dropzone__title">Arrastra img aquí</span>
-		<span class="photo-dropzone__subtitle">o haz clic para seleccionarlas</span>
-	</label>
-	<div id="modal-fotos-body" class="device-photos-wrap" style="margin-top:1rem;"></div>
-	<div class="form__actions">
-		<button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
-		<button type="submit" class="form-btn form-btn--primary">Guardar</button>
-	</div>
-</form>
-{% endcall %}
 
 
-{% call modal('modal-foto-eliminar-guardada', 'Eliminar imagen', 'sm') %}
-<div class="photo-remove-confirm">
-	<p class="photo-remove-confirm__text">¿Estás seguro de eliminar esta imagen guardada?</p>
-	<div class="form__actions">
-		<button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
-		<button type="button" class="form-btn form-btn--danger" id="btn-confirm-delete-saved-photo">Aceptar</button>
-	</div>
-</div>
-{% endcall %}
 
-{% call modal('modal-photo-view', 'Ver imagen', 'lg') %}
-<div id="modal-photo-view-body">
-	<img id="modal-photo-view-img" src="" alt="" />
-</div>
-{% endcall %}
 
-{% call modal('modal-repuestos', 'Selecciona un repuesto', 'lg') %}
-<div class="form__header" style="margin-bottom:1rem;">
-	<p class="form__subtitle" id="modal-repuestos-subtitle">Elige un repuesto de la lista.</p>
-</div>
-<div id="modal-repuestos-body"></div>
-{% endcall %}
+
+
+
+
