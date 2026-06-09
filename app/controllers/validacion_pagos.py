@@ -29,7 +29,6 @@ def api_pagos_pendientes():
     try:
         modelo = ValidacionPagosModel()
         pagos = modelo.obtener_pagos_pendientes()
-        print(f"API pendientes: {len(pagos)} pagos")
         return jsonify({"success": True, "pagos": pagos})
     except Exception as e:
         print(f"Error: {e}")
@@ -71,9 +70,6 @@ def api_detalle_venta(factura_id):
         modelo = ValidacionPagosModel()
         detalle = modelo.obtener_detalle_venta(factura_id)
         
-        print(f"API detalle venta {factura_id}: {len(detalle)} items")
-        
-        # Convertir Decimal a float para JSON
         for item in detalle:
             if 'Costo_venta' in item and isinstance(item['Costo_venta'], Decimal):
                 item['Costo_venta'] = float(item['Costo_venta'])
@@ -90,7 +86,6 @@ def api_detalle_venta(factura_id):
 @tiene_permiso('Validación Pagos', 'modificar')
 def api_aprobar_pago(factura_id):
     try:
-        # Obtener ID del empleado desde g.user
         empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
         empleado_id = str(empleado_id) if empleado_id else None
         
@@ -98,15 +93,10 @@ def api_aprobar_pago(factura_id):
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
         
         modelo = ValidacionPagosModel()
-        
-        # Actualizar la fecha de pago primero
         modelo.actualizar_fecha_pago(factura_id)
-        
-        # Luego aprobar el pago
         resultado = modelo.aprobar_pago(factura_id, empleado_id)
         
         if resultado["success"]:
-            # Obtener usuario actual para bitácora
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
             
             registrar_en_bitacora(
@@ -135,7 +125,6 @@ def api_rechazar_pago(factura_id):
         if not motivo:
             return jsonify({"success": False, "error": "Debe especificar un motivo"}), 400
         
-        # Obtener ID del empleado desde g.user
         empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
         empleado_id = str(empleado_id) if empleado_id else None
         
@@ -146,7 +135,6 @@ def api_rechazar_pago(factura_id):
         resultado = modelo.rechazar_pago(factura_id, empleado_id, motivo)
         
         if resultado["success"]:
-            # Obtener usuario actual para bitácora
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
             
             registrar_en_bitacora(
@@ -162,3 +150,76 @@ def api_rechazar_pago(factura_id):
         print(f"Error: {e}")
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== REPORTES ====================
+
+@validacion_pagos_blueprint.route("/api/validacion-pagos/reportes", methods=["POST"])
+@jwt_required
+@tiene_permiso('Validación Pagos', 'consultar')
+def api_reportes_pagos():
+    """Obtiene pagos para reportes con filtros avanzados"""
+    from datetime import datetime
+    
+    datos = request.get_json(silent=True) or {}
+    
+    filtros = {
+        "q": datos.get("q", "").strip(),
+        "estado": datos.get("estado"),
+        "metodo_pago": datos.get("metodo_pago"),
+        "moneda": datos.get("moneda"),
+        "fecha_desde": datos.get("fecha_desde"),
+        "fecha_hasta": datos.get("fecha_hasta"),
+        "monto_min": datos.get("monto_min"),
+        "monto_max": datos.get("monto_max"),
+    }
+    
+    filtros = {k: v for k, v in filtros.items() if v not in (None, "", 0)}
+    
+    modelo = ValidacionPagosModel()
+    resultado = modelo.obtener_reportes_pagos(filtros)
+    
+    if resultado["success"]:
+        resultado["fecha_reporte"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        resultado["filtros_aplicados"] = filtros
+        return jsonify(resultado)
+    else:
+        return jsonify({"success": False, "error": resultado.get("error", "Error al generar reporte")}), 500
+
+
+@validacion_pagos_blueprint.route("/api/validacion-pagos/detalle-venta/<factura_id>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Validación Pagos', 'consultar')
+def api_detalle_venta_reporte(factura_id):
+    """Obtiene el detalle completo de una venta para reportes"""
+    modelo = ValidacionPagosModel()
+    resultado = modelo.obtener_reporte_detalle_ventas(factura_id)
+    
+    if resultado["success"]:
+        return jsonify(resultado)
+    else:
+        return jsonify({"success": False, "error": resultado.get("error", "Error al obtener detalle")}), 500
+
+
+@validacion_pagos_blueprint.route("/api/validacion-pagos/metodos-pago", methods=["GET"])
+@jwt_required
+@tiene_permiso('Validación Pagos', 'consultar')
+def api_listar_metodos_pago():
+    """Lista los métodos de pago disponibles para filtros"""
+    modelo = ValidacionPagosModel()
+    return jsonify({
+        "success": True,
+        "metodos": modelo.obtener_metodos_pago_disponibles()
+    })
+
+
+@validacion_pagos_blueprint.route("/api/validacion-pagos/monedas", methods=["GET"])
+@jwt_required
+@tiene_permiso('Validación Pagos', 'consultar')
+def api_listar_monedas():
+    """Lista las monedas disponibles para filtros"""
+    modelo = ValidacionPagosModel()
+    return jsonify({
+        "success": True,
+        "monedas": modelo.obtener_monedas_disponibles()
+    })
