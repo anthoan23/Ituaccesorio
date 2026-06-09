@@ -46,85 +46,117 @@
 
   // ==================== MODALES PERSONALIZADOS ====================
   
-  function mostrarModalMensaje(mensaje, esError = false) {
-    // Eliminar modal existente si hay
-    const modalExistente = document.getElementById('modal-mensaje-global');
-    if (modalExistente) modalExistente.remove();
+  // function mostrarModalMensaje(mensaje, esError = false) {
+  //   // Eliminar modal existente si hay
+  //   const modalExistente = document.getElementById('modal-mensaje-global');
+  //   if (modalExistente) modalExistente.remove();
     
-    const modalDiv = document.createElement('div');
-    modalDiv.id = 'modal-mensaje-global';
-    modalDiv.className = 'modal';
-    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
-    modalDiv.innerHTML = `
-      <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
-      <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:400px;width:90%;text-align:center;">
-        <div style="margin-bottom:1rem;">
-          <span style="font-size:3rem;">${esError ? '❌' : '✅'}</span>
-        </div>
-        <p style="margin-bottom:1.5rem;font-size:1rem;color:${esError ? '#dc2626' : '#16a34a'};">
-          ${mensaje}
-        </p>
-        <button class="btn btn--primary" id="btn-cerrar-mensaje-global" style="min-width:100px;padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#f3c500;color:#121212;font-weight:bold;cursor:pointer;">Aceptar</button>
-      </div>
-    `;
+  //   const modalDiv = document.createElement('div');
+  //   modalDiv.id = 'modal-mensaje-global';
+  //   modalDiv.className = 'modal';
+  //   modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+  //   modalDiv.innerHTML = `
+  //     <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+  //     <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:400px;width:90%;text-align:center;">
+  //       <div style="margin-bottom:1rem;">
+  //         <span style="font-size:3rem;">${esError ? '❌' : '✅'}</span>
+  //       </div>
+  //       <p style="margin-bottom:1.5rem;font-size:1rem;color:${esError ? '#dc2626' : '#16a34a'};">
+  //         ${mensaje}
+  //       </p>
+  //       <button class="btn btn--primary" id="btn-cerrar-mensaje-global" style="min-width:100px;padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#f3c500;color:#121212;font-weight:bold;cursor:pointer;">Aceptar</button>
+  //     </div>
+  //   `;
     
-    document.body.appendChild(modalDiv);
-    document.body.style.overflow = 'hidden';
+  //   document.body.appendChild(modalDiv);
+  //   document.body.style.overflow = 'hidden';
     
-    const closeModal = () => {
-      modalDiv.remove();
-      document.body.style.overflow = '';
-    };
+  //   const closeModal = () => {
+  //     modalDiv.remove();
+  //     document.body.style.overflow = '';
+  //   };
     
-    document.getElementById('btn-cerrar-mensaje-global').addEventListener('click', closeModal);
-    modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
+  //   document.getElementById('btn-cerrar-mensaje-global').addEventListener('click', closeModal);
+  //   modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
     
-    // Auto cerrar después de 3 segundos
-    setTimeout(() => {
-      if (document.getElementById('modal-mensaje-global')) closeModal();
-    }, 3000);
-  }
+  //   // Auto cerrar después de 3 segundos
+  //   setTimeout(() => {
+  //     if (document.getElementById('modal-mensaje-global')) closeModal();
+  //   }, 3000);
+  // }
 
-  function mostrarModalConfirmacion(mensaje, onConfirmar) {
+  function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false) {
     // Eliminar modal existente si hay
-    const modalExistente = document.getElementById('modal-confirmacion-global');
+    const modalExistente = document.getElementById('confirmacion-modal');
     if (modalExistente) modalExistente.remove();
     
+    // Determinar el tipo de modal
+    const esError = soloInformacion && mensaje.includes('No se puede eliminar');
+    const titulo = soloInformacion ? (esError ? "Error" : "Información") : "Confirmar acción";
+    const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
+    const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
+    
     const modalDiv = document.createElement('div');
-    modalDiv.id = 'modal-confirmacion-global';
-    modalDiv.className = 'modal';
+    modalDiv.id = 'confirmacion-modal';
+    modalDiv.className = 'ui-modal';
+    modalDiv.setAttribute('data-modal', '');
+    modalDiv.setAttribute('hidden', '');
     modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+    
     modalDiv.innerHTML = `
-      <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
-      <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:450px;width:90%;">
-        <div style="margin-bottom:1rem;">
-          <span style="font-size:2rem;">⚠️</span>
+        <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
+            <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
+                <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;">${titulo}</h3>
+                <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
+            </header>
+            <div class="ui-modal__body" style="padding:1.5rem;">
+                <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;">${mensaje}</p>
+            </div>
+            <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
+                ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+                <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
+            </div>
         </div>
-        <p style="margin-bottom:1.5rem;font-size:1rem;color:#121212;">
-          ${mensaje}
-        </p>
-        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-          <button class="btn btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#eef0f4;color:#121212;font-weight:bold;cursor:pointer;">Cancelar</button>
-          <button class="btn btn--danger" id="btn-confirmar-accion" style="padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#dc2626;color:white;font-weight:bold;cursor:pointer;">Eliminar</button>
-        </div>
-      </div>
     `;
     
     document.body.appendChild(modalDiv);
     document.body.style.overflow = 'hidden';
     
-    const closeModal = () => {
-      modalDiv.remove();
-      document.body.style.overflow = '';
+    const cerrarModal = () => {
+        modalDiv.remove();
+        document.body.style.overflow = '';
     };
     
-    document.getElementById('btn-cancelar-confirmacion').addEventListener('click', closeModal);
-    modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
-    document.getElementById('btn-confirmar-accion').addEventListener('click', async () => {
-      closeModal();
-      if (onConfirmar) await onConfirmar();
+    // Botón cancelar (solo si no es solo información)
+    if (!soloInformacion) {
+        const cancelBtn = document.getElementById('btn-cancelar-confirmacion');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', cerrarModal);
+        }
+    }
+    
+    // Botón confirmar
+    const confirmBtn = document.getElementById('btn-confirmar-accion');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', async () => {
+            cerrarModal();
+            if (onConfirmar && !soloInformacion) {
+                await onConfirmar();
+            }
+        });
+    }
+    
+    // Botón cerrar (X)
+    const closeBtn = modalDiv.querySelector('[data-close-modal]');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', cerrarModal);
+    }
+    
+    // Cerrar al hacer click en el backdrop
+    modalDiv.addEventListener('click', (e) => {
+        if (e.target === modalDiv) cerrarModal();
     });
-  }
+}
 
   // ==================== FIN MODALES ====================
 
@@ -667,8 +699,13 @@
         const stock = data.stock || 0;
         
         if (tieneStock) {
-          mostrarModalMensaje(`No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario. Primero debe eliminar o reducir el stock.`, true);
-        } else {
+          // Usar mostrarModalConfirmacion con soloInformacion = true
+          mostrarModalConfirmacion(
+              `No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario.`,
+              null,
+              true  // soloInformacion = true
+          );
+      } else {
           mostrarModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, async () => {
             try {
               await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
