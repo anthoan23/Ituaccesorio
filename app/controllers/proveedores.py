@@ -313,7 +313,8 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
     modelo = Producto()
-    modelos = modelo.listar_modelos(q=q) or []
+    # Cambiar listar_modelos por listar
+    modelos = modelo.listar(q=q) or []
     return jsonify({"success": True, "modelos": modelos})
 
 # ==================== REPORTES ====================
