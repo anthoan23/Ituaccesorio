@@ -1,24 +1,14 @@
 from flask import Blueprint, jsonify, request, g
-from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.decorators import jwt_required, solo_roles
 from app.models.bitacora import registrar_en_bitacora
 from app.models.modulos import Modulo
 
 modulos_blueprint = Blueprint("modulos", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
 @modulos_blueprint.route("/api/modulos", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_listar_modulos():
     modulo_model = Modulo()
     modulos = modulo_model.listar_modulos()
@@ -27,7 +17,7 @@ def api_listar_modulos():
 
 @modulos_blueprint.route("/api/modulos", methods=["POST"])
 @jwt_required
-@tiene_permiso('Usuarios', 'registrar')
+@solo_roles(['admin'])
 def api_crear_modulo():
     data = request.get_json(silent=True) or {}
     nombre = data.get("nombre", "").strip()
@@ -40,10 +30,12 @@ def api_crear_modulo():
     mensaje = modulo_model.agregar_modulo()
 
     if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Crear módulo",
             descripcion=f"Se creó el módulo: {nombre}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Usuarios"
         )
         return jsonify({"success": True, "message": mensaje, "id": modulo_model.id}), 201
@@ -53,7 +45,7 @@ def api_crear_modulo():
 
 @modulos_blueprint.route("/api/modulos/<modulo_id>", methods=["PUT"])
 @jwt_required
-@tiene_permiso('Usuarios', 'modificar')
+@solo_roles(['admin'])
 def api_actualizar_modulo(modulo_id):
     data = request.get_json(silent=True) or {}
     nombre = data.get("nombre", "").strip()
@@ -66,10 +58,12 @@ def api_actualizar_modulo(modulo_id):
     mensaje = modulo_model.actualizar_modulo()
 
     if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Actualizar módulo",
             descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Usuarios"
         )
         return jsonify({"success": True, "message": mensaje}), 200
@@ -79,16 +73,18 @@ def api_actualizar_modulo(modulo_id):
 
 @modulos_blueprint.route("/api/modulos/<modulo_id>", methods=["DELETE"])
 @jwt_required
-@tiene_permiso('Usuarios', 'eliminar')
+@solo_roles(['admin'])
 def api_eliminar_modulo(modulo_id):
     modulo_model = Modulo(id=modulo_id)
     mensaje = modulo_model.eliminar_modulo()
 
     if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Eliminar módulo",
             descripcion=f"Se eliminó el módulo ID: {modulo_id}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Usuarios"
         )
         return jsonify({"success": True, "message": mensaje}), 200

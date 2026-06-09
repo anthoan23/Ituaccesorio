@@ -11,35 +11,18 @@ import traceback
 ventas_blueprint = Blueprint("ventas", __name__)
 
 
-def _usuario_actual() -> str:
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_id_empleado() -> str:
-    """Obtiene el ID del empleado actual (cédula como string)"""
-    user = getattr(g, 'user', None)
-    if not user:
+def obtener_cliente_id_actual() -> str:
+    """
+    Obtiene el ID del cliente actual.
+    Verifica si el usuario autenticado existe como cliente en la base de datos del negocio.
+    """
+    usuario = getattr(g, "user", None)
+    if not usuario:
         return None
     
-    if isinstance(user, dict):
-        cedula = user.get("cedula_personal") or user.get("cedula")
-    else:
-        cedula = getattr(user, "cedula_personal", None) or getattr(user, "cedula", None)
-    
-    return str(cedula) if cedula else None
-
-
-def obtener_cliente_id_actual() -> str:
-    """Obtiene el ID del cliente actual (cédula como string)"""
-    usuario = getattr(g, "user", {}) or {}
+    # Obtener cédula desde el usuario
     if isinstance(usuario, dict):
-        cliente_id = usuario.get("cedula") or usuario.get("cedula_personal") or usuario.get("id_c") or usuario.get("id_cliente")
+        cliente_id = usuario.get("cedula") or usuario.get("cedula_personal")
     else:
         cliente_id = getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None)
     
@@ -92,7 +75,7 @@ def calcular_precios_bs(productos: list, tasas: dict = None) -> list:
 
 @ventas_blueprint.route("/catalogo")
 def pagina_catalogo():
-    """Página principal del catálogo de productos"""
+    """Página principal del catálogo de productos - acceso público"""
     return render_template(
         "ventas/catalogo.html",
         show_navbar=True,
@@ -103,7 +86,7 @@ def pagina_catalogo():
 
 @ventas_blueprint.route("/api/catalogo/productos")
 def api_listar_productos_catalogo():
-    """API para obtener productos del catálogo con filtros"""
+    """API para obtener productos del catálogo con filtros - acceso público"""
     try:
         modelo_catalogo = CatalogoModel()
         
@@ -200,10 +183,13 @@ def api_agregar_carrito():
         modelo_carrito = CarritoModel()
         modelo_carrito.agregar_al_carrito(cliente_id, str(producto_id), cantidad)
         
+        # Obtener usuario actual para bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Agregar al carrito",
             descripcion=f"Cliente ID: {cliente_id} agregó producto ID: {producto_id} - Cantidad: {cantidad}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Carrito"
         )
         
@@ -403,10 +389,13 @@ def api_procesar_pago():
         # Vaciar el carrito
         modelo_carrito.vaciar_carrito(cliente_id)
         
+        # Obtener usuario actual para bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Realizar venta",
             descripcion=f"Cliente ID: {cliente_id} realizó venta ID: {factura_id} - Método: {metodo_pago}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Ventas"
         )
         
@@ -420,7 +409,8 @@ def api_procesar_pago():
         print(f"ERROR EN PROCESAR PAGO: {e}")
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
+
 @ventas_blueprint.route("/admin/validar-pagos")
 @jwt_required
 @solo_roles(['admin', 'ventas'])

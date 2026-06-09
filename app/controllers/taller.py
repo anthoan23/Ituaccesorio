@@ -14,31 +14,6 @@ taller_blueprint = Blueprint("taller", __name__)
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_id_empleado():
-    """Obtiene el ID del empleado actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return 1004
-    if isinstance(user, dict):
-        cedula = user.get("cedula_personal")
-    else:
-        cedula = getattr(user, "cedula_personal", None)
-    try:
-        return int(cedula) if cedula else 1004
-    except Exception:
-        return 1004
-
-
 def _is_allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
@@ -68,7 +43,14 @@ def obtener_ordenes_taller():
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
-    ordenes = Orden_servicio(ID_empleado=32014004)
+    # Obtener ID del empleado desde g.user
+    usuario_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
+    try:
+        id_empleado = int(usuario_id) if usuario_id else 32014004
+    except (ValueError, TypeError):
+        id_empleado = 32014004
+    
+    ordenes = Orden_servicio(ID_empleado=id_empleado)
     resultado = ordenes.listar_ordenes_tecnico()
     return jsonify(resultado)
 

@@ -12,32 +12,6 @@ from app.utils.jwt_utils import set_auth_cookies
 usuarios_blueprint = Blueprint("usuarios", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _usuario_actual_datos():
-    usuario = getattr(g, "user", None)
-    if not usuario:
-        return {}
-    if isinstance(usuario, dict):
-        return usuario
-    return {
-        "usuario_id": getattr(usuario, "usuario_id", None),
-        "usuario_nombre": getattr(usuario, "usuario_nombre", None),
-        "cedula": getattr(usuario, "cedula", None),
-        "rol_id": getattr(usuario, "rol_id", None),
-        "nombre_rol": getattr(usuario, "nombre_rol", None),
-        "foto_perfil": getattr(usuario, "foto_perfil", None),
-    }
-
-
 def _guardar_foto_perfil(archivo):
     if not archivo or not getattr(archivo, "filename", ""):
         return None
@@ -57,11 +31,11 @@ def _guardar_foto_perfil(archivo):
 
 def _actualizar_cookie_usuario(resp, usuario_actual, usuario_db):
     payload = {
-        "usuario_id": usuario_db.get("id"),
+        "id": usuario_db.get("id"),
         "usuario_nombre": usuario_db.get("nombre"),
         "cedula": usuario_db.get("cedula_personal"),
         "rol_id": usuario_db.get("rol_id"),
-        "nombre_rol": usuario_db.get("rol_nombre"),
+        "rol_nombre": usuario_db.get("rol_nombre"),
         "foto_perfil": usuario_db.get("foto_perfil"),
         "perfil_completo": bool((usuario_actual or {}).get("perfil_completo", True)),
     }
@@ -79,15 +53,15 @@ def pagina_usuarios():
         show_navbar=True,
         show_notifications=True,
         active_page="usuarios",
-        current_user=_usuario_actual_datos(),
+        current_user=g.user if isinstance(g.user, dict) else {},
     )
 
 
-# ==================== USUARIOS ====================
+# ==================== ADMINISTRACIÓN DE USUARIOS (SOLO ADMIN) ====================
 
 @usuarios_blueprint.route("/api/usuarios", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_listar_usuarios():
     usuario_model = Usuarios()
     usuarios = usuario_model.listar_usuarios()
@@ -96,7 +70,7 @@ def api_listar_usuarios():
 
 @usuarios_blueprint.route("/api/usuarios/empleados", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_listar_empleados():
     usuario_model = Usuarios()
     empleados = usuario_model.listar_empleados()
@@ -105,7 +79,7 @@ def api_listar_empleados():
 
 @usuarios_blueprint.route("/api/usuarios/clientes", methods=["GET"])
 @jwt_required
-@tiene_permiso('Usuarios', 'consultar')
+@solo_roles(['admin'])
 def api_listar_clientes():
     from app.models.clientes import Clientes
     cliente_model = Clientes()
@@ -122,8 +96,8 @@ def api_listar_clientes():
             continue
             
         clientes_transformados.append({
-            "cedula": cliente.get("id", ""),  # El campo 'id' se convierte en 'cedula'
-            "nombre_completo": cliente.get("nombre", ""),  # El campo 'nombre' se convierte en 'nombre_completo'
+            "cedula": cliente.get("id", ""),
+            "nombre_completo": cliente.get("nombre", ""),
             "celular": cliente.get("celular", ""),
             "correo": cliente.get("correo", ""),
             "tipo": cliente.get("tipo", "natural"),
@@ -134,11 +108,129 @@ def api_listar_clientes():
     
     return jsonify({"success": True, "clientes": clientes_transformados})
 
+
+@usuarios_blueprint.route("/api/usuarios", methods=["POST"])
+@jwt_required
+@solo_roles(['admin'])
+def api_crear_usuario():
+    data = request.get_json(silent=True) or request.form
+    nombre = data.get("nombre", "").strip()
+    cedula = data.get("cedula_personal") or data.get("cedula")
+    password = data.get("password", "").strip()
+    rol_id = data.get("rol_id", "").strip()
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
+
+    if not nombre or not cedula or not password or not rol_id:
+        return jsonify({"success": False, "error": "Nombre, cédula, contraseña y rol son obligatorios."}), 400
+
+    usuario_model = Usuarios(
+        nombre=nombre,
+        cedula=cedula,
+        password=password,
+        rol_id=rol_id,
+        foto_perfil=foto_perfil
+    )
+    mensaje = usuario_model.agregar_usuario()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Crear usuario",
+            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula} - Rol ID: {rol_id}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje, "id": usuario_model.id}), 201
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
+@jwt_required
+@solo_roles(['admin'])
+def api_actualizar_usuario(usuario_id):
+    data = request.get_json(silent=True) or request.form
+    nombre = data.get("nombre", "").strip()
+    cedula = data.get("cedula_personal") or data.get("cedula")
+    password = data.get("password", "").strip()
+    rol_id = data.get("rol_id", "").strip()
+    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
+
+    if not nombre or not cedula or not rol_id:
+        return jsonify({"success": False, "error": "Nombre, cédula y rol son obligatorios."}), 400
+
+    usuario_model = Usuarios(
+        id=usuario_id,
+        nombre=nombre,
+        cedula=cedula,
+        password=password,
+        rol_id=rol_id,
+        foto_perfil=foto_perfil
+    )
+    mensaje = usuario_model.actualizar_usuario()
+
+    if "exitosamente" in mensaje:
+        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Actualizar usuario",
+            descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
+            usuario_id=usuario_actual_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
+@jwt_required
+@solo_roles(['admin'])
+def api_eliminar_usuario(usuario_id):
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+
+    if usuario_actual_id == usuario_id:
+        return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
+
+    # Verificar el rol del usuario a eliminar
+    usuario_model = Usuarios()
+    usuario_objetivo = usuario_model.obtener_usuario_por_id(usuario_id)
+
+    if not usuario_objetivo:
+        return jsonify({"success": False, "error": "El usuario no existe."}), 404
+
+    nombre_usuario = usuario_objetivo.get("nombre", "N/A")
+    rol_objetivo = usuario_objetivo.get("rol_nombre", "").lower()
+
+    # Verificar permisos para eliminar admin
+    usuario_actual_rol = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "").lower()
+    if rol_objetivo == "admin" and usuario_actual_rol != "admin":
+        return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
+
+    usuario_model.id = usuario_id
+    mensaje = usuario_model.eliminar_usuario()
+
+    if "exitosamente" in mensaje:
+        registrar_en_bitacora(
+            accion="Eliminar usuario",
+            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {nombre_usuario}",
+            usuario_id=usuario_actual_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+# ==================== PERFIL PROPIO (TODOS LOS USUARIOS AUTENTICADOS) ====================
+
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
 @jwt_required
 def api_obtener_mi_perfil():
-    usuario_id = _usuario_actual()
-    if usuario_id == "SYSTEM":
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+    
+    if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
     usuario_model = Usuarios()
@@ -153,8 +245,9 @@ def api_obtener_mi_perfil():
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["PUT"])
 @jwt_required
 def api_actualizar_mi_perfil():
-    usuario_id = _usuario_actual()
-    if usuario_id == "SYSTEM":
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+    
+    if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
     data = request.get_json(silent=True) or request.form
@@ -189,116 +282,12 @@ def api_actualizar_mi_perfil():
         )
 
         resp = jsonify({"success": True, "message": mensaje, "usuario": usuario_actualizado})
-        return _actualizar_cookie_usuario(resp, _usuario_actual_datos(), usuario_actualizado)
-
-    return jsonify({"success": False, "error": mensaje}), 400
-
-
-@usuarios_blueprint.route("/api/usuarios", methods=["POST"])
-@jwt_required
-@tiene_permiso('Usuarios', 'registrar')
-def api_crear_usuario():
-    data = request.get_json(silent=True) or request.form
-    nombre = data.get("nombre", "").strip()
-    cedula = data.get("cedula_personal") or data.get("cedula")
-    password = data.get("password", "").strip()
-    rol_id = data.get("rol_id", "").strip()
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
-
-    if not nombre or not cedula or not password or not rol_id:
-        return jsonify({"success": False, "error": "Nombre, cédula, contraseña y rol son obligatorios."}), 400
-
-    usuario_model = Usuarios(
-        nombre=nombre,
-        cedula=cedula,
-        password=password,
-        rol_id=rol_id,
-        foto_perfil=foto_perfil
-    )
-    mensaje = usuario_model.agregar_usuario()
-
-    if "exitosamente" in mensaje:
-        registrar_en_bitacora(
-            accion="Crear usuario",
-            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula} - Rol ID: {rol_id}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Usuarios"
-        )
-        return jsonify({"success": True, "message": mensaje, "id": usuario_model.id}), 201
-
-    return jsonify({"success": False, "error": mensaje}), 400
-
-
-@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Usuarios', 'modificar')
-def api_actualizar_usuario(usuario_id):
-    data = request.get_json(silent=True) or request.form
-    nombre = data.get("nombre", "").strip()
-    cedula = data.get("cedula_personal") or data.get("cedula")
-    password = data.get("password", "").strip()
-    rol_id = data.get("rol_id", "").strip()
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
-
-    if not nombre or not cedula or not rol_id:
-        return jsonify({"success": False, "error": "Nombre, cédula y rol son obligatorios."}), 400
-
-    usuario_model = Usuarios(
-        id=usuario_id,
-        nombre=nombre,
-        cedula=cedula,
-        password=password,
-        rol_id=rol_id,
-        foto_perfil=foto_perfil
-    )
-    mensaje = usuario_model.actualizar_usuario()
-
-    if "exitosamente" in mensaje:
-        registrar_en_bitacora(
-            accion="Actualizar usuario",
-            descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
-            usuario_id=_usuario_actual(),
-            modulo_nombre="Usuarios"
-        )
-        return jsonify({"success": True, "message": mensaje}), 200
-
-    return jsonify({"success": False, "error": mensaje}), 400
-
-
-@usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Usuarios', 'eliminar')
-def api_eliminar_usuario(usuario_id):
-    usuario_actual_id = _usuario_actual()
-
-    if usuario_actual_id == usuario_id:
-        return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
-
-    # Verificar el rol del usuario a eliminar
-    usuario_model = Usuarios()
-    usuario_objetivo = usuario_model.obtener_usuario_por_id(usuario_id)
-
-    if not usuario_objetivo:
-        return jsonify({"success": False, "error": "El usuario no existe."}), 404
-
-    nombre_usuario = usuario_objetivo.get("nombre", "N/A")
-    rol_objetivo = usuario_objetivo.get("rol_nombre", "").lower()
-
-    # Verificar permisos para eliminar admin
-    usuario_actual_rol = _usuario_actual_datos().get("nombre_rol", "").lower()
-    if rol_objetivo == "admin" and usuario_actual_rol != "admin":
-        return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
-
-    usuario_model.id = usuario_id
-    mensaje = usuario_model.eliminar_usuario()
-
-    if "exitosamente" in mensaje:
-        registrar_en_bitacora(
-            accion="Eliminar usuario",
-            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {nombre_usuario}",
-            usuario_id=usuario_actual_id,
-            modulo_nombre="Usuarios"
-        )
-        return jsonify({"success": True, "message": mensaje}), 200
+        
+        # Obtener el usuario actual para la cookie
+        usuario_actual_data = {
+            "perfil_completo": g.user.get("perfil_completo", True) if isinstance(g.user, dict) else getattr(g.user, "perfil_completo", True)
+        }
+        
+        return _actualizar_cookie_usuario(resp, usuario_actual_data, usuario_actualizado)
 
     return jsonify({"success": False, "error": mensaje}), 400

@@ -9,26 +9,6 @@ proveedores_modelo = Proveedores()
 productos_modelo = Producto()
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_nombre_proveedor(proveedor_id):
-    """Obtiene el nombre de un proveedor por su ID"""
-    try:
-        modelo = Proveedores()
-        proveedor = modelo.obtener_proveedor(id_proveedor=proveedor_id)
-        return proveedor.get("nombre", str(proveedor_id)) if proveedor else str(proveedor_id)
-    except Exception:
-        return str(proveedor_id)
-
-
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
 @jwt_required
 @tiene_permiso('Proveedores', 'consultar')
@@ -130,11 +110,14 @@ def api_crear_proveedor():
                 limite_credito=limite_val,
             )
         
+        # Obtener usuario desde g.user
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         # Registrar en bitácora
         registrar_en_bitacora(
             accion="Crear proveedor",
             descripcion=f"Se creó el proveedor: {nombre} - Tipo: {tipo or 'N/A'} - Límite crédito: {limite_val or 0}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Proveedores"
         )
         
@@ -192,11 +175,14 @@ def api_actualizar_proveedor(id_proveedor: int):
         )
         
         if ok:
+            # Obtener usuario desde g.user
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             # Registrar en bitácora
             registrar_en_bitacora(
                 accion="Actualizar proveedor",
                 descripcion=f"Se actualizó el proveedor ID: {id_proveedor} - Nuevo nombre: {nombre}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -212,16 +198,20 @@ def api_eliminar_proveedor(id_proveedor: int):
     modelo = Proveedores()
     try:
         # Obtener nombre antes de eliminar
-        nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+        proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+        nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
         
         ok = modelo.eliminar_proveedor(id_proveedor=id_proveedor)
         
         if ok:
+            # Obtener usuario desde g.user
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             # Registrar en bitácora
             registrar_en_bitacora(
                 accion="Eliminar proveedor",
                 descripcion=f"Se eliminó el proveedor ID: {id_proveedor} - Nombre: {nombre_proveedor}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -268,12 +258,18 @@ def api_upsert_producto_proveedor(id_proveedor: int):
         )
         
         if ok:
+            # Obtener usuario desde g.user
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
+            # Obtener nombre del proveedor
+            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
+            
             # Registrar en bitácora
-            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
             registrar_en_bitacora(
                 accion="Actualizar producto de proveedor",
                 descripcion=f"Se actualizó producto para proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo_val} - Costo: {costo_val}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -293,12 +289,18 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
         ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
         
         if ok:
+            # Obtener usuario desde g.user
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
+            # Obtener nombre del proveedor
+            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
+            
             # Registrar en bitácora
-            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
             registrar_en_bitacora(
                 accion="Eliminar producto de proveedor",
                 descripcion=f"Se eliminó producto del proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -313,8 +315,10 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
     modelo = Producto()
-    modelos = modelo.listar_modelos(q=q) or []
+    # Cambiar listar_modelos por listar
+    modelos = modelo.listar(q=q) or []
     return jsonify({"success": True, "modelos": modelos})
+
 
 # ==================== REPORTES ====================
 

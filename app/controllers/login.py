@@ -6,6 +6,7 @@ import traceback
 from app.models.login import LoginManager
 from app.utils.decorators import jwt_required
 from app.utils.jwt_utils import clear_auth_cookies, set_auth_cookies
+from app.models.permisos import Permiso
 
 login_blueprint = Blueprint("login", __name__)
 
@@ -60,6 +61,42 @@ def _es_rol_cliente(nombre_rol):
     return str(nombre_rol or "").strip().lower() == "cliente"
 
 
+def _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol):
+    """Carga los permisos del usuario para incluirlos en el payload del JWT"""
+    # ADMIN tiene todos los permisos
+    if rol_id == 1 or str(nombre_rol or "").lower() == 'admin':
+        from app.models.modulos import Modulo
+        modulo_model = Modulo()
+        modulos = modulo_model.listar_modulos() or []
+        permisos = {}
+        for modulo in modulos:
+            permisos[modulo['nombre']] = {
+                'consultar': True,
+                'registrar': True,
+                'modificar': True,
+                'eliminar': True
+            }
+        return permisos
+    
+    if not usuario_id:
+        return {}
+    
+    # Cargar permisos desde la base de datos
+    permiso_model = Permiso()
+    permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
+    
+    permisos = {}
+    for p in permisos_db:
+        permisos[p['modulo_nombre']] = {
+            'consultar': bool(p.get('consultar', False)),
+            'registrar': bool(p.get('registrar', False)),
+            'modificar': bool(p.get('modificar', False)),
+            'eliminar': bool(p.get('eliminar', False))
+        }
+    
+    return permisos
+
+
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
     """Página de login"""
@@ -102,15 +139,23 @@ def validar_login():
         if es_cliente:
             perfil_completo = login_manager.verificar_perfil_completo_cliente(usuario.get("cedula"))
         
+        # Cargar permisos del usuario
+        permisos = _cargar_permisos_usuario(
+            usuario.get("id"), 
+            usuario.get("rol_id"), 
+            usuario.get("rol_nombre")
+        )
+        
         # Preparar payload para la cookie
         payload = {
-            "usuario_id": usuario.get("id"),
+            "id": usuario.get("id"),  # Cambiado de usuario_id a id
             "usuario_nombre": usuario.get("nombre"),
             "cedula": usuario.get("cedula"),
             "rol_id": usuario.get("rol_id"),
-            "nombre_rol": usuario.get("rol_nombre"),
+            "rol_nombre": usuario.get("rol_nombre"),  # Cambiado de nombre_rol a rol_nombre
             "foto_perfil": usuario.get("foto_perfil"),
             "perfil_completo": perfil_completo,
+            "permisos": permisos,  # Incluir permisos en el payload
         }
         
         resp = make_response(jsonify({
@@ -185,15 +230,19 @@ def registro_cliente_paso_1():
         if not usuario_id:
             return jsonify({"success": False, "error": "No se pudo crear la cuenta. Verifica los logs del servidor."}), 500
 
+        # Cargar permisos del nuevo usuario (cliente)
+        permisos = _cargar_permisos_usuario(usuario_id, rol_cliente["id"], rol_cliente["nombre"])
+
         # Preparar payload para la cookie
         payload = {
-            "usuario_id": usuario_id,
+            "id": usuario_id,
             "usuario_nombre": nombre_usuario,
             "cedula": int(cedula),
             "rol_id": rol_cliente["id"],
-            "nombre_rol": rol_cliente["nombre"],
+            "rol_nombre": rol_cliente["nombre"],
             "foto_perfil": None,
             "perfil_completo": False,
+            "permisos": permisos,
         }
         
         resp = make_response(jsonify({
@@ -230,15 +279,19 @@ def registro_cliente_paso_2():
         
         # Si es diccionario, acceder con .get()
         if isinstance(usuario, dict):
-            nombre_rol = usuario.get("nombre_rol", "")
+            nombre_rol = usuario.get("rol_nombre", "")
             cedula = usuario.get("cedula", "")
-            usuario_id = usuario.get("usuario_id", "")
+            usuario_id = usuario.get("id", "")
             usuario_nombre = usuario.get("usuario_nombre", "")
+            rol_id = usuario.get("rol_id", "")
+            foto_perfil = usuario.get("foto_perfil", "")
         else:
-            nombre_rol = getattr(usuario, "nombre_rol", "")
+            nombre_rol = getattr(usuario, "rol_nombre", "")
             cedula = getattr(usuario, "cedula", "")
-            usuario_id = getattr(usuario, "usuario_id", "")
+            usuario_id = getattr(usuario, "id", "")
             usuario_nombre = getattr(usuario, "usuario_nombre", "")
+            rol_id = getattr(usuario, "rol_id", "")
+            foto_perfil = getattr(usuario, "foto_perfil", "")
         
         print(f"Usuario autenticado paso-2: id={usuario_id}, rol={nombre_rol}, cedula={cedula}")
         
@@ -280,14 +333,18 @@ def registro_cliente_paso_2():
         # Verificar si el cliente ya existe
         existente = modelo_clientes.obtener_cliente_por_id(int(cedula))
         if existente:
+            # Recargar permisos actualizados
+            permisos = _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol)
+            
             payload = {
-                "usuario_id": usuario_id,
+                "id": usuario_id,
                 "usuario_nombre": usuario_nombre,
                 "cedula": int(cedula),
-                "rol_id": usuario.get("rol_id") if isinstance(usuario, dict) else getattr(usuario, "rol_id", None),
-                "nombre_rol": nombre_rol,
-                "foto_perfil": usuario.get("foto_perfil") if isinstance(usuario, dict) else getattr(usuario, "foto_perfil", None),
+                "rol_id": rol_id,
+                "rol_nombre": nombre_rol,
+                "foto_perfil": foto_perfil,
                 "perfil_completo": True,
+                "permisos": permisos,
             }
             resp = make_response(jsonify({"success": True, "message": "Perfil ya completado."}))
             return set_auth_cookies(resp, payload)
@@ -307,14 +364,18 @@ def registro_cliente_paso_2():
         
         print(f"Cliente creado con ID: {cedula}")
         
+        # Recargar permisos actualizados
+        permisos = _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol)
+        
         payload = {
-            "usuario_id": usuario_id,
+            "id": usuario_id,
             "usuario_nombre": usuario_nombre,
             "cedula": int(cedula),
-            "rol_id": usuario.get("rol_id") if isinstance(usuario, dict) else getattr(usuario, "rol_id", None),
-            "nombre_rol": nombre_rol,
-            "foto_perfil": usuario.get("foto_perfil") if isinstance(usuario, dict) else getattr(usuario, "foto_perfil", None),
+            "rol_id": rol_id,
+            "rol_nombre": nombre_rol,
+            "foto_perfil": foto_perfil,
             "perfil_completo": True,
+            "permisos": permisos,
         }
         resp = make_response(jsonify({"success": True, "message": "Perfil completado correctamente."}))
         return set_auth_cookies(resp, payload)
