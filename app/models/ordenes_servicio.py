@@ -101,17 +101,18 @@ class Orden_servicio():
         cursor = db.cursor(dictionary=True)
         try:
             sql ="""
-                SELECT
-                    os.ID_orden_servicio AS id_orden,                 
-                    p.Nombre_producto AS modelo,
-                    os.Descripcion_reparacion AS descripcion,       
-                    os.Fecha_entrada AS fecha_e      
-                FROM Orden_servicio os
-                INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+                SELECT 
+                o.ID_orden_servicio AS id_orden,                 
+                p.Nombre_producto AS modelo,
+                o.Descripcion_reparacion AS descripcion,       
+                o.Fecha_entrada AS fecha_e 
+
+                FROM Orden_servicio o 
+                INNER JOIN Equipo e ON o.ID_equipo = e.ID_equipo
                 INNER JOIN Producto p ON e.ID_producto = p.ID_producto
-                INNER JOIN Interaccion i ON os.ID_orden_servicio = i.ID_orden_servicio
-                WHERE i.ID_empleado = %s AND os.Estado_orden_servicio = 'Asignada'
-                ORDER BY os.ID_orden_servicio DESC;
+                INNER JOIN Interaccion i ON o.ID_orden_servicio = i.ID_orden_servicio
+                where o.Estado_orden_servicio = 'Asignada' And i.Accion =  'Asignada' and i.ID_empleado = %s
+
                 """
             cursor.execute(sql, (empleado_id,))
             return cursor.fetchall()
