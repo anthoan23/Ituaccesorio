@@ -38,13 +38,15 @@
 			</div>
 		</div>
 
-		<!-- Botón del carrito en navbar -->
+		<!-- Botón del carrito en navbar - SOLO SE MUESTRA EN EL MÓDULO DE CATÁLOGO -->
+		{% if active_page == 'catalogo' %}
 		<button id="cart-nav-btn" class="icon-btn icon-btn--cart" aria-label="Abrir carrito">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 				<path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
 			</svg>
 			<span id="cart-nav-count" class="cart-badge">0</span>
 		</button>
+		{% endif %}
 
 		<details class="user-menu">
 			<summary class="user-menu__trigger">
@@ -122,7 +124,7 @@
 
 				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
 				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
-				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Validar Pagos</a>
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
 				
 				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
@@ -170,7 +172,9 @@
 				{% if permisos.get('Catálogo', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
 				{% endif %}
-				
+				{% if permisos.get('Entregas', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				{% endif %}
 				{% if permisos.get('Productos', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
 				{% endif %}
@@ -211,6 +215,10 @@
 				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
 				{% endif %}
 				
+			{% else %}
+				{# ==================== USUARIO NO LOGUEADO: SOLO TRADE-IN Y CATÁLOGO ==================== #}
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
 			{% endif %}
 		</nav>
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
