@@ -60,7 +60,7 @@ def pagina_taller():
 @tiene_permiso('Taller', 'consultar')
 def obtener_ordenes_taller():
     ordenes = Orden_servicio()
-    resultado = ordenes.listado_ordenes_taller()
+    resultado = ordenes.listar_ordenes_taller()
     return jsonify(resultado)
 
 
@@ -68,21 +68,24 @@ def obtener_ordenes_taller():
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
-    ordenes = Orden_servicio()
-    resultado = ordenes.ordenes_asignadas_empleado()
+    ordenes = Orden_servicio(ID_empleado=32014004)
+    resultado = ordenes.listar_ordenes_tecnico()
     return jsonify(resultado)
 
 
-@taller_blueprint.route("/api/taller/ordenes/<int:id_orden>", methods=["POST"])
+@taller_blueprint.route("/api/taller/detalle-orden", methods=["POST"])
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
-def obtener_detalles_orden(id_orden):
-    ordenes = Orden_servicio()
+def obtener_detalles_orden():
+    ordenes = Orden_servicio(
+        ID_orden_e=request.json.get("id_orden")
+    )
     test = Tests()
-    detalle_orden = ordenes.detalles_orden(id_orden)
-    fotos_orden = ordenes.fotos_orden(id_orden)
-    test_orden = test.buscar_test(id_orden)
-    empleados_orden = ordenes.empleados_asignados(id_orden)
+    
+    detalle_orden = ordenes.consultar_orden()
+    fotos_orden = ordenes.fotos_orden()
+    test_orden = test.buscar_test()
+    empleados_orden = ordenes.empleados_asignados()
 
     resultado = {
         "detalle_orden": detalle_orden,

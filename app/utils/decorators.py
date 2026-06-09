@@ -12,6 +12,8 @@ def _get_bearer_token():
     return None
 
 
+from flask import redirect, url_for
+
 def jwt_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -23,7 +25,7 @@ def jwt_required(func):
             payload = decode_token(refresh_token)
 
         if not payload:
-            return jsonify({"success": False, "error": "Autenticación requerida."}), 401
+            return redirect(url_for('login.pagina_login'))
 
         # Attach user payload to g for handlers/templates
         g.user = payload

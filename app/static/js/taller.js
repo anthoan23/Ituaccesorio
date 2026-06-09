@@ -437,52 +437,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		tablaOrdenes.innerHTML = ordenes.map((orden) => `
 			<tr>
-				<td>${escapeHtml(orden.ID_orden)}</td>
-				<td>${escapeHtml(orden.Estado)}</td>
-				<td>${escapeHtml(orden.ID_c ?? orden.ID_cliente ?? '')}</td>
-				<td>${escapeHtml(((orden.Nombre_cliente ?? orden.Nombre_c ?? '') + ' ' + (orden.Apellido_cliente ?? orden.Apellido_c ?? '')).trim())}</td>
-				<td>${escapeHtml(orden.Modelo ?? orden.N_modelo ?? '')}</td>
-				<td>${escapeHtml(orden.Des_cliente)}</td>
-				<td>${escapeHtml(formatFecha(orden.Fecha_e))}</td>
+				<td>${escapeHtml(orden.id_orden)}</td>
+				<td>${escapeHtml(orden.estado)}</td>
+				<td>${escapeHtml(orden.id_cliente ?? '')}</td>
+				<td>${escapeHtml(orden.nombre_cliente ?? '')}</td>
+				<td>${escapeHtml(orden.modelo ?? '')}</td>
+				<td>${escapeHtml(orden.descripcion ?? '')}</td>
+				<td>${escapeHtml(formatFecha(orden.fecha_e))}</td>
 				<td class="table__actions">
 					<div class="row-actions">
-						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.ID_orden)}">Ver</button>
-						<button type="button" class="table-action" data-accion="tomar" data-id="${escapeHtml(orden.ID_orden)}">Tomar orden</button>
+						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.id_orden)}">Ver</button>
+						<button type="button" class="table-action" data-accion="tomar" data-id="${escapeHtml(orden.id_orden)}">Tomar orden</button>
 					</div>
 				</td>
 			</tr>
 		`).join("");
 
-			if (paginasOrdenes) {
+		if (paginasOrdenes) {
 			paginasOrdenes.textContent = String(ordenes.length);
 		}
 	};
 
-		const renderReparacionesAsignadas = (ordenes) => {
-			if (!tablaReparacionesAsignadas) {
-				return;
-			}
+	const renderReparacionesAsignadas = (ordenes) => {
+		if (!tablaReparacionesAsignadas) {
+			return;
+		}
 
-			if (!Array.isArray(ordenes) || ordenes.length === 0) {
-				tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">Sin reparaciones asignadas por ahora.</td></tr>';
-				return;
-			}
+		if (!Array.isArray(ordenes) || ordenes.length === 0) {
+			tablaReparacionesAsignadas.innerHTML = '<tr><td colspan="3">Sin reparaciones asignadas por ahora.</td></tr>';
+			return;
+		}
 
-			tablaReparacionesAsignadas.innerHTML = ordenes.map((orden) => `
-				<tr>
-					<td>${escapeHtml(orden.ID_orden)}</td>
-					<td>${escapeHtml(orden.N_modelo ?? orden.Modelo ?? '')}</td>
-					<td class="table__actions">
-						<div class="row-actions">
-							<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.ID_orden)}">Ver</button>
-							<button type="button" class="table-action" data-accion="revisar" data-id="${escapeHtml(orden.ID_orden)}">Revisar</button>
-							<button type="button" class="table-action table-action--accent" data-accion="reparar" data-id="${escapeHtml(orden.ID_orden)}">Reparar</button>
-							<button type="button" class="table-action table-action--danger" data-accion="liberar" data-id="${escapeHtml(orden.ID_orden)}">Liberar</button>
-						</div>
-					</td>
-				</tr>
-			`).join("");
-		};
+		tablaReparacionesAsignadas.innerHTML = ordenes.map((orden) => `
+			<tr>
+				<td>${escapeHtml(orden.id_orden)}</td> <td>${escapeHtml(orden.modelo ?? '')}</td>    <td class="table__actions">
+					<div class="row-actions">
+						<button type="button" class="table-action" data-accion="ver" data-id="${escapeHtml(orden.id_orden)}">Ver</button>
+						<button type="button" class="table-action" data-accion="revisar" data-id="${escapeHtml(orden.id_orden)}">Revisar</button>
+						<button type="button" class="table-action table-action--accent" data-accion="reparar" data-id="${escapeHtml(orden.id_orden)}">Reparar</button>
+						<button type="button" class="table-action table-action--danger" data-accion="liberar" data-id="${escapeHtml(orden.id_orden)}">Liberar</button>
+					</div>
+				</td>
+			</tr>
+		`).join("");
+	};
 
 	const tomarOrden = async (idOrden) => {
 		try {
