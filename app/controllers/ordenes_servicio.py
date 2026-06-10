@@ -4,44 +4,54 @@ from app.models.empleados import Empleados
 from app.models.ordenes_servicio import Orden_servicio as OrdenServicio
 from app.models.test import Tests
 from app.utils.decorators import jwt_required, tiene_permiso
-import traceback
-
-
-
-
-
-
-
-
-
-
-
-
+from app.models.equipo import Equipo
 
 
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
+@ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["POST"])
+@jwt_required
+def registrar_equipo():
+    data = request.get_json(silent=True) or request.form
+    id_equipo = data.get("ID_equipo", "").strip()
+    color = data.get("Color", "").strip()
+    capacidad = data.get("Capacidad", "").strip() or None
+    clave = data.get("Clave", "").strip() or None
+    patron = data.get("Patron", "").strip()
 
+    if not id_equipo or not color or not patron:
+        return jsonify({"success": False, "message": "ID del equipo, color y patrón son obligatorios."}), 400
 
-def _obtener_id_empleado() -> int:
-    usuario = getattr(g, "user", {}) or {}
-    if isinstance(usuario, dict):
-        cedula = usuario.get("cedula_personal")
-    else:
-        cedula = getattr(usuario, "cedula_personal", None)
     try:
-        return int(cedula) if cedula else 1004
+        id_equipo_val = int(id_equipo)
+        patron_val = int(patron)
     except Exception:
-        return 1004
+        return jsonify({"success": False, "message": "ID del equipo y patrón deben ser números enteros."}), 400
+
+    equipo_model = Equipo(
+        ID_equipo=id_equipo_val,
+        Color=color,
+        Capacidad=capacidad,
+        Clave=clave,
+        Patron=patron_val
+    )
+    mensaje = equipo_model.registrar_equipo()
+
+    if "exitosamente" in mensaje:
+        return jsonify({"success": True, "message": mensaje}), 201
+    else:
+        return jsonify({"success": False, "message": mensaje}), 400
+
+
+
+
+
+
+
+
+
+
 
 
 def _obtener_nombre_cliente(cliente_id):
