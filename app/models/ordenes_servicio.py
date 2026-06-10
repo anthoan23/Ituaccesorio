@@ -293,6 +293,62 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
+    def asignar_orden_empleado(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            sql = "CALL sp_asignar_orden_servicio(%s, %s);"
+            cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
+            
+            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
+            # Esto es crucial para evitar el error "Commands out of sync"
+            while cursor.nextset():
+                # Consumir cualquier resultado pendiente
+                try:
+                    cursor.fetchall()
+                except:
+                    pass
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al asignar la orden al empleado: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def liberar_orden_empleado(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            sql = "CALL sp_liberar_orden_servicio(%s, %s);"
+            cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
+            
+            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
+            while cursor.nextset():
+                try:
+                    cursor.fetchall()
+                except:
+                    pass
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al liberar la orden del empleado: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
 """
 from __future__ import annotations
 
