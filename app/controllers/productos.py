@@ -9,30 +9,6 @@ from app.models.inventario import Inventario
 productos_blueprint = Blueprint("productos", __name__)
 
 
-def _resolver_usuario_actual():
-    usuario = getattr(g, "user", None)
-    if not usuario:
-        return {"id": "SYSTEM", "nombre": "SISTEMA", "foto": None}
-    
-    if isinstance(usuario, dict):
-        user_id = usuario.get("usuario_id") or usuario.get("id") or "SYSTEM"
-        user_name = usuario.get("usuario_nombre") or usuario.get("nombre") or usuario.get("username") or "USUARIO"
-        user_foto = usuario.get("foto_perfil") or None
-    else:
-        user_id = getattr(usuario, "usuario_id", None) or getattr(usuario, "id", None) or "SYSTEM"
-        user_name = getattr(usuario, "usuario_nombre", None) or getattr(usuario, "nombre", None) or getattr(usuario, "username", None) or "USUARIO"
-        user_foto = getattr(usuario, "foto_perfil", None) or None
-    
-    return {"id": user_id, "nombre": user_name, "foto": user_foto}
-
-
-def _resolver_usuario_id_str():
-    info = _resolver_usuario_actual()
-    if info["nombre"] and info["id"] != "SYSTEM":
-        return f"{info['nombre']} ({info['id']})"
-    return info["id"] if info["id"] else "SISTEMA"
-
-
 # ==================== PÁGINAS ====================
 
 @productos_blueprint.route("/productos", methods=["GET"])
@@ -72,14 +48,18 @@ def api_crear_clase():
     try:
         new_id = modelo.crear()
         
-        user_info = _resolver_usuario_actual()
+        # Obtener usuario desde g.user
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+        
         registrar_en_bitacora(
             "Crear clase",
             f"Clase creada: {nombre} (ID: {new_id})",
-            usuario_id=user_info["id"],
+            usuario_id=usuario_id,
             modulo_nombre="Productos",
-            usuario_nombre=user_info["nombre"],
-            usuario_foto=user_info["foto"]
+            usuario_nombre=usuario_nombre,
+            usuario_foto=usuario_foto
         )
         
         return jsonify({"success": True, "id": new_id}), 201
@@ -102,14 +82,17 @@ def api_actualizar_clase(id_clase: str):
         ok = modelo.actualizar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Actualizar clase",
                 f"Clase actualizada: {nombre} (ID: {id_clase})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "updated": ok})
@@ -126,14 +109,17 @@ def api_eliminar_clase(id_clase: str):
         ok = modelo.eliminar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Eliminar clase",
                 f"Clase eliminada (ID: {id_clase})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "deleted": ok})
@@ -167,14 +153,17 @@ def api_crear_marca():
     try:
         new_id = modelo.crear()
         
-        user_info = _resolver_usuario_actual()
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+        
         registrar_en_bitacora(
             "Crear marca",
             f"Marca creada: {nombre} (ID: {new_id})",
-            usuario_id=user_info["id"],
+            usuario_id=usuario_id,
             modulo_nombre="Productos",
-            usuario_nombre=user_info["nombre"],
-            usuario_foto=user_info["foto"]
+            usuario_nombre=usuario_nombre,
+            usuario_foto=usuario_foto
         )
         
         return jsonify({"success": True, "id": new_id}), 201
@@ -197,14 +186,17 @@ def api_actualizar_marca(id_marca: str):
         ok = modelo.actualizar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Actualizar marca",
                 f"Marca actualizada: {nombre} (ID: {id_marca})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "updated": ok})
@@ -221,14 +213,17 @@ def api_eliminar_marca(id_marca: str):
         ok = modelo.eliminar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Eliminar marca",
                 f"Marca eliminada (ID: {id_marca})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "deleted": ok})
@@ -272,14 +267,17 @@ def api_crear_modelo():
     try:
         new_id = modelo.crear()
         
-        user_info = _resolver_usuario_actual()
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+        
         registrar_en_bitacora(
             "Crear producto",
             f"Producto creado: {nombre} (ID: {new_id})",
-            usuario_id=user_info["id"],
+            usuario_id=usuario_id,
             modulo_nombre="Productos",
-            usuario_nombre=user_info["nombre"],
-            usuario_foto=user_info["foto"]
+            usuario_nombre=usuario_nombre,
+            usuario_foto=usuario_foto
         )
         
         return jsonify({"success": True, "id": new_id}), 201
@@ -310,14 +308,17 @@ def api_actualizar_modelo(id_modelo: str):
         ok = modelo.actualizar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Actualizar producto",
                 f"Producto actualizado: {nombre} (ID: {id_modelo})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "updated": ok})
@@ -342,14 +343,17 @@ def api_eliminar_modelo(id_modelo: str):
         ok = modelo.eliminar()
         
         if ok:
-            user_info = _resolver_usuario_actual()
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+            
             registrar_en_bitacora(
                 "Eliminar producto",
                 f"Producto eliminado (ID: {id_modelo})",
-                usuario_id=user_info["id"],
+                usuario_id=usuario_id,
                 modulo_nombre="Productos",
-                usuario_nombre=user_info["nombre"],
-                usuario_foto=user_info["foto"]
+                usuario_nombre=usuario_nombre,
+                usuario_foto=usuario_foto
             )
         
         return jsonify({"success": True, "deleted": ok})

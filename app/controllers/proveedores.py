@@ -9,26 +9,6 @@ proveedores_modelo = Proveedores()
 productos_modelo = Producto()
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
-def _obtener_nombre_proveedor(proveedor_id):
-    """Obtiene el nombre de un proveedor por su ID"""
-    try:
-        modelo = Proveedores()
-        proveedor = modelo.obtener_proveedor(id_proveedor=proveedor_id)
-        return proveedor.get("nombre", str(proveedor_id)) if proveedor else str(proveedor_id)
-    except Exception:
-        return str(proveedor_id)
-
-
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
 @jwt_required
 @tiene_permiso('Proveedores', 'consultar')
@@ -130,11 +110,12 @@ def api_crear_proveedor():
                 limite_credito=limite_val,
             )
         
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Crear proveedor",
             descripcion=f"Se creó el proveedor: {nombre} - Tipo: {tipo or 'N/A'} - Límite crédito: {limite_val or 0}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Proveedores"
         )
         
@@ -192,11 +173,12 @@ def api_actualizar_proveedor(id_proveedor: int):
         )
         
         if ok:
-            # Registrar en bitácora
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Actualizar proveedor",
                 descripcion=f"Se actualizó el proveedor ID: {id_proveedor} - Nuevo nombre: {nombre}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -205,29 +187,71 @@ def api_actualizar_proveedor(id_proveedor: int):
         return jsonify({"success": False, "error": str(error)}), 400
 
 
+@proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>/verificar-eliminacion", methods=["GET"])
+@jwt_required
+@tiene_permiso('Proveedores', 'eliminar')
+def api_verificar_eliminacion_proveedor(id_proveedor: int):
+    """Verifica si un proveedor puede ser eliminado"""
+    modelo = Proveedores()
+    try:
+        tiene_relaciones, mensaje = modelo.tiene_relaciones_activas(id_proveedor=id_proveedor)
+        detalle = modelo.obtener_detalle_relaciones(id_proveedor=id_proveedor) if tiene_relaciones else {}
+        
+        return jsonify({
+            "success": True,
+            "puede_eliminar": not tiene_relaciones,
+            "mensaje": mensaje if tiene_relaciones else None,
+            "detalle": detalle if tiene_relaciones else None
+        })
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 400
+
+
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>", methods=["DELETE"])
 @jwt_required
 @tiene_permiso('Proveedores', 'eliminar')
 def api_eliminar_proveedor(id_proveedor: int):
     modelo = Proveedores()
     try:
+        # Primero verificar si tiene relaciones activas
+        tiene_relaciones, mensaje = modelo.tiene_relaciones_activas(id_proveedor=id_proveedor)
+        
+        if tiene_relaciones:
+            detalle = modelo.obtener_detalle_relaciones(id_proveedor=id_proveedor)
+            return jsonify({
+                "success": False, 
+                "error": mensaje,
+                "detalle": detalle
+            }), 400
+        
         # Obtener nombre antes de eliminar
-        nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+        proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+        nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
         
         ok = modelo.eliminar_proveedor(id_proveedor=id_proveedor)
         
         if ok:
-            # Registrar en bitácora
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Eliminar proveedor",
                 descripcion=f"Se eliminó el proveedor ID: {id_proveedor} - Nombre: {nombre_proveedor}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+        error_msg = str(error)
+        if "foreign key constraint fails" in error_msg.lower():
+            return jsonify({
+                "success": False, 
+                "error": "No se puede eliminar el proveedor porque tiene registros relacionados en otras tablas (órdenes de compra, productos suministrados, etc.)"
+            }), 400
+        return jsonify({"success": False, "error": error_msg}), 400
 
 
 @proveedores_blueprint.route("/api/proveedores/<int:id_proveedor>/productos", methods=["GET"])
@@ -268,12 +292,15 @@ def api_upsert_producto_proveedor(id_proveedor: int):
         )
         
         if ok:
-            # Registrar en bitácora
-            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
+            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
+            
             registrar_en_bitacora(
                 accion="Actualizar producto de proveedor",
                 descripcion=f"Se actualizó producto para proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo_val} - Costo: {costo_val}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -293,12 +320,15 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
         ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
         
         if ok:
-            # Registrar en bitácora
-            nombre_proveedor = _obtener_nombre_proveedor(id_proveedor)
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
+            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
+            
             registrar_en_bitacora(
                 accion="Eliminar producto de proveedor",
                 descripcion=f"Se eliminó producto del proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Proveedores"
             )
         
@@ -313,8 +343,9 @@ def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
 def api_listar_modelos_para_proveedores():
     q = request.args.get("q", default=None, type=str)
     modelo = Producto()
-    modelos = modelo.listar_modelos(q=q) or []
+    modelos = modelo.listar(q=q) or []
     return jsonify({"success": True, "modelos": modelos})
+
 
 # ==================== REPORTES ====================
 
@@ -337,14 +368,11 @@ def api_reportes_proveedores():
     modelo = Proveedores()
     proveedores = modelo.listar_proveedores(q=filtros["q"] if filtros["q"] else None) or []
     
-    # Aplicar filtros adicionales
     proveedores_filtrados = []
     for p in proveedores:
-        # Filtrar por tipo
         if filtros["tipo"] and p.get("tipo") != filtros["tipo"]:
             continue
         
-        # Filtrar por límite de crédito
         limite = p.get("limite_credito") or 0
         if filtros["limite_credito_min"] is not None and limite < int(filtros["limite_credito_min"]):
             continue
@@ -353,7 +381,6 @@ def api_reportes_proveedores():
         
         proveedores_filtrados.append(p)
     
-    # Contar productos por proveedor
     for p in proveedores_filtrados:
         productos = modelo.listar_productos_por_proveedor(int(p["id"])) or []
         p["total_productos"] = len(productos)

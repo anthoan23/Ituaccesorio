@@ -38,13 +38,15 @@
 			</div>
 		</div>
 
-		<!-- Botón del carrito en navbar -->
+		<!-- Botón del carrito en navbar - SOLO SE MUESTRA EN EL MÓDULO DE CATÁLOGO -->
+		{% if active_page == 'catalogo' %}
 		<button id="cart-nav-btn" class="icon-btn icon-btn--cart" aria-label="Abrir carrito">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 				<path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
 			</svg>
 			<span id="cart-nav-count" class="cart-badge">0</span>
 		</button>
+		{% endif %}
 
 		<details class="user-menu">
 			<summary class="user-menu__trigger">
@@ -57,7 +59,7 @@
 				</span>
 				<span class="user__meta">
 					<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
-					<span class="user__role">{{ g.user.nombre_rol }}</span>
+					<span class="user__role">{{ g.user.rol_nombre }}</span>
 				</span>
 				<svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 					<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
@@ -75,7 +77,7 @@
 					</span>
 					<span class="user-menu__label">Usuario</span>
 					<strong class="user-menu__full-name">{{ g.user.usuario_nombre }}</strong>
-					<span class="user-menu__role-text">{{ g.user.nombre_rol }}</span>
+					<span class="user-menu__role-text">{{ g.user.rol_nombre }}</span>
 				</div>
 
 				<form class="user-menu__logout" action="{{ url_for('login.logout') }}" method="GET">
@@ -102,51 +104,122 @@
 	<div class="drawer__nav-wrapper">
 		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
 		<nav class="drawer__nav" id="drawerNav" data-nav-container>
-			<!-- Dashboard -->
-			<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
+			{# Verificar si es admin #}
+			{% set es_admin = g.user and (g.user.rol_id == 1 or g.user.rol_nombre == 'admin') %}
+			
+			{% if es_admin %}
+				{# ==================== ADMIN: VER TODO ==================== #}
+				
+				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
 
-			<!-- Personal (submenú) -->
-			{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-			<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}"  data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
-				<span>Personal</span>
-			</button>
-			<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
-				<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
-				<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
-				<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
-			</div>
+				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+					<span>Personal</span>
+				</button>
+				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
+				</div>
 
-			<!-- Ventas -->
-			<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
-			<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Validar Pagos</a>
-			<!-- Productos -->
-			<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-			<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				
+				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
 
-			<!-- Proveedores -->
-			<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
 
-			<!-- Trade-in -->
-			<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
+				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
 
-			<!-- Taller -->
-			<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+				<a class="drawer__link {% if active_page == 'seguridad_bd' %}is-active{% endif %}" href="{{ url_for('gestion_bd.pagina_gestion_bd') }}">Seguridad de BD</a>
 
-			<!-- Órdenes -->
-			<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
-			<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
+			{% elif g.user and g.user.permisos %}
+				{# ==================== USUARIO NORMAL: FILTRAR POR PERMISOS ==================== #}
+				{% set permisos = g.user.permisos %}
+				
+				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
 
-			<!-- Clientes -->
-			<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+				{% set tiene_empleados = permisos.get('Empleados', {}).get('consultar', false) %}
+				{% set tiene_especialidades = permisos.get('Especialidades', {}).get('consultar', false) %}
+				{% set tiene_cargos = permisos.get('Cargos', {}).get('consultar', false) %}
+				
+				{% if tiene_empleados or tiene_especialidades or tiene_cargos %}
+				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+					<span>Personal</span>
+				</button>
+				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+					{% if tiene_empleados %}
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
+					{% endif %}
+					{% if tiene_especialidades %}
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
+					{% endif %}
+					{% if tiene_cargos %}
+					<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
+					{% endif %}
+				</div>
+				{% endif %}
 
-			<!-- Usuarios -->
-			<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+				{% if permisos.get('Catálogo', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+				{% endif %}
+				{% if permisos.get('Entregas', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				{% endif %}
+				{% if permisos.get('Productos', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+				{% endif %}
+				
+				{% if permisos.get('Inventario', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+				{% endif %}
 
-			<!-- Bitácora -->
-			<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+				{% if permisos.get('Proveedores', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+				{% endif %}
 
-			<a class="drawer__link {% if active_page == 'seguridad_bd' %}is-active{% endif %}" href="{{ url_for('gestion_bd.pagina_gestion_bd') }}">Seguridad de BD</a>
+				{% if permisos.get('Trade-in', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+				{% endif %}
+
+				{% if permisos.get('Taller', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+				{% endif %}
+
+				{% if permisos.get('Órdenes de servicio', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
+				{% endif %}
+				
+				{% if permisos.get('Órdenes de compra', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
+				{% endif %}
+
+				{% if permisos.get('Clientes', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+				{% endif %}
+
+				{% if permisos.get('Usuarios', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+				{% endif %}
+
+				{% if permisos.get('Bitácora', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+				{% endif %}
+				
+			{% else %}
+				{# ==================== USUARIO NO LOGUEADO: SOLO TRADE-IN Y CATÁLOGO ==================== #}
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+			{% endif %}
 		</nav>
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
 	</div>
@@ -174,7 +247,7 @@
 		</label>
 		<label class="ui-field">
 			<span>Rol</span>
-			<input id="mi-perfil-rol" type="text" value="{{ g.user.nombre_rol or '' }}" readonly data-validator-disabled="true">
+			<input id="mi-perfil-rol" type="text" value="{{ g.user.rol_nombre or '' }}" readonly data-validator-disabled="true">
 		</label>
 		<label class="ui-field">
 			<span>Nueva contraseña (opcional)</span>

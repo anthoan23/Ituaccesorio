@@ -6,16 +6,6 @@ from app.models.especialidades import Especialidad
 especialidades_blueprint = Blueprint("especialidades", __name__)
 
 
-def _usuario_actual():
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
 @especialidades_blueprint.route("/especialidades", methods=["GET"])
 @jwt_required
 @tiene_permiso('Especialidades', 'consultar')
@@ -55,11 +45,12 @@ def api_agregar_especialidad():
     mensaje = especialidad_model.agregar_especialidad()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Crear especialidad",
             descripcion=f"Se creó la especialidad: {nueva_especialidad}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Especialidades"
         )
         return jsonify({"success": True, "message": mensaje}), 201
@@ -89,11 +80,12 @@ def api_actualizar_especialidad():
     mensaje = especialidad_model.actualizar_especialidad()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Actualizar especialidad",
             descripcion=f"Se actualizó la especialidad ID: {especialidad_id} - Nuevo nombre: {nombre_especialidad}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Especialidades"
         )
         return jsonify({"success": True, "message": mensaje}), 200
@@ -126,11 +118,12 @@ def api_eliminar_especialidad():
     mensaje = especialidad_model.eliminar_especialidad()
 
     if "exitosamente" in mensaje:
-        # Registrar en bitácora
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Eliminar especialidad",
             descripcion=f"Se eliminó la especialidad ID: {especialidad_id} - Nombre: {nombre_especialidad}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Especialidades"
         )
         return jsonify({"success": True, "message": mensaje}), 200

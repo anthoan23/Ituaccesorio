@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g, send_file
-from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.decorators import jwt_required, solo_roles
 from app.models.gestion_bd import MySQLDockerManager
 import os
 import tempfile
@@ -29,6 +29,7 @@ DB_CONFIGS = {
 
 @gestion_bd_blueprint.route("/seguridad_bd", methods=["GET"])
 @jwt_required
+@solo_roles(['admin'])
 def pagina_gestion_bd():
     return render_template(
         "seguridad_bd.html",
@@ -40,7 +41,7 @@ def pagina_gestion_bd():
 
 @gestion_bd_blueprint.route("/api/backup/create", methods=["POST"])
 @jwt_required
-
+@solo_roles(['admin'])
 def crear_backup():
     """
     Endpoint para crear una copia de seguridad (descargar)
@@ -94,7 +95,7 @@ def crear_backup():
 
 @gestion_bd_blueprint.route("/api/backup/restore", methods=["POST"])
 @jwt_required
-
+@solo_roles(['admin'])
 def restaurar_backup():
     """
     Endpoint para restaurar una copia de seguridad (subir archivo)
@@ -174,7 +175,7 @@ def restaurar_backup():
 
 @gestion_bd_blueprint.route("/api/backup/list", methods=["GET"])
 @jwt_required
-
+@solo_roles(['admin'])
 def listar_backups():
     """
     Endpoint para listar los backups disponibles
@@ -219,7 +220,7 @@ def listar_backups():
 
 @gestion_bd_blueprint.route("/api/backup/delete", methods=["DELETE"])
 @jwt_required
-
+@solo_roles(['admin'])
 def eliminar_backup():
     """
     Endpoint para eliminar un backup específico

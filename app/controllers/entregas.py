@@ -8,21 +8,11 @@ import traceback
 entregas_blueprint = Blueprint("entregas", __name__)
 
 
-def _usuario_actual() -> str:
-    """Obtiene el ID del usuario actual"""
-    user = getattr(g, 'user', None)
-    if not user:
-        return "SYSTEM"
-    if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "SYSTEM")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "SYSTEM")
-
-
 # ==================== PÁGINAS ====================
 
 @entregas_blueprint.route("/entregas")
 @jwt_required
-@solo_roles(['admin', 'ventas'])
+@solo_roles(['admin', 'Ventas'])
 def pagina_entregas():
     """Panel de gestión de entregas"""
     return render_template(
@@ -37,6 +27,7 @@ def pagina_entregas():
 
 @entregas_blueprint.route("/api/personal-delivery", methods=["GET"])
 @jwt_required
+@tiene_permiso('Entregas', 'consultar')
 def api_listar_personal():
     """Listar todo el personal de delivery"""
     try:
@@ -51,6 +42,7 @@ def api_listar_personal():
 
 @entregas_blueprint.route("/api/personal-delivery", methods=["POST"])
 @jwt_required
+@tiene_permiso('Entregas', 'registrar')
 def api_crear_personal():
     """Registrar nuevo delivery"""
     try:
@@ -66,10 +58,12 @@ def api_crear_personal():
         mensaje = modelo.agregar_personal(cedula, nombre, apellido)
         
         if "exitosamente" in mensaje:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Registrar delivery",
                 descripcion=f"Se registró al delivery: {nombre} {apellido} - Cédula: {cedula}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Entregas"
             )
             return jsonify({"success": True, "message": mensaje}), 201
@@ -82,6 +76,7 @@ def api_crear_personal():
 
 @entregas_blueprint.route("/api/personal-delivery/<cedula>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Entregas', 'modificar')
 def api_actualizar_personal(cedula):
     """Actualizar delivery existente"""
     try:
@@ -96,10 +91,12 @@ def api_actualizar_personal(cedula):
         mensaje = modelo.actualizar_personal(cedula, nombre, apellido)
         
         if "exitosamente" in mensaje:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Actualizar delivery",
                 descripcion=f"Se actualizó al delivery con cédula: {cedula}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Entregas"
             )
             return jsonify({"success": True, "message": mensaje}), 200
@@ -112,6 +109,7 @@ def api_actualizar_personal(cedula):
 
 @entregas_blueprint.route("/api/personal-delivery/<cedula>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Entregas', 'eliminar')
 def api_eliminar_personal(cedula):
     """Eliminar delivery"""
     try:
@@ -119,10 +117,12 @@ def api_eliminar_personal(cedula):
         mensaje = modelo.eliminar_personal(cedula)
         
         if "exitosamente" in mensaje:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Eliminar delivery",
                 descripcion=f"Se eliminó al delivery con cédula: {cedula}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Entregas"
             )
             return jsonify({"success": True, "message": mensaje}), 200
@@ -137,6 +137,7 @@ def api_eliminar_personal(cedula):
 
 @entregas_blueprint.route("/api/entregas", methods=["GET"])
 @jwt_required
+@tiene_permiso('Entregas', 'consultar')
 def api_listar_entregas():
     """Listar todas las entregas"""
     try:
@@ -150,6 +151,7 @@ def api_listar_entregas():
 
 @entregas_blueprint.route("/api/entregas", methods=["POST"])
 @jwt_required
+@tiene_permiso('Entregas', 'registrar')
 def api_registrar_entrega():
     """Registrar nueva entrega"""
     try:
@@ -169,10 +171,12 @@ def api_registrar_entrega():
         modelo = EntregaModel()
         entrega_id = modelo.registrar_entrega(factura_id, cedula_delivery, direccion, estado)
         
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
         registrar_en_bitacora(
             accion="Registrar entrega",
             descripcion=f"Se registró la entrega ID: {entrega_id} para factura: {factura_id}",
-            usuario_id=_usuario_actual(),
+            usuario_id=usuario_id,
             modulo_nombre="Entregas"
         )
         
@@ -186,6 +190,7 @@ def api_registrar_entrega():
 
 @entregas_blueprint.route("/api/entregas/<string:entrega_id>", methods=["PUT"])
 @jwt_required
+@tiene_permiso('Entregas', 'modificar')
 def api_actualizar_entrega(entrega_id):
     """Actualizar entrega existente"""
     try:
@@ -200,10 +205,12 @@ def api_actualizar_entrega(entrega_id):
         mensaje = modelo.actualizar_entrega(entrega_id, direccion, estado)
         
         if "exitosamente" in mensaje:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Actualizar entrega",
                 descripcion=f"Se actualizó la entrega ID: {entrega_id}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Entregas"
             )
             return jsonify({"success": True, "message": mensaje}), 200
@@ -216,6 +223,7 @@ def api_actualizar_entrega(entrega_id):
 
 @entregas_blueprint.route("/api/entregas/<string:entrega_id>", methods=["DELETE"])
 @jwt_required
+@tiene_permiso('Entregas', 'eliminar')
 def api_eliminar_entrega(entrega_id):
     """Eliminar entrega"""
     try:
@@ -223,10 +231,12 @@ def api_eliminar_entrega(entrega_id):
         mensaje = modelo.eliminar_entrega(entrega_id)
         
         if "exitosamente" in mensaje:
+            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+            
             registrar_en_bitacora(
                 accion="Eliminar entrega",
                 descripcion=f"Se eliminó la entrega ID: {entrega_id}",
-                usuario_id=_usuario_actual(),
+                usuario_id=usuario_id,
                 modulo_nombre="Entregas"
             )
             return jsonify({"success": True, "message": mensaje}), 200
@@ -239,6 +249,7 @@ def api_eliminar_entrega(entrega_id):
 
 @entregas_blueprint.route("/api/facturas-pendientes", methods=["GET"])
 @jwt_required
+@tiene_permiso('Entregas', 'consultar')
 def api_facturas_pendientes():
     """Obtener facturas que necesitan entrega"""
     try:
