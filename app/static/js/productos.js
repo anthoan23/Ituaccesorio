@@ -44,57 +44,41 @@
     descripcion: 300,
   };
 
-  // ==================== MODALES PERSONALIZADOS ====================
+  // ==================== MODAL DE CONFIRMACIÓN ÚNICO ====================
   
-  // function mostrarModalMensaje(mensaje, esError = false) {
-  //   // Eliminar modal existente si hay
-  //   const modalExistente = document.getElementById('modal-mensaje-global');
-  //   if (modalExistente) modalExistente.remove();
-    
-  //   const modalDiv = document.createElement('div');
-  //   modalDiv.id = 'modal-mensaje-global';
-  //   modalDiv.className = 'modal';
-  //   modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
-  //   modalDiv.innerHTML = `
-  //     <div class="modal__backdrop" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
-  //     <div class="modal__panel" style="position:relative;z-index:10001;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:modalFadeIn 0.2s ease-out;padding:1.5rem;max-width:400px;width:90%;text-align:center;">
-  //       <div style="margin-bottom:1rem;">
-  //         <span style="font-size:3rem;">${esError ? '❌' : '✅'}</span>
-  //       </div>
-  //       <p style="margin-bottom:1.5rem;font-size:1rem;color:${esError ? '#dc2626' : '#16a34a'};">
-  //         ${mensaje}
-  //       </p>
-  //       <button class="btn btn--primary" id="btn-cerrar-mensaje-global" style="min-width:100px;padding:0.75rem 1.5rem;border:none;border-radius:12px;background:#f3c500;color:#121212;font-weight:bold;cursor:pointer;">Aceptar</button>
-  //     </div>
-  //   `;
-    
-  //   document.body.appendChild(modalDiv);
-  //   document.body.style.overflow = 'hidden';
-    
-  //   const closeModal = () => {
-  //     modalDiv.remove();
-  //     document.body.style.overflow = '';
-  //   };
-    
-  //   document.getElementById('btn-cerrar-mensaje-global').addEventListener('click', closeModal);
-  //   modalDiv.querySelector('.modal__backdrop').addEventListener('click', closeModal);
-    
-  //   // Auto cerrar después de 3 segundos
-  //   setTimeout(() => {
-  //     if (document.getElementById('modal-mensaje-global')) closeModal();
-  //   }, 3000);
-  // }
-
-  function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false) {
+  function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false, tipo = 'info') {
     // Eliminar modal existente si hay
     const modalExistente = document.getElementById('confirmacion-modal');
     if (modalExistente) modalExistente.remove();
     
     // Determinar el tipo de modal
-    const esError = soloInformacion && mensaje.includes('No se puede eliminar');
-    const titulo = soloInformacion ? (esError ? "Error" : "Información") : "Confirmar acción";
-    const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
-    const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
+    const esError = tipo === 'error';
+    const esExito = tipo === 'success';
+    const esInfo = tipo === 'info';
+    
+    let titulo = "Información";
+    let btnTexto = "Aceptar";
+    let btnColor = "#f3c500";
+    let icono = "ℹ️";
+    
+    if (esError) {
+      titulo = "Error";
+      btnColor = "#dc2626";
+      icono = "❌";
+    } else if (esExito) {
+      titulo = "Éxito";
+      btnColor = "#16a34a";
+      icono = "✅";
+    } else if (soloInformacion) {
+      titulo = "Información";
+      btnColor = "#f3c500";
+      icono = "ℹ️";
+    } else {
+      titulo = "Confirmar acción";
+      btnTexto = "Eliminar";
+      btnColor = "#dc2626";
+      icono = "⚠️";
+    }
     
     const modalDiv = document.createElement('div');
     modalDiv.id = 'confirmacion-modal';
@@ -110,10 +94,11 @@
                 <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
             </header>
             <div class="ui-modal__body" style="padding:1.5rem;">
-                <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;">${mensaje}</p>
+                <div style="text-align:center;font-size:3rem;margin-bottom:0.5rem;">${icono}</div>
+                <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;text-align:center;">${mensaje}</p>
             </div>
-            <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
-                ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+            <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
+                ${!soloInformacion && !esExito && !esInfo ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
                 <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
             </div>
         </div>
@@ -123,46 +108,59 @@
     document.body.style.overflow = 'hidden';
     
     const cerrarModal = () => {
-        modalDiv.remove();
-        document.body.style.overflow = '';
+      modalDiv.remove();
+      document.body.style.overflow = '';
     };
     
-    // Botón cancelar (solo si no es solo información)
-    if (!soloInformacion) {
-        const cancelBtn = document.getElementById('btn-cancelar-confirmacion');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', cerrarModal);
-        }
+    // Botón cancelar (solo si no es solo información ni éxito)
+    if (!soloInformacion && !esExito && !esInfo) {
+      const cancelBtn = document.getElementById('btn-cancelar-confirmacion');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', cerrarModal);
+      }
     }
     
     // Botón confirmar
     const confirmBtn = document.getElementById('btn-confirmar-accion');
     if (confirmBtn) {
-        confirmBtn.addEventListener('click', async () => {
-            cerrarModal();
-            if (onConfirmar && !soloInformacion) {
-                await onConfirmar();
-            }
-        });
+      confirmBtn.addEventListener('click', async () => {
+        cerrarModal();
+        if (onConfirmar && !soloInformacion && !esExito && !esInfo) {
+          await onConfirmar();
+        }
+      });
     }
     
     // Botón cerrar (X)
     const closeBtn = modalDiv.querySelector('[data-close-modal]');
     if (closeBtn) {
-        closeBtn.addEventListener('click', cerrarModal);
+      closeBtn.addEventListener('click', cerrarModal);
     }
     
     // Cerrar al hacer click en el backdrop
     modalDiv.addEventListener('click', (e) => {
-        if (e.target === modalDiv) cerrarModal();
+      if (e.target === modalDiv) cerrarModal();
     });
-}
-
-  // ==================== FIN MODALES ====================
+    
+    // Auto cerrar después de 3 segundos si es solo información o éxito
+    if (soloInformacion || esExito || esInfo) {
+      setTimeout(() => {
+        if (document.getElementById('confirmacion-modal')) cerrarModal();
+      }, 3000);
+    }
+  }
 
   function notify(type, message) {
-    mostrarModalMensaje(message, type === "error");
+    if (type === 'error') {
+      mostrarModalConfirmacion(message, null, true, 'error');
+    } else if (type === 'success') {
+      mostrarModalConfirmacion(message, null, true, 'success');
+    } else {
+      mostrarModalConfirmacion(message, null, true, 'info');
+    }
   }
+
+  // ==================== FIN MODALES ====================
 
   function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     if (!window.FieldValidator) {
@@ -427,7 +425,7 @@
                 </button>
               </div>
             </td>
-          </tr>
+           </tr>
         `,
       )
       .join("");
@@ -672,7 +670,7 @@
     }
   }
 
-  // ==================== ELIMINAR PRODUCTO CON MODAL (SIN ALERTS) ====================
+  // ==================== ELIMINAR PRODUCTO CON MODAL ====================
   
   async function onTablaClick(event) {
     const btn = event.target?.closest("button.icon-action");
@@ -693,32 +691,30 @@
       const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
       
       try {
-        // Verificar si el producto tiene stock
         const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' });
         const tieneStock = data.tiene_stock || false;
         const stock = data.stock || 0;
         
         if (tieneStock) {
-          // Usar mostrarModalConfirmacion con soloInformacion = true
           mostrarModalConfirmacion(
-              `No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario.`,
-              null,
-              true  // soloInformacion = true
+            `No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario.`,
+            null,
+            true,
+            'error'
           );
-      } else {
+        } else {
           mostrarModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, async () => {
             try {
               await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
               await recargarModelosSegunFiltros();
-              mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
+              notify("success", `Producto "${label}" eliminado correctamente.`);
             } catch (err) {
-              mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
+              notify("error", err?.message || "No se pudo eliminar el producto.");
             }
           });
         }
       } catch (err) {
-        // Si hay error al verificar stock, mostrar mensaje de error
-        mostrarModalMensaje("No se pudo verificar el stock del producto. Intente nuevamente.", true);
+        notify("error", "No se pudo verificar el stock del producto. Intente nuevamente.");
       }
       return;
     }
@@ -747,168 +743,151 @@
   const reporteTotal = document.getElementById("reporte-total");
   const reporteTabla = document.getElementById("reporte-tabla");
 
-    function abrirModalReportes() {
-      if (!modalReportes) return;
-      modalReportes.classList.remove("is-hidden");
-      modalReportes.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-    }
+  function abrirModalReportes() {
+    if (!modalReportes) return;
+    modalReportes.classList.remove("is-hidden");
+    modalReportes.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
 
-    function cerrarModalReportes() {
-      if (!modalReportes) return;
-      modalReportes.classList.add("is-hidden");
-      modalReportes.setAttribute("aria-hidden", "true");
-      if (!document.querySelector(".modal:not(.is-hidden)")) {
-        document.body.style.overflow = "";
-      }
+  function cerrarModalReportes() {
+    if (!modalReportes) return;
+    modalReportes.classList.add("is-hidden");
+    modalReportes.setAttribute("aria-hidden", "true");
+    if (!document.querySelector(".modal:not(.is-hidden)")) {
+      document.body.style.overflow = "";
     }
+  }
 
   function cargarClasesMarcasReporte() {
-      if (reporteClase) {
-          fetchJson("/api/productos/clases", { method: "GET" }).then(data => {
-              const clases = data.clases || [];
-              reporteClase.innerHTML = '<option value="">Todas</option>' + 
-                  clases.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join("");
-          }).catch(() => {});
-      }
-      
-      if (reporteMarca) {
-          fetchJson("/api/productos/marcas", { method: "GET" }).then(data => {
-              const marcas = data.marcas || [];
-              reporteMarca.innerHTML = '<option value="">Todas</option>' + 
-                  marcas.map(m => `<option value="${m.id}">${escapeHtml(m.nombre)}</option>`).join("");
-          }).catch(() => {});
-      }
+    if (reporteClase) {
+      fetchJson("/api/productos/clases", { method: "GET" }).then(data => {
+        const clases = data.clases || [];
+        reporteClase.innerHTML = '<option value="">Todas</option>' + 
+          clases.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join("");
+      }).catch(() => {});
+    }
+    
+    if (reporteMarca) {
+      fetchJson("/api/productos/marcas", { method: "GET" }).then(data => {
+        const marcas = data.marcas || [];
+        reporteMarca.innerHTML = '<option value="">Todas</option>' + 
+          marcas.map(m => `<option value="${m.id}">${escapeHtml(m.nombre)}</option>`).join("");
+      }).catch(() => {});
+    }
   }
 
   function limpiarFiltrosReporte() {
-      if (reporteClase) reporteClase.value = "";
-      if (reporteMarca) reporteMarca.value = "";
-      if (reporteBusqueda) reporteBusqueda.value = "";
-      if (reporteStockMin) reporteStockMin.value = "";
-      if (reporteStockMax) reporteStockMax.value = "";
+    if (reporteClase) reporteClase.value = "";
+    if (reporteMarca) reporteMarca.value = "";
+    if (reporteBusqueda) reporteBusqueda.value = "";
+    if (reporteStockMin) reporteStockMin.value = "";
+    if (reporteStockMax) reporteStockMax.value = "";
   }
 
   async function generarReporte() {
-      const filtros = {
-          clase_id: reporteClase?.value || null,
-          marca_id: reporteMarca?.value || null,
-          q: reporteBusqueda?.value || "",
-          stock_min: reporteStockMin?.value ? parseInt(reporteStockMin.value) : null,
-          stock_max: reporteStockMax?.value ? parseInt(reporteStockMax.value) : null,
-          clase_nombre: reporteClase?.options[reporteClase.selectedIndex]?.text || null,
-          marca_nombre: reporteMarca?.options[reporteMarca.selectedIndex]?.text || null
-      };
+    const filtros = {
+      clase_id: reporteClase?.value || null,
+      marca_id: reporteMarca?.value || null,
+      q: reporteBusqueda?.value || "",
+      stock_min: reporteStockMin?.value ? parseInt(reporteStockMin.value) : null,
+      stock_max: reporteStockMax?.value ? parseInt(reporteStockMax.value) : null,
+      clase_nombre: reporteClase?.options[reporteClase.selectedIndex]?.text || null,
+      marca_nombre: reporteMarca?.options[reporteMarca.selectedIndex]?.text || null
+    };
+    
+    reporteFiltrosActuales = filtros;
+    
+    btnGenerarReporte.disabled = true;
+    btnGenerarReporte.textContent = "Cargando...";
+    
+    try {
+      const data = await fetchJson("/api/productos/reportes", {
+        method: "POST",
+        body: JSON.stringify(filtros)
+      });
       
-      reporteFiltrosActuales = filtros;
+      reporteDatosActuales = data.productos || [];
+      const total = data.total || 0;
       
-      btnGenerarReporte.disabled = true;
-      btnGenerarReporte.textContent = "Cargando...";
+      if (reportePreview) reportePreview.style.display = "block";
+      if (reporteTotal) reporteTotal.textContent = `Total de productos: ${total}`;
       
-      try {
-          const data = await fetchJson("/api/productos/reportes", {
-              method: "POST",
-              body: JSON.stringify(filtros)
-          });
-          
-          reporteDatosActuales = data.productos || [];
-          const total = data.total || 0;
-          
-          if (reportePreview) reportePreview.style.display = "block";
-          if (reporteTotal) reporteTotal.textContent = `Total de productos: ${total}`;
-          
-          if (reporteTabla) {
-              if (reporteDatosActuales.length === 0) {
-                  reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
-              } else {
-                  reporteTabla.innerHTML = reporteDatosActuales.map(p => `
-                      <tr>
-                          <td>${escapeHtml(p.id || '')}</td>
-                          <td>${escapeHtml(p.nombre || '')}</td>
-                          <td>${escapeHtml(p.marca_nombre || '-')}</td>
-                          <td>${escapeHtml(p.clase_nombre || '-')}</td>
-                          <td>${p.stock === 0 ? '<span style="color:#f44336;">Sin stock</span>' : (p.stock <= 5 ? '<span style="color:#ff9800;">' + p.stock + ' uds</span>' : p.stock)}</td>
-                      </tr>
-                  `).join("");
-              }
-          }
-          
-          if (btnExportarExcel) btnExportarExcel.disabled = false;
-          if (btnExportarPdf) btnExportarPdf.disabled = false;
-          if (btnImprimir) btnImprimir.disabled = false;
-          
-      } catch (err) {
-          notify("error", err.message || "Error al generar el reporte");
-      } finally {
-          btnGenerarReporte.disabled = false;
-          btnGenerarReporte.textContent = "Generar reporte";
+      if (reporteTabla) {
+        if (reporteDatosActuales.length === 0) {
+          reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
+        } else {
+          reporteTabla.innerHTML = reporteDatosActuales.map(p => `
+            <tr>
+              <td>${escapeHtml(p.id || '')}</td>
+              <td>${escapeHtml(p.nombre || '')}</td>
+              <td>${escapeHtml(p.marca_nombre || '-')}</td>
+              <td>${escapeHtml(p.clase_nombre || '-')}</td>
+              <td>${p.stock === 0 ? '<span style="color:#f44336;">Sin stock</span>' : (p.stock <= 5 ? '<span style="color:#ff9800;">' + p.stock + ' uds</span>' : p.stock)}</td>
+            </tr>
+          `).join("");
+        }
       }
+      
+      if (btnExportarExcel) btnExportarExcel.disabled = false;
+      if (btnExportarPdf) btnExportarPdf.disabled = false;
+      if (btnImprimir) btnImprimir.disabled = false;
+      
+    } catch (err) {
+      notify("error", err.message || "Error al generar el reporte");
+    } finally {
+      btnGenerarReporte.disabled = false;
+      btnGenerarReporte.textContent = "Generar reporte";
+    }
   }
 
   function exportarAExcel() {
     if (reporteDatosActuales.length === 0) {
-        notify("error", "No hay datos para exportar");
-        return;
+      notify("error", "No hay datos para exportar");
+      return;
     }
     
-    // Verificar si XLSX está disponible
     if (typeof XLSX === 'undefined') {
-        notify("info", "Cargando librería de Excel...");
-        
-        // Cargar XLSX (SheetJS)
-        const script = document.createElement('script');
-        script.src = '/static/js/libs/xlsx.full.min.js';
-        script.onload = () => exportarAExcel();
-        document.head.appendChild(script);
-        return;
+      notify("info", "Cargando librería de Excel...");
+      const script = document.createElement('script');
+      script.src = '/static/js/libs/xlsx.full.min.js';
+      script.onload = () => exportarAExcel();
+      document.head.appendChild(script);
+      return;
     }
     
-    // ============================================
-    // PALETA DE COLORES OFICIAL iTuAccesorio
-    // ============================================
     const colors = {
-        dark: '121212',      // Negro Dominante
-        primary: 'F3C500',   // Amarillo Acento
-        white: 'FFFFFF',     // Blanco Puro
-        grayLight: 'F8F9FA', // Gris Claro (zebra)
-        grayBorder: 'E0E0E0' // Gris Bordes
+      dark: '121212',
+      primary: 'F3C500',
+      white: 'FFFFFF',
+      grayLight: 'F8F9FA',
+      grayBorder: 'E0E0E0'
     };
     
-    // ============================================
-    // DATOS PARA EL EXCEL
-    // ============================================
     const now = new Date();
     const fechaReporte = now.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
     
-    // Datos de la tabla
     const tableData = reporteDatosActuales.map(p => ({
-        id: p.id || '-',
-        nombre: p.nombre || '-',
-        marca: p.marca_nombre || '-',
-        clase: p.clase_nombre || '-',
-        stock: p.stock || 0,
-        descripcion: p.descripcion || '-'
+      id: p.id || '-',
+      nombre: p.nombre || '-',
+      marca: p.marca_nombre || '-',
+      clase: p.clase_nombre || '-',
+      stock: p.stock || 0,
+      descripcion: p.descripcion || '-'
     }));
     
-    // ============================================
-    // CONSTRUCCIÓN DE LA HOJA CON ESTILOS
-    // ============================================
-    // Crear libro y hoja de trabajo
     const wb = XLSX.utils.book_new();
     const wsData = [];
     
-    // ========== ENCABEZADO DEL REPORTE ==========
-    // Título principal
     wsData.push(['REPORTE DE PRODUCTOS']);
     wsData.push(['']);
     wsData.push([`Generado: ${fechaReporte}`]);
     wsData.push([`Total productos: ${tableData.length}`]);
     
-    // Filtros aplicados
     const filtrosTexto = [];
     if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
     if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
@@ -920,296 +899,89 @@
     wsData.push([filtrosLine]);
     wsData.push(['']);
     
-    // ========== ENCABEZADOS DE LA TABLA ==========
     wsData.push(['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']);
     
-    // ========== DATOS DE LA TABLA ==========
     tableData.forEach(item => {
-        wsData.push([
-            item.id,
-            item.nombre,
-            item.marca,
-            item.clase,
-            item.stock === 0 ? 'SIN STOCK' : String(item.stock),
-            item.descripcion
-        ]);
+      wsData.push([
+        item.id,
+        item.nombre,
+        item.marca,
+        item.clase,
+        item.stock === 0 ? 'SIN STOCK' : String(item.stock),
+        item.descripcion
+      ]);
     });
     
-    // Convertir a hoja de trabajo
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 45 }];
     
-    // ========== APLICAR ESTILOS CELDA POR CELDA ==========
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    
-    // Estilos por defecto
-    const defaultStyle = {
-        font: { name: 'Segoe UI', sz: 10 },
-        alignment: { vertical: 'center', horizontal: 'left' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const headerStyle = {
-        fill: { fgColor: { rgb: colors.dark }, patternType: 'solid' },
-        font: { name: 'Segoe UI', sz: 11, bold: true, color: { rgb: colors.white } },
-        alignment: { vertical: 'center', horizontal: 'center' },
-        border: {
-            top: { style: 'thin', color: { rgb: colors.grayBorder } },
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const titleStyle = {
-        font: { name: 'Segoe UI', sz: 18, bold: true, color: { rgb: colors.dark } },
-        alignment: { vertical: 'center', horizontal: 'center' }
-    };
-    
-    const subtitleStyle = {
-        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
-        alignment: { vertical: 'center', horizontal: 'left' }
-    };
-    
-    const lightStyle = {
-        fill: { fgColor: { rgb: colors.white }, patternType: 'solid' },
-        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
-        alignment: { vertical: 'center', horizontal: 'left' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const darkStyle = {
-        fill: { fgColor: { rgb: colors.grayLight }, patternType: 'solid' },
-        font: { name: 'Segoe UI', sz: 10, color: { rgb: colors.dark } },
-        alignment: { vertical: 'center', horizontal: 'left' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const stockGoodStyle = {
-        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: '16A34A' } },
-        alignment: { vertical: 'center', horizontal: 'center' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const stockLowStyle = {
-        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: colors.primary } },
-        alignment: { vertical: 'center', horizontal: 'center' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    const stockZeroStyle = {
-        font: { name: 'Segoe UI', sz: 10, bold: true, color: { rgb: 'DC2626' } },
-        alignment: { vertical: 'center', horizontal: 'center' },
-        border: {
-            bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-        }
-    };
-    
-    // Aplicar estilos a cada celda
-    for (let row = range.s.r; row <= range.e.r; row++) {
-        for (let col = range.s.c; col <= range.e.c; col++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-            if (!ws[cellAddress]) continue;
-            
-            ws[cellAddress].s = {};
-            const cellValue = ws[cellAddress].v;
-            
-            // Título principal (fila 0)
-            if (row === 0 && col === 0) {
-                // Fusionar celdas para el título
-                if (!ws['!merges']) ws['!merges'] = [];
-                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
-                ws[cellAddress].s = titleStyle;
-            }
-            // Fecha y total (filas 2, 3)
-            else if ((row === 2 || row === 3) && col === 0) {
-                if (!ws['!merges']) ws['!merges'] = [];
-                const existingMerge = ws['!merges'].find(m => m.s.r === row && m.s.c === 0 && m.e.r === row && m.e.c === 5);
-                if (!existingMerge) {
-                    ws['!merges'].push({ s: { r: row, c: 0 }, e: { r: row, c: 5 } });
-                }
-                ws[cellAddress].s = subtitleStyle;
-            }
-            // Filtros (fila 4)
-            else if (row === 4 && col === 0) {
-                if (!ws['!merges']) ws['!merges'] = [];
-                const existingMerge = ws['!merges'].find(m => m.s.r === row && m.s.c === 0 && m.e.r === row && m.e.c === 5);
-                if (!existingMerge) {
-                    ws['!merges'].push({ s: { r: row, c: 0 }, e: { r: row, c: 5 } });
-                }
-                // Fondo de la celda de filtros
-                ws[cellAddress].s = {
-                    fill: { fgColor: { rgb: colors.grayLight }, patternType: 'solid' },
-                    font: { name: 'Segoe UI', sz: 9, italic: true, color: { rgb: '666666' } },
-                    alignment: { vertical: 'center', horizontal: 'left' },
-                    border: {
-                        top: { style: 'thin', color: { rgb: colors.grayBorder } },
-                        bottom: { style: 'thin', color: { rgb: colors.grayBorder } }
-                    }
-                };
-            }
-            // Encabezados de tabla (fila 6)
-            else if (row === 6 && col >= 0 && col <= 5) {
-                ws[cellAddress].s = headerStyle;
-            }
-            // Filas de datos (desde fila 7)
-            else if (row >= 7) {
-                const dataRowIndex = row - 7;
-                const isEven = dataRowIndex % 2 === 0;
-                const isStockColumn = (col === 4);
-                const stockValue = tableData[dataRowIndex]?.stock;
-                
-                if (isStockColumn) {
-                    if (stockValue === 0) {
-                        ws[cellAddress].s = stockZeroStyle;
-                    } else if (stockValue <= 5) {
-                        ws[cellAddress].s = stockLowStyle;
-                    } else {
-                        ws[cellAddress].s = stockGoodStyle;
-                    }
-                } else {
-                    ws[cellAddress].s = isEven ? lightStyle : darkStyle;
-                }
-            }
-        }
-    }
-    
-    // ========== AJUSTAR ANCHOS DE COLUMNA ==========
-    ws['!cols'] = [
-        { wch: 8 },   // ID
-        { wch: 30 },  // NOMBRE
-        { wch: 20 },  // MARCA
-        { wch: 20 },  // CLASE
-        { wch: 12 },  // STOCK
-        { wch: 45 }   // DESCRIPCIÓN
-    ];
-    
-    // ========== AGREGAR LIBRO Y DESCARGAR ==========
     XLSX.utils.book_append_sheet(wb, ws, "Productos");
-    
     const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
     XLSX.writeFile(wb, `productos_${timestamp}.xlsx`);
     notify("success", "Reporte exportado a Excel");
-}
+  }
 
   function exportarAPdf() {
     if (reporteDatosActuales.length === 0) {
-        notify("error", "No hay datos para exportar");
-        return;
+      notify("error", "No hay datos para exportar");
+      return;
     }
     
-    // Verificar disponibilidad de jsPDF
     if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
-        notify("info", "Cargando librería de PDF...");
-        
-        const script1 = document.createElement('script');
-        script1.src = '/static/js/libs/jspdf.umd.min.js';
-        script1.onload = () => {
-            const script2 = document.createElement('script');
-            script2.src = '/static/js/libs/jspdf.plugin.autotable.min.js';
-            script2.onload = () => {
-                setTimeout(() => exportarAPdf(), 150);
-            };
-            document.head.appendChild(script2);
+      notify("info", "Cargando librería de PDF...");
+      const script1 = document.createElement('script');
+      script1.src = '/static/js/libs/jspdf.umd.min.js';
+      script1.onload = () => {
+        const script2 = document.createElement('script');
+        script2.src = '/static/js/libs/jspdf.plugin.autotable.min.js';
+        script2.onload = () => {
+          setTimeout(() => exportarAPdf(), 150);
         };
-        document.head.appendChild(script1);
-        return;
+        document.head.appendChild(script2);
+      };
+      document.head.appendChild(script1);
+      return;
     }
     
     const { jsPDF } = window.jspdf;
-    
-    // ============================================
-    // CONFIGURACIÓN INICIAL
-    // ============================================
-    const doc = new jsPDF({ 
-        orientation: 'landscape', 
-        unit: 'mm', 
-        format: 'a4',
-        putOnlyUsedFonts: true,
-        compress: true
-    });
-    
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // ============================================
-    // PALETA DE COLORES OFICIAL iTuAccesorio
-    // ============================================
     const colors = {
-        primary: [243, 197, 0],      // Amarillo Principal - #f3c500
-        dark: [18, 18, 18],          // Negro Dominante - #121212
-        white: [255, 255, 255],      // Blanco Puro
-        grayLight: [248, 249, 250],  // Gris muy sutil - #f8f9fa
-        grayMedium: [245, 246, 248], // Gris medio para filas alternas
-        grayText: [102, 102, 106],   // Texto secundario - #66666a
-        border: [225, 226, 230]      // Borde suave
+      primary: [243, 197, 0],
+      dark: [18, 18, 18],
+      white: [255, 255, 255],
+      grayLight: [248, 249, 250],
+      grayMedium: [245, 246, 248],
+      grayText: [102, 102, 106],
+      border: [225, 226, 230]
     };
     
-    // ============================================
-    // 1. ENCABEZADO
-    // ============================================
     const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
-    const logoWidth = 45;
-    const logoHeight = 8;
-    const logoX = (pageWidth - logoWidth) / 2;
-    
     try {
-        doc.addImage(logoUrl, 'PNG', logoX, 8, logoWidth, logoHeight);
-    } catch(e) {
-        console.warn('Logo no cargado:', e);
-    }
+      doc.addImage(logoUrl, 'PNG', (pageWidth - 45) / 2, 8, 45, 14);
+    } catch(e) {}
     
-    // ============================================
-    // 2. TÍTULO PRINCIPAL
-    // ============================================
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
     doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     doc.text("REPORTE DE PRODUCTOS", pageWidth / 2, 30, { align: 'center' });
     
-    // Línea decorativa amarilla
     doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
     doc.setLineWidth(0.8);
     doc.line(pageWidth / 2 - 35, 34, pageWidth / 2 + 35, 34);
     
-    // ============================================
-    // 3. METADATOS
-    // ============================================
     const now = new Date();
-    const fechaStr = now.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    const horaStr = now.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
+    const fechaStr = now.toLocaleDateString('es-ES');
+    const horaStr = now.toLocaleTimeString('es-ES');
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    const metadata = [`Generado: ${fechaStr}`, `Hora: ${horaStr}`, `Total productos: ${reporteDatosActuales.length}`];
+    doc.text(metadata.join(" • "), pageWidth / 2, 44, { align: 'center' });
     
-    const metadata = [
-        `Generado: ${fechaStr}`,
-        `Hora: ${horaStr}`,
-        `Total productos: ${reporteDatosActuales.length}`
-    ];
-    
-    const metadataText = metadata.join(" • ");
-    doc.text(metadataText, pageWidth / 2, 44, { align: 'center' });
-    
-    // ============================================
-    // 4. CAJA DE FILTROS APLICADOS
-    // ============================================
     const filtrosActivos = [];
     if (reporteFiltrosActuales.clase_nombre) filtrosActivos.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
     if (reporteFiltrosActuales.marca_nombre) filtrosActivos.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
@@ -1217,159 +989,56 @@
     if (reporteFiltrosActuales.stock_min) filtrosActivos.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
     if (reporteFiltrosActuales.stock_max) filtrosActivos.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
     
-    const filtrosText = filtrosActivos.length > 0 
-        ? `Filtros activos: ${filtrosActivos.join(" • ")}` 
-        : "Filtros activos: Todos los productos";
-    
     const filterBoxY = 54;
-    const filterBoxHeight = 10;
-    
-    // Fondo de la caja de filtros
     doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
-    doc.rect(15, filterBoxY, pageWidth - 30, filterBoxHeight, 'F');
-    
+    doc.rect(15, filterBoxY, pageWidth - 30, 10, 'F');
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8.5);
     doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-    doc.text(filtrosText, 20, filterBoxY + 7);
+    doc.text(filtrosActivos.length ? `Filtros: ${filtrosActivos.join(" • ")}` : "Filtros: Todos los productos", 18, filterBoxY + 7);
     
-    // ============================================
-    // 5. TABLA DE PRODUCTOS
-    // ============================================
-    const startY = filterBoxY + filterBoxHeight + 12;
-    
-    // Preparar datos para la tabla
+    const startY = filterBoxY + 14;
     const tableRows = reporteDatosActuales.map(p => {
-        let stockDisplay = '';
-        let stockColor = colors.dark;
-        
-        if (p.stock === 0) {
-            stockDisplay = 'Sin stock';
-            stockColor = [220, 38, 38];
-        } else if (p.stock <= 5) {
-            stockDisplay = `${p.stock} uds`;
-            stockColor = colors.primary;
-        } else {
-            stockDisplay = `${p.stock} uds`;
-            stockColor = [34, 197, 94];
-        }
-        
-        return [
-            p.id || '-',
-            p.nombre || '-',
-            p.marca_nombre || '-',
-            p.clase_nombre || '-',
-            stockDisplay,
-            (p.descripcion || '-').substring(0, 70) + ((p.descripcion || '').length > 70 ? '...' : '')
-        ];
+      let stockDisplay = '';
+      if (p.stock === 0) stockDisplay = 'Sin stock';
+      else if (p.stock <= 5) stockDisplay = `${p.stock} uds`;
+      else stockDisplay = `${p.stock} uds`;
+      return [
+        p.id || '-',
+        p.nombre || '-',
+        p.marca_nombre || '-',
+        p.clase_nombre || '-',
+        stockDisplay,
+        (p.descripcion || '-').substring(0, 70)
+      ];
     });
     
     doc.autoTable({
-        startY: startY,
-        head: [['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']],
-        body: tableRows,
-        theme: 'grid',
-        
-        // Estilos del encabezado
-        headStyles: {
-            fillColor: colors.primary,
-            textColor: colors.white,
-            fontStyle: 'bold',
-            fontSize: 8,
-            halign: 'center',
-            valign: 'middle',
-            cellPadding: 6,
-            lineWidth: 0,
-            lineColor: colors.dark
-        },
-        
-        // Estilos del cuerpo
-        bodyStyles: {
-            fontSize: 8.5,
-            textColor: colors.dark,
-            cellPadding: 5,
-            valign: 'middle',
-            lineColor: colors.border,
-            lineWidth: 0.3
-        },
-        
-        // Estilos de filas alternas (zebra)
-        alternateRowStyles: {
-            fillColor: colors.grayMedium
-        },
-        
-        // Estilo específico para la columna STOCK
-        columnStyles: {
-            0: { cellWidth: 18, halign: 'center' },
-            1: { cellWidth: 55, fontStyle: 'bold' },
-            2: { cellWidth: 35 },
-            3: { cellWidth: 35 },
-            4: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-            5: { cellWidth: 'auto' }
-        },
-        
-        // Colores de la tabla
-        tableLineColor: colors.border,
-        tableLineWidth: 0.5,
-        
-        // Márgenes
-        margin: { left: 15, right: 15 },
-        
-        // Hook para aplicar colores dinámicos al stock
-        didParseCell: (data) => {
-            // Colorear la celda de stock según su valor
-            if (data.column.index === 4 && data.row.index >= 0 && data.cell) {
-                const stockValue = data.cell.raw;
-                if (stockValue === 'Sin stock') {
-                    data.cell.styles.textColor = [220, 38, 38];
-                } else if (stockValue.includes('uds') && parseInt(stockValue) <= 5) {
-                    data.cell.styles.textColor = [243, 197, 0];
-                } else if (stockValue !== '-' && stockValue !== 'Sin stock') {
-                    data.cell.styles.textColor = [34, 197, 94];
-                }
-            }
-        },
-        
-        // Función para dibujar pie de página
-        didDrawPage: (data) => {
-            const currentPage = data.pageNumber;
-            
-            // Línea divisoria
-            doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
-            doc.setLineWidth(0.3);
-            doc.line(15, pageHeight - 12, pageWidth - 15, pageHeight - 12);
-            
-            // Texto de cierre centrado
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(7);
-            doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-            doc.text(
-                "ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio",
-                pageWidth / 2,
-                pageHeight - 6,
-                { align: 'center' }
-            );
-            
-            // Numeración
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(7);
-            doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-            doc.text(`Página ${currentPage}`, pageWidth - 15, pageHeight - 6, { align: 'right' });
-        }
+      startY: startY,
+      head: [['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']],
+      body: tableRows,
+      theme: 'grid',
+      headStyles: { fillColor: colors.primary, textColor: colors.white, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      bodyStyles: { fontSize: 8.5, textColor: colors.dark, cellPadding: 4 },
+      alternateRowStyles: { fillColor: colors.grayLight },
+      margin: { left: 15, right: 15 },
+      didDrawPage: (data) => {
+        doc.setFontSize(7);
+        doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+        doc.text("ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, pageHeight - 8, { align: 'center' });
+        doc.text(`Página ${data.pageNumber}`, pageWidth - 15, pageHeight - 8, { align: 'right' });
+      }
     });
     
-    // ============================================
-    // 6. GUARDAR PDF
-    // ============================================
     const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
     doc.save(`productos_${timestamp}.pdf`);
     notify("success", "Reporte exportado a PDF");
-}
+  }
 
-function imprimirReporte() {
+  function imprimirReporte() {
     if (reporteDatosActuales.length === 0) {
-        notify("error", "No hay datos para imprimir");
-        return;
+      notify("error", "No hay datos para imprimir");
+      return;
     }
     
     const ventana = window.open("", "_blank");
@@ -1384,326 +1053,98 @@ function imprimirReporte() {
     if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
     
     ventana.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Reporte de Productos - ItuAccesorio</title>
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-                
-                @media print {
-                    body {
-                        margin: 0;
-                        padding: 20px;
-                    }
-                    .no-print {
-                        display: none;
-                    }
-                    table {
-                        page-break-inside: avoid;
-                    }
-                    .page-break {
-                        page-break-before: always;
-                    }
-                }
-                
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                
-                body {
-                    font-family: 'Manrope', sans-serif;
-                    margin: 0;
-                    padding: 30px;
-                    background: #ffffff;
-                    color: #121212;
-                }
-                
-                .reporte-container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                }
-                
-                /* Header */
-                .header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 30px;
-                    padding-bottom: 20px;
-                    border-bottom: 3px solid #f3c500;
-                }
-                
-                .logo-area {
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                }
-                
-                .logo {
-                    height: 60px;
-                    width: auto;
-                }
-                
-                .title-area h1 {
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #121212;
-                    margin: 0;
-                    letter-spacing: -0.02em;
-                }
-                
-                .title-area p {
-                    font-size: 12px;
-                    color: #666;
-                    margin: 5px 0 0;
-                }
-                
-                .info-area {
-                    text-align: right;
-                }
-                
-                .info-area .date {
-                    font-size: 12px;
-                    color: #666;
-                    margin-bottom: 5px;
-                }
-                
-                .info-area .total {
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: #f3c500;
-                    background: #1a1a1a;
-                    display: inline-block;
-                    padding: 6px 12px;
-                    border-radius: 8px;
-                }
-                
-                /* Filtros */
-                .filters-box {
-                    background: #f8f9fa;
-                    border-left: 4px solid #f3c500;
-                    padding: 15px 20px;
-                    margin-bottom: 25px;
-                    border-radius: 8px;
-                }
-                
-                .filters-box h3 {
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-size: 13px;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    color: #888;
-                    margin-bottom: 8px;
-                }
-                
-                .filters-box p {
-                    font-size: 13px;
-                    color: #444;
-                    margin: 0;
-                }
-                
-                /* Tabla */
-                .table-wrapper {
-                    overflow-x: auto;
-                    margin-top: 20px;
-                }
-                
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 13px;
-                }
-                
-                th {
-                    background: #f3c500;
-                    color: #121212;
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-weight: 700;
-                    padding: 12px 10px;
-                    text-align: left;
-                    border: 1px solid #e0e0e0;
-                }
-                
-                td {
-                    padding: 10px;
-                    border: 1px solid #e0e0e0;
-                    vertical-align: top;
-                }
-                
-                tr:nth-child(even) {
-                    background: #fafafa;
-                }
-                
-                .stock-badge {
-                    display: inline-block;
-                    padding: 4px 10px;
-                    border-radius: 20px;
-                    font-size: 11px;
-                    font-weight: 700;
-                }
-                
-                .stock-out {
-                    background: #fee2e2;
-                    color: #dc2626;
-                }
-                
-                .stock-low {
-                    background: #ffedd5;
-                    color: #ea580c;
-                }
-                
-                .stock-good {
-                    background: #dcfce7;
-                    color: #16a34a;
-                }
-                
-                /* Footer */
-                .footer {
-                    margin-top: 30px;
-                    padding-top: 20px;
-                    border-top: 1px solid #e0e0e0;
-                    text-align: center;
-                    font-size: 11px;
-                    color: #888;
-                }
-                
-                .btn-print {
-                    background: #f3c500;
-                    color: #121212;
-                    border: none;
-                    padding: 12px 24px;
-                    font-family: 'Space Grotesk', sans-serif;
-                    font-weight: 700;
-                    font-size: 14px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    margin-bottom: 20px;
-                    transition: transform 0.2s ease;
-                }
-                
-                .btn-print:hover {
-                    transform: translateY(-2px);
-                }
-            </style>
-        </head>
-        <body>
-            <div class="reporte-container">
-                <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir Reporte</button>
-                
-                <div class="header">
-                    <div class="logo-area">
-                        <img class="logo" src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'">
-                        <div class="title-area">
-                            <h1>REPORTE DE PRODUCTOS</h1>
-                            <p>Gestión de inventario y catálogo</p>
-                        </div>
-                    </div>
-                    <div class="info-area">
-                        <div class="date">📅 ${fecha}</div>
-                        <div class="total">📦 Total: ${reporteDatosActuales.length} productos</div>
-                    </div>
-                </div>
-                
-                ${filtrosTexto.length > 0 ? `
-                <div class="filters-box">
-                    <h3>🔍 Filtros aplicados</h3>
-                    <p>${filtrosTexto.join(" • ")}</p>
-                </div>
-                ` : ''}
-                
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Marca</th>
-                                <th>Clase</th>
-                                <th>Stock</th>
-                                <th>Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${reporteDatosActuales.map(p => {
-                                let stockClass = '';
-                                let stockText = '';
-                                if (p.stock === 0) {
-                                    stockClass = 'stock-out';
-                                    stockText = 'Sin stock';
-                                } else if (p.stock <= 5) {
-                                    stockClass = 'stock-low';
-                                    stockText = `${p.stock} uds`;
-                                } else {
-                                    stockClass = 'stock-good';
-                                    stockText = `${p.stock} uds`;
-                                }
-                                return `
-                                    <tr>
-                                        <td>${escapeHtml(p.id || '')}</td>
-                                        <td><strong>${escapeHtml(p.nombre || '')}</strong></td>
-                                        <td>${escapeHtml(p.marca_nombre || '-')}</td>
-                                        <td>${escapeHtml(p.clase_nombre || '-')}</td>
-                                        <td><span class="stock-badge ${stockClass}">${stockText}</span></td>
-                                        <td>${escapeHtml((p.descripcion || '-').substring(0, 100))}${(p.descripcion || '').length > 100 ? '...' : ''}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="footer">
-                    <p>ItuAccesorio - Sistema de Gestión Comercial y Taller</p>
-                    <p>Reporte generado automáticamente • ${fecha}</p>
-                </div>
-            </div>
-        </body>
-        </html>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Productos - ItuAccesorio</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+          @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
+          body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
+          h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+          .logo { text-align: center; margin-bottom: 20px; }
+          .logo img { height: 50px; }
+          .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
+          .filters { background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-left: 4px solid #f3c500; font-size: 12px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background: #121212; color: white; font-weight: bold; }
+          tr:nth-child(even) { background: #f8f9fa; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+          .btn-print { background: #f3c500; border: none; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; }
+          .stock-out { color: #dc2626; font-weight: bold; }
+          .stock-low { color: #f59e0b; font-weight: bold; }
+          .stock-good { color: #10b981; }
+        </style>
+      </head>
+      <body>
+        <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
+        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+        <h1>REPORTE DE PRODUCTOS</h1>
+        <div class="info">Generado: ${fecha} • Total productos: ${reporteDatosActuales.length}</div>
+        ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
+        <table>
+          <thead><tr><th>ID</th><th>Nombre</th><th>Marca</th><th>Clase</th><th>Stock</th><th>Descripción</th></tr></thead>
+          <tbody>
+            ${reporteDatosActuales.map(p => {
+              let stockClass = '';
+              if (p.stock === 0) stockClass = 'stock-out';
+              else if (p.stock <= 5) stockClass = 'stock-low';
+              else stockClass = 'stock-good';
+              return `
+                <tr>
+                  <td>${escapeHtml(p.id || '')}</td>
+                  <td><strong>${escapeHtml(p.nombre || '')}</strong></td>
+                  <td>${escapeHtml(p.marca_nombre || '-')}</td>
+                  <td>${escapeHtml(p.clase_nombre || '-')}</td>
+                  <td class="${stockClass}">${p.stock || 0} uds</td>
+                  <td>${escapeHtml((p.descripcion || '-').substring(0, 100))}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        <div class="footer">ItuAccesorio - Sistema de Gestión Comercial y Taller<br>Reporte generado automáticamente • ${fecha}</div>
+      </body>
+      </html>
     `);
     ventana.document.close();
-}
+  }
 
   // Eventos de reportes
   if (btnReportes) {
-      btnReportes.addEventListener("click", () => {
-          cargarClasesMarcasReporte();
-          limpiarFiltrosReporte();
-          reportePreview.style.display = "none";
-          if (btnExportarExcel) btnExportarExcel.disabled = true;
-          if (btnExportarPdf) btnExportarPdf.disabled = true;
-          if (btnImprimir) btnImprimir.disabled = true;
-        abrirModalReportes();
-      });
+    btnReportes.addEventListener("click", () => {
+      cargarClasesMarcasReporte();
+      limpiarFiltrosReporte();
+      reportePreview.style.display = "none";
+      if (btnExportarExcel) btnExportarExcel.disabled = true;
+      if (btnExportarPdf) btnExportarPdf.disabled = true;
+      if (btnImprimir) btnImprimir.disabled = true;
+      abrirModalReportes();
+    });
   }
 
-    if (modalReportes) {
-      modalReportes.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-
-        if (target.dataset.modalClose === "true") {
-          cerrarModalReportes();
-          return;
-        }
-
-        if (target === modalReportes) {
-          cerrarModalReportes();
-        }
-      });
-    }
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") return;
-      if (modalReportes && !modalReportes.classList.contains("is-hidden")) {
+  if (modalReportes) {
+    modalReportes.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.dataset.modalClose === "true") {
+        cerrarModalReportes();
+        return;
+      }
+      if (target === modalReportes) {
         cerrarModalReportes();
       }
     });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (modalReportes && !modalReportes.classList.contains("is-hidden")) {
+      cerrarModalReportes();
+    }
+  });
 
   if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
   if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
