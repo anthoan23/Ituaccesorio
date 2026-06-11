@@ -293,8 +293,8 @@ async function onSubmitCliente(event) {
 
     const tipo = tipoClienteSelect?.value;
     let payload = {};
-    let url = "/api/clientes";
-    let method = "POST";
+    let url = "";
+    let method = "";
     
     const isEdit = formCliente.dataset.editing === "true";
     const clienteId = clienteIdInput?.value || "";
@@ -326,6 +326,7 @@ async function onSubmitCliente(event) {
             correo_cliente: correo,
         };
 
+        // CORREGIDO: Usar la URL correcta para persona natural
         if (isEdit) {
             if (!clienteId) {
                 mostrarToast("No se encontró el cliente a actualizar.", true);
@@ -333,6 +334,9 @@ async function onSubmitCliente(event) {
             }
             url = `/api/clientes/natural/${encodeURIComponent(clienteId)}`;
             method = "PUT";
+        } else {
+            url = "/api/clientes/natural";  // ← Cambiado de "/api/clientes" a "/api/clientes/natural"
+            method = "POST";
         }
     } else if (tipo === "juridico") {
         const rif = getFieldValue("rif");
@@ -355,6 +359,7 @@ async function onSubmitCliente(event) {
             correo_cliente: correo,
         };
 
+        // CORREGIDO: Usar la URL correcta para cliente jurídico
         if (isEdit) {
             if (!clienteId) {
                 mostrarToast("No se encontró el cliente a actualizar.", true);
@@ -363,7 +368,8 @@ async function onSubmitCliente(event) {
             url = `/api/clientes/juridico/${encodeURIComponent(clienteId)}`;
             method = "PUT";
         } else {
-            url = "/api/clientes/juridico";
+            url = "/api/clientes/juridico";  // ← URL correcta para crear jurídico
+            method = "POST";
         }
     } else {
         mostrarToast("Seleccione el tipo de cliente.", true);

@@ -1,0 +1,121 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Gestión de Trade-In{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tradein_empleados.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li aria-current="page">
+                <span class="breadcrumb__current">Gestión de Trade-In</span>
+            </li>
+        </ol>
+    </nav>
+
+    <header class="tradein-header">
+        <div class="tradein-header__copy">
+            <h1 class="tradein-header__title">Gestión de Trade-In</h1>
+            <p class="tradein-header__subtitle">Revisa y evalúa los equipos para intercambio</p>
+        </div>
+    </header>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card__icon">📱</div>
+            <div class="stat-card__info">
+                <span class="stat-card__value" id="stat-total">0</span>
+                <span class="stat-card__label">Total Trade-Ins</span>
+            </div>
+        </div>
+        <div class="stat-card stat-card--pending">
+            <div class="stat-card__icon">⏳</div>
+            <div class="stat-card__info">
+                <span class="stat-card__value" id="stat-pendientes">0</span>
+                <span class="stat-card__label">Pendientes</span>
+            </div>
+        </div>
+        <div class="stat-card stat-card--evaluated">
+            <div class="stat-card__icon">✅</div>
+            <div class="stat-card__info">
+                <span class="stat-card__value" id="stat-evaluados">0</span>
+                <span class="stat-card__label">Evaluados</span>
+            </div>
+        </div>
+        <div class="stat-card stat-card--value">
+            <div class="stat-card__icon">💰</div>
+            <div class="stat-card__info">
+                <span class="stat-card__value" id="stat-valor-total">$0</span>
+                <span class="stat-card__label">Valor Total</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="pendientes">⏳ Pendientes</button>
+        <button class="tab-btn" data-tab="evaluados">✅ Evaluados</button>
+    </div>
+
+    <!-- Contenido de tabs -->
+    <div id="pendientes-tab" class="tab-content">
+        <div id="pendientes-list" class="tradein-grid"></div>
+    </div>
+    <div id="evaluados-tab" class="tab-content is-hidden">
+        <div id="evaluados-list" class="tradein-grid"></div>
+    </div>
+</main>
+
+<!-- Modal de evaluación -->
+<div id="modal-evaluacion" class="modal-evaluacion is-hidden">
+    <div class="modal-panel modal-panel--lg">
+        <div class="modal-header">
+            <h3>Evaluar Trade-In</h3>
+            <button class="modal-close" id="close-modal">&times;</button>
+        </div>
+        
+        <div id="evaluacion-info" class="evaluacion-info"></div>
+        
+        <div class="form-group">
+            <label class="form-label">Fallas detectadas</label>
+            <div id="fallas-checkboxes" class="fallas-grid"></div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Observaciones</label>
+            <textarea id="evaluacion-observaciones" class="form-textarea" rows="3" placeholder="Ingrese observaciones adicionales..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Valor de cotización ($)</label>
+            <input type="number" id="evaluacion-valor" class="form-input" step="0.01" min="0" placeholder="0.00">
+            <small class="form-hint">Valor estimado basado en el estado del equipo</small>
+        </div>
+        
+        <div class="evaluacion-actions">
+            <button id="cancelar-evaluacion" class="btn btn--ghost">Cancelar</button>
+            <button id="confirmar-evaluacion" class="btn btn--yellow">Confirmar evaluación</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de detalle -->
+<div id="modal-detalle" class="modal-detalle is-hidden">
+    <div class="modal-panel modal-panel--lg">
+        <div class="modal-header">
+            <h3>Detalle del Trade-In</h3>
+            <button class="modal-close" id="close-detalle">&times;</button>
+        </div>
+        <div id="detalle-contenido" class="detalle-contenido"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/tradein_empleados.js') }}"></script>
+{% endblock %}
