@@ -1,37 +1,53 @@
 // ============================================
-// 1. CONSTANTES Y CONFIGURACIÓN
+// TALLER.JS - Versión Refactorizada
+// Módulos separados por responsabilidad
 // ============================================
+
+// --------------------------------
+// 1. CONFIGURACIÓN GLOBAL
+// --------------------------------
 const CONFIG = {
     API: {
         ORDENES: '/api/taller/ordenes',
         REPARACIONES_ASIGNADAS: '/api/taller/reparaciones-asignadas',
         CONSULTAR_ORDEN: '/api/taller/consultar-ordene',
         CONSULTAR_TEST: '/api/taller/consultar-test',
-        GUARDAR_REVISION: '/api/taller/guardar-revision'
+        GUARDAR_REVISION: '/api/taller/guardar-revision',
+        ASIGNAR_ORDEN: '/api/taller/asignar-orden',
+        LIBERAR_ORDEN: '/api/taller/liberar-orden',
+        GUARDAR_REPARACION: '/api/taller/guardar-reparacion'
     },
     VISTAS: {
         ORDENES: 'vista-1',
-        REPARACIONES_ASIGNADAS: 'vista-5'
-    }
+        DETALLE: 'vista-2',
+        REVISION: 'vista-3',
+        REPARACION: 'vista-4',
+        ASIGNADAS: 'vista-5'
+    },
+    COMPONENTES_TEST: [
+        'Btn_power', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Btn_vol', 'Btn_sil', 'Puerto_carga', 'Wifi', 'Cam_pos',
+        'Cam_del', 'Flash', 'Senal', 'Microfono', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth', 'Caja', 'Cargador', 'Cable',
+        'Auricular', 'Manuales'
+    ]
 };
 
-// ============================================
+// --------------------------------
 // 2. UTILIDADES
-// ============================================
+// --------------------------------
 const Utils = {
     getCsrfToken() {
         const input = document.querySelector("input[name='_csrf_token']");
-        return input ? input.value : "";
+        return input?.value || "";
     },
 
     getAccessToken() {
-        return (
-            localStorage.getItem("access_token") ||
-            localStorage.getItem("token") ||
-            sessionStorage.getItem("access_token") ||
-            sessionStorage.getItem("token") ||
-            ""
-        );
+        return localStorage.getItem("access_token") || 
+               localStorage.getItem("token") || 
+               sessionStorage.getItem("access_token") || 
+               sessionStorage.getItem("token") || 
+               "";
     },
 
     async fetchJson(url, options = {}) {
@@ -64,94 +80,38 @@ const Utils = {
         const payload = isJson ? await response.json() : await response.text();
 
         if (!response.ok) {
-            const msg =
-                (isJson && payload && (payload.message || payload.error)) ||
-                String(payload || response.statusText || "Error en la solicitud");
+            const msg = (isJson && payload?.message) || payload?.error || 
+                       String(payload) || response.statusText || "Error en la solicitud";
             throw new Error(msg);
         }
 
         return payload;
     },
 
-    escapeHtml(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     },
 
     showMessage(message, isError = false) {
         if (!message) return;
-        console.info(message);
-        // Aquí puedes implementar un toast o alerta visual
-        if (isError) {
-            alert(`❌ Error: ${message}`);
-        } else {
-            alert(`✅ ${message}`);
-        }
+        console[isError ? 'error' : 'log'](message);
     },
 
     formatDate(dateValue) {
         if (!dateValue) return '-';
-        
         try {
-            if (dateValue instanceof Date) {
-                const day = String(dateValue.getDate()).padStart(2, '0');
-                const month = String(dateValue.getMonth() + 1).padStart(2, '0');
-                const year = dateValue.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
-            
-            let dateStr = String(dateValue);
-            
-            const rfcMatch = dateStr.match(/(\d{2})\s+(\w+)\s+(\d{4})/);
-            if (rfcMatch) {
-                const day = rfcMatch[1];
-                const monthName = rfcMatch[2];
-                const year = rfcMatch[3];
-                
-                const meses = {
-                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
-                };
-                const month = meses[monthName] || '01';
-                return `${day}/${month}/${year}`;
-            }
-            
-            if (dateStr.includes(' ') || dateStr.includes('T')) {
-                dateStr = dateStr.split(/[ T]/)[0];
-            }
-            
-            if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-                const [year, month, day] = dateStr.split('-');
-                return `${day}/${month}/${year}`;
-            }
-            
-            if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
-                return dateStr;
-            }
-            
-            const date = new Date(dateStr);
-            if (!isNaN(date.getTime())) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
-            
-            return '-';
-        } catch (e) {
-            console.error('Error formateando fecha:', e, dateValue);
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleDateString('es-ES');
+        } catch {
             return '-';
         }
     },
 
     getEstadoClase(estado) {
-        const estadoStr = String(estado || '').toLowerCase();
         const estados = {
             'pendiente': 'estado-pendiente',
             'en revisión': 'estado-revision',
@@ -160,711 +120,698 @@ const Utils = {
             'entregado': 'estado-entregado',
             'asignada': 'estado-asignada'
         };
-        return estados[estadoStr] || 'estado-default';
-    },
-
-    getEstadoTexto(estado) {
-        if (!estado) return 'Desconocido';
-        return estado;
+        return estados[String(estado || '').toLowerCase()] || 'estado-default';
     },
 
     obtenerIdEmpleadoActual() {
-        // MÉTODO 1: Desde localStorage/sessionStorage (si guardas el usuario al hacer login)
         const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
-                return user.id_empleado || user.ID_empleado || user.empleado_id || user.ID_empleado;
+                return user.id_empleado || user.ID_empleado || user.empleado_id;
             } catch(e) {}
         }
         
-        // MÉTODO 2: Desde el token JWT (decodificarlo)
         const token = this.getAccessToken();
         if (token) {
             try {
-                // Decodificar JWT (solo la parte del payload)
-                const parts = token.split('.');
-                if (parts.length === 3) {
-                    const payload = JSON.parse(atob(parts[1]));
-                    return payload.id_empleado || payload.ID_empleado || payload.empleado_id;
-                }
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.id_empleado || payload.ID_empleado || payload.empleado_id;
             } catch(e) {}
         }
         
-        // MÉTODO 3: Desde un campo oculto en el HTML
-        const campoEmpleado = document.getElementById('id_empleado_actual');
-        if (campoEmpleado && campoEmpleado.value) {
-            return campoEmpleado.value;
-        }
-        
-        // MÉTODO 4: Desde un meta tag
-        const metaEmpleado = document.querySelector('meta[name="empleado-id"]');
-        if (metaEmpleado && metaEmpleado.getAttribute('content')) {
-            return metaEmpleado.getAttribute('content');
-        }
-        
-        // Valor por defecto para pruebas (NO USAR EN PRODUCCIÓN)
-        console.warn('No se pudo obtener el ID del empleado, usando valor por defecto 32014004');
-        return 32014004;
+        console.warn('No se pudo obtener ID del empleado, usando valor por defecto');
+        return '32014004';
     }
 };
 
-// ============================================
-// 3. MANEJADORES DE VISTAS (TABS)
-// ============================================
+// --------------------------------
+// 3. GESTOR DE VISTAS
+// --------------------------------
+const ViewManager = {
+    currentView: CONFIG.VISTAS.ORDENES,
+    
+    labels: {
+        [CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
+        [CONFIG.VISTAS.DETALLE]: 'Información de la orden',
+        [CONFIG.VISTAS.REVISION]: 'Revisión',
+        [CONFIG.VISTAS.REPARACION]: 'Reparación',
+        [CONFIG.VISTAS.ASIGNADAS]: 'Reparaciones asignadas'
+    },
 
-function activateView(targetClass) {
-    console.log('Activando vista:', targetClass);
-    
-    const breadcrumbLabels = {
-        'vista-1': 'Ordenes de servicio',
-        'vista-2': 'Informacion de la orden',
-        'vista-3': 'Revision',
-        'vista-4': 'Reparacion',
-        'vista-5': 'Reparaciones asignadas',
-    };
-    
-    const showBreadcrumbSuffix = ['vista-2', 'vista-3', 'vista-4', 'vista-5'].includes(targetClass);
-    
-    const viewPanels = document.querySelectorAll(".content.vista-1, .content.vista-2, .content.vista-3, .content.vista-4, .content.vista-5");
-    viewPanels.forEach((panel) => {
-        panel.hidden = !panel.classList.contains(targetClass);
-    });
-    
-    const breadcrumbSeparator = document.getElementById('breadcrumb-separator');
-    const breadcrumbSection = document.getElementById('breadcrumb-section');
-    
-    if (breadcrumbSeparator) {
-        breadcrumbSeparator.style.display = showBreadcrumbSuffix ? 'inline' : 'none';
-    }
-    
-    if (breadcrumbSection) {
-        breadcrumbSection.style.display = showBreadcrumbSuffix ? 'inline' : 'none';
-        breadcrumbSection.textContent = showBreadcrumbSuffix ? (breadcrumbLabels[targetClass] || '') : '';
-    }
-    
-    const allButtons = document.querySelectorAll('.vista-switcher__btn');
-    allButtons.forEach((button) => {
-        const isActive = button.getAttribute('data-view-target') === targetClass;
-        button.classList.toggle("is-active", isActive);
-        button.setAttribute("aria-pressed", String(isActive));
-    });
-    
-    if (targetClass === 'vista-1') {
-        cargarOrdenesServicio();
-    } else if (targetClass === 'vista-5') {
-        cargarReparacionesAsignadas();
-    }
-}
-
-function inicializarCambioVistas() {
-    const viewButtons = document.querySelectorAll("[data-view-target]");
-    
-    console.log('Botones de vista encontrados:', viewButtons.length);
-    
-    viewButtons.forEach((button) => {
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
+    activate(targetClass) {
+        console.log('Activando vista:', targetClass);
         
-        newButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const targetView = newButton.getAttribute("data-view-target");
-            console.log('Click en botón, vista target:', targetView);
-            
-            if (targetView) {
-                activateView(targetView);
+        const showBreadcrumb = [CONFIG.VISTAS.DETALLE, CONFIG.VISTAS.REVISION, 
+                                 CONFIG.VISTAS.REPARACION, CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
+        
+        document.querySelectorAll('.content').forEach(panel => {
+            panel.hidden = !panel.classList.contains(targetClass);
+        });
+        
+        const separator = document.getElementById('breadcrumb-separator');
+        const section = document.getElementById('breadcrumb-section');
+        if (separator) separator.style.display = showBreadcrumb ? 'inline' : 'none';
+        if (section) {
+            section.style.display = showBreadcrumb ? 'inline' : 'none';
+            section.textContent = showBreadcrumb ? this.labels[targetClass] : '';
+        }
+        
+        document.querySelectorAll('[data-view-target]').forEach(btn => {
+            const isActive = btn.getAttribute('data-view-target') === targetClass;
+            btn.classList.toggle('is-active', isActive);
+            btn.setAttribute('aria-pressed', String(isActive));
+        });
+        
+        this.currentView = targetClass;
+        
+        if (targetClass === CONFIG.VISTAS.ORDENES) {
+            OrdenesService.cargar();
+        } else if (targetClass === CONFIG.VISTAS.ASIGNADAS) {
+            ReparacionesService.cargarAsignadas();
+        } else if (targetClass === CONFIG.VISTAS.REVISION) {
+            const ordenActual = OrdenesService.obtenerOrdenActual();
+            if (ordenActual) {
+                document.getElementById('orden-id').textContent = ordenActual;
+                document.getElementById('id_orden_servicio_revision').value = ordenActual;
             }
-        });
-    });
-}
-
-// ============================================
-// 4. MANEJADORES DE TABLA (ÓRDENES)
-// ============================================
-function renderTablaOrdenes(ordenes) {
-    const tbody = document.getElementById("tabla-ordenes-servicio");
-    if (!tbody) {
-        console.error('No se encontró el elemento tabla-ordenes-servicio');
-        return;
-    }
-
-    if (!ordenes || !ordenes.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center;">No hay órdenes de servicio para mostrar.</td>
-            </tr>
-        `;
-        return;
-    }
-
-    console.log('Órdenes a renderizar:', ordenes);
-
-    tbody.innerHTML = ordenes
-        .map((raw) => {
-            const idOrden = Utils.escapeHtml(raw.id_orden);
-            const estado = Utils.escapeHtml(raw.estado);
-            const estadoClase = Utils.getEstadoClase(raw.estado);
-            const idCliente = Utils.escapeHtml(raw.id_cliente);
-            const nombreCliente = Utils.escapeHtml(raw.nombre_cliente);
-            const modelo = Utils.escapeHtml(raw.modelo);
-            const descripcion = Utils.escapeHtml(raw.descripcion || '-');
-            const fechaIngreso = Utils.formatDate(raw.fecha_e);
-
-            return `
-                <tr>
-                    <td data-label="ID orden">${idOrden}</td>
-                    <td data-label="Estado"><span class="estado-badge ${estadoClase}">${estado}</span></td>
-                    <td data-label="ID cliente">${idCliente}</td>
-                    <td data-label="Nombre cliente">${nombreCliente}</td>
-                    <td data-label="Modelo">${modelo}</td>
-                    <td data-label="Descripción">${descripcion}</td>
-                    <td data-label="Fecha ingreso">${fechaIngreso}</td>
-                    <td class="table__actions" data-label="Acciones">
-                        <div class="row-actions">
-                            <button type="button" class="table-action" data-accion="ver" data-id="${idOrden}">Ver detalle</button>
-                            <button type="button" class="table-action" data-accion="cambiar-estado" data-id="${idOrden}" data-estado="${estado}">Cambiar estado</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        })
-        .join("");
-    
-    console.log('Tabla de órdenes renderizada correctamente');
-}
-
-// ============================================
-// 5. MANEJADORES DE TABLA (REPARACIONES ASIGNADAS)
-// ============================================
-function renderTablaReparaciones(reparaciones) {
-    const tbody = document.getElementById("tabla-reparaciones-asignadas");
-    if (!tbody) {
-        console.error('No se encontró el elemento tabla-reparaciones-asignadas');
-        return;
-    }
-
-    if (!reparaciones || !reparaciones.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="3" style="text-align: center;">Sin reparaciones asignadas por ahora.</td>
-            </tr>
-        `;
-        return;
-    }
-
-    console.log('Reparaciones a renderizar:', reparaciones);
-
-    tbody.innerHTML = reparaciones
-        .map((raw) => {
-            const idOrden = Utils.escapeHtml(raw.id_orden);
-            const modelo = Utils.escapeHtml(raw.modelo);
-            const estado = Utils.escapeHtml(raw.estado);
-            const estadoClase = Utils.getEstadoClase(raw.estado);
-
-            return `
-                <tr>
-                    <td data-label="ID orden">${idOrden}</td>
-                    <td data-label="Modelo">${modelo}</td>
-                    <td class="table__actions" data-label="Acciones">
-                        <div class="row-actions">
-                            <button type="button" class="table-action" data-accion="ver" data-id="${idOrden}">Ver detalle</button>
-                            <button type="button" class="table-action" data-accion="iniciar-reparacion" data-id="${idOrden}">Iniciar reparación</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        })
-        .join("");
-    
-    console.log('Tabla de reparaciones renderizada correctamente');
-}
-
-// ============================================
-// 6. CRUD DE ÓRDENES Y REPARACIONES
-// ============================================
-async function cargarOrdenesServicio() {
-    try {
-        console.log('Cargando órdenes de servicio desde:', CONFIG.API.ORDENES);
-        const data = await Utils.fetchJson(CONFIG.API.ORDENES, { method: "GET" });
-        console.log('Respuesta de la API:', data);
-        
-        let ordenes = [];
-        if (Array.isArray(data)) {
-            ordenes = data;
-        } else if (data?.ordenes && Array.isArray(data.ordenes)) {
-            ordenes = data.ordenes;
-        } else if (data?.data && Array.isArray(data.data)) {
-            ordenes = data.data;
+            // Llamar a iniciar cuando se activa la vista de revisión
+            RevisionService.iniciar();
+        } else if (targetClass === CONFIG.VISTAS.REPARACION) {
+            const ordenActual = OrdenesService.obtenerOrdenActual();
+            if (ordenActual) {
+                document.getElementById('reparacion-orden-id').textContent = ordenActual;
+            }
         }
-        
-        console.log('Órdenes procesadas:', ordenes.length);
-        renderTablaOrdenes(ordenes);
-    } catch (error) {
-        console.error('Error cargando órdenes:', error);
-        Utils.showMessage(error.message || "No fue posible cargar las órdenes de servicio.", true);
-        renderTablaOrdenes([]);
-    }
-}
+    },
 
-async function cargarReparacionesAsignadas() {
-    try {
-        console.log('Cargando reparaciones asignadas desde:', CONFIG.API.REPARACIONES_ASIGNADAS);
-        
-        const data = await Utils.fetchJson(CONFIG.API.REPARACIONES_ASIGNADAS, { 
-            method: "POST",
-            body: JSON.stringify({})
-        });
-        
-        console.log('Respuesta de la API reparaciones:', data);
-        
-        let reparaciones = [];
-        if (Array.isArray(data)) {
-            reparaciones = data;
-        } else if (data?.reparaciones && Array.isArray(data.reparaciones)) {
-            reparaciones = data.reparaciones;
-        } else if (data?.data && Array.isArray(data.data)) {
-            reparaciones = data.data;
-        }
-        
-        console.log('Reparaciones procesadas:', reparaciones.length);
-        renderTablaReparaciones(reparaciones);
-    } catch (error) {
-        console.error('Error cargando reparaciones:', error);
-        Utils.showMessage(error.message || "No fue posible cargar las reparaciones asignadas.", true);
-        renderTablaReparaciones([]);
-    }
-}
-
-async function verDetalleOrden(idOrden) {
-    console.log(`Consultando datos combinados para la orden: ${idOrden}`);
-   
-    
-    const infoContainer = document.getElementById("order-info");
-    const testsContainer = document.getElementById("order-tests");
-    const subtitleContainer = document.getElementById("detalle-orden-subtitle");
-    
-    try {
-        const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
-            method: "POST",
-            body: JSON.stringify({ id_orden: idOrden })
-        });
-        
-        console.log('Datos combinados del backend:', data);
-        
-        const orden = data.orden;
-        const listaTests = data.tests || [];
-        
-        let ultimoNumeroTest = 0;
-        if (listaTests.length > 0) {
-            ultimoNumeroTest = Math.max(...listaTests.map(t => parseInt(t.Numero_test) || 0));
-        }
-        const proximoNumeroTest = ultimoNumeroTest + 1;
-
-        if (infoContainer && orden) {
-            const estadoOrden = orden.Estado_orden_servicio || orden.Estado || "Desconocido";
-            const estadoClase = Utils.getEstadoClase(estadoOrden);
-            
-            const descripcionTexto = orden.Descripcion_reparacion || "Sin descripción de reparación registrada.";
-            const notaTexto = orden.Nota_orden_servicio || "Ninguna nota adicional.";
-            
-            const estiloCajaUnificada = `
-                background: #f8f9fa; 
-                color: #212529; 
-                padding: 0.85rem; 
-                border-radius: 6px; 
-                border: 1px solid #dee2e6; 
-                font-size: 0.9rem; 
-                line-height: 1.5;
-                min-height: 60px;
-            `;
-            
-            infoContainer.innerHTML = `
-                <div class="detail-group">
-                    <span class="detail-label">ID de la Orden:</span>
-                    <strong class="detail-value">#${Utils.escapeHtml(orden.ID_orden_servicio || idOrden)}</strong>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Estado:</span>
-                    <span class="estado-badge ${estadoClase}">${Utils.escapeHtml(estadoOrden)}</span>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Cliente:</span>
-                    <strong class="detail-value">${Utils.escapeHtml(orden.nombre_cliente || 'No especificado')}</strong>
-                </div>
-                <div class="detail-group">
-                    <span class="detail-label">Modelo del Equipo:</span>
-                    <strong class="detail-value">${Utils.escapeHtml(orden.Modelo || 'No especificado')}</strong>
-                </div>
-                
-                <div class="detail-group field--full" style="grid-column: span 2; margin-top: 1rem;">
-                    <span class="detail-label" style="display: block; margin-bottom: 0.35rem; font-weight: 600; color: #495057;">Descripción de la Reparación:</span>
-                    <div class="detail-value-box" style="${estiloCajaUnificada}">
-                        ${Utils.escapeHtml(descripcionTexto)}
-                    </div>
-                </div>
-                
-                <div class="detail-group field--full" style="grid-column: span 2; margin-top: 1rem;">
-                    <span class="detail-label" style="display: block; margin-bottom: 0.35rem; font-weight: 600; color: #495057;">Nota de la Orden:</span>
-                    <div class="detail-value-box" style="${estiloCajaUnificada}">
-                        ${Utils.escapeHtml(notaTexto)}
-                    </div>
-                </div>
-            `;
-        }
-        
-        const contenedorDetalleDispositivo = document.getElementById("detalle-dispositivo");
-        if (contenedorDetalleDispositivo) {
-            const botonAntiguo = document.getElementById("btn-realizar-revision-container");
-            if (botonAntiguo) botonAntiguo.remove();
-
-            const divAcciones = document.createElement("div");
-            divAcciones.id = "btn-realizar-revision-container";
-            divAcciones.style.cssText = "display: flex; justify-content: flex-end; width: 100%; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e9ecef;";
-            
-            divAcciones.innerHTML = `
-                <button type="button" 
-                        class="form-btn form-btn--primary" 
-                        id="btn-realizar-revision"
-                        data-id-orden="${idOrden}" 
-                        data-proximo-test="${proximoNumeroTest}"
-                        style="padding: 0.7rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 8px; min-width: 220px; justify-content: center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    Realizar revisión
-                </button>
-            `;
-            
-            contenedorDetalleDispositivo.appendChild(divAcciones);
-
-            document.getElementById("btn-realizar-revision").addEventListener("click", (e) => {
-                const btn = e.currentTarget;
-                const id = btn.getAttribute("data-id-orden");
-                const numTest = btn.getAttribute("data-proximo-test");
-                ejecutarAccionIrARevision(id, numTest);
+    init() {
+        document.querySelectorAll('[data-view-target]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = btn.getAttribute('data-view-target');
+                if (target) this.activate(target);
             });
-        }
-        
-        if (testsContainer) {
-            if (listaTests.length === 0) {
-                testsContainer.innerHTML = `
-                    <h3 class="card__subtitle" style="margin-top: 2rem; margin-bottom: 0.5rem;">Tests Realizados</h3>
-                    <p class="device-detail__empty">Esta orden no tiene ningún test registrado todavía.</p>
-                `;
-            } else {
-                const filasHtml = listaTests.map((test) => {
-                    const numTest = Utils.escapeHtml(test.Numero_test);
-                    const cantidad = Utils.escapeHtml(test.cantidad);
-                    
-                    return `
-                        <tr>
-                            <td data-label="Número de Test" style="font-weight: 600; color: #495057;">Test #${numTest}</td>
-                            <td data-label="Cantidad de Interacciones">${cantidad}</td>
-                            <td data-label="Acción" class="table__actions">
-                                <button type="button" class="table-action" data-accion="ver-test" data-id-test="${numTest}" data-id-orden="${idOrden}">Ver</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join("");
-
-                testsContainer.innerHTML = `
-                    <h3 class="card__subtitle" style="margin-top: 2rem; margin-bottom: 0.75rem; font-weight: 600; color: #212529;">Tests</h3>
-                    <div class="table-wrap" style="box-shadow: none; border: 1px solid #dee2e6; border-radius: 6px;">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Número de test</th>
-                                    <th>Cantidad</th>
-                                    <th class="table__actions">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${filasHtml}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-        }
-
-        if (subtitleContainer) {
-            subtitleContainer.textContent = `Visualizando la información completa de la orden #${idOrden}`;
-        }
-        
-        activateView('vista-2');
-
-    } catch (error) {
-        console.error('Error al consultar la orden y tests en el servidor:', error);
-        Utils.showMessage(error.message || "No se pudo obtener la información completa.", true);
-    }
-}
-
-async function verDetallesDeUnTest(idOrden, numeroTest) {
-    const modalBody = document.getElementById("modal-test-body");
-    if (!modalBody) return;
-
-    modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem;">Cargando componentes del test...</p>`;
-    
-    if (window.UiModal && typeof window.UiModal.openById === 'function') {
-        window.UiModal.openById('modal-test-detail');
-    }
-
-    try {
-        const respuesta = await Utils.fetchJson(CONFIG.API.CONSULTAR_TEST, {
-            method: "POST",
-            body: JSON.stringify({ 
-                id_orden: idOrden, 
-                numero_test: numeroTest 
-            })
         });
+        this.activate(CONFIG.VISTAS.ORDENES);
+    }
+};
 
-        console.log("Datos del test recibidos:", respuesta);
+// --------------------------------
+// 4. SERVICIO DE ÓRDENES
+// --------------------------------
+const OrdenesService = {
+    ordenActualId: null,
 
-        const itemsTest = Array.isArray(respuesta) ? respuesta : [respuesta];
+    async cargar() {
+        const tbody = document.getElementById('tabla-ordenes-servicio');
+        if (!tbody) return;
 
-        if (!itemsTest || itemsTest.length === 0 || !itemsTest[0]) {
-            modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem; color: #6c757d;">No se encontraron registros de componentes para este test.</p>`;
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.ORDENES, { method: 'GET' });
+            const ordenes = Array.isArray(data) ? data : data?.ordenes || data?.data || [];
+            this.renderizar(ordenes, tbody);
+        } catch (error) {
+            console.error('Error cargando órdenes:', error);
+            this.renderizar([], tbody);
+        }
+    },
+
+    renderizar(ordenes, tbody) {
+        if (!ordenes.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay órdenes de servicio</td></tr>';
             return;
         }
 
-        modalBody.innerHTML = itemsTest.map((item) => {
-            const nombreComponente = item.test || "Componente Desconocido";
-            const resultado = item.Resultado_test || "Sin especificar";
-            
-            const esLargo = resultado.length > 30;
-            
-            const estiloDinamico = esLargo 
-                ? `grid-column: span 4 !important; order: 999 !important; background: #f8f9fa; border-left: 4px solid #28a745;` 
-                : `background: #ffffff; order: 0;`;
+        tbody.innerHTML = ordenes.map(orden => `
+            <tr>
+                <td data-label="ID orden">${Utils.escapeHtml(orden.id_orden)}</td>
+                <td data-label="Estado"><span class="estado-badge ${Utils.getEstadoClase(orden.estado)}">${Utils.escapeHtml(orden.estado)}</span></td>
+                <td data-label="ID cliente">${Utils.escapeHtml(orden.id_cliente)}</td>
+                <td data-label="Nombre cliente">${Utils.escapeHtml(orden.nombre_cliente)}</td>
+                <td data-label="Modelo">${Utils.escapeHtml(orden.modelo)}</td>
+                <td data-label="Fecha ingreso">${Utils.formatDate(orden.fecha_e)}</td>
+                <td class="table__actions" data-label="Acciones">
+                    <div class="row-actions">
+                        <button type="button" class="table-action" data-accion="ver-orden" data-id="${orden.id_orden}">Ver orden</button>
+                        <button type="button" class="table-action table-action--accent" data-accion="tomar-orden" data-id="${orden.id_orden}">Tomar orden</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    },
 
+    async verOrdenPreview(idOrden) {
+        const modalBodyInfo = document.getElementById('modal-order-info');
+        const modalBodyTests = document.getElementById('modal-order-tests');
+        const tomarOrdenBtn = document.getElementById('modal-tomar-orden-btn');
+        
+        if (!modalBodyInfo) return;
+
+        modalBodyInfo.innerHTML = '<p class="device-detail__empty">Cargando información de la orden...</p>';
+        modalBodyTests.innerHTML = '';
+        
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById('modal-preview-orden');
+        }
+
+        if (tomarOrdenBtn) {
+            tomarOrdenBtn.setAttribute('data-id', idOrden);
+        }
+
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ id_orden: idOrden })
+            });
+
+            const orden = data.orden;
+            const tests = data.tests || [];
+
+            if (orden) {
+                this.renderizarDetalleModal(modalBodyInfo, orden);
+            } else {
+                modalBodyInfo.innerHTML = '<p class="device-detail__empty error">No se encontró información de la orden</p>';
+            }
+
+            if (tests.length) {
+                this.renderizarTestsModal(modalBodyTests, tests, idOrden);
+            } else {
+                modalBodyTests.innerHTML = '<h3 class="card__subtitle">Tests Realizados</h3><p class="device-detail__empty">No hay tests registrados para esta orden.</p>';
+            }
+
+        } catch (error) {
+            console.error('Error al consultar orden:', error);
+            modalBodyInfo.innerHTML = `<p class="device-detail__empty error">Error: ${Utils.escapeHtml(error.message)}</p>`;
+            modalBodyTests.innerHTML = '';
+        }
+    },
+
+    renderizarDetalleModal(container, orden) {
+        const estiloCaja = 'background: #f8f9fa; padding: 0.85rem; border-radius: 6px; border: 1px solid #dee2e6;';
+        
+        container.innerHTML = `
+            <div class="detail-group"><span class="detail-label">ID de la Orden:</span><strong>#${Utils.escapeHtml(orden.ID_orden_servicio)}</strong></div>
+            <div class="detail-group"><span class="detail-label">Estado:</span><span class="estado-badge ${Utils.getEstadoClase(orden.Estado_orden_servicio)}">${Utils.escapeHtml(orden.Estado_orden_servicio)}</span></div>
+            <div class="detail-group"><span class="detail-label">Cliente:</span><strong>${Utils.escapeHtml(orden.nombre_cliente)}</strong></div>
+            <div class="detail-group"><span class="detail-label">Modelo:</span><strong>${Utils.escapeHtml(orden.Modelo)}</strong></div>
+            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
+            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
+        `;
+    },
+
+    renderizarTestsModal(container, tests, idOrden) {
+        container.innerHTML = `
+            <h3 class="card__subtitle">Tests Realizados</h3>
+            <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+                <table class="table" style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>N° Test</th>
+                            <th>Cantidad</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tests.map(test => `
+                            <tr>
+                                <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
+                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
+                                <td data-label="Acción" class="table__actions">
+                                    <button class="table-action" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}">Ver detalles</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.querySelectorAll('[data-accion="ver-test-modal"]').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const numTest = btn.getAttribute('data-id-test');
+                const idOrd = btn.getAttribute('data-id-orden');
+                await RevisionService.verDetalle(idOrd, numTest);
+            });
+        });
+    },
+
+    async verDetalle(idOrden) {
+        this.ordenActualId = idOrden;
+        sessionStorage.setItem('orden_actual_id', idOrden);
+        
+        const infoContainer = document.getElementById('order-info');
+        const testsContainer = document.getElementById('order-tests');
+        const subtitle = document.getElementById('detalle-orden-subtitle');
+        
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ id_orden: idOrden })
+            });
+
+            const orden = data.orden;
+            const tests = data.tests || [];
+
+            if (infoContainer && orden) {
+                this.renderizarDetalle(infoContainer, orden);
+            }
+
+            if (testsContainer) {
+                this.renderizarTests(testsContainer, tests, idOrden);
+            }
+
+            if (subtitle) {
+                subtitle.textContent = `Visualizando la información completa de la orden #${idOrden}`;
+            }
+
+            this.actualizarTitulosVistas(idOrden, orden?.Modelo);
+            
+            ViewManager.activate(CONFIG.VISTAS.DETALLE);
+        } catch (error) {
+            console.error('Error al consultar orden:', error);
+        }
+    },
+
+    renderizarDetalle(container, orden) {
+        const estiloCaja = 'background: #f8f9fa; padding: 0.85rem; border-radius: 6px; border: 1px solid #dee2e6;';
+        
+        container.innerHTML = `
+            <div class="detail-group"><span class="detail-label">ID de la Orden:</span><strong>#${Utils.escapeHtml(orden.ID_orden_servicio)}</strong></div>
+            <div class="detail-group"><span class="detail-label">Estado:</span><span class="estado-badge ${Utils.getEstadoClase(orden.Estado_orden_servicio)}">${Utils.escapeHtml(orden.Estado_orden_servicio)}</span></div>
+            <div class="detail-group"><span class="detail-label">Cliente:</span><strong>${Utils.escapeHtml(orden.nombre_cliente)}</strong></div>
+            <div class="detail-group"><span class="detail-label">Modelo:</span><strong>${Utils.escapeHtml(orden.Modelo)}</strong></div>
+            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
+            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
+        `;
+        
+        // Agregar botón de revisión
+        this.agregarBotonRevision(container);
+    },
+
+    renderizarTests(container, tests, idOrden) {
+        if (!tests || !tests.length) {
+            container.innerHTML = '<h3 class="card__subtitle">Tests Realizados</h3><p class="device-detail__empty">No hay tests registrados.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <h3 class="card__subtitle">Tests Realizados</h3>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>N° Test</th>
+                            <th>Cantidad</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tests.map(test => `
+                            <tr>
+                                <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
+                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
+                                <td data-label="Acción" class="table__actions">
+                                    <button class="table-action" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}">Ver detalles</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    agregarBotonRevision(container) {
+        const btnExistente = document.getElementById('btn-realizar-revision');
+        if (btnExistente) btnExistente.remove();
+
+        const btn = document.createElement('button');
+        btn.id = 'btn-realizar-revision';
+        btn.type = 'button';
+        btn.className = 'form-btn form-btn--primary';
+        btn.style.cssText = 'margin-top: 1rem; width: 100%;';
+        btn.innerHTML = '🔧 Realizar revisión técnica';
+        btn.addEventListener('click', () => {
+            ViewManager.activate(CONFIG.VISTAS.REVISION);
+        });
+        
+        container.appendChild(btn);
+    },
+
+    actualizarTitulosVistas(idOrden, modelo) {
+        const reparacionOrdenId = document.getElementById('reparacion-orden-id');
+        const reparacionModelo = document.getElementById('reparacion-modelo');
+        if (reparacionOrdenId) reparacionOrdenId.textContent = idOrden;
+        if (reparacionModelo) reparacionModelo.textContent = modelo || '-';
+        
+        const ordenIdSpan = document.getElementById('orden-id');
+        if (ordenIdSpan) ordenIdSpan.textContent = idOrden;
+        
+        const inputOrden = document.getElementById('id_orden_servicio_revision');
+        if (inputOrden) inputOrden.value = idOrden;
+    },
+
+    obtenerOrdenActual() {
+        return this.ordenActualId || sessionStorage.getItem('orden_actual_id');
+    },
+
+    async asignarOrden(idOrden) {
+        try {
+            const idEmpleado = Utils.obtenerIdEmpleadoActual();
+            
+            await Utils.fetchJson(CONFIG.API.ASIGNAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    id_orden: idOrden,
+                    id_empleado: idEmpleado
+                })
+            });
+            
+            if (window.UiModal && typeof window.UiModal.close === 'function') {
+                window.UiModal.close();
+            }
+            
+            await this.cargar();
+            
+            if (ViewManager.currentView === CONFIG.VISTAS.ASIGNADAS) {
+                await ReparacionesService.cargarAsignadas();
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error al tomar orden:', error);
+            return false;
+        }
+    }
+};
+
+// --------------------------------
+// 5. SERVICIO DE REVISIONES
+// --------------------------------
+const RevisionService = {
+    iniciar() {
+        const ordenId = OrdenesService.obtenerOrdenActual();
+        
+        if (!ordenId) {
+            console.warn('No hay orden seleccionada');
+            return;
+        }
+        
+        const inputOrden = document.getElementById('id_orden_servicio_revision');
+        const spanOrden = document.getElementById('orden-id');
+
+        if (inputOrden) inputOrden.value = ordenId;
+        if (spanOrden) spanOrden.textContent = ordenId;
+
+        // Calcular el próximo número de test
+        this.calcularProximoNumeroTest(ordenId).then(proximoTest => {
+            const numeroTestInput = document.getElementById('numero_test_revision');
+            const testIdSpan = document.getElementById('test-id-form');
+            
+            if (numeroTestInput) numeroTestInput.value = proximoTest;
+            if (testIdSpan) testIdSpan.textContent = proximoTest;
+            
+            // Cargar los componentes
+            this.cargarComponentes();
+        }).catch(() => {
+            const numeroTestInput = document.getElementById('numero_test_revision');
+            const testIdSpan = document.getElementById('test-id-form');
+            if (numeroTestInput) numeroTestInput.value = 1;
+            if (testIdSpan) testIdSpan.textContent = 1;
+            this.cargarComponentes();
+        });
+    },
+
+    async calcularProximoNumeroTest(ordenId) {
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ id_orden: ordenId })
+            });
+            
+            const tests = data.tests || [];
+            if (tests.length === 0) return 1;
+            
+            const maxNumero = Math.max(...tests.map(t => parseInt(t.Numero_test) || 0));
+            return maxNumero + 1;
+        } catch (error) {
+            console.error('Error calculando próximo test:', error);
+            return 1;
+        }
+    },
+
+    cargarComponentes() {
+        const container = document.getElementById('test-componentes-grid');
+        if (!container) {
+            console.error('No se encontró el contenedor test-componentes-grid');
+            return;
+        }
+
+        console.log('Cargando componentes de prueba...');
+        
+        container.innerHTML = CONFIG.COMPONENTES_TEST.map(comp => {
+            const nombreLegible = comp.replace(/_/g, ' ')
+                .replace('Btn', 'Botón')
+                .replace('Cam', 'Cámara')
+                .replace('sil', 'silencio')
+                .replace('pos', 'posterior')
+                .replace('del', 'delantera');
             return `
-                <div class="test-item-card" style="${estiloDinamico}">
-                    <span style="display: block; font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 700; letter-spacing: 0.5px;">
-                        ${Utils.escapeHtml(nombreComponente)}
-                    </span>
-                    <strong style="display: block; font-size: 0.95rem; color: #212529; margin-top: 0.25rem; word-break: break-word;">
-                        ${Utils.escapeHtml(resultado)}
-                    </strong>
+                <div class="test-row-item">
+                    <span class="test-component-name">${Utils.escapeHtml(nombreLegible)}</span>
+                    <div class="radio-group">
+                        <label class="radio-label radio-label--success">
+                            <input type="radio" name="test_${comp}" value="Funciona"> ✅ Funciona
+                        </label>
+                        <label class="radio-label radio-label--danger">
+                            <input type="radio" name="test_${comp}" value="No funciona"> ❌ No funciona
+                        </label>
+                    </div>
                 </div>
             `;
-        }).join("");
+        }).join('');
+        
+        console.log('Componentes cargados correctamente');
+    },
 
-    } catch (error) {
-        console.error("Error al consultar detalles del test:", error);
-        modalBody.innerHTML = `<p style="text-align:center; width:100%; grid-column: span 4; padding: 2rem; color: #dc3545; font-weight: 600;">
-            Error al cargar la información: ${Utils.escapeHtml(error.message)}
-        </p>`;
-    }
-}
+    async guardar(event) {
+        event.preventDefault();
+        
+        const idOrden = document.getElementById('id_orden_servicio_revision')?.value;
+        const numeroTest = document.getElementById('numero_test_revision')?.value;
+        const observaciones = document.querySelector('textarea[name="observaciones"]')?.value;
+        const idEmpleado = Utils.obtenerIdEmpleadoActual();
 
-function ejecutarAccionIrARevision(idOrden, numeroTest) {
-    console.log(`Redireccionando a Vista 3 (Revisión) para Orden #${idOrden} y Test #${numeroTest}`);
-    
-    const inputOrden = document.getElementById("id_orden_servicio_revision");
-    const inputTest = document.getElementById("numero_test_revision");
-
-    if (inputOrden) inputOrden.value = idOrden;
-    if (inputTest) inputTest.value = numeroTest;
-
-    const spanInfoRevision = document.getElementById("orden-id");
-    if (spanInfoRevision) {
-        spanInfoRevision.textContent = idOrden;
-    }
-    
-    const testIdSpan = document.getElementById("test-id-form");
-    if (testIdSpan) {
-        testIdSpan.textContent = numeroTest;
-    }
-    
-    if (typeof activateView === "function") {
-        activateView("vista-3");
-    } else {
-        console.warn("La función activateView no está disponible en el scope.");
-    }
-    
-    
-}
-
-function cambiarEstadoOrden(idOrden, estadoActual) {
-    console.log(`Cambiar estado de orden: ${idOrden}, estado actual: ${estadoActual}`);
-    
-    // TODO: Implementar modal de cambio de estado
-}
-
-function iniciarReparacion(idOrden) {
-    console.log(`Iniciar reparación de orden: ${idOrden}`);
-    
-    // TODO: Implementar lógica de inicio de reparación
-}
-
-// ============================================
-// 7. GUARDAR REVISIÓN TÉCNICA
-// ============================================
-
-// ============================================
-// 7. GUARDAR REVISIÓN TÉCNICA
-// ============================================
-
-async function guardarRevisionTecnica(event) {
-    event.preventDefault();
-    
-    console.log('Iniciando guardado de revisión técnica...');
-    
-    // Obtener los valores básicos
-    const idOrden = document.getElementById('id_orden_servicio_revision').value;
-    const numeroTest = document.getElementById('numero_test_revision').value;
-    const observaciones = document.querySelector('textarea[name="observaciones"]').value;
-    
-    // Validar campos requeridos
-    if (!idOrden) {
-        Utils.showMessage('No se ha seleccionado una orden de servicio', true);
-        return;
-    }
-    
-    if (!numeroTest) {
-        Utils.showMessage('Número de test no válido', true);
-        return;
-    }
-    
-    // Obtener el ID del empleado (técnico actual)
-    const idEmpleado = Utils.obtenerIdEmpleadoActual();
-    
-    if (!idEmpleado) {
-        Utils.showMessage('No se pudo identificar al técnico', true);
-        return;
-    }
-    
-    console.log(`ID Empleado: ${idEmpleado}, ID Orden: ${idOrden}, Test #: ${numeroTest}`);
-    console.log(`Observaciones: ${observaciones}`);  // Debug
-    
-    // Construir el array de componentes evaluados
-    const componentesEvaluados = [];
-    
-    // Seleccionar todos los radio buttons que están marcados
-    const radiosMarcados = document.querySelectorAll('#form-revision-tecnica input[type="radio"]:checked');
-    
-    console.log(`Radios marcados encontrados: ${radiosMarcados.length}`);
-    
-    radiosMarcados.forEach(radio => {
-        // Obtener el nombre del componente del atributo data-label o del name
-        let nombreComponente = radio.getAttribute('data-label');
-        if (!nombreComponente) {
-            // Si no tiene data-label, limpiar el nombre del campo
-            nombreComponente = radio.name.replace('test_', '').replace(/_/g, ' ');
+        if (!idOrden || !numeroTest) {
+            console.warn('Datos de orden incompletos');
+            return;
         }
-        const resultado = radio.value;
+
+        const componentesEvaluados = [];
+        document.querySelectorAll('#form-revision-tecnica input[type="radio"]:checked').forEach(radio => {
+            const nombre = radio.name.replace('test_', '').replace(/_/g, ' ');
+            componentesEvaluados.push({ nombre, resultado: radio.value });
+        });
+
+        if (observaciones?.trim()) {
+            componentesEvaluados.push({ nombre: 'Observaciones', resultado: observaciones.trim() });
+        }
+
+        if (!componentesEvaluados.length) {
+            Utils.showMessage('Debes evaluar al menos un componente', true);
+            return;
+        }
+
+        try {
+            await Utils.fetchJson(CONFIG.API.GUARDAR_REVISION, {
+                method: 'POST',
+                body: JSON.stringify({
+                    id_orden: idOrden,
+                    id_empleado: parseInt(idEmpleado),
+                    numero_test: parseInt(numeroTest),
+                    componentes_evaluados: componentesEvaluados
+                })
+            });
+
+            document.getElementById('form-revision-tecnica')?.reset();
+            
+            setTimeout(() => {
+                ViewManager.activate(CONFIG.VISTAS.DETALLE);
+                OrdenesService.verDetalle(idOrden);
+            }, 1500);
+        } catch (error) {
+            console.error('Error al guardar revisión:', error);
+            Utils.showMessage(error.message, true);
+        }
+    },
+
+    async verDetalle(idOrden, numeroTest) {
+        const modalBody = document.getElementById('modal-test-body');
+        if (!modalBody) return;
+
+        modalBody.innerHTML = '<p>Cargando...</p>';
         
-        componentesEvaluados.push({
-            nombre: nombreComponente,
-            resultado: resultado
-        });
-    });
-    
-    // AGREGAR LAS OBSERVACIONES COMO UN COMPONENTE MÁS
-    if (observaciones && observaciones.trim() !== '') {
-        componentesEvaluados.push({
-            nombre: 'Observaciones',
-            resultado: observaciones.trim()
-        });
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById('modal-test-detail');
+        }
+
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_TEST, {
+                method: 'POST',
+                body: JSON.stringify({ id_orden: idOrden, numero_test: numeroTest })
+            });
+
+            const items = Array.isArray(data) ? data : [data];
+            
+            if (!items.length || !items[0]) {
+                modalBody.innerHTML = '<p>No se encontraron registros</p>';
+                return;
+            }
+
+            modalBody.innerHTML = items.map(item => `
+                <div class="test-item-card">
+                    <span class="test-component-name">${Utils.escapeHtml(item.test || 'Componente')}</span>
+                    <strong>${Utils.escapeHtml(item.Resultado_test || 'Sin especificar')}</strong>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error al cargar test:', error);
+            modalBody.innerHTML = `<p class="error">Error: ${Utils.escapeHtml(error.message)}</p>`;
+        }
     }
-    
-    // Validar que se haya evaluado al menos un componente
-    if (componentesEvaluados.length === 0) {
-        Utils.showMessage('Debes evaluar al menos un componente del dispositivo', true);
-        return;
-    }
-    
-    console.log('Componentes evaluados (incluyendo observaciones):', componentesEvaluados);
-    
-    // Preparar el payload
-    const payload = {
-        id_orden: idOrden,
-        id_empleado: parseInt(idEmpleado),
-        numero_test: parseInt(numeroTest),
-        componentes_evaluados: componentesEvaluados  // Aquí ya están incluidas las observaciones
-    };
-    
-    console.log('Payload completo a enviar:', payload);
-    
-    try {
-        Utils.showMessage('Guardando revisión técnica...');
+};
+
+// --------------------------------
+// 6. SERVICIO DE REPARACIONES
+// --------------------------------
+const ReparacionesService = {
+    async cargarAsignadas() {
+        const tbody = document.getElementById('tabla-reparaciones-asignadas');
+        if (!tbody) return;
+
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.REPARACIONES_ASIGNADAS, { 
+                method: 'POST',
+                body: JSON.stringify({})
+            });
+
+            const reparaciones = Array.isArray(data) ? data : data?.reparaciones || data?.data || [];
+            this.renderizarAsignadas(reparaciones, tbody);
+        } catch (error) {
+            console.error('Error cargando reparaciones:', error);
+            this.renderizarAsignadas([], tbody);
+        }
+    },
+
+    renderizarAsignadas(reparaciones, tbody) {
+        if (!reparaciones.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Sin reparaciones asignadas por ahora.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = reparaciones.map(rep => `
+            <tr>
+                <td data-label="ID orden">${Utils.escapeHtml(rep.id_orden)}</td>
+                <td data-label="Modelo">${Utils.escapeHtml(rep.modelo)}</td>
+                <td data-label="Fecha ingreso">${Utils.formatDate(rep.fecha_e)}</td>
+                <td class="table__actions" data-label="Acciones">
+                    <div class="row-actions">
+                        <button type="button" class="table-action" data-accion="ver" data-id="${rep.id_orden}">Ver detalle</button>
+                        <button type="button" class="table-action" data-accion="iniciar-reparacion" data-id="${rep.id_orden}">Iniciar reparación</button>
+                        <button type="button" class="table-action table-action--danger" data-accion="liberar-orden" data-id="${rep.id_orden}">Liberar orden</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    },
+
+    iniciar(idOrden = null) {
+        const ordenId = idOrden || OrdenesService.obtenerOrdenActual();
         
-        const response = await Utils.fetchJson(CONFIG.API.GUARDAR_REVISION, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        console.log('Respuesta del servidor:', response);
-        Utils.showMessage(response.mensaje || 'Revisión guardada exitosamente');
-        
-        // Limpiar el formulario
-        const formulario = document.getElementById('form-revision-tecnica');
-        if (formulario) {
-            formulario.reset();
+        if (!ordenId) {
+            console.warn('No hay orden seleccionada');
+            return;
         }
         
-        // Opcional: Volver a la vista de detalle de la orden
+        console.log('Iniciar reparación de orden:', ordenId);
+        
+        const reparacionOrdenId = document.getElementById('reparacion-orden-id');
+        if (reparacionOrdenId) reparacionOrdenId.textContent = ordenId;
+        
         setTimeout(() => {
-            activateView('vista-2');
-            // Recargar los detalles de la orden para mostrar el nuevo test
-            verDetalleOrden(idOrden);
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Error al guardar la revisión:', error);
-        Utils.showMessage(error.message || 'Error al guardar la revisión técnica', true);
-    }
-}
+            OrdenesService.verDetalle(ordenId);
+            ViewManager.activate(CONFIG.VISTAS.REPARACION);
+        }, 500);
+    },
 
-// ============================================
-// 8. EVENTOS E INICIALIZACIÓN
-// ============================================
+    async liberarOrden(idOrden) {
+        try {
+            const idEmpleado = Utils.obtenerIdEmpleadoActual();
+            
+            await Utils.fetchJson(CONFIG.API.LIBERAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    id_orden: idOrden,
+                    id_empleado: idEmpleado
+                })
+            });
+            
+            await this.cargarAsignadas();
+            await OrdenesService.cargar();
+            
+        } catch (error) {
+            console.error('Error al liberar orden:', error);
+        }
+    }
+};
+
+// --------------------------------
+// 7. INICIALIZACIÓN Y EVENTOS
+// --------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     console.log('DOM cargado - Inicializando taller.js');
     
+    ViewManager.init();
+
     const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
-    const tablaReparaciones = document.getElementById("tabla-reparaciones-asignadas");
-    const contenedorTests = document.getElementById("order-tests");
-
-    inicializarCambioVistas();
-
     if (tablaOrdenes) {
-        tablaOrdenes.addEventListener("click", (event) => {
+        tablaOrdenes.addEventListener("click", async (event) => {
             const button = event.target.closest("button[data-accion]");
             if (!button) return;
 
             const accion = button.getAttribute("data-accion");
             const idOrden = button.getAttribute("data-id");
 
-            console.log(`Acción en tabla órdenes: ${accion}, ID: ${idOrden}`);
-
-            if (accion === "ver") {
-                verDetalleOrden(idOrden);
-            } else if (accion === "cambiar-estado") {
-                const estadoActual = button.getAttribute("data-estado");
-                cambiarEstadoOrden(idOrden, estadoActual);
+            if (accion === "ver-orden") {
+                OrdenesService.verOrdenPreview(idOrden);
+            } else if (accion === "tomar-orden") {
+                await OrdenesService.asignarOrden(idOrden);
             }
         });
     }
 
+    const tablaReparaciones = document.getElementById("tabla-reparaciones-asignadas");
     if (tablaReparaciones) {
-        tablaReparaciones.addEventListener("click", (event) => {
+        tablaReparaciones.addEventListener("click", async (event) => {
             const button = event.target.closest("button[data-accion]");
             if (!button) return;
 
             const accion = button.getAttribute("data-accion");
             const idOrden = button.getAttribute("data-id");
 
-            console.log(`Acción en tabla reparaciones: ${accion}, ID: ${idOrden}`);
-
             if (accion === "ver") {
-                verDetalleOrden(idOrden);
+                OrdenesService.verDetalle(idOrden);
             } else if (accion === "iniciar-reparacion") {
-                iniciarReparacion(idOrden);
+                ReparacionesService.iniciar(idOrden);
+            } else if (accion === "liberar-orden") {
+                await ReparacionesService.liberarOrden(idOrden);
             }
         });
     }
 
+    const contenedorTests = document.getElementById("order-tests");
     if (contenedorTests) {
         contenedorTests.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-accion='ver-test']");
@@ -872,23 +819,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const numTest = button.getAttribute("data-id-test");
             const idOrden = button.getAttribute("data-id-orden");
-
-            console.log(`Abriendo detalles del Test #${numTest} para la Orden: ${idOrden}`);
-            
-            verDetallesDeUnTest(idOrden, numTest);
+            RevisionService.verDetalle(idOrden, numTest);
         });
     }
-    
-    // ============================================
-    // AGREGAR EVENT LISTENER PARA EL FORMULARIO DE REVISIÓN
-    // ============================================
+
     const formularioRevision = document.getElementById('form-revision-tecnica');
     if (formularioRevision) {
-        console.log('Formulario de revisión encontrado, agregando event listener');
-        formularioRevision.addEventListener('submit', guardarRevisionTecnica);
-    } else {
-        console.warn('No se encontró el formulario de revisión');
+        formularioRevision.addEventListener('submit', (e) => RevisionService.guardar(e));
     }
 
-    activateView("vista-1");
+    const btnGuardarReparacion = document.getElementById('btn-guardar-reparacion');
+    if (btnGuardarReparacion) {
+        btnGuardarReparacion.addEventListener('click', () => {
+            console.log('Función guardar reparación en desarrollo');
+        });
+    }
+
+    const modalTomarOrdenBtn = document.getElementById('modal-tomar-orden-btn');
+    if (modalTomarOrdenBtn) {
+        modalTomarOrdenBtn.addEventListener('click', async () => {
+            const idOrden = modalTomarOrdenBtn.getAttribute('data-id');
+            if (idOrden) {
+                await OrdenesService.asignarOrden(idOrden);
+            }
+        });
+    }
 });

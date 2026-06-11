@@ -101,17 +101,18 @@ class Orden_servicio():
         cursor = db.cursor(dictionary=True)
         try:
             sql ="""
-                SELECT
-                    os.ID_orden_servicio AS id_orden,                 
-                    p.Nombre_producto AS modelo,
-                    os.Descripcion_reparacion AS descripcion,       
-                    os.Fecha_entrada AS fecha_e      
-                FROM Orden_servicio os
-                INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+                SELECT 
+                o.ID_orden_servicio AS id_orden,                 
+                p.Nombre_producto AS modelo,
+                o.Descripcion_reparacion AS descripcion,       
+                o.Fecha_entrada AS fecha_e 
+
+                FROM Orden_servicio o 
+                INNER JOIN Equipo e ON o.ID_equipo = e.ID_equipo
                 INNER JOIN Producto p ON e.ID_producto = p.ID_producto
-                INNER JOIN Interaccion i ON os.ID_orden_servicio = i.ID_orden_servicio
-                WHERE i.ID_empleado = %s AND os.Estado_orden_servicio = 'Asignada'
-                ORDER BY os.ID_orden_servicio DESC;
+                INNER JOIN Interaccion i ON o.ID_orden_servicio = i.ID_orden_servicio
+                where o.Estado_orden_servicio = 'Asignada' And i.Accion =  'Asignada' and i.ID_empleado = %s
+
                 """
             cursor.execute(sql, (empleado_id,))
             return cursor.fetchall()
@@ -288,6 +289,62 @@ class Orden_servicio():
             db.rollback()
             mensaje = "Error al eliminar la foto."
             return mensaje
+        finally:
+            cursor.close()
+            db.close()
+
+    def asignar_orden_empleado(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            sql = "CALL sp_asignar_orden_servicio(%s, %s);"
+            cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
+            
+            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
+            # Esto es crucial para evitar el error "Commands out of sync"
+            while cursor.nextset():
+                # Consumir cualquier resultado pendiente
+                try:
+                    cursor.fetchall()
+                except:
+                    pass
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al asignar la orden al empleado: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def liberar_orden_empleado(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            sql = "CALL sp_liberar_orden_servicio(%s, %s);"
+            cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
+            
+            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
+            while cursor.nextset():
+                try:
+                    cursor.fetchall()
+                except:
+                    pass
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al liberar la orden del empleado: {e}")
+            return False
         finally:
             cursor.close()
             db.close()

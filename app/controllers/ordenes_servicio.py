@@ -4,9 +4,69 @@ from app.models.empleados import Empleados
 from app.models.ordenes_servicio import Orden_servicio as OrdenServicio
 from app.models.test import Tests
 from app.utils.decorators import jwt_required, tiene_permiso
+from app.models.equipo import Equipo
+
 import traceback
 
 ordenes_servicio_blueprint = Blueprint("ordenes_servicio", __name__)
+
+
+@ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["POST"])
+@jwt_required
+def registrar_equipo():
+    data = request.get_json(silent=True) or request.form
+    id_equipo = data.get("ID_equipo", "").strip()
+    color = data.get("Color", "").strip()
+    capacidad = data.get("Capacidad", "").strip() or None
+    clave = data.get("Clave", "").strip() or None
+    patron = data.get("Patron", "").strip()
+
+    if not id_equipo or not color or not patron:
+        return jsonify({"success": False, "message": "ID del equipo, color y patrón son obligatorios."}), 400
+
+    try:
+        id_equipo_val = int(id_equipo)
+        patron_val = int(patron)
+    except Exception:
+        return jsonify({"success": False, "message": "ID del equipo y patrón deben ser números enteros."}), 400
+
+    equipo_model = Equipo(
+        ID_equipo=id_equipo_val,
+        Color=color,
+        Capacidad=capacidad,
+        Clave=clave,
+        Patron=patron_val
+    )
+    mensaje = equipo_model.registrar_equipo()
+
+    if "exitosamente" in mensaje:
+        return jsonify({"success": True, "message": mensaje}), 201
+    else:
+        return jsonify({"success": False, "message": mensaje}), 400
+
+
+
+
+
+
+
+
+
+
+
+
+def _obtener_nombre_cliente(cliente_id):
+    """Obtiene el nombre de un cliente por su ID"""
+    try:
+        orden = OrdenServicio()
+        # Buscar en órdenes existentes o llamar a un método específico
+        ordenes = orden.listado_ordenes_servicio()
+        for o in ordenes:
+            if o.get("ID_cliente") == cliente_id:
+                return o.get("Nombre_cliente", str(cliente_id))
+    except Exception:
+        pass
+    return str(cliente_id)
 
 
 @ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["GET"])

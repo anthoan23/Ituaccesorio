@@ -4,399 +4,270 @@
 {% block title %}Ituaccesorio - Taller{% endblock %}
 
 {% block head_extra %}
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/taller.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/taller.css') }}">
 {% endblock %}
 
 {% block content %}
-	<main class="page">
-		<nav class="breadcrumb" aria-label="Breadcrumb">
-			<ol class="breadcrumb__list">
-				<li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-				<li aria-current="page"><button class="breadcrumb__current" type="button" data-view-target="vista-1">Taller</button><span class="breadcrumb__separator" id="breadcrumb-separator">/</span><span class="breadcrumb__section" id="breadcrumb-section"></span></li>
-			</ol>
-		</nav>
-		
-		<input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
-		<div class="taller-top-grid">
-			<header class="taller-hero">
-				<h1 class="taller-hero__title">Taller</h1>
-				<p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
-			</header>
-		</div>
-
-	
-
-		<section class="content vista-1" aria-label="Ordenes de servicio">
-
-			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-					<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Ordenes de servicio</button>
-					<button class="vista-switcher__btn" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
-			</nav>
-			<article class="card card--table" aria-label="Ordenes de servicio">
-				
-		
-				<div class="table-wrap">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>ID orden</th>
-								<th>Estado</th>
-								<th>ID cliente</th>
-								<th>Nombre cliente</th>
-								<th>Modelo</th>
-								<th>Descripción cliente</th>
-								<th>Fecha ingreso</th>
-								<th class="table__actions">Acción</th>
-							</tr>
-						</thead>
-						<tbody id="tabla-ordenes-servicio"></tbody>
-					</table>
-				</div>
-			</article>
-		</section>
-
-		<!-- Sección reparaciones asignadas (vista-5) -->
-		<section class="content vista-5" aria-label="Reparaciones asignadas" hidden>
-			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-1">Ordenes de servicio</button>
-				<button class="vista-switcher__btn is-active" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
-			</nav>
-			<article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
-				<div class="table-wrap">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>ID orden</th>
-								<th>Modelo</th>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody id="tabla-reparaciones-asignadas">
-							<tr>
-								<td colspan="3">Sin reparaciones asignadas por ahora.</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</article>
-		</section>
-
-        <section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
-			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
-			</nav>
-			<article class="card card--form" aria-label="Detalle del dispositivo">
-				<div class="form__header">
-					<h2 class="card__title">Detalle del dispositivo seleccionado</h2>
-					<p class="form__subtitle" id="detalle-orden-subtitle">Selecciona una orden para ver toda su información.</p>
-				</div>
-				<div class="device-detail" id="detalle-dispositivo">
-					<!-- Order info -->
-					<div id="order-info" class="device-detail__grid">
-						<p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>
-					</div>
-
-					<!-- Photos -->
-					<div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
-					<div class="device-detail__actions" style="margin-top:1rem;">
-						<button type="button" class="form-btn form-btn--primary" data-open-modal="modal-fotos-registrar">Registrar fotos</button>
-					</div>
-
-					<!-- Tests -->
-					<div id="order-tests" class="device-tests"></div>
-
-					<!-- People -->
-					<div id="order-people" class="device-people" aria-live="polite"></div>
-				</div>
-			</article>
-		</section>
-
-<section class="content vista-3" aria-label="Formulario de revisión" hidden>
-    <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-        <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Información de la orden</button>
-        <button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revisión</button>
-        <button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparación</button>    
+<main class="page">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li>
+                <button class="breadcrumb__current" type="button" data-view-target="vista-1">Taller</button>
+                <span class="breadcrumb__separator" id="breadcrumb-separator" style="display: none;">/</span>
+                <span class="breadcrumb__section" id="breadcrumb-section" style="display: none;"></span>
+            </li>
+        </ol>
     </nav>
-    <article class="card card--form" aria-label="Formulario de revisión">
-        <div class="form__header">
-            <h2 class="card__title">Formulario de revisión</h2>
-            <p class="form__subtitle">Revisión de la orden (<span id="orden-id">-</span>)</p>
-            <label class="field field--full">
-                <span>Número de test: <span id="test-id-form">-</span></span>
-            </label>
-        </div>
 
-        <form class="service-form" id="form-revision-tecnica" autocomplete="off">
-            <input type="hidden" id="id_orden_servicio_revision" name="id_orden" value="">
-            <input type="hidden" id="numero_test_revision" name="Num_test" value="">
-            
-            <div class="service-form__grid">
-                
-                <div class="test-options-grid">
-                    
-                    <div class="test-row-item">
-                        <span class="test-component-name">Botón de power</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success">
-                                <input type="radio" name="test_Btn_power" value="Funciona" data-label="Botón de power"> Funciona
-                            </label>
-                            <label class="radio-label radio-label--danger">
-                                <input type="radio" name="test_Btn_power" value="No funciona" data-label="Botón de power"> No funciona
-                            </label>
-                        </div>
-                    </div>
+    <!-- CSRF Token -->
+    <input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}">
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">Cornetas</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cornetas" value="Funciona" data-label="Cornetas"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cornetas" value="No funciona" data-label="Cornetas"> No funciona</label>
-                        </div>
-                    </div>
+    <!-- Header Hero -->
+    <div class="taller-top-grid">
+        <header class="taller-hero">
+            <h1 class="taller-hero__title">Taller</h1>
+            <p class="taller-hero__description">Gestiona órdenes de servicio, revisiones y reparaciones.</p>
+        </header>
+    </div>
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">Mica</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Mica" value="Funciona" data-label="Mica"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Mica" value="No funciona" data-label="Mica"> No funciona</label>
-                        </div>
-                    </div>
+    <!-- ============================================ -->
+    <!-- VISTA 1: ÓRDENES DE SERVICIO -->
+    <!-- ============================================ -->
+    <section class="content vista-1" aria-label="Ordenes de servicio">
+        <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+            <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">Órdenes de servicio</button>
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
+        </nav>
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">LCD</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_LCD" value="Funciona" data-label="LCD"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_LCD" value="No funciona" data-label="LCD"> No funciona</label>
-                        </div>
-                    </div>
+        <article class="card card--table" aria-label="Ordenes de servicio">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID orden</th>
+                            <th>Estado</th>
+                            <th>ID cliente</th>
+                            <th>Nombre cliente</th>
+                            <th>Modelo</th>
+                            <th>Fecha ingreso</th>
+                            <th class="table__actions">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-ordenes-servicio"></tbody>
+                </table>
+            </div>
+        </article>
+    </section>
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">Táctil</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Tactil" value="Funciona" data-label="Táctil"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Tactil" value="No funciona" data-label="Táctil"> No funciona</label>
-                        </div>
-                    </div>
+    <!-- ============================================ -->
+    <!-- VISTA 2: DETALLE DE LA ORDEN -->
+    <!-- ============================================ -->
+    <section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
+        <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Información de la orden</button>
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revisión</button>
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparación</button>    
+        </nav>
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">Botones laterales</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Btn_vol" value="Funciona" data-label="Botones laterales"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Btn_vol" value="No funciona" data-label="Botones laterales"> No funciona</label>
-                        </div>
-                    </div>
+        <article class="card card--form" aria-label="Detalle del dispositivo">
+            <div class="form__header">
+                <h2 class="card__title">Detalle del dispositivo seleccionado</h2>
+                <p class="form__subtitle" id="detalle-orden-subtitle">Selecciona una orden para ver toda su información.</p>
+            </div>
 
-                    <div class="test-row-item">
-                        <span class="test-component-name">Botones inferiores</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Btn_sil" value="Funciona" data-label="Botones inferiores"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Btn_sil" value="No funciona" data-label="Botones inferiores"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Puerto de carga</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Puerto_carga" value="Funciona" data-label="Puerto de carga"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Puerto_carga" value="No funciona" data-label="Puerto de carga"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">WiFi</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Wifi" value="Funciona" data-label="WiFi"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Wifi" value="No funciona" data-label="WiFi"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Cámara trasera</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cam_pos" value="Funciona" data-label="Cámara trasera"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cam_pos" value="No funciona" data-label="Cámara trasera"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Cámara delantera</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cam_del" value="Funciona" data-label="Cámara delantera"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cam_del" value="No funciona" data-label="Cámara delantera"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Flash</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Flash" value="Funciona" data-label="Flash"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Flash" value="No funciona" data-label="Flash"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Señal auricular</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Senal" value="Funciona" data-label="Señal auricular"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Senal" value="No funciona" data-label="Señal auricular"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Micrófono</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Microfono" value="Funciona" data-label="Micrófono"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Microfono" value="No funciona" data-label="Micrófono"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Sensor proximidad</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Sensor_proximidad" value="Funciona" data-label="Sensor de proximidad"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Sensor_proximidad" value="No funciona" data-label="Sensor de proximidad"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Face ID</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Face_id" value="Funciona" data-label="Face ID"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Face_id" value="No funciona" data-label="Face ID"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Bluetooth</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Bluetooth" value="Funciona" data-label="Bluetooth"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Bluetooth" value="No funciona" data-label="Bluetooth"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Caja</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Caja" value="Funciona" data-label="Caja"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Caja" value="No funciona" data-label="Caja"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Cargador</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cargador" value="Funciona" data-label="Cargador"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cargador" value="No funciona" data-label="Cargador"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Cable</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Cable" value="Funciona" data-label="Cable"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Cable" value="No funciona" data-label="Cable"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Audífonos</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Auricular" value="Funciona" data-label="Audífonos"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Auricular" value="No funciona" data-label="Audífonos"> No funciona</label>
-                        </div>
-                    </div>
-
-                    <div class="test-row-item">
-                        <span class="test-component-name">Manuales</span>
-                        <div class="radio-group">
-                            <label class="radio-label radio-label--success"><input type="radio" name="test_Manuales" value="Funciona" data-label="Manuales"> Funciona</label>
-                            <label class="radio-label radio-label--danger"><input type="radio" name="test_Manuales" value="No funciona" data-label="Manuales"> No funciona</label>
-                        </div>
-                    </div>
-
+            <div class="device-detail" id="detalle-dispositivo">
+                <!-- Información de la orden -->
+                <div id="order-info" class="device-detail__grid">
+                    <p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>
                 </div>
 
-                <label class="field field--full" style="margin-top: 1rem;">
-                    <span>Observaciones</span>
-                    <textarea name="observaciones" rows="4" placeholder="Notas adicionales de la revisión" required maxlength="500"></textarea>
+                <!-- Fotos del dispositivo -->
+                <div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
+
+                <div class="device-detail__actions" style="margin-top:1rem;">
+                    <button type="button" class="form-btn form-btn--primary" data-open-modal="modal-fotos-registrar">Registrar fotos</button>
+                </div>
+
+                <!-- Tests realizados -->
+                <div id="order-tests" class="device-tests"></div>
+
+                <!-- Personas asignadas -->
+                <div id="order-people" class="device-people" aria-live="polite"></div>
+            </div>
+        </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- VISTA 3: FORMULARIO DE REVISIÓN TÉCNICA -->
+    <!-- ============================================ -->
+    <section class="content vista-3" aria-label="Formulario de revisión" hidden>
+        <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Información de la orden</button>
+            <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-3">Revisión</button>
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparación</button>    
+        </nav>
+
+        <article class="card card--form" aria-label="Formulario de revisión">
+            <div class="form__header">
+                <h2 class="card__title">Formulario de revisión</h2>
+                <p class="form__subtitle">Revisión de la orden (<span id="orden-id">-</span>)</p>
+                <label class="field field--full">
+                    <span>Número de test: <span id="test-id-form">-</span></span>
                 </label>
             </div>
 
-            <div class="service-form__actions">
-                <button type="button" class="form-btn form-btn--ghost" onclick="activateView('vista-2')">Cancelar</button>
-                <button type="submit" class="form-btn form-btn--primary">Guardar revisión</button>
+            <form class="service-form" id="form-revision-tecnica" autocomplete="off">
+                <input type="hidden" id="id_orden_servicio_revision" name="id_orden" value="">
+                <input type="hidden" id="numero_test_revision" name="Num_test" value="">
+                
+                <div class="service-form__grid">
+                    <!-- Componentes de prueba (se cargan dinámicamente con JS) -->
+                    <div class="test-options-grid" id="test-componentes-grid"></div>
+
+                    <!-- Observaciones -->
+                    <label class="field field--full" style="margin-top: 1rem;">
+                        <span>Observaciones</span>
+                        <textarea name="observaciones" rows="4" placeholder="Notas adicionales de la revisión" maxlength="500"></textarea>
+                    </label>
+                </div>
+
+                <div class="service-form__actions">
+                    <button type="button" class="form-btn form-btn--ghost" data-view-target="vista-2">Cancelar</button>
+                    <button type="submit" class="form-btn form-btn--primary">Guardar revisión</button>
+                </div>
+            </form>
+        </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- VISTA 4: FORMULARIO DE REPARACIÓN -->
+    <!-- ============================================ -->
+    <section class="content vista-4" aria-label="Reparación" hidden>
+        <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-2">Información de la orden</button>
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revisión</button>
+            <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-4">Reparación</button>    
+        </nav>
+
+        <article class="card card--form" aria-label="Trabajo de reparación">
+            <div class="form__header">
+                <h2 class="card__title">Reparación <span id="reparacion-orden-id">-</span></h2>
+                <p class="form__subtitle">Modelo del producto: <strong id="reparacion-modelo">-</strong></p>
             </div>
-        </form>
-    </article>
-</section>
 
-		<section class="content vista-4" aria-label="Reparación" hidden>
-			<nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-2">Informacion de la orden</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-3">Revision</button>
-				<button class="vista-switcher__btn" type="button" data-view-target="vista-4">Reparacion</button>	
-			</nav>
-			<article class="card card--form" aria-label="Trabajo de reparación">
-				<div class="form__header">
-					<h2 class="card__title">Reparación <span id="reparacion-orden-id">-</span></h2>
-					<p class="form__subtitle">Modelo del producto: <strong id="reparacion-modelo">-</strong></p>
-				</div>
+            <div class="device-detail__actions" style="margin-bottom:1rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+                <button type="button" class="form-btn form-btn--ghost" id="btn-repuestos-equipo">Piezas del equipo</button>
+                <button type="button" class="form-btn form-btn--primary" id="btn-repuestos-inventario">Inventario de repuestos</button>
+            </div>
 
-				<div class="device-detail__actions" style="margin-bottom:1rem; display:flex; gap:.5rem; flex-wrap:wrap;">
-					<button type="button" class="form-btn form-btn--ghost" id="btn-repuestos-equipo">Piezas del equipo</button>
-					<button type="button" class="form-btn form-btn--primary" id="btn-repuestos-inventario">Inventario de repuestos</button>
-				</div>
+            <!-- Repuestos usados -->
+            <div class="repair-used-parts">
+                <h3 class="card__subtitle">Repuestos usados</h3>
+                <div id="repuestos-usados-list" class="device-detail__grid">
+                    <p class="device-detail__empty">Aún no has agregado repuestos.</p>
+                </div>
+            </div>
 
-				<div class="repair-used-parts">
-					<h3 class="card__subtitle">Repuestos usados</h3>
-					<div id="repuestos-usados-list" class="device-detail__grid">
-						<p class="device-detail__empty">Aún no has agregado repuestos.</p>
-					</div>
-				</div>
+            <!-- Descripción de la reparación -->
+            <label class="field field--full" style="margin-top:1rem;">
+                <span>Reparación</span>
+                <textarea id="reparacion-textarea" 
+                          class="field__input" 
+                          name="reparacion" 
+                          rows="5" 
+                          placeholder="Escribe lo que se le hizo al teléfono"
+                          maxlength="500"
+                          title="Sin caracteres especiales"></textarea>
+                <small class="field-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
+            </label>
 
-				<label class="field field--full" style="margin-top:1rem;">
-					<span>Reparación</span>
-					<textarea id="reparacion-textarea" 
-					          class="field__input" 
-					          name="reparacion" 
-					          rows="5" 
-					          placeholder="Escribe lo que se le hizo al teléfono"
-					          maxlength="500"
-					          data-validation-rules="sinCaracteresEspeciales"
-					          title="Sin caracteres especiales"></textarea>
-					<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 500 caracteres)</small>
-				</label>
+            <div class="service-form__actions" style="margin-top:1rem;">
+                <button type="button" id="btn-guardar-reparacion" class="form-btn form-btn--primary">Guardar reparación</button>
+            </div>
+        </article>
+    </section>
 
-				<div class="service-form__actions" style="margin-top:1rem;">
-					<button type="button" id="btn-guardar-reparacion" class="form-btn form-btn--primary">Guardar reparación</button>
-				</div>
-			</article>
+    <!-- ============================================ -->
+    <!-- VISTA 5: REPARACIONES ASIGNADAS -->
+    <!-- ============================================ -->
+    <section class="content vista-5" aria-label="Reparaciones asignadas" hidden>
+        <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
+            <button class="vista-switcher__btn" type="button" data-view-target="vista-1">Órdenes de servicio</button>
+            <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-5">Reparaciones asignadas</button>
+        </nav>
+
+        <article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID orden</th>
+                            <th>Modelo</th>
+                            <th>Fecha ingreso</th>
+                            <th class="table__actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-reparaciones-asignadas"></tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+</main>
+
+<!-- ============================================ -->
+<!-- MODALES -->
+<!-- ============================================ -->
 
 
-		</section>
 
-		
-
-	</main>
-{% endblock %}
-
-{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
-    <div id="modal-test-body" class="test-modal-grid">
+<!-- Modal para ver detalle de orden antes de tomarla -->
+{% call modal('modal-preview-orden', 'Detalle de la orden', 'lg') %}
+    <div id="modal-preview-body">
+        <div id="modal-order-info" class="device-detail__grid">
+            <p class="device-detail__empty">Cargando información...</p>
         </div>
+        <div id="modal-order-tests" class="device-tests" style="margin-top: 1rem;"></div>
+        <div class="service-form__actions" style="margin-top: 1.5rem; justify-content: center;">
+            <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
+            <button type="button" id="modal-tomar-orden-btn" class="form-btn form-btn--primary">Tomar orden</button>
+        </div>
+    </div>
+{% endcall %}
+
+<!-- Modal para ver detalles del test -->
+{% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
+    <div id="modal-test-body" class="test-modal-grid"></div>
+{% endcall %}
+
+
+<!-- Modal para registrar fotos -->
+{% call modal('modal-fotos-registrar', 'Registrar fotos del dispositivo', 'lg') %}
+    <div id="modal-fotos-body">
+        <div class="photo-dropzone" id="photo-dropzone">
+            <span class="photo-dropzone__title">📸 Arrastra o haz clic</span>
+            <span class="photo-dropzone__subtitle">Sube fotos del dispositivo (JPG, PNG)</span>
+            <input type="file" id="fotos-input" multiple accept="image/jpeg,image/png,image/jpg">
+        </div>
+        <div id="fotos-preview" class="device-photos" style="margin-top: 1rem;"></div>
+        <div class="service-form__actions" style="margin-top: 1rem;">
+            <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
+            <button type="button" id="btn-subir-fotos" class="form-btn form-btn--primary">Subir fotos</button>
+        </div>
+    </div>
+{% endcall %}
+
+<!-- Modal para ver foto ampliada -->
+{% call modal('modal-photo-view', 'Vista previa', 'lg') %}
+    <div style="text-align: center;">
+        <img id="modal-photo-view-img" src="" alt="Vista previa" style="max-width: 100%; max-height: 80vh;">
+    </div>
 {% endcall %}
 
 {% block scripts %}
-	<script src="{{ url_for('static', filename='js/taller.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/taller.js') }}"></script>
 {% endblock %}
-
-
-
-
-
-
-
+{% endblock %}
 
 

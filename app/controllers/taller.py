@@ -107,7 +107,7 @@ def consultar_test():
 def guardar_revision_tecnica():
     # 1. Capturar los datos provenientes de la petición JSON del frontend
     id_orden = request.json.get("id_orden")
-    id_empleado = request.json.get("id_empleado")       # ID del técnico que realiza la revisión
+    id_empleado = 32014004   # ID del técnico que realiza la revisión
     numero_test = request.json.get("numero_test")       # Identificador del lote de pruebas (ej: 1, 2)
     componentes = request.json.get("componentes_evaluados") # El arreglo: [{"nombre": "Mica", "resultado": "Funciona"}, ...]
 
@@ -141,3 +141,39 @@ def guardar_revision_tecnica():
 
 
 
+@taller_blueprint.route("/api/taller/asignar-orden", methods=["POST"])
+@jwt_required
+@tiene_permiso('Taller', 'editar')
+def asignar_orden_tecnico():
+    id_orden = request.json.get("id_orden")
+    id_empleado = 32014004
+
+    if not id_orden or not id_empleado:
+        return jsonify({"error": "ID de orden o ID de empleado no proporcionado"}), 400
+
+    ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
+    resultado = ordenes.asignar_orden_empleado()
+
+    if resultado is True:
+        return jsonify({"mensaje": "Técnico asignado exitosamente a la orden"}), 200
+    else:
+        return jsonify({"error": "Error al asignar el técnico a la orden"}), 500
+    
+
+@taller_blueprint.route("/api/taller/liberar-orden", methods=["POST"])
+@jwt_required
+@tiene_permiso('Taller', 'editar')
+def liberar_orden_tecnico():
+    id_orden = request.json.get("id_orden")
+    id_empleado = 32014004
+
+    if not id_orden or not id_empleado:
+        return jsonify({"error": "ID de orden o ID de empleado no proporcionado"}), 400
+
+    ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
+    resultado = ordenes.liberar_orden_empleado()
+
+    if resultado is True:
+        return jsonify({"mensaje": "Técnico liberado exitosamente de la orden"}), 200
+    else:
+        return jsonify({"error": "Error al liberar el técnico de la orden"}), 500
