@@ -422,3 +422,28 @@ def pagina_validar_pagos():
         show_notifications=True,
         active_page="validar_pagos"
     )
+
+# ==================== DASHBOARD ====================
+
+@ventas_blueprint.route("/api/dashboard/ventas-hoy", methods=["GET"])
+@jwt_required
+def api_ventas_hoy():
+    """API para obtener el total de ventas del día de hoy"""
+    try:
+        modelo_venta = VentaModel()
+        ventas_hoy = modelo_venta.obtener_ventas_hoy()
+        
+        # Formatear el total con separadores de miles
+        total_formateado = f"{ventas_hoy['total_ventas']:,.2f}"
+        moneda = ventas_hoy['moneda']
+        
+        return jsonify({
+            "success": True,
+            "total_ventas": ventas_hoy['total_ventas'],
+            "total_formateado": total_formateado,
+            "cantidad_ventas": ventas_hoy['cantidad_ventas'],
+            "moneda": moneda
+        })
+    except Exception as e:
+        print(f"Error en api_ventas_hoy: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500

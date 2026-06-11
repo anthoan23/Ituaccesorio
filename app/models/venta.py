@@ -168,3 +168,61 @@ class VentaModel:
         finally:
             cursor.close()
             db.close()
+
+def obtener_ventas_hoy(self) -> dict:
+    """Obtiene el total de ventas del día de hoy"""
+    db = self.__conexion_bd.conexion1()
+    if not db:
+        return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Obtener ventas de hoy (facturas creadas hoy)
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as cantidad_ventas,
+                COALESCE(SUM(v.Monto), 0) as total_ventas,
+                v.Moneda
+            FROM Venta v
+            WHERE DATE(v.Fecha_venta) = CURDATE()
+            GROUP BY v.Moneda
+            ORDER BY v.Moneda DESC
+            LIMIT 1
+        """)
+        resultado = cursor.fetchone()
+        
+        if resultado:
+            return {
+                "total_ventas": float(resultado.get("total_ventas", 0)),
+                "cantidad_ventas": resultado.get("cantidad_ventas", 0),
+                "moneda": resultado.get("Moneda", "USD")
+            }
+        
+        # Si no hay ventas en la tabla Venta, revisar en Metodo_pago
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as cantidad_ventas,
+                COALESCE(SUM(mp.Monto), 0) as total_ventas,
+                mp.Moneda
+            FROM Metodo_pago mp
+            WHERE DATE(mp.Fecha_pago) = CURDATE()
+            GROUP BY mp.Moneda
+            ORDER BY mp.Moneda DESC
+            LIMIT 1
+        """)
+        resultado = cursor.fetchone()
+        
+        if resultado:
+            return {
+                "total_ventas": float(resultado.get("total_ventas", 0)),
+                "cantidad_ventas": resultado.get("cantidad_ventas", 0),
+                "moneda": resultado.get("Moneda", "USD")
+            }
+        
+        return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+    except Exception as e:
+        print(f"Error en obtener_ventas_hoy: {e}")
+        return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+    finally:
+        cursor.close()
+        db.close()
