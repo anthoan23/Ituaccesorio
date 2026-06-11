@@ -1,5 +1,7 @@
 {% from 'components/ui/modal.html' import modal %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/notificaciones.css') }}">
+<script src="{{ url_for('static', filename='js/notificaciones.js') }}" defer></script>
 
 <header class="topbar">
 	<div class="topbar__left">
@@ -18,25 +20,28 @@
 
 	<div class="topbar__right">
 		{% if g.user %}
-		<div class="notifications" data-notifications-root>
-			<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
-				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-					<path d="M12 22a2.4 2.4 0 0 0 2.35-2H9.65A2.4 2.4 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z" fill="currentColor" />
-				</svg>
-				<span class="notifications__badge" data-notifications-badge hidden>0</span>
-			</button>
-
-			<div class="notifications__panel" data-notifications-panel hidden>
-				<div class="notifications__header">
-					<strong>Notificaciones</strong>
-					<span data-notifications-status>Conectando...</span>
+		<!-- Notificaciones -->
+			<div class="notifications" data-notifications-root>
+				<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
+					<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+						<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/>
+					</svg>
+					<span class="notifications__badge" data-notifications-badge hidden>0</span>
+				</button>
+				
+				<div class="notifications__panel" data-notifications-panel hidden>
+					<div class="notifications__header">
+						<strong>Notificaciones</strong>
+						<small data-notifications-status>Conectando...</small>
+					</div>
+					
+					<div class="notifications__list" data-notifications-list></div>
+					
+					<div class="notifications__empty" data-notifications-empty hidden>
+						No hay notificaciones nuevas
+					</div>
 				</div>
-				<div class="notifications__empty" data-notifications-empty>
-					Esperando actividad nueva.
-				</div>
-				<div class="notifications__list" data-notifications-list aria-live="polite" aria-relevant="additions"></div>
 			</div>
-		</div>
 
 		<!-- Botón del carrito en navbar - SOLO SE MUESTRA EN EL MÓDULO DE CATÁLOGO -->
 		{% if active_page == 'catalogo' %}

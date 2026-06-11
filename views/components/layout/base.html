@@ -14,7 +14,7 @@
 	<title>{% block title %}Mi sitio{% endblock %}</title>
 	{% block head_extra %}{% endblock %}
 </head>
-<body data-user-id="{{ g.user.usuario_id if g.user else '' }}">
+<body data-user-id="{{ (g.user.id or g.user.usuario_id or g.user.user_id or '') if g.user else '' }}">
 	{% block navbar %}
 		{% include 'components/layout/navbar.html' %}
 	{% endblock %}
