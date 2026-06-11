@@ -104,3 +104,61 @@ class Bitacora(conectar):
 
 def registrar_en_bitacora(accion, descripcion, usuario_id="SYSTEM", modulo_nombre=None, usuario_nombre=None, usuario_foto=None):
     return Bitacora().registrar(accion, descripcion, usuario_id=usuario_id, modulo_nombre=modulo_nombre, usuario_nombre=usuario_nombre, usuario_foto=usuario_foto)
+
+def listar_actividad_reciente_dashboard(self, limite: int = 5):
+    """Obtiene las últimas actividades para el dashboard"""
+    db = self.conexion2()
+    if not db:
+        return []
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                b.id,
+                b.usuario_id,
+                b.accion,
+                b.descripcion,
+                b.fecha_hora,
+                m.nombre as modulo_nombre
+            FROM bitacora b
+            LEFT JOIN modulo m ON b.modulo_id = m.id
+            ORDER BY b.id DESC
+            LIMIT %s
+        """, (int(limite),))
+        registros = cursor.fetchall() or []
+        
+        # Formatear tiempo relativo
+        from datetime import datetime
+        ahora = datetime.now()
+        
+        for reg in registros:
+            if reg.get('fecha_hora'):
+                fecha = reg['fecha_hora']
+                if isinstance(fecha, datetime):
+                    diff = ahora - fecha
+                    if diff.days > 0:
+                        if diff.days == 1:
+                            reg['tiempo_relativo'] = 'hace 1 día'
+                        else:
+                            reg['tiempo_relativo'] = f'hace {diff.days} días'
+                    elif diff.seconds >= 3600:
+                        horas = diff.seconds // 3600
+                        reg['tiempo_relativo'] = f'hace {horas} hora{"s" if horas > 1 else ""}'
+                    elif diff.seconds >= 60:
+                        minutos = diff.seconds // 60
+                        reg['tiempo_relativo'] = f'hace {minutos} minuto{"s" if minutos > 1 else ""}'
+                    else:
+                        reg['tiempo_relativo'] = 'hace unos segundos'
+                else:
+                    reg['tiempo_relativo'] = 'recientemente'
+            else:
+                reg['tiempo_relativo'] = 'recientemente'
+        
+        return registros
+    except Exception as e:
+        print(f"Error en listar_actividad_reciente_dashboard: {e}")
+        return []
+    finally:
+        cursor.close()
+        db.close()

@@ -78,3 +78,17 @@ def api_ultimas_notificaciones():
         notificaciones.append(notificacion)
     
     return jsonify({"success": True, "notificaciones": notificaciones}), 200
+
+# ==================== DASHBOARD ====================
+
+@bitacora_blueprint.route("/api/dashboard/actividad-reciente", methods=["GET"])
+@jwt_required
+def api_actividad_reciente():
+    """API para obtener actividad reciente para el dashboard"""
+    try:
+        modelo = Bitacora()
+        actividades = modelo.listar_actividad_reciente_dashboard(limite=5)
+        return jsonify({"success": True, "actividades": actividades})
+    except Exception as e:
+        print(f"Error en api_actividad_reciente: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
