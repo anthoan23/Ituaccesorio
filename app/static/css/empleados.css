@@ -8,6 +8,7 @@
   --line: rgba(20, 22, 26, 0.12);
   --accent: #f3c500;
   --accent-soft: #ffe36b;
+  --accent-glow: rgba(243, 197, 0, 0.5);
   --radius: 22px;
   --shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
   --danger: #dc3545;
@@ -216,6 +217,15 @@ body {
   box-shadow: 0 14px 30px rgba(243, 197, 0, 0.2);
 }
 
+.btn-glow {
+  box-shadow: 0 0 15px var(--accent-glow), 0 14px 30px rgba(243, 197, 0, 0.2);
+  transition: box-shadow 0.3s ease, transform 0.15s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 25px var(--accent-glow), 0 14px 30px rgba(243, 197, 0, 0.3);
+}
+
 .btn--ghost,
 .ui-btn--ghost {
   background: #eef0f4;
@@ -375,48 +385,64 @@ body {
 }
 
 .table__actions {
-  width: 280px;
+  width: 160px;
   text-align: right;
 }
 
 .row-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-/* Botones de acción en tabla */
-.table-action {
-  appearance: none;
-  border: 1px solid rgba(18, 18, 18, 0.12);
+/* Iconos de acción (igual que especialidades) */
+.icon-action {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
   background: #ffffff;
-  color: var(--ink);
-  border-radius: 999px;
-  padding: 0.52rem 0.9rem;
-  font: inherit;
-  font-size: 0.84rem;
-  font-weight: 800;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(17, 24, 39, 0.85);
+  transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
-.table-action:hover {
+.icon-action:hover {
   transform: translateY(-1px);
-  border-color: rgba(243, 197, 0, 0.68);
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.08);
+  filter: brightness(1.02);
 }
 
-.table-action--accent {
-  background: linear-gradient(180deg, var(--accent), var(--accent-soft));
-  border-color: transparent;
-  color: #111111;
+.icon-action--danger {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.08);
+  color: rgba(239, 68, 68, 0.95);
 }
 
-.table-action--danger {
-  background: linear-gradient(180deg, var(--danger), var(--danger-soft));
-  border-color: transparent;
-  color: white;
+.icon-action--view {
+  border-color: rgba(54, 162, 235, 0.28);
+  background: rgba(54, 162, 235, 0.08);
+  color: rgba(54, 162, 235, 0.95);
+}
+
+.icon-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Chip para el ID */
+.chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba(243, 197, 0, 0.15);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 /* Formularios */
@@ -436,7 +462,7 @@ body {
 
 .empleado-form {
   display: grid;
-  grid-template-columns: minmax(260px, 1.25fr) minmax(0, 1.75fr);
+  grid-template-columns: 1fr;
   gap: 0.9rem;
   align-items: start;
 }
@@ -711,6 +737,31 @@ body {
   gap: 0.75rem;
   margin-top: 1rem;
 }
+
+/* Modal */
+.ui-modal__dialog--sm {
+  width: min(500px, 100%);
+}
+
+
+/* Estilos para validación de cédula */
+.input-error {
+  border-color: #dc3545 !important;
+  background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+.input-success {
+  border-color: #28a745 !important;
+  background-color: rgba(40, 167, 69, 0.05) !important;
+}
+
+.field-hint {
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  display: block;
+  transition: all 0.2s ease;
+}
+
 /* Responsive */
 @media (max-width: 1100px) {
   .empleados-hero {
@@ -776,8 +827,8 @@ body {
     flex-direction: column;
   }
 
-  .table-action {
-    text-align: center;
+  .icon-action {
+    width: 100%;
   }
 }
 

@@ -25,7 +25,7 @@ from app.controllers.cargos import cargos_blueprint
 from app.controllers.especialidades import especialidades_blueprint
 from app.controllers.validacion_pagos import validacion_pagos_blueprint
 from app.controllers.entregas import entregas_blueprint
-from app.controllers.gestion_bd import gestion_bd_blueprint
+from app.controllers.backup import backup_blueprint
 from app.utils.jwt_utils import decode_token
 from types import SimpleNamespace
 
@@ -85,7 +85,7 @@ app.register_blueprint(cargos_blueprint)
 app.register_blueprint(especialidades_blueprint)
 app.register_blueprint(validacion_pagos_blueprint)
 app.register_blueprint(entregas_blueprint)
-app.register_blueprint(gestion_bd_blueprint)
+app.register_blueprint(backup_blueprint)
 @app.before_request
 def load_user_from_jwt():
     token = request.cookies.get('access_token')
