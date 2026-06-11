@@ -28,11 +28,12 @@ body {
 .dashboard {
     display: grid;
     gap: 1.25rem;
-    grid-template-columns: 1.05fr 1.25fr 1.05fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-areas:
         "ventas ingresos actividad"
         "ordenes ingresos actividad"
-        "tecnicos top actividad";
+        "tecnicos top lowstock"
+        "tecnicos productos lowstock";
     align-items: stretch;
 }
 
@@ -50,6 +51,25 @@ body {
     font-family: "Space Grotesk", sans-serif;
     font-size: 1.05rem;
     font-weight: 800;
+}
+
+.card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.card__link {
+    font-size: 0.8rem;
+    color: rgba(0, 0, 0, 0.6);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.card__link:hover {
+    color: var(--yellow);
 }
 
 .card--stat {
@@ -288,7 +308,7 @@ body {
 }
 
 .card--products {
-    grid-area: top;
+    grid-area: productos;
     min-height: 210px;
     background: var(--color-card);
 }
@@ -389,13 +409,6 @@ body {
     background: var(--color-card);
 }
 
-.card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-
 .activity {
     margin-top: 0.9rem;
     display: grid;
@@ -459,6 +472,147 @@ body {
     font-size: 0.92rem;
 }
 
+/* Card de bajo stock */
+.card--low-stock {
+    grid-area: lowstock;
+    background: var(--color-card);
+}
+
+.low-stock-list {
+    display: grid;
+    gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.low-stock-item {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.low-stock-item:hover {
+    background: rgba(243, 197, 0, 0.08);
+    border-color: rgba(243, 197, 0, 0.2);
+}
+
+.low-stock-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.low-stock-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.low-stock-img--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+    color: #999;
+}
+
+.low-stock-info {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.low-stock-name {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--color-texto-card);
+}
+
+.low-stock-marca {
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.low-stock-stock {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.low-stock-cantidad {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--color-texto-card);
+}
+
+.low-stock-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.badge--danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.badge--warning {
+    background: #ffedd5;
+    color: #f59e0b;
+}
+
+.badge--info {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.badge--success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.loading, .empty-message {
+    text-align: center;
+    padding: 1rem;
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 500;
+}
+
+/* Scroll personalizado para la lista */
+.low-stock-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.low-stock-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.low-stock-list::-webkit-scrollbar-thumb {
+    background: rgba(243, 197, 0, 0.5);
+    border-radius: 3px;
+}
+
+.low-stock-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(243, 197, 0, 0.8);
+}
+
+/* Responsive */
 @media (max-width: 1100px) {
     .dashboard {
         grid-template-columns: 1fr 1fr;
@@ -466,6 +620,7 @@ body {
             "ventas ingresos"
             "ordenes ingresos"
             "tecnicos top"
+            "productos lowstock"
             "actividad actividad";
     }
 }
@@ -479,6 +634,8 @@ body {
             "ordenes"
             "tecnicos"
             "top"
+            "productos"
+            "lowstock"
             "actividad";
     }
 

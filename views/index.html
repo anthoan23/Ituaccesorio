@@ -9,9 +9,21 @@
 {% block content %}
     <main class="page">
         <section class="dashboard" aria-label="Panel principal">
+            <!-- Card Productos con bajo stock -->
+            <article class="card card--low-stock" aria-label="Productos con bajo stock">
+                <div class="card__header">
+                    <h2 class="card__title">Productos con Bajo Stock</h2>
+                    <a href="/inventario" class="card__link">Ver inventario →</a>
+                </div>
+                <div class="low-stock-list" id="low-stock-list">
+                    <div class="loading">Cargando productos...</div>
+                </div>
+            </article>
+
             <article class="card card--stat" aria-label="Ventas hoy">
                 <h2 class="card__title">Ventas Hoy</h2>
-                <p class="card__value">$1,525<span class="card__value-dec">.00</span></p>
+                <p class="card__value" id="ventas-hoy-value">$0.00</p>
+                <p class="card__subtitle" id="ventas-hoy-count">0 ventas hoy</p>
                 <a class="card__action" href="#" aria-label="Mostrar historial reciente">Mostrar Historial Reciente</a>
             </article>
 
@@ -212,4 +224,7 @@
             </article>
         </section>
     </main>
+    {% block scripts %}
+        <script defer src="{{ url_for('static', filename='js/index.js') }}"></script>
+    {% endblock %}
 {% endblock %}

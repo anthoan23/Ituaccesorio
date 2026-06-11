@@ -186,6 +186,86 @@ class Inventario:
             cursor.close()
             db.close()
 
+    def obtener_productos_bajo_stock(self, limite: int = 10):
+        """Obtiene productos con stock menor o igual al límite (excluyendo 0)"""
+        db = self._conexion()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    i.ID_inventario AS id_inventario,
+                    i.ID_producto AS id_producto,
+                    i.Existencia AS existencia,
+                    i.Costo_venta AS costo_venta,
+                    p.Nombre_producto AS nombre_producto,
+                    ma.Nombre_marca AS nombre_marca,
+                    cl.Nombre_Clase AS nombre_clase,
+                    (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
+                     WHERE fi.ID_inventario = i.ID_inventario 
+                     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
+                FROM Inventario i
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+                WHERE i.Existencia <= %s AND i.Existencia > 0
+                ORDER BY i.Existencia ASC
+                LIMIT %s
+            """, (limite, limite))
+            rows = cursor.fetchall() or []
+            for row in rows:
+                if isinstance(row.get("costo_venta"), Decimal):
+                    row["costo_venta"] = float(row["costo_venta"])
+            return rows
+        except Exception as e:
+            print(f"Error obtener_productos_bajo_stock: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_productos_sin_stock(self):
+        """Obtiene productos con stock igual a 0"""
+        db = self._conexion()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    i.ID_inventario AS id_inventario,
+                    i.ID_producto AS id_producto,
+                    i.Existencia AS existencia,
+                    i.Costo_venta AS costo_venta,
+                    p.Nombre_producto AS nombre_producto,
+                    ma.Nombre_marca AS nombre_marca,
+                    cl.Nombre_Clase AS nombre_clase,
+                    (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
+                     WHERE fi.ID_inventario = i.ID_inventario 
+                     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
+                FROM Inventario i
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+                WHERE i.Existencia = 0
+                ORDER BY p.Nombre_producto ASC
+                LIMIT 10
+            """)
+            rows = cursor.fetchall() or []
+            for row in rows:
+                if isinstance(row.get("costo_venta"), Decimal):
+                    row["costo_venta"] = float(row["costo_venta"])
+            return rows
+        except Exception as e:
+            print(f"Error obtener_productos_sin_stock: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
     def registrar_stock(self, id_producto: str, existencia: int, 
         costo_venta: Decimal, foto_inventario: str | None = None) -> str | None:
         """Registra o actualiza stock de un producto"""
