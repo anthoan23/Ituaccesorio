@@ -95,15 +95,17 @@ class Usuarios:
 
         cursor = db.cursor(dictionary=True)
         try:
+            # CORREGIDO: Usar los nombres correctos de columnas
             cursor.execute(
                 """
                 SELECT
-                    pn.ID_persona_natural AS cedula,
-                    CONCAT(pn.Nombres_persona_natural, ' ', pn.Apellidos_persona_natural) AS nombre_completo,
-                    pn.Celular_persona_natural AS celular,
-                    pn.Correo_persona_natural AS correo
+                    pn.ID_cliente AS cedula,
+                    CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente) AS nombre_completo,
+                    c.Celular_cliente AS celular,
+                    c.Correo_cliente AS correo
                 FROM Persona_natural pn
-                ORDER BY pn.ID_persona_natural ASC
+                INNER JOIN Cliente c ON c.ID_cliente = pn.ID_cliente
+                ORDER BY pn.ID_cliente ASC
                 """
             )
             return cursor.fetchall()
@@ -118,6 +120,7 @@ class Usuarios:
 
         cursor = db.cursor()
         try:
+            # La columna es 'ID_empleado'
             cursor.execute(
                 "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
                 (cedula,),
@@ -136,7 +139,7 @@ class Usuarios:
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT 1 FROM Persona_natural WHERE ID_persona_natural = %s LIMIT 1",
+                "SELECT 1 FROM Persona_natural WHERE ID_cliente = %s LIMIT 1",
                 (cedula,),
             )
             return cursor.fetchone() is not None

@@ -9,9 +9,21 @@
 {% block content %}
     <main class="page">
         <section class="dashboard" aria-label="Panel principal">
+            <!-- Card Productos con bajo stock -->
+            <article class="card card--low-stock" aria-label="Productos con bajo stock">
+                <div class="card__header">
+                    <h2 class="card__title">Productos con Bajo Stock</h2>
+                    <a href="/inventario" class="card__link">Ver inventario →</a>
+                </div>
+                <div class="low-stock-list" id="low-stock-list">
+                    <div class="loading">Cargando productos...</div>
+                </div>
+            </article>
+
             <article class="card card--stat" aria-label="Ventas hoy">
                 <h2 class="card__title">Ventas Hoy</h2>
-                <p class="card__value">$1,525<span class="card__value-dec">.00</span></p>
+                <p class="card__value" id="ventas-hoy-value">$0.00</p>
+                <p class="card__subtitle" id="ventas-hoy-count">0 ventas hoy</p>
                 <a class="card__action" href="#" aria-label="Mostrar historial reciente">Mostrar Historial Reciente</a>
             </article>
 
@@ -179,37 +191,22 @@
                 <div class="card__header">
                     <h2 class="card__title">Actividad Reciente</h2>
                 </div>
-
-                <div class="activity">
+                <div class="activity" id="actividad-reciente-list">
                     <div class="activity__item">
                         <span class="activity__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/></svg>
+                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/>
+                            </svg>
                         </span>
                         <div class="activity__content">
-                            <p class="activity__text"><strong>Cliente [3221]</strong> Creó orden #3036, compra de cargador para iPhone</p>
-                            <span class="activity__time">
-                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11h5v-2h-4V6h-2v7Z" fill="currentColor"/></svg>
-                                hace 12 horas
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="activity__divider" aria-hidden="true"></div>
-
-                    <div class="activity__item">
-                        <span class="activity__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14Z" fill="currentColor"/></svg>
-                        </span>
-                        <div class="activity__content">
-                            <p class="activity__text"><strong>Técnico [Jorge]</strong> Completó reparación del teléfono #[220]</p>
-                            <span class="activity__time">
-                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11h5v-2h-4V6h-2v7Z" fill="currentColor"/></svg>
-                                hace 7 horas
-                            </span>
+                            <p class="activity__text">Cargando actividad...</p>
                         </div>
                     </div>
                 </div>
             </article>
         </section>
     </main>
+    {% block scripts %}
+        <script defer src="{{ url_for('static', filename='js/index.js') }}"></script>
+    {% endblock %}
 {% endblock %}

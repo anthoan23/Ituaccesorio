@@ -6,7 +6,8 @@ const CONFIG = {
     EMPLEADOS: '/api/empleados',
     CONSULTAR: '/api/empleados/consultar',
     LISTA: '/api/empleados/lista',
-    GRAFICOS: '/api/empleados/graficos'
+    GRAFICOS: '/api/empleados/graficos',
+    VERIFICAR_CEDULA: '/api/empleados/verificar-cedula' // Nueva endpoint para verificar cédula
   },
   CHART_COLORS: {
     PIE_1: {
@@ -27,9 +28,23 @@ let cargosList = [];
 let especialidadesArray = [];
 window.especialidadesArray = especialidadesArray;
 
+// Variable para controlar si la cédula ya está verificada
+let cedulaVerificada = {
+  isValid: false,
+  message: '',
+  exists: false,
+  checking: false
+};
+
 // ============================================
-// 2. UTILIDADES
+// 2. UTILIDADES E ICONOS
 // ============================================
+const Iconos = {
+  lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+  basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`,
+  ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`
+};
+
 const Utils = {
   getCsrfToken() {
     const input = document.querySelector("input[name='_csrf_token']");
@@ -118,6 +133,33 @@ const Utils = {
       sinCaracteresEspeciales: (valor) => valor === '' || /^[a-zA-Z0-9\s,.-]+$/.test(valor)
     };
     return reglas;
+  },
+
+  // Función para verificar cédula en tiempo real
+  async verificarCedula(cedula, excludeCurrentId = null) {
+    if (!cedula || cedula.length < 6) {
+      return { exists: false, message: '' };
+    }
+    
+    try {
+      const response = await this.fetchJson(CONFIG.API.CONSULTAR, {
+        method: 'POST',
+        body: JSON.stringify({ cedula: cedula })
+      });
+      
+      // Si existe un ID a excluir (para edición) y coincide, no considerarlo como duplicado
+      if (excludeCurrentId && response.empleado && response.empleado.id_empleado == excludeCurrentId) {
+        return { exists: false, message: '' };
+      }
+      
+      return { 
+        exists: response.success && response.empleado,
+        message: response.success && response.empleado ? '⚠️ Esta cédula ya está registrada en el sistema' : ''
+      };
+    } catch (error) {
+      // Si hay error, asumimos que no existe para no bloquear
+      return { exists: false, message: '' };
+    }
   }
 };
 
@@ -132,16 +174,15 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
     const modalTitle = modal.querySelector('.modal__title');
     const submitBtn = modal.querySelector('#modal-submit-btn');
     const form = modal.querySelector('#form-registrar-empleado');
-    const cancelBtn = modal.querySelector('[data-close-modal]');
     const especialidadesContainer = document.getElementById('especialidades-container');
     
     if (mode === 'register') {
       if (modalTitle) modalTitle.textContent = 'Registrar nuevo empleado';
       if (submitBtn) {
         submitBtn.textContent = 'Guardar empleado';
+        submitBtn.disabled = false;
         submitBtn.style.display = '';
       }
-      if (cancelBtn) cancelBtn.textContent = 'x';
       if (form) {
         form.dataset.mode = 'register';
         form.reset();
@@ -159,20 +200,47 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
       if (editIdInput) editIdInput.value = '';
       
       const cedulaInput = document.getElementById('reg-cedula-empleado');
-      if (cedulaInput) cedulaInput.disabled = false;
+      if (cedulaInput) {
+        cedulaInput.disabled = false;
+        cedulaInput.value = '';
+        // Limpiar estado de validación
+        limpiarValidacionCedula();
+      }
+      
+      // Resetear variable de verificación
+      cedulaVerificada = {
+        isValid: false,
+        message: '',
+        exists: false,
+        checking: false
+      };
       
     } else if (mode === 'edit') {
       if (modalTitle) modalTitle.textContent = 'Modificar empleado';
       if (submitBtn) {
         submitBtn.textContent = 'Actualizar empleado';
+        submitBtn.disabled = false;
         submitBtn.style.display = '';
       }
-      if (cancelBtn) cancelBtn.textContent = 'x';
       if (form) form.dataset.mode = 'edit';
       
       habilitarCamposFormulario(true);
       const cedulaInput = document.getElementById('reg-cedula-empleado');
-      if (cedulaInput) cedulaInput.disabled = true;
+      if (cedulaInput) {
+        cedulaInput.disabled = true;
+        // En edición, la cédula es válida por defecto (no se puede cambiar)
+        cedulaVerificada = {
+          isValid: true,
+          message: '',
+          exists: false,
+          checking: false
+        };
+        const cedulaHint = document.getElementById('cedula-hint');
+        if (cedulaHint) {
+          cedulaHint.textContent = 'La cédula no se puede modificar en edición';
+          cedulaHint.style.color = '#6c757d';
+        }
+      }
       
       if (empleadoData) {
         cargarDatosEnFormulario(empleadoData, especialidadesData);
@@ -205,7 +273,6 @@ function closeModal(id) {
       const form = modal.querySelector('#form-registrar-empleado');
       const modalTitle = modal.querySelector('.modal__title');
       const submitBtn = modal.querySelector('#modal-submit-btn');
-      const cancelBtn = modal.querySelector('[data-close-modal]');
       const especialidadesContainer = document.getElementById('especialidades-container');
       
       if (form) {
@@ -219,9 +286,9 @@ function closeModal(id) {
       if (modalTitle) modalTitle.textContent = 'Registrar nuevo empleado';
       if (submitBtn) {
         submitBtn.textContent = 'Guardar empleado';
+        submitBtn.disabled = false;
         submitBtn.style.display = '';
       }
-      if (cancelBtn) cancelBtn.textContent = 'Cancelar';
       
       if (especialidadesContainer) {
         especialidadesContainer.style.display = 'none';
@@ -248,7 +315,128 @@ function closeModal(id) {
       
       const selectEspecialidad = document.getElementById('select-especialidad');
       if (selectEspecialidad) selectEspecialidad.value = '';
+      
+      // Limpiar validación de cédula
+      limpiarValidacionCedula();
     }
+  }
+}
+
+function limpiarValidacionCedula() {
+  const cedulaInput = document.getElementById('reg-cedula-empleado');
+  const cedulaHint = document.getElementById('cedula-hint');
+  
+  if (cedulaInput) {
+    cedulaInput.style.borderColor = '';
+    cedulaInput.classList.remove('input-error', 'input-success');
+  }
+  
+  if (cedulaHint) {
+    cedulaHint.textContent = 'Solo números (máximo 8 dígitos)';
+    cedulaHint.style.color = '#6c757d';
+  }
+}
+
+function mostrarValidacionCedula(isValid, exists, message) {
+  const cedulaInput = document.getElementById('reg-cedula-empleado');
+  const cedulaHint = document.getElementById('cedula-hint');
+  const submitBtn = document.getElementById('modal-submit-btn');
+  
+  if (!cedulaInput) return;
+  
+  if (exists) {
+    // Cédula ya registrada - ERROR
+    cedulaInput.style.borderColor = '#dc3545';
+    cedulaInput.classList.add('input-error');
+    cedulaInput.classList.remove('input-success');
+    if (cedulaHint) {
+      cedulaHint.textContent = message || '⚠️ Esta cédula ya está registrada en el sistema';
+      cedulaHint.style.color = '#dc3545';
+    }
+    if (submitBtn) submitBtn.disabled = true;
+  } else if (isValid && cedulaInput.value.length >= 6) {
+    // Cédula válida y no registrada - ÉXITO
+    cedulaInput.style.borderColor = '#28a745';
+    cedulaInput.classList.add('input-success');
+    cedulaInput.classList.remove('input-error');
+    if (cedulaHint) {
+      cedulaHint.textContent = '✓ Cédula disponible para registrar';
+      cedulaHint.style.color = '#28a745';
+    }
+    if (submitBtn) submitBtn.disabled = false;
+  } else if (cedulaInput.value.length > 0 && cedulaInput.value.length < 6) {
+    // Cédula incompleta
+    cedulaInput.style.borderColor = '#ffc107';
+    cedulaInput.classList.remove('input-error', 'input-success');
+    if (cedulaHint) {
+      cedulaHint.textContent = '⚠️ La cédula debe tener 8 dígitos';
+      cedulaHint.style.color = '#ffc107';
+    }
+    if (submitBtn) submitBtn.disabled = true;
+  } else {
+    // Sin valor o valor inválido
+    cedulaInput.style.borderColor = '';
+    cedulaInput.classList.remove('input-error', 'input-success');
+    if (cedulaHint) {
+      cedulaHint.textContent = 'Solo números (máximo 8 dígitos)';
+      cedulaHint.style.color = '#6c757d';
+    }
+    if (submitBtn) submitBtn.disabled = true;
+  }
+}
+
+// Función para verificar cédula con debounce
+let debounceTimer;
+async function verificarCedulaEnTiempoReal(cedula, excludeCurrentId = null) {
+  // Limpiar timer anterior
+  if (debounceTimer) clearTimeout(debounceTimer);
+  
+  // Si la cédula está vacía o es muy corta, resetear
+  if (!cedula || cedula.length < 6) {
+    mostrarValidacionCedula(false, false, '');
+    cedulaVerificada = { isValid: false, message: '', exists: false, checking: false };
+    return;
+  }
+  
+  // Si la cédula no es solo números
+  if (!/^\d+$/.test(cedula)) {
+    mostrarValidacionCedula(false, false, '⚠️ Solo se permiten números');
+    cedulaVerificada = { isValid: false, message: '', exists: false, checking: false };
+    return;
+  }
+  
+  // Si tiene exactamente 8 dígitos, verificar
+  if (cedula.length === 8) {
+    // Mostrar estado de verificación
+    const cedulaHint = document.getElementById('cedula-hint');
+    if (cedulaHint) {
+      cedulaHint.textContent = '🔍 Verificando cédula...';
+      cedulaHint.style.color = '#17a2b8';
+    }
+    
+    cedulaVerificada.checking = true;
+    
+    // Debounce para no hacer muchas peticiones
+    debounceTimer = setTimeout(async () => {
+      try {
+        const result = await Utils.verificarCedula(cedula, excludeCurrentId);
+        cedulaVerificada = {
+          isValid: !result.exists,
+          message: result.message,
+          exists: result.exists,
+          checking: false
+        };
+        mostrarValidacionCedula(!result.exists, result.exists, result.message);
+      } catch (error) {
+        console.error('Error verificando cédula:', error);
+        cedulaVerificada = { isValid: true, message: '', exists: false, checking: false };
+        mostrarValidacionCedula(true, false, '');
+      }
+    }, 500);
+  } else {
+    // Cédula incompleta
+    mostrarValidacionCedula(false, false, '');
+    cedulaVerificada = { isValid: false, message: '', exists: false, checking: false };
   }
 }
 
@@ -433,7 +621,7 @@ async function editarEmpleado(cedula) {
 }
 
 // ============================================
-// 4. MANEJADORES DE TABLA
+// 4. MANEJADORES DE TABLA CON ICONOS
 // ============================================
 function renderTabla(empleados) {
   const tbody = document.getElementById("tabla-empleados");
@@ -442,7 +630,7 @@ function renderTabla(empleados) {
   if (!tbody) return;
 
   if (!empleados || empleados.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="table__empty">No hay empleados para mostrar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="table__empty">No hay empleados para mostrar.</td></td>`;
     if (contador) {
       contador.setAttribute("data-count", "0");
       contador.textContent = "0";
@@ -450,21 +638,42 @@ function renderTabla(empleados) {
     return;
   }
 
-  tbody.innerHTML = empleados.map(empleado => `
-    <tr data-cedula="${Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '')}">
-      <td>${Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || '')}</td>
-      <td>${Utils.escapeHtml(empleado.nombre || empleado.nombre_empleado || '')}</td>
-      <td>${Utils.escapeHtml(empleado.apellido || empleado.apellido_empleado || '')}</td>
-      <td>${Utils.escapeHtml(empleado.cargo || empleado.nombre_cargo || '-')}</td>
-      <td class="table__actions">
-        <div class="row-actions" aria-label="Acciones del empleado">
-          <button type="button" class="table-action table-action--accent" data-action="editar" data-cedula="${Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '')}">✏️ Editar</button>
-          <button type="button" class="table-action" data-action="ver" data-cedula="${Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '')}">👁️ Ver</button>
-          <button type="button" class="table-action table-action--danger" data-action="eliminar" data-cedula="${Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '')}" data-nombre="${Utils.escapeHtml(empleado.nombre || empleado.nombre_empleado || '')}" data-apellido="${Utils.escapeHtml(empleado.apellido || empleado.apellido_empleado || '')}">🗑️ Eliminar</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = empleados.map(empleado => {
+    const cedula = Utils.escapeHtml(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '');
+    const nombre = Utils.escapeHtml(empleado.nombre || empleado.nombre_empleado || '');
+    const apellido = Utils.escapeHtml(empleado.apellido || empleado.apellido_empleado || '');
+    const cargo = Utils.escapeHtml(empleado.cargo || empleado.nombre_cargo || '-');
+    
+    return `
+      <tr data-cedula="${cedula}">
+        <td><span class="chip">${cedula}</span></td>
+        <td>${nombre}</td>
+        <td>${apellido}</td>
+        <td>${cargo}</td>
+        <td class="table__actions">
+          <div class="row-actions" aria-label="Acciones del empleado">
+            <button class="icon-action" type="button" data-action="editar" 
+                    data-cedula="${cedula}" 
+                    aria-label="Modificar">
+              ${Iconos.lapiz}
+            </button>
+            <button class="icon-action icon-action--view" type="button" data-action="ver" 
+                    data-cedula="${cedula}" 
+                    aria-label="Ver">
+              ${Iconos.ojo}
+            </button>
+            <button class="icon-action icon-action--danger" type="button" data-action="eliminar" 
+                    data-cedula="${cedula}" 
+                    data-nombre="${nombre}" 
+                    data-apellido="${apellido}" 
+                    aria-label="Eliminar">
+              ${Iconos.basura}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   if (contador) {
     contador.setAttribute("data-count", String(empleados.length));
@@ -509,7 +718,7 @@ function handleEliminarClick(e) {
   
   const confirmText = document.getElementById('texto-confirmar-eliminar-empleado');
   if (confirmText) {
-    confirmText.textContent = `¿Estás seguro de que quieres eliminar a ${nombreCompleto}?`;
+    confirmText.textContent = `¿Estás seguro de que quieres eliminar a "${nombreCompleto}"?`;
   }
   
   const confirmBtn = document.getElementById('btn-confirmar-eliminar-empleado');
@@ -815,12 +1024,31 @@ async function cargarEmpleados() {
 async function registrarEmpleado(event) {
   event.preventDefault();
   
+  // Verificar si la cédula es válida (no existe)
+  if (cedulaVerificada.exists) {
+    Utils.showMessage('No se puede registrar: La cédula ya está registrada en el sistema', true);
+    return;
+  }
+  
+  if (cedulaVerificada.checking) {
+    Utils.showMessage('Esperando verificación de cédula...', true);
+    return;
+  }
+  
   const form = document.getElementById('form-registrar-empleado');
   const mode = form.dataset.mode;
   const editId = document.getElementById('edit-id-empleado')?.value;
   
+  const cedulaValue = document.getElementById('reg-cedula-empleado')?.value.trim() || '';
+  
+  // Validar longitud de cédula
+  if (cedulaValue.length !== 8) {
+    Utils.showMessage('La cédula debe tener exactamente 8 dígitos', true);
+    return;
+  }
+  
   const formData = {
-    cedula: document.getElementById('reg-cedula-empleado')?.value.trim() || '',
+    cedula: cedulaValue,
     nombre: document.getElementById('reg-nombre-empleado')?.value.trim(),
     apellido: document.getElementById('reg-apellido-empleado')?.value.trim(),
     id_cargo: document.getElementById('reg-cargo-empleado')?.value,
@@ -839,9 +1067,8 @@ async function registrarEmpleado(event) {
     let response;
     
     if (mode === 'edit' && editId) {
-      // CORRECCIÓN: Enviar el ID dentro del cuerpo de la petición, no en la URL
       const updateData = {
-        id_empleado: editId,  // Campo requerido por el backend
+        id_empleado: editId,
         cedula: formData.cedula,
         nombre: formData.nombre,
         apellido: formData.apellido,
@@ -978,21 +1205,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
   
-  const reglasValidacion = Utils.validarCampos();
-  
+  // ============================================
+  // VALIDACIÓN DE CÉDULA EN TIEMPO REAL
+  // ============================================
   const cedulaInput = document.getElementById('reg-cedula-empleado');
   if (cedulaInput) {
+    // Evento input para validar en tiempo real
     cedulaInput.addEventListener('input', (e) => {
+      let valor = e.target.value.replace(/\D/g, ''); // Solo números
+      if (valor.length > 8) valor = valor.slice(0, 8);
+      e.target.value = valor;
+      
+      const mode = document.getElementById('form-registrar-empleado')?.dataset.mode;
+      const editId = document.getElementById('edit-id-empleado')?.value;
+      
+      if (mode === 'edit') {
+        // En modo edición, no validar porque la cédula está deshabilitada
+        return;
+      }
+      
+      verificarCedulaEnTiempoReal(valor, editId);
+    });
+    
+    // Evento blur para validación final
+    cedulaInput.addEventListener('blur', (e) => {
       const valor = e.target.value;
-      if (!reglasValidacion.soloNumeros(valor) && valor !== '') {
-        e.target.style.borderColor = '#dc3545';
-        e.target.setCustomValidity('Solo se permiten números');
-      } else {
-        e.target.style.borderColor = '';
-        e.target.setCustomValidity('');
+      const mode = document.getElementById('form-registrar-empleado')?.dataset.mode;
+      
+      if (mode === 'edit') return;
+      
+      if (valor && valor.length !== 8) {
+        mostrarValidacionCedula(false, false, '⚠️ La cédula debe tener exactamente 8 dígitos');
       }
     });
   }
+  
+  const reglasValidacion = Utils.validarCampos();
   
   const nombreInput = document.getElementById('reg-nombre-empleado');
   const apellidoInput = document.getElementById('reg-apellido-empleado');
