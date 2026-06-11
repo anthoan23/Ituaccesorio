@@ -256,18 +256,18 @@ class Producto:
             cursor.close()
             db.close()
 
-    def _siguiente_id_inventario(self) -> str:
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT COALESCE(MAX(CAST(ID_inventario AS UNSIGNED)), 0) + 1 FROM Inventario")
-            row = cursor.fetchone()
-            return str(int(row[0] or 0))
-        finally:
-            cursor.close()
-            db.close()
+    # def _siguiente_id_inventario(self) -> str:
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute("SELECT COALESCE(MAX(CAST(ID_inventario AS UNSIGNED)), 0) + 1 FROM Inventario")
+    #         row = cursor.fetchone()
+    #         return str(int(row[0] or 0))
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
     def listar(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
         db = self._conexion()
@@ -326,11 +326,11 @@ class Producto:
             """, (new_id, self.id_clase, self.id_marca, self.nombre, self.descripcion))
 
             # Crear inventario básico con existencia 0
-            id_inventario = self._siguiente_id_inventario()
-            cursor.execute("""
-                INSERT INTO Inventario (ID_inventario, ID_producto, Existencia, Costo_venta, Numero_inventario)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (id_inventario, new_id, 0, 0, None))
+            # id_inventario = self._siguiente_id_inventario()
+            # cursor.execute("""
+            #     INSERT INTO Inventario (ID_inventario, ID_producto, Existencia, Costo_venta, Numero_inventario)
+            #     VALUES (%s, %s, %s, %s, %s)
+            # """, (id_inventario, new_id, 0, 0, None))
 
             db.commit()
             return new_id
