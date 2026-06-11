@@ -80,11 +80,17 @@ const Utils = {
 
     normalizeCargo(cargo) {
         return {
-            id: cargo?.id ?? cargo?.ID_cargo ?? "",
-            nombre: cargo?.nombre ?? cargo?.Nombre_cargo ?? "",
-            descripcion: cargo?.descripcion ?? cargo?.Descripcion_cargo ?? "",
+            id: cargo?.id ?? cargo?.ID_cargo ?? cargo?.id_cargo ?? "",
+            nombre: cargo?.nombre ?? cargo?.Nombre_cargo ?? cargo?.nombre_cargo ?? "",
+            descripcion: cargo?.descripcion ?? cargo?.Descripcion_cargo ?? cargo?.descripcion_cargo ?? "",
         };
     }
+};
+
+// Iconos SVG (igual que en especialidades)
+const Iconos = {
+    lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+    basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`
 };
 
 // ============================================
@@ -133,7 +139,7 @@ function renderTabla(cargos) {
     if (!cargos.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4">No hay cargos para mostrar.</td>
+                <td colspan="4" class="table__empty">No hay cargos para mostrar.</td>
             </tr>
         `;
         renderContador(0);
@@ -149,23 +155,23 @@ function renderTabla(cargos) {
 
             return `
                 <tr>
-                    <td>${id}</td>
+                    <td><span class="chip">${id}</span></td>
                     <td>${nombre}</td>
                     <td>${descripcion}</td>
                     <td class="table__actions">
                         <div class="row-actions" aria-label="Acciones del cargo">
-                            <button type="button" class="table-action table-action--accent" 
-                                    data-action="editar" 
+                            <button class="icon-action" type="button" data-action="editar" 
                                     data-id="${id}" 
                                     data-nombre="${nombre}" 
-                                    data-descripcion="${descripcion}">
-                                Modificar
+                                    data-descripcion="${descripcion}" 
+                                    aria-label="Modificar">
+                                ${Iconos.lapiz}
                             </button>
-                            <button type="button" class="table-action" 
-                                    data-action="eliminar" 
+                            <button class="icon-action icon-action--danger" type="button" data-action="eliminar" 
                                     data-id="${id}" 
-                                    data-nombre="${nombre}">
-                                Eliminar
+                                    data-nombre="${nombre}" 
+                                    aria-label="Eliminar">
+                                ${Iconos.basura}
                             </button>
                         </div>
                     </td>
@@ -182,7 +188,7 @@ function renderTabla(cargos) {
 // ============================================
 async function cargarCargos() {
     const data = await Utils.fetchJson(CONFIG.API.CARGOS, { method: "GET" });
-    const cargos = Array.isArray(data) ? data : Array.isArray(data?.cargos) ? data.cargos : [];
+    const cargos = Array.isArray(data) ? data : (data?.cargos || data?.data || []);
     renderTabla(cargos);
 }
 
@@ -212,7 +218,7 @@ function abrirModalEliminar(button) {
     cargoPendienteEliminar = { id, nombre };
 
     if (textoEliminar) {
-        textoEliminar.textContent = `¿Estás seguro de que quieres eliminar el registro ${nombre} (${id})?`;
+        textoEliminar.textContent = `¿Estás seguro de que quieres eliminar el cargo "${nombre}"?`;
     }
 
     openModal("modal-eliminar-cargo");
@@ -228,14 +234,24 @@ async function registrarCargo(event) {
         descripcion_cargo: formCrear.descripcion_cargo.value.trim(),
     };
 
+    if (!payload.nombre_cargo) {
+        Utils.showMessage("El nombre del cargo es requerido.", true);
+        return;
+    }
+
     try {
         const result = await Utils.fetchJson(CONFIG.API.CARGOS, {
             method: "POST",
             body: JSON.stringify(payload),
         });
-        Utils.showMessage(result?.message || "Cargo registrado correctamente.");
-        formCrear.reset();
-        await cargarCargos();
+        
+        if (result.success) {
+            Utils.showMessage(result.message || "Cargo registrado correctamente.");
+            formCrear.reset();
+            await cargarCargos();
+        } else {
+            Utils.showMessage(result.message || "No fue posible registrar el cargo.", true);
+        }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible registrar el cargo.", true);
     }
@@ -255,14 +271,24 @@ async function actualizarCargo(event) {
         descripcion_cargo: inputEditarDescripcion?.value.trim() || "",
     };
 
+    if (!payload.nombre_cargo) {
+        Utils.showMessage("El nombre del cargo es requerido.", true);
+        return;
+    }
+
     try {
         const result = await Utils.fetchJson(CONFIG.API.CARGOS, {
             method: "PUT",
             body: JSON.stringify(payload),
         });
-        Utils.showMessage(result?.message || "Cargo modificado correctamente.");
-        closeModal("modal-editar-cargo");
-        await cargarCargos();
+        
+        if (result.success) {
+            Utils.showMessage(result.message || "Cargo modificado correctamente.");
+            closeModal("modal-editar-cargo");
+            await cargarCargos();
+        } else {
+            Utils.showMessage(result.message || "No fue posible modificar el cargo.", true);
+        }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible modificar el cargo.", true);
     }
@@ -276,10 +302,15 @@ async function eliminarCargo() {
             method: "DELETE",
             body: JSON.stringify({ id_cargo: cargoPendienteEliminar.id }),
         });
-        Utils.showMessage(result?.message || "Cargo eliminado correctamente.");
-        cargoPendienteEliminar = null;
-        closeModal("modal-eliminar-cargo");
-        await cargarCargos();
+        
+        if (result.success) {
+            Utils.showMessage(result.message || "Cargo eliminado correctamente.");
+            cargoPendienteEliminar = null;
+            closeModal("modal-eliminar-cargo");
+            await cargarCargos();
+        } else {
+            Utils.showMessage(result.message || "No fue posible eliminar el cargo.", true);
+        }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible eliminar el cargo.", true);
     }
