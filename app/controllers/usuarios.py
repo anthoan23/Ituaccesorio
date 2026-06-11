@@ -113,16 +113,93 @@ def api_listar_clientes():
 @jwt_required
 @solo_roles(['admin'])
 def api_crear_usuario():
+    # Obtener datos tanto de JSON como de form-data
     data = request.get_json(silent=True) or request.form
+    
+    # ========== DEBUG: Imprimir datos recibidos ==========
+    print("=" * 50)
+    print("DATOS RECIBIDOS EN API CREAR USUARIO:")
+    print(f"Request method: {request.method}")
+    print(f"Content-Type: {request.content_type}")
+    print(f"Datos (form/json): {dict(data)}")
+    print(f"Archivos recibidos: {list(request.files.keys())}")
+    print("=" * 50)
+    
+    # ========== OBTENER Y LIMPIAR CAMPOS ==========
     nombre = data.get("nombre", "").strip()
-    cedula = data.get("cedula_personal") or data.get("cedula")
+    
+    # IMPORTANTE: El frontend envía 'cedula_personal', no 'cedula'
+    cedula = data.get("cedula_personal")
+    if not cedula:
+        cedula = data.get("cedula")  # Fallback por si usan otro nombre
+    
+    # Convertir a string y limpiar
+    if cedula:
+        cedula = str(cedula).strip()
+    else:
+        cedula = ""
+    
     password = data.get("password", "").strip()
     rol_id = data.get("rol_id", "").strip()
-    foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
-
+    
+    # Manejar foto de perfil
+    foto_perfil = None
+    if request.files.get("foto_perfil"):
+        foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil"))
+    elif data.get("foto_perfil_actual"):
+        foto_perfil = data.get("foto_perfil_actual")
+    
+    # ========== DEBUG: Mostrar datos procesados ==========
+    print("DATOS PROCESADOS:")
+    print(f"  nombre: '{nombre}' (bool: {bool(nombre)})")
+    print(f"  cedula: '{cedula}' (bool: {bool(cedula)})")
+    print(f"  password: '{'*' * len(password)}' (bool: {bool(password)})")
+    print(f"  rol_id: '{rol_id}' (bool: {bool(rol_id)})")
+    print(f"  foto_perfil: {foto_perfil}")
+    print("=" * 50)
+    
+    # ========== VALIDACIONES ==========
     if not nombre or not cedula or not password or not rol_id:
-        return jsonify({"success": False, "error": "Nombre, cédula, contraseña y rol son obligatorios."}), 400
-
+        error_msg = f"Faltan datos obligatorios: "
+        error_details = []
+        if not nombre: error_details.append("nombre")
+        if not cedula: error_details.append("cédula")
+        if not password: error_details.append("contraseña")
+        if not rol_id: error_details.append("rol")
+        error_msg += ", ".join(error_details)
+        
+        return jsonify({
+            "success": False, 
+            "error": error_msg,
+            "received": {
+                "nombre": bool(nombre),
+                "cedula": bool(cedula),
+                "password": bool(password),
+                "rol_id": bool(rol_id)
+            }
+        }), 400
+    
+    # Validar longitud del nombre
+    if len(nombre) > 50:
+        return jsonify({
+            "success": False, 
+            "error": "El nombre no puede exceder los 50 caracteres."
+        }), 400
+    
+    # Validar contraseña
+    if len(password) < 6:
+        return jsonify({
+            "success": False, 
+            "error": "La contraseña debe tener al menos 6 caracteres."
+        }), 400
+    
+    if len(password) > 50:
+        return jsonify({
+            "success": False, 
+            "error": "La contraseña no puede exceder los 50 caracteres."
+        }), 400
+    
+    # ========== CREAR MODELO DE USUARIO ==========
     usuario_model = Usuarios(
         nombre=nombre,
         cedula=cedula,
@@ -130,8 +207,14 @@ def api_crear_usuario():
         rol_id=rol_id,
         foto_perfil=foto_perfil
     )
+    
+    # ========== EJECUTAR CREACIÓN ==========
     mensaje = usuario_model.agregar_usuario()
-
+    
+    print(f"RESULTADO AGREGAR USUARIO: {mensaje}")
+    print("=" * 50)
+    
+    # ========== RESPUESTA ==========
     if "exitosamente" in mensaje:
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
@@ -141,9 +224,17 @@ def api_crear_usuario():
             usuario_id=usuario_id,
             modulo_nombre="Usuarios"
         )
-        return jsonify({"success": True, "message": mensaje, "id": usuario_model.id}), 201
-
-    return jsonify({"success": False, "error": mensaje}), 400
+        
+        return jsonify({
+            "success": True, 
+            "message": mensaje, 
+            "id": usuario_model.id
+        }), 201
+    
+    return jsonify({
+        "success": False, 
+        "error": mensaje
+    }), 400
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
