@@ -3,7 +3,7 @@ from app.models.database import conectar
 
 
 class Orden_servicio():
-    def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio: str = None, ID_empleado: int = None):
+    def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio: str = None, ID_empleado: int = None, lista_repuestos=None):
         self.ID_orden_servicio = ID_orden_servicio
         self.Estado_orden_servicio = Estado_orden_servicio
         self.Descripcion_reparacion = Descripcion_reparacion
@@ -14,6 +14,7 @@ class Orden_servicio():
         self.Fecha_salida = Fecha_salida
         self.ID_foto_orden_servicio = ID_foto_orden_servicio
         self.Foto_orden_servicio = Foto_orden_servicio
+        self.lista_repuestos = lista_repuestos
 
         self._conexion = conectar()
 
@@ -345,6 +346,53 @@ class Orden_servicio():
             db.rollback()
             print(f"Error al liberar la orden del empleado: {e}")
             return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_reparacion(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return {"error": "Error de conexión a la base de datos"}
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Ejecutar el procedimiento almacenado
+            sql = "CALL sp_registrar_reparacion(%s, %s, %s, %s);"
+            cursor.execute(sql, (
+                self.ID_orden_servicio,
+                self.ID_empleado,
+                self.Descripcion_reparacion,
+                self.lista_repuestos  # Debe venir como JSON string
+            ))
+            
+            # Obtener el resultado (SELECT final del procedimiento)
+            resultado = cursor.fetchone()
+            
+            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES (importante!)
+            while cursor.nextset():
+                try:
+                    cursor.fetchall()
+                except:
+                    pass
+            
+            db.commit()
+            
+            # Verificar si el resultado es exitoso
+            if resultado and isinstance(resultado, dict):
+                # Si el procedimiento retorna un mensaje en alguna clave
+                mensaje = resultado.get('mensaje') or resultado.get('Mensaje') or resultado.get('resultado')
+                if mensaje and "exitosamente" in str(mensaje).lower():
+                    return {"success": True, "mensaje": mensaje, "data": resultado}
+                else:
+                    return {"error": mensaje if mensaje else "Error desconocido", "data": resultado}
+            else:
+                return {"success": True, "mensaje": "Reparación registrada exitosamente"}
+                
+        except Exception as e:
+            db.rollback()
+            print(f"Error al registrar la reparación: {e}")
+            return {"error": f"Error en la base de datos: {str(e)}"}
         finally:
             cursor.close()
             db.close()

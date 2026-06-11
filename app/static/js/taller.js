@@ -1,6 +1,6 @@
 // ============================================
-// TALLER.JS - Versión Refactorizada
-// Módulos separados por responsabilidad
+// TALLER.JS - Versión Completa con Inventario de Repuestos
+// Adaptado para listar_inventario_taller()
 // ============================================
 
 // --------------------------------
@@ -15,7 +15,8 @@ const CONFIG = {
         GUARDAR_REVISION: '/api/taller/guardar-revision',
         ASIGNAR_ORDEN: '/api/taller/asignar-orden',
         LIBERAR_ORDEN: '/api/taller/liberar-orden',
-        GUARDAR_REPARACION: '/api/taller/guardar-reparacion'
+        GUARDAR_REPARACION: '/api/taller/guardar-reparacion',
+        CONSULTAR_INVENTARIO: '/api/taller/consultar-inventario'
     },
     VISTAS: {
         ORDENES: 'vista-1',
@@ -98,6 +99,11 @@ const Utils = {
     showMessage(message, isError = false) {
         if (!message) return;
         console[isError ? 'error' : 'log'](message);
+        if (isError) {
+            alert(`❌ Error: ${message}`);
+        } else {
+            console.log(`✅ ${message}`);
+        }
     },
 
     formatDate(dateValue) {
@@ -195,7 +201,6 @@ const ViewManager = {
                 document.getElementById('orden-id').textContent = ordenActual;
                 document.getElementById('id_orden_servicio_revision').value = ordenActual;
             }
-            // Llamar a iniciar cuando se activa la vista de revisión
             RevisionService.iniciar();
         } else if (targetClass === CONFIG.VISTAS.REPARACION) {
             const ordenActual = OrdenesService.obtenerOrdenActual();
@@ -406,7 +411,6 @@ const OrdenesService = {
             <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
         `;
         
-        // Agregar botón de revisión
         this.agregarBotonRevision(container);
     },
 
@@ -525,7 +529,6 @@ const RevisionService = {
         if (inputOrden) inputOrden.value = ordenId;
         if (spanOrden) spanOrden.textContent = ordenId;
 
-        // Calcular el próximo número de test
         this.calcularProximoNumeroTest(ordenId).then(proximoTest => {
             const numeroTestInput = document.getElementById('numero_test_revision');
             const testIdSpan = document.getElementById('test-id-form');
@@ -533,7 +536,6 @@ const RevisionService = {
             if (numeroTestInput) numeroTestInput.value = proximoTest;
             if (testIdSpan) testIdSpan.textContent = proximoTest;
             
-            // Cargar los componentes
             this.cargarComponentes();
         }).catch(() => {
             const numeroTestInput = document.getElementById('numero_test_revision');
@@ -684,7 +686,244 @@ const RevisionService = {
 };
 
 // --------------------------------
-// 6. SERVICIO DE REPARACIONES
+// 6. SERVICIO DE REPUESTOS (MODIFICADO - CLICK EN FILA)
+// --------------------------------
+const RepuestosService = {
+    repuestosSeleccionados: [],
+
+    async cargarInventario() {
+        const tbody = document.getElementById('tabla-inventario-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">🔄 Cargando inventario...</td></tr>';
+        
+        const tablaContainer = document.getElementById('tabla-inventario-repuestos');
+        if (tablaContainer) {
+            tablaContainer.removeEventListener('click', this.handleInventarioClick);
+            tablaContainer.addEventListener('click', this.handleInventarioClick.bind(this));
+        }
+
+        try {
+            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_INVENTARIO, { method: 'GET' });
+            console.log('Datos del inventario (listar_inventario_taller):', data);
+            
+            const inventario = Array.isArray(data) ? data : data?.inventario || data?.data || [];
+            this.renderizarInventario(inventario, tbody);
+        } catch (error) {
+            console.error('Error cargando inventario:', error);
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #c62828;">❌ Error al cargar inventario: ${error.message}</td></tr>`;
+        }
+    },
+
+    handleInventarioClick(event) {
+        // Buscar la fila (tr) más cercana al elemento clickeado
+        const row = event.target.closest('tr');
+        if (!row) return;
+        
+        // Obtener los datos de la fila
+        const idInventario = row.getAttribute('data-id');
+        const nombreProducto = row.getAttribute('data-nombre');
+        const existencia = parseInt(row.getAttribute('data-existencia') || '0');
+        
+        if (!idInventario || !nombreProducto) return;
+        
+        if (existencia <= 0) {
+            Utils.showMessage(`❌ "${nombreProducto}" no tiene stock disponible`, true);
+            return;
+        }
+        
+        console.log('Agregando repuesto (click en fila):', idInventario, nombreProducto);
+        this.agregarRepuesto(idInventario, nombreProducto);
+        
+        // Opcional: Cerrar el modal después de agregar
+        // if (window.UiModal && typeof window.UiModal.close === 'function') {
+        //     window.UiModal.close();
+        // }
+    },
+
+    renderizarInventario(inventario, tbody) {
+        if (!inventario.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">📦 No hay repuestos disponibles en inventario</td></tr>';
+            return;
+        }
+
+        console.log('Renderizando inventario, cantidad:', inventario.length);
+        
+        tbody.innerHTML = inventario.map(item => {
+            const idInventario = item.ID_inventario;
+            const nombreProducto = item.Nombre_producto || 'Sin nombre';
+            const nombreMarca = item.Nombre_marca || '-';
+            const nombreClase = item.Nombre_Clase || '-';
+            const existencia = item.Existencia || 0;
+            const costoVenta = item.Costo_venta || 0;
+            
+            // Clase CSS para la fila según disponibilidad de stock
+            const rowClass = existencia > 0 ? 'inventario-row-clickable' : 'inventario-row-sinstock';
+            const cursorStyle = existencia > 0 ? 'pointer' : 'not-allowed';
+            
+            return `
+                <tr class="${rowClass}" 
+                    data-id="${Utils.escapeHtml(idInventario)}"
+                    data-nombre="${Utils.escapeHtml(nombreProducto)}"
+                    data-existencia="${existencia}"
+                    style="cursor: ${cursorStyle}; transition: background-color 0.2s ease;">
+                    <td data-label="ID">${Utils.escapeHtml(idInventario)}</td>
+                    <td data-label="Producto"><strong>${Utils.escapeHtml(nombreProducto)}</strong></td>
+                    <td data-label="Marca">${Utils.escapeHtml(nombreMarca)}</td>
+                    <td data-label="Clase">${Utils.escapeHtml(nombreClase)}</td>
+                    <td data-label="Existencia">
+                        <span style="font-weight: bold; color: ${existencia > 0 ? '#2e7d32' : '#c62828'}">
+                            ${Utils.escapeHtml(existencia)}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Agregar estilos hover para las filas clickeables
+        const style = document.createElement('style');
+        style.textContent = `
+            .inventario-row-clickable:hover {
+                background-color: rgba(243, 197, 0, 0.15) !important;
+                cursor: pointer;
+            }
+            .inventario-row-sinstock:hover {
+                background-color: rgba(220, 53, 69, 0.1) !important;
+                cursor: not-allowed;
+            }
+        `;
+        if (!document.querySelector('#inventario-row-styles')) {
+            style.id = 'inventario-row-styles';
+            document.head.appendChild(style);
+        }
+    },
+
+    agregarRepuesto(idInventario, nombreProducto) {
+        const existente = this.repuestosSeleccionados.find(r => r.id === idInventario);
+        
+        if (existente) {
+            existente.cantidad++;
+            Utils.showMessage(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
+        } else {
+            this.repuestosSeleccionados.push({
+                id: idInventario,
+                nombre: nombreProducto,
+                cantidad: 1
+            });
+            Utils.showMessage(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
+        }
+
+        this.renderizarRepuestosUsados();
+        this.actualizarContadorTotal();
+    },
+
+    renderizarRepuestosUsados() {
+        const container = document.getElementById('repuestos-usados-list');
+        if (!container) return;
+
+        if (this.repuestosSeleccionados.length === 0) {
+            container.innerHTML = `
+                <div class="device-detail__empty" style="text-align: center; padding: 2rem;">
+                    📦 No hay repuestos agregados aún.<br>
+                    <small>Haz clic en "Inventario de repuestos" y luego haz clic en cualquier producto de la lista.</small>
+                </div>
+            `;
+            const btnLimpiar = document.getElementById('btn-limpiar-repuestos');
+            if (btnLimpiar) btnLimpiar.style.display = 'none';
+            return;
+        }
+
+        const btnLimpiar = document.getElementById('btn-limpiar-repuestos');
+        if (btnLimpiar) btnLimpiar.style.display = 'inline-flex';
+
+        container.innerHTML = this.repuestosSeleccionados.map((repuesto, index) => `
+            <div class="repuesto-item" data-repuesto-index="${index}">
+                <div class="repuesto-info">
+                    <div class="repuesto-nombre">🔧 ${Utils.escapeHtml(repuesto.nombre)}</div>
+                    <div class="repuesto-cantidad-control">
+                        <label>Cantidad:</label>
+                        <input type="number" 
+                               class="repuesto-cantidad-input" 
+                               data-index="${index}"
+                               value="${repuesto.cantidad}" 
+                               min="1" 
+                               max="99" 
+                               step="1">
+                    </div>
+                </div>
+                <button type="button" class="btn-eliminar-repuesto" data-eliminar-repuesto="${index}">
+                    ✖ Eliminar
+                </button>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.repuesto-cantidad-input').forEach(input => {
+            input.removeEventListener('change', this.handleCantidadChange);
+            input.addEventListener('change', this.handleCantidadChange.bind(this));
+        });
+
+        container.querySelectorAll('.btn-eliminar-repuesto').forEach(btn => {
+            btn.removeEventListener('click', this.handleEliminarClick);
+            btn.addEventListener('click', this.handleEliminarClick.bind(this));
+        });
+    },
+
+    handleCantidadChange(event) {
+        const input = event.target;
+        const index = parseInt(input.getAttribute('data-index'));
+        let nuevaCantidad = parseInt(input.value);
+        
+        if (!isNaN(nuevaCantidad) && nuevaCantidad > 0 && nuevaCantidad <= 99) {
+            this.repuestosSeleccionados[index].cantidad = nuevaCantidad;
+            this.renderizarRepuestosUsados();
+            this.actualizarContadorTotal();
+            Utils.showMessage(`Cantidad actualizada a ${nuevaCantidad}`);
+        } else {
+            input.value = this.repuestosSeleccionados[index].cantidad;
+            Utils.showMessage('Cantidad inválida (debe ser entre 1 y 99)', true);
+        }
+    },
+
+    handleEliminarClick(event) {
+        event.stopPropagation();
+        const btn = event.target.closest('[data-eliminar-repuesto]');
+        if (!btn) return;
+        
+        const index = parseInt(btn.getAttribute('data-eliminar-repuesto'));
+        const repuestoEliminado = this.repuestosSeleccionados[index];
+        this.repuestosSeleccionados.splice(index, 1);
+        this.renderizarRepuestosUsados();
+        this.actualizarContadorTotal();
+        Utils.showMessage(`Repuesto "${repuestoEliminado.nombre}" eliminado`);
+    },
+
+    actualizarContadorTotal() {
+        const totalUnidades = this.repuestosSeleccionados.reduce((sum, r) => sum + r.cantidad, 0);
+        const totalCountSpan = document.getElementById('repuestos-total-count');
+        if (totalCountSpan) {
+            totalCountSpan.textContent = `${totalUnidades} unidad${totalUnidades !== 1 ? 'es' : ''}`;
+            totalCountSpan.style.background = totalUnidades > 0 ? '#2e7d32' : '#6c757d';
+        }
+    },
+
+    limpiar() {
+        if (this.repuestosSeleccionados.length > 0) {
+            if (confirm('¿Estás seguro de que deseas limpiar todos los repuestos de la lista?')) {
+                this.repuestosSeleccionados = [];
+                this.renderizarRepuestosUsados();
+                this.actualizarContadorTotal();
+                Utils.showMessage('Lista de repuestos limpiada');
+            }
+        }
+    },
+
+    obtenerRepuestos() {
+        return this.repuestosSeleccionados;
+    }
+};
+
+// --------------------------------
+// 7. SERVICIO DE REPARACIONES
 // --------------------------------
 const ReparacionesService = {
     async cargarAsignadas() {
@@ -737,8 +976,13 @@ const ReparacionesService = {
         
         console.log('Iniciar reparación de orden:', ordenId);
         
+        RepuestosService.limpiar();
+        
         const reparacionOrdenId = document.getElementById('reparacion-orden-id');
         if (reparacionOrdenId) reparacionOrdenId.textContent = ordenId;
+        
+        const reparacionTextarea = document.getElementById('reparacion-textarea');
+        if (reparacionTextarea) reparacionTextarea.value = '';
         
         setTimeout(() => {
             OrdenesService.verDetalle(ordenId);
@@ -763,17 +1007,94 @@ const ReparacionesService = {
             
         } catch (error) {
             console.error('Error al liberar orden:', error);
+            Utils.showMessage(error.message, true);
+        }
+    },
+
+    async guardarReparacion() {
+        const ordenId = OrdenesService.obtenerOrdenActual();
+        const reparacionTexto = document.getElementById('reparacion-textarea')?.value.trim();
+        const repuestos = RepuestosService.obtenerRepuestos();
+        
+        if (!ordenId) {
+            Utils.showMessage('No hay una orden seleccionada', true);
+            return;
+        }
+        
+        if (!reparacionTexto) {
+            Utils.showMessage('Debes describir la reparación realizada', true);
+            return;
+        }
+        
+        const regexEspeciales = /[<>{}[\]|\\^]/;
+        if (regexEspeciales.test(reparacionTexto)) {
+            Utils.showMessage('La descripción no puede contener caracteres especiales como < > { } [ ] | \\ ^', true);
+            return;
+        }
+        
+        try {
+            const idEmpleado = Utils.obtenerIdEmpleadoActual();
+            
+            // ✅ CORREGIDO: Usar los nombres correctos que espera el backend
+            const payload = {
+                id_orden: ordenId,
+                descripcion_reparacion: reparacionTexto,      // ← CORREGIDO
+                repuestos_utilizados: repuestos.map(r => ({   // ← CORREGIDO
+                    id_inventario: r.id,
+                    cantidad: r.cantidad
+                }))
+            };
+            
+            // NOTA: No incluyas id_empleado aquí porque el backend lo asigna automáticamente (32014004)
+            
+            console.log('Guardando reparación:', payload);
+            
+            const response = await Utils.fetchJson(CONFIG.API.GUARDAR_REPARACION, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            
+            Utils.showMessage('✅ Reparación guardada exitosamente');
+            
+            document.getElementById('reparacion-textarea').value = '';
+            RepuestosService.limpiar();
+            
+            await OrdenesService.cargar();
+            await this.cargarAsignadas();
+            
+            ViewManager.activate(CONFIG.VISTAS.ORDENES);
+            
+        } catch (error) {
+            console.error('Error al guardar reparación:', error);
+            Utils.showMessage(error.message, true);
         }
     }
 };
 
 // --------------------------------
-// 7. INICIALIZACIÓN Y EVENTOS
+// 8. INICIALIZACIÓN Y EVENTOS
 // --------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     console.log('DOM cargado - Inicializando taller.js');
     
     ViewManager.init();
+
+    // Contador de caracteres para el textarea
+    const reparacionTextarea = document.getElementById('reparacion-textarea');
+    if (reparacionTextarea) {
+        const contadorSpan = document.getElementById('caracteres-contador');
+        if (contadorSpan) {
+            reparacionTextarea.addEventListener('input', () => {
+                const length = reparacionTextarea.value.length;
+                contadorSpan.textContent = length;
+                if (length >= 450) {
+                    contadorSpan.classList.add('warning');
+                } else {
+                    contadorSpan.classList.remove('warning');
+                }
+            });
+        }
+    }
 
     const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
     if (tablaOrdenes) {
@@ -831,7 +1152,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnGuardarReparacion = document.getElementById('btn-guardar-reparacion');
     if (btnGuardarReparacion) {
         btnGuardarReparacion.addEventListener('click', () => {
-            console.log('Función guardar reparación en desarrollo');
+            ReparacionesService.guardarReparacion();
+        });
+    }
+
+    const btnInventarioRepuestos = document.getElementById('btn-inventario-repuestos');
+    if (btnInventarioRepuestos) {
+        btnInventarioRepuestos.addEventListener('click', async () => {
+            if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                window.UiModal.openById('modal-inventario-repuestos');
+                await RepuestosService.cargarInventario();
+            } else {
+                console.error('UiModal no disponible');
+                Utils.showMessage('Error al abrir el inventario', true);
+            }
+        });
+    }
+
+    const btnLimpiarRepuestos = document.getElementById('btn-limpiar-repuestos');
+    if (btnLimpiarRepuestos) {
+        btnLimpiarRepuestos.addEventListener('click', () => {
+            RepuestosService.limpiar();
         });
     }
 
