@@ -333,7 +333,7 @@ DROP TABLE IF EXISTS `Equipo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Equipo` (
-  `ID_equipo` varchar(10) NOT NULL,
+  `ID_equipo` int(15) NOT NULL,
   `ID_producto` varchar(10) DEFAULT NULL,
   `Color` varchar(20) DEFAULT NULL,
   `Capacidad` varchar(20) DEFAULT NULL,

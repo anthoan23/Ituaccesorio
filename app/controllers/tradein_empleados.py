@@ -49,6 +49,7 @@ def pagina_tradein_empleados():
 
 # ==================== REGISTRAR NUEVO TRADE-IN ====================
 
+# En la función api_registrar_trade_in
 @tradein_empleados_blueprint.route("/api/tradein", methods=["POST"])
 @jwt_required
 @tiene_permiso('Trade-in', 'registrar')
@@ -61,7 +62,7 @@ def api_registrar_trade_in():
         valor_pagado = request.form.get("valor_pagado", "").strip()
         
         # Datos del equipo (opcionales)
-        imei = request.form.get("imei", "").strip() or None
+        id_equipo = request.form.get("id_equipo", "").strip() or None  # CAMBIADO: ahora es obligatorio en la práctica
         color = request.form.get("color", "").strip() or None
         capacidad = request.form.get("capacidad", "").strip() or None
         clave = request.form.get("clave", "").strip() or None
@@ -74,6 +75,9 @@ def api_registrar_trade_in():
         
         if not id_producto:
             return jsonify({"success": False, "error": "Debe seleccionar un producto/modelo"}), 400
+        
+        if not id_equipo:  # CAMBIADO: IMEI ahora es obligatorio como ID del equipo
+            return jsonify({"success": False, "error": "Debe ingresar el IMEI/ID del equipo"}), 400
         
         if not valor_pagado:
             return jsonify({"success": False, "error": "Debe ingresar el valor pagado"}), 400
@@ -101,14 +105,20 @@ def api_registrar_trade_in():
             except ValueError as e:
                 return jsonify({"success": False, "error": str(e)}), 400
         
-        # Registrar trade-in
         modelo = TradeInEmpleados()
+        equipo_existente = modelo.verificar_equipo_existente(id_equipo)
+        
+        if equipo_existente:
+           
+            pass
+        
+        # Registrar trade-in
         resultado = modelo.registrar_trade_in(
             cliente_id=cliente_id,
             id_producto=id_producto,
             valor_pagado=valor_pagado_float,
             empleado_id=empleado_id,
-            imei=imei,
+            id_equipo=id_equipo,  # CAMBIADO: ahora se llama id_equipo
             color=color,
             capacidad=capacidad,
             clave=clave,
@@ -122,7 +132,7 @@ def api_registrar_trade_in():
             
             registrar_en_bitacora(
                 accion="Registrar Trade-in",
-                descripcion=f"Se registró nuevo trade-in ID: {resultado['trade_in_id']} - Cliente: {cliente_id} - Valor: {valor_pagado}",
+                descripcion=f"Se registró nuevo trade-in ID: {resultado['trade_in_id']} - Cliente: {cliente_id} - Equipo ID: {id_equipo} - Valor: {valor_pagado}",
                 usuario_id=usuario_id,
                 modulo_nombre="Trade-in"
             )
@@ -136,6 +146,29 @@ def api_registrar_trade_in():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@tradein_empleados_blueprint.route("/api/tradein/verificar-equipo/<id_equipo>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Trade-in', 'consultar')
+def api_verificar_equipo(id_equipo):
+    """Verifica si un equipo ya existe por su ID (IMEI)"""
+    try:
+        modelo = TradeInEmpleados()
+        equipo = modelo.verificar_equipo_existente(id_equipo)
+        
+        if equipo:
+            return jsonify({
+                "success": True,
+                "exists": True,
+                "equipo": equipo
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "exists": False
+            })
+    except Exception as e:
+        print(f"Error en api_verificar_equipo: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 # ==================== REGISTRAR TESTS ====================
 
 @tradein_empleados_blueprint.route("/api/tradein/<tradein_id>/tests", methods=["POST"])

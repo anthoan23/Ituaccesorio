@@ -17,10 +17,10 @@ class TradeInEmpleados:
         return self.__conexion_bd.conexion1()
     
     def _generar_id_trade_in(self) -> str:
-        """Genera un nuevo ID para Trade_in (formato TRD0000001)"""
+        """Genera un nuevo ID para Trade_in (formato TRD000001)"""
         db = self._conexion()
         if not db:
-            return "TRD0000001"
+            return "TRD000001"
         
         cursor = db.cursor()
         try:
@@ -39,42 +39,12 @@ class TradeInEmpleados:
             else:
                 siguiente = 1
             
-            # Formatear con 7 dígitos (ej: 1 -> 0000001)
-            return f"TRD{str(siguiente).zfill(3)}"
+            # Formatear con 6 dígitos (ej: 1 -> 000001)
+            return f"TRD{str(siguiente).zfill(6)}"
         except Exception as e:
             print(f"Error generando ID trade-in: {e}")
             # Fallback: usar timestamp
             return f"TRD{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        finally:
-            cursor.close()
-            db.close()
-    
-    def _generar_id_equipo(self) -> str:
-        """Genera un nuevo ID para Equipo (formato EQ0000001)"""
-        db = self._conexion()
-        if not db:
-            return "EQ0000001"
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT MAX(ID_equipo) FROM Equipo")
-            row = cursor.fetchone()
-            ultimo_id = row[0] if row and row[0] else None
-            
-            if ultimo_id:
-                try:
-                    num_str = ultimo_id[2:]  # Quita 'EQ'
-                    num = int(num_str)
-                    siguiente = num + 1
-                except (ValueError, IndexError):
-                    siguiente = 1
-            else:
-                siguiente = 1
-            
-            return f"EQ{str(siguiente).zfill(7)}"
-        except Exception as e:
-            print(f"Error generando ID equipo: {e}")
-            return f"EQ{datetime.now().strftime('%Y%m%d%H%M%S')}"
         finally:
             cursor.close()
             db.close()
@@ -117,7 +87,7 @@ class TradeInEmpleados:
         id_producto: str,
         valor_pagado: float,
         empleado_id: str,
-        imei: str = None,
+        id_equipo: str,  # AHORA ES MANUAL (actúa como IMEI)
         color: str = None,
         capacidad: str = None,
         clave: str = None,
@@ -133,7 +103,7 @@ class TradeInEmpleados:
             id_producto: ID del producto/modelo (ej: '1' para iPhone 15)
             valor_pagado: Monto que pagó la tienda por el equipo
             empleado_id: Cédula del empleado que recibe
-            imei: IMEI del equipo (opcional)
+            id_equipo: ID manual del equipo (actúa como IMEI/número de serie)
             color: Color del equipo
             capacidad: Capacidad de almacenamiento
             clave: Clave numérica del equipo
@@ -147,26 +117,25 @@ class TradeInEmpleados:
         
         cursor = db.cursor()
         try:
-            # 1. Verificar si el equipo ya existe por IMEI
-            equipo_id = None
-            if imei:
-                cursor.execute(
-                    "SELECT ID_equipo FROM Equipo WHERE IMEI = %s LIMIT 1",
-                    (imei,)
-                )
-                row = cursor.fetchone()
-                if row:
-                    equipo_id = row[0]
+            # 1. Verificar si el equipo ya existe (por ID_equipo que funciona como IMEI)
+            cursor.execute(
+                "SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s LIMIT 1",
+                (id_equipo,)
+            )
+            row = cursor.fetchone()
             
-            # 2. Si no existe, crear nuevo equipo
-            if not equipo_id:
-                equipo_id = self._generar_id_equipo()
+            if row:
+                # El equipo ya existe, usar el existente
+                equipo_id = row[0]
+            else:
+                # El equipo no existe, crear nuevo con el ID proporcionado manualmente
+                equipo_id = id_equipo
                 cursor.execute("""
-                    INSERT INTO Equipo (ID_equipo, ID_producto, IMEI, Color, Capacidad, Clave, Patron)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (equipo_id, id_producto, imei, color, capacidad, clave, patron))
+                    INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (equipo_id, id_producto, color, capacidad, clave, patron))
             
-            # 3. Crear registro de trade-in
+            # 2. Crear registro de trade-in
             trade_in_id = self._generar_id_trade_in()
             fecha_actual = datetime.now()
             
@@ -175,7 +144,7 @@ class TradeInEmpleados:
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (trade_in_id, empleado_id, cliente_id, equipo_id, 0, fecha_actual, valor_pagado))
             
-            # 4. Guardar fotos si las hay
+            # 3. Guardar fotos si las hay
             if fotos:
                 for foto_url in fotos:
                     id_foto = self._generar_id_foto_trade_in()
@@ -284,8 +253,7 @@ class TradeInEmpleados:
                     t.Numero_utilizado,
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
-                    e.ID_equipo,
-                    e.IMEI,
+                    e.ID_equipo AS imei,
                     e.Color,
                     e.Capacidad,
                     p.Nombre_producto AS producto_nombre,
@@ -334,9 +302,9 @@ class TradeInEmpleados:
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
                     p.Nombre_producto AS producto_nombre,
+                    e.ID_equipo AS imei,
                     e.Color,
-                    e.Capacidad,
-                    e.IMEI
+                    e.Capacidad
                 FROM Trade_in t
                 LEFT JOIN Equipo e ON t.ID_equipo = e.ID_equipo
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
@@ -370,8 +338,7 @@ class TradeInEmpleados:
                     t.Numero_utilizado,
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
-                    e.ID_equipo,
-                    e.IMEI,
+                    e.ID_equipo AS imei,
                     e.Color,
                     e.Capacidad,
                     e.Clave,
@@ -591,6 +558,36 @@ class TradeInEmpleados:
         except Exception as e:
             print(f"Error en obtener_clientes: {e}")
             return []
+        finally:
+            cursor.close()
+            db.close()
+    
+    def verificar_equipo_existente(self, id_equipo: str) -> Optional[Dict[str, Any]]:
+        """
+        Verifica si un equipo ya existe por su ID (IMEI)
+        Retorna la información del equipo si existe
+        """
+        db = self._conexion()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    e.ID_equipo,
+                    e.Color,
+                    e.Capacidad,
+                    p.Nombre_producto AS producto_nombre,
+                    p.ID_producto AS producto_id
+                FROM Equipo e
+                LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
+                WHERE e.ID_equipo = %s
+            """, (id_equipo,))
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error en verificar_equipo_existente: {e}")
+            return None
         finally:
             cursor.close()
             db.close()

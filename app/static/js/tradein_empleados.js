@@ -320,68 +320,90 @@ const Iconos = {
     }
 
     // Enviar formulario de registro
-    const formRegistrar = document.getElementById("form-registrar-tradein");
-    if (formRegistrar) {
-        formRegistrar.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const clienteId = document.getElementById("cliente-id")?.value;
-            if (!clienteId) {
-                mostrarToast("Debe seleccionar un cliente válido", "error");
-                return;
-            }
-            
-            const productoId = document.getElementById("producto-id")?.value;
-            if (!productoId) {
-                mostrarToast("Debe seleccionar un iPhone válido", "error");
-                return;
-            }
-            
-            const valorPagado = document.getElementById("valor-pagado")?.value;
-            if (!valorPagado || Number(valorPagado) <= 0) {
-                mostrarToast("Debe ingresar un valor pagado válido", "error");
-                return;
-            }
-            
-            const formData = new FormData(formRegistrar);
-            
-            const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
-            const textoOriginal = btnSubmit.textContent;
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = "Registrando...";
-            
-            try {
-                const response = await fetch("/api/tradein", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${getAuthToken()}`
-                    },
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    mostrarToast(data.message || "Trade-in registrado correctamente");
-                    cerrarModal("modal-registrar");
-                    formRegistrar.reset();
-                    if (fotosPreview) fotosPreview.innerHTML = "";
-                    if (clienteIdInput) clienteIdInput.value = "";
-                    if (clienteSearch) clienteSearch.value = "";
-                    await cargarEstadisticas();
-                    await cargarTradeIns();
-                } else {
-                    mostrarToast(data.error || "Error al registrar", "error");
+    // En la función del submit del formulario, agregar validación para id_equipo
+const formRegistrar = document.getElementById("form-registrar-tradein");
+if (formRegistrar) {
+    formRegistrar.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const clienteId = document.getElementById("cliente-id")?.value;
+        if (!clienteId) {
+            mostrarToast("Debe seleccionar un cliente válido", "error");
+            return;
+        }
+        
+        const productoId = document.getElementById("producto-id")?.value;
+        if (!productoId) {
+            mostrarToast("Debe seleccionar un iPhone válido", "error");
+            return;
+        }
+        
+        const idEquipo = document.getElementById("id_equipo")?.value;  // CAMBIADO
+        if (!idEquipo) {
+            mostrarToast("Debe ingresar el IMEI/ID del equipo", "error");
+            return;
+        }
+        
+        const valorPagado = document.getElementById("valor-pagado")?.value;
+        if (!valorPagado || Number(valorPagado) <= 0) {
+            mostrarToast("Debe ingresar un valor pagado válido", "error");
+            return;
+        }
+        
+        // Opcional: verificar si el equipo ya existe
+        try {
+            const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
+                headers: { "Authorization": `Bearer ${getAuthToken()}` }
+            });
+            const checkData = await checkResponse.json();
+            if (checkData.exists) {
+                if (!confirm(`⚠️ El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${checkData.producto_nombre}\nColor: ${checkData.color || 'N/A'}\nCapacidad: ${checkData.capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`)) {
+                    return;
                 }
-            } catch (err) {
-                mostrarToast(err.message || "Error de conexión", "error");
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = textoOriginal;
             }
-        });
-    }
-
+        } catch (err) {
+            // El equipo no existe o error, continuar normalmente
+            console.log("Equipo nuevo o error:", err);
+        }
+        
+        const formData = new FormData(formRegistrar);
+        
+        const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
+        const textoOriginal = btnSubmit.textContent;
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "Registrando...";
+        
+        try {
+            const response = await fetch("/api/tradein", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${getAuthToken()}`
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                mostrarToast(data.message || "Trade-in registrado correctamente");
+                cerrarModal("modal-registrar");
+                formRegistrar.reset();
+                if (fotosPreview) fotosPreview.innerHTML = "";
+                if (clienteIdInput) clienteIdInput.value = "";
+                if (clienteSearch) clienteSearch.value = "";
+                await cargarEstadisticas();
+                await cargarTradeIns();
+            } else {
+                mostrarToast(data.error || "Error al registrar", "error");
+            }
+        } catch (err) {
+            mostrarToast(err.message || "Error de conexión", "error");
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = textoOriginal;
+        }
+    });
+}
     // ==================== TESTS ====================
     async function cargarCatalogoTests() {
         try {

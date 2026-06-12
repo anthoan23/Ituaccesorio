@@ -1,213 +1,301 @@
-{% extends 'components/layout/base.html' %}
-
-{% block title %}Ituaccesorio - Gestión de Trade-In{% endblock %}
-
-{% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tradein_empleados.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends 'components/layout/base.html' %} {% block title %}Ituaccesorio -
+Gestión de Trade-In{% endblock %} {% block head_extra %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/tradein_empleados.css') }}"
+/>
+{% endblock %} {% block content %}
 <main class="page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <ol class="breadcrumb__list">
-            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-            <li aria-current="page">
-                <span class="breadcrumb__current">Gestión de Trade-In</span>
-            </li>
-        </ol>
-    </nav>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Gestión de Trade-In</span>
+      </li>
+    </ol>
+  </nav>
 
-    <header class="tradein-header">
-        <div class="tradein-header__copy">
-            <h1 class="tradein-header__title">Gestión de Trade-In</h1>
-            <p class="tradein-header__subtitle">Registro de equipos recibidos en la tienda</p>
-        </div>
-        <div class="tradein-header__actions">
-            <button id="btn-nuevo-tradein" class="btn btn--yellow">+ Nuevo Trade-In</button>
-        </div>
-    </header>
-
-    <!-- Tarjetas de estadísticas -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-card__icon">📱</div>
-            <div class="stat-card__info">
-                <span class="stat-card__value" id="stat-total">0</span>
-                <span class="stat-card__label">Total Trade-Ins</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card__icon">💰</div>
-            <div class="stat-card__info">
-                <span class="stat-card__value" id="stat-valor-total">$0</span>
-                <span class="stat-card__label">Total Pagado</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card__icon">📱</div>
-            <div class="stat-card__info">
-                <span class="stat-card__value" id="stat-equipos">0</span>
-                <span class="stat-card__label">Equipos Únicos</span>
-            </div>
-        </div>
+  <header class="tradein-header">
+    <div class="tradein-header__copy">
+      <h1 class="tradein-header__title">Gestión de Trade-In</h1>
+      <p class="tradein-header__subtitle">
+        Registro de equipos recibidos en la tienda
+      </p>
     </div>
-
-    <!-- Tabla de trade-ins -->
-    <div class="card">
-        <div class="card__header">
-            <div class="card__header-left">
-                <h2 class="card__title">Equipos recibidos</h2>
-                <p class="card__subtitle">Historial de todos los equipos trade-in registrados</p>
-            </div>
-            <div class="card__actions">
-                <div class="search-box">
-                    <input type="text" id="search-tradein" placeholder="Buscar por cliente o equipo..." class="form-input">
-                </div>
-            </div>
-        </div>
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Equipo</th>
-                        <th>Marca</th>
-                        <th>Cotización</th>
-                        <th>Tests</th>
-                        <th class="table__actions">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tradein-list">
-                    <tr>
-                        <td colspan="8" class="table__empty">Cargando...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="tradein-header__actions">
+      <button id="btn-nuevo-tradein" class="btn btn--yellow">
+        + Nuevo Trade-In
+      </button>
     </div>
+  </header>
+
+  <!-- Tarjetas de estadísticas -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card__icon">📱</div>
+      <div class="stat-card__info">
+        <span class="stat-card__value" id="stat-total">0</span>
+        <span class="stat-card__label">Total Trade-Ins</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon">💰</div>
+      <div class="stat-card__info">
+        <span class="stat-card__value" id="stat-valor-total">$0</span>
+        <span class="stat-card__label">Total Pagado</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon">📱</div>
+      <div class="stat-card__info">
+        <span class="stat-card__value" id="stat-equipos">0</span>
+        <span class="stat-card__label">Equipos Únicos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de trade-ins -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__header-left">
+        <h2 class="card__title">Equipos recibidos</h2>
+        <p class="card__subtitle">
+          Historial de todos los equipos trade-in registrados
+        </p>
+      </div>
+      <div class="card__actions">
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-tradein"
+            placeholder="Buscar por cliente o equipo..."
+            class="form-input"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Equipo</th>
+            <th>Marca</th>
+            <th>Cotización</th>
+            <th>Tests</th>
+            <th class="table__actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tradein-list">
+          <tr>
+            <td colspan="8" class="table__empty">Cargando...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </main>
 
 <!-- Modal para REGISTRAR nuevo trade-in -->
 <div id="modal-registrar" class="modal is-hidden">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__dialog modal__dialog--lg">
-        <div class="modal__header">
-            <h3 class="modal__title">Registrar nuevo Trade-In</h3>
-            <button class="modal__close" data-close-modal>&times;</button>
-        </div>
-        <div class="modal__body">
-            <form id="form-registrar-tradein" enctype="multipart/form-data">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                
-                <div class="form__grid">
-                    <!-- Buscar cliente -->
-                    <div class="form__field form__field--full">
-                        <label class="form__label">Cliente *</label>
-                        <div class="cliente-search">
-                            <input type="text" id="cliente-search-input" class="form-input" placeholder="Buscar por cédula, nombre o apellido...">
-                            <input type="hidden" id="cliente-id" name="cliente_id">
-                        </div>
-                        <div id="cliente-results" class="search-results is-hidden"></div>
-                    </div>
-                    
-                    <!-- Datos del equipo -->
-                    <div class="form__field">
-                        <label class="form__label">Producto/Modelo *</label>
-                        <select id="producto-id" name="id_producto" class="form-input" required>
-                            <option value="">Seleccionar producto...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">IMEI</label>
-                        <input type="text" id="imei" name="imei" class="form-input" placeholder="IMEI del equipo (opcional)">
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">Color</label>
-                        <input type="text" id="color" name="color" class="form-input" placeholder="Ej: Negro, Azul...">
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">Capacidad</label>
-                        <input type="text" id="capacidad" name="capacidad" class="form-input" placeholder="Ej: 128GB, 256GB...">
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">Clave numérica</label>
-                        <input type="text" id="clave" name="clave" class="form-input" placeholder="Código de desbloqueo">
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">Patrón</label>
-                        <input type="text" id="patron" name="patron" class="form-input" placeholder="Patrón de desbloqueo">
-                    </div>
-                    
-                    <div class="form__field">
-                        <label class="form__label">Valor pagado ($) *</label>
-                        <input type="number" id="valor-pagado" name="valor_pagado" class="form-input" step="0.01" min="0" required placeholder="0.00">
-                    </div>
-                    
-                    <div class="form__field form__field--full">
-                        <label class="form__label">Observaciones</label>
-                        <textarea id="observaciones" name="observaciones" class="form-textarea" rows="3" placeholder="Notas adicionales sobre el equipo..."></textarea>
-                    </div>
-                    
-                    <div class="form__field form__field--full">
-                        <label class="form__label">Fotos del equipo</label>
-                        <div id="fotos-preview" class="fotos-preview"></div>
-                        <input type="file" id="fotos" name="fotos" class="form-input" accept="image/*" multiple>
-                        <small class="form-hint">📸 Puede seleccionar múltiples fotos (JPG, PNG)</small>
-                    </div>
-                </div>
-                
-                <div class="form__actions">
-                    <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-                    <button type="submit" class="btn btn--yellow">Registrar Trade-In</button>
-                </div>
-            </form>
-        </div>
+  <div class="modal__backdrop" data-close-modal></div>
+  <div class="modal__dialog modal__dialog--lg">
+    <div class="modal__header">
+      <h3 class="modal__title">Registrar nuevo Trade-In</h3>
+      <button class="modal__close" data-close-modal>&times;</button>
     </div>
+    <div class="modal__body">
+      <form id="form-registrar-tradein" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="form__grid">
+          <!-- Buscar cliente -->
+          <div class="form__field form__field--full">
+            <label class="form__label">Cliente *</label>
+            <div class="cliente-search">
+              <input
+                type="text"
+                id="cliente-search-input"
+                class="form-input"
+                placeholder="Buscar por cédula, nombre o apellido..."
+              />
+              <input type="hidden" id="cliente-id" name="cliente_id" />
+            </div>
+            <div id="cliente-results" class="search-results is-hidden"></div>
+          </div>
+
+          <!-- Datos del equipo -->
+          <div class="form__field">
+            <label class="form__label">Producto/Modelo *</label>
+            <select
+              id="producto-id"
+              name="id_producto"
+              class="form-input"
+              required
+            >
+              <option value="">Seleccionar producto...</option>
+            </select>
+          </div>
+
+          <!-- Dentro del modal de registro, reemplazar el campo IMEI -->
+          <div class="form__field">
+            <label class="form__label">IMEI / ID del equipo *</label>
+            <input
+              type="text"
+              id="id_equipo"
+              name="id_equipo"
+              class="form-input"
+              placeholder="Número IMEI o ID único del equipo"
+              required
+            />
+            <small class="form-hint"
+              >Ingrese el IMEI del equipo (obligatorio). Si ya existe, se
+              reutilizará.</small
+            >
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Color</label>
+            <input
+              type="text"
+              id="color"
+              name="color"
+              class="form-input"
+              placeholder="Ej: Negro, Azul..."
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Capacidad</label>
+            <input
+              type="text"
+              id="capacidad"
+              name="capacidad"
+              class="form-input"
+              placeholder="Ej: 128GB, 256GB..."
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Clave numérica</label>
+            <input
+              type="text"
+              id="clave"
+              name="clave"
+              class="form-input"
+              placeholder="Código de desbloqueo"
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Patrón</label>
+            <input
+              type="text"
+              id="patron"
+              name="patron"
+              class="form-input"
+              placeholder="Patrón de desbloqueo"
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Valor pagado ($) *</label>
+            <input
+              type="number"
+              id="valor-pagado"
+              name="valor_pagado"
+              class="form-input"
+              step="0.01"
+              min="0"
+              required
+              placeholder="0.00"
+            />
+          </div>
+
+          <div class="form__field form__field--full">
+            <label class="form__label">Observaciones</label>
+            <textarea
+              id="observaciones"
+              name="observaciones"
+              class="form-textarea"
+              rows="3"
+              placeholder="Notas adicionales sobre el equipo..."
+            ></textarea>
+          </div>
+
+          <div class="form__field form__field--full">
+            <label class="form__label">Fotos del equipo</label>
+            <div id="fotos-preview" class="fotos-preview"></div>
+            <input
+              type="file"
+              id="fotos"
+              name="fotos"
+              class="form-input"
+              accept="image/*"
+              multiple
+            />
+            <small class="form-hint"
+              >📸 Puede seleccionar múltiples fotos (JPG, PNG)</small
+            >
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button type="button" class="btn btn--ghost" data-close-modal>
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--yellow">
+            Registrar Trade-In
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- Modal para REGISTRAR TESTS -->
 <div id="modal-tests" class="modal is-hidden">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__dialog modal__dialog--lg">
-        <div class="modal__header">
-            <h3 class="modal__title">Realizar pruebas al equipo</h3>
-            <button class="modal__close" data-close-modal>&times;</button>
-        </div>
-        <div class="modal__body">
-            <div id="tests-equipo-info" class="equipo-info"></div>
-            
-            <div class="tests-categorias">
-                <div id="tests-container" class="tests-grid"></div>
-            </div>
-            
-            <div class="form__actions">
-                <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-                <button type="button" id="btn-guardar-tests" class="btn btn--yellow">Guardar pruebas</button>
-            </div>
-        </div>
+  <div class="modal__backdrop" data-close-modal></div>
+  <div class="modal__dialog modal__dialog--lg">
+    <div class="modal__header">
+      <h3 class="modal__title">Realizar pruebas al equipo</h3>
+      <button class="modal__close" data-close-modal>&times;</button>
     </div>
+    <div class="modal__body">
+      <div id="tests-equipo-info" class="equipo-info"></div>
+
+      <div class="tests-categorias">
+        <div id="tests-container" class="tests-grid"></div>
+      </div>
+
+      <div class="form__actions">
+        <button type="button" class="btn btn--ghost" data-close-modal>
+          Cancelar
+        </button>
+        <button type="button" id="btn-guardar-tests" class="btn btn--yellow">
+          Guardar pruebas
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal de DETALLE -->
 <div id="modal-detalle" class="modal is-hidden">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__dialog modal__dialog--lg">
-        <div class="modal__header">
-            <h3 class="modal__title">Detalle del Trade-In</h3>
-            <button class="modal__close" data-close-modal>&times;</button>
-        </div>
-        <div class="modal__body" id="detalle-contenido"></div>
+  <div class="modal__backdrop" data-close-modal></div>
+  <div class="modal__dialog modal__dialog--lg">
+    <div class="modal__header">
+      <h3 class="modal__title">Detalle del Trade-In</h3>
+      <button class="modal__close" data-close-modal>&times;</button>
     </div>
+    <div class="modal__body" id="detalle-contenido"></div>
+  </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script defer src="{{ url_for('static', filename='js/tradein_empleados.js') }}"></script>
+{% endblock %} {% block scripts %}
+<script
+  defer
+  src="{{ url_for('static', filename='js/tradein_empleados.js') }}"
+></script>
 {% endblock %}
