@@ -8,8 +8,22 @@ from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.usuarios import Usuarios
 from app.models.bitacora import registrar_en_bitacora
 from app.utils.jwt_utils import set_auth_cookies
+from app.models.modulos import Modulo
+from app.models.permisos import Permiso
+from app.models.roles import Rol
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
+
+
+def _bool(valor):
+    if isinstance(valor, bool):
+        return valor
+    if valor is None:
+        return 0
+    if isinstance(valor, (int, float)):
+        return 1 if int(valor) != 0 else 0
+    texto = str(valor).strip().lower()
+    return 1 if texto in {"1", "true", "on", "si", "yes"} else 0
 
 
 def _guardar_foto_perfil(archivo):
@@ -380,5 +394,348 @@ def api_actualizar_mi_perfil():
         }
         
         return _actualizar_cookie_usuario(resp, usuario_actual_data, usuario_actualizado)
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+# ==================== MÓDULOS ====================
+
+@usuarios_blueprint.route("/api/modulos", methods=["GET"])
+@jwt_required
+@solo_roles(['admin'])
+def api_listar_modulos():
+    modulo_model = Modulo()
+    modulos = modulo_model.listar_modulos()
+    return jsonify({"success": True, "modulos": modulos or []})
+
+
+@usuarios_blueprint.route("/api/modulos", methods=["POST"])
+@jwt_required
+@solo_roles(['admin'])
+def api_crear_modulo():
+    data = request.get_json(silent=True) or {}
+    nombre = data.get("nombre", "").strip()
+    descripcion = data.get("descripcion", "").strip()
+
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre del módulo es obligatorio."}), 400
+
+    modulo_model = Modulo(nombre=nombre, descripcion=descripcion)
+    mensaje = modulo_model.agregar_modulo()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Crear módulo",
+            descripcion=f"Se creó el módulo: {nombre}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje, "id": modulo_model.id}), 201
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/modulos/<modulo_id>", methods=["PUT"])
+@jwt_required
+@solo_roles(['admin'])
+def api_actualizar_modulo(modulo_id):
+    data = request.get_json(silent=True) or {}
+    nombre = data.get("nombre", "").strip()
+    descripcion = data.get("descripcion", "").strip()
+
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre del módulo es obligatorio."}), 400
+
+    modulo_model = Modulo(id=modulo_id, nombre=nombre, descripcion=descripcion)
+    mensaje = modulo_model.actualizar_modulo()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Actualizar módulo",
+            descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/modulos/<modulo_id>", methods=["DELETE"])
+@jwt_required
+@solo_roles(['admin'])
+def api_eliminar_modulo(modulo_id):
+    modulo_model = Modulo(id=modulo_id)
+    mensaje = modulo_model.eliminar_modulo()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Eliminar módulo",
+            descripcion=f"Se eliminó el módulo ID: {modulo_id}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+# ==================== PERMISOS ====================
+
+@usuarios_blueprint.route("/api/permisos/rol/<rol_id>", methods=["GET"])
+@jwt_required
+@solo_roles(['admin'])
+def api_obtener_permisos_por_rol(rol_id):
+    """Obtiene todos los permisos de un rol específico aplicando la regla de negocio"""
+    # Verificar que el rol existe
+    rol_model = Rol(id=rol_id)
+    if not rol_model.verificar_rol_por_id():
+        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
+
+    permiso_model = Permiso(rol_id=rol_id)
+    permisos = permiso_model.listar_permisos_completos_por_rol()
+
+    return jsonify({
+        "success": True,
+        "rol_id": rol_id,
+        "permisos": permisos or []
+    })
+
+
+@usuarios_blueprint.route("/api/permisos/rol/<rol_id>", methods=["PUT"])
+@jwt_required
+@solo_roles(['admin'])
+def api_actualizar_permisos_rol(rol_id):
+    """Actualiza todos los permisos de un rol específico"""
+    data = request.get_json(silent=True) or {}
+    permisos = data.get("permisos", [])
+
+    if not permisos:
+        return jsonify({"success": False, "error": "Se requiere la lista de permisos."}), 400
+
+    # Verificar que el rol existe
+    rol_model = Rol(id=rol_id)
+    rol_existente = rol_model.obtener_rol_por_id()
+
+    if not rol_existente:
+        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
+
+    # Verificar permisos para modificar admin (solo otro admin puede)
+    nombre_rol = rol_existente.get("nombre", "").lower()
+    usuario_actual = getattr(g, 'user', None)
+    usuario_rol = ""
+    if usuario_actual:
+        if isinstance(usuario_actual, dict):
+            usuario_rol = usuario_actual.get("rol_nombre", "").lower()
+        else:
+            usuario_rol = getattr(usuario_actual, "rol_nombre", "").lower()
+
+    if nombre_rol == "admin" and usuario_rol != "admin":
+        return jsonify({"success": False, "error": "No tienes permisos para modificar los permisos del rol Admin."}), 403
+
+    # Preparar datos para guardado masivo
+    permisos_data = []
+    for permiso in permisos:
+        modulo_id = permiso.get("modulo_id")
+        if modulo_id:
+            permisos_data.append({
+                "modulo_id": modulo_id,
+                "registrar": _bool(permiso.get("registrar", False)),
+                "modificar": _bool(permiso.get("modificar", False)),
+                "eliminar": _bool(permiso.get("eliminar", False))
+            })
+
+    if not permisos_data:
+        return jsonify({"success": False, "error": "No hay permisos válidos para guardar."}), 400
+
+    permiso_model = Permiso()
+    exitosos, errores = permiso_model.guardar_permisos_masivos(rol_id, permisos_data)
+
+    if errores:
+        return jsonify({
+            "success": False,
+            "error": "Algunos permisos no se pudieron guardar.",
+            "detalles": errores
+        }), 500
+
+    # Obtener ID del usuario desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+
+    registrar_en_bitacora(
+        accion="Actualizar permisos de rol",
+        descripcion=f"Se actualizaron {exitosos} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
+        usuario_id=usuario_id,
+        modulo_nombre="Usuarios"
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Permisos actualizados correctamente.",
+        "actualizados": exitosos
+    })
+
+
+@usuarios_blueprint.route("/api/permisos/rol/<rol_id>/modulo/<modulo_id>", methods=["GET"])
+@jwt_required
+@solo_roles(['admin'])
+def api_obtener_permiso_especifico(rol_id, modulo_id):
+    """Obtiene un permiso específico de un rol para un módulo aplicando la regla de negocio"""
+    # Verificar que el rol existe
+    rol_model = Rol(id=rol_id)
+    if not rol_model.verificar_rol_por_id():
+        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
+
+    # Verificar que el módulo existe
+    modulo_model = Modulo(id=modulo_id)
+    modulo = modulo_model.obtener_modulo_por_id()
+    if not modulo:
+        return jsonify({"success": False, "error": f"El módulo con ID {modulo_id} no existe."}), 404
+
+    permiso_model = Permiso(rol_id=rol_id, modulo_id=modulo_id)
+    permisos = permiso_model.listar_permisos_completos_por_rol()
+    
+    # Buscar el permiso específico
+    permiso = None
+    for p in (permisos or []):
+        if p["modulo_id"] == int(modulo_id):
+            permiso = p
+            break
+
+    return jsonify({
+        "success": True,
+        "permiso": {
+            "rol_id": rol_id,
+            "modulo_id": modulo_id,
+            "modulo_nombre": modulo["nombre"],
+            "consultar": permiso.get("consultar", False) if permiso else False,
+            "registrar": permiso.get("registrar", False) if permiso else False,
+            "modificar": permiso.get("modificar", False) if permiso else False,
+            "eliminar": permiso.get("eliminar", False) if permiso else False,
+        }
+    })
+
+
+@usuarios_blueprint.route("/api/usuarios/mis-permisos", methods=["GET"])
+@jwt_required
+def api_obtener_mis_permisos():
+    """Obtiene todos los permisos del usuario actual aplicando la regla de negocio"""
+    # Obtener ID del usuario desde g.user
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+    
+    if not usuario_id or usuario_id == "SYSTEM":
+        return jsonify({"success": False, "error": "No se pudo identificar al usuario."}), 401
+
+    permiso_model = Permiso()
+    permisos = permiso_model.obtener_permisos_usuario(usuario_id)
+
+    return jsonify({"success": True, "permisos": permisos or []})
+
+
+# ==================== ROLES ====================
+
+@usuarios_blueprint.route("/api/roles", methods=["GET"])
+@jwt_required
+@solo_roles(['admin'])
+def api_listar_roles():
+    rol_model = Rol()
+    roles = rol_model.listar_roles()
+    return jsonify({"success": True, "roles": roles or []})
+
+
+@usuarios_blueprint.route("/api/roles", methods=["POST"])
+@jwt_required
+@solo_roles(['admin'])
+def api_crear_rol():
+    data = request.get_json(silent=True) or {}
+    nombre = data.get("nombre", "").strip()
+    descripcion = data.get("descripcion", "").strip()
+
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre del rol es obligatorio."}), 400
+
+    rol_model = Rol(nombre=nombre, descripcion=descripcion)
+    mensaje = rol_model.agregar_rol()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Crear rol",
+            descripcion=f"Se creó el rol: {nombre}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje, "id": rol_model.id}), 201
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/roles/<rol_id>", methods=["PUT"])
+@jwt_required
+@solo_roles(['admin'])
+def api_actualizar_rol(rol_id):
+    data = request.get_json(silent=True) or {}
+    nombre = data.get("nombre", "").strip()
+    descripcion = data.get("descripcion", "").strip()
+
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre del rol es obligatorio."}), 400
+
+    # Verificar que no se esté modificando el rol Admin
+    rol_existente = Rol(id=rol_id)
+    rol_data = rol_existente.obtener_rol_por_id()
+    
+    if rol_data and rol_data.get("nombre", "").lower() == "admin":
+        usuario_actual = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
+        if usuario_actual != "admin":
+            return jsonify({"success": False, "error": "No se puede modificar el rol Admin."}), 403
+
+    rol_model = Rol(id=rol_id, nombre=nombre, descripcion=descripcion)
+    mensaje = rol_model.actualizar_rol()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Actualizar rol",
+            descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
+
+    return jsonify({"success": False, "error": mensaje}), 400
+
+
+@usuarios_blueprint.route("/api/roles/<rol_id>", methods=["DELETE"])
+@jwt_required
+@solo_roles(['admin'])
+def api_eliminar_rol(rol_id):
+    # Verificar que no se esté eliminando el rol Admin
+    rol_existente = Rol(id=rol_id)
+    rol_data = rol_existente.obtener_rol_por_id()
+    
+    if rol_data and rol_data.get("nombre", "").lower() == "admin":
+        return jsonify({"success": False, "error": "No se puede eliminar el rol Admin."}), 403
+
+    rol_model = Rol(id=rol_id)
+    mensaje = rol_model.eliminar_rol()
+
+    if "exitosamente" in mensaje:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+        
+        registrar_en_bitacora(
+            accion="Eliminar rol",
+            descripcion=f"Se eliminó el rol ID: {rol_id}",
+            usuario_id=usuario_id,
+            modulo_nombre="Usuarios"
+        )
+        return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
