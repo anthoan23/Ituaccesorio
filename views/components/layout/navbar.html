@@ -177,8 +177,11 @@
 				{# ==================== USUARIO NORMAL (EMPLEADO O CLIENTE LOGUEADO) ==================== #}
 				{# Verificar si tiene permisos (solo para empleados) #}
 				{% set tiene_permisos = g.user.permisos is defined and g.user.permisos %}
-				
+				{% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
+				{% endif %}
+
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
 
 				{# 1. Empleados - Solo si tiene permisos de empleados #}
 				{% if tiene_permisos %}
