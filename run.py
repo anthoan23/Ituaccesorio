@@ -10,9 +10,6 @@ from app.controllers.productos import productos_blueprint
 from app.controllers.proveedores import proveedores_blueprint
 from app.controllers.login import login_blueprint
 from app.controllers.usuarios import usuarios_blueprint
-from app.controllers.roles import roles_blueprint
-from app.controllers.modulos import modulos_blueprint
-from app.controllers.permisos import permisos_blueprint
 from app.controllers.bitacora import bitacora_blueprint
 from app.controllers.notificaciones import notificaciones_blueprint
 from app.controllers.taller import taller_blueprint
@@ -71,9 +68,6 @@ app.register_blueprint(productos_blueprint)
 app.register_blueprint(proveedores_blueprint)
 app.register_blueprint(login_blueprint)
 app.register_blueprint(usuarios_blueprint)
-app.register_blueprint(roles_blueprint)
-app.register_blueprint(modulos_blueprint)
-app.register_blueprint(permisos_blueprint)
 app.register_blueprint(bitacora_blueprint)
 app.register_blueprint(notificaciones_blueprint)
 app.register_blueprint(taller_blueprint)

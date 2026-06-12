@@ -24,19 +24,27 @@ class TradeInEmpleados:
         
         cursor = db.cursor()
         try:
+            # Obtener el ID más alto
             cursor.execute("SELECT MAX(ID_Trade_in) FROM Trade_in")
             row = cursor.fetchone()
-            ultimo_id = row[0] if row else None
+            ultimo_id = row[0] if row and row[0] else None
             
-            if ultimo_id and ultimo_id.startswith('TRD'):
+            if ultimo_id:
                 try:
-                    num = int(ultimo_id[3:]) + 1
-                except ValueError:
-                    num = 1
+                    num_str = ultimo_id[3:]  # Quita 'TRD'
+                    num = int(num_str)
+                    siguiente = num + 1
+                except (ValueError, IndexError):
+                    siguiente = 1
             else:
-                num = 1
+                siguiente = 1
             
-            return f"TRD{str(num).zfill(7)}"
+            # Formatear con 7 dígitos (ej: 1 -> 0000001)
+            return f"TRD{str(siguiente).zfill(3)}"
+        except Exception as e:
+            print(f"Error generando ID trade-in: {e}")
+            # Fallback: usar timestamp
+            return f"TRD{datetime.now().strftime('%Y%m%d%H%M%S')}"
         finally:
             cursor.close()
             db.close()
@@ -51,17 +59,22 @@ class TradeInEmpleados:
         try:
             cursor.execute("SELECT MAX(ID_equipo) FROM Equipo")
             row = cursor.fetchone()
-            ultimo_id = row[0] if row else None
+            ultimo_id = row[0] if row and row[0] else None
             
-            if ultimo_id and ultimo_id.startswith('EQ'):
+            if ultimo_id:
                 try:
-                    num = int(ultimo_id[2:]) + 1
-                except ValueError:
-                    num = 1
+                    num_str = ultimo_id[2:]  # Quita 'EQ'
+                    num = int(num_str)
+                    siguiente = num + 1
+                except (ValueError, IndexError):
+                    siguiente = 1
             else:
-                num = 1
+                siguiente = 1
             
-            return f"EQ{str(num).zfill(7)}"
+            return f"EQ{str(siguiente).zfill(7)}"
+        except Exception as e:
+            print(f"Error generando ID equipo: {e}")
+            return f"EQ{datetime.now().strftime('%Y%m%d%H%M%S')}"
         finally:
             cursor.close()
             db.close()
@@ -76,17 +89,22 @@ class TradeInEmpleados:
         try:
             cursor.execute("SELECT MAX(ID_foto_trade_in) FROM Fotos_trade_in")
             row = cursor.fetchone()
-            ultimo_id = row[0] if row else None
+            ultimo_id = row[0] if row and row[0] else None
             
-            if ultimo_id and ultimo_id.startswith('FTI'):
+            if ultimo_id:
                 try:
-                    num = int(ultimo_id[3:]) + 1
-                except ValueError:
-                    num = 1
+                    num_str = ultimo_id[3:]  # Quita 'FTI'
+                    num = int(num_str)
+                    siguiente = num + 1
+                except (ValueError, IndexError):
+                    siguiente = 1
             else:
-                num = 1
+                siguiente = 1
             
-            return f"FTI{str(num).zfill(7)}"
+            return f"FTI{str(siguiente).zfill(7)}"
+        except Exception as e:
+            print(f"Error generando ID foto: {e}")
+            return f"FTI{datetime.now().strftime('%Y%m%d%H%M%S')}"
         finally:
             cursor.close()
             db.close()

@@ -161,6 +161,9 @@
 				{# 12. Ventas #}
 				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
 
+				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Delivery</a>
+
+
 				{# 13. Usuarios #}
 				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 
@@ -253,6 +256,10 @@
 				{# 12. Ventas - Solo si tiene permisos #}
 				{% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				{% endif %}
+
+				{% if tiene_permisos and g.user.permisos.get('Entregas', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
 				{% endif %}
 
 				{# 13. Usuarios - Solo si tiene permisos #}
