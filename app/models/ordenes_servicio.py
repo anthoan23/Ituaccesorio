@@ -1,5 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
+from datetime import date
 
 
 class Orden_servicio():
@@ -10,7 +11,7 @@ class Orden_servicio():
         self.Costo_reparacion = Costo_reparacion
         self.Nota_orden_servicio = Nota_orden_servicio
         self.ID_empleado = ID_empleado
-        self.Fecha_ingreso = Fecha_entrada
+        self.Fecha_entrada = Fecha_entrada
         self.Fecha_salida = Fecha_salida
         self.ID_foto_orden_servicio = ID_foto_orden_servicio
         self.Foto_orden_servicio = Foto_orden_servicio
@@ -349,151 +350,83 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-"""
-from __future__ import annotations
 
-import os
+    def registrar_orden(self):
+        id_cliente = self.ID_cliente.strip()
+        id_equipo = self.ID_equipo
+        Estado_orden_servicio = 'pendiente'
+        descripcion = self.Descripcion_reparacion
+        fecha_entrada = self.Fecha_entrada
+        fecha_salida = self.Fecha_salida
+        nota = self.Nota_orden_servicio
+        fecha_actual = date.today()
 
-from flask import current_app
+        if not id_cliente or not id_equipo or not descripcion or not fecha_entrada:
+            return "Los campos ID_cliente, ID_equipo, Descripcion_reparacion y Fecha_entrada son obligatorios."
 
-from app.models.database import conectar
+        if len(descripcion) > 1000:
+            return "La descripción de la reparación no puede exceder los 1000 caracteres."
 
-class OrdenServicio(conectar):
+        if id_cliente.isdigit():
+            return "El ID del cliente debe ser solo numeros."
 
-    def listado_ordenes_taller(self):
-        db = self.conexion1()
+        if len(id_cliente) > 8:
+            return "El ID del cliente no puede tener más de 8 caracteres."
+    
+        if fecha_salida and fecha_salida < fecha_entrada:
+            return "La fecha de salida no puede ser anterior a la fecha de entrada."
+   
+        if fecha_entrada < fecha_actual:
+            return "La fecha de entrada no puede ser anterior a la fecha actual."
+        
+        db = self._conexion._bd.conexion1()
         if not db:
-            return None
-        
-        r1 = 'Pendiente'
-        r2 = 'En Proceso'
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = (
-                "SELECT o.*, "
-                "o.ID_orden_servicio AS ID_orden, "
-                "o.Estado_o AS Estado, "
-                "o.ID_c AS ID_cliente, "
-                "c.Nombre_c AS Nombre_cliente, "
-                "c.Apellido_c AS Apellido_cliente, "
-                "m.N_modelo AS Modelo, "
-                "o.Des_cliente "
-                "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
-                "JOIN cliente c ON o.ID_c = c.ID_c "
-                "WHERE o.Estado_o = %s OR o.Estado_o = %s "
-            )
-            cursor.execute(sql, (r1, r2))
-            ordenes = cursor.fetchall()
-        
-            return ordenes
-        
-        finally:
-            cursor.close()
-            db.close() 
-
-    def listado_ordenes_servicio(self, estados=None):
-        db = self.conexion1()
-        if not db:
-            return None
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            where_sql = ""
-            params = []
-            if estados:
-                placeholders = ", ".join(["%s"] * len(estados))
-                where_sql = f"WHERE o.Estado_o IN ({placeholders})"
-                params = list(estados)
-
-            sql = (
-                "SELECT o.*, "
-                "o.ID_orden_servicio AS ID_orden, "
-                "o.Estado_o AS Estado, "
-                "o.ID_c AS ID_cliente, "
-                "c.Nombre_c AS Nombre_cliente, "
-                "c.Apellido_c AS Apellido_cliente, "
-                "m.N_modelo AS Modelo, "
-                "o.Des_cliente "
-                "FROM orden_e o JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
-                "JOIN cliente c ON o.ID_c = c.ID_c "
-                f"{where_sql} "
-                "ORDER BY o.ID_orden_servicio DESC"
-            )
-            cursor.execute(sql, tuple(params))
-            return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
-
-    def crear_orden(
-        self,
-        id_cliente: int,
-        id_modelo: int,
-        descripcion: str,
-        patron,
-        clave: str,
-        fecha_ingreso,
-        nota: str | None = None,
-        estado: str = "Pendiente",
-    ):
-        db = self.conexion1()
-        if not db:
-            return None
-
+            return "Error al conectar con la base de datos."
+            
         cursor = db.cursor()
         try:
-            sql = (
-                "INSERT INTO orden_e (ID_modelo, ID_c, Estado_o, Des_cliente, Patron, Clave, Costo_reparacion, Fecha_e, Nota) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            )
             cursor.execute(
-                sql,
-                (
-                    id_modelo,
-                    id_cliente,
-                    estado,
-                    descripcion,
-                    patron,
-                    clave,
-                    None,
-                    fecha_ingreso,
-                    nota,
-                ),
+            """
+             INSERT INTO orden_servicio (
+             ID_cliente, ID_equipo,
+             Estado_orden_servicio,Descripcion_reparacion, 
+             Fecha_entrada, Fecha_salida, Nota_orden_servicio) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+             (id_cliente, id_equipo, Estado_orden_servicio, descripcion, fecha_entrada, fecha_salida, nota)
             )
             db.commit()
-            return cursor.lastrowid
+            return "Orden de servicio registrada exitosamente."
         except Exception as e:
             db.rollback()
-            print(f"Error al crear orden: {e}")
-            return None
+            print(f"Error al registrar la orden de servicio: {e}")
+            return "Error al registrar la orden de servicio."
         finally:
             cursor.close()
             db.close()
 
+
     def ordenes_asignadas_empleado(self):
-        db = self.conexion1()
+        db = self._conexion.conexion1()
         if not db:
             return None
 
-        id_empleado = 1004
+
+    def ordenes_asignadas_tecnico(self)
+        db = self._conexion.conexion1()
+        if not db:
+            return None
+        
         cursor = db.cursor(dictionary=True)
         try:
             sql = (
-                "SELECT i.ID_orden, m.N_modelo "
-                "FROM interaccion i JOIN orden_e o ON i.ID_orden = o.ID_orden_servicio "
-                "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
-                "WHERE o.Estado_o IN ('Asignado', 'Revisado') AND i.ID_em = %s"
-            )
-            cursor.execute(sql, (id_empleado,))
-            ordenes = cursor.fetchall()
-        
-            return ordenes
-        
-        finally:
-            cursor.close()
-            db.close()
+                """" 
+                SELECT * Ordene_servicio  
 
+                
+                
+                """
+            )
+
+"""
     def ordenes_asignadas_tecnico(self, id_empleado: int):
         db = self.conexion1()
         if not db:
@@ -526,89 +459,7 @@ class OrdenServicio(conectar):
     
 
     
-    def eliminar_foto_orden(self, id_evidencia: int):
-        db = self.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute(
-                "SELECT Foto_e FROM evidencia_e WHERE ID_evidencia_e = %s",
-                (id_evidencia,)
-            )
-            foto = cursor.fetchone()
-
-            if not foto:
-                return False
-
-            ruta_archivo = foto.get("Foto_e") if isinstance(foto, dict) else None
-            if ruta_archivo:
-                ruta_relativa = ruta_archivo.lstrip("/\\")
-                posibles_rutas = []
-
-                if ruta_archivo.startswith("/static/"):
-                    try:
-                        relativas_static = ruta_archivo.split("/static/", 1)[1].lstrip("/\\")
-                        posibles_rutas.append(os.path.join(current_app.static_folder, relativas_static))
-                    except RuntimeError:
-                        pass
-
-                try:
-                    posibles_rutas.append(os.path.join(current_app.root_path, ruta_relativa))
-                except RuntimeError:
-                    pass
-
-                posibles_rutas.append(os.path.join(os.getcwd(), ruta_relativa))
-
-                ruta_local = next((ruta for ruta in posibles_rutas if os.path.exists(ruta)), None)
-                if ruta_local:
-                    os.remove(ruta_local)
-
-            cursor.execute(
-                "DELETE FROM evidencia_e WHERE ID_evidencia_e = %s",
-                (id_evidencia,)
-            )
-            db.commit()
-            return True
-
-        except Exception as e:
-            db.rollback()
-            print(f"Error al eliminar foto: {e}")
-            return False
-
-        finally:
-            cursor.close()
-            db.close()
-
-    def registrar_fotos_orden(self, id_orden: int, rutas_fotos: list[str]):
-        if not rutas_fotos:
-            return False
-
-        db = self.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor()
-        try:
-            db.start_transaction()
-
-            sql = (
-                "INSERT INTO evidencia_e (ID_orden, Foto_e) "
-                "VALUES (%s, %s)"
-            )
-            for ruta in rutas_fotos:
-                cursor.execute(sql, (id_orden, ruta))
-
-            db.commit()
-            return True
-        except Exception as e:
-            db.rollback()
-            print(f"Error al registrar fotos: {e}")
-            return False
-        finally:
-            cursor.close()
-            db.close()
+    
 
     def registrar_interaccion(self, id_orden: int, id_empleado: int, accion: str):
         db = self.conexion1()

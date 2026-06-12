@@ -86,9 +86,9 @@ class Equipo(Producto):
         try:
              #verificar si el ID del equipo ya existe
 
-            cursor.execute("SELECT ID_equipo FROM equipo WHERE ID_equipo = %s", (id_equipo,))
+            cursor.execute("SELECT ID_quipo FROM equipo WHERE ID_equipo = %s", (id_equipo,))
             if cursor.fetchone():
-                return f"El ID del equipo '{id_equipo}' ya existe. Por favor, elige otro ID."
+                return f"El IMEI del equipo '{id_equipo}' ya existe. Por favor verifica de nuevo el IMEI."
             
             cursor.execute(
                 "INSERT INTO equipo (ID_equipo, Color, Capacidad, Clave, Patron) VALUES (%s, %s, %s, %s, %s)",
