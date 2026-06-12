@@ -117,33 +117,61 @@
 				
 				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
 
-				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
-					<span>Personal</span>
+				{# 1. Empleados #}
+				{% set empleados_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+				<button class="drawer__link drawer__group-toggle {% if empleados_active %}is-active{% endif %}" data-nav-group-toggle="empleados-group" aria-controls="empleados-group" aria-expanded="{{ 'true' if empleados_active else 'false' }}">
+					<span>Empleados</span>
 				</button>
-				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+				<div class="drawer__submenu" id="empleados-group" data-nav-group="empleados-group" {% if not empleados_active %}hidden{% endif %}>
 					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
 					<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
 					<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
 				</div>
 
-				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
-				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
-				
-				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+				{# 2. Clientes #}
+				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
 
-				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+				{# 3. Productos #}
+				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+
+				{# 4. Órdenes de servicio #}
+				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
+
+				{# 5. Taller #}
 				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
 
-				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
-				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
+				{# 6. Proveedores #}
+				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
 
-				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
+				{# 7. Inventario #}
+				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+
+				{# 8. Compras #}
+				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Compras</a>
+
+				{# 9. Entregas #}
+				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
+
+				{# 10. Trade-in #}
+				<a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">Trade-in</a>
+
+				{# 11. Ventas #}
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+
+				{# 12. Pagos #}
+				<a class="drawer__link {% if active_page == 'pagos' %}is-active{% endif %}" href="{{ url_for('pagos.pagina_pagos') }}">Pagos</a>
+
+				{# 13. Delivery #}
+				<a class="drawer__link {% if active_page == 'delivery' %}is-active{% endif %}" href="{{ url_for('delivery.pagina_delivery') }}">Delivery</a>
+
+				{# 14. Usuarios #}
 				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
+
+				{# 15. Bitácora #}
 				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
+
+				{# 16. Seguridad de BD #}
 				<a class="drawer__link {% if active_page == 'seguridad_bd' %}is-active{% endif %}" href="{{ url_for('backup.pagina_backup') }}">Seguridad de BD</a>
 
 			{% elif g.user and g.user.permisos %}
@@ -152,16 +180,17 @@
 				
 				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
 
+				{# 1. Empleados #}
 				{% set tiene_empleados = permisos.get('Empleados', {}).get('consultar', false) %}
 				{% set tiene_especialidades = permisos.get('Especialidades', {}).get('consultar', false) %}
 				{% set tiene_cargos = permisos.get('Cargos', {}).get('consultar', false) %}
 				
 				{% if tiene_empleados or tiene_especialidades or tiene_cargos %}
-				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
-					<span>Personal</span>
+				{% set empleados_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+				<button class="drawer__link drawer__group-toggle {% if empleados_active %}is-active{% endif %}" data-nav-group-toggle="empleados-group" aria-controls="empleados-group" aria-expanded="{{ 'true' if empleados_active else 'false' }}">
+					<span>Empleados</span>
 				</button>
-				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+				<div class="drawer__submenu" id="empleados-group" data-nav-group="empleados-group" {% if not empleados_active %}hidden{% endif %}>
 					{% if tiene_empleados %}
 					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Empleados</a>
 					{% endif %}
@@ -174,56 +203,87 @@
 				</div>
 				{% endif %}
 
-				{% if permisos.get('Catálogo', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-				{% endif %}
-				{% if permisos.get('Entregas', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
-				{% endif %}
-				{% if permisos.get('Productos', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-				{% endif %}
-				
-				{% if permisos.get('Inventario', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
-				{% endif %}
-
-				{% if permisos.get('Proveedores', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
-				{% endif %}
-
-				{% if permisos.get('Trade-in', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
-				{% endif %}
-
-				{% if permisos.get('Taller', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
-				{% endif %}
-
-				{% if permisos.get('Órdenes de servicio', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
-				{% endif %}
-				
-				{% if permisos.get('Órdenes de compra', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Órdenes de compra</a>
-				{% endif %}
-
+				{# 2. Clientes #}
 				{% if permisos.get('Clientes', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
 				{% endif %}
 
+				{# 3. Productos #}
+				{% if permisos.get('Productos', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
+				{% endif %}
+
+				{# 4. Órdenes de servicio #}
+				{% if permisos.get('Órdenes de servicio', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
+				{% endif %}
+
+				{# 5. Taller #}
+				{% if permisos.get('Taller', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
+				{% endif %}
+
+				{# 6. Proveedores #}
+				{% if permisos.get('Proveedores', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
+				{% endif %}
+
+				{# 7. Inventario #}
+				{% if permisos.get('Inventario', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
+				{% endif %}
+
+				{# 8. Compras #}
+				{% if permisos.get('Órdenes de compra', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Compras</a>
+				{% endif %}
+
+				{# 9. Entregas #}
+				{% if permisos.get('Entregas', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Entregas</a>
+				{% endif %}
+
+				{# 10. Trade-in #}
+				{% if permisos.get('Trade-in', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">Trade-in</a>
+				{% endif %}
+
+				{# 11. Ventas #}
+				{% if permisos.get('Catálogo', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
+				{% endif %}
+				
+				{% if permisos.get('Ventas', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
+				{% endif %}
+
+				{# 12. Pagos #}
+				{% if permisos.get('Pagos', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'pagos' %}is-active{% endif %}" href="{{ url_for('pagos.pagina_pagos') }}">Pagos</a>
+				{% endif %}
+
+				{# 13. Delivery #}
+				{% if permisos.get('Delivery', {}).get('consultar', false) %}
+				<a class="drawer__link {% if active_page == 'delivery' %}is-active{% endif %}" href="{{ url_for('delivery.pagina_delivery') }}">Delivery</a>
+				{% endif %}
+
+				{# 14. Usuarios #}
 				{% if permisos.get('Usuarios', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
 				{% endif %}
 
+				{# 15. Bitácora #}
 				{% if permisos.get('Bitácora', {}).get('consultar', false) %}
 				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
 				{% endif %}
+
+				{# 16. Seguridad de BD - Solo admin #}
+				{# No se muestra para usuarios normales #}
 				
 			{% else %}
-				{# ==================== USUARIO NO LOGUEADO: SOLO TRADE-IN Y CATÁLOGO ==================== #}
+				{# ==================== USUARIO NO LOGUEADO ==================== #}
 				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Trade-in</a>
+				<a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">Trade-in</a>
 			{% endif %}
 		</nav>
 		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
