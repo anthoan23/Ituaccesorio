@@ -487,7 +487,7 @@ CREATE TABLE `Interaccion` (
 
 LOCK TABLES `Interaccion` WRITE;
 /*!40000 ALTER TABLE `Interaccion` DISABLE KEYS */;
-INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Asignada'),('INT000023','OS0000002',32014004,'Revisión'),('INT000024','OS0000002',32014004,'Revisión'),('INT000025','OS0000002',32014004,'Revisión');
+INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Reparada'),('INT000023','OS0000002',32014004,'Revisión'),('INT000024','OS0000002',32014004,'Revisión'),('INT000025','OS0000002',32014004,'Revisión'),('INT000026','OS0000001',32014004,'En proceso'),('INT000027','OS0000001',32014004,'Reparada'),('INT000028','OS0000001',32014004,'Revisión'),('INT000029','OS0000004',32014004,'Asignada');
 /*!40000 ALTER TABLE `Interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -516,7 +516,7 @@ CREATE TABLE `Inventario` (
 
 LOCK TABLES `Inventario` WRITE;
 /*!40000 ALTER TABLE `Inventario` DISABLE KEYS */;
-INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL),('10','10',16,80.00,1),('2','2',15,350.00,1),('3','3',8,950.00,1002),('4','4',12,850.00,1003),('5','5',20,400.00,1),('6','6',5,450.00,1005),('7','7',30,25.00,1006),('8','8',25,15.00,1007),('9','9',10,120.00,1008);
+INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL),('10','10',15,80.00,1),('2','2',15,350.00,1),('3','3',8,950.00,1002),('4','4',12,850.00,1003),('5','5',17,400.00,1),('6','6',5,450.00,1005),('7','7',30,25.00,1006),('8','8',25,15.00,1007),('9','9',10,120.00,1008);
 /*!40000 ALTER TABLE `Inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -676,7 +676,7 @@ CREATE TABLE `Orden_servicio` (
 
 LOCK TABLES `Orden_servicio` WRITE;
 /*!40000 ALTER TABLE `Orden_servicio` DISABLE KEYS */;
-INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','En proceso','Cambio de pantalla rota',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-03 17:00:00'),('OS0000002','EQ0000002','22345678','Reparada','holaaaaaaaa',80.00,NULL,'2026-06-02 10:30:00','2026-06-11 18:36:07'),('OS0000003','EQ0000003','44567890','Asignada','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','En proceso','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Asignada','Actualización software',60.00,'Dejo el cargador','2026-06-06 11:00:00',NULL),('OS0000006','EQ0000005','30548845','En proceso','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
+INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','Reparada','Mandigo',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-11 20:23:26'),('OS0000002','EQ0000002','22345678','Reparada','holaaaaaaaa',80.00,NULL,'2026-06-02 10:30:00','2026-06-11 18:36:07'),('OS0000003','EQ0000003','44567890','Asignada','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','Asignada','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Reparada','mandigo',60.00,'Dejo el cargador','2026-06-06 11:00:00','2026-06-11 20:25:24'),('OS0000006','EQ0000005','30548845','En proceso','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
 /*!40000 ALTER TABLE `Orden_servicio` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -842,7 +842,7 @@ CREATE TABLE `Repuestos_usados` (
 
 LOCK TABLES `Repuestos_usados` WRITE;
 /*!40000 ALTER TABLE `Repuestos_usados` DISABLE KEYS */;
-INSERT INTO `Repuestos_usados` VALUES ('OS0000001','2',1),('OS0000002','10',3),('OS0000003','7',1);
+INSERT INTO `Repuestos_usados` VALUES ('OS0000001','10',1),('OS0000001','2',1),('OS0000002','10',3),('OS0000003','7',1),('OS0000005','5',3);
 /*!40000 ALTER TABLE `Repuestos_usados` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -896,7 +896,7 @@ CREATE TABLE `Test` (
 
 LOCK TABLES `Test` WRITE;
 /*!40000 ALTER TABLE `Test` DISABLE KEYS */;
-INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona');
+INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona'),('TST000084',6,'Btn power','Funciona'),('TST000085',6,'Cornetas','Funciona'),('TST000086',6,'Mica','Funciona'),('TST000087',6,'LCD','Funciona'),('TST000088',6,'Tactil','Funciona'),('TST000089',6,'Btn vol','Funciona'),('TST000090',6,'Btn sil','Funciona'),('TST000091',6,'Puerto carga','Funciona'),('TST000092',6,'Wifi','Funciona'),('TST000093',6,'Cam pos','Funciona'),('TST000094',6,'Cam del','Funciona'),('TST000095',6,'Flash','Funciona'),('TST000096',6,'Senal','Funciona'),('TST000097',6,'Microfono','Funciona'),('TST000098',6,'Sensor proximidad','Funciona'),('TST000099',6,'Face id','Funciona'),('TST000100',6,'Bluetooth','Funciona'),('TST000101',6,'Caja','Funciona'),('TST000102',6,'Cargador','Funciona'),('TST000103',6,'Cable','Funciona'),('TST000104',6,'Auricular','Funciona'),('TST000105',6,'Manuales','Funciona'),('TST000106',6,'Observaciones','dsdsdsdsdsdsdsdsd');
 /*!40000 ALTER TABLE `Test` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -923,7 +923,7 @@ CREATE TABLE `Test_realizados_interaccion` (
 
 LOCK TABLES `Test_realizados_interaccion` WRITE;
 /*!40000 ALTER TABLE `Test_realizados_interaccion` DISABLE KEYS */;
-INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083');
+INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083'),('INT000028','TST000084'),('INT000028','TST000085'),('INT000028','TST000086'),('INT000028','TST000087'),('INT000028','TST000088'),('INT000028','TST000089'),('INT000028','TST000090'),('INT000028','TST000091'),('INT000028','TST000092'),('INT000028','TST000093'),('INT000028','TST000094'),('INT000028','TST000095'),('INT000028','TST000096'),('INT000028','TST000097'),('INT000028','TST000098'),('INT000028','TST000099'),('INT000028','TST000100'),('INT000028','TST000101'),('INT000028','TST000102'),('INT000028','TST000103'),('INT000028','TST000104'),('INT000028','TST000105'),('INT000028','TST000106');
 /*!40000 ALTER TABLE `Test_realizados_interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1505,6 +1505,113 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_revision_test` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_revision_test`(
+    IN p_ID_orden_servicio VARCHAR(10),
+    IN p_ID_empleado INT,
+    IN p_Num_test INT,            -- El número identificador del lote de test
+    IN p_Json_Tests JSON          -- El arreglo: [{"nombre":"Mica", "resultado":"Funciona"}, ...]
+)
+BEGIN
+    -- Variables para generar ID_interaccion (Formato 'INT0000001')
+    DECLARE v_ultimo_id_int VARCHAR(10);
+    DECLARE v_siguiente_num_int INT;
+    DECLARE v_nuevo_id_interaccion VARCHAR(10);
+    
+    -- Variables para generar ID_test dentro del ciclo (Formato 'TST0000001')
+    DECLARE v_ultimo_id_tes VARCHAR(10);
+    DECLARE v_siguiente_num_tes INT;
+    DECLARE v_nuevo_id_test VARCHAR(10);
+    
+    -- Variables para el control del Ciclo Repetitivo (Bucle WHILE)
+    DECLARE v_items_count INT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE v_nombre_comp VARCHAR(50);
+    DECLARE v_resultado_comp VARCHAR(300);
+
+    -- Manejo de errores: Si algo falla, deshace todo (Rollback)
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    -- Iniciamos la transacción segura
+    START TRANSACTION;
+
+    -- =========================================================================
+    -- PASO 1: INSERTAR EN LA TABLA Interaccion CON ID AUTOGENERADO
+    -- =========================================================================
+    SELECT MAX(`ID_interaccion`) INTO v_ultimo_id_int FROM `Interaccion`;
+
+    IF v_ultimo_id_int IS NULL THEN
+        SET v_siguiente_num_int = 1;
+    ELSE
+        SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
+    END IF;
+
+    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+
+    -- Registro inicial requerido
+    INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`)
+    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Revisión');
+
+
+    -- =========================================================================
+    -- PASO 2: CICLO REPETITIVO PARA PROCESAR EL ARREGLO E INSERTAR EN Test Y LA INTERMEDIA
+    -- =========================================================================
+    SET v_items_count = JSON_LENGTH(p_Json_Tests);
+    
+    WHILE i < v_items_count DO
+        -- 2.1 Extraer los datos del componente actual del lote JSON
+        SET v_nombre_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
+        SET v_resultado_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
+        
+        -- 2.2 Generar el ID_test dinámico (Formato 'TST0000001') para este componente específico
+        SELECT MAX(`ID_test`) INTO v_ultimo_id_tes FROM `Test`;
+        
+        IF v_ultimo_id_tes IS NULL THEN
+            SET v_siguiente_num_tes = 1;
+        ELSE
+            SET v_siguiente_num_tes = CAST(SUBSTRING(v_ultimo_id_tes, 4) AS UNSIGNED) + 1;
+        END IF;
+        
+        SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_tes, 6, '0'));
+        
+        -- 2.3 Insertar el registro en la tabla Test usando los nombres correctos de columnas
+        -- CORREGIDO: Usar 'Num_test' (parámetro) y 'Resultado_test' (columna correcta)
+        INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`)
+        VALUES (v_nuevo_id_test, p_Num_test, v_nombre_comp, v_resultado_comp);
+        
+        -- 2.4 Insertar la relación de los códigos en la tabla Test_realizados_interaccion
+        INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`)
+        VALUES (v_nuevo_id_interaccion, v_nuevo_id_test);
+        
+        -- Avanzar al siguiente elemento del arreglo
+        SET i = i + 1;
+    END WHILE;
+
+    -- Guardar de manera permanente todos los cambios
+    COMMIT;
+
+    -- Devolver resumen para tu backend
+    SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1515,4 +1622,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-11 23:46:58
+-- Dump completed on 2026-06-12  0:26:08
