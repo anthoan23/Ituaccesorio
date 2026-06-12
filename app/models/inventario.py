@@ -69,6 +69,28 @@ class Inventario:
             cursor.close()
             db.close()
 
+    def listar_inventario_taller(self):
+        """Lista inventario específico para taller (ejemplo: solo productos de clase 'Accesorio')"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            mensaje = "Error al conectar con la base de datos."
+            return mensaje
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """SELECT i.ID_inventario, p.Nombre_producto, m.Nombre_marca, c.Nombre_Clase, i.Existencia, i.Costo_venta FROM Inventario i
+                JOIN Producto p ON i.ID_producto = p.ID_producto
+                JOIN Clase_producto c ON p.ID_Clase = c.ID_Clase
+                JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                WHERE i.Numero_inventario = 1"""
+            
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return rows
+        finally:
+            cursor.close()
+            db.close()
+
     def listar_inventario_general(self):
         """Lista inventario general (sin filtros)"""
         return self.listar_inventario()

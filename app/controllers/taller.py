@@ -177,3 +177,65 @@ def liberar_orden_tecnico():
         return jsonify({"mensaje": "Técnico liberado exitosamente de la orden"}), 200
     else:
         return jsonify({"error": "Error al liberar el técnico de la orden"}), 500
+
+@taller_blueprint.route("/api/taller/consultar-inventario", methods=["GET"])
+@jwt_required
+@tiene_permiso('Taller', 'consultar')
+def consultar_inventario():
+    inventario = Inventario()
+    resultado = inventario.listar_inventario_taller()
+    return jsonify(resultado)
+
+@taller_blueprint.route("/api/taller/guardar-reparacion", methods=["POST"])
+@jwt_required
+@tiene_permiso('Taller', 'registrar')
+def registrar_reparacion():
+    try:
+        # Obtener datos del request
+        data = request.json
+        
+        # Validar campos obligatorios
+        id_orden = data.get("id_orden")
+        descripcion = data.get("descripcion_reparacion")
+        
+        if not id_orden:
+            return jsonify({"error": "El ID de orden es obligatorio"}), 400
+        if not descripcion:
+            return jsonify({"error": "La descripción de reparación es obligatoria"}), 400
+        
+        # Procesar lista de repuestos (convertir a JSON si es necesario)
+        repuestos = data.get("repuestos_utilizados")
+        if repuestos and isinstance(repuestos, (list, dict)):
+            import json
+            repuestos = json.dumps(repuestos)  # Convertir a JSON string
+        
+        # Crear instancia de Orden_servicio
+        ordenes = Orden_servicio(
+            ID_empleado=32014004,  # ID del técnico (debería venir del JWT)
+            ID_orden_servicio=id_orden,
+            Descripcion_reparacion=descripcion,
+            lista_repuestos=repuestos
+        )
+        
+        # Registrar reparación
+        resultado = ordenes.registrar_reparacion()
+        
+        # Procesar respuesta
+        if resultado.get("success"):
+            return jsonify({
+                "mensaje": resultado.get("mensaje", "Reparación registrada exitosamente"),
+                "data": resultado.get("data")
+            }), 200
+        else:
+            error_msg = resultado.get("error", "Error desconocido")
+            # Determinar código de estado según el error
+            if any(palabra in error_msg.lower() for palabra in ["inválido", "obligatorio", "válida", "no encontrado"]):
+                return jsonify({"error": error_msg}), 400
+            elif "permiso" in error_msg.lower() or "autorización" in error_msg.lower():
+                return jsonify({"error": error_msg}), 403
+            else:
+                return jsonify({"error": error_msg}), 500
+                
+    except Exception as e:
+        print(f"Error en la ruta: {e}")
+        return jsonify({"error": f"Error interno del servidor: {str(e)}"}), 500

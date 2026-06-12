@@ -335,7 +335,6 @@ DROP TABLE IF EXISTS `Equipo`;
 CREATE TABLE `Equipo` (
   `ID_equipo` varchar(10) NOT NULL,
   `ID_producto` varchar(10) DEFAULT NULL,
-  `IMEI` varchar(30) DEFAULT NULL,
   `Color` varchar(20) DEFAULT NULL,
   `Capacidad` varchar(20) DEFAULT NULL,
   `Clave` int DEFAULT NULL,
@@ -352,7 +351,7 @@ CREATE TABLE `Equipo` (
 
 LOCK TABLES `Equipo` WRITE;
 /*!40000 ALTER TABLE `Equipo` DISABLE KEYS */;
-INSERT INTO `Equipo` VALUES ('EQ0000001','1','123456789012345','Negro','128GB',1234,'PATRON123'),('EQ0000002','3','234567890123456','Azul','256GB',NULL,NULL),('EQ0000003','4','345678901234567','Blanco','512GB',NULL,NULL),('EQ0000004','1','456789012345678','Rojo','64GB',1111,'PATRON456'),('EQ0000005','3','567890123456789','Verde','128GB',NULL,NULL);
+INSERT INTO `Equipo` VALUES ('EQ0000001','1','Negro','128GB',1234,'PATRON123'),('EQ0000002','3','Azul','256GB',NULL,NULL),('EQ0000003','4','Blanco','512GB',NULL,NULL),('EQ0000004','1','Rojo','64GB',1111,'PATRON456'),('EQ0000005','3','Verde','128GB',NULL,NULL);
 /*!40000 ALTER TABLE `Equipo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -488,7 +487,7 @@ CREATE TABLE `Interaccion` (
 
 LOCK TABLES `Interaccion` WRITE;
 /*!40000 ALTER TABLE `Interaccion` DISABLE KEYS */;
-INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',20567890,'Reparación completada'),('INT000003','OS0000002',20567890,'Diagnóstico'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión');
+INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Asignada'),('INT000023','OS0000002',32014004,'Revisión'),('INT000024','OS0000002',32014004,'Revisión'),('INT000025','OS0000002',32014004,'Revisión');
 /*!40000 ALTER TABLE `Interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -517,7 +516,7 @@ CREATE TABLE `Inventario` (
 
 LOCK TABLES `Inventario` WRITE;
 /*!40000 ALTER TABLE `Inventario` DISABLE KEYS */;
-INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL),('10','10',18,80.00,1009),('2','2',15,350.00,1001),('3','3',8,950.00,1002),('4','4',12,850.00,1003),('5','5',20,400.00,1004),('6','6',5,450.00,1005),('7','7',30,25.00,1006),('8','8',25,15.00,1007),('9','9',10,120.00,1008);
+INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL),('10','10',16,80.00,1),('2','2',15,350.00,1),('3','3',8,950.00,1002),('4','4',12,850.00,1003),('5','5',20,400.00,1),('6','6',5,450.00,1005),('7','7',30,25.00,1006),('8','8',25,15.00,1007),('9','9',10,120.00,1008);
 /*!40000 ALTER TABLE `Inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -677,7 +676,7 @@ CREATE TABLE `Orden_servicio` (
 
 LOCK TABLES `Orden_servicio` WRITE;
 /*!40000 ALTER TABLE `Orden_servicio` DISABLE KEYS */;
-INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','Asignada','Cambio de pantalla rota',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-03 17:00:00'),('OS0000002','EQ0000002','33456789','Pendiente','Revisión de batería',80.00,NULL,'2026-06-02 10:30:00',NULL),('OS0000003','EQ0000003','44567890','Pendiente','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','Pendiente','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Pendiente','Actualización software',60.00,'Dejo el cargador','2026-06-06 11:00:00',NULL),('OS0000006',NULL,'30548845','Pendiente','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
+INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','En proceso','Cambio de pantalla rota',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-03 17:00:00'),('OS0000002','EQ0000002','22345678','Reparada','holaaaaaaaa',80.00,NULL,'2026-06-02 10:30:00','2026-06-11 18:36:07'),('OS0000003','EQ0000003','44567890','Asignada','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','En proceso','Limpieza interna',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-05 16:00:00'),('OS0000005','EQ0000005','66789012','Asignada','Actualización software',60.00,'Dejo el cargador','2026-06-06 11:00:00',NULL),('OS0000006','EQ0000005','30548845','En proceso','Diagnóstico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL);
 /*!40000 ALTER TABLE `Orden_servicio` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -843,7 +842,7 @@ CREATE TABLE `Repuestos_usados` (
 
 LOCK TABLES `Repuestos_usados` WRITE;
 /*!40000 ALTER TABLE `Repuestos_usados` DISABLE KEYS */;
-INSERT INTO `Repuestos_usados` VALUES ('OS0000001','2',1),('OS0000002','10',1),('OS0000003','7',1);
+INSERT INTO `Repuestos_usados` VALUES ('OS0000001','2',1),('OS0000002','10',3),('OS0000003','7',1);
 /*!40000 ALTER TABLE `Repuestos_usados` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -897,7 +896,7 @@ CREATE TABLE `Test` (
 
 LOCK TABLES `Test` WRITE;
 /*!40000 ALTER TABLE `Test` DISABLE KEYS */;
-INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss');
+INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona');
 /*!40000 ALTER TABLE `Test` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -924,7 +923,7 @@ CREATE TABLE `Test_realizados_interaccion` (
 
 LOCK TABLES `Test_realizados_interaccion` WRITE;
 /*!40000 ALTER TABLE `Test_realizados_interaccion` DISABLE KEYS */;
-INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037');
+INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083');
 /*!40000 ALTER TABLE `Test_realizados_interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1118,7 +1117,7 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_revision_test` */;
+/*!50003 DROP PROCEDURE IF EXISTS `Listar_ordenes_servicio_con_equipo` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1128,97 +1127,378 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_revision_test`(
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `Listar_ordenes_servicio_con_equipo`(
+    -- Parámetros opcionales para filtrar
     IN p_ID_orden_servicio VARCHAR(10),
-    IN p_ID_empleado INT,
-    IN p_Num_test INT,            -- El número identificador del lote de test
-    IN p_Json_Tests JSON          -- El arreglo: [{"nombre":"Mica", "resultado":"Funciona"}, ...]
+    IN p_Estado_orden_servicio VARCHAR(20),
+    IN p_ID_cliente VARCHAR(10)
 )
 BEGIN
-    -- Variables para generar ID_interaccion (Formato 'INT0000001')
+    -- Consulta principal que une Orden_servicio con Equipo y tablas relacionadas
+    SELECT 
+        -- Datos de la orden de servicio
+        os.ID_orden_servicio,
+        os.Estado_orden_servicio,
+        os.Descripcion_reparacion,
+        os.Costo_reparacion,
+        os.Nota_orden_servicio,
+        os.Fecha_entrada,
+        os.Fecha_salida,
+        
+        -- Datos del cliente (a través de Orden_servicio)
+        os.ID_cliente,
+        pn.Nombre_cliente,
+        pn.Apellido_cliente,
+        c.Celular_cliente,
+        c.Correo_cliente,
+        c.Direccion_cliente,
+        
+        -- Datos del equipo asociado
+        e.ID_equipo,
+        e.IMEI,
+        e.Color,
+        e.Capacidad,
+        e.Clave,
+        e.Patron,
+        
+        -- Datos del producto (asociado al equipo)
+        e.ID_producto,
+        prod.Nombre_producto,
+        prod.Descripcion,
+        
+        -- Datos de la clase del producto
+        cp.Nombre_Clase AS Clase_producto,
+        
+        -- Datos de la marca
+        mp.Nombre_marca AS Marca_producto
+        
+    FROM Orden_servicio os
+    INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+    INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
+    INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
+    INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
+    INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
+    LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente  -- LEFT JOIN porque puede ser cliente jurídico también
+    
+    WHERE 
+        (p_ID_orden_servicio IS NULL OR os.ID_orden_servicio = p_ID_orden_servicio)
+        AND (p_Estado_orden_servicio IS NULL OR os.Estado_orden_servicio = p_Estado_orden_servicio)
+        AND (p_ID_cliente IS NULL OR os.ID_cliente = p_ID_cliente)
+        
+    ORDER BY os.Fecha_entrada DESC;
+    
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_asignar_orden_servicio` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_asignar_orden_servicio`(
+    IN p_ID_orden_servicio VARCHAR(10),
+    IN p_ID_empleado INT
+)
+BEGIN
+    DECLARE v_estado_actual VARCHAR(20);
+    DECLARE v_tiene_asignacion INT;
     DECLARE v_ultimo_id_int VARCHAR(10);
     DECLARE v_siguiente_num_int INT;
     DECLARE v_nuevo_id_interaccion VARCHAR(10);
     
-    -- Variables para generar ID_test dentro del ciclo (Formato 'TST0000001')
-    DECLARE v_ultimo_id_tes VARCHAR(10);
-    DECLARE v_siguiente_num_tes INT;
-    DECLARE v_nuevo_id_test VARCHAR(10);
-    
-    -- Variables para el control del Ciclo Repetitivo (Bucle WHILE)
-    DECLARE v_items_count INT DEFAULT 0;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_nombre_comp VARCHAR(50);
-    DECLARE v_resultado_comp VARCHAR(300);
-
-    -- Manejo de errores: Si algo falla, deshace todo (Rollback)
+    -- Manejo de errores
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         RESIGNAL;
     END;
-
-    -- Iniciamos la transacción segura
+    
+    -- Iniciar transacción
     START TRANSACTION;
-
-    -- =========================================================================
-    -- PASO 1: INSERTAR EN LA TABLA Interaccion CON ID AUTOGENERADO
-    -- =========================================================================
-    SELECT MAX(`ID_interaccion`) INTO v_ultimo_id_int FROM `Interaccion`;
-
+    
+    -- 1. Verificar el estado actual de la orden de servicio
+    SELECT Estado_orden_servicio INTO v_estado_actual
+    FROM Orden_servicio
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    -- Si no existe la orden, mostrar error
+    IF v_estado_actual IS NULL THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio no existe';
+    END IF;
+    
+    -- Verificar que no esté asignada
+    IF v_estado_actual = 'Asignada' THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio ya está asignada';
+    END IF;
+    
+    -- 2. Verificar que no exista una interacción con acción 'Asignada' para esta orden
+    SELECT COUNT(*) INTO v_tiene_asignacion
+    FROM Interaccion
+    WHERE ID_orden_servicio = p_ID_orden_servicio 
+      AND Accion = 'Asignada';
+    
+    IF v_tiene_asignacion > 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio ya tiene un registro de asignación previa';
+    END IF;
+    
+    -- 3. Cambiar el estado de la orden a 'Asignada'
+    UPDATE Orden_servicio
+    SET Estado_orden_servicio = 'Asignada'
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    -- 4. Generar nuevo ID para la interacción
+    SELECT MAX(ID_interaccion) INTO v_ultimo_id_int FROM Interaccion;
+    
     IF v_ultimo_id_int IS NULL THEN
         SET v_siguiente_num_int = 1;
     ELSE
         SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
     END IF;
-
-    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
-
-    -- Registro inicial requerido
-    INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`)
-    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Revisión');
-
-
-    -- =========================================================================
-    -- PASO 2: CICLO REPETITIVO PARA PROCESAR EL ARREGLO E INSERTAR EN Test Y LA INTERMEDIA
-    -- =========================================================================
-    SET v_items_count = JSON_LENGTH(p_Json_Tests);
     
-    WHILE i < v_items_count DO
-        -- 2.1 Extraer los datos del componente actual del lote JSON
-        SET v_nombre_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
-        SET v_resultado_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
-        
-        -- 2.2 Generar el ID_test dinámico (Formato 'TST0000001') para este componente específico
-        SELECT MAX(`ID_test`) INTO v_ultimo_id_tes FROM `Test`;
-        
-        IF v_ultimo_id_tes IS NULL THEN
-            SET v_siguiente_num_tes = 1;
-        ELSE
-            SET v_siguiente_num_tes = CAST(SUBSTRING(v_ultimo_id_tes, 4) AS UNSIGNED) + 1;
-        END IF;
-        
-        SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_tes, 6, '0'));
-        
-        -- 2.3 Insertar el registro en la tabla Test usando los nombres correctos de columnas
-        -- CORREGIDO: Usar 'Num_test' (parámetro) y 'Resultado_test' (columna correcta)
-        INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`)
-        VALUES (v_nuevo_id_test, p_Num_test, v_nombre_comp, v_resultado_comp);
-        
-        -- 2.4 Insertar la relación de los códigos en la tabla Test_realizados_interaccion
-        INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`)
-        VALUES (v_nuevo_id_interaccion, v_nuevo_id_test);
-        
-        -- Avanzar al siguiente elemento del arreglo
-        SET i = i + 1;
-    END WHILE;
-
-    -- Guardar de manera permanente todos los cambios
+    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+    
+    -- 5. Insertar registro en Interaccion
+    INSERT INTO Interaccion (ID_interaccion, ID_orden_servicio, ID_empleado, Accion)
+    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Asignada');
+    
+    -- Confirmar transacción
     COMMIT;
-
-    -- Devolver resumen para tu backend
-    SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
-
+    
+    -- 6. Devolver resultado
+    SELECT 
+        p_ID_orden_servicio AS ID_orden_servicio,
+        'Asignada' AS Nuevo_estado,
+        v_nuevo_id_interaccion AS ID_interaccion,
+        'Orden de servicio asignada correctamente' AS Mensaje;
+        
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_liberar_orden_servicio` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_liberar_orden_servicio`(
+    IN p_ID_orden_servicio VARCHAR(10),
+    IN p_ID_empleado INT
+)
+BEGIN
+    DECLARE v_estado_actual VARCHAR(20);
+    DECLARE v_tiene_asignacion INT;
+    
+    -- Manejo de errores
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    -- Iniciar transacción
+    START TRANSACTION;
+    
+    -- 1. Verificar el estado actual de la orden de servicio
+    SELECT Estado_orden_servicio INTO v_estado_actual
+    FROM Orden_servicio
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    -- Si no existe la orden, mostrar error
+    IF v_estado_actual IS NULL THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio no existe';
+    END IF;
+    
+    -- Verificar que esté asignada (solo se puede liberar una orden asignada)
+    IF v_estado_actual != 'Asignada' THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio no está asignada, no se puede liberar';
+    END IF;
+    
+    -- 2. Verificar que exista una interacción con acción 'Asignada' para esta orden
+    SELECT COUNT(*) INTO v_tiene_asignacion
+    FROM Interaccion
+    WHERE ID_orden_servicio = p_ID_orden_servicio 
+      AND Accion = 'Asignada';
+    
+    IF v_tiene_asignacion = 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'La orden de servicio no tiene registro de asignación previa';
+    END IF;
+    
+    -- 3. Cambiar el estado de la orden a 'En proceso'
+    UPDATE Orden_servicio
+    SET Estado_orden_servicio = 'En proceso'
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    -- 4. Modificar la interacción existente: cambiar acción de 'Asignada' a 'En proceso'
+    UPDATE Interaccion
+    SET Accion = 'En proceso'
+    WHERE ID_orden_servicio = p_ID_orden_servicio 
+      AND Accion = 'Asignada';
+    
+    -- Confirmar transacción
+    COMMIT;
+    
+    -- 5. Devolver resultado
+    SELECT 
+        p_ID_orden_servicio AS ID_orden_servicio,
+        'En proceso' AS Nuevo_estado,
+        'Interacción actualizada correctamente' AS Mensaje;
+        
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_reparacion` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_reparacion`(
+    IN p_ID_orden_servicio VARCHAR(10),
+    IN p_ID_empleado INT,
+    IN p_Descripcion_reparacion VARCHAR(300),
+    IN p_Json_Repuestos JSON
+)
+BEGIN
+    DECLARE v_estado_actual VARCHAR(20);
+    DECLARE v_id_interaccion_asignada VARCHAR(10);
+    
+    DECLARE v_items_count INT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE v_id_inventario VARCHAR(10);
+    DECLARE v_cantidad INT;
+    DECLARE v_existencia_actual INT;
+    DECLARE v_error_msg VARCHAR(255);
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET @err_msg = IFNULL(MESSAGE_TEXT, 'Error desconocido en la base de datos');
+        RESIGNAL SET MESSAGE_TEXT = @err_msg;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Verificar que la orden exista
+    SELECT Estado_orden_servicio INTO v_estado_actual
+    FROM Orden_servicio
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    IF v_estado_actual IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden de servicio no existe';
+    END IF;
+    
+    IF v_estado_actual != 'Asignada' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden debe estar en estado Asignada';
+    END IF;
+    
+    -- Buscar la interaccion
+    SELECT ID_interaccion INTO v_id_interaccion_asignada
+    FROM Interaccion
+    WHERE ID_orden_servicio = p_ID_orden_servicio AND Accion = 'Asignada'
+    LIMIT 1;
+    
+    IF v_id_interaccion_asignada IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se encontro interaccion con accion Asignada';
+    END IF;
+    
+    -- Actualizar interaccion
+    UPDATE Interaccion SET Accion = 'Reparada' 
+    WHERE ID_interaccion = v_id_interaccion_asignada;
+    
+    -- Actualizar orden
+    UPDATE Orden_servicio
+    SET Estado_orden_servicio = 'Reparada',
+        Descripcion_reparacion = p_Descripcion_reparacion,
+        Fecha_salida = NOW()
+    WHERE ID_orden_servicio = p_ID_orden_servicio;
+    
+    -- Procesar repuestos
+    IF p_Json_Repuestos IS NOT NULL AND JSON_VALID(p_Json_Repuestos) AND JSON_LENGTH(p_Json_Repuestos) > 0 THEN
+        SET v_items_count = JSON_LENGTH(p_Json_Repuestos);
+        
+        WHILE i < v_items_count DO
+            SET v_id_inventario = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].id_inventario')));
+            SET v_cantidad = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].cantidad')));
+            
+            -- Validar que se extrajo correctamente
+            IF v_id_inventario IS NULL OR v_id_inventario = '' THEN
+                SET v_error_msg = CONCAT('Error: No se pudo extraer id_inventario del repuesto en indice ', i);
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+            END IF;
+            
+            IF v_cantidad IS NULL OR v_cantidad <= 0 THEN
+                SET v_error_msg = CONCAT('Cantidad invalida para el repuesto ', v_id_inventario);
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+            END IF;
+            
+            -- Verificar existencia en inventario
+            SELECT Existencia INTO v_existencia_actual
+            FROM Inventario
+            WHERE ID_inventario = v_id_inventario;
+            
+            IF v_existencia_actual IS NULL THEN
+                SET v_error_msg = CONCAT('El repuesto con ID ', v_id_inventario, ' no existe');
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+            END IF;
+            
+            IF v_existencia_actual < v_cantidad THEN
+                SET v_error_msg = CONCAT('Stock insuficiente para ', v_id_inventario, 
+                                       ': disponible ', v_existencia_actual, ', requerido ', v_cantidad);
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+            END IF;
+            
+            -- Registrar repuesto usado (Asegurate que la tabla existe)
+            INSERT INTO Repuestos_usados (ID_orden_servicio, ID_inventario, Cantidad_usada)
+            VALUES (p_ID_orden_servicio, v_id_inventario, v_cantidad)
+            ON DUPLICATE KEY UPDATE Cantidad_usada = Cantidad_usada + v_cantidad;
+            
+            -- Descontar stock
+            UPDATE Inventario
+            SET Existencia = Existencia - v_cantidad
+            WHERE ID_inventario = v_id_inventario;
+            
+            SET i = i + 1;
+        END WHILE;
+    END IF;
+    
+    COMMIT;
+    
+    SELECT 
+        p_ID_orden_servicio AS ID_orden_servicio,
+        'Reparada' AS Nuevo_estado,
+        v_id_interaccion_asignada AS ID_interaccion_actualizada,
+        p_Descripcion_reparacion AS Descripcion_reparacion,
+        IFNULL(v_items_count, 0) AS Total_repuestos_usados,
+        'Orden reparada exitosamente' AS Mensaje;
+        
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -1235,4 +1515,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-09  4:16:13
+-- Dump completed on 2026-06-11 23:46:58

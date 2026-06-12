@@ -142,7 +142,7 @@
     </section>
 
     <!-- ============================================ -->
-    <!-- VISTA 4: FORMULARIO DE REPARACIÓN -->
+    <!-- VISTA 4: FORMULARIO DE REPARACIÓN (ACTUALIZADA) -->
     <!-- ============================================ -->
     <section class="content vista-4" aria-label="Reparación" hidden>
         <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
@@ -158,33 +158,46 @@
             </div>
 
             <div class="device-detail__actions" style="margin-bottom:1rem; display:flex; gap:.5rem; flex-wrap:wrap;">
-                <button type="button" class="form-btn form-btn--ghost" id="btn-repuestos-equipo">Piezas del equipo</button>
-                <button type="button" class="form-btn form-btn--primary" id="btn-repuestos-inventario">Inventario de repuestos</button>
+                <button type="button" class="form-btn form-btn--primary" id="btn-inventario-repuestos">
+                    📦 Inventario de repuestos
+                </button>
+                <button type="button" class="form-btn form-btn--ghost" id="btn-limpiar-repuestos" style="display: none;">
+                    🗑️ Limpiar lista
+                </button>
             </div>
 
-            <!-- Repuestos usados -->
+            <!-- Repuestos usados - SECCIÓN MEJORADA -->
             <div class="repair-used-parts">
-                <h3 class="card__subtitle">Repuestos usados</h3>
-                <div id="repuestos-usados-list" class="device-detail__grid">
-                    <p class="device-detail__empty">Aún no has agregado repuestos.</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h3 class="card__subtitle" style="margin: 0;">🔧 Repuestos usados en esta reparación</h3>
+                    <span id="repuestos-total-count" class="estado-badge estado-default" style="background: #6c757d; font-size: 0.7rem;">0 unidades</span>
+                </div>
+                <div id="repuestos-usados-list" class="repuestos-list-container">
+                    <div class="device-detail__empty" style="text-align: center; padding: 2rem;">
+                        📦 No hay repuestos agregados aún.<br>
+                        <small>Haz clic en "Inventario de repuestos" para agregar productos.</small>
+                    </div>
                 </div>
             </div>
 
             <!-- Descripción de la reparación -->
             <label class="field field--full" style="margin-top:1rem;">
-                <span>Reparación</span>
+                <span>Descripción de la reparación</span>
                 <textarea id="reparacion-textarea" 
-                          class="field__input" 
-                          name="reparacion" 
-                          rows="5" 
-                          placeholder="Escribe lo que se le hizo al teléfono"
-                          maxlength="500"
-                          title="Sin caracteres especiales"></textarea>
-                <small class="field-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
+                        class="field__input" 
+                        name="reparacion" 
+                        rows="5" 
+                        placeholder="Describe detalladamente lo que se le hizo al equipo (ej: cambio de pantalla, reparación de botón de encendido, etc.)"
+                        maxlength="500"
+                        title="Sin caracteres especiales"></textarea>
+                <small class="field-hint">
+                    <span id="caracteres-contador">0</span>/500 caracteres - Sin caracteres especiales como &lt; &gt; { } [ ] | \ ^
+                </small>
             </label>
 
             <div class="service-form__actions" style="margin-top:1rem;">
-                <button type="button" id="btn-guardar-reparacion" class="form-btn form-btn--primary">Guardar reparación</button>
+                <button type="button" class="form-btn form-btn--ghost" data-view-target="vista-2">Cancelar</button>
+                <button type="button" id="btn-guardar-reparacion" class="form-btn form-btn--primary">✅ Guardar reparación</button>
             </div>
         </article>
     </section>
@@ -220,8 +233,6 @@
 <!-- MODALES -->
 <!-- ============================================ -->
 
-
-
 <!-- Modal para ver detalle de orden antes de tomarla -->
 {% call modal('modal-preview-orden', 'Detalle de la orden', 'lg') %}
     <div id="modal-preview-body">
@@ -236,11 +247,45 @@
     </div>
 {% endcall %}
 
+<!-- Modal de inventario de repuestos (MEJORADO) -->
+{% call modal('modal-inventario-repuestos', '📦 Inventario de repuestos', 'lg') %}
+    <div id="modal-inventario-body">
+        <div class="table-wrap" style="max-height: 450px; overflow-y: auto;">
+            <table class="table" id="tabla-inventario-repuestos" style="min-width: 600px;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">ID</th>
+                        <th style="width: 35%;">Producto</th>
+                        <th style="width: 15%;">Marca</th>
+                        <th style="width: 15%;">Clase</th>
+                        <th style="width: 10%;">Stock</th>
+                        
+                    </tr>
+                </thead>
+                <tbody id="tabla-inventario-body">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            <div>🔄 Cargando inventario...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="service-form__actions" style="margin-top: 1rem; justify-content: space-between;">
+            <div>
+                <small class="field-hint">💡 Haz clic en "Agregar" para añadir repuestos a la lista</small>
+            </div>
+            <div>
+                <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cerrar</button>
+            </div>
+        </div>
+    </div>
+{% endcall %}
+
 <!-- Modal para ver detalles del test -->
 {% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
     <div id="modal-test-body" class="test-modal-grid"></div>
 {% endcall %}
-
 
 <!-- Modal para registrar fotos -->
 {% call modal('modal-fotos-registrar', 'Registrar fotos del dispositivo', 'lg') %}

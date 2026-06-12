@@ -18,7 +18,7 @@ body {
     margin: 0;
     min-height: 100vh;
     font-family: "Manrope", sans-serif;
-    color: #ffffff;
+    color: #1a1a1a;    
     background: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%),
         radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
         linear-gradient(135deg, #1e1e1e, #2a2a2a);
@@ -43,9 +43,9 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.62);
+    color: #666;
     padding-bottom: 0.2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .breadcrumb__list li + li:before {
@@ -56,14 +56,14 @@ body {
 }
 
 .breadcrumb a {
-    color: rgba(255, 255, 255, 0.72);
+    color: #555; 
     text-decoration: none;
     font-weight: 700;
     transition: color 0.15s ease;
 }
 
 .breadcrumb a:hover {
-    color: #ffffff;
+    color: var(--ink);
     text-decoration: none;
 }
 
@@ -82,11 +82,12 @@ body {
     font-weight: 900;
     letter-spacing: -0.03em;
     font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+    color: var(--ink);
 }
 
 .validacion-header__subtitle {
     margin: 0.35rem 0 0;
-    color: rgba(255, 255, 255, 0.78);
+    color: #666;
     font-weight: 600;
 }
 
@@ -95,7 +96,7 @@ body {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 2px solid #e0e0e0;
     padding-bottom: 0.5rem;
 }
 
@@ -106,15 +107,15 @@ body {
     font-family: "Space Grotesk", sans-serif;
     font-weight: 700;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: #666; 
     cursor: pointer;
     border-radius: 40px;
     transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .tab-btn.active {
@@ -364,6 +365,10 @@ body {
     color: var(--ink);
 }
 
+.modal-panel p {
+    color: #666; 
+}
+
 .motivo-rechazo {
     width: 100%;
     padding: 0.75rem;
@@ -372,6 +377,7 @@ body {
     font-family: "Manrope", sans-serif;
     resize: vertical;
     margin: 1rem 0;
+    color: var(--ink); /* Agregado color del texto */
 }
 
 .motivo-rechazo:focus {
@@ -482,6 +488,7 @@ body {
     background: #eef2f6;
     border-top: 2px solid rgba(0, 0, 0, 0.08);
     font-size: 0.9rem;
+    color: var(--ink); 
 }
 
 .total-amount {
@@ -543,6 +550,7 @@ body {
     border-radius: 12px;
     margin: 0.5rem 0;
     border-left: 3px solid #c62828;
+    color: #c62828;
 }
 
 .motivo-rechazo-info strong {
@@ -644,6 +652,7 @@ body {
         margin-top: 0.25rem;
     }
 }
+
 /* ==================== ESTILOS PARA FILTROS DEL MODAL DE REPORTES ==================== */
 
 .filters-panel__section {

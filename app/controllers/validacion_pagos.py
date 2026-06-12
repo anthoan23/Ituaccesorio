@@ -86,11 +86,19 @@ def api_detalle_venta(factura_id):
 @tiene_permiso('Validación Pagos', 'modificar')
 def api_aprobar_pago(factura_id):
     try:
-        empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
+        # CORREGIDO: Usar 'cedula' en lugar de 'cedula_personal'
+        if isinstance(g.user, dict):
+            empleado_id = g.user.get("cedula")
+            print(f"empleado_id desde dict: {empleado_id}")
+        else:
+            empleado_id = getattr(g.user, "cedula", None)
+            print(f"empleado_id desde objeto: {empleado_id}")
+        
         empleado_id = str(empleado_id) if empleado_id else None
         
         if not empleado_id:
-            return jsonify({"success": False, "error": "Empleado no identificado"}), 400
+            print("ERROR: No se encontró la cédula en el token")
+            return jsonify({"success": False, "error": "Empleado no identificado - cédula no encontrada en token"}), 400
         
         modelo = ValidacionPagosModel()
         modelo.actualizar_fecha_pago(factura_id)
@@ -105,12 +113,17 @@ def api_aprobar_pago(factura_id):
                 usuario_id=usuario_id,
                 modulo_nombre="Validación Pagos"
             )
+            print(f"Pago {factura_id} aprobado por empleado {empleado_id}")
+            print("=" * 50)
             return jsonify({"success": True, "mensaje": "Pago aprobado correctamente", "fecha_aprobacion": datetime.now().isoformat()})
         else:
+            print(f"ERROR al aprobar: {resultado.get('error')}")
+            print("=" * 50)
             return jsonify({"success": False, "error": resultado.get("error", "Error al aprobar")}), 500
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en api_aprobar_pago: {e}")
         traceback.print_exc()
+        print("=" * 50)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -125,11 +138,25 @@ def api_rechazar_pago(factura_id):
         if not motivo:
             return jsonify({"success": False, "error": "Debe especificar un motivo"}), 400
         
-        empleado_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
+        # Debug
+        print("=" * 50)
+        print("DEBUG - Rechazando pago para factura:", factura_id)
+        print("Motivo:", motivo)
+        print("g.user:", g.user)
+        
+        # CORREGIDO: Usar 'cedula' en lugar de 'cedula_personal'
+        if isinstance(g.user, dict):
+            empleado_id = g.user.get("cedula")
+            print(f"empleado_id desde dict: {empleado_id}")
+        else:
+            empleado_id = getattr(g.user, "cedula", None)
+            print(f"empleado_id desde objeto: {empleado_id}")
+        
         empleado_id = str(empleado_id) if empleado_id else None
         
         if not empleado_id:
-            return jsonify({"success": False, "error": "Empleado no identificado"}), 400
+            print("ERROR: No se encontró la cédula en el token")
+            return jsonify({"success": False, "error": "Empleado no identificado - cédula no encontrada en token"}), 400
         
         modelo = ValidacionPagosModel()
         resultado = modelo.rechazar_pago(factura_id, empleado_id, motivo)
@@ -143,12 +170,17 @@ def api_rechazar_pago(factura_id):
                 usuario_id=usuario_id,
                 modulo_nombre="Validación Pagos"
             )
+            print(f"Pago {factura_id} rechazado por empleado {empleado_id}")
+            print("=" * 50)
             return jsonify({"success": True, "mensaje": "Pago rechazado"})
         else:
+            print(f"ERROR al rechazar: {resultado.get('error')}")
+            print("=" * 50)
             return jsonify({"success": False, "error": resultado.get("error", "Error al rechazar")}), 500
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en api_rechazar_pago: {e}")
         traceback.print_exc()
+        print("=" * 50)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
