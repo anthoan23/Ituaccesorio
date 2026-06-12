@@ -70,8 +70,10 @@
 								</label>
 
 								{% if recaptcha_site_key %}
-									<div class="phone__captcha">
-										<div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="normal"></div>
+									<div class="phone__captcha-wrapper">
+										<div class="phone__captcha">
+											<div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="normal"></div>
+										</div>
 									</div>
 								{% else %}
 									<p class="phone__captcha" role="note">Captcha no configurado. Define <strong>RECAPTCHA_SITE_KEY</strong> y <strong>RECAPTCHA_SECRET_KEY</strong> en el archivo <strong>.env</strong>.</p>

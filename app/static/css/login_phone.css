@@ -294,12 +294,17 @@ body::before {
 	height: 0;
 }
 
-.phone__captcha {
+.phone__captcha-wrapper {
 	display: flex;
 	justify-content: center;
-	align-items: center;
 	margin: 0;
 	padding: 0;
+}
+
+.phone__captcha {
+	transform: scale(0.95);
+	transform-origin: center center;
+	display: inline-block;
 }
 
 .phone__captcha > div {
