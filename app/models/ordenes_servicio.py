@@ -473,12 +473,7 @@ class Orden_servicio():
         cursor = db.cursor(dictionary=True)
         try:
             sql = (
-                """" 
-                SELECT * Ordene_servicio  
-
-                
-                
-                """
+     
             )
 
 
