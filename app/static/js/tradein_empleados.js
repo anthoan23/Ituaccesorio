@@ -1,8 +1,18 @@
+// ============================================
+// ICONOS (consistentes con módulo de empleados)
+// ============================================
+const Iconos = {
+  lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+  basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`,
+  ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`,
+  herramientas: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" fill="currentColor"/></svg>`
+};
+
 (() => {
     "use strict";
 
     let tradeinActual = null;
-    let catalogoFallas = [];
+    let catalogoTests = [];
 
     function getAuthToken() {
         return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
@@ -22,15 +32,17 @@
             ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         };
 
-        if (options.body && !(options.body instanceof FormData)) {
+        let body = options.body;
+        if (body && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
             headers["Content-Type"] = "application/json";
+            body = JSON.stringify(body);
         }
 
         const response = await fetch(url, {
             headers,
             credentials: "same-origin",
             method: options.method || "GET",
-            body: options.body,
+            body: body,
         });
 
         const data = await response.json().catch(() => ({}));
@@ -49,20 +61,6 @@
         const toast = document.createElement("div");
         toast.className = `custom-toast custom-toast--${tipo}`;
         toast.textContent = mensaje;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: ${tipo === "error" ? "#ef4444" : "#22c55e"};
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            z-index: 10000;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: 'Space Grotesk', sans-serif;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
 
         document.body.appendChild(toast);
 
@@ -90,6 +88,7 @@
     }
 
     function formatCurrency(value) {
+        if (value === null || value === undefined) return "$0.00";
         return `$${Number(value).toFixed(2)}`;
     }
 
@@ -103,134 +102,402 @@
             .replace(/'/g, "&#39;");
     }
 
+    // ==================== ESTADÍSTICAS ====================
     async function cargarEstadisticas() {
         try {
             const data = await fetchJson("/api/tradein/estadisticas");
             const stats = data.estadisticas;
             
             document.getElementById("stat-total").textContent = stats.total || 0;
-            document.getElementById("stat-pendientes").textContent = stats.pendientes || 0;
-            document.getElementById("stat-evaluados").textContent = stats.evaluados || 0;
             document.getElementById("stat-valor-total").textContent = formatCurrency(stats.valor_total || 0);
+            document.getElementById("stat-equipos").textContent = stats.equipos || 0;
         } catch (err) {
             console.error("Error cargando estadísticas:", err);
+            document.getElementById("stat-total").textContent = "0";
+            document.getElementById("stat-valor-total").textContent = "$0.00";
+            document.getElementById("stat-equipos").textContent = "0";
         }
     }
 
-    async function cargarCatalogoFallas() {
-        try {
-            const data = await fetchJson("/api/tradein/catalogo-fallas");
-            catalogoFallas = data.fallas || [];
-        } catch (err) {
-            console.error("Error cargando catálogo de fallas:", err);
-            catalogoFallas = [];
-        }
-    }
-
-    function renderFallasCheckboxes() {
-        const container = document.getElementById("fallas-checkboxes");
-        if (!container) return;
-        
-        container.innerHTML = catalogoFallas.map(falla => `
-            <label class="falla-checkbox">
-                <input type="checkbox" value="${escapeHtml(falla.id)}" data-nombre="${escapeHtml(falla.nombre)}">
-                <span>${escapeHtml(falla.nombre)}</span>
-                <small style="color:#888;">(-${formatCurrency(falla.deduccion_base)})</small>
-            </label>
-        `).join("");
-    }
-
-    async function cargarTradeIns(tipo) {
-        const url = tipo === "pendientes" ? "/api/tradein/pendientes" : "/api/tradein/evaluados";
-        const container = document.getElementById(`${tipo}-list`);
-        
-        if (!container) return;
+    // ==================== LISTAR TRADE-INS ====================
+    async function cargarTradeIns() {
+        const tbody = document.getElementById("tradein-list");
         
         try {
-            const data = await fetchJson(url);
+            const data = await fetchJson("/api/tradein");
             const tradeins = data.tradeins || [];
             
             if (tradeins.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 No hay trade-ins en esta lista</div>';
+                tbody.innerHTML = '<tr><td colspan="8" class="table__empty">📭 No hay trade-ins registrados</td>' + '</tr>';
                 return;
             }
             
-            container.innerHTML = tradeins.map(trade => `
-                <div class="tradein-card" data-id="${trade.id}">
-                    <div class="tradein-header-card">
-                        <span class="tradein-id">🔁 Trade-in: ${escapeHtml(trade.id)}</span>
-                        <span class="tradein-estado ${trade.estado}">${trade.estado === "pendiente" ? "⏳ Pendiente" : "✅ Evaluado"}</span>
-                    </div>
-                    
-                    <div class="tradein-info-grid">
-                        <div class="info-row">
-                            <strong>📱 Equipo</strong>
-                            <span>${escapeHtml(trade.producto_nombre || "N/A")}</span>
+            tbody.innerHTML = tradeins.map(trade => `
+                <tr data-id="${trade.id}">
+                    <td><span class="chip">${escapeHtml(trade.id)}</span></td>
+                    <td>${formatDate(trade.fecha)}</td>
+                    <td>
+                        <strong>${escapeHtml(trade.cliente_nombre)} ${escapeHtml(trade.cliente_apellido || "")}</strong>
+                        ${trade.cliente_celular ? `<br><small style="color: #6d7480;">${escapeHtml(trade.cliente_celular)}</small>` : ''}
+                    </td>
+                    <td><strong>${escapeHtml(trade.producto_nombre || "N/A")}</strong></td>
+                    <td>${escapeHtml(trade.marca || "N/A")}</td>
+                    <td><strong style="color: #121418;">${formatCurrency(trade.valor_pagado || 0)}</strong></td>
+                    <td>
+                        ${trade.tests && trade.tests.length > 0 ? 
+                            `<span class="badge badge--success">✅ ${trade.tests.length} pruebas</span>` : 
+                            `<span class="badge badge--warning">⏳ Sin pruebas</span>`}
+                    </td>
+                    <td class="table__actions">
+                        <div class="row-actions" aria-label="Acciones del trade-in">
+                            <button class="icon-action icon-action--view" type="button" data-action="ver" data-id="${trade.id}" title="Ver detalle">
+                                ${Iconos.ojo}
+                            </button>
+                            ${(!trade.tests || trade.tests.length === 0) ? 
+                                `<button class="icon-action icon-action--tests" type="button" data-action="tests" data-id="${trade.id}" title="Realizar pruebas">
+                                    ${Iconos.herramientas}
+                                </button>` : ''}
+                            <button class="icon-action icon-action--danger" type="button" data-action="eliminar" data-id="${trade.id}" title="Eliminar">
+                                ${Iconos.basura}
+                            </button>
                         </div>
-                        <div class="info-row">
-                            <strong>🏷️ Marca</strong>
-                            <span>${escapeHtml(trade.marca || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>📦 Clase</strong>
-                            <span>${escapeHtml(trade.clase || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>🎨 Color</strong>
-                            <span>${escapeHtml(trade.Color || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>💾 Capacidad</strong>
-                            <span>${escapeHtml(trade.Capacidad || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>🔢 IMEI</strong>
-                            <span>${escapeHtml(trade.IMEI || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>👤 Cliente</strong>
-                            <span>${escapeHtml(trade.cliente_nombre)} ${escapeHtml(trade.cliente_apellido || "")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>📞 Teléfono</strong>
-                            <span>${escapeHtml(trade.cliente_celular || "N/A")}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>📅 Fecha de registro</strong>
-                            <span>${formatDate(trade.fecha)}</span>
-                        </div>
-                        ${trade.cotizacion ? `
-                        <div class="info-row">
-                            <strong>💰 Cotización</strong>
-                            <span>${formatCurrency(trade.cotizacion)}</span>
-                        </div>
-                        ` : ""}
-                    </div>
-                    
-                    <div class="tradein-actions">
-                        <button class="btn btn--ghost btn-ver-detalle" data-id="${trade.id}">📋 Ver detalle</button>
-                        ${trade.estado === "pendiente" ? `
-                        <button class="btn btn--yellow btn-evaluar" data-id="${trade.id}">📝 Evaluar</button>
-                        ` : ""}
-                    </div>
-                </div>
+                    </td>
+                 </tr>
             `).join("");
             
-            // Event listeners para botones
-            document.querySelectorAll(".btn-ver-detalle").forEach(btn => {
-                btn.addEventListener("click", () => mostrarDetalle(btn.dataset.id));
+            document.querySelectorAll('.icon-action[data-action="ver"]').forEach(btn => {
+                btn.removeEventListener('click', handleVerClick);
+                btn.addEventListener('click', handleVerClick);
             });
             
-            document.querySelectorAll(".btn-evaluar").forEach(btn => {
-                btn.addEventListener("click", () => mostrarModalEvaluacion(btn.dataset.id));
+            document.querySelectorAll('.icon-action[data-action="tests"]').forEach(btn => {
+                btn.removeEventListener('click', handleTestsClick);
+                btn.addEventListener('click', handleTestsClick);
+            });
+            
+            document.querySelectorAll('.icon-action[data-action="eliminar"]').forEach(btn => {
+                btn.removeEventListener('click', handleEliminarClick);
+                btn.addEventListener('click', handleEliminarClick);
             });
             
         } catch (err) {
-            console.error(`Error cargando trade-ins ${tipo}:`, err);
-            container.innerHTML = '<div class="empty-state">❌ Error al cargar los datos</div>';
+            console.error("Error cargando trade-ins:", err);
+            tbody.innerHTML = '<tr><td colspan="8" class="table__empty">❌ Error al cargar los datos</td>' + '</tr>';
         }
     }
 
+    function handleVerClick(e) {
+        const btn = e.currentTarget;
+        const id = btn.getAttribute('data-id');
+        if (id) mostrarDetalle(id);
+    }
+
+    function handleTestsClick(e) {
+        const btn = e.currentTarget;
+        const id = btn.getAttribute('data-id');
+        if (id) abrirModalTests(id);
+    }
+
+    function handleEliminarClick(e) {
+        const btn = e.currentTarget;
+        const id = btn.getAttribute('data-id');
+        if (id) eliminarTradeIn(id);
+    }
+
+    // ==================== REGISTRAR NUEVO TRADE-IN ====================
+    // Cargar SOLO iPhones (productos de la marca Apple/iPhone)
+    async function cargarProductos() {
+        try {
+            const data = await fetchJson("/api/tradein/productos");
+            const select = document.getElementById("producto-id");
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Seleccionar iPhone...</option>';
+            
+            // Filtrar solo productos que sean iPhone (marca Apple o nombre que contenga iPhone)
+            const productos = data.productos || [];
+            const iPhones = productos.filter(producto => {
+                const marca = (producto.marca || "").toLowerCase();
+                const nombre = (producto.nombre || "").toLowerCase();
+                // Filtrar por marca Apple o que el nombre contenga "iphone"
+                return marca === 'apple' || marca === 'iphone' || nombre.includes('iphone');
+            });
+            
+            if (iPhones.length === 0) {
+                select.innerHTML += '<option value="" disabled>⚠️ No hay iPhones disponibles para trade-in</option>';
+                return;
+            }
+            
+            iPhones.forEach(producto => {
+                const marcaTexto = producto.marca ? ` (${escapeHtml(producto.marca)})` : '';
+                const nombreCompleto = `${escapeHtml(producto.nombre)}${marcaTexto}`;
+                select.innerHTML += `<option value="${producto.id}">📱 ${nombreCompleto}</option>`;
+            });
+            
+        } catch (err) {
+            console.error("Error cargando productos:", err);
+            const select = document.getElementById("producto-id");
+            if (select) {
+                select.innerHTML = '<option value="">❌ Error al cargar productos</option>';
+            }
+        }
+    }
+
+    // Búsqueda de clientes
+    let busquedaTimeout;
+    const clienteSearch = document.getElementById("cliente-search-input");
+    const clienteResults = document.getElementById("cliente-results");
+    const clienteIdInput = document.getElementById("cliente-id");
+
+    if (clienteSearch) {
+        clienteSearch.addEventListener("input", () => {
+            clearTimeout(busquedaTimeout);
+            const q = clienteSearch.value.trim();
+            
+            if (q.length < 2) {
+                clienteResults.classList.add("is-hidden");
+                return;
+            }
+            
+            busquedaTimeout = setTimeout(async () => {
+                try {
+                    const data = await fetchJson(`/api/tradein/clientes?q=${encodeURIComponent(q)}`);
+                    const clientes = data.clientes || [];
+                    
+                    if (clientes.length === 0) {
+                        clienteResults.innerHTML = '<div class="search-result-item">No se encontraron clientes</div>';
+                    } else {
+                        clienteResults.innerHTML = clientes.map(cliente => `
+                            <div class="search-result-item" data-id="${cliente.id}" data-nombre="${escapeHtml(cliente.nombre_completo)}" data-celular="${escapeHtml(cliente.celular || '')}">
+                                <strong>${escapeHtml(cliente.nombre_completo)}</strong>
+                                <small>📞 ${escapeHtml(cliente.celular || 'Sin teléfono')} · 🆔 ${cliente.id}</small>
+                            </div>
+                        `).join("");
+                        
+                        document.querySelectorAll(".search-result-item").forEach(item => {
+                            item.addEventListener("click", () => {
+                                clienteIdInput.value = item.dataset.id;
+                                clienteSearch.value = item.dataset.nombre;
+                                clienteResults.classList.add("is-hidden");
+                            });
+                        });
+                    }
+                    clienteResults.classList.remove("is-hidden");
+                } catch (err) {
+                    console.error("Error buscando clientes:", err);
+                }
+            }, 300);
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (clienteSearch && !clienteSearch.contains(e.target) && clienteResults && !clienteResults.contains(e.target)) {
+                clienteResults.classList.add("is-hidden");
+            }
+        });
+    }
+
+    // Preview de fotos
+    const fotosInput = document.getElementById("fotos");
+    const fotosPreview = document.getElementById("fotos-preview");
+    
+    if (fotosInput && fotosPreview) {
+        fotosInput.addEventListener("change", () => {
+            fotosPreview.innerHTML = "";
+            Array.from(fotosInput.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.createElement("div");
+                    preview.className = "foto-preview";
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="remove-foto" data-index="${index}">×</button>`;
+                    preview.querySelector(".remove-foto")?.addEventListener("click", () => {
+                        preview.remove();
+                    });
+                    fotosPreview.appendChild(preview);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
+    // Enviar formulario de registro
+    const formRegistrar = document.getElementById("form-registrar-tradein");
+    if (formRegistrar) {
+        formRegistrar.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const clienteId = document.getElementById("cliente-id")?.value;
+            if (!clienteId) {
+                mostrarToast("Debe seleccionar un cliente válido", "error");
+                return;
+            }
+            
+            const productoId = document.getElementById("producto-id")?.value;
+            if (!productoId) {
+                mostrarToast("Debe seleccionar un iPhone válido", "error");
+                return;
+            }
+            
+            const valorPagado = document.getElementById("valor-pagado")?.value;
+            if (!valorPagado || Number(valorPagado) <= 0) {
+                mostrarToast("Debe ingresar un valor pagado válido", "error");
+                return;
+            }
+            
+            const formData = new FormData(formRegistrar);
+            
+            const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
+            const textoOriginal = btnSubmit.textContent;
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "Registrando...";
+            
+            try {
+                const response = await fetch("/api/tradein", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${getAuthToken()}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    mostrarToast(data.message || "Trade-in registrado correctamente");
+                    cerrarModal("modal-registrar");
+                    formRegistrar.reset();
+                    if (fotosPreview) fotosPreview.innerHTML = "";
+                    if (clienteIdInput) clienteIdInput.value = "";
+                    if (clienteSearch) clienteSearch.value = "";
+                    await cargarEstadisticas();
+                    await cargarTradeIns();
+                } else {
+                    mostrarToast(data.error || "Error al registrar", "error");
+                }
+            } catch (err) {
+                mostrarToast(err.message || "Error de conexión", "error");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = textoOriginal;
+            }
+        });
+    }
+
+    // ==================== TESTS ====================
+    async function cargarCatalogoTests() {
+        try {
+            const data = await fetchJson("/api/tradein/catalogo-tests");
+            catalogoTests = data.tests || [];
+        } catch (err) {
+            console.error("Error cargando catálogo de tests:", err);
+            catalogoTests = [];
+        }
+    }
+
+    async function abrirModalTests(tradeinId) {
+        try {
+            const data = await fetchJson(`/api/tradein/${tradeinId}/detalle`);
+            const detalle = data.detalle || {};
+            tradeinActual = tradeinId;
+            
+            const infoContainer = document.getElementById("tests-equipo-info");
+            if (infoContainer) {
+                infoContainer.innerHTML = `
+                    <div class="equipo-info-card">
+                        <strong>📱 ${escapeHtml(detalle.producto_nombre || "N/A")}</strong>
+                        ${detalle.marca ? `<span>🏷️ ${escapeHtml(detalle.marca)}</span>` : ''}
+                        ${detalle.IMEI ? `<span>🔢 IMEI: ${escapeHtml(detalle.IMEI)}</span>` : ''}
+                        <span>👤 ${escapeHtml(detalle.cliente_nombre)} ${escapeHtml(detalle.cliente_apellido || "")}</span>
+                    </div>
+                `;
+            }
+            
+            const container = document.getElementById("tests-container");
+            if (!container) return;
+            
+            const testsPorCategoria = {};
+            
+            catalogoTests.forEach(test => {
+                if (!testsPorCategoria[test.categoria]) {
+                    testsPorCategoria[test.categoria] = [];
+                }
+                testsPorCategoria[test.categoria].push(test);
+            });
+            
+            let html = "";
+            for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
+                html += `
+                    <div class="test-categoria">
+                        <h4>${escapeHtml(categoria)}</h4>
+                        <div class="test-items">
+                            ${tests.map(test => {
+                                const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
+                                return `
+                                <div class="test-item">
+                                    <span class="test-nombre">${escapeHtml(test.nombre)}</span>
+                                    <div class="test-resultados">
+                                        <label><input type="radio" name="test_${safeName}" value="Funciona"> ✅ Funciona</label>
+                                        <label><input type="radio" name="test_${safeName}" value="No funciona"> ❌ No funciona</label>
+                                    </div>
+                                </div>
+                            `}).join("")}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html || '<p style="text-align:center; padding:2rem;">No hay pruebas configuradas</p>';
+            
+            abrirModal("modal-tests");
+            
+        } catch (err) {
+            mostrarToast(err.message || "Error al cargar datos del trade-in", "error");
+        }
+    }
+
+    async function guardarTests() {
+        if (!tradeinActual) return;
+        
+        const tests = [];
+        document.querySelectorAll("#tests-container .test-item").forEach(item => {
+            const nombre = item.querySelector(".test-nombre")?.textContent || "";
+            const seleccionado = item.querySelector('input[type="radio"]:checked');
+            const resultado = seleccionado ? seleccionado.value : "Dañado";
+            tests.push({ nombre, resultado });
+        });
+        
+        if (tests.length === 0) {
+            mostrarToast("No hay pruebas para registrar", "error");
+            return;
+        }
+        
+        const btnGuardar = document.getElementById("btn-guardar-tests");
+        if (!btnGuardar) return;
+        
+        const textoOriginal = btnGuardar.textContent;
+        btnGuardar.disabled = true;
+        btnGuardar.textContent = "Guardando...";
+        
+        try {
+            const data = await fetchJson(`/api/tradein/${tradeinActual}/tests`, {
+                method: "POST",
+                body: { tests }
+            });
+            
+            if (data.success) {
+                mostrarToast(data.message || "Pruebas registradas correctamente");
+                cerrarModal("modal-tests");
+                await cargarTradeIns();
+            } else {
+                mostrarToast(data.error || "Error al registrar pruebas", "error");
+            }
+        } catch (err) {
+            mostrarToast(err.message || "Error de conexión", "error");
+        } finally {
+            btnGuardar.disabled = false;
+            btnGuardar.textContent = textoOriginal;
+        }
+    }
+
+    // ==================== DETALLE ====================
     async function mostrarDetalle(tradeinId) {
         try {
             const data = await fetchJson(`/api/tradein/${tradeinId}/detalle`);
@@ -238,8 +505,8 @@
             const tests = data.tests || [];
             const fotos = data.fotos || [];
             
-            const modal = document.getElementById("modal-detalle");
             const contenido = document.getElementById("detalle-contenido");
+            if (!contenido) return;
             
             let fotosHtml = "";
             if (fotos.length > 0) {
@@ -265,9 +532,9 @@
                         <div class="tests-list">
                             ${tests.map(test => `
                                 <div class="test-item">
-                                    <span class="test-nombre">${escapeHtml(test.Nombre_test)}</span>
-                                    <span class="test-resultado ${test.Resultado_test === "Funciona" ? "funciona" : "no-funciona"}">
-                                        ${escapeHtml(test.Resultado_test || "Sin resultado")}
+                                    <span class="test-nombre">${escapeHtml(test.nombre)}</span>
+                                    <span class="test-resultado ${test.resultado === "Funciona" ? "funciona" : "no-funciona"}">
+                                        ${test.resultado === "Funciona" ? "✅" : "❌"} ${escapeHtml(test.resultado || "Sin resultado")}
                                     </span>
                                 </div>
                             `).join("")}
@@ -278,12 +545,26 @@
             
             contenido.innerHTML = `
                 <div class="detalle-section">
-                    <h4>📋 Información del equipo</h4>
+                    <h4>📋 Información del trade-in</h4>
                     <div class="detalle-grid">
                         <div class="detalle-item">
                             <strong>ID Trade-in</strong>
-                            <span>${escapeHtml(detalle.id || "N/A")}</span>
+                            <span>#${escapeHtml(detalle.id || "N/A")}</span>
                         </div>
+                        <div class="detalle-item">
+                            <strong>Fecha</strong>
+                            <span>${formatDate(detalle.fecha)}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <strong>Valor pagado</strong>
+                            <span style="font-size:1.2rem; font-weight:900; color:#f3c500;">${formatCurrency(detalle.valor_pagado || 0)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detalle-section">
+                    <h4>📱 Información del equipo</h4>
+                    <div class="detalle-grid">
                         <div class="detalle-item">
                             <strong>Producto</strong>
                             <span>${escapeHtml(detalle.producto_nombre || "N/A")}</span>
@@ -310,8 +591,20 @@
                         </div>
                         ${detalle.Clave ? `
                         <div class="detalle-item">
-                            <strong>Clave</strong>
+                            <strong>Clave numérica</strong>
                             <span>${escapeHtml(detalle.Clave)}</span>
+                        </div>
+                        ` : ""}
+                        ${detalle.Patron ? `
+                        <div class="detalle-item">
+                            <strong>Patrón</strong>
+                            <span>${escapeHtml(detalle.Patron)}</span>
+                        </div>
+                        ` : ""}
+                        ${detalle.observaciones ? `
+                        <div class="detalle-item">
+                            <strong>Observaciones</strong>
+                            <span>${escapeHtml(detalle.observaciones)}</span>
                         </div>
                         ` : ""}
                     </div>
@@ -341,166 +634,101 @@
                 
                 ${testsHtml}
                 ${fotosHtml}
-                
-                ${detalle.cotizacion ? `
-                <div class="detalle-section">
-                    <h4>💰 Cotización</h4>
-                    <div class="detalle-grid">
-                        <div class="detalle-item">
-                            <strong>Valor</strong>
-                            <span style="font-size:1.2rem; color:var(--yellow);">${formatCurrency(detalle.cotizacion)}</span>
-                        </div>
-                    </div>
-                </div>
-                ` : ""}
             `;
             
-            modal.classList.remove("is-hidden");
+            abrirModal("modal-detalle");
             
         } catch (err) {
-            mostrarToast(err.message, "error");
+            mostrarToast(err.message || "Error al cargar el detalle", "error");
         }
     }
 
-    async function mostrarModalEvaluacion(tradeinId) {
-        try {
-            const data = await fetchJson(`/api/tradein/${tradeinId}/detalle`);
-            const detalle = data.detalle || {};
-            tradeinActual = tradeinId;
-            
-            const infoContainer = document.getElementById("evaluacion-info");
-            infoContainer.innerHTML = `
-                <div class="detalle-grid">
-                    <div class="detalle-item">
-                        <strong>Equipo</strong>
-                        <span>${escapeHtml(detalle.producto_nombre || "N/A")}</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong>Marca</strong>
-                        <span>${escapeHtml(detalle.marca || "N/A")}</span>
-                    </div>
-                    <div class="detalle-item">
-                        <strong>Cliente</strong>
-                        <span>${escapeHtml(detalle.cliente_nombre)} ${escapeHtml(detalle.cliente_apellido || "")}</span>
-                    </div>
-                </div>
-            `;
-            
-            // Limpiar checkboxes
-            document.querySelectorAll("#fallas-checkboxes input").forEach(cb => cb.checked = false);
-            document.getElementById("evaluacion-observaciones").value = "";
-            document.getElementById("evaluacion-valor").value = "";
-            
-            const modal = document.getElementById("modal-evaluacion");
-            modal.classList.remove("is-hidden");
-            
-        } catch (err) {
-            mostrarToast(err.message, "error");
-        }
-    }
-
-    async function confirmarEvaluacion() {
-        if (!tradeinActual) return;
-        
-        const valor = document.getElementById("evaluacion-valor").value;
-        if (!valor || parseFloat(valor) < 0) {
-            mostrarToast("Ingrese un valor válido para la cotización", "error");
-            return;
-        }
-        
-        const fallasSeleccionadas = Array.from(document.querySelectorAll("#fallas-checkboxes input:checked"))
-            .map(cb => cb.getAttribute("data-nombre") || cb.value);
-        
-        const observaciones = document.getElementById("evaluacion-observaciones").value;
-        
-        const btnConfirmar = document.getElementById("confirmar-evaluacion");
-        const textoOriginal = btnConfirmar.textContent;
-        btnConfirmar.disabled = true;
-        btnConfirmar.textContent = "Procesando...";
+    // ==================== ELIMINAR ====================
+    async function eliminarTradeIn(tradeinId) {
+        if (!confirm("⚠️ ¿Estás seguro de que deseas eliminar este trade-in?\n\nEsta acción no se puede deshacer.")) return;
         
         try {
-            await fetchJson(`/api/tradein/evaluar/${tradeinActual}`, {
-                method: "POST",
-                body: JSON.stringify({
-                    valor: parseFloat(valor),
-                    fallas: fallasSeleccionadas,
-                    observaciones: observaciones
-                })
+            const data = await fetchJson(`/api/tradein/${tradeinId}`, {
+                method: "DELETE"
             });
             
-            mostrarToast(`Trade-in evaluado correctamente por ${formatCurrency(parseFloat(valor))}`);
-            cerrarModalEvaluacion();
-            
-            // Recargar datos
-            await Promise.all([
-                cargarEstadisticas(),
-                cargarTradeIns("pendientes"),
-                cargarTradeIns("evaluados")
-            ]);
-            
+            if (data.success) {
+                mostrarToast("Trade-in eliminado correctamente");
+                await cargarEstadisticas();
+                await cargarTradeIns();
+            } else {
+                mostrarToast(data.error || "Error al eliminar", "error");
+            }
         } catch (err) {
-            mostrarToast(err.message, "error");
-        } finally {
-            btnConfirmar.disabled = false;
-            btnConfirmar.textContent = textoOriginal;
+            mostrarToast(err.message || "Error de conexión", "error");
         }
     }
 
-    function cerrarModalEvaluacion() {
-        const modal = document.getElementById("modal-evaluacion");
-        modal.classList.add("is-hidden");
-        tradeinActual = null;
+    // ==================== MODALES ====================
+    function abrirModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.remove("is-hidden");
+            document.body.classList.add("modal-open");
+        }
     }
 
-    function cerrarModalDetalle() {
-        const modal = document.getElementById("modal-detalle");
-        modal.classList.add("is-hidden");
+    function cerrarModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add("is-hidden");
+            document.body.classList.remove("modal-open");
+        }
     }
 
-    function initTabs() {
-        const tabBtns = document.querySelectorAll(".tab-btn");
+    function initModales() {
+        document.querySelectorAll("[data-close-modal], .modal__close, .modal__backdrop").forEach(el => {
+            el.addEventListener("click", (e) => {
+                const modal = el.closest(".modal");
+                if (modal) {
+                    modal.classList.add("is-hidden");
+                    document.body.classList.remove("modal-open");
+                }
+            });
+        });
         
-        tabBtns.forEach(btn => {
-            btn.addEventListener("click", () => {
-                tabBtns.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                
-                const tab = btn.dataset.tab;
-                
-                document.querySelectorAll(".tab-content").forEach(content => {
-                    content.classList.add("is-hidden");
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                document.querySelectorAll(".modal:not(.is-hidden)").forEach(modal => {
+                    modal.classList.add("is-hidden");
+                    document.body.classList.remove("modal-open");
                 });
-                
-                const tabContent = document.getElementById(`${tab}-tab`);
-                if (tabContent) tabContent.classList.remove("is-hidden");
-                
-                if (tab === "pendientes") cargarTradeIns("pendientes");
-                else if (tab === "evaluados") cargarTradeIns("evaluados");
-            });
+            }
         });
     }
 
+    // ==================== INICIALIZACIÓN ====================
     async function init() {
-        await cargarCatalogoFallas();
-        renderFallasCheckboxes();
-        initTabs();
-        
-        document.getElementById("cancelar-evaluacion")?.addEventListener("click", cerrarModalEvaluacion);
-        document.getElementById("confirmar-evaluacion")?.addEventListener("click", confirmarEvaluacion);
-        document.getElementById("close-modal")?.addEventListener("click", cerrarModalEvaluacion);
-        document.getElementById("close-detalle")?.addEventListener("click", cerrarModalDetalle);
-        
-        // Cerrar modal al hacer clic fuera
-        document.getElementById("modal-evaluacion")?.addEventListener("click", (e) => {
-            if (e.target === document.getElementById("modal-evaluacion")) cerrarModalEvaluacion();
-        });
-        
-        document.getElementById("modal-detalle")?.addEventListener("click", (e) => {
-            if (e.target === document.getElementById("modal-detalle")) cerrarModalDetalle();
-        });
-        
+        initModales();
+        await cargarCatalogoTests();
+        await cargarProductos();
         await cargarEstadisticas();
-        await cargarTradeIns("pendientes");
+        await cargarTradeIns();
+        
+        const btnNuevo = document.getElementById("btn-nuevo-tradein");
+        if (btnNuevo) {
+            btnNuevo.addEventListener("click", () => {
+                const form = document.getElementById("form-registrar-tradein");
+                if (form) form.reset();
+                const preview = document.getElementById("fotos-preview");
+                if (preview) preview.innerHTML = "";
+                const clienteId = document.getElementById("cliente-id");
+                if (clienteId) clienteId.value = "";
+                const clienteSearchInput = document.getElementById("cliente-search-input");
+                if (clienteSearchInput) clienteSearchInput.value = "";
+                abrirModal("modal-registrar");
+            });
+        }
+        
+        const btnGuardarTests = document.getElementById("btn-guardar-tests");
+        if (btnGuardarTests) {
+            btnGuardarTests.addEventListener("click", guardarTests);
+        }
     }
     
     document.addEventListener("DOMContentLoaded", init);

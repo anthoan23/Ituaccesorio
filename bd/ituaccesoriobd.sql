@@ -571,7 +571,7 @@ CREATE TABLE `Marca_producto` (
 
 LOCK TABLES `Marca_producto` WRITE;
 /*!40000 ALTER TABLE `Marca_producto` DISABLE KEYS */;
-INSERT INTO `Marca_producto` VALUES ('1','Iphone'),('2','Iphone'),('3','Samsung'),('4','Xiaomi'),('5','Motorola'),('6','Huawei'),('7','LG');
+INSERT INTO `Marca_producto` VALUES ('1','Apple'),('2','RedMagic'),('3','Samsung'),('4','Xiaomi'),('5','Motorola'),('6','Huawei'),('7','LG');
 /*!40000 ALTER TABLE `Marca_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
