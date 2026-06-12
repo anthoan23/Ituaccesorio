@@ -1,4 +1,5 @@
 (function () {
+    let notificacionesNoLeidas = 0;
     let panelAbierto = false;
     let inicializado = false;
 
@@ -84,11 +85,46 @@
         return item;
     }
 
-    async function cargarNotificaciones() {
+    function actualizarBadge() {
+        const badge = document.querySelector("[data-notifications-badge]");
+        if (!badge) return;
+        
+        if (notificacionesNoLeidas <= 0) {
+            badge.hidden = true;
+            badge.textContent = "0";
+        } else {
+            badge.hidden = false;
+            badge.textContent = notificacionesNoLeidas > 99 ? "99+" : String(notificacionesNoLeidas);
+        }
+        console.log("Badge actualizado:", notificacionesNoLeidas);
+    }
+
+    function agregarNotificacion(evento) {
+        const list = document.querySelector("[data-notifications-list]");
+        const emptyState = document.querySelector("[data-notifications-empty]");
+        
+        if (!list) return;
+        
+        const item = crearElementoNotificacion(evento);
+        if (emptyState) emptyState.hidden = true;
+        
+        // Agregar al principio de la lista
+        list.prepend(item);
+        
+        // Limitar a 20 notificaciones
+        while (list.children.length > 20) {
+            list.removeChild(list.lastChild);
+        }
+        
+        // Solo incrementar contador si el panel NO está abierto
+        if (!panelAbierto) {
+            notificacionesNoLeidas++;
+            actualizarBadge();
+        }
+    }
+
+    async function cargarNotificacionesHistoricas(marcarComoLeidas = true) {
         try {
-            const statusEl = document.querySelector("[data-notifications-status]");
-            if (statusEl) statusEl.textContent = "Cargando...";
-            
             const response = await fetch('/api/bitacora/ultimas-notificaciones', {
                 headers: {
                     'Accept': 'application/json',
@@ -97,10 +133,7 @@
                 credentials: 'same-origin'
             });
 
-            if (!response.ok) {
-                if (statusEl) statusEl.textContent = "Error";
-                return;
-            }
+            if (!response.ok) return;
 
             const data = await response.json();
             const notificaciones = data.notificaciones || [];
@@ -110,12 +143,12 @@
 
             if (!list) return;
 
-            if (statusEl) statusEl.textContent = "Conectado";
-
             if (notificaciones.length === 0) {
                 if (emptyState) emptyState.hidden = false;
                 list.innerHTML = '<div class="notifications__empty">No hay notificaciones</div>';
                 if (badge) badge.hidden = true;
+                notificacionesNoLeidas = 0;
+                actualizarBadge();
                 return;
             }
 
@@ -127,14 +160,19 @@
                 list.appendChild(item);
             });
 
-            if (badge && !panelAbierto) {
-                badge.hidden = false;
-                badge.textContent = String(notificaciones.length);
+            // Si se deben marcar como leídas, resetear contador
+            if (marcarComoLeidas) {
+                notificacionesNoLeidas = 0;
+                actualizarBadge();
+            } else {
+                // Si no se marcan como leídas, mostrar el número de notificaciones
+                if (badge && notificacionesNoLeidas === 0) {
+                    badge.hidden = false;
+                    badge.textContent = String(notificaciones.length);
+                }
             }
         } catch (error) {
-            console.error("Error cargando notificaciones:", error);
-            const statusEl = document.querySelector("[data-notifications-status]");
-            if (statusEl) statusEl.textContent = "Error";
+            console.error("Error cargando notificaciones históricas:", error);
         }
     }
 
@@ -142,67 +180,100 @@
         if (inicializado) return;
         inicializado = true;
 
+        const usuarioId = document.body?.dataset?.userId;
         const root = document.querySelector("[data-notifications-root]");
         const toggle = document.querySelector("[data-notifications-toggle]");
         const panel = document.querySelector("[data-notifications-panel]");
-        const badge = document.querySelector("[data-notifications-badge]");
+        const status = document.querySelector("[data-notifications-status]");
 
-        if (!toggle || !panel) {
-            console.log("Faltan elementos");
+        if (!usuarioId || !toggle || !panel) {
+            console.log("Faltan elementos necesarios");
             return;
         }
 
-        if (root) root.style.position = 'relative';
-        
-        // Configurar clases iniciales
-        panel.classList.add('notifications__panel--hidden');
-        panel.classList.remove('notifications__panel--visible');
+        // Estado inicial
+        panel.hidden = true;
+        panelAbierto = false;
+        toggle.setAttribute("aria-expanded", "false");
+        if (status) status.textContent = "Listo";
 
-        // Configurar scroll en la lista
-        const list = document.querySelector("[data-notifications-list]");
-        if (list) {
-            list.style.maxHeight = '300px';
-            list.style.overflowY = 'auto';
-        }
+        // Cargar notificaciones sin marcar como leídas
+        cargarNotificacionesHistoricas(false);
 
-        // Cargar notificaciones iniciales
-        cargarNotificaciones();
-
-        // Remover cualquier listener anterior
-        const newToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(newToggle, toggle);
-        
-        newToggle.addEventListener("click", async function(e) {
+        // Evento click en la campana
+        toggle.addEventListener("click", async (e) => {
             e.preventDefault();
             e.stopPropagation();
             
-            if (panel.classList.contains('notifications__panel--hidden')) {
-                await cargarNotificaciones();
-                panel.classList.remove('notifications__panel--hidden');
-                panel.classList.add('notifications__panel--visible');
-                if (badge) badge.hidden = true;
-                panelAbierto = true;
-                console.log("Panel abierto");
-            } else {
-                panel.classList.remove('notifications__panel--visible');
-                panel.classList.add('notifications__panel--hidden');
+            console.log("Click en notificaciones - Panel abierto:", panelAbierto);
+            
+            if (panelAbierto) {
+                // Cerrar panel
+                panel.hidden = true;
                 panelAbierto = false;
+                toggle.setAttribute("aria-expanded", "false");
                 console.log("Panel cerrado");
+            } else {
+                // Abrir panel y marcar notificaciones como leídas
+                await cargarNotificacionesHistoricas(true); // true = marcar como leídas
+                panel.hidden = false;
+                panelAbierto = true;
+                toggle.setAttribute("aria-expanded", "true");
+                console.log("Panel abierto - notificaciones marcadas como leídas");
             }
         });
 
         // Cerrar al hacer clic fuera
-        document.addEventListener("click", function(e) {
-            const rootEl = document.querySelector("[data-notifications-root]");
-            if (rootEl && !rootEl.contains(e.target) && panel.classList.contains('notifications__panel--visible')) {
-                panel.classList.remove('notifications__panel--visible');
-                panel.classList.add('notifications__panel--hidden');
+        document.addEventListener("click", (event) => {
+            if (root && !root.contains(event.target) && panelAbierto) {
+                panel.hidden = true;
                 panelAbierto = false;
+                toggle.setAttribute("aria-expanded", "false");
                 console.log("Panel cerrado por clic fuera");
             }
         });
 
-        console.log("Notificaciones inicializadas");
+        // Configurar EventSource para notificaciones en tiempo real
+        let fuente = null;
+        
+        function conectarSSE() {
+            if (fuente) {
+                fuente.close();
+            }
+            
+            const url = `/notificaciones/stream/${encodeURIComponent(usuarioId)}`;
+            console.log("Conectando SSE a:", url);
+            fuente = new EventSource(url);
+            
+            fuente.addEventListener("open", () => {
+                console.log("SSE Conectado");
+                if (status) status.textContent = "Conectado";
+            });
+            
+            fuente.addEventListener("bitacora", (event) => {
+                try {
+                    const data = JSON.parse(event.data || "{}");
+                    console.log("Nueva notificación recibida:", data);
+                    agregarNotificacion(data);
+                } catch (error) {
+                    console.error("Error al procesar notificación SSE:", error);
+                }
+            });
+            
+            fuente.onerror = (error) => {
+                console.log("SSE Error:", error);
+                if (status) status.textContent = "Reconectando...";
+                setTimeout(conectarSSE, 3000);
+            };
+        }
+        
+        conectarSSE();
+        
+        window.addEventListener("beforeunload", () => {
+            if (fuente) fuente.close();
+        });
+        
+        console.log("Notificaciones inicializadas correctamente");
     }
 
     if (document.readyState === 'loading') {
