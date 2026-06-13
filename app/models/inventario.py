@@ -5,7 +5,7 @@ from app.models.productos import Producto
 
 
 class Inventario:
-    """Modelo para la tabla Existencias_productos (antes Inventario)"""
+    """Modelo para la tabla Existencias_productos"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
                  existencia: int = 0, costo_venta: Decimal = Decimal(0)):
@@ -65,6 +65,33 @@ class Inventario:
                 if isinstance(row.get("costo_venta"), Decimal):
                     row["costo_venta"] = float(row["costo_venta"])
             return rows
+        finally:
+            cursor.close()
+            db.close()
+
+    def listar_inventario_taller(self):
+        """Lista inventario específico para taller"""
+        db = self._conexion()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    e.ID_inventario,
+                    p.Nombre_producto,
+                    m.Nombre_marca,
+                    c.Nombre_Clase,
+                    e.Existencia,
+                    e.Costo_venta 
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
+                JOIN Clase_producto c ON p.ID_Clase = c.ID_Clase
+                JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                ORDER BY c.Nombre_Clase, m.Nombre_marca, p.Nombre_producto
+            """)
+            return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
