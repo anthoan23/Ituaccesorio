@@ -16,6 +16,34 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `Abastece`
+--
+
+DROP TABLE IF EXISTS `Abastece`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Abastece` (
+  `ID_entrega_inventario` varchar(10) NOT NULL,
+  `ID_inventario` varchar(10) NOT NULL,
+  `Cantidad_entregada` int NOT NULL,
+  PRIMARY KEY (`ID_entrega_inventario`,`ID_inventario`),
+  KEY `ID_existencia` (`ID_inventario`),
+  CONSTRAINT `Abastece_ibfk_1` FOREIGN KEY (`ID_entrega_inventario`) REFERENCES `Entrega_inventario` (`ID_entrega_inventario`) ON DELETE CASCADE,
+  CONSTRAINT `Abastece_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Abastece`
+--
+
+LOCK TABLES `Abastece` WRITE;
+/*!40000 ALTER TABLE `Abastece` DISABLE KEYS */;
+INSERT INTO `Abastece` VALUES ('ENT0000001','1',10),('ENT0000002','3',5),('ENT0000003','2',20),('ENT0000004','4',8),('ENT0000005','8',30);
+/*!40000 ALTER TABLE `Abastece` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Capacitacion`
 --
 
@@ -66,6 +94,29 @@ LOCK TABLES `Cargo` WRITE;
 /*!40000 ALTER TABLE `Cargo` DISABLE KEYS */;
 INSERT INTO `Cargo` VALUES ('CRG0000001','Prueba-1','Esta es la descripción detallada para la prueba'),('CRG0000002','Prueba-2','Esta es la descripción detallada para la prueba 2'),('CRG0000003','Prueba-3','Esta es la descripción detallada para la prueba 3'),('CRG0000004','Prueba-4','Esta es la descripción detallada para la prueba 4'),('CRG0000005','Prueba-5','Esta es la descripción detallada para la prueba 5'),('CRG0000006','Técnico','Encargado de las revisiones y reparaciones'),('CRG0000007','Vendedor','Encargado de ventas y atención al cliente'),('CRG0000008','Almacenista','Encargado del control de inventario'),('CRG0000009','Delivery','Encargado de entregas a domicilio'),('CRG0000010','Administrador','Administrador del sistema'),('CRG0000011','Soporte Técnico','Soporte técnico especializado');
 /*!40000 ALTER TABLE `Cargo` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Categoria`
+--
+
+DROP TABLE IF EXISTS `Categoria`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Categoria` (
+  `ID_categoria` int NOT NULL AUTO_INCREMENT,
+  `Nombre_categoria` varchar(30) NOT NULL,
+  PRIMARY KEY (`ID_categoria`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Categoria`
+--
+
+LOCK TABLES `Categoria` WRITE;
+/*!40000 ALTER TABLE `Categoria` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Categoria` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -213,7 +264,7 @@ CREATE TABLE `Detalle_venta` (
   `Cantidad_articulo` int DEFAULT NULL,
   PRIMARY KEY (`ID_inventario`,`ID_factura`),
   KEY `ID_factura` (`ID_factura`),
-  CONSTRAINT `Detalle_venta_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`),
+  CONSTRAINT `Detalle_venta_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Detalle_venta_ibfk_2` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -302,16 +353,12 @@ CREATE TABLE `Entrega_inventario` (
   `ID_entrega_inventario` varchar(10) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
   `ID_orden_compra` varchar(10) DEFAULT NULL,
-  `ID_inventario` varchar(10) DEFAULT NULL,
-  `Cantidad_entregada_inventario` int DEFAULT NULL,
   `Fecha_entrega_inventario` datetime DEFAULT NULL,
   PRIMARY KEY (`ID_entrega_inventario`),
   KEY `ID_empleado` (`ID_empleado`),
   KEY `ID_orden_compra` (`ID_orden_compra`),
-  KEY `ID_inventario` (`ID_inventario`),
   CONSTRAINT `Entrega_inventario_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
-  CONSTRAINT `Entrega_inventario_ibfk_2` FOREIGN KEY (`ID_orden_compra`) REFERENCES `Orden_compra` (`ID_orden_compra`),
-  CONSTRAINT `Entrega_inventario_ibfk_3` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)
+  CONSTRAINT `Entrega_inventario_ibfk_2` FOREIGN KEY (`ID_orden_compra`) REFERENCES `Orden_compra` (`ID_orden_compra`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -321,7 +368,7 @@ CREATE TABLE `Entrega_inventario` (
 
 LOCK TABLES `Entrega_inventario` WRITE;
 /*!40000 ALTER TABLE `Entrega_inventario` DISABLE KEYS */;
-INSERT INTO `Entrega_inventario` VALUES ('ENT0000001',20234567,'OC0000001','1',10,'2026-06-02 15:00:00'),('ENT0000002',20234567,'OC0000001','3',5,'2026-06-02 15:00:00'),('ENT0000003',20234567,'OC0000002','2',20,'2026-06-03 14:30:00'),('ENT0000004',20234567,'OC0000002','4',8,'2026-06-03 14:30:00'),('ENT0000005',20234567,'OC0000005','8',30,'2026-06-07 10:00:00');
+INSERT INTO `Entrega_inventario` VALUES ('ENT0000001',20234567,'OC0000001','2026-06-02 15:00:00'),('ENT0000002',20234567,'OC0000001','2026-06-02 15:00:00'),('ENT0000003',20234567,'OC0000002','2026-06-03 14:30:00'),('ENT0000004',20234567,'OC0000002','2026-06-03 14:30:00'),('ENT0000005',20234567,'OC0000005','2026-06-07 10:00:00');
 /*!40000 ALTER TABLE `Entrega_inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -333,7 +380,7 @@ DROP TABLE IF EXISTS `Equipo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Equipo` (
-  `ID_equipo` int(15) NOT NULL,
+  `ID_equipo` varchar(16) NOT NULL,
   `ID_producto` varchar(10) DEFAULT NULL,
   `Color` varchar(20) DEFAULT NULL,
   `Capacidad` varchar(20) DEFAULT NULL,
@@ -381,6 +428,37 @@ INSERT INTO `Especialidad` VALUES ('ESP0000001','Prueba-1','Esta es la descripci
 UNLOCK TABLES;
 
 --
+-- Table structure for table `Existencias_productos`
+--
+
+DROP TABLE IF EXISTS `Existencias_productos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Existencias_productos` (
+  `ID_inventario` varchar(10) NOT NULL,
+  `ID_producto` varchar(10) DEFAULT NULL,
+  `Existencia` int DEFAULT NULL,
+  `Costo_venta` decimal(10,2) DEFAULT NULL,
+  `ID_categoria` int DEFAULT NULL,
+  PRIMARY KEY (`ID_inventario`),
+  KEY `ID_producto` (`ID_producto`),
+  KEY `fk_existencias_categoria` (`ID_categoria`),
+  CONSTRAINT `Existencias_productos_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`),
+  CONSTRAINT `fk_existencias_categoria` FOREIGN KEY (`ID_categoria`) REFERENCES `Categoria` (`ID_categoria`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Existencias_productos`
+--
+
+LOCK TABLES `Existencias_productos` WRITE;
+/*!40000 ALTER TABLE `Existencias_productos` DISABLE KEYS */;
+INSERT INTO `Existencias_productos` VALUES ('1','1',10,800.00,NULL),('10','10',15,80.00,NULL),('2','2',15,350.00,NULL),('3','3',8,950.00,NULL),('4','4',12,850.00,NULL),('5','5',17,400.00,NULL),('6','6',5,450.00,NULL),('7','7',30,25.00,NULL),('8','8',25,15.00,NULL),('9','9',10,120.00,NULL);
+/*!40000 ALTER TABLE `Existencias_productos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Fotos_inventario`
 --
 
@@ -393,7 +471,7 @@ CREATE TABLE `Fotos_inventario` (
   `Foto_inventario` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID_foto_inventario`),
   KEY `ID_inventario` (`ID_inventario`),
-  CONSTRAINT `Fotos_inventario_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)
+  CONSTRAINT `Fotos_inventario_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -487,37 +565,8 @@ CREATE TABLE `Interaccion` (
 
 LOCK TABLES `Interaccion` WRITE;
 /*!40000 ALTER TABLE `Interaccion` DISABLE KEYS */;
-INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Reparada'),('INT000023','OS0000002',32014004,'Revisión'),('INT000024','OS0000002',32014004,'Revisión'),('INT000025','OS0000002',32014004,'Revisión'),('INT000026','OS0000001',32014004,'En proceso'),('INT000027','OS0000001',32014004,'Reparada'),('INT000028','OS0000001',32014004,'Revisión'),('INT000029','OS0000004',32014004,'Asignada');
+INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'Revisión'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT000006','OS0000005',20567890,'Actualización de software'),('INT000007','OS0000001',32014004,'Revisión'),('INT000008','OS0000001',32014004,'Revisión'),('INT000009','OS0000001',32014004,'Revisión'),('INT000010','OS0000005',32014004,'Revisión'),('INT000011','OS0000001',32014004,'Revisión'),('INT000012','OS0000001',32014004,'Revisión'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Reparada'),('INT000023','OS0000002',32014004,'Revisión'),('INT000024','OS0000002',32014004,'Revisión'),('INT000025','OS0000002',32014004,'Revisión'),('INT000026','OS0000001',32014004,'En proceso'),('INT000027','OS0000001',32014004,'Reparada'),('INT000028','OS0000001',32014004,'Revisión'),('INT000029','OS0000004',32014004,'Asignada'),('INT000030','OS0000004',32014004,'Revisión');
 /*!40000 ALTER TABLE `Interaccion` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Inventario`
---
-
-DROP TABLE IF EXISTS `Inventario`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Inventario` (
-  `ID_inventario` varchar(10) NOT NULL,
-  `ID_producto` varchar(10) DEFAULT NULL,
-  `Existencia` int DEFAULT NULL,
-  `Costo_venta` decimal(10,2) DEFAULT NULL,
-  `Numero_inventario` int DEFAULT NULL,
-  PRIMARY KEY (`ID_inventario`),
-  KEY `ID_producto` (`ID_producto`),
-  CONSTRAINT `Inventario_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Inventario`
---
-
-LOCK TABLES `Inventario` WRITE;
-/*!40000 ALTER TABLE `Inventario` DISABLE KEYS */;
-INSERT INTO `Inventario` VALUES ('1','1',10,800.00,NULL),('10','10',15,80.00,1),('2','2',15,350.00,1),('3','3',8,950.00,1002),('4','4',12,850.00,1003),('5','5',17,400.00,1),('6','6',5,450.00,1005),('7','7',30,25.00,1006),('8','8',25,15.00,1007),('9','9',10,120.00,1008);
-/*!40000 ALTER TABLE `Inventario` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -536,7 +585,7 @@ CREATE TABLE `Lista_compra` (
   PRIMARY KEY (`ID_lista_compra`),
   KEY `ID_inventario` (`ID_inventario`),
   KEY `ID_cliente` (`ID_cliente`),
-  CONSTRAINT `Lista_compra_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`),
+  CONSTRAINT `Lista_compra_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Lista_compra_ibfk_2` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -571,7 +620,7 @@ CREATE TABLE `Marca_producto` (
 
 LOCK TABLES `Marca_producto` WRITE;
 /*!40000 ALTER TABLE `Marca_producto` DISABLE KEYS */;
-INSERT INTO `Marca_producto` VALUES ('1','Apple'),('2','RedMagic'),('3','Samsung'),('4','Xiaomi'),('5','Motorola'),('6','Huawei'),('7','LG');
+INSERT INTO `Marca_producto` VALUES ('1','Iphone'),('2','Iphone'),('3','Samsung'),('4','Xiaomi'),('5','Motorola'),('6','Huawei'),('7','LG');
 /*!40000 ALTER TABLE `Marca_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -654,7 +703,7 @@ DROP TABLE IF EXISTS `Orden_servicio`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Orden_servicio` (
   `ID_orden_servicio` varchar(10) NOT NULL,
-  `ID_equipo` varchar(10) DEFAULT NULL,
+  `ID_equipo` varchar(16) DEFAULT NULL,
   `ID_cliente` varchar(10) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
@@ -832,7 +881,7 @@ CREATE TABLE `Repuestos_usados` (
   PRIMARY KEY (`ID_orden_servicio`,`ID_inventario`),
   KEY `ID_inventario` (`ID_inventario`),
   CONSTRAINT `Repuestos_usados_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
-  CONSTRAINT `Repuestos_usados_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`)
+  CONSTRAINT `Repuestos_usados_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -896,7 +945,7 @@ CREATE TABLE `Test` (
 
 LOCK TABLES `Test` WRITE;
 /*!40000 ALTER TABLE `Test` DISABLE KEYS */;
-INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona'),('TST000084',6,'Btn power','Funciona'),('TST000085',6,'Cornetas','Funciona'),('TST000086',6,'Mica','Funciona'),('TST000087',6,'LCD','Funciona'),('TST000088',6,'Tactil','Funciona'),('TST000089',6,'Btn vol','Funciona'),('TST000090',6,'Btn sil','Funciona'),('TST000091',6,'Puerto carga','Funciona'),('TST000092',6,'Wifi','Funciona'),('TST000093',6,'Cam pos','Funciona'),('TST000094',6,'Cam del','Funciona'),('TST000095',6,'Flash','Funciona'),('TST000096',6,'Senal','Funciona'),('TST000097',6,'Microfono','Funciona'),('TST000098',6,'Sensor proximidad','Funciona'),('TST000099',6,'Face id','Funciona'),('TST000100',6,'Bluetooth','Funciona'),('TST000101',6,'Caja','Funciona'),('TST000102',6,'Cargador','Funciona'),('TST000103',6,'Cable','Funciona'),('TST000104',6,'Auricular','Funciona'),('TST000105',6,'Manuales','Funciona'),('TST000106',6,'Observaciones','dsdsdsdsdsdsdsdsd');
+INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de Batería','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de Cámara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrófono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'Botón power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'Botón de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'Botón de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'Táctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'Cámara trasera','Funciona'),('TST000023',3,'Cámara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'Señal auricular','Funciona'),('TST000026',3,'Micrófono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'Audífonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona'),('TST000084',6,'Btn power','Funciona'),('TST000085',6,'Cornetas','Funciona'),('TST000086',6,'Mica','Funciona'),('TST000087',6,'LCD','Funciona'),('TST000088',6,'Tactil','Funciona'),('TST000089',6,'Btn vol','Funciona'),('TST000090',6,'Btn sil','Funciona'),('TST000091',6,'Puerto carga','Funciona'),('TST000092',6,'Wifi','Funciona'),('TST000093',6,'Cam pos','Funciona'),('TST000094',6,'Cam del','Funciona'),('TST000095',6,'Flash','Funciona'),('TST000096',6,'Senal','Funciona'),('TST000097',6,'Microfono','Funciona'),('TST000098',6,'Sensor proximidad','Funciona'),('TST000099',6,'Face id','Funciona'),('TST000100',6,'Bluetooth','Funciona'),('TST000101',6,'Caja','Funciona'),('TST000102',6,'Cargador','Funciona'),('TST000103',6,'Cable','Funciona'),('TST000104',6,'Auricular','Funciona'),('TST000105',6,'Manuales','Funciona'),('TST000106',6,'Observaciones','dsdsdsdsdsdsdsdsd'),('TST000107',1,'Btn power','Funciona'),('TST000108',1,'Observaciones','dddddddddddd');
 /*!40000 ALTER TABLE `Test` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -923,7 +972,7 @@ CREATE TABLE `Test_realizados_interaccion` (
 
 LOCK TABLES `Test_realizados_interaccion` WRITE;
 /*!40000 ALTER TABLE `Test_realizados_interaccion` DISABLE KEYS */;
-INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083'),('INT000028','TST000084'),('INT000028','TST000085'),('INT000028','TST000086'),('INT000028','TST000087'),('INT000028','TST000088'),('INT000028','TST000089'),('INT000028','TST000090'),('INT000028','TST000091'),('INT000028','TST000092'),('INT000028','TST000093'),('INT000028','TST000094'),('INT000028','TST000095'),('INT000028','TST000096'),('INT000028','TST000097'),('INT000028','TST000098'),('INT000028','TST000099'),('INT000028','TST000100'),('INT000028','TST000101'),('INT000028','TST000102'),('INT000028','TST000103'),('INT000028','TST000104'),('INT000028','TST000105'),('INT000028','TST000106');
+INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083'),('INT000028','TST000084'),('INT000028','TST000085'),('INT000028','TST000086'),('INT000028','TST000087'),('INT000028','TST000088'),('INT000028','TST000089'),('INT000028','TST000090'),('INT000028','TST000091'),('INT000028','TST000092'),('INT000028','TST000093'),('INT000028','TST000094'),('INT000028','TST000095'),('INT000028','TST000096'),('INT000028','TST000097'),('INT000028','TST000098'),('INT000028','TST000099'),('INT000028','TST000100'),('INT000028','TST000101'),('INT000028','TST000102'),('INT000028','TST000103'),('INT000028','TST000104'),('INT000028','TST000105'),('INT000028','TST000106'),('INT000030','TST000107'),('INT000030','TST000108');
 /*!40000 ALTER TABLE `Test_realizados_interaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -977,7 +1026,7 @@ CREATE TABLE `Trade_in` (
   KEY `ID_equipo` (`ID_equipo`),
   CONSTRAINT `Trade_in_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
   CONSTRAINT `Trade_in_ibfk_2` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`),
-  CONSTRAINT `Trade_in_ibfk_3` FOREIGN KEY (`ID_inventario`) REFERENCES `Inventario` (`ID_inventario`),
+  CONSTRAINT `Trade_in_ibfk_3` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Trade_in_ibfk_4` FOREIGN KEY (`ID_equipo`) REFERENCES `Equipo` (`ID_equipo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1622,4 +1671,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-12  0:26:08
+-- Dump completed on 2026-06-13 20:01:55
