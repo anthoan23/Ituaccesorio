@@ -5,7 +5,7 @@ from app.models.productos import Producto
 
 
 class Inventario:
-    """Modelo para la tabla Inventario"""
+    """Modelo para la tabla Existencias_productos (antes Inventario)"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
                  existencia: int = 0, costo_venta: Decimal = Decimal(0)):
@@ -25,7 +25,7 @@ class Inventario:
         cursor = None
         try:
             cursor = db.cursor()
-            cursor.execute("SELECT COALESCE(MAX(CAST(ID_inventario AS UNSIGNED)), 0) + 1 FROM Inventario")
+            cursor.execute("SELECT COALESCE(MAX(CAST(ID_inventario AS UNSIGNED)), 0) + 1 FROM Existencias_productos")
             row = cursor.fetchone()
             return str(int(row[0] or 0))
         finally:
@@ -44,18 +44,18 @@ class Inventario:
         try:
             cursor.execute("""
                 SELECT 
-                    i.ID_inventario AS id_inventario,
-                    i.ID_producto AS id_producto,
-                    i.Existencia AS existencia,
-                    i.Costo_venta AS costo_venta,
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
                     p.Nombre_producto AS nombre_producto,
                     ma.Nombre_marca AS nombre_marca,
                     cl.Nombre_Clase AS nombre_clase,
                     (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                     WHERE fi.ID_inventario = i.ID_inventario 
+                     WHERE fi.ID_inventario = e.ID_inventario 
                      ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 ORDER BY cl.Nombre_Clase, ma.Nombre_marca, p.Nombre_producto
@@ -64,28 +64,6 @@ class Inventario:
             for row in rows:
                 if isinstance(row.get("costo_venta"), Decimal):
                     row["costo_venta"] = float(row["costo_venta"])
-            return rows
-        finally:
-            cursor.close()
-            db.close()
-
-    def listar_inventario_taller(self):
-        """Lista inventario específico para taller (ejemplo: solo productos de clase 'Accesorio')"""
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            mensaje = "Error al conectar con la base de datos."
-            return mensaje
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = """SELECT i.ID_inventario, p.Nombre_producto, m.Nombre_marca, c.Nombre_Clase, i.Existencia, i.Costo_venta FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
-                JOIN Clase_producto c ON p.ID_Clase = c.ID_Clase
-                JOIN Marca_producto m ON p.ID_marca = m.ID_marca
-                WHERE i.Numero_inventario = 1"""
-            
-            cursor.execute(sql)
-            rows = cursor.fetchall()
             return rows
         finally:
             cursor.close()
@@ -105,18 +83,18 @@ class Inventario:
         try:
             cursor.execute("""
                 SELECT 
-                    i.ID_inventario AS id_inventario,
-                    i.ID_producto AS id_producto,
-                    i.Existencia AS existencia,
-                    i.Costo_venta AS costo_venta,
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
                     p.Nombre_producto AS nombre_producto,
                     ma.Nombre_marca AS nombre_marca,
                     cl.Nombre_Clase AS nombre_clase,
                     (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                     WHERE fi.ID_inventario = i.ID_inventario 
+                     WHERE fi.ID_inventario = e.ID_inventario 
                      ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE p.Nombre_producto LIKE %s
@@ -150,18 +128,18 @@ class Inventario:
             
             cursor.execute(f"""
                 SELECT 
-                    i.ID_inventario AS id_inventario,
-                    i.ID_producto AS id_producto,
-                    i.Existencia AS existencia,
-                    i.Costo_venta AS costo_venta,
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
                     p.Nombre_producto AS nombre_producto,
                     ma.Nombre_marca AS nombre_marca,
                     cl.Nombre_Clase AS nombre_clase,
                     (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                     WHERE fi.ID_inventario = i.ID_inventario 
+                     WHERE fi.ID_inventario = e.ID_inventario 
                      ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 {where_sql}
@@ -218,22 +196,22 @@ class Inventario:
         try:
             cursor.execute("""
                 SELECT 
-                    i.ID_inventario AS id_inventario,
-                    i.ID_producto AS id_producto,
-                    i.Existencia AS existencia,
-                    i.Costo_venta AS costo_venta,
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
                     p.Nombre_producto AS nombre_producto,
                     ma.Nombre_marca AS nombre_marca,
                     cl.Nombre_Clase AS nombre_clase,
                     (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                     WHERE fi.ID_inventario = i.ID_inventario 
+                     WHERE fi.ID_inventario = e.ID_inventario 
                      ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
-                WHERE i.Existencia <= %s AND i.Existencia > 0
-                ORDER BY i.Existencia ASC
+                WHERE e.Existencia <= %s AND e.Existencia > 0
+                ORDER BY e.Existencia ASC
                 LIMIT %s
             """, (limite, limite))
             rows = cursor.fetchall() or []
@@ -258,21 +236,21 @@ class Inventario:
         try:
             cursor.execute("""
                 SELECT 
-                    i.ID_inventario AS id_inventario,
-                    i.ID_producto AS id_producto,
-                    i.Existencia AS existencia,
-                    i.Costo_venta AS costo_venta,
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
                     p.Nombre_producto AS nombre_producto,
                     ma.Nombre_marca AS nombre_marca,
                     cl.Nombre_Clase AS nombre_clase,
                     (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                     WHERE fi.ID_inventario = i.ID_inventario 
+                     WHERE fi.ID_inventario = e.ID_inventario 
                      ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
-                WHERE i.Existencia = 0
+                WHERE e.Existencia = 0
                 ORDER BY p.Nombre_producto ASC
                 LIMIT 10
             """)
@@ -304,7 +282,7 @@ class Inventario:
             
             # Buscar si ya existe inventario para este producto
             cursor.execute(
-                "SELECT ID_inventario FROM Inventario WHERE ID_producto = %s LIMIT 1",
+                "SELECT ID_inventario FROM Existencias_productos WHERE ID_producto = %s LIMIT 1",
                 (str(id_producto),)
             )
             row = cursor.fetchone()
@@ -313,20 +291,20 @@ class Inventario:
                 # Actualizar existente
                 id_inventario = str(row[0])
                 cursor.execute(
-                    "UPDATE Inventario SET Existencia = %s, Costo_venta = %s WHERE ID_inventario = %s",
+                    "UPDATE Existencias_productos SET Existencia = %s, Costo_venta = %s WHERE ID_inventario = %s",
                     (int(existencia), costo_venta, id_inventario)
                 )
             else:
                 # Crear nuevo
                 id_inventario = self._siguiente_id()
                 cursor.execute("""
-                    INSERT INTO Inventario (ID_inventario, ID_producto, Existencia, Costo_venta, Numero_inventario)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (id_inventario, str(id_producto), int(existencia), costo_venta, None))
+                    INSERT INTO Existencias_productos (ID_inventario, ID_producto, Existencia, Costo_venta)
+                    VALUES (%s, %s, %s, %s)
+                """, (id_inventario, str(id_producto), int(existencia), costo_venta))
             
             db.commit()
             
-            # Guardar foto si se proporcionó (en una transacción separada)
+            # Guardar foto si se proporcionó
             if foto_inventario:
                 from app.models.inventario import FotosInventario
                 fotos = FotosInventario()
