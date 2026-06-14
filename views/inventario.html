@@ -24,9 +24,9 @@
 
       <div class="hero__chips" aria-label="Filtros rápidos">
         <span class="chip chip--active" role="button" tabindex="0" aria-pressed="true" data-filter="all">Todos</span>
-        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Teléfono">Teléfonos</span>
-        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Accesorios">Accesorios</span>
-        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Repuestos">Repuestos</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Telefono">Teléfonos</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Pantalla">Pantallas</span>
+        <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="tipo" data-value="Repuesto">Repuestos</span>
         <span class="chip" role="button" tabindex="0" aria-pressed="false" data-filter="low">Bajo stock</span>
       </div>
     </div>
@@ -63,8 +63,6 @@
         </div>
 
         <div class="panel__tools" aria-label="Acciones de la vista">
-          <button class="btn btn--primary" type="button" data-open-modal="modal-inventario-stock">Añadir Stock</button>
-          <button class="btn btn--ghost" type="button">Filtrar</button>
           <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
         </div>
       </div>
@@ -93,7 +91,7 @@
       <p class="table-note" id="inventario-note">La tabla une inventario, producto, marca, clase y atributos.</p>
     </article>
 
-    <section class="inventory-extras" aria-label="Detalles del inventario">
+    <!-- <section class="inventory-extras" aria-label="Detalles del inventario">
       <article class="panel panel--stacked">
         <h2 class="panel__title">Piezas consumidas en reparaciones</h2>
         <div class="repuestos">
@@ -162,83 +160,10 @@
           </div>
         </div>
       </article>
-
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Atributos clave por producto</h2>
-        <ul class="mini-list" aria-label="Lista de caracteristicas" id="inventario-mini-list"></ul>
-      </article>
     </section>
-  </section>
+  </section> -->
 
-  <!-- Modal Añadir Stock -->
-  {% call modal('modal-inventario-stock', 'Añadir stock', 'lg') %}
-    <form id="inventario-form" class="inventory-form" autocomplete="off" enctype="multipart/form-data">
-      <div class="ui-form__grid ui-form__grid--two">
-        <label class="ui-field">
-          <span>Clase *</span>
-          <select id="inv-clase" name="id_clase" aria-label="Clase" required>
-            <option value="">Selecciona una clase</option>
-          </select>
-        </label>
-
-        <label class="ui-field">
-          <span>Marca *</span>
-          <select id="inv-marca" name="id_marca" aria-label="Marca" required>
-            <option value="">Selecciona una marca</option>
-          </select>
-        </label>
-
-        <label class="ui-field ui-field--full">
-          <span>Producto *</span>
-          <select id="inv-modelo" name="id_producto" aria-label="Producto" required>
-            <option value="">Selecciona un producto</option>
-          </select>
-        </label>
-
-        <label class="ui-field ui-field--full">
-          <span>Foto *</span>
-          <input id="inv-foto" name="foto_inventario" type="file" accept="image/*" required>
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
-        </label>
-
-        <label class="ui-field">
-          <span>Existencia *</span>
-          <input id="inv-existencia" 
-                 name="existencia" 
-                 type="number" 
-                 min="0" 
-                 placeholder="0" 
-                 aria-label="Existencia" 
-                 required
-                 data-validation-rules="soloNumeros"
-                 title="Solo números enteros positivos">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números enteros (mínimo 0)</small>
-        </label>
-
-        <label class="ui-field">
-          <span>Costo venta *</span>
-          <input id="inv-costo" 
-                 name="costo_venta" 
-                 type="text" 
-                 placeholder="0.00" 
-                 inputmode="decimal" 
-                 aria-label="Costo venta" 
-                 required
-                 data-validation-rules="soloNumeros"
-                 title="Solo números, puede incluir punto decimal"
-                 pattern="^\d+(\.\d{1,2})?$">
-          <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (ej: 100, 150.50, 99.99)</small>
-        </label>
-      </div>
-
-      <div class="ui-form__actions">
-        <button id="inv-guardar" class="ui-btn ui-btn--primary" type="submit">Guardar stock</button>
-        <button id="inv-limpiar" class="ui-btn ui-btn--ghost" type="button">Limpiar</button>
-      </div>
-    </form>
-  {% endcall %}
-
-  <!-- ==================== MODAL DE REPORTES (INDEPENDIENTE) ==================== -->
+  <!-- Modal de Reportes -->
   <div id="modal-reportes" class="ui-modal" data-modal hidden aria-hidden="true">
     <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-title">
       <div class="ui-modal__header">

@@ -1,5 +1,54 @@
 from __future__ import annotations
 from app.models.database import conectar
+from decimal import Decimal
+
+
+class Categoria:
+    """Modelo para la tabla Categoria"""
+    
+    def __init__(self, id_categoria: int = 0, nombre: str = ""):
+        self.id_categoria = id_categoria
+        self.nombre = nombre
+        self.__conexion_bd = conectar()
+
+    def _conexion(self):
+        return self.__conexion_bd.conexion1()
+
+    def listar_categorias(self):
+        """Lista todas las categorías"""
+        db = self._conexion()
+        if not db:
+            return []
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ID_categoria AS id, Nombre_categoria AS nombre
+                FROM Categoria
+                ORDER BY Nombre_categoria ASC
+            """)
+            return cursor.fetchall() or []
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_categoria(self) -> dict | None:
+        """Obtiene una categoría por su ID"""
+        if not self.id_categoria:
+            return None
+        db = self._conexion()
+        if not db:
+            return None
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ID_categoria AS id, Nombre_categoria AS nombre
+                FROM Categoria
+                WHERE ID_categoria = %s
+            """, (self.id_categoria,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
 
 
 class ClaseProducto:
@@ -44,7 +93,6 @@ class ClaseProducto:
             db.close()
 
     def verificar_clase(self) -> bool:
-        """Verifica si una clase existe (usa el atributo id_clase)"""
         if not self.id_clase:
             return False
         db = self._conexion()
@@ -59,7 +107,6 @@ class ClaseProducto:
             db.close()
 
     def obtener_clase(self) -> dict | None:
-        """Obtiene una clase por su ID (usa el atributo id_clase)"""
         if not self.id_clase:
             return None
         db = self._conexion()
@@ -78,7 +125,6 @@ class ClaseProducto:
             db.close()
 
     def registrar_clase(self) -> str:
-        """Registra una nueva clase usando los atributos de la instancia"""
         if not self.nombre:
             raise ValueError("El nombre de la clase es obligatorio.")
         
@@ -102,51 +148,6 @@ class ClaseProducto:
         finally:
             cursor.close()
             db.close()
-
-    # def actualizar_clase(self) -> bool:
-    #     """Actualiza una clase usando los atributos de la instancia"""
-    #     if not self.id_clase or not self.nombre:
-    #         raise ValueError("ID y nombre son requeridos.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute(
-    #             "UPDATE Clase_producto SET Nombre_Clase = %s WHERE ID_Clase = %s",
-    #             (self.nombre, self.id_clase)
-    #         )
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
-    # def eliminar_clase(self) -> bool:
-    #     """Elimina una clase usando el atributo id_clase"""
-    #     if not self.id_clase:
-    #         raise ValueError("ID es requerido.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase = %s", (self.id_clase,))
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
 
 
 class MarcaProducto:
@@ -175,7 +176,6 @@ class MarcaProducto:
             db.close()
 
     def listar_marcas(self, id_clase: str | None = None):
-        """Lista todas las marcas, opcionalmente filtradas por clase"""
         db = self._conexion()
         if not db:
             return []
@@ -202,7 +202,6 @@ class MarcaProducto:
             db.close()
 
     def verificar_marca(self) -> bool:
-        """Verifica si una marca existe (usa el atributo id_marca)"""
         if not self.id_marca:
             return False
         db = self._conexion()
@@ -217,7 +216,6 @@ class MarcaProducto:
             db.close()
 
     def obtener_marca(self) -> dict | None:
-        """Obtiene una marca por su ID (usa el atributo id_marca)"""
         if not self.id_marca:
             return None
         db = self._conexion()
@@ -236,7 +234,6 @@ class MarcaProducto:
             db.close()
 
     def registrar_marca(self) -> str:
-        """Registra una nueva marca usando los atributos de la instancia"""
         if not self.nombre:
             raise ValueError("El nombre de la marca es obligatorio.")
         
@@ -261,62 +258,18 @@ class MarcaProducto:
             cursor.close()
             db.close()
 
-    # def actualizar_marca(self) -> bool:
-    #     """Actualiza una marca usando los atributos de la instancia"""
-    #     if not self.id_marca or not self.nombre:
-    #         raise ValueError("ID y nombre son requeridos.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute(
-    #             "UPDATE Marca_producto SET Nombre_marca = %s WHERE ID_marca = %s",
-    #             (self.nombre, self.id_marca)
-    #         )
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
-    # def eliminar_marca(self) -> bool:
-    #     """Elimina una marca usando el atributo id_marca"""
-    #     if not self.id_marca:
-    #         raise ValueError("ID es requerido.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute("DELETE FROM Marca_producto WHERE ID_marca = %s", (self.id_marca,))
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
 
 class Producto:
     """Modelo para la tabla Producto"""
     
     def __init__(self, id_producto: str = "", id_clase: str = "", id_marca: str = "", 
-                 nombre: str = "", descripcion: str | None = None):
+                 nombre: str = "", descripcion: str | None = None, id_categoria: int = 0):
         self.id_producto = id_producto
         self.id_clase = id_clase
         self.id_marca = id_marca
         self.nombre = nombre
         self.descripcion = descripcion
+        self.id_categoria = id_categoria
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -336,7 +289,6 @@ class Producto:
             db.close()
 
     def listar_productos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
-        """Lista todos los productos, opcionalmente filtrados"""
         db = self._conexion()
         if not db:
             return []
@@ -377,7 +329,6 @@ class Producto:
             db.close()
 
     def verificar_producto(self) -> bool:
-        """Verifica si un producto existe (usa el atributo id_producto)"""
         if not self.id_producto:
             return False
         db = self._conexion()
@@ -392,7 +343,6 @@ class Producto:
             db.close()
 
     def obtener_producto(self):
-        """Obtiene un producto por su ID (usa el atributo id_producto)"""
         if not self.id_producto:
             return None
         db = self._conexion()
@@ -421,7 +371,6 @@ class Producto:
             db.close()
 
     def registrar_producto(self) -> str:
-        """Registra un nuevo producto usando los atributos de la instancia"""
         if not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("Clase, marca y nombre son obligatorios.")
         
@@ -447,7 +396,6 @@ class Producto:
             db.close()
 
     def actualizar_producto(self) -> bool:
-        """Actualiza un producto usando los atributos de la instancia"""
         if not self.id_producto:
             raise ValueError("ID del producto es requerido para actualizar.")
         if not self.id_clase or not self.id_marca or not self.nombre:
@@ -474,7 +422,6 @@ class Producto:
             db.close()
 
     def eliminar_producto(self) -> bool:
-        """Elimina un producto usando el atributo id_producto"""
         if not self.id_producto:
             raise ValueError("ID del producto es requerido para eliminar.")
         
@@ -510,7 +457,6 @@ class Producto:
             db.close()
 
     def verificar_stock_asociado(self) -> bool:
-        """Verifica si el producto tiene stock en inventario (usa el atributo id_producto)"""
         if not self.id_producto:
             return False
         
@@ -531,7 +477,6 @@ class Producto:
             db.close()
 
     def obtener_stock_producto(self) -> int:
-        """Obtiene la cantidad de stock del producto (usa el atributo id_producto)"""
         if not self.id_producto:
             return 0
         
@@ -553,7 +498,7 @@ class Producto:
 
 
 class Productos(conectar):
-    """Capa de compatibilidad para controladores antiguos que usan el nombre Productos."""
+    """Capa de compatibilidad para controladores antiguos"""
     
     def listar_clases(self):
         return ClaseProducto().listar_clases()
@@ -563,3 +508,6 @@ class Productos(conectar):
     
     def listar_modelos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
         return Producto().listar_productos(id_marca=id_marca, id_clase=id_clase, q=q)
+    
+    def listar_categorias(self):
+        return Categoria().listar_categorias()

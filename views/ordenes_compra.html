@@ -103,6 +103,14 @@
             <form id="form-registrar-entrada">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 
+                <!-- Selector de empleado -->
+                <div class="form__group">
+                    <label class="form__label">Empleado que registra *</label>
+                    <select id="entrada-id-empleado" class="form__input" required>
+                        <option value="">Seleccione un empleado</option>
+                    </select>
+                </div>
+                
                 <div class="form__group form__group--inline">
                     <div class="form__field">
                         <label>ID Proveedor</label>
@@ -268,6 +276,7 @@
                 <label class="form__label">Fecha de entrega:</label>
                 <input type="date" id="entrega-fecha" class="form__input">
             </div>
+            <div id="entrega-productos-preview" class="entrega-preview"></div>
             <div class="form__actions form__actions--end" style="margin-top: 1rem;">
                 <button class="btn btn--ghost" data-close-modal>Cancelar</button>
                 <button id="btn-confirmar-entrega" class="btn btn--primary">Registrar entrega</button>
@@ -334,6 +343,62 @@
         text-align: center;
         font-weight: 600;
     }
+    .text-muted {
+        color: #6b7280;
+        text-align: center;
+        padding: 12px;
+    }
+    .text-error {
+        color: #dc2626;
+        text-align: center;
+        padding: 12px;
+    }
+    
+    /* Estilos para la previsualización de productos en entrega */
+    .entrega-preview {
+        margin-top: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .entrega-preview-header {
+        background: #f9fafb;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+    }
+    .entrega-preview-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .entrega-preview-table th,
+    .entrega-preview-table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .entrega-preview-table th {
+        background: #ffffff;
+        font-weight: 600;
+        color: #374151;
+    }
+    .entrega-preview-table td:last-child,
+    .entrega-preview-table th:last-child {
+        text-align: right;
+    }
+    .entrega-preview-table td:first-child,
+    .entrega-preview-table th:first-child {
+        text-align: left;
+    }
+    .entrega-preview-table tr:last-child td {
+        border-bottom: none;
+    }
+    .entrega-preview-empty {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+</style>
 </style>
 {% endblock %}
 

@@ -1,12 +1,41 @@
-from flask import Blueprint, jsonify, render_template, request, g
+from flask import Blueprint, jsonify, render_template, request, g, current_app
 from app.utils.decorators import jwt_required, tiene_permiso
 from datetime import datetime
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 from app.models.bitacora import registrar_en_bitacora
-from app.models.productos import ClaseProducto, MarcaProducto, Producto
-from app.models.inventario import Inventario
+from app.models.productos import ClaseProducto, MarcaProducto, Producto, Categoria
+from app.models.inventario import Inventario, FotosInventario
 
 productos_blueprint = Blueprint("productos", __name__)
+
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+
+def _es_imagen_permitida(nombre_archivo: str) -> bool:
+    return "." in nombre_archivo and nombre_archivo.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+def _guardar_foto_inventario(archivo):
+    if not archivo or not getattr(archivo, "filename", ""):
+        return None
+
+    if not _es_imagen_permitida(archivo.filename):
+        raise ValueError("La foto debe ser una imagen válida.")
+
+    nombre_seguro = secure_filename(archivo.filename)
+    _, extension = os.path.splitext(nombre_seguro)
+    extension = extension.lower()[:10] or ".jpg"
+    nombre_final = f"{uuid.uuid4().hex}{extension}"
+
+    carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "inventario")
+    os.makedirs(carpeta_destino, exist_ok=True)
+
+    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
+    archivo.save(ruta_fisica)
+    return f"/static/img/evidencias/inventario/{nombre_final}"
 
 
 # ==================== PÁGINAS ====================
@@ -21,6 +50,17 @@ def pagina_productos():
         show_notifications=True,
         active_page="productos",
     )
+
+
+# ==================== CATEGORÍAS ====================
+
+@productos_blueprint.route("/api/productos/categorias", methods=["GET"])
+@jwt_required
+@tiene_permiso('Productos', 'consultar')
+def api_listar_categorias():
+    modelo = Categoria()
+    categorias = modelo.listar_categorias()
+    return jsonify({"success": True, "categorias": categorias})
 
 
 # ==================== CLASES ====================
@@ -44,7 +84,6 @@ def api_crear_clase():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
-    # Instanciar el modelo con los atributos
     modelo = ClaseProducto(nombre=nombre)
     
     try:
@@ -64,70 +103,6 @@ def api_crear_clase():
         )
         
         return jsonify({"success": True, "id": new_id}), 201
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
-
-
-@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Productos', 'modificar')
-def api_actualizar_clase(id_clase: str):
-    datos = request.get_json(silent=True) or {}
-    nombre = str(datos.get("nombre", "")).strip()
-    
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
-
-    # Instanciar el modelo con los atributos
-    modelo = ClaseProducto(id_clase=id_clase, nombre=nombre)
-    
-    try:
-        ok = modelo.actualizar_clase()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Actualizar clase",
-                f"Clase actualizada: {nombre} (ID: {id_clase})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
-        
-        return jsonify({"success": True, "updated": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
-
-
-@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Productos', 'eliminar')
-def api_eliminar_clase(id_clase: str):
-    # Instanciar el modelo con los atributos
-    modelo = ClaseProducto(id_clase=id_clase)
-    
-    try:
-        ok = modelo.eliminar_clase()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Eliminar clase",
-                f"Clase eliminada (ID: {id_clase})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
-        
-        return jsonify({"success": True, "deleted": ok})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
 
@@ -154,7 +129,6 @@ def api_crear_marca():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
 
-    # Instanciar el modelo con los atributos
     modelo = MarcaProducto(nombre=nombre)
     
     try:
@@ -178,70 +152,6 @@ def api_crear_marca():
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Productos', 'modificar')
-def api_actualizar_marca(id_marca: str):
-    datos = request.get_json(silent=True) or {}
-    nombre = str(datos.get("nombre", "")).strip()
-    
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
-
-    # Instanciar el modelo con los atributos
-    modelo = MarcaProducto(id_marca=id_marca, nombre=nombre)
-    
-    try:
-        ok = modelo.actualizar_marca()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Actualizar marca",
-                f"Marca actualizada: {nombre} (ID: {id_marca})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
-        
-        return jsonify({"success": True, "updated": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
-
-
-@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Productos', 'eliminar')
-def api_eliminar_marca(id_marca: str):
-    # Instanciar el modelo con los atributos
-    modelo = MarcaProducto(id_marca=id_marca)
-    
-    try:
-        ok = modelo.eliminar_marca()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Eliminar marca",
-                f"Marca eliminada (ID: {id_marca})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
-        
-        return jsonify({"success": True, "deleted": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
-
-
 # ==================== PRODUCTOS (MODELOS) ====================
 
 @productos_blueprint.route("/api/productos/modelos", methods=["GET"])
@@ -261,12 +171,29 @@ def api_listar_modelos():
 @jwt_required
 @tiene_permiso('Productos', 'registrar')
 def api_crear_modelo():
-    datos = request.get_json(silent=True) or {}
+    # Verificar si es FormData (con foto) o JSON
+    if request.files:
+        datos = request.form.to_dict()
+        archivo = request.files.get("foto_inventario")
+        print("=== DATOS RECIBIDOS (FormData) ===")
+        print(datos)
+        print(f"Archivo: {archivo.filename if archivo else 'No'}")
+    else:
+        datos = request.get_json(silent=True) or {}
+        archivo = None
+        print("=== DATOS RECIBIDOS (JSON) ===")
+        print(datos)
     
-    nombre = str(datos.get("nombre", "")).strip()
+    # Extraer campos
+    nombre = str(datos.get("modelo", "")).strip()
     id_marca = str(datos.get("id_marca", "")).strip()
     id_clase = str(datos.get("id_clase", "")).strip()
-    descripcion = datos.get("descripcion")
+    id_categoria = datos.get("id_categoria", 0)
+    descripcion = datos.get("descripcion", "")
+
+    print(f"Nombre extraído: '{nombre}'")
+    print(f"ID Marca: '{id_marca}'")
+    print(f"ID Clase: '{id_clase}'")
 
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
@@ -275,7 +202,7 @@ def api_crear_modelo():
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    # Instanciar el modelo con los atributos
+    # Crear producto SOLO en la tabla Producto (sin inventario)
     modelo = Producto(
         id_clase=id_clase,
         id_marca=id_marca,
@@ -285,6 +212,16 @@ def api_crear_modelo():
     
     try:
         new_id = modelo.registrar_producto()
+        
+        # Guardar foto si se proporcionó (solo guardar, no asociar a inventario aún)
+        foto_path = None
+        if archivo and archivo.filename:
+            try:
+                foto_path = _guardar_foto_inventario(archivo)
+                print(f"Foto guardada: {foto_path}")
+                # TODO: Guardar la foto asociada al producto (si agregas una tabla Producto_fotos)
+            except ValueError as e:
+                print(f"Error al guardar foto: {e}")
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
@@ -301,6 +238,9 @@ def api_crear_modelo():
         
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
+        print(f"Error al crear producto: {error}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": str(error)}), 400
 
 
@@ -322,7 +262,6 @@ def api_actualizar_modelo(id_modelo: str):
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    # Instanciar el modelo con los atributos
     modelo = Producto(
         id_producto=id_modelo,
         id_clase=id_clase,
@@ -357,11 +296,9 @@ def api_actualizar_modelo(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'eliminar')
 def api_eliminar_modelo(id_modelo: str):
-    # Instanciar el modelo con los atributos
     modelo = Producto(id_producto=id_modelo)
     
     try:
-        # Verificar si el producto tiene stock
         if modelo.verificar_stock_asociado():
             stock = modelo.obtener_stock_producto()
             return jsonify({
@@ -394,7 +331,6 @@ def api_eliminar_modelo(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'consultar')
 def api_verificar_stock_producto(id_modelo: str):
-    """Verifica si un producto tiene stock asociado"""
     modelo = Producto(id_producto=id_modelo)
     tiene_stock = modelo.verificar_stock_asociado()
     stock = modelo.obtener_stock_producto()
@@ -411,8 +347,8 @@ def api_verificar_stock_producto(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'consultar')
 def api_reportes_productos():
-    """Obtiene productos para reportes con filtros avanzados"""
     from app.models.inventario import Inventario
+    from datetime import datetime
     
     datos = request.get_json(silent=True) or {}
     
@@ -431,23 +367,19 @@ def api_reportes_productos():
         q=filtros["q"]
     )
     
-    # Obtener stock de cada producto
     inv_modelo = Inventario()
     inventario_lista = inv_modelo.listar_inventario() or []
     
-    # Crear diccionario de stock por id_producto
     stock_dict = {}
     for item in inventario_lista:
         id_prod = str(item.get("id_producto", ""))
         if id_prod:
             stock_dict[id_prod] = item.get("existencia", 0)
     
-    # Filtrar por stock y agregar stock a cada producto
     productos_filtrados = []
     for p in productos:
         stock = stock_dict.get(str(p.get("id", "")), 0)
         
-        # Aplicar filtros de stock
         if filtros["stock_min"] is not None and stock < int(filtros["stock_min"]):
             continue
         if filtros["stock_max"] is not None and stock > int(filtros["stock_max"]):

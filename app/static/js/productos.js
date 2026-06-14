@@ -4,6 +4,7 @@
   const state = {
     clases: [],
     marcas: [],
+    categorias: [],
     modelos: [],
   };
 
@@ -26,6 +27,7 @@
   const pMarca = document.getElementById("p-marca");
   const pMarcaNuevaWrap = document.getElementById("p-marca-nueva-wrap");
   const pMarcaNueva = document.getElementById("p-marca-nueva");
+  const pCategoria = document.getElementById("p-categoria");
   const pModelo = document.getElementById("p-modelo");
   const pDescripcion = document.getElementById("p-descripcion");
   const btnNuevaClase = document.getElementById("btn-nueva-clase");
@@ -44,7 +46,7 @@
     descripcion: 300,
   };
 
-  // ==================== MODAL DE CONFIRMACIÓN ÚNICO ====================
+  // ==================== MODAL DE CONFIRMACIÓN ====================
   
   function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false, tipo = 'info') {
     const modalExistente = document.getElementById('confirmacion-modal');
@@ -211,6 +213,27 @@
     return data;
   }
 
+  async function fetchFormData(url, formData) {
+    const authToken = getAuthToken();
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      credentials: "same-origin",
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || "No se pudo completar la operación.");
+    }
+    return data;
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -359,6 +382,18 @@
     });
   }
 
+  function renderCategoriaSelect() {
+    if (!pCategoria) return;
+    pCategoria.innerHTML = '<option value="0">Sin categoría</option>';
+    
+    state.categorias.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = String(c.id);
+      opt.textContent = c.nombre;
+      pCategoria.appendChild(opt);
+    });
+  }
+
   async function cargarClases() {
     const data = await fetchJson("/api/productos/clases", { method: "GET" });
     state.clases = Array.isArray(data.clases) ? data.clases : [];
@@ -372,6 +407,12 @@
     state.marcas = marcas;
     renderSelect(fMarca, marcas, { includeAll: true, allLabel: "Todas" });
     renderMarcaFormSelect(marcas);
+  }
+
+  async function cargarCategorias() {
+    const data = await fetchJson("/api/productos/categorias", { method: "GET" });
+    state.categorias = Array.isArray(data.categorias) ? data.categorias : [];
+    renderCategoriaSelect();
   }
 
   async function cargarModelos({ claseId = "", marcaId = "", q = "" } = {}) {
@@ -469,6 +510,7 @@
 
     if (!state.clases.length) await cargarClases();
     if (!state.marcas.length) await cargarMarcas();
+    await cargarCategorias();
 
     if (pClase) pClase.value = String(modelo.id_clase || "");
     setNewClassMode(false);
@@ -480,69 +522,93 @@
     if (pDescripcion) pDescripcion.value = modelo.descripcion || "";
   }
 
-  async function onSubmitProducto(event) {
+async function onSubmitProducto(event) {
     event.preventDefault();
     if (!formProducto) return;
     if (isSubmitting) return;
 
     if (!validarFormularioAntesDeEnviar(formProducto, 'producto')) {
-      return;
+        return;
     }
 
     const idModelo = String(formProducto.querySelector("input[name='id_modelo']")?.value || "").trim();
     const nombreModelo = String(pModelo?.value || "").trim();
     const descripcion = String(pDescripcion?.value || "").trim();
     
+    console.log("=== VALORES DEL FORMULARIO ===");
+    console.log("ID Modelo:", idModelo);
+    console.log("Nombre producto:", nombreModelo);
+    console.log("Descripción:", descripcion);
+    console.log("Clase seleccionada:", pClase?.value);
+    console.log("Marca seleccionada:", pMarca?.value);
+    console.log("Categoría seleccionada:", pCategoria?.value);
+    
     if (!nombreModelo) {
-      notify("error", "El nombre del producto es obligatorio.");
-      return;
+        notify("error", "El nombre del producto es obligatorio.");
+        return;
     }
 
     try {
-      isSubmitting = true;
-      const submitBtn = formProducto.querySelector("button[type='submit']");
-      if (submitBtn) submitBtn.disabled = true;
+        isSubmitting = true;
+        const submitBtn = formProducto.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
 
-      if (isCreatingNewBrand) {
-        throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
-      }
+        if (isCreatingNewBrand) {
+            throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
+        }
 
-      if (isCreatingNewClass) {
-        throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
-      }
+        if (isCreatingNewClass) {
+            throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
+        }
 
-      const claseIdFinal = Number(pClase?.value || 0);
-      if (!claseIdFinal) throw new Error("La clase es obligatoria.");
+        const claseIdFinal = Number(pClase?.value || 0);
+        if (!claseIdFinal) throw new Error("La clase es obligatoria.");
 
-      const finalMarcaId = Number(pMarca?.value || 0);
-      if (!finalMarcaId) throw new Error("La marca es obligatoria.");
+        const finalMarcaId = Number(pMarca?.value || 0);
+        if (!finalMarcaId) throw new Error("La marca es obligatoria.");
 
-      validateMaxLen("Producto", nombreModelo, MAX.producto);
-      validateMaxLen("Descripción", descripcion, MAX.descripcion);
+        validateMaxLen("Producto", nombreModelo, MAX.producto);
+        validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
-      if (idModelo) {
-        await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
-          method: "PUT",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
-        });
-      } else {
-        await fetchJson("/api/productos/modelos", {
-          method: "POST",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
-        });
-      }
+        if (idModelo) {
+            // Editar producto - usar JSON
+            await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
+                method: "PUT",
+                body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+            });
+        } else {
+            // Crear producto - usar FormData para la foto
+            const formData = new FormData(formProducto);
+            
+            // Asegurar que los campos requeridos estén presentes
+            formData.set("modelo", nombreModelo);
+            formData.set("id_marca", String(finalMarcaId));
+            formData.set("id_clase", String(claseIdFinal));
+            formData.set("descripcion", descripcion || "");
+            formData.set("id_categoria", pCategoria?.value || "0");
+            
+            console.log("FormData a enviar:");
+            for (let pair of formData.entries()) {
+                if (pair[0] !== "foto_inventario" || pair[1] instanceof File) {
+                    console.log(pair[0] + ": " + (pair[1] instanceof File ? pair[1].name : pair[1]));
+                }
+            }
+            
+            await fetchFormData("/api/productos/modelos", formData);
+        }
 
-      closeModal();
-      await recargarModelosSegunFiltros();
-      notify("success", "Producto guardado correctamente.");
+        closeModal();
+        await recargarModelosSegunFiltros();
+        notify("success", "Producto guardado correctamente.");
     } catch (err) {
-      notify("error", err?.message || "No se pudo guardar.");
+        console.error("Error:", err);
+        notify("error", err?.message || "No se pudo guardar.");
     } finally {
-      isSubmitting = false;
-      const submitBtn = formProducto.querySelector("button[type='submit']");
-      if (submitBtn) submitBtn.disabled = false;
+        isSubmitting = false;
+        const submitBtn = formProducto.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = false;
     }
-  }
+}
 
   async function onGuardarClaseClick() {
     try {
@@ -625,7 +691,7 @@
     }
   }
 
-  // ==================== ELIMINAR PRODUCTO CORREGIDO ====================
+  // ==================== ELIMINAR PRODUCTO ====================
   
   async function eliminarProducto(id, nombreProducto) {
     try {
@@ -657,10 +723,8 @@
   }
 
   async function onTablaClick(event) {
-    // Buscar el botón en el evento click
     let target = event.target;
     
-    // Si el target es un SVG o un path, buscar el botón padre
     if (target.tagName === 'svg' || target.tagName === 'path') {
       target = target.closest('button');
     }
@@ -674,7 +738,6 @@
     
     if (!action || !id) return;
 
-    // Prevenir propagación para evitar conflictos
     event.stopPropagation();
     event.preventDefault();
 
@@ -691,8 +754,6 @@
       return;
     }
   }
-
-  // ==================== FIN ELIMINAR PRODUCTO ====================
 
   // ==================== REPORTES ====================
   
@@ -764,8 +825,6 @@
       q: reporteBusqueda?.value || "",
       stock_min: reporteStockMin?.value ? parseInt(reporteStockMin.value) : null,
       stock_max: reporteStockMax?.value ? parseInt(reporteStockMax.value) : null,
-      clase_nombre: reporteClase?.options[reporteClase.selectedIndex]?.text || null,
-      marca_nombre: reporteMarca?.options[reporteMarca.selectedIndex]?.text || null
     };
     
     reporteFiltrosActuales = filtros;
@@ -787,7 +846,7 @@
       
       if (reporteTabla) {
         if (reporteDatosActuales.length === 0) {
-          reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
+          reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td</tr>';
         } else {
           reporteTabla.innerHTML = reporteDatosActuales.map(p => `
             <tr>
@@ -829,11 +888,7 @@
     }
     
     const now = new Date();
-    const fechaReporte = now.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    const fechaReporte = now.toLocaleDateString('es-ES');
     
     const tableData = reporteDatosActuales.map(p => ({
       id: p.id || '-',
@@ -851,18 +906,7 @@
     wsData.push(['']);
     wsData.push([`Generado: ${fechaReporte}`]);
     wsData.push([`Total productos: ${tableData.length}`]);
-    
-    const filtrosTexto = [];
-    if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
-    if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
-    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
-    if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
-    if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
-    
-    const filtrosLine = filtrosTexto.length > 0 ? `Filtros aplicados: ${filtrosTexto.join(' | ')}` : 'Filtros aplicados: Todos los productos';
-    wsData.push([filtrosLine]);
     wsData.push(['']);
-    
     wsData.push(['ID', 'NOMBRE', 'MARCA', 'CLASE', 'STOCK', 'DESCRIPCIÓN']);
     
     tableData.forEach(item => {
@@ -910,7 +954,6 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     
     const colors = {
       primary: [243, 197, 0],
@@ -944,36 +987,15 @@
     const metadata = [`Generado: ${fechaStr}`, `Hora: ${horaStr}`, `Total productos: ${reporteDatosActuales.length}`];
     doc.text(metadata.join(" • "), pageWidth / 2, 44, { align: 'center' });
     
-    const filtrosActivos = [];
-    if (reporteFiltrosActuales.clase_nombre) filtrosActivos.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
-    if (reporteFiltrosActuales.marca_nombre) filtrosActivos.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
-    if (reporteFiltrosActuales.q) filtrosActivos.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
-    if (reporteFiltrosActuales.stock_min) filtrosActivos.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
-    if (reporteFiltrosActuales.stock_max) filtrosActivos.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
-    
-    const filterBoxY = 54;
-    doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
-    doc.rect(15, filterBoxY, pageWidth - 30, 10, 'F');
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(8.5);
-    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-    doc.text(filtrosActivos.length ? `Filtros: ${filtrosActivos.join(" • ")}` : "Filtros: Todos los productos", 18, filterBoxY + 7);
-    
-    const startY = filterBoxY + 14;
-    const tableRows = reporteDatosActuales.map(p => {
-      let stockDisplay = '';
-      if (p.stock === 0) stockDisplay = 'Sin stock';
-      else if (p.stock <= 5) stockDisplay = `${p.stock} uds`;
-      else stockDisplay = `${p.stock} uds`;
-      return [
-        p.id || '-',
-        p.nombre || '-',
-        p.marca_nombre || '-',
-        p.clase_nombre || '-',
-        stockDisplay,
-        (p.descripcion || '-').substring(0, 70)
-      ];
-    });
+    const startY = 52;
+    const tableRows = reporteDatosActuales.map(p => [
+      p.id || '-',
+      p.nombre || '-',
+      p.marca_nombre || '-',
+      p.clase_nombre || '-',
+      p.stock === 0 ? 'Sin stock' : `${p.stock} uds`,
+      (p.descripcion || '-').substring(0, 70)
+    ]);
     
     doc.autoTable({
       startY: startY,
@@ -984,12 +1006,6 @@
       bodyStyles: { fontSize: 8.5, textColor: colors.dark, cellPadding: 4 },
       alternateRowStyles: { fillColor: colors.grayLight },
       margin: { left: 15, right: 15 },
-      didDrawPage: (data) => {
-        doc.setFontSize(7);
-        doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-        doc.text("ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, pageHeight - 8, { align: 'center' });
-        doc.text(`Página ${data.pageNumber}`, pageWidth - 15, pageHeight - 8, { align: 'right' });
-      }
     });
     
     const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
@@ -1007,13 +1023,6 @@
     const fecha = new Date().toLocaleString();
     const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
     
-    const filtrosTexto = [];
-    if (reporteFiltrosActuales.clase_nombre) filtrosTexto.push(`Clase: ${reporteFiltrosActuales.clase_nombre}`);
-    if (reporteFiltrosActuales.marca_nombre) filtrosTexto.push(`Marca: ${reporteFiltrosActuales.marca_nombre}`);
-    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
-    if (reporteFiltrosActuales.stock_min) filtrosTexto.push(`Stock ≥ ${reporteFiltrosActuales.stock_min}`);
-    if (reporteFiltrosActuales.stock_max) filtrosTexto.push(`Stock ≤ ${reporteFiltrosActuales.stock_max}`);
-    
     ventana.document.write(`
       <!DOCTYPE html>
       <html>
@@ -1021,14 +1030,12 @@
         <meta charset="UTF-8">
         <title>Reporte de Productos - ItuAccesorio</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
           @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
-          body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
-          h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+          body { font-family: Arial, sans-serif; margin: 20px; padding: 20px; background: white; }
+          h1 { text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
           .logo { text-align: center; margin-bottom: 20px; }
           .logo img { height: 50px; }
           .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
-          .filters { background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-left: 4px solid #f3c500; font-size: 12px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
           th { background: #121212; color: white; font-weight: bold; }
@@ -1045,7 +1052,6 @@
         <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
         <h1>REPORTE DE PRODUCTOS</h1>
         <div class="info">Generado: ${fecha} • Total productos: ${reporteDatosActuales.length}</div>
-        ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
         <table>
           <thead><tr><th>ID</th><th>Nombre</th><th>Marca</th><th>Clase</th><th>Stock</th><th>Descripción</th></tr></thead>
           <tbody>
@@ -1124,6 +1130,7 @@
         resetFormToCreate();
         if (!state.clases.length) await cargarClases();
         if (!state.marcas.length) await cargarMarcas();
+        await cargarCategorias();
         openModal();
       });
     }
@@ -1208,6 +1215,7 @@
     try {
       await cargarClases();
       await cargarMarcas();
+      await cargarCategorias();
       await cargarModelos({});
       aplicarFiltrosYRender();
     } catch (err) {

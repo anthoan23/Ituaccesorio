@@ -13,11 +13,10 @@
 
 	async function fetchJson(url, options = {}) {
 		const authToken = getAuthToken();
-		const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 		const response = await fetch(url, {
 			headers: {
 				Accept: "application/json",
-				...(options.method && options.method !== "GET" && !isFormData ? { "Content-Type": "application/json" } : {}),
+				...(options.method && options.method !== "GET" ? { "Content-Type": "application/json" } : {}),
 				...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
 				...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
 				...(options.headers || {}),
@@ -37,11 +36,7 @@
 		if (value === null || value === undefined || value === '') return '-';
 		const num = Number(value);
 		if (Number.isNaN(num)) return String(value);
-		try {
-			return `$${new Intl.NumberFormat('es-VE').format(num)}`;
-		} catch (e) {
-			return `$${num.toLocaleString()}`;
-		}
+		return `$${num.toLocaleString('es-VE')}`;
 	};
 
 	const normalizeText = (value) => {
@@ -134,36 +129,6 @@
 	const setNote = (text) => {
 		const el = document.getElementById('inventario-note');
 		if (el) el.textContent = text;
-	};
-
-	const renderSelect = (select, items, placeholder) => {
-		if (!select) return;
-		select.innerHTML = '';
-		const opt = document.createElement('option');
-		opt.value = '';
-		opt.textContent = placeholder;
-		select.appendChild(opt);
-
-		(items || []).forEach((item) => {
-			const option = document.createElement('option');
-			option.value = String(item.id);
-			option.textContent = String(item.nombre);
-			select.appendChild(option);
-		});
-	};
-
-	const parseIntSafe = (value) => {
-		const str = String(value ?? '').trim();
-		if (!str) return NaN;
-		const cleaned = str.replace(/[^0-9-]/g, '');
-		return Number.parseInt(cleaned, 10);
-	};
-
-	const parseDecimalSafe = (value) => {
-		const str = String(value ?? '').trim();
-		if (!str) return NaN;
-		const cleaned = str.replace(/[^0-9.,-]/g, '').replace(',', '.');
-		return Number.parseFloat(cleaned);
 	};
 
 	const stripAccents = (value) => {
@@ -265,346 +230,11 @@
 		if (initial) activate(initial);
 	};
 
-	const initFormularioStock = async () => {
-		const form = document.getElementById('inventario-form');
-		const selectClase = document.getElementById('inv-clase');
-		const selectMarca = document.getElementById('inv-marca');
-		const selectModelo = document.getElementById('inv-modelo');
-		const inputFoto = document.getElementById('inv-foto');
-		const inputExistencia = document.getElementById('inv-existencia');
-		const inputCosto = document.getElementById('inv-costo');
-		const btnLimpiar = document.getElementById('inv-limpiar');
-		const btnGuardar = document.getElementById('inv-guardar');
-		if (!form || !selectClase || !selectMarca || !selectModelo || !btnGuardar) return;
-
-		renderSelect(selectClase, [], 'Cargando clases…');
-		renderSelect(selectMarca, [], 'Selecciona una marca');
-		renderSelect(selectModelo, [], 'Selecciona un producto');
-
-		try {
-			const dataClases = await fetchJson('/api/productos/clases', { method: 'GET' });
-			const clases = Array.isArray(dataClases?.clases) ? dataClases.clases : [];
-			renderSelect(selectClase, clases, 'Selecciona una clase');
-		} catch (err) {
-			console.error('Error cargando clases:', err);
-			renderSelect(selectClase, [], 'No se pudieron cargar clases');
-		}
-
-		const cargarMarcas = async (idClase) => {
-			try {
-				renderSelect(selectMarca, [], 'Cargando marcas…');
-				renderSelect(selectModelo, [], 'Selecciona un producto');
-				if (!idClase) {
-					renderSelect(selectMarca, [], 'Selecciona una marca');
-					return;
-				}
-				const data = await fetchJson(`/api/productos/marcas?clase_id=${encodeURIComponent(String(idClase))}`, { method: 'GET' });
-				const marcas = Array.isArray(data?.marcas) ? data.marcas : [];
-				renderSelect(selectMarca, marcas, 'Selecciona una marca');
-			} catch (err) {
-				console.error('Error cargando marcas:', err);
-				renderSelect(selectMarca, [], 'No se pudieron cargar marcas');
-			}
-		};
-
-		const cargarProductos = async (idMarca) => {
-			try {
-				renderSelect(selectModelo, [], 'Cargando productos…');
-				if (!idMarca) {
-					renderSelect(selectModelo, [], 'Selecciona un producto');
-					return;
-				}
-				const idClase = String(selectClase?.value || '');
-				const qs = new URLSearchParams();
-				qs.set('marca_id', String(idMarca));
-				if (idClase) qs.set('clase_id', String(idClase));
-				const data = await fetchJson(`/api/productos/modelos?${qs.toString()}`, { method: 'GET' });
-				const productos = Array.isArray(data?.modelos) ? data.modelos : [];
-				renderSelect(selectModelo, productos, 'Selecciona un producto');
-			} catch (err) {
-				console.error('Error cargando productos:', err);
-				renderSelect(selectModelo, [], 'No se pudieron cargar productos');
-			}
-		};
-
-		selectClase.addEventListener('change', () => {
-			cargarMarcas(String(selectClase.value || ''));
-		});
-		selectMarca.addEventListener('change', () => {
-			cargarProductos(String(selectMarca.value || ''));
-		});
-
-		btnLimpiar?.addEventListener('click', () => {
-			form.reset();
-			renderSelect(selectMarca, [], 'Selecciona una marca');
-			renderSelect(selectModelo, [], 'Selecciona un producto');
-			setNote('Formulario limpiado.');
-		});
-
-		form.addEventListener('submit', async (e) => {
-			e.preventDefault();
-			const idProducto = String(selectModelo.value || '').trim();
-			if (!idProducto) {
-				setNote('Selecciona un producto antes de guardar.');
-				return;
-			}
-			if (!inputFoto?.files?.length) {
-				setNote('Selecciona una foto antes de guardar.');
-				return;
-			}
-
-			const existencia = parseIntSafe(inputExistencia?.value);
-			const costoVenta = parseDecimalSafe(inputCosto?.value);
-			if (!Number.isFinite(existencia) || existencia < 0) {
-				setNote('Existencia inválida.');
-				return;
-			}
-			if (!Number.isFinite(costoVenta) || costoVenta < 0) {
-				setNote('Costo venta inválido.');
-				return;
-			}
-
-			const payload = new FormData(form);
-			payload.set('id_producto', idProducto);
-			payload.set('existencia', String(existencia));
-			payload.set('costo_venta', String(inputCosto?.value || '').trim());
-
-			const oldText = btnGuardar.textContent;
-			btnGuardar.disabled = true;
-			btnGuardar.textContent = 'Guardando…';
-			try {
-				await fetchJson('/api/inventario/stock', {
-					method: 'POST',
-					body: payload,
-				});
-				setNote('Stock guardado correctamente.');
-				form.reset();
-				renderSelect(selectMarca, [], 'Selecciona una marca');
-				renderSelect(selectModelo, [], 'Selecciona un producto');
-				window.UiModal?.closeById('modal-inventario-stock');
-				await loadInventario();
-			} catch (err) {
-				console.error('Error guardando stock:', err);
-				setNote(`No se pudo guardar stock: ${String(err?.message || err)}`);
-			} finally {
-				btnGuardar.disabled = false;
-				btnGuardar.textContent = oldText;
-			}
-		});
-	};
-
 	document.addEventListener('DOMContentLoaded', () => {
 		initChips();
 		loadInventario();
-		initFormularioStock();
 	});
 
-  // Variables para modales
-  let modalConfirmacion = null;
-  let productoAEliminar = null;
-
-  // Función para crear modal de confirmación dinámico
-  function crearModalConfirmacion() {
-      // Verificar si ya existe
-      let modal = document.getElementById('modal-confirmar-eliminar');
-      if (modal) {
-          modal.remove();
-      }
-      
-      modal = document.createElement('div');
-      modal.id = 'modal-confirmar-eliminar';
-      modal.className = 'modal is-hidden';
-      modal.setAttribute('aria-hidden', 'true');
-      
-      modal.innerHTML = `
-          <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-          <div class="modal__panel card" style="max-width: 500px; width: 90%;" role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                  <h2 class="card__title" style="color: #dc2626;">⚠️ Confirmar eliminación</h2>
-                  <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
-              </div>
-              <div class="filters-panel__section">
-                  <p id="confirmar-mensaje" style="margin-bottom: 1rem; font-size: 1rem;">¿Seguro que deseas eliminar este producto?</p>
-                  <div id="confirmar-stock-warning" style="display: none; background: #fef3c7; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
-                      ⚠️ Este producto tiene stock en inventario. No se puede eliminar hasta que el stock sea 0.
-                  </div>
-                  <div class="filters-panel__actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                      <button id="btn-cancelar-eliminar" class="btn btn--ghost" type="button">Cancelar</button>
-                      <button id="btn-confirmar-eliminar" class="btn btn--danger" type="button">Eliminar</button>
-                  </div>
-              </div>
-          </div>
-      `;
-      
-      document.body.appendChild(modal);
-      
-      // Eventos del modal
-      const closeModal = () => {
-          modal.classList.add('is-hidden');
-          modal.setAttribute('aria-hidden', 'true');
-          productoAEliminar = null;
-          document.body.style.overflow = '';
-      };
-      
-      modal.querySelectorAll('[data-modal-close="true"]').forEach(btn => {
-          btn.addEventListener('click', closeModal);
-      });
-      
-      document.getElementById('btn-cancelar-eliminar')?.addEventListener('click', closeModal);
-      
-      return modal;
-  }
-
-  // Función para abrir modal de confirmación
-  function abrirModalConfirmacion(mensaje, tieneStock = false, onConfirmar) {
-      let modal = document.getElementById('modal-confirmar-eliminar');
-      if (!modal) {
-          modal = crearModalConfirmacion();
-      }
-      
-      const mensajeEl = document.getElementById('confirmar-mensaje');
-      const warningEl = document.getElementById('confirmar-stock-warning');
-      const btnConfirmar = document.getElementById('btn-confirmar-eliminar');
-      
-      if (mensajeEl) mensajeEl.textContent = mensaje;
-      
-      if (tieneStock) {
-          if (warningEl) warningEl.style.display = 'block';
-          if (btnConfirmar) btnConfirmar.disabled = true;
-      } else {
-          if (warningEl) warningEl.style.display = 'none';
-          if (btnConfirmar) btnConfirmar.disabled = false;
-      }
-      
-      // Remover event listener anterior
-      const newBtnConfirmar = btnConfirmar.cloneNode(true);
-      btnConfirmar.parentNode.replaceChild(newBtnConfirmar, btnConfirmar);
-      
-      newBtnConfirmar.addEventListener('click', async () => {
-          if (onConfirmar) await onConfirmar();
-          modal.classList.add('is-hidden');
-          modal.setAttribute('aria-hidden', 'true');
-          productoAEliminar = null;
-          document.body.style.overflow = '';
-      });
-      
-      modal.classList.remove('is-hidden');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-  }
-
-  // Función para mostrar modal de mensaje (éxito/error)
-  function mostrarModalMensaje(mensaje, esError = false) {
-      let modal = document.getElementById('modal-mensaje-productos');
-      if (!modal) {
-          modal = document.createElement('div');
-          modal.id = 'modal-mensaje-productos';
-          modal.className = 'modal is-hidden';
-          modal.setAttribute('aria-hidden', 'true');
-          modal.innerHTML = `
-              <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-              <div class="modal__panel card" style="max-width: 400px; width: 90%;" role="dialog" aria-modal="true" aria-label="Mensaje">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                      <h2 class="card__title" id="modal-mensaje-title">${esError ? '❌ Error' : '✅ Éxito'}</h2>
-                      <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
-                  </div>
-                  <div class="filters-panel__section">
-                      <p id="modal-mensaje-texto" style="margin-bottom: 1rem; font-size: 1rem;">${mensaje}</p>
-                      <div class="filters-panel__actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                          <button id="btn-cerrar-mensaje" class="btn btn--primary" type="button">Aceptar</button>
-                      </div>
-                  </div>
-              </div>
-          `;
-          document.body.appendChild(modal);
-          
-          modal.querySelectorAll('[data-modal-close="true"]').forEach(btn => {
-              btn.addEventListener('click', () => {
-                  modal.classList.add('is-hidden');
-                  modal.setAttribute('aria-hidden', 'true');
-                  document.body.style.overflow = '';
-              });
-          });
-          document.getElementById('btn-cerrar-mensaje')?.addEventListener('click', () => {
-              modal.classList.add('is-hidden');
-              modal.setAttribute('aria-hidden', 'true');
-              document.body.style.overflow = '';
-          });
-      }
-      
-      const titleEl = document.getElementById('modal-mensaje-title');
-      const textoEl = document.getElementById('modal-mensaje-texto');
-      
-      if (titleEl) titleEl.textContent = esError ? '❌ Error' : '✅ Éxito';
-      if (textoEl) textoEl.textContent = mensaje;
-      
-      modal.classList.remove('is-hidden');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-      
-      // Auto cerrar después de 3 segundos
-      setTimeout(() => {
-          if (modal && !modal.classList.contains('is-hidden')) {
-              modal.classList.add('is-hidden');
-              modal.setAttribute('aria-hidden', 'true');
-              document.body.style.overflow = '';
-          }
-      }, 3000);
-  }
-
-  // Reemplazar la función onTablaClick
-  async function onTablaClick(event) {
-      const btn = event.target?.closest("button.icon-action");
-      if (!btn) return;
-
-      const action = btn.getAttribute("data-action");
-      const id = btn.getAttribute("data-id");
-      if (!action || !id) return;
-
-      if (action === "edit") {
-          await prepararFormularioEdicion(id);
-          openModal();
-          return;
-      }
-
-      if (action === "delete") {
-          const modelo = findModeloById(id);
-          const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
-          
-          // Verificar si el producto tiene stock
-          try {
-              const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' }).catch(() => null);
-              const tieneStock = data?.tiene_stock || false;
-              const stock = data?.stock || 0;
-              
-              if (tieneStock) {
-                  mostrarModalMensaje(`No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario. Primero debe eliminar o reducir el stock.`, true);
-              } else {
-                  abrirModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, false, async () => {
-                      try {
-                          await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
-                          await recargarModelosSegunFiltros();
-                          mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
-                      } catch (err) {
-                          mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
-                      }
-                  });
-              }
-          } catch (err) {
-              // Si no hay endpoint de verificación, intentar eliminar directamente
-              abrirModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, false, async () => {
-                  try {
-                      await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
-                      await recargarModelosSegunFiltros();
-                      mostrarModalMensaje(`Producto "${label}" eliminado correctamente.`, false);
-                  } catch (err) {
-                      mostrarModalMensaje(err?.message || "No se pudo eliminar el producto.", true);
-                  }
-              });
-          }
-          return;
-      }
-  }
 })();
 
 // ==================== REPORTES INVENTARIO ====================
@@ -707,17 +337,14 @@ function cargarFiltrosReporte(clases, marcas) {
 
 async function cargarClasesMarcasIniciales() {
   try {
-    // Cargar clases desde el endpoint de productos
     const clasesData = await fetchJsonReportes("/api/productos/clases", { method: "GET" });
     const clases = (clasesData.clases || []).map(c => c.nombre);
     clasesDisponibles = [...new Set(clases)];
     
-    // Cargar marcas desde el endpoint de productos
     const marcasData = await fetchJsonReportes("/api/productos/marcas", { method: "GET" });
     const marcas = (marcasData.marcas || []).map(m => m.nombre);
     marcasDisponibles = [...new Set(marcas)];
     
-    // Actualizar selects
     if (reporteClase) {
       reporteClase.innerHTML = '<option value="">Todas</option>' + 
         clasesDisponibles.map(c => `<option value="${escapeHtmlReportes(c)}">${escapeHtmlReportes(c)}</option>`).join("");
@@ -764,11 +391,9 @@ async function generarReporteInventario() {
     reporteDatosActuales = data.inventario || [];
     const total = data.total || 0;
     
-    // Actualizar filtros con los valores únicos del backend (por si hay nuevos)
     if (data.clases && data.clases.length > 0) {
       cargarFiltrosReporte(data.clases, data.marcas || []);
     } else {
-      // Si el backend no devuelve clases/marcas, mantener las iniciales
       cargarFiltrosReporte(clasesDisponibles, marcasDisponibles);
     }
     
@@ -777,7 +402,7 @@ async function generarReporteInventario() {
     
     if (reporteTabla) {
       if (reporteDatosActuales.length === 0) {
-        reporteTabla.innerHTML = '<tr><td colspan="7" class="table__empty">No hay productos con esos filtros</td></tr>';
+        reporteTabla.innerHTML = '<tr><td colspan="7" class="table__empty">No hay productos con esos filtros</td</tr>';
       } else {
         reporteTabla.innerHTML = reporteDatosActuales.map(p => {
           const status = getStatusLabel(p.existencia || 0);
@@ -840,9 +465,7 @@ function exportarInventarioExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Inventario");
   
-  ws['!cols'] = [
-    {wch: 35}, {wch: 20}, {wch: 20}, {wch: 12}, {wch: 15}, {wch: 18}
-  ];
+  ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 18 }];
   
   XLSX.writeFile(wb, `inventario_${new Date().toISOString().slice(0,19)}.xlsx`);
   notifyReportes('success', "Reporte exportado a Excel");
@@ -943,12 +566,6 @@ function exportarInventarioPdf() {
     bodyStyles: { fontSize: 8.5, cellPadding: 4 },
     alternateRowStyles: { fillColor: colors.grayLight },
     margin: { left: 15, right: 15 },
-    didDrawPage: (data) => {
-      doc.setFontSize(7);
-      doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
-      doc.text("ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
-      doc.text(`Página ${data.pageNumber}`, pageWidth - 15, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
-    }
   });
   
   doc.save(`inventario_${now.toISOString().slice(0,19)}.pdf`);
@@ -979,10 +596,9 @@ function imprimirReporteInventario() {
       <meta charset="UTF-8">
       <title>Reporte de Inventario</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
         @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
-        body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
-        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+        body { font-family: Arial, sans-serif; margin: 20px; padding: 20px; background: white; }
+        h1 { text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
         .logo { text-align: center; margin-bottom: 20px; }
         .logo img { height: 50px; }
         .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
@@ -1050,7 +666,6 @@ if (btnReportes) {
     if (btnExportarPdf) btnExportarPdf.disabled = true;
     if (btnImprimir) btnImprimir.disabled = true;
     
-    // Cargar clases y marcas ANTES de abrir el modal
     await cargarClasesMarcasIniciales();
     
     if (window.UiModal && typeof window.UiModal.openById === 'function') {

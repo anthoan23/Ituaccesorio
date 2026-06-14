@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Estado
     let proveedores = [];
+    let empleados = [];
     let productosDisponibles = [];
     let productosSeleccionados = [];
     let proveedorSeleccionado = null;
@@ -169,11 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
             } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
+                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.穷';
             }
         } catch (error) {
             console.error('Error cargando órdenes:', error);
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
         }
     }
 
@@ -203,13 +204,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
             } else {
-                tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.</td></tr>';
+                tablaEntregadas.innerHTML = '</tr><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.穷';
             }
         } catch (error) {
             console.error('Error cargando órdenes entregadas:', error);
-            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
+            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
         }
     }
+
+// Cargar empleados - Versión simplificada
+async function cargarEmpleados() {
+    const selectEmpleado = document.getElementById('entrada-id-empleado');
+    if (!selectEmpleado) return;
+    
+    try {
+        const data = await fetchJson('/api/empleados');
+        empleados = data || [];
+        
+        if (empleados.length > 0) {
+            selectEmpleado.innerHTML = '<option value="">Seleccione un empleado</option>' +
+                empleados.map(e => {
+                    const textoMostrar = `${e.nombre} ${e.apellido} (${e.cedula})`;
+                    return `<option value="${e.cedula}">${escapeHtml(textoMostrar)}</option>`;
+                }).join('');
+        } else {
+            selectEmpleado.innerHTML = '<option value="">No hay empleados registrados</option>';
+        }
+    } catch (error) {
+        console.error('Error cargando empleados:', error);
+        selectEmpleado.innerHTML = '<option value="">Error al cargar empleados</option>';
+    }
+}
 
     // Cargar proveedores
     async function cargarProveedores() {
@@ -226,14 +251,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${escapeHtml(p.nombre)}</td>
                         <td>${escapeHtml(p.celular || '-')}</td>
                         <td>${escapeHtml(p.correo || '-')}</td>
-                    </tr>
+                    </table>
                 `).join('');
             } else {
-                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.</td></tr>';
+                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.穷';
             }
         } catch (error) {
             console.error('Error cargando proveedores:', error);
-            listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.</td></tr>';
+            listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.穷';
         }
     }
 
@@ -255,11 +280,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 `).join('');
             } else {
-                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.</td></tr>';
+                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.穷';
             }
         } catch (error) {
             console.error('Error cargando productos:', error);
-            listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.</td></tr>';
+            listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.穷';
         }
     }
 
@@ -268,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tablaSeleccionados) return;
         
         if (productosSeleccionados.length === 0) {
-            tablaSeleccionados.innerHTML = '<tr><td colspan="5" class="table__empty">Aún no hay productos seleccionados.</td></tr>';
+            tablaSeleccionados.innerHTML = '<table><td colspan="5" class="table__empty">Aún no hay productos seleccionados.穷';
             actualizarTotal();
             return;
         }
@@ -322,84 +347,135 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     }
 
-    // Ver detalle de orden
-// Ver detalle de orden
-async function verDetalle(id) {
-    console.log("=== VER DETALLE ===");
-    console.log("ID de orden a buscar:", id);
+// Cargar productos de la orden para preview
+async function cargarProductosOrdenParaEntrega(idOrden) {
+    const container = document.getElementById('entrega-productos-preview');
+    if (!container) return;
     
     try {
-        const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
-        console.log("Respuesta del servidor:", data);
-        
-        const detalle = data.datos_orden;
+        const data = await fetchJson(`/api/detalles_orden/${idOrden}`, { method: 'GET' });
         const productos = data.productos_orden || [];
-
-        if (detalle) {
-            const infoContainer = document.getElementById('detalle-orden-info');
-            const productosContainer = document.getElementById('detalle-orden-productos');
-            const totalSpan = document.getElementById('detalle-orden-total-value');
+        
+        if (productos.length > 0) {
+            // Calcular total
+            let totalBs = 0;
+            productos.forEach(p => {
+                totalBs += Number(p.Costo || 0) * Number(p.Cantidad_p || 0);
+            });
             
-            if (infoContainer) {
-                infoContainer.innerHTML = `
-                    <div class="device-detail__grid">
-                        <div class="detail-item">
-                            <span class="device-detail__label">ID Orden</span>
-                            <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="device-detail__label">Proveedor</span>
-                            <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="device-detail__label">Fecha</span>
-                            <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="device-detail__label">Estado</span>
-                            <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="device-detail__label">Realizado por</span>
-                            <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
-                        </div>
-                        ${detalle.Recibido_por ? `
-                        <div class="detail-item">
-                            <span class="device-detail__label">Recibido por</span>
-                            <span class="device-detail__value">${escapeHtml(detalle.Recibido_por)}</span>
-                        </div>
-                        ` : ''}
+            container.innerHTML = `
+                <div class="entrega-preview">
+                    <div class="entrega-preview-header">
+                        Productos a recibir
                     </div>
-                `;
-            }
-
-            if (productosContainer) {
-                if (productos.length > 0) {
-                    productosContainer.innerHTML = productos.map(p => `
-                        <tr>
-                            <td>${escapeHtml(p.N_marca)}</td>
-                            <td>${escapeHtml(p.N_modelo)}</td>
-                            <td>${escapeHtml(p.Cantidad_p)}</td>
-                            <td>Bs. ${formatMoney(p.Costo)}</td>
-                            <td>Bs. ${formatMoney(p.sup_total)}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    productosContainer.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos en esta orden.</td></tr>';
-                }
-            }
-
-            if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
-            openModal(modalDetalle);
+                    <table class="entrega-preview-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th style="text-align: center;">Cantidad</th>
+                                <th style="text-align: right;">Costo unitario</th>
+                                <th style="text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productos.map(p => `
+                                <tr>
+                                    <td>${escapeHtml(p.N_modelo)}</td>
+                                    <td style="text-align: center;">${escapeHtml(p.Cantidad_p)}</td>
+                                    <td style="text-align: right;">Bs. ${formatMoney(p.Costo)}</td>
+                                    <td style="text-align: right;">Bs. ${formatMoney(p.sup_total)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" style="text-align: right; font-weight: 600;">Total:</td>
+                                <td style="text-align: right; font-weight: 600;">Bs. ${formatMoney(totalBs)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
         } else {
-            console.error("No se encontró la orden:", id);
-            mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
+            container.innerHTML = '<div class="entrega-preview-empty">⚠️ No hay productos en esta orden</div>';
         }
     } catch (error) {
-        console.error('Error cargando detalle:', error);
-        mostrarMensaje(error.message || 'No se pudo cargar el detalle de la orden.', true);
+        console.error('Error cargando productos:', error);
+        container.innerHTML = '<div class="entrega-preview-empty">❌ Error al cargar productos</div>';
     }
 }
+
+    // Ver detalle de orden
+    async function verDetalle(id) {
+        console.log("=== VER DETALLE ===");
+        console.log("ID de orden a buscar:", id);
+        
+        try {
+            const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
+            console.log("Respuesta del servidor:", data);
+            
+            const detalle = data.datos_orden;
+            const productos = data.productos_orden || [];
+
+            if (detalle) {
+                const infoContainer = document.getElementById('detalle-orden-info');
+                const productosContainer = document.getElementById('detalle-orden-productos');
+                const totalSpan = document.getElementById('detalle-orden-total-value');
+                
+                if (infoContainer) {
+                    infoContainer.innerHTML = `
+                        <div class="device-detail__grid">
+                            <div class="detail-item">
+                                <span class="device-detail__label">ID Orden</span>
+                                <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="device-detail__label">Proveedor</span>
+                                <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="device-detail__label">Fecha</span>
+                                <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="device-detail__label">Estado</span>
+                                <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="device-detail__label">Realizado por</span>
+                                <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (productosContainer) {
+                    if (productos.length > 0) {
+                        productosContainer.innerHTML = productos.map(p => `
+                            <tr>
+                                <td>${escapeHtml(p.N_marca)}</td>
+                                <td>${escapeHtml(p.N_modelo)}</td>
+                                <td>${escapeHtml(p.Cantidad_p)}</td>
+                                <td>Bs. ${formatMoney(p.Costo)}</td>
+                                <td>Bs. ${formatMoney(p.sup_total)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        productosContainer.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos en esta orden.穷';
+                    }
+                }
+
+                if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
+                openModal(modalDetalle);
+            } else {
+                console.error("No se encontró la orden:", id);
+                mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
+            }
+        } catch (error) {
+            console.error('Error cargando detalle:', error);
+            mostrarMensaje(error.message || 'No se pudo cargar el detalle de la orden.', true);
+        }
+    }
 
     // Event Listeners
     if (btnPendientes) btnPendientes.addEventListener('click', () => cambiarVista('pendientes'));
@@ -408,6 +484,7 @@ async function verDetalle(id) {
     if (btnRegistrar) {
         btnRegistrar.addEventListener('click', () => {
             limpiarFormulario();
+            cargarEmpleados();
             openModal(modalRegistro);
         });
     }
@@ -519,11 +596,23 @@ async function verDetalle(id) {
                 mostrarMensaje('Debe agregar al menos un producto.', true);
                 return;
             }
+            
+            // Obtener el empleado seleccionado
+            const selectEmpleado = document.getElementById('entrada-id-empleado');
+            const ID_empleado = selectEmpleado?.value;
+            
+            if (!ID_empleado) {
+                mostrarMensaje('Debe seleccionar el empleado que registra la orden.', true);
+                return;
+            }
 
             const payload = {
                 ID_proveedor: parseInt(proveedorSeleccionado.id),
-                productos: productosSeleccionados.map(p => [parseInt(p.id_modelo), p.cantidad])
+                ID_empleado: parseInt(ID_empleado),
+                productos: productosSeleccionados.map(p => [String(p.id_modelo), p.cantidad])
             };
+
+            console.log("Payload enviado:", payload);
 
             try {
                 const response = await fetchJson('/api/ordenes_compra/agregar', {
@@ -562,6 +651,9 @@ async function verDetalle(id) {
                 ordenParaEntrega = id;
                 if (entregaRecibidoPor) entregaRecibidoPor.value = '';
                 if (entregaFecha) entregaFecha.value = new Date().toISOString().slice(0, 10);
+                
+                await cargarProductosOrdenParaEntrega(id);
+                
                 if (modalEntrega) openModal(modalEntrega);
             }
         });
@@ -610,13 +702,16 @@ async function verDetalle(id) {
                 return;
             }
             
+            btnConfirmarEntrega.disabled = true;
+            btnConfirmarEntrega.textContent = 'Procesando...';
+            
             try {
                 const response = await fetchJson(`/api/ordenes_compra/${ordenParaEntrega}/entrega`, {
                     method: 'POST',
                     body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
                 });
                 if (response.success) {
-                    mostrarMensaje('Entrega registrada exitosamente.');
+                    mostrarMensaje('Entrega registrada exitosamente. Stock actualizado.');
                     closeModal(modalEntrega);
                     ordenParaEntrega = null;
                     cargarOrdenesPendientes();
@@ -627,6 +722,9 @@ async function verDetalle(id) {
             } catch (error) {
                 console.error('Error registrando entrega:', error);
                 mostrarMensaje(error.message || 'Error al registrar la entrega.', true);
+            } finally {
+                btnConfirmarEntrega.disabled = false;
+                btnConfirmarEntrega.textContent = 'Registrar entrega';
             }
         });
     }

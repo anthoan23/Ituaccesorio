@@ -28,7 +28,6 @@
         Registrar producto
       </button>
       <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
-      <!-- <button class="btn btn--ghost" type="button">Filtros</button> -->
     </div>
   </header>
 
@@ -86,7 +85,7 @@
       <h2 id="producto-modal-title" class="card__title">Registrar producto</h2>
 
       <div class="filters-panel__section" aria-label="Datos del producto">
-        <form id="form-producto" action="#" method="post" autocomplete="off">
+        <form id="form-producto" action="#" method="post" autocomplete="off" enctype="multipart/form-data">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id_modelo" value="">
 
@@ -149,6 +148,14 @@
           </label>
 
           <label class="field">
+            <span class="field__label">Categoría</span>
+            <select id="p-categoria" name="id_categoria" aria-label="Categoría">
+              <option value="0">Sin categoría</option>
+            </select>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Clasificación adicional del producto</small>
+          </label>
+
+          <label class="field">
             <span class="field__label">Producto <span class="required-indicator">*</span></span>
             <input id="p-modelo" 
                    type="text" 
@@ -173,6 +180,12 @@
                       data-validation-rules="sinCaracteresEspeciales"
                       title="Sin caracteres especiales"></textarea>
             <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 300 caracteres)</small>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Foto del producto</span>
+            <input id="p-foto" name="foto_inventario" type="file" accept="image/*">
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
           </label>
 
           <div class="filters-panel__actions" aria-label="Acciones del formulario">

@@ -50,15 +50,18 @@ class OrdenCompra(conectar):
                 SELECT 
                     o.ID_orden_compra as ID_orden_c,
                     p.Nombre_proveedor as N_proveedor,
-                    DATE(o.Fecha_orden_compra) as Fecha_entrega,
+                    DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
+                    CONCAT(emp.Nombre_empleado, ' ', emp.Apellido_empleado) as Recibido_por,
                     COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
                 FROM Orden_compra o
                 JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                JOIN Entrega_inventario ei ON o.ID_orden_compra = ei.ID_orden_compra
+                JOIN Empleado emp ON ei.ID_empleado = emp.ID_empleado
                 LEFT JOIN Detalle_orden d ON o.ID_orden_compra = d.ID_orden_compra
                 LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
                 WHERE o.Estado_orden_compra = 'Completada'
-                GROUP BY o.ID_orden_compra, p.Nombre_proveedor, o.Fecha_orden_compra
-                ORDER BY o.Fecha_orden_compra DESC
+                GROUP BY o.ID_orden_compra, p.Nombre_proveedor, ei.Fecha_entrega_inventario, emp.Nombre_empleado, emp.Apellido_empleado
+                ORDER BY ei.Fecha_entrega_inventario DESC
             """)
             return cursor.fetchall()
         except Exception as e:
@@ -69,37 +72,28 @@ class OrdenCompra(conectar):
             db.close()
 
     def obtener_detalles_orden(self, ID_orden_c: str):
-        """Obtiene detalles completos de una orden - VERSIÓN SIMPLIFICADA"""
+        """Obtiene detalles completos de una orden"""
         db = self.conexion1()
         if not db:
-            print("Error: No se pudo conectar a la base de datos")
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            print(f"=== Buscando orden: {ID_orden_c} ===")
-            
-            # PRIMERO: Verificar si la orden existe (SIN Recibido_por ni Fecha_entrega)
             cursor.execute("""
                 SELECT 
                     o.ID_orden_compra as ID_orden_c,
                     o.ID_proveedor,
                     o.ID_empleado,
-                    o.Fecha_orden_compra as Fecha_o,
+                    DATE(o.Fecha_orden_compra) as Fecha_o,
                     o.Estado_orden_compra as Estado
                 FROM Orden_compra o
                 WHERE o.ID_orden_compra = %s
             """, (ID_orden_c,))
             
             datos_orden = cursor.fetchone()
-            
             if not datos_orden:
-                print(f"❌ Orden {ID_orden_c} no encontrada en tabla Orden_compra")
                 return None
             
-            print(f"✅ Orden encontrada: {datos_orden['ID_orden_c']}")
-            
-            # SEGUNDO: Obtener nombre del proveedor
             cursor.execute("""
                 SELECT Nombre_proveedor as nombre
                 FROM Proveedor
@@ -109,7 +103,6 @@ class OrdenCompra(conectar):
             proveedor = cursor.fetchone()
             datos_orden["nombre"] = proveedor["nombre"] if proveedor else "Proveedor no encontrado"
             
-            # TERCERO: Obtener nombre del empleado
             if datos_orden.get("ID_empleado"):
                 cursor.execute("""
                     SELECT CONCAT(Nombre_empleado, ' ', Apellido_empleado) as Realizado_por
@@ -121,7 +114,6 @@ class OrdenCompra(conectar):
             else:
                 datos_orden["Realizado_por"] = "Sistema"
             
-            # CUARTO: Calcular costo total
             cursor.execute("""
                 SELECT COALESCE(SUM(d.Cantidad_producto * s.Costo_producto), 0) as Costo_venta
                 FROM Detalle_orden d
@@ -132,7 +124,6 @@ class OrdenCompra(conectar):
             total = cursor.fetchone()
             datos_orden["Costo_venta"] = float(total["Costo_venta"]) if total else 0
             
-            # QUINTO: Obtener productos de la orden
             cursor.execute("""
                 SELECT 
                     p.Nombre_producto as N_modelo,
@@ -150,8 +141,6 @@ class OrdenCompra(conectar):
             """, (datos_orden["ID_proveedor"], ID_orden_c))
             
             productos_orden = cursor.fetchall()
-            print(f"Productos encontrados: {len(productos_orden)}")
-            print(f"Costo total: {datos_orden['Costo_venta']}")
 
             return {
                 "datos_orden": datos_orden,
@@ -159,8 +148,6 @@ class OrdenCompra(conectar):
             }
         except Exception as e:
             print(f"Error obtener_detalles_orden: {e}")
-            import traceback
-            traceback.print_exc()
             return None
         finally:
             cursor.close()
@@ -187,6 +174,31 @@ class OrdenCompra(conectar):
             return cursor.fetchall()
         except Exception as e:
             print(f"Error enlistar_proveedores: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+    def enlistar_empleados(self):
+        """Lista todos los empleados para el selector"""
+        db = self.conexion1()
+        if not db:
+            return []
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    ID_empleado as id,
+                    Nombre_empleado as nombre,
+                    Apellido_empleado as apellido
+                FROM Empleado 
+                WHERE ID_empleado IS NOT NULL
+                ORDER BY Nombre_empleado ASC
+            """)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error enlistar_empleados: {e}")
             return []
         finally:
             cursor.close()
@@ -228,12 +240,13 @@ class OrdenCompra(conectar):
         if not db:
             return False
 
-        cursor = db.cursor()
+        cursor = None
         try:
-            if not productos or len(productos) == 0:
+            cursor = db.cursor()
+            
+            if not productos:
                 return False
             
-            # Generar ID para la orden
             cursor.execute("SELECT MAX(ID_orden_compra) FROM Orden_compra")
             result = cursor.fetchone()
             last_id = result[0] if result and result[0] else "OC0000000"
@@ -249,15 +262,11 @@ class OrdenCompra(conectar):
             new_num = last_num + 1
             ID_orden = f"OC{str(new_num).zfill(7)}"
             
-            print(f"Generando orden: {ID_orden}")
-            
-            # Insertar orden
             cursor.execute("""
                 INSERT INTO Orden_compra (ID_orden_compra, ID_empleado, ID_proveedor, Fecha_orden_compra, Estado_orden_compra) 
                 VALUES (%s, %s, %s, NOW(), 'Pendiente')
             """, (ID_orden, ID_em, ID_proveedor))
             
-            # Insertar detalles
             for mid, qty in productos:
                 cursor.execute("""
                     INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
@@ -265,15 +274,18 @@ class OrdenCompra(conectar):
                 """, (ID_orden, str(mid), qty))
             
             db.commit()
-            print(f"Orden {ID_orden} creada exitosamente")
             return True
+            
         except Exception as e:
             print(f"Error agregar_orden_compra: {e}")
-            db.rollback()
+            if db:
+                db.rollback()
             return False
         finally:
-            cursor.close()
-            db.close()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
 
     def anular_orden_compra(self, ID_orden_c: str):
         """Anula una orden de compra"""
@@ -298,27 +310,130 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
     
-    def registrar_entrega(self, ID_orden_c: str, recibido_por: str, fecha_entrega: str):
-        """Registra la entrega de una orden"""
+    def registrar_entrega(self, ID_orden_c: str, recibido_por: str, fecha_entrega: str, id_empleado: int):
+        """
+        Registra la entrega de una orden.
+        Si el producto no existe en Existencias_productos, lo crea.
+        Luego aumenta el stock.
+        """
         db = self.conexion1()
         if not db:
             return False
 
-        cursor = db.cursor()
+        cursor = None
         try:
+            cursor = db.cursor()
+            
+            # 1. Verificar si la orden existe y está pendiente
+            cursor.execute("""
+                SELECT ID_orden_compra, Estado_orden_compra FROM Orden_compra 
+                WHERE ID_orden_compra = %s
+            """, (ID_orden_c,))
+            resultado = cursor.fetchone()
+            
+            if not resultado or resultado[1] != 'Pendiente':
+                return False
+            
+            # 2. Obtener los detalles de la orden con costo de suministra
+            cursor.execute("""
+                SELECT 
+                    d.ID_producto,
+                    d.Cantidad_producto,
+                    s.Costo_producto
+                FROM Detalle_orden d
+                JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = (
+                    SELECT ID_proveedor FROM Orden_compra WHERE ID_orden_compra = %s
+                )
+                WHERE d.ID_orden_compra = %s
+            """, (ID_orden_c, ID_orden_c))
+            
+            detalles = cursor.fetchall()
+            if not detalles:
+                return False
+            
+            # 3. Generar ID para la entrega de inventario
+            cursor.execute("SELECT MAX(ID_entrega_inventario) FROM Entrega_inventario")
+            result = cursor.fetchone()
+            last_id = result[0] if result and result[0] else "ENT0000000"
+            last_num = int(last_id[3:]) if last_id and last_id.startswith("ENT") else 0
+            ID_entrega = f"ENT{str(last_num + 1).zfill(7)}"
+            
+            # 4. Insertar en Entrega_inventario
+            cursor.execute("""
+                INSERT INTO Entrega_inventario (ID_entrega_inventario, ID_empleado, ID_orden_compra, Fecha_entrega_inventario)
+                VALUES (%s, %s, %s, NOW())
+            """, (ID_entrega, id_empleado, ID_orden_c))
+            
+            # 5. Para cada producto, verificar/crear en Existencias_productos y actualizar stock
+            for detalle in detalles:
+                id_producto = detalle[0]
+                cantidad = detalle[1]
+                costo_compra = float(detalle[2]) if detalle[2] else 0
+                
+                # Calcular costo de venta (ej: 30% de ganancia)
+                costo_venta = round(costo_compra * 1.3, 2)
+                
+                # Verificar si el producto ya existe en Existencias_productos
+                cursor.execute("""
+                    SELECT ID_inventario, Existencia FROM Existencias_productos 
+                    WHERE ID_producto = %s
+                """, (id_producto,))
+                inventario_existente = cursor.fetchone()
+                
+                if inventario_existente:
+                    # Ya existe, actualizar stock
+                    id_inventario = inventario_existente[0]
+                    
+                    # Insertar en Abastece
+                    cursor.execute("""
+                        INSERT INTO Abastece (ID_entrega_inventario, ID_inventario, Cantidad_entregada)
+                        VALUES (%s, %s, %s)
+                    """, (ID_entrega, id_inventario, cantidad))
+                    
+                    # Actualizar stock
+                    cursor.execute("""
+                        UPDATE Existencias_productos 
+                        SET Existencia = Existencia + %s
+                        WHERE ID_inventario = %s
+                    """, (cantidad, id_inventario))
+                    print(f"Stock actualizado para producto {id_producto}: +{cantidad}")
+                else:
+                    # No existe, crear nuevo registro
+                    cursor.execute("SELECT MAX(CAST(ID_inventario AS UNSIGNED)) FROM Existencias_productos")
+                    result = cursor.fetchone()
+                    last_inv_id = result[0] if result and result[0] else 0
+                    new_inv_id = str(last_inv_id + 1)
+                    
+                    # Insertar nuevo inventario
+                    cursor.execute("""
+                        INSERT INTO Existencias_productos (ID_inventario, ID_producto, Existencia, Costo_venta)
+                        VALUES (%s, %s, %s, %s)
+                    """, (new_inv_id, id_producto, cantidad, costo_venta))
+                    print(f"Nuevo inventario creado para producto {id_producto}: +{cantidad}")
+                    
+                    # Insertar en Abastece
+                    cursor.execute("""
+                        INSERT INTO Abastece (ID_entrega_inventario, ID_inventario, Cantidad_entregada)
+                        VALUES (%s, %s, %s)
+                    """, (ID_entrega, new_inv_id, cantidad))
+            
+            # 6. Actualizar estado de la orden a Completada
             cursor.execute("""
                 UPDATE Orden_compra 
-                SET Estado_orden_compra = 'Completada',
-                    Recibido_por = %s,
-                    Fecha_entrega = %s
-                WHERE ID_orden_compra = %s AND Estado_orden_compra = 'Pendiente'
-            """, (recibido_por, fecha_entrega, ID_orden_c))
+                SET Estado_orden_compra = 'Completada'
+                WHERE ID_orden_compra = %s
+            """, (ID_orden_c,))
+            
             db.commit()
-            return cursor.rowcount > 0
+            return True
+            
         except Exception as e:
             print(f"Error registrar_entrega: {e}")
-            db.rollback()
+            if db:
+                db.rollback()
             return False
         finally:
-            cursor.close()
-            db.close()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()

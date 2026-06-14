@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_compra import OrdenCompra
+from app.models.empleados import Empleados
 from datetime import datetime
 
 ordenes_compra = Blueprint('ordenes_compra', __name__)
@@ -34,6 +35,16 @@ def api_ordenes_compra_entregadas():
     orden = OrdenCompra()
     ordenes = orden.enlistar_ordenes_entregadas()
     return jsonify(ordenes)
+
+
+@ordenes_compra.route('/api/empleados', methods=['GET'])
+@jwt_required
+@tiene_permiso('Órdenes de compra', 'consultar')
+def api_empleados():
+    """Lista empleados para selector"""
+    orden = OrdenCompra()
+    empleados = orden.enlistar_empleados()
+    return jsonify(empleados)
 
 
 @ordenes_compra.route('/api/proveedores', methods=['GET'])
@@ -78,16 +89,21 @@ def api_detalles_orden(ID_orden_c):
 def api_agregar_orden_compra():
     try:
         data = request.get_json()
+        print("=== DATOS RECIBIDOS ===")
+        print(data)
         
-        # Obtener ID del empleado desde g.user
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-        if not usuario_id:
-            return jsonify({"success": False, "error": "Usuario no identificado"}), 400
+        # Obtener ID del empleado del payload
+        ID_empleado = data.get('ID_empleado')
+        
+        if not ID_empleado:
+            return jsonify({"success": False, "error": "Debe seleccionar un empleado"}), 400
         
         try:
-            ID_em = int(usuario_id)
+            ID_em = int(ID_empleado)
         except (ValueError, TypeError):
-            ID_em = 1
+            return jsonify({"success": False, "error": "ID de empleado inválido"}), 400
+        
+        print(f"ID_empleado a usar: {ID_em}")
         
         ID_proveedor = data.get('ID_proveedor')
         productos = data.get('productos', [])
@@ -107,7 +123,7 @@ def api_agregar_orden_compra():
                 mid, qty = p[0], p[1]
             else:
                 continue
-            normalized.append((int(mid), int(qty)))
+            normalized.append((str(mid), int(qty)))
 
         orden = OrdenCompra()
         success = orden.agregar_orden_compra(ID_em, ID_proveedor, normalized)
@@ -118,6 +134,8 @@ def api_agregar_orden_compra():
             return jsonify({"success": False, "error": "Error al agregar la orden de compra"}), 500
     except Exception as e:
         print(f"Error en api_agregar_orden_compra: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -154,15 +172,32 @@ def api_registrar_entrega(ID_orden_c):
         if not fecha_entrega:
             fecha_entrega = datetime.now().strftime("%Y-%m-%d")
         
+        # Obtener ID del empleado desde g.user - CORREGIDO
+        # g.user.get("id") puede devolver 'USR-001', necesitamos un número
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        # Si el ID no es numérico, usar un empleado por defecto que existe
+        id_empleado = None
+        if usuario_id and str(usuario_id).isdigit():
+            id_empleado = int(usuario_id)
+        else:
+            # Usar un ID de empleado válido (Maria Gonzalez)
+            id_empleado = 30124556
+            print(f"ID de empleado no numérico ('{usuario_id}'), usando valor por defecto: {id_empleado}")
+        
+        print(f"ID Empleado a usar: {id_empleado}")
+        
         orden = OrdenCompra()
-        success = orden.registrar_entrega(ID_orden_c, recibido_por, fecha_entrega)
+        success = orden.registrar_entrega(ID_orden_c, recibido_por, fecha_entrega, id_empleado)
         
         if success:
-            return jsonify({"success": True, "message": "Entrega registrada exitosamente"}), 200
+            return jsonify({"success": True, "message": "Entrega registrada exitosamente. Stock actualizado."}), 200
         else:
             return jsonify({"success": False, "error": "No se pudo registrar la entrega"}), 500
     except Exception as e:
         print(f"Error en api_registrar_entrega: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 
 
