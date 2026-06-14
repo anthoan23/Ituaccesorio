@@ -44,19 +44,26 @@ class ValidacionPagosModel:
                     mp.Metodo AS metodo_pago,
                     mp.Referencia,
                     mp.Monto,
-                    COALESCE(mp.Estado_pago, 'pendiente') AS estado
+                    mp.Estado_pago AS estado
                 FROM Venta v
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
-                WHERE COALESCE(mp.Estado_pago, 'pendiente') = 'pendiente'
+                WHERE mp.Estado_pago = 'pendiente'
                 ORDER BY v.Fecha_venta DESC
             """)
             
             pagos = cursor.fetchall()
+            
+            # Convertir Decimal a float para serialización JSON
+            for pago in pagos:
+                if pago.get("Monto") and isinstance(pago["Monto"], Decimal):
+                    pago["Monto"] = float(pago["Monto"])
+            
             return pagos
         except Exception as e:
             print(f"Error en obtener_pagos_pendientes: {e}")
+            traceback.print_exc()
             return []
         finally:
             cursor.close()
@@ -95,9 +102,15 @@ class ValidacionPagosModel:
                 ORDER BY mp.Fecha_aprobacion DESC
             """)
             
-            return cursor.fetchall()
+            resultados = cursor.fetchall()
+            for r in resultados:
+                if r.get("Monto") and isinstance(r["Monto"], Decimal):
+                    r["Monto"] = float(r["Monto"])
+            
+            return resultados
         except Exception as e:
             print(f"Error en obtener_pagos_aprobados: {e}")
+            traceback.print_exc()
             return []
         finally:
             cursor.close()
@@ -137,9 +150,15 @@ class ValidacionPagosModel:
                 ORDER BY mp.Fecha_rechazo DESC
             """)
             
-            return cursor.fetchall()
+            resultados = cursor.fetchall()
+            for r in resultados:
+                if r.get("Monto") and isinstance(r["Monto"], Decimal):
+                    r["Monto"] = float(r["Monto"])
+            
+            return resultados
         except Exception as e:
             print(f"Error en obtener_pagos_rechazados: {e}")
+            traceback.print_exc()
             return []
         finally:
             cursor.close()
@@ -170,7 +189,7 @@ class ValidacionPagosModel:
                     Aprobado_por = %s,
                     Fecha_aprobacion = %s
                 WHERE ID_factura = %s
-            """, (empleado, fecha_actual, factura))
+            """, (str(empleado), fecha_actual, factura))
             
             db.commit()
             
@@ -186,6 +205,7 @@ class ValidacionPagosModel:
         except Exception as e:
             db.rollback()
             print(f"Error en aprobar_pago: {e}")
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -219,7 +239,7 @@ class ValidacionPagosModel:
                     Rechazado_por = %s,
                     Fecha_rechazo = %s
                 WHERE ID_factura = %s
-            """, (motivo, empleado, fecha_actual, factura))
+            """, (motivo, str(empleado), fecha_actual, factura))
             
             db.commit()
             
@@ -236,6 +256,7 @@ class ValidacionPagosModel:
         except Exception as e:
             db.rollback()
             print(f"Error en rechazar_pago: {e}")
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -262,7 +283,7 @@ class ValidacionPagosModel:
                     COALESCE(ma.Nombre_marca, '') AS marca,
                     COALESCE(cl.Nombre_Clase, '') AS clase
                 FROM Detalle_venta dv
-                JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+                JOIN Existencias_productos i ON dv.ID_inventario = i.ID_inventario
                 JOIN Producto p ON i.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
@@ -274,10 +295,13 @@ class ValidacionPagosModel:
             for item in items:
                 if isinstance(item.get("Costo_venta"), Decimal):
                     item["Costo_venta"] = float(item["Costo_venta"])
+                if isinstance(item.get("Cantidad_articulo"), Decimal):
+                    item["Cantidad_articulo"] = int(item["Cantidad_articulo"])
             
             return items
         except Exception as e:
             print(f"Error en obtener_detalle_venta: {e}")
+            traceback.print_exc()
             return []
         finally:
             cursor.close()
@@ -308,6 +332,7 @@ class ValidacionPagosModel:
         except Exception as e:
             db.rollback()
             print(f"Error en actualizar_fecha_pago: {e}")
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -352,11 +377,11 @@ class ValidacionPagosModel:
                 params.append(filtros["fecha_hasta"])
             
             if filtros.get("monto_min"):
-                where_conditions.append("CAST(mp.Monto AS DECIMAL(10,2)) >= %s")
+                where_conditions.append("mp.Monto >= %s")
                 params.append(float(filtros["monto_min"]))
             
             if filtros.get("monto_max"):
-                where_conditions.append("CAST(mp.Monto AS DECIMAL(10,2)) <= %s")
+                where_conditions.append("mp.Monto <= %s")
                 params.append(float(filtros["monto_max"]))
             
             where_sql = " AND ".join(where_conditions)
@@ -392,7 +417,7 @@ class ValidacionPagosModel:
                     (
                         SELECT COALESCE(SUM(i.Costo_venta * dv.Cantidad_articulo), 0)
                         FROM Detalle_venta dv
-                        JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+                        JOIN Existencias_productos i ON dv.ID_inventario = i.ID_inventario
                         WHERE dv.ID_factura = v.ID_factura
                     ) AS total_venta
                 FROM Venta v
@@ -406,22 +431,32 @@ class ValidacionPagosModel:
             cursor.execute(query, tuple(params))
             pagos = cursor.fetchall()
             
+            total_monto = 0
+            cantidad_pendientes = 0
+            cantidad_aprobados = 0
+            cantidad_rechazados = 0
+            
             for pago in pagos:
                 if pago.get("monto_pagado") is not None and isinstance(pago["monto_pagado"], Decimal):
                     pago["monto_pagado"] = float(pago["monto_pagado"])
                 if pago.get("total_venta") is not None and isinstance(pago["total_venta"], Decimal):
                     pago["total_venta"] = float(pago["total_venta"])
-            
-            total_pagos = len(pagos)
-            total_monto = sum(p.get("monto_pagado", 0) or 0 for p in pagos)
-            cantidad_pendientes = sum(1 for p in pagos if p.get("estado") == "pendiente")
-            cantidad_aprobados = sum(1 for p in pagos if p.get("estado") == "aprobado")
-            cantidad_rechazados = sum(1 for p in pagos if p.get("estado") == "rechazado")
+                
+                monto = pago.get("monto_pagado", 0) or 0
+                total_monto += monto
+                
+                estado = pago.get("estado", "")
+                if estado == "pendiente":
+                    cantidad_pendientes += 1
+                elif estado == "aprobado":
+                    cantidad_aprobados += 1
+                elif estado == "rechazado":
+                    cantidad_rechazados += 1
             
             return {
                 "success": True,
                 "pagos": pagos,
-                "total": total_pagos,
+                "total": len(pagos),
                 "total_monto": total_monto,
                 "pendientes": cantidad_pendientes,
                 "aprobados": cantidad_aprobados,
@@ -486,7 +521,7 @@ class ValidacionPagosModel:
                     COALESCE(ma.Nombre_marca, '') AS marca,
                     COALESCE(cl.Nombre_Clase, '') AS clase
                 FROM Detalle_venta dv
-                JOIN Inventario i ON dv.ID_inventario = i.ID_inventario
+                JOIN Existencias_productos i ON dv.ID_inventario = i.ID_inventario
                 JOIN Producto p ON i.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
@@ -495,20 +530,25 @@ class ValidacionPagosModel:
             
             productos = cursor.fetchall()
             total_venta = 0
+            total_productos = 0
             
             for p in productos:
                 if isinstance(p.get("precio_unitario"), Decimal):
                     p["precio_unitario"] = float(p["precio_unitario"])
                 if isinstance(p.get("subtotal"), Decimal):
                     p["subtotal"] = float(p["subtotal"])
+                if isinstance(p.get("Cantidad_articulo"), Decimal):
+                    p["Cantidad_articulo"] = int(p["Cantidad_articulo"])
+                
                 total_venta += p.get("subtotal", 0)
+                total_productos += p.get("Cantidad_articulo", 0)
             
             return {
                 "success": True,
                 "venta": venta,
                 "productos": productos,
                 "total_venta": total_venta,
-                "total_productos": sum(p.get("Cantidad_articulo", 0) for p in productos)
+                "total_productos": total_productos
             }
         except Exception as e:
             print(f"Error en obtener_reporte_detalle_ventas: {e}")
@@ -519,9 +559,39 @@ class ValidacionPagosModel:
             db.close()
     
     def obtener_metodos_pago_disponibles(self) -> List[str]:
-        """Obtiene la lista de métodos de pago disponibles"""
-        return ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        """Obtiene la lista de métodos de pago disponibles según la BD"""
+        db = self._conexion()
+        if not db:
+            return ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT Metodo FROM Metodo_pago WHERE Metodo IS NOT NULL")
+            resultados = cursor.fetchall()
+            metodos = list(set([r[0] for r in resultados]))
+            return metodos if metodos else ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        except Exception as e:
+            print(f"Error en obtener_metodos_pago_disponibles: {e}")
+            return ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        finally:
+            cursor.close()
+            db.close()
     
     def obtener_monedas_disponibles(self) -> List[str]:
-        """Obtiene la lista de monedas disponibles"""
-        return ["USD", "VES", "USDT"]
+        """Obtiene la lista de monedas disponibles según la BD"""
+        db = self._conexion()
+        if not db:
+            return ["USD", "VES", "USDT"]
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT Moneda FROM Metodo_pago WHERE Moneda IS NOT NULL")
+            resultados = cursor.fetchall()
+            monedas = list(set([r[0] for r in resultados]))
+            return monedas if monedas else ["USD", "VES", "USDT"]
+        except Exception as e:
+            print(f"Error en obtener_monedas_disponibles: {e}")
+            return ["USD", "VES", "USDT"]
+        finally:
+            cursor.close()
+            db.close()
