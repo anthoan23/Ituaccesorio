@@ -41,13 +41,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // CSRF Token
     const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || '';
+    
+    // Access Token
+    function getAccessToken() {
+        return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+    }
 
     // Helper: Fetch con autenticación
     async function fetchJson(url, options = {}) {
+        const authToken = getAccessToken();
+        
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             ...(csrfToken && { 'X-CSRFToken': csrfToken }),
+            ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
             ...options.headers
         };
 
@@ -90,22 +98,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDate(dateStr) {
         if (!dateStr) return 'Fecha no disponible';
         
-        // Si es el texto literal %Y-%m-%d, mostrar un mensaje
         if (dateStr === '%Y-%m-%d') {
             return 'Fecha por definir';
         }
         
         try {
-            // Si es un string en formato MySQL 'YYYY-MM-DD HH:MM:SS' o 'YYYY-MM-DD'
             if (typeof dateStr === 'string') {
-                // Extraer solo la parte de la fecha (primeros 10 caracteres)
                 const datePart = dateStr.substring(0, 10);
                 if (datePart.match(/^\d{4}-\d{2}-\d{2}/)) {
                     const [year, month, day] = datePart.split('-');
                     return `${day}/${month}/${year}`;
                 }
             }
-            // Si es un objeto Date
             const date = new Date(dateStr);
             if (!isNaN(date.getTime())) {
                 const day = String(date.getDate()).padStart(2, '0');
@@ -119,33 +123,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return dateStr || 'Fecha inválida';
         }
     }
+    
     // Cambiar vista
     function cambiarVista(vista) {
         if (vista === 'pendientes') {
-            vistaPendientes?.classList.remove('hidden');
-            vistaEntregadas?.classList.add('hidden');
-            btnPendientes?.classList.add('is-active');
-            btnEntregadas?.classList.remove('is-active');
+            if (vistaPendientes) vistaPendientes.classList.remove('hidden');
+            if (vistaEntregadas) vistaEntregadas.classList.add('hidden');
+            if (btnPendientes) btnPendientes.classList.add('is-active');
+            if (btnEntregadas) btnEntregadas.classList.remove('is-active');
             cargarOrdenesPendientes();
         } else {
-            vistaPendientes?.classList.add('hidden');
-            vistaEntregadas?.classList.remove('hidden');
-            btnPendientes?.classList.remove('is-active');
-            btnEntregadas?.classList.add('is-active');
+            if (vistaPendientes) vistaPendientes.classList.add('hidden');
+            if (vistaEntregadas) vistaEntregadas.classList.remove('hidden');
+            if (btnPendientes) btnPendientes.classList.remove('is-active');
+            if (btnEntregadas) btnEntregadas.classList.add('is-active');
             cargarOrdenesEntregadas();
         }
     }
 
     // Cargar órdenes pendientes
     async function cargarOrdenesPendientes() {
+        if (!tablaPendientes) return;
+        
         try {
             const data = await fetchJson('/api/ordenes_compra');
-            console.log("Órdenes pendientes:", data);
             
             if (Array.isArray(data) && data.length > 0) {
                 tablaPendientes.innerHTML = data.map(orden => {
                     const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
-                    // Usar formatDate para la fecha
                     const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
                     
                     return `
@@ -164,24 +169,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
             } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.穷';
+                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando órdenes:', error);
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
         }
     }
 
     // Cargar órdenes entregadas
     async function cargarOrdenesEntregadas() {
+        if (!tablaEntregadas) return;
+        
         try {
             const data = await fetchJson('/api/ordenes_compra/entregadas');
-            console.log("Órdenes entregadas:", data);
             
             if (Array.isArray(data) && data.length > 0) {
                 tablaEntregadas.innerHTML = data.map(orden => {
                     const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
-                    // Usar formatDate para la fecha de entrega
                     const fechaEntrega = orden.Fecha_entrega ? formatDate(orden.Fecha_entrega) : 'Fecha no disponible';
                     
                     return `
@@ -198,67 +203,63 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
             } else {
-                tablaEntregadas.innerHTML = '</table><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.穷';
+                tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando órdenes entregadas:', error);
-            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
+            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
         }
     }
 
     // Cargar proveedores
     async function cargarProveedores() {
+        if (!listaProveedores) return;
+        
         try {
             const data = await fetchJson('/api/proveedores');
             proveedores = data.proveedores || [];
             
-            if (listaProveedores) {
-                if (proveedores.length > 0) {
-                    listaProveedores.innerHTML = proveedores.map(p => `
-                        <tr data-proveedor-id="${escapeHtml(p.id)}" class="row-selectable">
-                            <td>${escapeHtml(p.id)}</td>
-                            <td>${escapeHtml(p.nombre)}</td>
-                            <td>${escapeHtml(p.celular || '-')}</td>
-                            <td>${escapeHtml(p.correo || '-')}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.</td></tr>';
-                }
+            if (proveedores.length > 0) {
+                listaProveedores.innerHTML = proveedores.map(p => `
+                    <tr data-proveedor-id="${escapeHtml(p.id)}" class="row-selectable">
+                        <td>${escapeHtml(p.id)}</td>
+                        <td>${escapeHtml(p.nombre)}</td>
+                        <td>${escapeHtml(p.celular || '-')}</td>
+                        <td>${escapeHtml(p.correo || '-')}</td>
+                    </tr>
+                `).join('');
+            } else {
+                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando proveedores:', error);
-            if (listaProveedores) {
-                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.</td></tr>';
-            }
+            listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.</td></tr>';
         }
     }
 
     // Cargar productos de un proveedor
     async function cargarProductosProveedor(idProveedor) {
+        if (!listaProductos) return;
+        
         try {
             const data = await fetchJson(`/api/productos_proveedor/${idProveedor}`, { method: 'POST' });
             productosDisponibles = data.productos || [];
             
-            if (listaProductos) {
-                if (productosDisponibles.length > 0) {
-                    listaProductos.innerHTML = productosDisponibles.map(p => `
-                        <tr data-producto-id="${escapeHtml(p.ID_modelo)}" class="row-selectable">
-                            <td>${escapeHtml(p.N_clase || '-')}</td>
-                            <td>${escapeHtml(p.N_marca || '-')}</td>
-                            <td>${escapeHtml(p.N_modelo)}</td>
-                            <td>Bs. ${escapeHtml(formatMoney(p.Costo))}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.</td></tr>';
-                }
+            if (productosDisponibles.length > 0) {
+                listaProductos.innerHTML = productosDisponibles.map(p => `
+                    <tr data-producto-id="${escapeHtml(p.ID_modelo)}" class="row-selectable">
+                        <td>${escapeHtml(p.N_clase || '-')}</td>
+                        <td>${escapeHtml(p.N_marca || '-')}</td>
+                        <td>${escapeHtml(p.N_modelo)}</td>
+                        <td>Bs. ${escapeHtml(formatMoney(p.Costo))}</td>
+                    </tr>
+                `).join('');
+            } else {
+                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando productos:', error);
-            if (listaProductos) {
-                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.</td></tr>';
-            }
+            listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.</td></tr>';
         }
     }
 
@@ -312,82 +313,93 @@ document.addEventListener('DOMContentLoaded', () => {
     // Abrir modal
     function openModal(modal) {
         if (modal) modal.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
     }
 
     // Cerrar modal
     function closeModal(modal) {
         if (modal) modal.setAttribute('hidden', '');
+        document.body.style.overflow = '';
     }
 
     // Ver detalle de orden
-    async function verDetalle(id) {
-        try {
-            const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
-            const detalle = data.datos_orden;
-            const productos = data.productos_orden || [];
+// Ver detalle de orden
+async function verDetalle(id) {
+    console.log("=== VER DETALLE ===");
+    console.log("ID de orden a buscar:", id);
+    
+    try {
+        const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
+        console.log("Respuesta del servidor:", data);
+        
+        const detalle = data.datos_orden;
+        const productos = data.productos_orden || [];
 
-            if (detalle) {
-                const infoContainer = document.getElementById('detalle-orden-info');
-                const productosContainer = document.getElementById('detalle-orden-productos');
-                const totalSpan = document.getElementById('detalle-orden-total-value');
-                
-                if (infoContainer) {
-                    infoContainer.innerHTML = `
-                        <div class="device-detail__grid">
-                            <div class="detail-item">
-                                <span class="device-detail__label">ID Orden</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Proveedor</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Fecha</span>
-                                <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Estado</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Realizado por</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
-                            </div>
-                            ${detalle.Recibido_por ? `
-                            <div class="detail-item">
-                                <span class="device-detail__label">Recibido por</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Recibido_por)}</span>
-                            </div>
-                            ` : ''}
+        if (detalle) {
+            const infoContainer = document.getElementById('detalle-orden-info');
+            const productosContainer = document.getElementById('detalle-orden-productos');
+            const totalSpan = document.getElementById('detalle-orden-total-value');
+            
+            if (infoContainer) {
+                infoContainer.innerHTML = `
+                    <div class="device-detail__grid">
+                        <div class="detail-item">
+                            <span class="device-detail__label">ID Orden</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
                         </div>
-                    `;
-                }
-
-                if (productosContainer) {
-                    if (productos.length > 0) {
-                        productosContainer.innerHTML = productos.map(p => `
-                            <tr>
-                                <td>${escapeHtml(p.N_marca)}</td>
-                                <td>${escapeHtml(p.N_modelo)}</td>
-                                <td>${escapeHtml(p.Cantidad_p)}</td>
-                                <td>Bs. ${formatMoney(p.Costo)}</td>
-                                <td>Bs. ${formatMoney(p.sup_total)}</td>
-                            </tr>
-                        `).join('');
-                    } else {
-                        productosContainer.innerHTML = '</table><td colspan="5" class="table__empty">No hay productos en esta orden.</td></tr>';
-                    }
-                }
-
-                if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
-                openModal(modalDetalle);
+                        <div class="detail-item">
+                            <span class="device-detail__label">Proveedor</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Fecha</span>
+                            <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Estado</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Realizado por</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
+                        </div>
+                        ${detalle.Recibido_por ? `
+                        <div class="detail-item">
+                            <span class="device-detail__label">Recibido por</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.Recibido_por)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
             }
-        } catch (error) {
-            console.error('Error cargando detalle:', error);
-            mostrarMensaje(error.message || 'No se pudo cargar el detalle de la orden.', true);
+
+            if (productosContainer) {
+                if (productos.length > 0) {
+                    productosContainer.innerHTML = productos.map(p => `
+                        <tr>
+                            <td>${escapeHtml(p.N_marca)}</td>
+                            <td>${escapeHtml(p.N_modelo)}</td>
+                            <td>${escapeHtml(p.Cantidad_p)}</td>
+                            <td>Bs. ${formatMoney(p.Costo)}</td>
+                            <td>Bs. ${formatMoney(p.sup_total)}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    productosContainer.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos en esta orden.</td></tr>';
+                }
+            }
+
+            if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
+            openModal(modalDetalle);
+        } else {
+            console.error("No se encontró la orden:", id);
+            mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
         }
+    } catch (error) {
+        console.error('Error cargando detalle:', error);
+        mostrarMensaje(error.message || 'No se pudo cargar el detalle de la orden.', true);
     }
+}
 
     // Event Listeners
     if (btnPendientes) btnPendientes.addEventListener('click', () => cambiarVista('pendientes'));

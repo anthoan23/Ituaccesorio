@@ -54,15 +54,22 @@ def api_productos_proveedor(ID_proveedor):
     return jsonify({"success": True, "productos": productos})
 
 
-@ordenes_compra.route('/api/detalles_orden/<string:ID_orden_c>', methods=['GET', 'POST'])
+@ordenes_compra.route('/api/detalles_orden/<string:ID_orden_c>', methods=['GET'])
 @jwt_required
 @tiene_permiso('Órdenes de compra', 'consultar')
 def api_detalles_orden(ID_orden_c):
-    orden = OrdenCompra(id_orden=ID_orden_c)
-    detalles = orden.obtener_detalles_orden()
+    print(f"=== API DETALLES ORDEN ===")
+    print(f"ID recibido: {ID_orden_c}")
+    
+    orden = OrdenCompra()
+    detalles = orden.obtener_detalles_orden(ID_orden_c)
+    
     if detalles and detalles.get("datos_orden"):
+        print(f"✅ Orden encontrada: {detalles['datos_orden']['ID_orden_c']}")
         return jsonify(detalles)
-    return jsonify({"error": "Orden no encontrada"}), 404
+    
+    print(f"❌ Orden no encontrada: {ID_orden_c}")
+    return jsonify({"error": f"Orden {ID_orden_c} no encontrada"}), 404
 
 
 @ordenes_compra.route('/api/ordenes_compra/agregar', methods=['POST'])
@@ -73,11 +80,14 @@ def api_agregar_orden_compra():
         data = request.get_json()
         
         # Obtener ID del empleado desde g.user
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        if not usuario_id:
+            return jsonify({"success": False, "error": "Usuario no identificado"}), 400
+        
         try:
             ID_em = int(usuario_id) if usuario_id else None
         except (ValueError, TypeError):
-            ID_em = None
+            ID_em = 1
         
         ID_proveedor = data.get('ID_proveedor')
         productos = data.get('productos', [])
@@ -88,7 +98,6 @@ def api_agregar_orden_compra():
         if not productos or len(productos) == 0:
             return jsonify({"success": False, "error": "Debe agregar al menos un producto"}), 400
 
-        # Normalizar productos
         normalized = []
         for p in productos:
             if isinstance(p, dict):
@@ -100,13 +109,8 @@ def api_agregar_orden_compra():
                 continue
             normalized.append((int(mid), int(qty)))
 
-        orden = OrdenCompra(
-            id_empleado=int(ID_em) if ID_em else None,
-            id_proveedor=int(ID_proveedor),
-            productos=normalized,
-            usuario_id=usuario_id
-        )
-        success = orden.agregar_orden_compra()
+        orden = OrdenCompra()
+        success = orden.agregar_orden_compra(ID_em, ID_proveedor, normalized)
         
         if success:
             return jsonify({"success": True, "message": "Orden de compra agregada exitosamente"}), 201
@@ -157,20 +161,41 @@ def api_registrar_entrega(ID_orden_c):
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        orden = OrdenCompra(
-            id_orden=ID_orden_c,
-            recibido_por=recibido_por,
-            fecha_entrega=fecha_entrega,
-            usuario_id=usuario_id
-        )
-        success = orden.registrar_entrega()
-        
         if success:
             return jsonify({"success": True, "message": "Entrega registrada exitosamente"}), 200
         else:
-            return jsonify({"success": False, "error": "No se pudo registrar la entrega. Verifique que la orden exista y esté pendiente."}), 500
+            return jsonify({"success": False, "error": "No se pudo registrar la entrega"}), 500
     except Exception as e:
         print(f"Error en api_registrar_entrega: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Endpoint de depuración
+@ordenes_compra.route('/api/ordenes_compra/debug/listar', methods=['GET'])
+@jwt_required
+def api_debug_listar_ordenes():
+    """Endpoint temporal para depurar"""
+    orden = OrdenCompra()
+    db = orden.conexion1()
+    
+    if not db:
+        return jsonify({"error": "No se pudo conectar"}), 500
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT ID_orden_compra FROM Orden_compra ORDER BY ID_orden_compra")
+        todas = cursor.fetchall()
+        
+        cursor.execute("SELECT ID_orden_compra FROM Orden_compra WHERE Estado_orden_compra = 'Pendiente'")
+        pendientes = cursor.fetchall()
+        
+        return jsonify({
+            "todas": [o["ID_orden_compra"] for o in todas],
+            "pendientes": [o["ID_orden_compra"] for o in pendientes],
+            "total": len(todas)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        db.close()

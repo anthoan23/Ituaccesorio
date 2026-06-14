@@ -28,7 +28,8 @@ class ClaseProducto:
             cursor.close()
             db.close()
 
-    def listar(self):
+    def listar_clases(self):
+        """Lista todas las clases"""
         db = self._conexion()
         if not db:
             return []
@@ -44,7 +45,42 @@ class ClaseProducto:
             cursor.close()
             db.close()
 
-    def crear(self) -> str:
+    def verificar_clase(self) -> bool:
+        """Verifica si una clase existe (usa el atributo id_clase)"""
+        if not self.id_clase:
+            return False
+        db = self._conexion()
+        if not db:
+            return False
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1", (self.id_clase,))
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_clase(self) -> dict | None:
+        """Obtiene una clase por su ID (usa el atributo id_clase)"""
+        if not self.id_clase:
+            return None
+        db = self._conexion()
+        if not db:
+            return None
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ID_Clase AS id, Nombre_Clase AS nombre
+                FROM Clase_producto
+                WHERE ID_Clase = %s
+            """, (self.id_clase,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_clase(self) -> str:
+        """Registra una nueva clase usando los atributos de la instancia"""
         if not self.nombre:
             raise ValueError("El nombre de la clase es obligatorio.")
         
@@ -60,17 +96,7 @@ class ClaseProducto:
                 (new_id, self.nombre)
             )
             db.commit()
-            
-            # Registrar en bitácora
-            if self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Crear clase",
-                    descripcion=f"Clase creada: {self.nombre} (ID: {new_id})",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Productos"
-                )
-                bitacora.registrar()
-            
+            self.id_clase = new_id
             return new_id
         except Exception:
             db.rollback()
@@ -78,6 +104,51 @@ class ClaseProducto:
         finally:
             cursor.close()
             db.close()
+
+    # def actualizar_clase(self) -> bool:
+    #     """Actualiza una clase usando los atributos de la instancia"""
+    #     if not self.id_clase or not self.nombre:
+    #         raise ValueError("ID y nombre son requeridos.")
+        
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
+        
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute(
+    #             "UPDATE Clase_producto SET Nombre_Clase = %s WHERE ID_Clase = %s",
+    #             (self.nombre, self.id_clase)
+    #         )
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
+
+    # def eliminar_clase(self) -> bool:
+    #     """Elimina una clase usando el atributo id_clase"""
+    #     if not self.id_clase:
+    #         raise ValueError("ID es requerido.")
+        
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
+        
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase = %s", (self.id_clase,))
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
 
 class MarcaProducto:
@@ -106,20 +177,22 @@ class MarcaProducto:
             cursor.close()
             db.close()
 
-    def listar(self, id_clase: str | None = None):
+    def listar_marcas(self, id_clase: str | None = None):
+        """Lista todas las marcas, opcionalmente filtradas por clase"""
         db = self._conexion()
         if not db:
             return []
         cursor = db.cursor(dictionary=True)
         try:
-            if id_clase:
+            filtro_clase = id_clase or self.id_clase
+            if filtro_clase:
                 cursor.execute("""
                     SELECT DISTINCT ma.ID_marca AS id, ma.Nombre_marca AS nombre
                     FROM Marca_producto ma
                     JOIN Producto p ON p.ID_marca = ma.ID_marca
                     WHERE p.ID_Clase = %s
                     ORDER BY CAST(ma.ID_marca AS UNSIGNED) ASC
-                """, (id_clase,))
+                """, (filtro_clase,))
             else:
                 cursor.execute("""
                     SELECT ID_marca AS id, Nombre_marca AS nombre
@@ -131,7 +204,42 @@ class MarcaProducto:
             cursor.close()
             db.close()
 
-    def crear(self) -> str:
+    def verificar_marca(self) -> bool:
+        """Verifica si una marca existe (usa el atributo id_marca)"""
+        if not self.id_marca:
+            return False
+        db = self._conexion()
+        if not db:
+            return False
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1", (self.id_marca,))
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_marca(self) -> dict | None:
+        """Obtiene una marca por su ID (usa el atributo id_marca)"""
+        if not self.id_marca:
+            return None
+        db = self._conexion()
+        if not db:
+            return None
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ID_marca AS id, Nombre_marca AS nombre
+                FROM Marca_producto
+                WHERE ID_marca = %s
+            """, (self.id_marca,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_marca(self) -> str:
+        """Registra una nueva marca usando los atributos de la instancia"""
         if not self.nombre:
             raise ValueError("El nombre de la marca es obligatorio.")
         
@@ -147,17 +255,7 @@ class MarcaProducto:
                 (new_id, self.nombre)
             )
             db.commit()
-            
-            # Registrar en bitácora
-            if self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Crear marca",
-                    descripcion=f"Marca creada: {self.nombre} (ID: {new_id})",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Productos"
-                )
-                bitacora.registrar()
-            
+            self.id_marca = new_id
             return new_id
         except Exception:
             db.rollback()
@@ -165,6 +263,51 @@ class MarcaProducto:
         finally:
             cursor.close()
             db.close()
+
+    # def actualizar_marca(self) -> bool:
+    #     """Actualiza una marca usando los atributos de la instancia"""
+    #     if not self.id_marca or not self.nombre:
+    #         raise ValueError("ID y nombre son requeridos.")
+        
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
+        
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute(
+    #             "UPDATE Marca_producto SET Nombre_marca = %s WHERE ID_marca = %s",
+    #             (self.nombre, self.id_marca)
+    #         )
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
+
+    # def eliminar_marca(self) -> bool:
+    #     """Elimina una marca usando el atributo id_marca"""
+    #     if not self.id_marca:
+    #         raise ValueError("ID es requerido.")
+        
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
+        
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute("DELETE FROM Marca_producto WHERE ID_marca = %s", (self.id_marca,))
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
 
 class Producto:
@@ -196,7 +339,8 @@ class Producto:
             cursor.close()
             db.close()
 
-    def listar(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
+    def listar_productos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
+        """Lista todos los productos, opcionalmente filtrados"""
         db = self._conexion()
         if not db:
             return []
@@ -204,12 +348,12 @@ class Producto:
         try:
             where = []
             params = []
-            if id_marca:
+            if id_marca or self.id_marca:
                 where.append("p.ID_marca = %s")
-                params.append(id_marca)
-            if id_clase:
+                params.append(id_marca or self.id_marca)
+            if id_clase or self.id_clase:
                 where.append("p.ID_Clase = %s")
-                params.append(id_clase)
+                params.append(id_clase or self.id_clase)
             if q:
                 where.append("p.Nombre_producto LIKE %s")
                 params.append(f"%{q}%")
@@ -236,7 +380,52 @@ class Producto:
             cursor.close()
             db.close()
 
-    def crear(self) -> str:
+    def verificar_producto(self) -> bool:
+        """Verifica si un producto existe (usa el atributo id_producto)"""
+        if not self.id_producto:
+            return False
+        db = self._conexion()
+        if not db:
+            return False
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1", (self.id_producto,))
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_producto(self):
+        """Obtiene un producto por su ID (usa el atributo id_producto)"""
+        if not self.id_producto:
+            return None
+        db = self._conexion()
+        if not db:
+            return None
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT
+                    p.ID_producto AS id,
+                    p.ID_marca AS id_marca,
+                    p.ID_Clase AS id_clase,
+                    p.Nombre_producto AS nombre,
+                    p.Descripcion AS descripcion,
+                    ma.Nombre_marca AS marca_nombre,
+                    cl.Nombre_Clase AS clase_nombre
+                FROM Producto p
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+                WHERE p.ID_producto = %s
+                LIMIT 1
+            """, (self.id_producto,))
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_producto(self) -> str:
+        """Registra un nuevo producto usando los atributos de la instancia"""
         if not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("Clase, marca y nombre son obligatorios.")
         
@@ -251,19 +440,8 @@ class Producto:
                 INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion)
                 VALUES (%s, %s, %s, %s, %s)
             """, (new_id, self.id_clase, self.id_marca, self.nombre, self.descripcion))
-
             db.commit()
-            
-            # Registrar en bitácora
-            if self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Crear producto",
-                    descripcion=f"Producto creado: {self.nombre} (ID: {new_id})",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Productos"
-                )
-                bitacora.registrar()
-
+            self.id_producto = new_id
             return new_id
         except Exception:
             db.rollback()
@@ -272,9 +450,12 @@ class Producto:
             cursor.close()
             db.close()
 
-    def actualizar(self) -> bool:
-        if not self.id_producto or not self.id_clase or not self.id_marca or not self.nombre:
-            raise ValueError("ID, clase, marca y nombre son requeridos.")
+    def actualizar_producto(self) -> bool:
+        """Actualiza un producto usando los atributos de la instancia"""
+        if not self.id_producto:
+            raise ValueError("ID del producto es requerido para actualizar.")
+        if not self.id_clase or not self.id_marca or not self.nombre:
+            raise ValueError("Clase, marca y nombre son obligatorios.")
         
         db = self._conexion()
         if not db:
@@ -308,51 +489,10 @@ class Producto:
             cursor.close()
             db.close()
 
-    def tiene_stock_asociado(self, id_producto: str) -> bool:
-        """Verifica si un producto tiene stock en inventario"""
-        db = self._conexion()
-        if not db:
-            return False
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute("""
-                SELECT COUNT(*) FROM Existencias_productos 
-                WHERE ID_producto = %s AND Existencia > 0
-            """, (id_producto,))
-            result = cursor.fetchone()
-            return result[0] > 0 if result else False
-        except Exception as e:
-            print(f"Error verificando stock: {e}")
-            return False
-        finally:
-            cursor.close()
-            db.close()
-
-    def obtener_stock(self, id_producto: str) -> int:
-        """Obtiene la cantidad de stock de un producto"""
-        db = self._conexion()
-        if not db:
-            return 0
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute("""
-                SELECT COALESCE(SUM(Existencia), 0) FROM Existencias_productos 
-                WHERE ID_producto = %s
-            """, (id_producto,))
-            result = cursor.fetchone()
-            return result[0] if result else 0
-        except Exception as e:
-            print(f"Error obteniendo stock: {e}")
-            return 0
-        finally:
-            cursor.close()
-            db.close()
-
-    def eliminar(self) -> bool:
+    def eliminar_producto(self) -> bool:
+        """Elimina un producto usando el atributo id_producto"""
         if not self.id_producto:
-            raise ValueError("ID es requerido.")
+            raise ValueError("ID del producto es requerido para eliminar.")
         
         db = self._conexion()
         if not db:
@@ -377,48 +517,52 @@ class Producto:
             cursor.execute("DELETE FROM Producto WHERE ID_producto = %s", (self.id_producto,))
             
             db.commit()
-            deleted = cursor.rowcount > 0
-            
-            # Registrar en bitácora
-            if deleted and self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Eliminar producto",
-                    descripcion=f"Producto eliminado (ID: {self.id_producto})",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Productos"
-                )
-                bitacora.registrar()
-            
-            return deleted
-        except Exception as e:
+            return cursor.rowcount > 0
+        except Exception:
             db.rollback()
-            print(f"Error al eliminar producto: {e}")
             raise
         finally:
             cursor.close()
             db.close()
 
-    def obtener_por_id(self, id_producto: str):
+    def verificar_stock_asociado(self) -> bool:
+        """Verifica si el producto tiene stock en inventario (usa el atributo id_producto)"""
+        if not self.id_producto:
+            return False
+        
         db = self._conexion()
         if not db:
-            return None
-        cursor = db.cursor(dictionary=True)
+            return False
+        
+        cursor = db.cursor()
         try:
             cursor.execute("""
-                SELECT
-                    p.ID_producto AS id,
-                    p.ID_marca AS id_marca,
-                    p.ID_Clase AS id_clase,
-                    p.Nombre_producto AS nombre,
-                    p.Descripcion AS descripcion,
-                    ma.Nombre_marca AS marca_nombre,
-                    cl.Nombre_Clase AS clase_nombre
-                FROM Producto p
-                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
-                WHERE p.ID_producto = %s
-            """, (id_producto,))
-            return cursor.fetchone()
+                SELECT COUNT(*) FROM Existencias_productos 
+                WHERE ID_producto = %s AND Existencia > 0
+            """, (self.id_producto,))
+            result = cursor.fetchone()
+            return result[0] > 0 if result else False
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_stock_producto(self) -> int:
+        """Obtiene la cantidad de stock del producto (usa el atributo id_producto)"""
+        if not self.id_producto:
+            return 0
+        
+        db = self._conexion()
+        if not db:
+            return 0
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                SELECT COALESCE(SUM(Existencia), 0) FROM Existencias_productos 
+                WHERE ID_producto = %s
+            """, (self.id_producto,))
+            result = cursor.fetchone()
+            return result[0] if result else 0
         finally:
             cursor.close()
             db.close()
@@ -426,55 +570,12 @@ class Producto:
 
 class Productos(conectar):
     """Capa de compatibilidad para controladores antiguos que usan el nombre Productos."""
-
+    
     def listar_clases(self):
-        return ClaseProducto().listar()
-
-    def crear_clase(self, nombre: str, num_i: int | None = None, usuario_id: str = None):
-        return ClaseProducto(nombre=nombre, usuario_id=usuario_id).crear()
-
+        return ClaseProducto().listar_clases()
+    
     def listar_marcas(self, id_clase: str | None = None):
-        return MarcaProducto().listar(id_clase=id_clase)
-
-    def crear_marca(self, nombre: str = "", usuario_id: str = None):
-        return MarcaProducto(nombre=nombre, usuario_id=usuario_id).crear()
-
+        return MarcaProducto().listar_marcas(id_clase=id_clase)
+    
     def listar_modelos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
-        return Producto().listar(id_marca=id_marca, id_clase=id_clase, q=q)
-
-    def crear_modelo(
-        self,
-        id_clase: str,
-        id_marca: str,
-        nombre: str,
-        descripcion: str | None = None,
-        usuario_id: str = None,
-    ):
-        return Producto(
-            id_clase=id_clase, 
-            id_marca=id_marca, 
-            nombre=nombre, 
-            descripcion=descripcion,
-            usuario_id=usuario_id
-        ).crear()
-
-    def actualizar_modelo(
-        self,
-        id_modelo: str,
-        id_clase: str,
-        id_marca: str,
-        nombre: str,
-        descripcion: str | None = None,
-        usuario_id: str = None,
-    ):
-        return Producto(
-            id_producto=id_modelo,
-            id_clase=id_clase,
-            id_marca=id_marca,
-            nombre=nombre,
-            descripcion=descripcion,
-            usuario_id=usuario_id,
-        ).actualizar()
-
-    def eliminar_modelo(self, id_modelo: str, usuario_id: str = None):
-        return Producto(id_producto=id_modelo, usuario_id=usuario_id).eliminar()
+        return Producto().listar_productos(id_marca=id_marca, id_clase=id_clase, q=q)
