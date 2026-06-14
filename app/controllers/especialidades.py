@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.especialidades import Especialidad
 
 especialidades_blueprint = Blueprint("especialidades", __name__)
@@ -38,21 +37,16 @@ def api_agregar_especialidad():
     if not nueva_especialidad:
         return jsonify({"success": False, "message": "El nombre de la especialidad es obligatorio."}), 400
 
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     especialidad_model = Especialidad(
         nombre_especialidad=nueva_especialidad,
-        descripcion_especialidad=descripcion_especialidad
+        descripcion_especialidad=descripcion_especialidad,
+        usuario_id=usuario_id
     )
     mensaje = especialidad_model.agregar_especialidad()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear especialidad",
-            descripcion=f"Se creó la especialidad: {nueva_especialidad}",
-            usuario_id=usuario_id,
-            modulo_nombre="Especialidades"
-        )
         return jsonify({"success": True, "message": mensaje}), 201
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -72,22 +66,17 @@ def api_actualizar_especialidad():
     if not nombre_especialidad:
         return jsonify({"success": False, "message": "El nombre de la especialidad es obligatorio."}), 400
 
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     especialidad_model = Especialidad(
         id_especialidad=especialidad_id,
         nombre_especialidad=nombre_especialidad,
-        descripcion_especialidad=descripcion_especialidad
+        descripcion_especialidad=descripcion_especialidad,
+        usuario_id=usuario_id
     )
     mensaje = especialidad_model.actualizar_especialidad()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Actualizar especialidad",
-            descripcion=f"Se actualizó la especialidad ID: {especialidad_id} - Nuevo nombre: {nombre_especialidad}",
-            usuario_id=usuario_id,
-            modulo_nombre="Especialidades"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -103,29 +92,15 @@ def api_eliminar_especialidad():
     if not especialidad_id:
         return jsonify({"success": False, "message": "El ID de la especialidad es obligatorio."}), 400
 
-    # Obtener nombre antes de eliminar para la bitácora
-    especialidad_model = Especialidad()
-    especialidades = especialidad_model.listar_especialidades()
-    especialidad_existente = None
-    for esp in especialidades:
-        if esp.get("id_especialidad") == especialidad_id:
-            especialidad_existente = esp
-            break
-    
-    nombre_especialidad = especialidad_existente.get("nombre_especialidad") if especialidad_existente else especialidad_id
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
-    especialidad_model = Especialidad(id_especialidad=especialidad_id)
+    especialidad_model = Especialidad(
+        id_especialidad=especialidad_id,
+        usuario_id=usuario_id
+    )
     mensaje = especialidad_model.eliminar_especialidad()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Eliminar especialidad",
-            descripcion=f"Se eliminó la especialidad ID: {especialidad_id} - Nombre: {nombre_especialidad}",
-            usuario_id=usuario_id,
-            modulo_nombre="Especialidades"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
         return jsonify({"success": False, "message": mensaje}), 400

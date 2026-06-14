@@ -60,8 +60,8 @@ def api_proveedores():
 @jwt_required
 @tiene_permiso('Órdenes de compra', 'consultar')
 def api_productos_proveedor(ID_proveedor):
-    orden = OrdenCompra()
-    productos = orden.obtener_productos_proveedor(ID_proveedor)
+    orden = OrdenCompra(id_proveedor=ID_proveedor)
+    productos = orden.obtener_productos_proveedor()
     return jsonify({"success": True, "productos": productos})
 
 
@@ -149,8 +149,13 @@ def api_anular_orden_compra():
     if not ID_orden_c:
         return jsonify({"success": False, "error": "Falta el campo requerido: ID_orden_c"}), 400
 
-    orden = OrdenCompra()
-    success = orden.anular_orden_compra(ID_orden_c)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    orden = OrdenCompra(
+        id_orden=ID_orden_c,
+        usuario_id=usuario_id
+    )
+    success = orden.anular_orden_compra()
     
     if success:
         return jsonify({"success": True, "message": "Orden de compra anulada exitosamente"}), 200
@@ -172,23 +177,7 @@ def api_registrar_entrega(ID_orden_c):
         if not fecha_entrega:
             fecha_entrega = datetime.now().strftime("%Y-%m-%d")
         
-        # Obtener ID del empleado desde g.user - CORREGIDO
-        # g.user.get("id") puede devolver 'USR-001', necesitamos un número
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-        
-        # Si el ID no es numérico, usar un empleado por defecto que existe
-        id_empleado = None
-        if usuario_id and str(usuario_id).isdigit():
-            id_empleado = int(usuario_id)
-        else:
-            # Usar un ID de empleado válido (Maria Gonzalez)
-            id_empleado = 30124556
-            print(f"ID de empleado no numérico ('{usuario_id}'), usando valor por defecto: {id_empleado}")
-        
-        print(f"ID Empleado a usar: {id_empleado}")
-        
-        orden = OrdenCompra()
-        success = orden.registrar_entrega(ID_orden_c, recibido_por, fecha_entrega, id_empleado)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         if success:
             return jsonify({"success": True, "message": "Entrega registrada exitosamente. Stock actualizado."}), 200

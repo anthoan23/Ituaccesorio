@@ -1,10 +1,9 @@
 from flask import Blueprint, jsonify, render_template, request, g, redirect
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
-from app.models.bitacora import registrar_en_bitacora
 from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
 from app.models.venta import VentaModel
-from app.models.entrega import EntregaModel
+from app.models.clientes import Clientes
 import requests
 import traceback
 
@@ -12,32 +11,29 @@ ventas_blueprint = Blueprint("ventas", __name__)
 
 
 def obtener_cliente_id_actual() -> str:
-    """
-    Obtiene el ID del cliente actual.
-    Verifica si el usuario autenticado existe como cliente en la base de datos del negocio.
-    """
-    usuario = getattr(g, "user", None)
-    if not usuario:
+    """Obtiene el ID del cliente actual desde g.user y verifica que exista en la BD de clientes"""
+    if not g.user:
         return None
     
     # Obtener cédula desde el usuario
-    if isinstance(usuario, dict):
-        cliente_id = usuario.get("cedula") or usuario.get("cedula_personal")
+    if isinstance(g.user, dict):
+        cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
     else:
-        cliente_id = getattr(usuario, "cedula", None) or getattr(usuario, "cedula_personal", None)
+        cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
     
     if not cliente_id:
         return None
     
     cliente_id_str = str(cliente_id)
     
-    # Verificar si existe como cliente en Persona_natural
-    from app.models.clientes import Clientes as GestionClientes
-    modelo_clientes = GestionClientes()
+    # Verificar que el cliente existe en la base de datos del negocio
+    modelo_clientes = Clientes(ID_cliente=cliente_id_str)
     try:
-        existente = modelo_clientes.obtener_cliente_por_id(cliente_id_str)
-        return cliente_id_str if existente else None
-    except:
+        if modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
+            return cliente_id_str
+        return None
+    except Exception as e:
+        print(f"Error al verificar cliente: {e}")
         return None
 
 
@@ -88,26 +84,30 @@ def pagina_catalogo():
 def api_listar_productos_catalogo():
     """API para obtener productos del catálogo con filtros - acceso público"""
     try:
-        modelo_catalogo = CatalogoModel()
-        
         clase_id = request.args.get("clase_id", type=str)
         marca_id = request.args.get("marca_id", type=str)
         q = request.args.get("q", "")
         
-        productos = modelo_catalogo.listar_productos_catalogo(
+        modelo_catalogo = CatalogoModel(
             clase_id=clase_id,
             marca_id=marca_id,
             q=q if q else None
         )
         
+        productos = modelo_catalogo.listar_productos_catalogo()
+        
         tasas = get_dolar_rates()
         productos = calcular_precios_bs(productos, tasas)
         
-        mas_vendidos = modelo_catalogo.productos_mas_vendidos(limite=5)
+        modelo_mas_vendidos = CatalogoModel()
+        mas_vendidos = modelo_mas_vendidos.productos_mas_vendidos()
         mas_vendidos = calcular_precios_bs(mas_vendidos, tasas)
         
-        clases = modelo_catalogo.listar_clases()
-        marcas = modelo_catalogo.listar_marcas()
+        modelo_clases = CatalogoModel()
+        clases = modelo_clases.listar_clases()
+        
+        modelo_marcas = CatalogoModel()
+        marcas = modelo_marcas.listar_marcas()
         
         return jsonify({
             "success": True,
@@ -137,8 +137,8 @@ def api_obtener_carrito():
         if not cliente_id:
             return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0, "tasas": get_dolar_rates()})
         
-        modelo_carrito = CarritoModel()
-        carrito = modelo_carrito.obtener_carrito(cliente_id)
+        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        carrito = modelo_carrito.obtener_carrito()
         
         tasas = get_dolar_rates()
         carrito = calcular_precios_bs(carrito, tasas)
@@ -180,18 +180,15 @@ def api_agregar_carrito():
         if not producto_id:
             return jsonify({"success": False, "error": "Producto no especificado"}), 400
         
-        modelo_carrito = CarritoModel()
-        modelo_carrito.agregar_al_carrito(cliente_id, str(producto_id), cantidad)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        # Obtener usuario actual para bitácora
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Agregar al carrito",
-            descripcion=f"Cliente ID: {cliente_id} agregó producto ID: {producto_id} - Cantidad: {cantidad}",
-            usuario_id=usuario_id,
-            modulo_nombre="Carrito"
+        modelo_carrito = CarritoModel(
+            cliente_id=cliente_id,
+            inventario_id=str(producto_id),
+            cantidad=cantidad,
+            usuario_id=usuario_id
         )
+        modelo_carrito.agregar_al_carrito()
         
         return jsonify({"success": True, "message": "Producto agregado al carrito"})
     except ValueError as e:
@@ -214,8 +211,8 @@ def api_eliminar_carrito(producto_id):
         if not cliente_id:
             return jsonify({"success": True})
         
-        modelo_carrito = CarritoModel()
-        modelo_carrito.eliminar_item(cliente_id, producto_id)
+        modelo_carrito = CarritoModel(cliente_id=cliente_id, inventario_id=producto_id)
+        modelo_carrito.eliminar_item()
         return jsonify({"success": True})
     except Exception as e:
         print(f"Error en api_eliminar_carrito: {e}")
@@ -238,8 +235,12 @@ def api_actualizar_cantidad():
         producto_id = datos.get("producto_id")
         cantidad = datos.get("cantidad", 1)
         
-        modelo_carrito = CarritoModel()
-        modelo_carrito.actualizar_cantidad(cliente_id, str(producto_id), cantidad)
+        modelo_carrito = CarritoModel(
+            cliente_id=cliente_id,
+            inventario_id=str(producto_id),
+            cantidad=cantidad
+        )
+        modelo_carrito.actualizar_cantidad()
         return jsonify({"success": True})
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
@@ -260,8 +261,8 @@ def api_vaciar_carrito():
         if not cliente_id:
             return jsonify({"success": True})
         
-        modelo_carrito = CarritoModel()
-        modelo_carrito.vaciar_carrito(cliente_id)
+        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        modelo_carrito.vaciar_carrito()
         return jsonify({"success": True})
     except Exception as e:
         print(f"Error en api_vaciar_carrito: {e}")
@@ -314,10 +315,6 @@ def api_procesar_pago():
     from datetime import datetime
     
     try:
-        print("=" * 50)
-        print("INICIO PROCESAR PAGO")
-        print("=" * 50)
-        
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
@@ -335,13 +332,11 @@ def api_procesar_pago():
         if not metodo_pago:
             return jsonify({"success": False, "error": "Método de pago no seleccionado"}), 400
         
-        from app.models.carrito import CarritoModel
-        from app.models.venta import VentaModel
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        modelo_carrito = CarritoModel()
-        modelo_venta = VentaModel()
-        
-        carrito = modelo_carrito.obtener_carrito(cliente_id)
+        # Obtener carrito
+        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        carrito = modelo_carrito.obtener_carrito()
         if not carrito:
             return jsonify({"success": False, "error": "Carrito vacío"}), 400
         
@@ -364,13 +359,17 @@ def api_procesar_pago():
             except Exception as e:
                 print(f"Error guardando archivo: {e}")
         
+        estado_pago = "Pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
+        
         # Crear la venta
-        factura_id = modelo_venta.crear_venta_desde_carrito(
+        modelo_venta = VentaModel(
             cliente_id=cliente_id,
             items=carrito,
             metodo_pago=metodo_pago,
-            estado_pago="Pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
+            estado_pago=estado_pago,
+            usuario_id=usuario_id
         )
+        factura_id = modelo_venta.crear_venta_desde_carrito()
         
         # Guardar registro de pago
         datos_pago = {
@@ -380,24 +379,17 @@ def api_procesar_pago():
             "capture": capture_path
         }
         
-        modelo_venta.guardar_registro_pago(
+        modelo_pago = VentaModel(
             factura_id=factura_id,
             metodo_pago=metodo_pago,
-            datos_pago=datos_pago
+            estado_pago=estado_pago,
+            datos_pago=datos_pago,
+            usuario_id=usuario_id
         )
+        modelo_pago.guardar_registro_pago()
         
         # Vaciar el carrito
-        modelo_carrito.vaciar_carrito(cliente_id)
-        
-        # Obtener usuario actual para bitácora
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Realizar venta",
-            descripcion=f"Cliente ID: {cliente_id} realizó venta ID: {factura_id} - Método: {metodo_pago}",
-            usuario_id=usuario_id,
-            modulo_nombre="Ventas"
-        )
+        modelo_carrito.vaciar_carrito()
         
         return jsonify({
             "success": True,
@@ -423,6 +415,7 @@ def pagina_validar_pagos():
         active_page="validar_pagos"
     )
 
+
 # ==================== DASHBOARD ====================
 
 @ventas_blueprint.route("/api/dashboard/ventas-hoy", methods=["GET"])
@@ -433,7 +426,6 @@ def api_ventas_hoy():
         modelo_venta = VentaModel()
         ventas_hoy = modelo_venta.obtener_ventas_hoy()
         
-        # Formatear el total con separadores de miles
         total_formateado = f"{ventas_hoy['total_ventas']:,.2f}"
         moneda = ventas_hoy['moneda']
         

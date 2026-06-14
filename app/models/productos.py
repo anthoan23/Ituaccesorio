@@ -54,9 +54,10 @@ class Categoria:
 class ClaseProducto:
     """Modelo para la tabla Clase_producto"""
     
-    def __init__(self, id_clase: str = "", nombre: str = ""):
+    def __init__(self, id_clase: str = "", nombre: str = "", usuario_id: str = None):
         self.id_clase = id_clase
         self.nombre = nombre
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -153,10 +154,11 @@ class ClaseProducto:
 class MarcaProducto:
     """Modelo para la tabla Marca_producto"""
     
-    def __init__(self, id_marca: str = "", nombre: str = "", id_clase: str | None = None):
+    def __init__(self, id_marca: str = "", nombre: str = "", id_clase: str | None = None, usuario_id: str = None):
         self.id_marca = id_marca
         self.nombre = nombre
         self.id_clase = id_clase
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -413,7 +415,19 @@ class Producto:
                 WHERE ID_producto = %s
             """, (self.id_clase, self.id_marca, self.nombre, self.descripcion, self.id_producto))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar producto",
+                    descripcion=f"Producto actualizado: {self.nombre} (ID: {self.id_producto})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception:
             db.rollback()
             raise

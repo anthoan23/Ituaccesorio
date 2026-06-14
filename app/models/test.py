@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from flask import json
-
+import json
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
+
 
 class Tests():
-    def __init__(self, ID_test=None, Numero_test= None, lista_tests=None, id_personal=None, capacidad=None, clave=None, patron=None, ID_orden=None, ID_empleado=None):
+    def __init__(self, ID_test=None, Numero_test=None, lista_tests=None, 
+                 id_personal=None, capacidad=None, clave=None, patron=None, 
+                 ID_orden=None, ID_empleado=None, usuario_id: str = None):
         self.ID_test = ID_test
         self.Numero_test = Numero_test
         self.lista_tests = lista_tests
@@ -15,10 +18,9 @@ class Tests():
         self.patron = patron
         self.ID_orden = ID_orden
         self.ID_empleado = ID_empleado
-
+        self.usuario_id = usuario_id  # Usuario que realiza la acción
 
         self._conexion = conectar()
-
 
     def buscar_test(self):
         id_orden = self.ID_orden
@@ -96,11 +98,10 @@ class Tests():
             db.close()
     
    
-    def registrar_revision_test(self ) -> str:
+    def registrar_revision_test(self) -> str:
         
-        # 1. Obtener y limpiar los identificadores base desde los atributos de la instancia
-        id_orden = self.ID_orden.strip() 
-        id_empleado = self.ID_empleado or 32014004 # Asumiendo que es un entero (INT)
+        id_orden = self.ID_orden.strip() if self.ID_orden else ""
+        id_empleado = self.ID_empleado.strip() if self.ID_empleado else ""
 
         # Validaciones previas básicas
         if not id_orden or len(id_orden) > 10:
@@ -138,6 +139,17 @@ class Tests():
                 pass
                 
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Registrar revisión técnica",
+                    descripcion=f"Se registró revisión técnica para orden: {id_orden} - Test #{self.Numero_test}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Taller"
+                )
+                bitacora.registrar()
+            
             return "Revisión técnica y pruebas registradas exitosamente."
             
         except Exception as e:
@@ -148,6 +160,3 @@ class Tests():
         finally:
             cursor.close()
             db.close()
-
-
-    

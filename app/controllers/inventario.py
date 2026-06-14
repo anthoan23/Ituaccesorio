@@ -8,7 +8,6 @@ from decimal import Decimal, InvalidOperation
 
 from app.models.inventario import Inventario, FotosInventario
 from app.models.productos import Producto
-from app.models.bitacora import registrar_en_bitacora
 from app.utils.decorators import jwt_required, tiene_permiso
 
 inventario_blueprint = Blueprint("inventario", __name__)

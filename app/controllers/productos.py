@@ -86,9 +86,11 @@ def api_crear_clase():
 
     modelo = ClaseProducto(nombre=nombre)
     
+    modelo = ClaseProducto(nombre=nombre, usuario_id=usuario_id)
     try:
-        new_id = modelo.registrar_clase()
+        new_id = modelo.crear()
         
+        # Obtener usuario desde g.user
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
         usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
@@ -132,7 +134,7 @@ def api_crear_marca():
     modelo = MarcaProducto(nombre=nombre)
     
     try:
-        new_id = modelo.registrar_marca()
+        new_id = modelo.crear()
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
@@ -202,16 +204,24 @@ def api_crear_modelo():
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    # Crear producto SOLO en la tabla Producto (sin inventario)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    # Instanciar el modelo con los atributos
     modelo = Producto(
+        
         id_clase=id_clase,
+        
         id_marca=id_marca,
-        nombre=nombre,
-        descripcion=descripcion
+        
+        nombre=nombre, 
+       
+        descripcion=descripcion,
+        usuario_id=usuario_id
+    
     )
     
     try:
-        new_id = modelo.registrar_producto()
+        new_id = modelo.crear()
         
         # Guardar foto si se proporcionó (solo guardar, no asociar a inventario aún)
         foto_path = None
@@ -270,8 +280,16 @@ def api_actualizar_modelo(id_modelo: str):
         descripcion=descripcion
     )
     
+    modelo = Producto(
+        id_producto=id_modelo, 
+        id_clase=str(id_clase), 
+        id_marca=str(id_marca), 
+        nombre=nombre, 
+        descripcion=descripcion,
+        usuario_id=usuario_id
+    )
     try:
-        ok = modelo.actualizar_producto()
+        ok = modelo.actualizar()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -298,6 +316,7 @@ def api_actualizar_modelo(id_modelo: str):
 def api_eliminar_modelo(id_modelo: str):
     modelo = Producto(id_producto=id_modelo)
     
+    modelo = Producto(id_producto=id_modelo, usuario_id=usuario_id)
     try:
         if modelo.verificar_stock_asociado():
             stock = modelo.obtener_stock_producto()
@@ -306,7 +325,7 @@ def api_eliminar_modelo(id_modelo: str):
                 "error": f"No se puede eliminar el producto porque tiene {stock} unidades en inventario. Primero debe eliminar o reducir el stock."
             }), 400
         
-        ok = modelo.eliminar_producto()
+        ok = modelo.eliminar()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")

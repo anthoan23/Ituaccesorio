@@ -2,11 +2,9 @@ import os
 import uuid
 
 from flask import Blueprint, jsonify, render_template, request, g, current_app
-import mysql.connector
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.usuarios import Usuarios
-from app.models.bitacora import registrar_en_bitacora
 from app.utils.jwt_utils import set_auth_cookies
 from app.models.modulos import Modulo
 from app.models.permisos import Permiso
@@ -130,24 +128,13 @@ def api_crear_usuario():
     # Obtener datos tanto de JSON como de form-data
     data = request.get_json(silent=True) or request.form
     
-    # ========== DEBUG: Imprimir datos recibidos ==========
-    print("=" * 50)
-    print("DATOS RECIBIDOS EN API CREAR USUARIO:")
-    print(f"Request method: {request.method}")
-    print(f"Content-Type: {request.content_type}")
-    print(f"Datos (form/json): {dict(data)}")
-    print(f"Archivos recibidos: {list(request.files.keys())}")
-    print("=" * 50)
-    
-    # ========== OBTENER Y LIMPIAR CAMPOS ==========
+    # OBTENER Y LIMPIAR CAMPOS
     nombre = data.get("nombre", "").strip()
     
-    # IMPORTANTE: El frontend envía 'cedula_personal', no 'cedula'
     cedula = data.get("cedula_personal")
     if not cedula:
-        cedula = data.get("cedula")  # Fallback por si usan otro nombre
+        cedula = data.get("cedula")
     
-    # Convertir a string y limpiar
     if cedula:
         cedula = str(cedula).strip()
     else:
@@ -163,18 +150,9 @@ def api_crear_usuario():
     elif data.get("foto_perfil_actual"):
         foto_perfil = data.get("foto_perfil_actual")
     
-    # ========== DEBUG: Mostrar datos procesados ==========
-    print("DATOS PROCESADOS:")
-    print(f"  nombre: '{nombre}' (bool: {bool(nombre)})")
-    print(f"  cedula: '{cedula}' (bool: {bool(cedula)})")
-    print(f"  password: '{'*' * len(password)}' (bool: {bool(password)})")
-    print(f"  rol_id: '{rol_id}' (bool: {bool(rol_id)})")
-    print(f"  foto_perfil: {foto_perfil}")
-    print("=" * 50)
-    
-    # ========== VALIDACIONES ==========
+    # VALIDACIONES
     if not nombre or not cedula or not password or not rol_id:
-        error_msg = f"Faltan datos obligatorios: "
+        error_msg = "Faltan datos obligatorios: "
         error_details = []
         if not nombre: error_details.append("nombre")
         if not cedula: error_details.append("cédula")
@@ -184,23 +162,15 @@ def api_crear_usuario():
         
         return jsonify({
             "success": False, 
-            "error": error_msg,
-            "received": {
-                "nombre": bool(nombre),
-                "cedula": bool(cedula),
-                "password": bool(password),
-                "rol_id": bool(rol_id)
-            }
+            "error": error_msg
         }), 400
     
-    # Validar longitud del nombre
     if len(nombre) > 50:
         return jsonify({
             "success": False, 
             "error": "El nombre no puede exceder los 50 caracteres."
         }), 400
     
-    # Validar contraseña
     if len(password) < 6:
         return jsonify({
             "success": False, 
@@ -213,32 +183,20 @@ def api_crear_usuario():
             "error": "La contraseña no puede exceder los 50 caracteres."
         }), 400
     
-    # ========== CREAR MODELO DE USUARIO ==========
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     usuario_model = Usuarios(
         nombre=nombre,
         cedula=cedula,
         password=password,
         rol_id=rol_id,
-        foto_perfil=foto_perfil
+        foto_perfil=foto_perfil,
+        usuario_id=usuario_actual_id
     )
     
-    # ========== EJECUTAR CREACIÓN ==========
     mensaje = usuario_model.agregar_usuario()
     
-    print(f"RESULTADO AGREGAR USUARIO: {mensaje}")
-    print("=" * 50)
-    
-    # ========== RESPUESTA ==========
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear usuario",
-            descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula} - Rol ID: {rol_id}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
-        
         return jsonify({
             "success": True, 
             "message": mensaje, 
@@ -262,8 +220,15 @@ def api_actualizar_usuario(usuario_id):
     rol_id = data.get("rol_id", "").strip()
     foto_perfil = _guardar_foto_perfil(request.files.get("foto_perfil")) or data.get("foto_perfil_actual")
 
+    if cedula:
+        cedula = str(cedula).strip()
+    else:
+        cedula = ""
+
     if not nombre or not cedula or not rol_id:
         return jsonify({"success": False, "error": "Nombre, cédula y rol son obligatorios."}), 400
+
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     usuario_model = Usuarios(
         id=usuario_id,
@@ -271,19 +236,13 @@ def api_actualizar_usuario(usuario_id):
         cedula=cedula,
         password=password,
         rol_id=rol_id,
-        foto_perfil=foto_perfil
+        foto_perfil=foto_perfil,
+        usuario_id=usuario_actual_id
     )
+    
     mensaje = usuario_model.actualizar_usuario()
 
     if "exitosamente" in mensaje:
-        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Actualizar usuario",
-            descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
-            usuario_id=usuario_actual_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -293,19 +252,18 @@ def api_actualizar_usuario(usuario_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_usuario(usuario_id):
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     if usuario_actual_id == usuario_id:
         return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
 
     # Verificar el rol del usuario a eliminar
-    usuario_model = Usuarios()
-    usuario_objetivo = usuario_model.obtener_usuario_por_id(usuario_id)
+    usuario_model_verif = Usuarios()
+    usuario_objetivo = usuario_model_verif.obtener_usuario_por_id(usuario_id)
 
     if not usuario_objetivo:
         return jsonify({"success": False, "error": "El usuario no existe."}), 404
 
-    nombre_usuario = usuario_objetivo.get("nombre", "N/A")
     rol_objetivo = usuario_objetivo.get("rol_nombre", "").lower()
 
     # Verificar permisos para eliminar admin
@@ -313,16 +271,14 @@ def api_eliminar_usuario(usuario_id):
     if rol_objetivo == "admin" and usuario_actual_rol != "admin":
         return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
 
-    usuario_model.id = usuario_id
+    usuario_model = Usuarios(
+        id=usuario_id,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = usuario_model.eliminar_usuario()
 
     if "exitosamente" in mensaje:
-        registrar_en_bitacora(
-            accion="Eliminar usuario",
-            descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {nombre_usuario}",
-            usuario_id=usuario_actual_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -363,7 +319,7 @@ def api_actualizar_mi_perfil():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre es obligatorio."}), 400
 
-    usuario_model = Usuarios()
+    usuario_model = Usuarios(usuario_id=usuario_id)
     usuario_actual_db = usuario_model.obtener_usuario_por_id(usuario_id)
 
     if not usuario_actual_db:
@@ -372,19 +328,17 @@ def api_actualizar_mi_perfil():
     if not foto_perfil:
         foto_perfil = usuario_actual_db.get("foto_perfil")
 
-    mensaje = usuario_model.actualizar_perfil(
+    # Crear modelo con usuario_id para bitácora
+    usuario_actualizacion = Usuarios(
+        usuario_id=usuario_id
+    )
+    
+    mensaje = usuario_actualizacion.actualizar_perfil(
         usuario_id, nombre, password if password else None, foto_perfil
     )
 
     if "exitosamente" in mensaje:
         usuario_actualizado = usuario_model.obtener_usuario_por_id(usuario_id)
-
-        registrar_en_bitacora(
-            accion="Actualizar perfil",
-            descripcion=f"Usuario actualizó su perfil",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
 
         resp = jsonify({"success": True, "message": mensaje, "usuario": usuario_actualizado})
         
@@ -420,18 +374,17 @@ def api_crear_modulo():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del módulo es obligatorio."}), 400
 
-    modulo_model = Modulo(nombre=nombre, descripcion=descripcion)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    modulo_model = Modulo(
+        nombre=nombre,
+        descripcion=descripcion,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = modulo_model.agregar_modulo()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear módulo",
-            descripcion=f"Se creó el módulo: {nombre}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje, "id": modulo_model.id}), 201
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -448,18 +401,18 @@ def api_actualizar_modulo(modulo_id):
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del módulo es obligatorio."}), 400
 
-    modulo_model = Modulo(id=modulo_id, nombre=nombre, descripcion=descripcion)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    modulo_model = Modulo(
+        id=modulo_id,
+        nombre=nombre,
+        descripcion=descripcion,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = modulo_model.actualizar_modulo()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Actualizar módulo",
-            descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -469,18 +422,16 @@ def api_actualizar_modulo(modulo_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_modulo(modulo_id):
-    modulo_model = Modulo(id=modulo_id)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    modulo_model = Modulo(
+        id=modulo_id,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = modulo_model.eliminar_modulo()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Eliminar módulo",
-            descripcion=f"Se eliminó el módulo ID: {modulo_id}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -564,15 +515,16 @@ def api_actualizar_permisos_rol(rol_id):
             "detalles": errores
         }), 500
 
-    # Obtener ID del usuario desde g.user
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-
-    registrar_en_bitacora(
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    from app.models.bitacora import Bitacora
+    bitacora = Bitacora(
         accion="Actualizar permisos de rol",
         descripcion=f"Se actualizaron {exitosos} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
-        usuario_id=usuario_id,
+        usuario_id=usuario_actual_id,
         modulo_nombre="Usuarios"
     )
+    bitacora.registrar()
 
     return jsonify({
         "success": True,
@@ -625,7 +577,6 @@ def api_obtener_permiso_especifico(rol_id, modulo_id):
 @jwt_required
 def api_obtener_mis_permisos():
     """Obtiene todos los permisos del usuario actual aplicando la regla de negocio"""
-    # Obtener ID del usuario desde g.user
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
     
     if not usuario_id or usuario_id == "SYSTEM":
@@ -659,18 +610,17 @@ def api_crear_rol():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del rol es obligatorio."}), 400
 
-    rol_model = Rol(nombre=nombre, descripcion=descripcion)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    rol_model = Rol(
+        nombre=nombre,
+        descripcion=descripcion,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = rol_model.agregar_rol()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear rol",
-            descripcion=f"Se creó el rol: {nombre}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje, "id": rol_model.id}), 201
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -696,18 +646,18 @@ def api_actualizar_rol(rol_id):
         if usuario_actual != "admin":
             return jsonify({"success": False, "error": "No se puede modificar el rol Admin."}), 403
 
-    rol_model = Rol(id=rol_id, nombre=nombre, descripcion=descripcion)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    rol_model = Rol(
+        id=rol_id,
+        nombre=nombre,
+        descripcion=descripcion,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = rol_model.actualizar_rol()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Actualizar rol",
-            descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400
@@ -724,18 +674,16 @@ def api_eliminar_rol(rol_id):
     if rol_data and rol_data.get("nombre", "").lower() == "admin":
         return jsonify({"success": False, "error": "No se puede eliminar el rol Admin."}), 403
 
-    rol_model = Rol(id=rol_id)
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    rol_model = Rol(
+        id=rol_id,
+        usuario_id=usuario_actual_id
+    )
+    
     mensaje = rol_model.eliminar_rol()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Eliminar rol",
-            descripcion=f"Se eliminó el rol ID: {rol_id}",
-            usuario_id=usuario_id,
-            modulo_nombre="Usuarios"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
 
     return jsonify({"success": False, "error": mensaje}), 400

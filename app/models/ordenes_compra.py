@@ -1,10 +1,24 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 from datetime import datetime
 import mysql.connector
 
 
 class OrdenCompra(conectar):
+    
+    def __init__(self, id_orden: str = None, id_empleado: int = None, 
+                 id_proveedor: int = None, productos: list = None,
+                 recibido_por: str = None, fecha_entrega: str = None,
+                 usuario_id: str = None):
+        super().__init__()
+        self.id_orden = id_orden
+        self.id_empleado = id_empleado
+        self.id_proveedor = id_proveedor
+        self.productos = productos or []
+        self.recibido_por = recibido_por
+        self.fecha_entrega = fecha_entrega
+        self.usuario_id = usuario_id
     
     def enlistar_ordenes_compra(self):
         """Lista órdenes pendientes"""
@@ -88,8 +102,8 @@ class OrdenCompra(conectar):
                     o.Estado_orden_compra as Estado
                 FROM Orden_compra o
                 WHERE o.ID_orden_compra = %s
+                GROUP BY o.ID_orden_compra
             """, (ID_orden_c,))
-            
             datos_orden = cursor.fetchone()
             if not datos_orden:
                 return None
@@ -138,8 +152,7 @@ class OrdenCompra(conectar):
                 LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
                 LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE d.ID_orden_compra = %s
-            """, (datos_orden["ID_proveedor"], ID_orden_c))
-            
+            """, (datos_orden.get("ID_proveedor"), ID_orden_c))
             productos_orden = cursor.fetchall()
 
             return {
@@ -206,6 +219,9 @@ class OrdenCompra(conectar):
 
     def obtener_productos_proveedor(self, ID_proveedor: int):
         """Obtiene productos que suministra un proveedor"""
+        if not self.id_proveedor:
+            return []
+
         db = self.conexion1()
         if not db:
             return []
@@ -225,7 +241,7 @@ class OrdenCompra(conectar):
                 LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE s.ID_proveedor = %s
                 ORDER BY p.Nombre_producto ASC
-            """, (ID_proveedor,))
+            """, (self.id_proveedor,))
             return cursor.fetchall()
         except Exception as e:
             print(f"Error obtener_productos_proveedor: {e}")
@@ -234,8 +250,12 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def agregar_orden_compra(self, ID_em: int, ID_proveedor: int, productos: list):
+    def agregar_orden_compra(self) -> bool:
         """Agrega una nueva orden de compra"""
+        if not self.id_empleado or not self.id_proveedor or not self.productos:
+            print("Error: Faltan datos para crear la orden")
+            return False
+
         db = self.conexion1()
         if not db:
             return False
@@ -260,18 +280,19 @@ class OrdenCompra(conectar):
                 last_num = 0
             
             new_num = last_num + 1
-            ID_orden = f"OC{str(new_num).zfill(7)}"
+            self.id_orden = f"OC{str(new_num).zfill(7)}"
             
             cursor.execute("""
                 INSERT INTO Orden_compra (ID_orden_compra, ID_empleado, ID_proveedor, Fecha_orden_compra, Estado_orden_compra) 
                 VALUES (%s, %s, %s, NOW(), 'Pendiente')
-            """, (ID_orden, ID_em, ID_proveedor))
+            """, (self.id_orden, self.id_empleado, self.id_proveedor))
             
             for mid, qty in productos:
+                print(f"Insertando producto: ID_producto={mid}, Cantidad={qty}")
                 cursor.execute("""
                     INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
                     VALUES (%s, %s, %s)
-                """, (ID_orden, str(mid), qty))
+                """, (self.id_orden, str(mid), qty))
             
             db.commit()
             return True
@@ -287,8 +308,11 @@ class OrdenCompra(conectar):
             if db:
                 db.close()
 
-    def anular_orden_compra(self, ID_orden_c: str):
+    def anular_orden_compra(self) -> bool:
         """Anula una orden de compra"""
+        if not self.id_orden:
+            return False
+
         db = self.conexion1()
         if not db:
             return False
@@ -299,9 +323,20 @@ class OrdenCompra(conectar):
                 UPDATE Orden_compra 
                 SET Estado_orden_compra = 'Anulada' 
                 WHERE ID_orden_compra = %s AND Estado_orden_compra = 'Pendiente'
-            """, (ID_orden_c,))
+            """, (self.id_orden,))
             db.commit()
-            return cursor.rowcount > 0
+            anulado = cursor.rowcount > 0
+            
+            if anulado and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Anular orden de compra",
+                    descripcion=f"Se anuló la orden de compra ID: {self.id_orden}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                )
+                bitacora.registrar()
+            
+            return anulado
         except Exception as e:
             print(f"Error anular_orden_compra: {e}")
             db.rollback()

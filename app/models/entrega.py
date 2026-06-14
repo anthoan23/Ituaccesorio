@@ -1,5 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
@@ -7,7 +8,15 @@ from typing import Dict, Any, Optional, List
 class EntregaModel:
     """Modelo para operaciones de entregas"""
     
-    def __init__(self):
+    def __init__(self, entrega_id: str = None, factura_id: str = None, 
+                 cedula_delivery: str = None, direccion: str = None, 
+                 estado: int = 0, usuario_id: str = None):
+        self.entrega_id = entrega_id
+        self.factura_id = factura_id
+        self.cedula_delivery = cedula_delivery
+        self.direccion = direccion
+        self.estado = estado
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
     
     def _generar_id_entrega(self) -> str:
@@ -68,7 +77,6 @@ class EntregaModel:
             
             entregas = cursor.fetchall()
             
-            # Convertir estado a texto para mostrar
             for entrega in entregas:
                 estado_val = entrega.get("estado", 0)
                 if estado_val == 0:
@@ -95,8 +103,12 @@ class EntregaModel:
             cursor.close()
             db.close()
     
-    def obtener_entrega_por_id(self, entrega_id: str) -> Optional[Dict[str, Any]]:
+    def obtener_entrega_por_id(self, entrega_id: str = None) -> Optional[Dict[str, Any]]:
         """Obtiene una entrega por su ID"""
+        entrega = entrega_id or self.entrega_id
+        if not entrega:
+            return None
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return None
@@ -126,40 +138,41 @@ class EntregaModel:
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
                 WHERE e.ID_entrega = %s
-            """, (entrega_id,))
+            """, (entrega,))
             
-            entrega = cursor.fetchone()
-            if entrega:
-                estado_val = entrega.get("estado", 0)
+            resultado = cursor.fetchone()
+            if resultado:
+                estado_val = resultado.get("estado", 0)
                 if estado_val == 0:
-                    entrega["estado_texto"] = "Pendiente"
-                    entrega["estado_clase"] = "estado-pendiente"
+                    resultado["estado_texto"] = "Pendiente"
+                    resultado["estado_clase"] = "estado-pendiente"
                 elif estado_val == 1:
-                    entrega["estado_texto"] = "En camino"
-                    entrega["estado_clase"] = "estado-camino"
+                    resultado["estado_texto"] = "En camino"
+                    resultado["estado_clase"] = "estado-camino"
                 elif estado_val == 2:
-                    entrega["estado_texto"] = "Entregado"
-                    entrega["estado_clase"] = "estado-entregado"
+                    resultado["estado_texto"] = "Entregado"
+                    resultado["estado_clase"] = "estado-entregado"
                 elif estado_val == 3:
-                    entrega["estado_texto"] = "Cancelado"
-                    entrega["estado_clase"] = "estado-cancelado"
+                    resultado["estado_texto"] = "Cancelado"
+                    resultado["estado_clase"] = "estado-cancelado"
                 else:
-                    entrega["estado_texto"] = "Programado"
-                    entrega["estado_clase"] = "estado-programado"
+                    resultado["estado_texto"] = "Programado"
+                    resultado["estado_clase"] = "estado-programado"
             
-            return entrega
+            return resultado
         finally:
             cursor.close()
             db.close()
     
-    def registrar_entrega(
-        self,
-        factura_id: str,
-        cedula_delivery: str,
-        direccion: str,
-        estado: int = 0
-    ) -> str:
+    def registrar_entrega(self) -> str:
         """Registra una nueva entrega"""
+        if not self.factura_id:
+            raise ValueError("La factura es obligatoria")
+        if not self.cedula_delivery:
+            raise ValueError("El delivery es obligatorio")
+        if not self.direccion:
+            raise ValueError("La dirección es obligatoria")
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos")
@@ -169,20 +182,31 @@ class EntregaModel:
         
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT 1 FROM Venta WHERE ID_factura = %s", (factura_id,))
+            cursor.execute("SELECT 1 FROM Venta WHERE ID_factura = %s", (self.factura_id,))
             if not cursor.fetchone():
-                raise ValueError(f"La factura {factura_id} no existe")
+                raise ValueError(f"La factura {self.factura_id} no existe")
             
-            cursor.execute("SELECT 1 FROM Personal_delivery WHERE Cedula_delivery = %s", (cedula_delivery,))
+            cursor.execute("SELECT 1 FROM Personal_delivery WHERE Cedula_delivery = %s", (self.cedula_delivery,))
             if not cursor.fetchone():
-                raise ValueError(f"El delivery con cédula {cedula_delivery} no existe")
+                raise ValueError(f"El delivery con cédula {self.cedula_delivery} no existe")
             
             cursor.execute("""
                 INSERT INTO Entrega (ID_entrega, ID_factura, Cedula_delivery, Estado_entrega, Direccion_entrega, Fecha_entrega)
                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, (entrega_id, factura_id, cedula_delivery, estado, direccion, fecha_entrega))
+            """, (entrega_id, self.factura_id, self.cedula_delivery, self.estado, self.direccion, fecha_entrega))
             
             db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Registrar entrega",
+                    descripcion=f"Se registró la entrega ID: {entrega_id} para factura: {self.factura_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                )
+                bitacora.registrar()
+            
+            self.entrega_id = entrega_id
             return entrega_id
         except Exception as e:
             db.rollback()
@@ -191,8 +215,11 @@ class EntregaModel:
             cursor.close()
             db.close()
     
-    def actualizar_entrega(self, entrega_id: str, direccion: str, estado: int) -> str:
+    def actualizar_entrega(self) -> str:
         """Actualiza una entrega existente"""
+        if not self.entrega_id:
+            return "ID de entrega no especificado"
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos"
@@ -203,12 +230,22 @@ class EntregaModel:
                 UPDATE Entrega 
                 SET Direccion_entrega = %s, Estado_entrega = %s
                 WHERE ID_entrega = %s
-            """, (direccion, estado, entrega_id))
+            """, (self.direccion, self.estado, self.entrega_id))
             
             if cursor.rowcount == 0:
                 return "Entrega no encontrada"
             
             db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar entrega",
+                    descripcion=f"Se actualizó la entrega ID: {self.entrega_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                )
+                bitacora.registrar()
+            
             return "Entrega actualizada exitosamente"
         except Exception as e:
             db.rollback()
@@ -218,20 +255,33 @@ class EntregaModel:
             cursor.close()
             db.close()
     
-    def eliminar_entrega(self, entrega_id: str) -> str:
+    def eliminar_entrega(self) -> str:
         """Elimina una entrega"""
+        if not self.entrega_id:
+            return "ID de entrega no especificado"
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos"
         
         cursor = db.cursor()
         try:
-            cursor.execute("DELETE FROM Entrega WHERE ID_entrega = %s", (entrega_id,))
+            cursor.execute("DELETE FROM Entrega WHERE ID_entrega = %s", (self.entrega_id,))
             
             if cursor.rowcount == 0:
                 return "Entrega no encontrada"
             
             db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar entrega",
+                    descripcion=f"Se eliminó la entrega ID: {self.entrega_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                )
+                bitacora.registrar()
+            
             return "Entrega eliminada exitosamente"
         except Exception as e:
             db.rollback()

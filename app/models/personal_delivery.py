@@ -1,12 +1,17 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 from typing import List, Dict, Any
 
 
 class PersonalDeliveryModel:
     """Modelo para gestionar el personal de delivery"""
     
-    def __init__(self):
+    def __init__(self, cedula: str = None, nombre: str = None, apellido: str = None, usuario_id: str = None):
+        self.cedula = cedula
+        self.nombre = nombre
+        self.apellido = apellido
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
     
     def listar_personal(self) -> List[Dict[str, Any]]:
@@ -34,8 +39,12 @@ class PersonalDeliveryModel:
             cursor.close()
             db.close()
     
-    def obtener_personal_por_cedula(self, cedula: str) -> Dict[str, Any] | None:
+    def obtener_personal_por_cedula(self, cedula: str = None) -> Dict[str, Any] | None:
         """Obtiene un delivery por su cédula"""
+        ced = cedula or self.cedula
+        if not ced:
+            return None
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return None
@@ -50,14 +59,18 @@ class PersonalDeliveryModel:
                     CONCAT(Nombre_delivery, ' ', Apellido_delivery) AS nombre_completo
                 FROM Personal_delivery
                 WHERE Cedula_delivery = %s
-            """, (cedula,))
+            """, (ced,))
             return cursor.fetchone()
         finally:
             cursor.close()
             db.close()
     
-    def verificar_personal_existe(self, cedula: str) -> bool:
+    def verificar_personal_existe(self, cedula: str = None) -> bool:
         """Verifica si un delivery existe"""
+        ced = cedula or self.cedula
+        if not ced:
+            return False
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return False
@@ -66,40 +79,36 @@ class PersonalDeliveryModel:
         try:
             cursor.execute(
                 "SELECT 1 FROM Personal_delivery WHERE Cedula_delivery = %s LIMIT 1",
-                (cedula,)
+                (ced,)
             )
             return cursor.fetchone() is not None
         finally:
             cursor.close()
             db.close()
     
-    def agregar_personal(self, cedula: str, nombre: str, apellido: str) -> str:
+    def agregar_personal(self) -> str:
         """Agrega un nuevo delivery"""
-        cedula = cedula.strip()
-        nombre = nombre.strip()
-        apellido = apellido.strip()
-        
-        if not cedula:
+        if not self.cedula:
             return "La cédula es obligatoria."
-        if not nombre:
+        if not self.nombre:
             return "El nombre es obligatorio."
-        if not apellido:
+        if not self.apellido:
             return "El apellido es obligatorio."
         
-        if not cedula.isdigit():
+        if not self.cedula.isdigit():
             return "La cédula debe contener solo números."
         
-        if len(cedula) > 15:
+        if len(self.cedula) > 15:
             return "La cédula no puede exceder 15 caracteres."
         
-        if len(nombre) > 40:
+        if len(self.nombre) > 40:
             return "El nombre no puede exceder 40 caracteres."
         
-        if len(apellido) > 40:
+        if len(self.apellido) > 40:
             return "El apellido no puede exceder 40 caracteres."
         
-        if self.verificar_personal_existe(cedula):
-            return f"Ya existe un delivery con cédula {cedula}."
+        if self.verificar_personal_existe():
+            return f"Ya existe un delivery con cédula {self.cedula}."
         
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -110,8 +119,17 @@ class PersonalDeliveryModel:
             cursor.execute("""
                 INSERT INTO Personal_delivery (Cedula_delivery, Nombre_delivery, Apellido_delivery)
                 VALUES (%s, %s, %s)
-            """, (cedula, nombre, apellido))
+            """, (self.cedula, self.nombre, self.apellido))
             db.commit()
+            
+            if self.usuario_id:
+                Bitacora(
+                    accion="Registrar delivery",
+                    descripcion=f"Se registró al delivery: {self.nombre} {self.apellido} - Cédula: {self.cedula}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                ).registrar()
+            
             return "Delivery registrado exitosamente."
         except Exception as e:
             db.rollback()
@@ -121,21 +139,17 @@ class PersonalDeliveryModel:
             cursor.close()
             db.close()
     
-    def actualizar_personal(self, cedula: str, nombre: str, apellido: str) -> str:
+    def actualizar_personal(self) -> str:
         """Actualiza un delivery existente"""
-        cedula = cedula.strip()
-        nombre = nombre.strip()
-        apellido = apellido.strip()
-        
-        if not cedula:
+        if not self.cedula:
             return "La cédula es obligatoria."
-        if not nombre:
+        if not self.nombre:
             return "El nombre es obligatorio."
-        if not apellido:
+        if not self.apellido:
             return "El apellido es obligatorio."
         
-        if not self.verificar_personal_existe(cedula):
-            return f"No existe un delivery con cédula {cedula}."
+        if not self.verificar_personal_existe():
+            return f"No existe un delivery con cédula {self.cedula}."
         
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -147,8 +161,17 @@ class PersonalDeliveryModel:
                 UPDATE Personal_delivery 
                 SET Nombre_delivery = %s, Apellido_delivery = %s
                 WHERE Cedula_delivery = %s
-            """, (nombre, apellido, cedula))
+            """, (self.nombre, self.apellido, self.cedula))
             db.commit()
+            
+            if self.usuario_id:
+                Bitacora(
+                    accion="Actualizar delivery",
+                    descripcion=f"Se actualizó al delivery con cédula: {self.cedula}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                ).registrar()
+            
             return "Delivery actualizado exitosamente."
         except Exception as e:
             db.rollback()
@@ -158,15 +181,17 @@ class PersonalDeliveryModel:
             cursor.close()
             db.close()
     
-    def eliminar_personal(self, cedula: str) -> str:
+    def eliminar_personal(self) -> str:
         """Elimina un delivery"""
-        cedula = cedula.strip()
-        
-        if not cedula:
+        if not self.cedula:
             return "La cédula es obligatoria."
         
-        if not self.verificar_personal_existe(cedula):
-            return f"No existe un delivery con cédula {cedula}."
+        if not self.verificar_personal_existe():
+            return f"No existe un delivery con cédula {self.cedula}."
+        
+        # Obtener nombre antes de eliminar
+        personal_info = self.obtener_personal_por_cedula()
+        nombre_completo = f"{personal_info.get('nombre', '')} {personal_info.get('apellido', '')}" if personal_info else self.cedula
         
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -174,19 +199,27 @@ class PersonalDeliveryModel:
         
         cursor = db.cursor()
         try:
-            # Verificar si tiene entregas asociadas
             cursor.execute(
                 "SELECT 1 FROM Entrega WHERE Cedula_delivery = %s LIMIT 1",
-                (cedula,)
+                (self.cedula,)
             )
             if cursor.fetchone():
                 return "No se puede eliminar el delivery porque tiene entregas asociadas."
             
             cursor.execute(
                 "DELETE FROM Personal_delivery WHERE Cedula_delivery = %s",
-                (cedula,)
+                (self.cedula,)
             )
             db.commit()
+            
+            if self.usuario_id:
+                Bitacora(
+                    accion="Eliminar delivery",
+                    descripcion=f"Se eliminó al delivery con cédula: {self.cedula} - Nombre: {nombre_completo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                ).registrar()
+            
             return "Delivery eliminado exitosamente."
         except Exception as e:
             db.rollback()

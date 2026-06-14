@@ -150,7 +150,7 @@
 				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Compras</a>
 
 				{# 9. Entregas #}
-				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
+				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Entregas</a>
 
 				{# 10. Trade-in clientes #}
 				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Cotizar Trade-in</a>
@@ -170,8 +170,6 @@
 				{# 14. Bitácora #}
 				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
 
-				{# 15. Seguridad de BD #}
-				<a class="drawer__link {% if active_page == 'seguridad_bd' %}is-active{% endif %}" href="{{ url_for('backup.pagina_backup') }}">Seguridad de BD</a>
 
 			{% elif g.user %}
 				{# ==================== USUARIO NORMAL (EMPLEADO O CLIENTE LOGUEADO) ==================== #}

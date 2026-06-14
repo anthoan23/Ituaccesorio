@@ -7,11 +7,13 @@ class Inventario:
     """Modelo para la tabla Existencias_productos - SOLO LECTURA"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
-                 existencia: int = 0, costo_venta: Decimal = Decimal(0)):
+                 existencia: int = 0, costo_venta: Decimal = Decimal(0), 
+                 usuario_id: str = None):
         self.id_inventario = id_inventario
         self.id_producto = id_producto
         self.existencia = existencia
         self.costo_venta = costo_venta
+        self.usuario_id = usuario_id  # Usuario que realiza la acción
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -206,10 +208,11 @@ class FotosInventario:
     """Modelo para la tabla Fotos_inventario"""
     
     def __init__(self, id_foto_inventario: str = "", id_inventario: str = "", 
-                 foto_inventario: str = ""):
+                 foto_inventario: str = "", usuario_id: str = None):
         self.id_foto_inventario = id_foto_inventario
         self.id_inventario = id_inventario
         self.foto_inventario = foto_inventario
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):

@@ -44,8 +44,9 @@
 									       autocomplete="username" 
 									       placeholder="Email / Usuario" 
 									       required 
-									       maxlength="50"
-									       data-validator-config='{"maxLength": {"value": 50}}'>
+									       maxlength="15"
+									       data-validation-rules="sinEspacios"
+									       title="Sin espacios">
 								</label>
 
 								<label class="pfield">
@@ -64,7 +65,8 @@
 										       required 
 										       minlength="6"
 										       maxlength="50"
-										       data-validator-config='{"maxLength": {"value": 50}}'>
+										       data-validation-rules="sinEspacios"
+										       title="Mínimo 6 caracteres, sin espacios">
 										<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 									</div>
 								</label>
@@ -104,8 +106,9 @@
 						<input id="registro-usuario" 
 						       type="text" 
 						       required 
-						       maxlength="50"
-						       data-validator-config='{"maxLength": {"value": 50}}'>
+						       maxlength="15"
+						       data-validation-rules="sinEspacios"
+						       title="Sin espacios">
 					</label>
 					<label class="ui-field">
 						<span>Cédula *</span>
@@ -114,8 +117,8 @@
 						       inputmode="numeric" 
 						       required 
 						       maxlength="10"
-						       pattern="^\d+$"
-						       data-validator-config='{"maxLength": {"value": 10}}'>
+						       data-validation-rules="soloNumeros"
+						       title="Solo números">
 					</label>
 					<label class="ui-field">
 						<span>Contraseña *</span>
@@ -125,7 +128,8 @@
 							       required 
 							       minlength="6"
 							       maxlength="50"
-							       data-validator-config='{"maxLength": {"value": 50}}'>
+							       data-validation-rules="sinEspacios"
+							       title="Mínimo 6 caracteres, sin espacios">
 							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 						</div>
 					</label>
@@ -136,7 +140,9 @@
 							       type="password" 
 							       required 
 							       minlength="6"
-							       maxlength="50">
+							       maxlength="50"
+							       data-validation-rules="sinEspacios"
+							       title="Mínimo 6 caracteres, sin espacios">
 							<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
 						</div>
 					</label>
@@ -157,45 +163,48 @@
 						<input id="perfil-nombre" 
 						       type="text" 
 						       required 
-						       maxlength="40"
-						       data-validator-config='{"maxLength": {"value": 40}}'>
+						       maxlength="15"
+						       data-validation-rules="soloLetras,capitalizar"
+						       title="Solo letras, espacios, acentos y ñ">
+						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
 					</label>
 					<label class="ui-field">
 						<span>Apellido *</span>
 						<input id="perfil-apellido" 
 						       type="text" 
 						       required 
-						       maxlength="40"
-						       data-validator-config='{"maxLength": {"value": 40}}'>
+						       maxlength="15"
+						       data-validation-rules="soloLetras,capitalizar"
+						       title="Solo letras, espacios, acentos y ñ">
+						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
 					</label>
 					<label class="ui-field">
 						<span>Celular *</span>
 						<input id="perfil-celular" 
 						       type="tel" 
 						       required 
-						       maxlength="15"
-						       pattern="^[\d\s\-+()]{7,15}$"
-						       data-validator-config='{
-						           "maxLength": {"value": 15},
-						           "customRules": [{
-						               "validate": "function(value) { return value.replace(/[\\s\\-\\+\\(\\)]/g, \"\").length >= 10; }",
-						               "message": "El número de celular debe tener al menos 10 dígitos"
-						           }]
-						       }'>
+						       maxlength="11"
+						       data-validation-rules="telefono"
+						       title="Formato: 04141234567 (11 dígitos)">
+						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
 					</label>
 					<label class="ui-field">
 						<span>Correo</span>
 						<input id="perfil-correo" 
 						       type="email" 
 						       maxlength="120"
-						       data-validator-config='{"maxLength": {"value": 120}}'>
+						       data-validation-rules="email"
+						       title="Correo electrónico válido">
+						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
 					</label>
 					<label class="ui-field ui-field--full">
 						<span>Dirección</span>
 						<input id="perfil-direccion" 
 						       type="text" 
-						       maxlength="255"
-						       data-validator-config='{"maxLength": {"value": 255}}'>
+						       maxlength="40"
+						       data-validation-rules="sinCaracteresEspeciales"
+						       title="Sin caracteres especiales">
+						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
 					</label>
 				</div>
 				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Persona Natural</strong>.</p>

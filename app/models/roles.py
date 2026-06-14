@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Rol:
-    def __init__(self, id: str = "", nombre: str = "", descripcion: str = ""):
+    def __init__(self, id: str = "", nombre: str = "", descripcion: str = "", usuario_id: str = None):
         self.id = id
         self.nombre = nombre
         self.descripcion = descripcion
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def listar_roles(self):
@@ -95,7 +97,18 @@ class Rol:
             )
             db.commit()
             self.id = str(cursor.lastrowid)
-            return f"Rol agregado exitosamente."
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear rol",
+                    descripcion=f"Se creó el rol: {nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
+            return "Rol agregado exitosamente."
         except Exception as e:
             print(f"Error al agregar rol: {e}")
             db.rollback()
@@ -138,6 +151,17 @@ class Rol:
                 (nombre, descripcion, rol_id),
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar rol",
+                    descripcion=f"Se actualizó el rol ID: {rol_id} - Nuevo nombre: {nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Rol actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar rol: {e}")
@@ -171,6 +195,17 @@ class Rol:
         try:
             cursor.execute("DELETE FROM rol WHERE id = %s", (rol_id,))
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar rol",
+                    descripcion=f"Se eliminó el rol ID: {rol_id} - Nombre: {rol_actual['nombre'] if rol_actual else ''}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Rol eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar rol: {e}")

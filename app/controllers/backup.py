@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g, send_file, after_this_request
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.backup import Backup
 import os
 
@@ -48,13 +47,7 @@ def api_crear_backup():
         return jsonify({"success": False, "message": result['message']}), 400
     
     # Registrar en bitácora
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-    registrar_en_bitacora(
-        accion="Crear backup",
-        descripcion=f"Se creó backup de la base de datos {database_name} - Archivo: {result['filename']}",
-        usuario_id=usuario_id,
-        modulo_nombre="Backup"
-    )
+    
     
     # Enviar archivo y limpiar después
     response = send_file(
@@ -107,13 +100,7 @@ def api_restaurar_backup():
     result = backup_model.restaurar_backup(file_content)
     
     if result['success']:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Restaurar backup",
-            descripcion=f"Se restauró backup en la base de datos {database_name} - Archivo: {backup_file.filename}",
-            usuario_id=usuario_id,
-            modulo_nombre="Backup"
-        )
+       
         return jsonify(result), 200
     else:
         return jsonify(result), 400

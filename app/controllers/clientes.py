@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.clientes import Clientes, Persona_natural, Cliente_juridico
-from app.models.bitacora import registrar_en_bitacora
 
 clientes_blueprint = Blueprint("clientes", __name__)
 
@@ -39,24 +38,21 @@ def api_registrar_persona_natural():
     telefono_cliente = data.get("telefono_cliente", "").strip()
     correo_cliente = data.get("correo_cliente", "").strip()
     
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     cliente_model = Persona_natural(
         Cedula_cliente=Id_cliente,
         Nombre_cliente=nombre_cliente,
         Apellido_cliente=apellido_cliente,
         Direccion_cliente=direccion_cliente,
         Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente
+        Correo_cliente=correo_cliente,
+        usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.registrar_persona_natural()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Registrar cliente natural",
-            descripcion=f"Se registró el cliente natural: {Id_cliente} - {nombre_cliente} {apellido_cliente}",
-            usuario_id=usuario_id,
-            modulo_nombre="Clientes"
-        )
         return jsonify({"success": True, "message": mensaje}), 201
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -78,24 +74,21 @@ def api_actualizar_persona_natural(cedula):
     if not nombre_cliente:
         return jsonify({"success": False, "message": "El nombre del cliente es obligatorio."}), 400
     
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     cliente_model = Persona_natural(
         Cedula_cliente=cedula,
         Nombre_cliente=nombre_cliente,
         Apellido_cliente=apellido_cliente,
         Direccion_cliente=direccion_cliente,
         Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente
+        Correo_cliente=correo_cliente,
+        usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.actualizar_persona_natural()
     
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Actualizar cliente natural",
-            descripcion=f"Se actualizó el cliente natural: {cedula} - {nombre_cliente} {apellido_cliente}",
-            usuario_id=usuario_id,
-            modulo_nombre="Clientes"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -113,24 +106,21 @@ def api_registrar_cliente_juridico():
     telefono_cliente = data.get("telefono_cliente", "").strip()
     correo_cliente = data.get("correo_cliente", "").strip()
     
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     cliente_model = Cliente_juridico(
         Id_cliente=Id_cliente,
         Razon_social=razon_social,
         RIF=rif,
         Direccion_cliente=direccion_cliente,
         Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente
+        Correo_cliente=correo_cliente,
+        usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.registrar_cliente_juridico()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Registrar cliente jurídico",
-            descripcion=f"Se registró el cliente jurídico: {Id_cliente} - {razon_social}",
-            usuario_id=usuario_id,
-            modulo_nombre="Clientes"
-        )
         return jsonify({"success": True, "message": mensaje}), 201
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -152,24 +142,21 @@ def api_actualizar_cliente_juridico(id_cliente):
     if not razon_social:
         return jsonify({"success": False, "message": "La razón social del cliente es obligatoria."}), 400
     
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     cliente_model = Cliente_juridico(
         Id_cliente=id_cliente,
         Razon_social=razon_social,
         RIF=rif,
         Direccion_cliente=direccion_cliente,
         Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente
+        Correo_cliente=correo_cliente,
+        usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.actualizar_cliente_juridico()
     
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Actualizar cliente jurídico",
-            descripcion=f"Se actualizó el cliente jurídico: {id_cliente} - {razon_social}",
-            usuario_id=usuario_id,
-            modulo_nombre="Clientes"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
         return jsonify({"success": False, "message": mensaje}), 400
@@ -183,21 +170,16 @@ def api_eliminar_cliente(id_cliente):
     if not id_cliente:
         return jsonify({"success": False, "message": "El ID del cliente es obligatorio."}), 400
 
-    cliente_model_temp = Clientes()
-    cliente_existente = cliente_model_temp.obtener_cliente_por_id(id_cliente)
-    nombre_cliente = cliente_existente.get("nombre_cliente") if cliente_existente else id_cliente
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
-    cliente_model = Clientes(ID_cliente=id_cliente)
+    cliente_model = Clientes(
+        ID_cliente=id_cliente,
+        usuario_id=usuario_actual_id
+    )
     mensaje = cliente_model.eliminar_cliente()
     
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        registrar_en_bitacora(
-            accion="Eliminar cliente",
-            descripcion=f"Se eliminó el cliente ID: {id_cliente} - Nombre: {nombre_cliente}",
-            usuario_id=usuario_id,
-            modulo_nombre="Clientes"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     else:
         return jsonify({"success": False, "message": mensaje}), 400

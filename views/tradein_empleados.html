@@ -4,6 +4,7 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
   rel="stylesheet"
   href="{{ url_for('static', filename='css/tradein_empleados.css') }}"
 />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %} {% block content %}
 <main class="page">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -139,7 +140,6 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
             </select>
           </div>
 
-          <!-- Dentro del modal de registro, reemplazar el campo IMEI -->
           <div class="form__field">
             <label class="form__label">IMEI / ID del equipo *</label>
             <input
@@ -149,10 +149,12 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               class="form-input"
               placeholder="Número IMEI o ID único del equipo"
               required
+              maxlength="30"
+              data-validation-rules="soloNumeros,sinEspacios"
+              title="Solo números, sin espacios"
             />
             <small class="form-hint"
-              >Ingrese el IMEI del equipo (obligatorio). Si ya existe, se
-              reutilizará.</small
+              >Ingrese el IMEI del equipo solo números, sin espacios.</small
             >
           </div>
 
@@ -164,7 +166,11 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               name="color"
               class="form-input"
               placeholder="Ej: Negro, Azul..."
+              maxlength="30"
+              data-validation-rules="soloLetras,capitalizar"
+              title="Solo letras, espacios, acentos y ñ"
             />
+            <small class="form-hint">Solo letras, espacios, acentos y ñ</small>
           </div>
 
           <div class="form__field">
@@ -175,7 +181,11 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               name="capacidad"
               class="form-input"
               placeholder="Ej: 128GB, 256GB..."
+              maxlength="20"
+              data-validation-rules="soloLetrasNumeros"
+              title="Solo letras y números"
             />
+            <small class="form-hint">Solo letras y números (ej: 128GB)</small>
           </div>
 
           <div class="form__field">
@@ -186,7 +196,11 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               name="clave"
               class="form-input"
               placeholder="Código de desbloqueo"
+              maxlength="10"
+              data-validation-rules="soloNumeros"
+              title="Solo números"
             />
+            <small class="form-hint">Solo números</small>
           </div>
 
           <div class="form__field">
@@ -197,21 +211,26 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               name="patron"
               class="form-input"
               placeholder="Patrón de desbloqueo"
+              maxlength="20"
+              data-validation-rules="soloNumeros"
+              title="Solo números"
             />
+            <small class="form-hint">Solo números</small>
           </div>
 
           <div class="form__field">
             <label class="form__label">Valor pagado ($) *</label>
             <input
-              type="number"
+              type="text"
               id="valor-pagado"
               name="valor_pagado"
               class="form-input"
-              step="0.01"
-              min="0"
-              required
               placeholder="0.00"
+              required
+              data-validation-rules="decimal"
+              title="Solo números, puede incluir hasta 2 decimales"
             />
+            <small class="form-hint">Solo números (ej: 100, 150.50, 99.99)</small>
           </div>
 
           <div class="form__field form__field--full">
@@ -222,7 +241,11 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
               class="form-textarea"
               rows="3"
               placeholder="Notas adicionales sobre el equipo..."
+              maxlength="500"
+              data-validation-rules="sinCaracteresEspeciales"
+              title="Sin caracteres especiales"
             ></textarea>
+            <small class="form-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
           </div>
 
           <div class="form__field form__field--full">
@@ -294,6 +317,7 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
   </div>
 </div>
 {% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
 <script
   defer
   src="{{ url_for('static', filename='js/tradein_empleados.js') }}"

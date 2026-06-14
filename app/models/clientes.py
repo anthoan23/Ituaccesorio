@@ -1,16 +1,20 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
+
 
 class Clientes():
-    def __init__(self, ID_cliente=None, Direccion_cliente=None, Celular_cliente=None, Correo_cliente=None, **kwargs):
+    def __init__(self, ID_cliente=None, Direccion_cliente=None, Celular_cliente=None, 
+                 Correo_cliente=None, usuario_id: str = None, **kwargs):
         self.ID_cliente = ID_cliente
         self.Direccion_cliente = Direccion_cliente
         self.Celular_cliente = Celular_cliente
         self.Correo_cliente = Correo_cliente
+        self.usuario_id = usuario_id  # Usuario que realiza la acción
        
         self._conexion_bd = conectar()
 
-    """" Inicio de metodos"""
+    """ Inicio de metodos"""
 
     def listar_clientes(self):
         db = self._conexion_bd.conexion1()
@@ -75,6 +79,24 @@ class Clientes():
         
         cursor = db.cursor()
         try: 
+            # Obtener nombre antes de eliminar (para bitácora)
+            nombre_cliente = Id_cliente
+            cursor.execute(
+                "SELECT CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) as nombre FROM Persona_natural p WHERE p.ID_cliente = %s",
+                (Id_cliente,)
+            )
+            row = cursor.fetchone()
+            if row:
+                nombre_cliente = row[0]
+            else:
+                cursor.execute(
+                    "SELECT Razon_social FROM Cliente_juridico WHERE ID_cliente = %s",
+                    (Id_cliente,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    nombre_cliente = row[0]
+
             sql = "DELETE FROM Persona_natural WHERE ID_cliente = %s"
             cursor.execute(sql, (Id_cliente,))
             db.commit()
@@ -86,6 +108,17 @@ class Clientes():
             sql = "DELETE FROM Cliente WHERE ID_cliente = %s"
             cursor.execute(sql, (Id_cliente,))
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar cliente",
+                    descripcion=f"Se eliminó el cliente ID: {Id_cliente} - Nombre: {nombre_cliente}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             mensaje = f"El cliente de cédula '{Id_cliente}' ha sido eliminado exitosamente."
             return mensaje
         except Exception as e:
@@ -155,7 +188,8 @@ class Clientes():
             Apellido_cliente=apellido,
             Telefono_cliente=celular,
             Correo_cliente=correo,
-            Direccion_cliente=direccion
+            Direccion_cliente=direccion,
+            usuario_id=self.usuario_id
         )
         
         resultado = persona.registrar_persona_natural()
@@ -333,6 +367,17 @@ class Clientes():
                         )
             
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar cliente",
+                    descripcion=f"Se actualizó el cliente ID: {cliente_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             return "Cliente actualizado exitosamente."
         except Exception as e:
             db.rollback()
@@ -341,7 +386,8 @@ class Clientes():
         finally:
             cursor.close()
             db.close()
-"""Fin de los añadios de Eduin"""
+
+
 class Persona_natural(Clientes):
     def __init__(
         self,
@@ -351,6 +397,7 @@ class Persona_natural(Clientes):
         Direccion_cliente=None,
         Telefono_cliente=None,
         Correo_cliente=None,
+        usuario_id: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -358,6 +405,7 @@ class Persona_natural(Clientes):
             Direccion_cliente=Direccion_cliente,
             Celular_cliente=Telefono_cliente,
             Correo_cliente=Correo_cliente,
+            usuario_id=usuario_id,
         )
         self.Cedula_cliente = Cedula_cliente
         self.Apellido_cliente = Apellido_cliente
@@ -413,6 +461,17 @@ class Persona_natural(Clientes):
                 (cedula, apellido, nombre)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Registrar cliente natural",
+                    descripcion=f"Se registró el cliente natural: {cedula} - {nombre} {apellido}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             return f"El cliente '{nombre} {apellido}' se registró exitosamente."
         except Exception as e:
             db.rollback()
@@ -474,6 +533,17 @@ class Persona_natural(Clientes):
                 (nombre, apellido, cedula)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar cliente natural",
+                    descripcion=f"Se actualizó el cliente natural: {cedula} - {nombre} {apellido}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             mensaje = f"El cliente '{nombre} {apellido}' se actualizó exitosamente."
             return mensaje
         except Exception as e:
@@ -497,6 +567,7 @@ class Cliente_juridico(Clientes):
         Direccion_cliente=None,
         Telefono_cliente=None,
         Correo_cliente=None,
+        usuario_id: str = None,
         **kwargs,
     ):
         codigo = Id_cliente or Rif_cliente or RIF
@@ -505,6 +576,7 @@ class Cliente_juridico(Clientes):
             Direccion_cliente=Direccion_cliente,
             Celular_cliente=Telefono_cliente,
             Correo_cliente=Correo_cliente,
+            usuario_id=usuario_id,
         )
         self.Id_cliente = codigo
         self.Razon_social = Razon_social
@@ -552,6 +624,17 @@ class Cliente_juridico(Clientes):
                 (rif, razon_social, rif)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Registrar cliente jurídico",
+                    descripcion=f"Se registró el cliente jurídico: {rif} - {razon_social}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             return f"El cliente jurídico '{razon_social}' se registró exitosamente."
         except Exception as e:
             db.rollback()
@@ -604,6 +687,17 @@ class Cliente_juridico(Clientes):
                 (razon_social, rif, rif)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar cliente jurídico",
+                    descripcion=f"Se actualizó el cliente jurídico: {rif} - {razon_social}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Clientes"
+                )
+                bitacora.registrar()
+            
             mensaje = f"El cliente jurídico '{razon_social}' se actualizó exitosamente."
             return mensaje
         except Exception as e:

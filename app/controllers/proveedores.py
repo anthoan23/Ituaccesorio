@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.proveedores import Proveedores
 from app.models.productos import Producto
 
@@ -105,15 +104,6 @@ def api_crear_proveedor():
         else:
             new_id = modelo.crear_proveedor()
         
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear proveedor",
-            descripcion=f"Se creó el proveedor: {nombre} - Tipo: {tipo or 'N/A'} - Límite crédito: {limite_val or 0}",
-            usuario_id=usuario_id,
-            modulo_nombre="Proveedores"
-        )
-        
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -171,16 +161,6 @@ def api_actualizar_proveedor(id_proveedor: int):
         
         ok = modelo.actualizar_proveedor()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Actualizar proveedor",
-                descripcion=f"Se actualizó el proveedor ID: {id_proveedor} - Nuevo nombre: {nombre}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
-        
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -232,15 +212,13 @@ def api_eliminar_proveedor(id_proveedor: int):
         
         ok = modelo.eliminar_proveedor()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Eliminar proveedor",
-                descripcion=f"Se eliminó el proveedor ID: {id_proveedor} - Nombre: {nombre_proveedor}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
+        modelo = Proveedores(
+            id_proveedor=id_proveedor,
+            nombre=nombre_proveedor,
+            usuario_id=usuario_id
+        )
+        
+        ok = modelo.eliminar_proveedor()
         
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
