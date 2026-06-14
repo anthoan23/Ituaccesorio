@@ -21,7 +21,7 @@ class CatalogoModel:
         
         cursor = db.cursor(dictionary=True)
         try:
-            where = ["i.Existencia > 0"]
+            where = ["e.Existencia > 0"]
             params = []
             
             if clase_id:
@@ -39,16 +39,16 @@ class CatalogoModel:
             
             query = f"""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
                     COALESCE(cl.Nombre_Clase, '') AS clase,
-                    i.Costo_venta AS precio_usd,
-                    i.Existencia AS stock,
+                    e.Costo_venta AS precio_usd,
+                    e.Existencia AS stock,
                     COALESCE((
                         SELECT fi.Foto_inventario
                         FROM Fotos_inventario fi
-                        WHERE fi.ID_inventario = i.ID_inventario
+                        WHERE fi.ID_inventario = e.ID_inventario
                         ORDER BY fi.ID_foto_inventario DESC
                         LIMIT 1
                     ), '') AS imagen,
@@ -58,10 +58,10 @@ class CatalogoModel:
                     COALESCE((
                         SELECT SUM(dv.Cantidad_articulo)
                         FROM Detalle_venta dv
-                        WHERE dv.ID_inventario = i.ID_inventario
+                        WHERE dv.ID_inventario = e.ID_inventario
                     ), 0) AS veces_vendido
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE {where_sql}
@@ -89,15 +89,15 @@ class CatalogoModel:
         try:
             cursor.execute("""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Costo_venta AS precio_usd,
-                    i.Existencia AS stock
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                    e.Costo_venta AS precio_usd,
+                    e.Existencia AS stock
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                WHERE i.ID_inventario = %s
+                WHERE e.ID_inventario = %s
             """, (inventario_id,))
             
             row = cursor.fetchone()
@@ -143,16 +143,16 @@ class CatalogoModel:
         try:
             cursor.execute("""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Costo_venta AS precio_usd,
+                    e.Costo_venta AS precio_usd,
                     COALESCE(SUM(dv.Cantidad_articulo), 0) AS veces_vendido
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                LEFT JOIN Detalle_venta dv ON dv.ID_inventario = i.ID_inventario
-                GROUP BY i.ID_inventario, p.Nombre_producto, ma.Nombre_marca, i.Costo_venta
+                LEFT JOIN Detalle_venta dv ON dv.ID_inventario = e.ID_inventario
+                GROUP BY e.ID_inventario, p.Nombre_producto, ma.Nombre_marca, e.Costo_venta
                 ORDER BY veces_vendido DESC
                 LIMIT %s
             """, (limite,))
