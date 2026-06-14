@@ -271,14 +271,6 @@ def api_actualizar_modelo(id_modelo: str):
         return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
-
-    modelo = Producto(
-        id_producto=id_modelo,
-        id_clase=id_clase,
-        id_marca=id_marca,
-        nombre=nombre,
-        descripcion=descripcion
-    )
     
     modelo = Producto(
         id_producto=id_modelo, 
