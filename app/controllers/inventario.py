@@ -40,22 +40,24 @@ def _guardar_foto_inventario(archivo):
     return f"/static/img/evidencias/inventario/{nombre_final}"
 
 
+# ==================== LISTADOS ====================
+
 @inventario_blueprint.route("/api/inventario", methods=["GET"])
 @jwt_required
 @tiene_permiso('Inventario', 'consultar')
 def api_listar_inventario():
     """Listado de inventario (stock + modelo + marca + clase)"""
-    modelo = request.args.get("modelo")
+    modelo_buscar = request.args.get("modelo")
     
-    if modelo is not None:
-        modelo = str(modelo).strip()
-        if modelo == "":
-            modelo = None
+    if modelo_buscar is not None:
+        modelo_buscar = str(modelo_buscar).strip()
+        if modelo_buscar == "":
+            modelo_buscar = None
 
     inv = Inventario()
     
-    if modelo:
-        inventario = inv.listar_inventario_general_modelo(modelo) or []
+    if modelo_buscar:
+        inventario = inv.listar_inventario_por_modelo(nombre_modelo=modelo_buscar) or []
     else:
         inventario = inv.listar_inventario_general() or []
     
@@ -71,10 +73,34 @@ def api_listar_inventario():
     return jsonify({"success": True, "inventario": inventario})
 
 
+@inventario_blueprint.route("/api/inventario/productos/bajo-stock", methods=["GET"])
+@jwt_required
+@tiene_permiso('Inventario', 'consultar')
+def api_productos_bajo_stock():
+    """Obtiene productos con stock bajo"""
+    limite = request.args.get("limite", 10, type=int)
+    inv = Inventario()
+    productos = inv.listar_productos_bajo_stock(limite=limite)
+    return jsonify({"success": True, "productos": productos})
+
+
+@inventario_blueprint.route("/api/inventario/productos/sin-stock", methods=["GET"])
+@jwt_required
+@tiene_permiso('Inventario', 'consultar')
+def api_productos_sin_stock():
+    """Obtiene productos sin stock"""
+    inv = Inventario()
+    productos = inv.listar_productos_sin_stock()
+    return jsonify({"success": True, "productos": productos})
+
+
+# ==================== REGISTRO DE STOCK ====================
+
 @inventario_blueprint.route("/api/inventario/stock", methods=["POST"])
 @jwt_required
 @tiene_permiso('Inventario', 'registrar')
 def api_registrar_stock():
+    """Registra o actualiza stock de un producto"""
     print("=== DEBUG: Iniciando registro de stock ===")
     
     # Verificar si es FormData o JSON
@@ -92,69 +118,60 @@ def api_registrar_stock():
     existencia = datos.get("existencia")
     costo_venta = datos.get("costo_venta")
     
-    # Guardar foto
-    foto_inventario = None
-    if archivo:
-        try:
-            foto_inventario = _guardar_foto_inventario(archivo)
-            print(f"Foto guardada en: {foto_inventario}")
-        except ValueError as e:
-            return jsonify({"success": False, "error": str(e)}), 400
-    else:
-        print("No se recibió archivo de foto")
-
-    id_producto_val = str(id_producto).strip() if id_producto not in (None, "") else ""
-    print(f"ID Producto: {id_producto_val}")
-    
-    if not id_producto_val:
-        print("Error: id_producto vacío")
+    # Validar ID del producto
+    if not id_producto:
         return jsonify({"success": False, "error": "id_producto es obligatorio."}), 400
-
-    if not foto_inventario:
-        print("Error: foto_inventario vacía")
-        return jsonify({"success": False, "error": "foto_inventario es obligatoria."}), 400
-
+    
+    # Validar existencia
     try:
         existencia_val = int(existencia)
-        print(f"Existencia: {existencia_val}")
+        if existencia_val < 0:
+            return jsonify({"success": False, "error": "existencia no puede ser negativa."}), 400
     except Exception as e:
-        print(f"Error parsing existencia: {e}")
         return jsonify({"success": False, "error": "existencia debe ser un número."}), 400
 
+    # Validar costo
     try:
         costo_raw = str(costo_venta).strip().replace(",", ".")
         costo_val = Decimal(costo_raw)
-        print(f"Costo venta: {costo_val}")
-    except (InvalidOperation, Exception) as e:
-        print(f"Error parsing costo: {e}")
+        if costo_val < 0:
+            return jsonify({"success": False, "error": "costo_venta no puede ser negativo."}), 400
+    except (InvalidOperation, Exception):
         return jsonify({"success": False, "error": "costo_venta debe ser un número (ej. 12.50)."}), 400
 
-    if existencia_val < 0:
-        return jsonify({"success": False, "error": "existencia no puede ser negativa."}), 400
-    if costo_val < 0:
-        return jsonify({"success": False, "error": "costo_venta no puede ser negativo."}), 400
+    # Guardar foto
+    foto_path = None
+    if archivo:
+        try:
+            foto_path = _guardar_foto_inventario(archivo)
+            print(f"Foto guardada en: {foto_path}")
+        except ValueError as e:
+            return jsonify({"success": False, "error": str(e)}), 400
 
-    inv = Inventario()
+    # Instanciar modelo con los datos
+    modelo = Inventario(
+        id_producto=id_producto,
+        existencia=existencia_val,
+        costo_venta=costo_val
+    )
+    
     try:
-        id_inventario = inv.registrar_stock(
-            id_producto=id_producto_val,
-            existencia=existencia_val,
-            costo_venta=costo_val,
-            foto_inventario=foto_inventario,
-        )
-        
+        id_inventario = modelo.registrar_stock()
         print(f"ID inventario retornado: {id_inventario}")
         
-        if not id_inventario:
-            return jsonify({"success": False, "error": "No se pudo registrar el stock."}), 500
+        # Guardar foto si se proporcionó
+        if foto_path and id_inventario:
+            foto_model = FotosInventario(
+                id_inventario=id_inventario,
+                foto_inventario=foto_path
+            )
+            foto_model.registrar_foto()
         
-        # Obtener ID del usuario desde g.user
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
-        # Registrar en bitácora
         registrar_en_bitacora(
             accion="Registrar stock",
-            descripcion=f"Se registró stock para producto ID: {id_producto_val} - Cantidad: {existencia_val} - Costo: {costo_val}",
+            descripcion=f"Se registró stock para producto ID: {id_producto} - Cantidad: {existencia_val} - Costo: {costo_val}",
             usuario_id=usuario_id,
             modulo_nombre="Inventario"
         )
@@ -167,13 +184,15 @@ def api_registrar_stock():
         return jsonify({"success": False, "error": str(error)}), 500
 
 
+# ==================== FOTOS DE INVENTARIO ====================
+
 @inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
 @jwt_required
 @tiene_permiso('Inventario', 'consultar')
 def api_listar_fotos_inventario(id_inventario: str):
     """Lista todas las fotos de un inventario"""
-    fotos = FotosInventario()
-    lista = fotos.listar_fotos(id_inventario)
+    modelo = FotosInventario(id_inventario=id_inventario)
+    lista = modelo.listar_fotos()
     return jsonify({"success": True, "fotos": lista})
 
 
@@ -189,9 +208,13 @@ def api_agregar_foto_inventario():
     if not id_inventario or not foto_url:
         return jsonify({"success": False, "error": "id_inventario y foto_url son requeridos."}), 400
     
-    fotos = FotosInventario()
+    modelo = FotosInventario(
+        id_inventario=id_inventario,
+        foto_inventario=foto_url
+    )
+    
     try:
-        new_id = fotos.insertar_foto(id_inventario, foto_url)
+        new_id = modelo.registrar_foto()
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
@@ -212,9 +235,10 @@ def api_agregar_foto_inventario():
 @tiene_permiso('Inventario', 'eliminar')
 def api_eliminar_foto_inventario(id_foto: str):
     """Elimina una foto de inventario"""
-    fotos = FotosInventario()
+    modelo = FotosInventario(id_foto_inventario=id_foto)
+    
     try:
-        ok = fotos.eliminar_foto(id_foto)
+        ok = modelo.eliminar_foto()
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
             
