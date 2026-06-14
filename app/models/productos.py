@@ -66,48 +66,48 @@ class ClaseProducto:
             cursor.close()
             db.close()
 
-    def actualizar(self) -> bool:
-        if not self.id_clase or not self.nombre:
-            raise ValueError("ID y nombre son requeridos.")
+    # def actualizar(self) -> bool:
+    #     if not self.id_clase or not self.nombre:
+    #         raise ValueError("ID y nombre son requeridos.")
         
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "UPDATE Clase_producto SET Nombre_Clase = %s WHERE ID_Clase = %s",
-                (self.nombre, self.id_clase)
-            )
-            db.commit()
-            return cursor.rowcount > 0
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute(
+    #             "UPDATE Clase_producto SET Nombre_Clase = %s WHERE ID_Clase = %s",
+    #             (self.nombre, self.id_clase)
+    #         )
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
-    def eliminar(self) -> bool:
-        if not self.id_clase:
-            raise ValueError("ID es requerido.")
+    # def eliminar(self) -> bool:
+    #     if not self.id_clase:
+    #         raise ValueError("ID es requerido.")
         
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
-        try:
-            cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase = %s", (self.id_clase,))
-            db.commit()
-            return cursor.rowcount > 0
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase = %s", (self.id_clase,))
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
 
 class MarcaProducto:
@@ -184,48 +184,48 @@ class MarcaProducto:
             cursor.close()
             db.close()
 
-    def actualizar(self) -> bool:
-        if not self.id_marca or not self.nombre:
-            raise ValueError("ID y nombre son requeridos.")
+    # def actualizar(self) -> bool:
+    #     if not self.id_marca or not self.nombre:
+    #         raise ValueError("ID y nombre son requeridos.")
         
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "UPDATE Marca_producto SET Nombre_marca = %s WHERE ID_marca = %s",
-                (self.nombre, self.id_marca)
-            )
-            db.commit()
-            return cursor.rowcount > 0
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute(
+    #             "UPDATE Marca_producto SET Nombre_marca = %s WHERE ID_marca = %s",
+    #             (self.nombre, self.id_marca)
+    #         )
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
-    def eliminar(self) -> bool:
-        if not self.id_marca:
-            raise ValueError("ID es requerido.")
+    # def eliminar(self) -> bool:
+    #     if not self.id_marca:
+    #         raise ValueError("ID es requerido.")
         
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
+    #     db = self._conexion()
+    #     if not db:
+    #         raise RuntimeError("No se pudo conectar a la base de datos.")
         
-        cursor = db.cursor()
-        try:
-            cursor.execute("DELETE FROM Marca_producto WHERE ID_marca = %s", (self.id_marca,))
-            db.commit()
-            return cursor.rowcount > 0
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            cursor.close()
-            db.close()
+    #     cursor = db.cursor()
+    #     try:
+    #         cursor.execute("DELETE FROM Marca_producto WHERE ID_marca = %s", (self.id_marca,))
+    #         db.commit()
+    #         return cursor.rowcount > 0
+    #     except Exception:
+    #         db.rollback()
+    #         raise
+    #     finally:
+    #         cursor.close()
+    #         db.close()
 
 
 class Producto:

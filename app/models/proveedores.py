@@ -36,6 +36,10 @@ class Proveedores:
             if db:
                 db.close()
 
+    def siguiente_id_proveedor(self) -> int:
+        """Obtiene el siguiente ID disponible para un nuevo proveedor"""
+        return self._siguiente_id()
+
     def listar_proveedores(self, q: str | None = None) -> list:
         """Lista todos los proveedores, opcionalmente filtrados por búsqueda"""
         db = self._conexion()
@@ -68,8 +72,13 @@ class Proveedores:
             cursor.close()
             db.close()
 
-    def obtener_proveedor(self, id_proveedor: int) -> dict | None:
+    def obtener_proveedor(self, id_proveedor: int = None) -> dict | None:
         """Obtiene un proveedor por su ID"""
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
+            return None
+            
         db = self._conexion()
         if not db:
             return None
@@ -88,7 +97,7 @@ class Proveedores:
                 FROM Proveedor
                 WHERE ID_proveedor = %s
                 LIMIT 1
-            """, (id_proveedor,))
+            """, (proveedor_id,))
             return cursor.fetchone()
         finally:
             cursor.close()
@@ -107,7 +116,7 @@ class Proveedores:
         try:
             cursor = db.cursor()
             
-            # Si no tiene ID, obtener el siguiente
+            # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
             
@@ -133,9 +142,11 @@ class Proveedores:
             if db:
                 db.close()
 
-    def actualizar_proveedor(self) -> bool:
+    def actualizar_proveedor(self, id_proveedor: int = None) -> bool:
         """Actualiza un proveedor existente usando los atributos de la instancia"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             raise ValueError("ID del proveedor es requerido para actualizar.")
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
@@ -159,7 +170,7 @@ class Proveedores:
                 WHERE ID_proveedor = %s
             """, (self.nombre, self.tipo or None, self.celular or None,
                   self.correo or None, self.direccion or None, 
-                  self.limite_credito or None, self.id_proveedor))
+                  self.limite_credito or None, proveedor_id))
             db.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -172,9 +183,11 @@ class Proveedores:
             if db:
                 db.close()
 
-    def eliminar_proveedor(self) -> bool:
-        """Elimina un proveedor usando el ID de la instancia"""
-        if self.id_proveedor == 0:
+    def eliminar_proveedor(self, id_proveedor: int = None) -> bool:
+        """Elimina un proveedor usando el ID de la instancia o el proporcionado"""
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             raise ValueError("ID del proveedor es requerido para eliminar.")
         
         db = self._conexion()
@@ -184,7 +197,7 @@ class Proveedores:
         cursor = None
         try:
             cursor = db.cursor()
-            cursor.execute("DELETE FROM Proveedor WHERE ID_proveedor = %s", (self.id_proveedor,))
+            cursor.execute("DELETE FROM Proveedor WHERE ID_proveedor = %s", (proveedor_id,))
             db.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -197,9 +210,11 @@ class Proveedores:
             if db:
                 db.close()
 
-    def tiene_relaciones_activas(self) -> tuple[bool, str]:
+    def tiene_relaciones_activas(self, id_proveedor: int = None) -> tuple[bool, str]:
         """Verifica si el proveedor tiene relaciones activas en otros módulos"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             return True, "ID de proveedor no especificado"
         
         db = self._conexion()
@@ -213,7 +228,7 @@ class Proveedores:
                 SELECT COUNT(*) as total FROM Orden_compra 
                 WHERE ID_proveedor = %s 
                 AND Estado_orden_compra IN ('Pendiente', 'Completada')
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             ordenes = cursor.fetchone()
             if ordenes and ordenes['total'] > 0:
                 return True, f"No se puede eliminar el proveedor porque tiene {ordenes['total']} órdenes de compra asociadas."
@@ -222,7 +237,7 @@ class Proveedores:
             cursor.execute("""
                 SELECT COUNT(*) as total FROM Suministra 
                 WHERE ID_proveedor = %s
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             suministros = cursor.fetchone()
             if suministros and suministros['total'] > 0:
                 return True, f"No se puede eliminar el proveedor porque tiene {suministros['total']} productos asociados."
@@ -235,9 +250,11 @@ class Proveedores:
             cursor.close()
             db.close()
 
-    def obtener_detalle_relaciones(self) -> dict:
+    def obtener_detalle_relaciones(self, id_proveedor: int = None) -> dict:
         """Obtiene el detalle de las relaciones activas del proveedor"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             return {}
         
         db = self._conexion()
@@ -252,16 +269,19 @@ class Proveedores:
                 FROM Orden_compra 
                 WHERE ID_proveedor = %s 
                 AND Estado_orden_compra IN ('Pendiente', 'Completada')
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             ordenes = cursor.fetchall()
             
             # Obtener productos suministrados
             cursor.execute("""
-                SELECT p.ID_producto as id, p.Nombre_producto as nombre
+                SELECT 
+                    s.ID_producto as id_modelo,
+                    p.Nombre_producto as nombre,
+                    s.Costo_producto as costo
                 FROM Suministra s
                 JOIN Producto p ON s.ID_producto = p.ID_producto
                 WHERE s.ID_proveedor = %s
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             productos = cursor.fetchall()
             
             return {
@@ -275,9 +295,11 @@ class Proveedores:
             cursor.close()
             db.close()
 
-    def listar_productos_por_proveedor(self) -> list:
+    def listar_productos_por_proveedor(self, id_proveedor: int = None) -> list:
         """Lista los productos que suministra este proveedor"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             return []
         
         db = self._conexion()
@@ -301,15 +323,17 @@ class Proveedores:
                 ORDER BY CAST(cl.ID_Clase AS UNSIGNED) ASC, 
                          CAST(ma.ID_marca AS UNSIGNED) ASC, 
                          p.Nombre_producto ASC
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             return cursor.fetchall() or []
         finally:
             cursor.close()
             db.close()
 
-    def upsert_producto_proveedor(self, id_modelo: str, costo: int | None) -> bool:
+    def upsert_producto_proveedor(self, id_proveedor: int = None, id_modelo: str = None, costo: int | None = None) -> bool:
         """Inserta o actualiza un producto para este proveedor"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             raise ValueError("ID del proveedor es requerido")
         if not id_modelo:
             raise ValueError("ID del modelo es requerido")
@@ -325,7 +349,7 @@ class Proveedores:
                 INSERT INTO Suministra (ID_proveedor, ID_producto, Costo_producto)
                 VALUES (%s, %s, %s)
                 ON DUPLICATE KEY UPDATE Costo_producto = VALUES(Costo_producto)
-            """, (self.id_proveedor, id_modelo, costo))
+            """, (proveedor_id, id_modelo, costo))
             db.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -338,9 +362,11 @@ class Proveedores:
             if db:
                 db.close()
 
-    def eliminar_producto_proveedor(self, id_modelo: str) -> bool:
+    def eliminar_producto_proveedor(self, id_proveedor: int = None, id_modelo: str = None) -> bool:
         """Elimina un producto de este proveedor"""
-        if self.id_proveedor == 0:
+        proveedor_id = id_proveedor if id_proveedor is not None else self.id_proveedor
+        
+        if proveedor_id == 0:
             raise ValueError("ID del proveedor es requerido")
         if not id_modelo:
             raise ValueError("ID del modelo es requerido")
@@ -354,7 +380,7 @@ class Proveedores:
             cursor = db.cursor()
             cursor.execute(
                 "DELETE FROM Suministra WHERE ID_proveedor = %s AND ID_producto = %s",
-                (self.id_proveedor, id_modelo)
+                (proveedor_id, id_modelo)
             )
             db.commit()
             return cursor.rowcount > 0
@@ -381,7 +407,7 @@ class Proveedores:
         try:
             cursor = db.cursor()
             
-            # Si no tiene ID, obtener el siguiente
+            # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
             

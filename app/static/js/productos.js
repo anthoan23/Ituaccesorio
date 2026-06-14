@@ -47,14 +47,11 @@
   // ==================== MODAL DE CONFIRMACIÓN ÚNICO ====================
   
   function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false, tipo = 'info') {
-    // Eliminar modal existente si hay
     const modalExistente = document.getElementById('confirmacion-modal');
     if (modalExistente) modalExistente.remove();
     
-    // Determinar el tipo de modal
     const esError = tipo === 'error';
     const esExito = tipo === 'success';
-    const esInfo = tipo === 'info';
     
     let titulo = "Información";
     let btnTexto = "Aceptar";
@@ -98,7 +95,7 @@
                 <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;text-align:center;">${mensaje}</p>
             </div>
             <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
-                ${!soloInformacion && !esExito && !esInfo ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+                ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
                 <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
             </div>
         </div>
@@ -112,38 +109,33 @@
       document.body.style.overflow = '';
     };
     
-    // Botón cancelar (solo si no es solo información ni éxito)
-    if (!soloInformacion && !esExito && !esInfo) {
+    if (!soloInformacion && !esExito && !esError) {
       const cancelBtn = document.getElementById('btn-cancelar-confirmacion');
       if (cancelBtn) {
         cancelBtn.addEventListener('click', cerrarModal);
       }
     }
     
-    // Botón confirmar
     const confirmBtn = document.getElementById('btn-confirmar-accion');
     if (confirmBtn) {
       confirmBtn.addEventListener('click', async () => {
         cerrarModal();
-        if (onConfirmar && !soloInformacion && !esExito && !esInfo) {
+        if (onConfirmar && !soloInformacion && !esExito && !esError) {
           await onConfirmar();
         }
       });
     }
     
-    // Botón cerrar (X)
     const closeBtn = modalDiv.querySelector('[data-close-modal]');
     if (closeBtn) {
       closeBtn.addEventListener('click', cerrarModal);
     }
     
-    // Cerrar al hacer click en el backdrop
     modalDiv.addEventListener('click', (e) => {
       if (e.target === modalDiv) cerrarModal();
     });
     
-    // Auto cerrar después de 3 segundos si es solo información o éxito
-    if (soloInformacion || esExito || esInfo) {
+    if (soloInformacion || esExito || esError) {
       setTimeout(() => {
         if (document.getElementById('confirmacion-modal')) cerrarModal();
       }, 3000);
@@ -159,8 +151,6 @@
       mostrarModalConfirmacion(message, null, true, 'info');
     }
   }
-
-  // ==================== FIN MODALES ====================
 
   function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     if (!window.FieldValidator) {
@@ -405,7 +395,7 @@
     tabla.innerHTML = modelos
       .map(
         (m) => `
-          <tr>
+          <tr data-id="${escapeHtml(m.id ?? "")}">
             <td><span class="product-thumb" aria-hidden="true"></span></td>
             <td>
               <div class="product-meta">
@@ -418,14 +408,14 @@
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones del producto">
                 <button class="icon-action" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
                 </button>
                 <button class="icon-action" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
                 </button>
               </div>
             </td>
-           </tr>
+          </tr>
         `,
       )
       .join("");
@@ -488,41 +478,6 @@
 
     if (pModelo) pModelo.value = modelo.nombre || "";
     if (pDescripcion) pDescripcion.value = modelo.descripcion || "";
-  }
-
-  async function crearClaseSiHaceFalta() {
-    if (!pClase) return null;
-    if (!isCreatingNewClass) {
-      const v = String(pClase.value || "");
-      return v ? Number(v) : null;
-    }
-
-    const nombre = String(pClaseNueva?.value || "").trim();
-    if (!nombre) throw new Error("Debes escribir el nombre de la nueva clase.");
-
-    const data = await fetchJson("/api/productos/clases", {
-      method: "POST",
-      body: JSON.stringify({ nombre, num_i: null }),
-    });
-
-    return Number(data.id);
-  }
-
-  async function crearMarcaSiHaceFalta(idClase) {
-    if (!pMarca) return null;
-    if (!isCreatingNewBrand) {
-      const v = String(pMarca.value || "");
-      return v ? Number(v) : null;
-    }
-
-    const nombre = String(pMarcaNueva?.value || "").trim();
-    if (!nombre) throw new Error("Debes escribir el nombre de la nueva marca.");
-
-    const data = await fetchJson("/api/productos/marcas", {
-      method: "POST",
-      body: JSON.stringify({ nombre }),
-    });
-    return Number(data.id);
   }
 
   async function onSubmitProducto(event) {
@@ -670,15 +625,58 @@
     }
   }
 
-  // ==================== ELIMINAR PRODUCTO CON MODAL ====================
+  // ==================== ELIMINAR PRODUCTO CORREGIDO ====================
   
+  async function eliminarProducto(id, nombreProducto) {
+    try {
+      const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' });
+      const tieneStock = data.tiene_stock || false;
+      const stock = data.stock || 0;
+      
+      if (tieneStock) {
+        mostrarModalConfirmacion(
+          `No se puede eliminar el producto "${nombreProducto}" porque tiene ${stock} unidades en inventario.`,
+          null,
+          true,
+          'error'
+        );
+      } else {
+        mostrarModalConfirmacion(`¿Seguro que deseas eliminar el producto "${nombreProducto}"?`, async () => {
+          try {
+            await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
+            await recargarModelosSegunFiltros();
+            notify("success", `Producto "${nombreProducto}" eliminado correctamente.`);
+          } catch (err) {
+            notify("error", err?.message || "No se pudo eliminar el producto.");
+          }
+        });
+      }
+    } catch (err) {
+      notify("error", "No se pudo verificar el stock del producto. Intente nuevamente.");
+    }
+  }
+
   async function onTablaClick(event) {
-    const btn = event.target?.closest("button.icon-action");
+    // Buscar el botón en el evento click
+    let target = event.target;
+    
+    // Si el target es un SVG o un path, buscar el botón padre
+    if (target.tagName === 'svg' || target.tagName === 'path') {
+      target = target.closest('button');
+    }
+    
+    const btn = target?.closest('.icon-action');
+    
     if (!btn) return;
 
-    const action = btn.getAttribute("data-action");
-    const id = btn.getAttribute("data-id");
+    const action = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    
     if (!action || !id) return;
+
+    // Prevenir propagación para evitar conflictos
+    event.stopPropagation();
+    event.preventDefault();
 
     if (action === "edit") {
       await prepararFormularioEdicion(id);
@@ -688,34 +686,8 @@
 
     if (action === "delete") {
       const modelo = findModeloById(id);
-      const label = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
-      
-      try {
-        const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' });
-        const tieneStock = data.tiene_stock || false;
-        const stock = data.stock || 0;
-        
-        if (tieneStock) {
-          mostrarModalConfirmacion(
-            `No se puede eliminar el producto "${label}" porque tiene ${stock} unidades en inventario.`,
-            null,
-            true,
-            'error'
-          );
-        } else {
-          mostrarModalConfirmacion(`¿Seguro que deseas eliminar el producto "${label}"?`, async () => {
-            try {
-              await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}`, { method: "DELETE" });
-              await recargarModelosSegunFiltros();
-              notify("success", `Producto "${label}" eliminado correctamente.`);
-            } catch (err) {
-              notify("error", err?.message || "No se pudo eliminar el producto.");
-            }
-          });
-        }
-      } catch (err) {
-        notify("error", "No se pudo verificar el stock del producto. Intente nuevamente.");
-      }
+      const nombreProducto = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
+      await eliminarProducto(id, nombreProducto);
       return;
     }
   }
@@ -856,14 +828,6 @@
       return;
     }
     
-    const colors = {
-      dark: '121212',
-      primary: 'F3C500',
-      white: 'FFFFFF',
-      grayLight: 'F8F9FA',
-      grayBorder: 'E0E0E0'
-    };
-    
     const now = new Date();
     const fechaReporte = now.toLocaleDateString('es-ES', {
       day: '2-digit',
@@ -953,9 +917,7 @@
       dark: [18, 18, 18],
       white: [255, 255, 255],
       grayLight: [248, 249, 250],
-      grayMedium: [245, 246, 248],
       grayText: [102, 102, 106],
-      border: [225, 226, 230]
     };
     
     const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
@@ -1117,7 +1079,7 @@
     btnReportes.addEventListener("click", () => {
       cargarClasesMarcasReporte();
       limpiarFiltrosReporte();
-      reportePreview.style.display = "none";
+      if (reportePreview) reportePreview.style.display = "none";
       if (btnExportarExcel) btnExportarExcel.disabled = true;
       if (btnExportarPdf) btnExportarPdf.disabled = true;
       if (btnImprimir) btnImprimir.disabled = true;

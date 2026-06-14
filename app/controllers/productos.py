@@ -67,64 +67,64 @@ def api_crear_clase():
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Productos', 'modificar')
-def api_actualizar_clase(id_clase: str):
-    datos = request.get_json(silent=True) or {}
-    nombre = str(datos.get("nombre", "")).strip()
+# @productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["PUT"])
+# @jwt_required
+# @tiene_permiso('Productos', 'modificar')
+# def api_actualizar_clase(id_clase: str):
+#     datos = request.get_json(silent=True) or {}
+#     nombre = str(datos.get("nombre", "")).strip()
     
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
+#     if not nombre:
+#         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
-    modelo = ClaseProducto(id_clase=id_clase, nombre=nombre)
-    try:
-        ok = modelo.actualizar()
+#     modelo = ClaseProducto(id_clase=id_clase, nombre=nombre)
+#     try:
+#         ok = modelo.actualizar()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+#         if ok:
+#             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+#             usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+#             usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
             
-            registrar_en_bitacora(
-                "Actualizar clase",
-                f"Clase actualizada: {nombre} (ID: {id_clase})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
+#             registrar_en_bitacora(
+#                 "Actualizar clase",
+#                 f"Clase actualizada: {nombre} (ID: {id_clase})",
+#                 usuario_id=usuario_id,
+#                 modulo_nombre="Productos",
+#                 usuario_nombre=usuario_nombre,
+#                 usuario_foto=usuario_foto
+#             )
         
-        return jsonify({"success": True, "updated": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+#         return jsonify({"success": True, "updated": ok})
+#     except Exception as error:
+#         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Productos', 'eliminar')
-def api_eliminar_clase(id_clase: str):
-    modelo = ClaseProducto(id_clase=id_clase)
-    try:
-        ok = modelo.eliminar()
+# @productos_blueprint.route("/api/productos/clases/<string:id_clase>", methods=["DELETE"])
+# @jwt_required
+# @tiene_permiso('Productos', 'eliminar')
+# def api_eliminar_clase(id_clase: str):
+#     modelo = ClaseProducto(id_clase=id_clase)
+#     try:
+#         ok = modelo.eliminar()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+#         if ok:
+#             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+#             usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+#             usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
             
-            registrar_en_bitacora(
-                "Eliminar clase",
-                f"Clase eliminada (ID: {id_clase})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
+#             registrar_en_bitacora(
+#                 "Eliminar clase",
+#                 f"Clase eliminada (ID: {id_clase})",
+#                 usuario_id=usuario_id,
+#                 modulo_nombre="Productos",
+#                 usuario_nombre=usuario_nombre,
+#                 usuario_foto=usuario_foto
+#             )
         
-        return jsonify({"success": True, "deleted": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+#         return jsonify({"success": True, "deleted": ok})
+#     except Exception as error:
+#         return jsonify({"success": False, "error": str(error)}), 400
 
 
 # ==================== MARCAS ====================
@@ -171,64 +171,64 @@ def api_crear_marca():
         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
-@jwt_required
-@tiene_permiso('Productos', 'modificar')
-def api_actualizar_marca(id_marca: str):
-    datos = request.get_json(silent=True) or {}
-    nombre = str(datos.get("nombre", "")).strip()
+# @productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["PUT"])
+# @jwt_required
+# @tiene_permiso('Productos', 'modificar')
+# def api_actualizar_marca(id_marca: str):
+#     datos = request.get_json(silent=True) or {}
+#     nombre = str(datos.get("nombre", "")).strip()
     
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+#     if not nombre:
+#         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
 
-    modelo = MarcaProducto(id_marca=id_marca, nombre=nombre)
-    try:
-        ok = modelo.actualizar()
+#     modelo = MarcaProducto(id_marca=id_marca, nombre=nombre)
+#     try:
+#         ok = modelo.actualizar()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+#         if ok:
+#             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+#             usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+#             usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
             
-            registrar_en_bitacora(
-                "Actualizar marca",
-                f"Marca actualizada: {nombre} (ID: {id_marca})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
+#             registrar_en_bitacora(
+#                 "Actualizar marca",
+#                 f"Marca actualizada: {nombre} (ID: {id_marca})",
+#                 usuario_id=usuario_id,
+#                 modulo_nombre="Productos",
+#                 usuario_nombre=usuario_nombre,
+#                 usuario_foto=usuario_foto
+#             )
         
-        return jsonify({"success": True, "updated": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+#         return jsonify({"success": True, "updated": ok})
+#     except Exception as error:
+#         return jsonify({"success": False, "error": str(error)}), 400
 
 
-@productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
-@jwt_required
-@tiene_permiso('Productos', 'eliminar')
-def api_eliminar_marca(id_marca: str):
-    modelo = MarcaProducto(id_marca=id_marca)
-    try:
-        ok = modelo.eliminar()
+# @productos_blueprint.route("/api/productos/marcas/<string:id_marca>", methods=["DELETE"])
+# @jwt_required
+# @tiene_permiso('Productos', 'eliminar')
+# def api_eliminar_marca(id_marca: str):
+#     modelo = MarcaProducto(id_marca=id_marca)
+#     try:
+#         ok = modelo.eliminar()
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+#         if ok:
+#             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+#             usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
+#             usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
             
-            registrar_en_bitacora(
-                "Eliminar marca",
-                f"Marca eliminada (ID: {id_marca})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
+#             registrar_en_bitacora(
+#                 "Eliminar marca",
+#                 f"Marca eliminada (ID: {id_marca})",
+#                 usuario_id=usuario_id,
+#                 modulo_nombre="Productos",
+#                 usuario_nombre=usuario_nombre,
+#                 usuario_foto=usuario_foto
+#             )
         
-        return jsonify({"success": True, "deleted": ok})
-    except Exception as error:
-        return jsonify({"success": False, "error": str(error)}), 400
+#         return jsonify({"success": True, "deleted": ok})
+#     except Exception as error:
+#         return jsonify({"success": False, "error": str(error)}), 400
 
 
 # ==================== PRODUCTOS (MODELOS) ====================

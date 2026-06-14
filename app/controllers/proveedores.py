@@ -49,14 +49,17 @@ def api_crear_proveedor():
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
 
     modelo = Proveedores()
-    try:
-        if id_proveedor in (None, ""):
-            id_val = modelo.siguiente_id_proveedor()
-        else:
-            id_val = int(id_proveedor)
-    except Exception:
-        return jsonify({"success": False, "error": "El ID del proveedor debe ser numérico."}), 400
+    
+    # Validar ID del proveedor (0 significa que el modelo generará el ID automáticamente)
+    if id_proveedor in (None, ""):
+        id_val = 0  # El modelo asignará automáticamente el siguiente ID
+    else:
+        try:
+            id_val = int(str(id_proveedor).strip())
+        except (ValueError, TypeError):
+            return jsonify({"success": False, "error": "El ID del proveedor debe ser un número válido."}), 400
 
+    # Validar límite de crédito
     try:
         if limite_credito in (None, ""):
             limite_val = None
@@ -88,27 +91,19 @@ def api_crear_proveedor():
         productos_norm.append({"id_modelo": id_modelo_val, "costo": costo_val})
 
     try:
+        # Asignar valores a la instancia del modelo
+        modelo.id_proveedor = id_val
+        modelo.nombre = nombre
+        modelo.tipo = tipo
+        modelo.celular = celular
+        modelo.correo = correo
+        modelo.direccion = direccion
+        modelo.limite_credito = limite_val
+
         if productos_norm:
-            new_id = modelo.crear_proveedor_con_productos(
-                id_proveedor=id_val,
-                nombre=nombre,
-                tipo=tipo,
-                celular=celular,
-                correo=correo,
-                direccion=direccion,
-                limite_credito=limite_val,
-                productos=productos_norm,
-            )
+            new_id = modelo.crear_proveedor_con_productos(productos=productos_norm)
         else:
-            new_id = modelo.crear_proveedor(
-                id_proveedor=id_val,
-                nombre=nombre,
-                tipo=tipo,
-                celular=celular,
-                correo=correo,
-                direccion=direccion,
-                limite_credito=limite_val,
-            )
+            new_id = modelo.crear_proveedor()
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
@@ -162,15 +157,16 @@ def api_actualizar_proveedor(id_proveedor: int):
 
     modelo = Proveedores()
     try:
-        ok = modelo.actualizar_proveedor(
-            id_proveedor=id_proveedor,
-            nombre=nombre,
-            tipo=tipo,
-            celular=celular,
-            correo=correo,
-            direccion=direccion,
-            limite_credito=limite_val,
-        )
+        # Asignar valores a la instancia del modelo
+        modelo.id_proveedor = id_proveedor
+        modelo.nombre = nombre
+        modelo.tipo = tipo
+        modelo.celular = celular
+        modelo.correo = correo
+        modelo.direccion = direccion
+        modelo.limite_credito = limite_val
+        
+        ok = modelo.actualizar_proveedor()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -382,7 +378,7 @@ def api_reportes_proveedores():
         proveedores_filtrados.append(p)
     
     for p in proveedores_filtrados:
-        productos = modelo.listar_productos_por_proveedor(int(p["id"])) or []
+        productos = modelo.listar_productos_por_proveedor(id_proveedor=int(p["id"])) or []
         p["total_productos"] = len(productos)
         p["costo_total"] = sum(item.get("costo", 0) or 0 for item in productos)
     
