@@ -23,4 +23,9 @@ Es la parte de seguridad y es muy estricta cambia el protocolo a https y no perm
 
 sudo docker exec -i ituaccesorio-web-1 mysqldump -u root -p'contraseña_root' --all-databases --routines --triggers > ituaccesoriobd.sql
 
+comando pra las bruebas 
+
+bandit -r . --exclude ./.venv -f html -o reporte_seguridad.html
+
+bandit -r . --exclude ./.venv
 

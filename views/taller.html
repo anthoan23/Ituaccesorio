@@ -287,7 +287,7 @@
     <div id="modal-test-body" class="test-modal-grid"></div>
 {% endcall %}
 
-<!-- Modal para registrar fotos -->
+<!-- Modal para registrar fotos 
 {% call modal('modal-fotos-registrar', 'Registrar fotos del dispositivo', 'lg') %}
     <div id="modal-fotos-body">
         <div class="photo-dropzone" id="photo-dropzone">
@@ -299,6 +299,17 @@
         <div class="service-form__actions" style="margin-top: 1rem;">
             <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
             <button type="button" id="btn-subir-fotos" class="form-btn form-btn--primary">Subir fotos</button>
+        </div>
+    </div>
+{% endcall %}-->
+
+<!-- Modal para registrar fotos - FUNCIÓN DESACTIVADA -->
+{% call modal('modal-fotos-registrar', 'Aviso', 'md') %}
+    <div id="modal-fotos-body" style="text-align: center; padding: 1.5rem;">
+        <p style="color: #e67e22;">⚠️ Esta función se encuentra desactivada temporalmente.</p>
+        <p>Estamos trabajando para implementarla correctamente.</p>
+        <div class="service-form__actions" style="margin-top: 1rem; justify-content: center;">
+            <button type="button" class="form-btn form-btn--primary" data-close-modal>Cerrar</button>
         </div>
     </div>
 {% endcall %}
