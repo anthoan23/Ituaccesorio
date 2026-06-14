@@ -1,5 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
@@ -10,7 +11,10 @@ import traceback
 class ValidacionPagosModel:
     """Modelo para la validación de pagos por parte de empleados"""
     
-    def __init__(self):
+    def __init__(self, factura_id: str = None, empleado_id: str = None, usuario_id: str = None):
+        self.factura_id = factura_id
+        self.empleado_id = empleado_id
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
     
     def _conexion(self):
@@ -141,8 +145,16 @@ class ValidacionPagosModel:
             cursor.close()
             db.close()
     
-    def aprobar_pago(self, factura_id: str, empleado_id: str) -> Dict[str, Any]:
+    def aprobar_pago(self, factura_id: str = None) -> Dict[str, Any]:
         """Aprueba un pago actualizando el estado en la tabla Metodo_pago"""
+        factura = factura_id or self.factura_id
+        empleado = self.empleado_id
+        
+        if not factura:
+            return {"success": False, "error": "ID de factura no especificado"}
+        if not empleado:
+            return {"success": False, "error": "Empleado no identificado"}
+        
         db = self._conexion()
         if not db:
             return {"success": False, "error": "Error de conexión"}
@@ -158,9 +170,18 @@ class ValidacionPagosModel:
                     Aprobado_por = %s,
                     Fecha_aprobacion = %s
                 WHERE ID_factura = %s
-            """, (empleado_id, fecha_actual, factura_id))
+            """, (empleado, fecha_actual, factura))
             
             db.commit()
+            
+            if self.usuario_id:
+                Bitacora(
+                    accion="Aprobar pago",
+                    descripcion=f"Se aprobó el pago de la factura ID: {factura}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Validación Pagos"
+                ).registrar()
+            
             return {"success": True, "message": "Pago aprobado correctamente"}
         except Exception as e:
             db.rollback()
@@ -170,8 +191,18 @@ class ValidacionPagosModel:
             cursor.close()
             db.close()
     
-    def rechazar_pago(self, factura_id: str, empleado_id: str, motivo: str) -> Dict[str, Any]:
+    def rechazar_pago(self, factura_id: str = None, motivo: str = None) -> Dict[str, Any]:
         """Rechaza un pago actualizando el estado en la tabla Metodo_pago"""
+        factura = factura_id or self.factura_id
+        empleado = self.empleado_id
+        
+        if not factura:
+            return {"success": False, "error": "ID de factura no especificado"}
+        if not empleado:
+            return {"success": False, "error": "Empleado no identificado"}
+        if not motivo:
+            return {"success": False, "error": "Motivo de rechazo no especificado"}
+        
         db = self._conexion()
         if not db:
             return {"success": False, "error": "Error de conexión"}
@@ -188,9 +219,19 @@ class ValidacionPagosModel:
                     Rechazado_por = %s,
                     Fecha_rechazo = %s
                 WHERE ID_factura = %s
-            """, (motivo, empleado_id, fecha_actual, factura_id))
+            """, (motivo, empleado, fecha_actual, factura))
             
             db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Rechazar pago",
+                    descripcion=f"Se rechazó el pago de la factura ID: {factura} - Motivo: {motivo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Validación Pagos"
+                )
+                bitacora.registrar()
+            
             return {"success": True, "message": "Pago rechazado"}
         except Exception as e:
             db.rollback()
@@ -200,8 +241,12 @@ class ValidacionPagosModel:
             cursor.close()
             db.close()
     
-    def obtener_detalle_venta(self, factura_id: str) -> List[Dict[str, Any]]:
+    def obtener_detalle_venta(self, factura_id: str = None) -> List[Dict[str, Any]]:
         """Obtiene el detalle de productos de una venta"""
+        factura = factura_id or self.factura_id
+        if not factura:
+            return []
+        
         db = self._conexion()
         if not db:
             return []
@@ -222,7 +267,7 @@ class ValidacionPagosModel:
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE dv.ID_factura = %s
-            """, (factura_id,))
+            """, (factura,))
             
             items = cursor.fetchall()
             
@@ -238,8 +283,12 @@ class ValidacionPagosModel:
             cursor.close()
             db.close()
     
-    def actualizar_fecha_pago(self, factura_id: str) -> Dict[str, Any]:
+    def actualizar_fecha_pago(self, factura_id: str = None) -> Dict[str, Any]:
         """Actualiza la fecha de pago a la fecha actual"""
+        factura = factura_id or self.factura_id
+        if not factura:
+            return {"success": False, "error": "ID de factura no especificado"}
+        
         db = self._conexion()
         if not db:
             return {"success": False, "error": "Error de conexión"}
@@ -252,7 +301,7 @@ class ValidacionPagosModel:
                 UPDATE Metodo_pago 
                 SET Fecha_pago = %s
                 WHERE ID_factura = %s AND Estado_pago = 'pendiente'
-            """, (fecha_actual, factura_id))
+            """, (fecha_actual, factura))
             
             db.commit()
             return {"success": True, "message": "Fecha de pago actualizada"}
@@ -277,28 +326,23 @@ class ValidacionPagosModel:
             where_conditions = ["1=1"]
             params = []
             
-            # Filtro por búsqueda (factura o cliente)
             if filtros.get("q"):
                 search = f"%{filtros['q']}%"
                 where_conditions.append("(v.ID_factura LIKE %s OR pn.Nombre_cliente LIKE %s OR pn.Apellido_cliente LIKE %s)")
                 params.extend([search, search, search])
             
-            # Filtro por estado
             if filtros.get("estado"):
                 where_conditions.append("mp.Estado_pago = %s")
                 params.append(filtros["estado"])
             
-            # Filtro por método de pago
             if filtros.get("metodo_pago"):
                 where_conditions.append("mp.Metodo = %s")
                 params.append(filtros["metodo_pago"])
             
-            # Filtro por moneda
             if filtros.get("moneda"):
                 where_conditions.append("v.Moneda = %s")
                 params.append(filtros["moneda"])
             
-            # Filtro por rango de fechas
             if filtros.get("fecha_desde"):
                 where_conditions.append("DATE(v.Fecha_venta) >= %s")
                 params.append(filtros["fecha_desde"])
@@ -307,7 +351,6 @@ class ValidacionPagosModel:
                 where_conditions.append("DATE(v.Fecha_venta) <= %s")
                 params.append(filtros["fecha_hasta"])
             
-            # Filtro por rango de montos
             if filtros.get("monto_min"):
                 where_conditions.append("CAST(mp.Monto AS DECIMAL(10,2)) >= %s")
                 params.append(float(filtros["monto_min"]))
@@ -363,14 +406,12 @@ class ValidacionPagosModel:
             cursor.execute(query, tuple(params))
             pagos = cursor.fetchall()
             
-            # Convertir Decimal a float
             for pago in pagos:
                 if pago.get("monto_pagado") is not None and isinstance(pago["monto_pagado"], Decimal):
                     pago["monto_pagado"] = float(pago["monto_pagado"])
                 if pago.get("total_venta") is not None and isinstance(pago["total_venta"], Decimal):
                     pago["total_venta"] = float(pago["total_venta"])
             
-            # Calcular totales estadísticos
             total_pagos = len(pagos)
             total_monto = sum(p.get("monto_pagado", 0) or 0 for p in pagos)
             cantidad_pendientes = sum(1 for p in pagos if p.get("estado") == "pendiente")
@@ -394,15 +435,18 @@ class ValidacionPagosModel:
             cursor.close()
             db.close()
     
-    def obtener_reporte_detalle_ventas(self, factura_id: str) -> Dict[str, Any]:
+    def obtener_reporte_detalle_ventas(self, factura_id: str = None) -> Dict[str, Any]:
         """Obtiene el detalle completo de productos de una venta para reportes"""
+        factura = factura_id or self.factura_id
+        if not factura:
+            return {"success": False, "error": "ID de factura no especificado", "productos": []}
+        
         db = self._conexion()
         if not db:
             return {"success": False, "error": "Error de conexión", "productos": []}
         
         cursor = db.cursor(dictionary=True)
         try:
-            # Obtener información de la venta
             cursor.execute("""
                 SELECT 
                     v.ID_factura AS factura_id,
@@ -422,17 +466,15 @@ class ValidacionPagosModel:
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
                 WHERE v.ID_factura = %s
-            """, (factura_id,))
+            """, (factura,))
             
             venta = cursor.fetchone()
             if not venta:
                 return {"success": False, "error": "Venta no encontrada", "productos": []}
             
-            # Convertir Decimal a float
             if venta.get("monto_pagado") and isinstance(venta["monto_pagado"], Decimal):
                 venta["monto_pagado"] = float(venta["monto_pagado"])
             
-            # Obtener productos de la venta
             cursor.execute("""
                 SELECT 
                     dv.ID_inventario,
@@ -449,7 +491,7 @@ class ValidacionPagosModel:
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE dv.ID_factura = %s
-            """, (factura_id,))
+            """, (factura,))
             
             productos = cursor.fetchall()
             total_venta = 0

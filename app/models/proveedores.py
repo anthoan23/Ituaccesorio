@@ -1,5 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Proveedores:
@@ -7,7 +8,7 @@ class Proveedores:
     
     def __init__(self, id_proveedor: int = 0, nombre: str = "", 
                  tipo: str = "", celular: str = "", correo: str = "", 
-                 direccion: str = "", limite_credito: int = 0):
+                 direccion: str = "", limite_credito: int = 0, usuario_id: str = None):
         self.id_proveedor = id_proveedor
         self.nombre = nombre
         self.tipo = tipo
@@ -15,6 +16,7 @@ class Proveedores:
         self.correo = correo
         self.direccion = direccion
         self.limite_credito = limite_credito
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -131,6 +133,17 @@ class Proveedores:
                   self.direccion or None, self.limite_credito or None))
             
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear proveedor",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
             return self.id_proveedor
         except Exception as e:
             if db:
@@ -172,7 +185,19 @@ class Proveedores:
                   self.correo or None, self.direccion or None, 
                   self.limite_credito or None, proveedor_id))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar proveedor",
+                    descripcion=f"Se actualizó el proveedor ID: {proveedor_id} - Nuevo nombre: {self.nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception as e:
             if db:
                 db.rollback()
@@ -199,7 +224,19 @@ class Proveedores:
             cursor = db.cursor()
             cursor.execute("DELETE FROM Proveedor WHERE ID_proveedor = %s", (proveedor_id,))
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar proveedor",
+                    descripcion=f"Se eliminó el proveedor ID: {proveedor_id} - Nombre: {self.nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             if db:
                 db.rollback()
@@ -351,7 +388,19 @@ class Proveedores:
                 ON DUPLICATE KEY UPDATE Costo_producto = VALUES(Costo_producto)
             """, (proveedor_id, id_modelo, costo))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar producto de proveedor",
+                    descripcion=f"Se actualizó producto para proveedor ID: {proveedor_id} - Modelo ID: {id_modelo} - Costo: {costo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception as e:
             if db:
                 db.rollback()
@@ -383,7 +432,19 @@ class Proveedores:
                 (proveedor_id, id_modelo)
             )
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar producto de proveedor",
+                    descripcion=f"Se eliminó producto del proveedor ID: {proveedor_id} - Modelo ID: {id_modelo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             if db:
                 db.rollback()
@@ -438,6 +499,17 @@ class Proveedores:
                 """, rows)
             
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear proveedor",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos)}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
             return self.id_proveedor
         except Exception as e:
             if db:

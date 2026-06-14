@@ -1,13 +1,15 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class ClaseProducto:
     """Modelo para la tabla Clase_producto"""
     
-    def __init__(self, id_clase: str = "", nombre: str = ""):
+    def __init__(self, id_clase: str = "", nombre: str = "", usuario_id: str = None):
         self.id_clase = id_clase
         self.nombre = nombre
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -58,6 +60,17 @@ class ClaseProducto:
                 (new_id, self.nombre)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear clase",
+                    descripcion=f"Clase creada: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception:
             db.rollback()
@@ -66,57 +79,15 @@ class ClaseProducto:
             cursor.close()
             db.close()
 
-    # def actualizar(self) -> bool:
-    #     if not self.id_clase or not self.nombre:
-    #         raise ValueError("ID y nombre son requeridos.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute(
-    #             "UPDATE Clase_producto SET Nombre_Clase = %s WHERE ID_Clase = %s",
-    #             (self.nombre, self.id_clase)
-    #         )
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
-    # def eliminar(self) -> bool:
-    #     if not self.id_clase:
-    #         raise ValueError("ID es requerido.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute("DELETE FROM Clase_producto WHERE ID_Clase = %s", (self.id_clase,))
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
 
 class MarcaProducto:
     """Modelo para la tabla Marca_producto"""
     
-    def __init__(self, id_marca: str = "", nombre: str = "", id_clase: str | None = None):
+    def __init__(self, id_marca: str = "", nombre: str = "", id_clase: str | None = None, usuario_id: str = None):
         self.id_marca = id_marca
         self.nombre = nombre
         self.id_clase = id_clase
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -176,6 +147,17 @@ class MarcaProducto:
                 (new_id, self.nombre)
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear marca",
+                    descripcion=f"Marca creada: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception:
             db.rollback()
@@ -184,60 +166,18 @@ class MarcaProducto:
             cursor.close()
             db.close()
 
-    # def actualizar(self) -> bool:
-    #     if not self.id_marca or not self.nombre:
-    #         raise ValueError("ID y nombre son requeridos.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute(
-    #             "UPDATE Marca_producto SET Nombre_marca = %s WHERE ID_marca = %s",
-    #             (self.nombre, self.id_marca)
-    #         )
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
-    # def eliminar(self) -> bool:
-    #     if not self.id_marca:
-    #         raise ValueError("ID es requerido.")
-        
-    #     db = self._conexion()
-    #     if not db:
-    #         raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-    #     cursor = db.cursor()
-    #     try:
-    #         cursor.execute("DELETE FROM Marca_producto WHERE ID_marca = %s", (self.id_marca,))
-    #         db.commit()
-    #         return cursor.rowcount > 0
-    #     except Exception:
-    #         db.rollback()
-    #         raise
-    #     finally:
-    #         cursor.close()
-    #         db.close()
-
 
 class Producto:
     """Modelo para la tabla Producto"""
     
     def __init__(self, id_producto: str = "", id_clase: str = "", id_marca: str = "", 
-                 nombre: str = "", descripcion: str | None = None):
+                 nombre: str = "", descripcion: str | None = None, usuario_id: str = None):
         self.id_producto = id_producto
         self.id_clase = id_clase
         self.id_marca = id_marca
         self.nombre = nombre
         self.descripcion = descripcion
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -313,6 +253,17 @@ class Producto:
             """, (new_id, self.id_clase, self.id_marca, self.nombre, self.descripcion))
 
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear producto",
+                    descripcion=f"Producto creado: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+
             return new_id
         except Exception:
             db.rollback()
@@ -337,7 +288,19 @@ class Producto:
                 WHERE ID_producto = %s
             """, (self.id_clase, self.id_marca, self.nombre, self.descripcion, self.id_producto))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar producto",
+                    descripcion=f"Producto actualizado: {self.nombre} (ID: {self.id_producto})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception:
             db.rollback()
             raise
@@ -397,7 +360,7 @@ class Producto:
         
         cursor = db.cursor()
         try:
-            # Primero eliminar fotos del inventario (usando Existencias_productos)
+            # Primero eliminar fotos del inventario
             cursor.execute("""
                 DELETE fi FROM Fotos_inventario fi
                 JOIN Existencias_productos e ON fi.ID_inventario = e.ID_inventario
@@ -414,7 +377,19 @@ class Producto:
             cursor.execute("DELETE FROM Producto WHERE ID_producto = %s", (self.id_producto,))
             
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar producto",
+                    descripcion=f"Producto eliminado (ID: {self.id_producto})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             db.rollback()
             print(f"Error al eliminar producto: {e}")
@@ -455,26 +430,14 @@ class Productos(conectar):
     def listar_clases(self):
         return ClaseProducto().listar()
 
-    def crear_clase(self, nombre: str, num_i: int | None = None):
-        return ClaseProducto(nombre=nombre).crear()
-
-    def actualizar_clase(self, id_clase: str, nombre: str, num_i: int | None = None):
-        return ClaseProducto(id_clase=id_clase, nombre=nombre).actualizar()
-
-    def eliminar_clase(self, id_clase: str):
-        return ClaseProducto(id_clase=id_clase).eliminar()
+    def crear_clase(self, nombre: str, num_i: int | None = None, usuario_id: str = None):
+        return ClaseProducto(nombre=nombre, usuario_id=usuario_id).crear()
 
     def listar_marcas(self, id_clase: str | None = None):
         return MarcaProducto().listar(id_clase=id_clase)
 
-    def crear_marca(self, id_clase: str | None = None, nombre: str = ""):
-        return MarcaProducto(nombre=nombre, id_clase=id_clase).crear()
-
-    def actualizar_marca(self, id_marca: str, id_clase: str | None = None, nombre: str = ""):
-        return MarcaProducto(id_marca=id_marca, nombre=nombre, id_clase=id_clase).actualizar()
-
-    def eliminar_marca(self, id_marca: str):
-        return MarcaProducto(id_marca=id_marca).eliminar()
+    def crear_marca(self, nombre: str = "", usuario_id: str = None):
+        return MarcaProducto(nombre=nombre, usuario_id=usuario_id).crear()
 
     def listar_modelos(self, id_marca: str | None = None, id_clase: str | None = None, q: str | None = None):
         return Producto().listar(id_marca=id_marca, id_clase=id_clase, q=q)
@@ -485,8 +448,15 @@ class Productos(conectar):
         id_marca: str,
         nombre: str,
         descripcion: str | None = None,
+        usuario_id: str = None,
     ):
-        return Producto(id_clase=id_clase, id_marca=id_marca, nombre=nombre, descripcion=descripcion).crear()
+        return Producto(
+            id_clase=id_clase, 
+            id_marca=id_marca, 
+            nombre=nombre, 
+            descripcion=descripcion,
+            usuario_id=usuario_id
+        ).crear()
 
     def actualizar_modelo(
         self,
@@ -495,6 +465,7 @@ class Productos(conectar):
         id_marca: str,
         nombre: str,
         descripcion: str | None = None,
+        usuario_id: str = None,
     ):
         return Producto(
             id_producto=id_modelo,
@@ -502,7 +473,8 @@ class Productos(conectar):
             id_marca=id_marca,
             nombre=nombre,
             descripcion=descripcion,
+            usuario_id=usuario_id,
         ).actualizar()
 
-    def eliminar_modelo(self, id_modelo: str):
-        return Producto(id_producto=id_modelo).eliminar()
+    def eliminar_modelo(self, id_modelo: str, usuario_id: str = None):
+        return Producto(id_producto=id_modelo, usuario_id=usuario_id).eliminar()

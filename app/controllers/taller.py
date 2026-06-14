@@ -4,7 +4,6 @@ from uuid import uuid4
 from flask import Blueprint, jsonify, render_template, request, current_app, g
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
 from app.models.inventario import Inventario
@@ -101,27 +100,28 @@ def consultar_test():
 
     return jsonify(resultado_test)
 
+
 @taller_blueprint.route("/api/taller/guardar-revision", methods=["POST"])
 @jwt_required
-@tiene_permiso('Taller', 'registrar')  # O el permiso que tengas configurado para guardar ('guardar', 'registrar', etc.)
+@tiene_permiso('Taller', 'registrar')
 def guardar_revision_tecnica():
-    # 1. Capturar los datos provenientes de la petición JSON del frontend
     id_orden = request.json.get("id_orden")
-    id_empleado = 32014004   # ID del técnico que realiza la revisión
-    numero_test = request.json.get("numero_test")       # Identificador del lote de pruebas (ej: 1, 2)
-    componentes = request.json.get("componentes_evaluados") # El arreglo: [{"nombre": "Mica", "resultado": "Funciona"}, ...]
+    id_empleado = 32014004
+    numero_test = request.json.get("numero_test")
+    componentes = request.json.get("componentes_evaluados")
 
-    # 2. Validar que los datos requeridos no vengan vacíos
     if not id_orden or not id_empleado or not numero_test or not componentes:
         return jsonify({"error": "Faltan datos obligatorios para registrar la revisión técnica"}), 400
 
-    # 3. Instanciar tu objeto o modelo de Tests (Ajusta el nombre de la clase si se llama distinto)
-    # Seteamos las propiedades directamente en la instancia como lo requiere tu método modificado
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     tests = Tests(
         ID_orden=id_orden,
         ID_empleado=id_empleado,
         Numero_test=numero_test,
-        lista_tests=componentes
+        lista_tests=componentes,
+        usuario_id=usuario_actual_id
     )
 
     # 4. Ejecutar el método que modificaste
@@ -140,7 +140,6 @@ def guardar_revision_tecnica():
         return jsonify({"error": resultado_mensaje}), 500
 
 
-
 @taller_blueprint.route("/api/taller/asignar-orden", methods=["POST"])
 @jwt_required
 @tiene_permiso('Taller', 'editar')
@@ -151,14 +150,20 @@ def asignar_orden_tecnico():
     if not id_orden or not id_empleado:
         return jsonify({"error": "ID de orden o ID de empleado no proporcionado"}), 400
 
-    ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
+    # Obtener usuario actual para bitácora
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    ordenes = Orden_servicio(
+        ID_orden_servicio=id_orden, 
+        ID_empleado=id_empleado,
+    )
     resultado = ordenes.asignar_orden_empleado()
 
     if resultado is True:
         return jsonify({"mensaje": "Técnico asignado exitosamente a la orden"}), 200
     else:
         return jsonify({"error": "Error al asignar el técnico a la orden"}), 500
-    
+
 
 @taller_blueprint.route("/api/taller/liberar-orden", methods=["POST"])
 @jwt_required
@@ -178,6 +183,7 @@ def liberar_orden_tecnico():
     else:
         return jsonify({"error": "Error al liberar el técnico de la orden"}), 500
 
+
 @taller_blueprint.route("/api/taller/consultar-inventario", methods=["GET"])
 @jwt_required
 @tiene_permiso('Taller', 'consultar')
@@ -185,6 +191,7 @@ def consultar_inventario():
     inventario = Inventario()
     resultado = inventario.listar_inventario_taller()
     return jsonify(resultado)
+
 
 @taller_blueprint.route("/api/taller/guardar-reparacion", methods=["POST"])
 @jwt_required
@@ -207,14 +214,17 @@ def registrar_reparacion():
         repuestos = data.get("repuestos_utilizados")
         if repuestos and isinstance(repuestos, (list, dict)):
             import json
-            repuestos = json.dumps(repuestos)  # Convertir a JSON string
+            repuestos = json.dumps(repuestos)
+        
+        # Obtener usuario actual para bitácora
+        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         # Crear instancia de Orden_servicio
         ordenes = Orden_servicio(
-            ID_empleado=32014004,  # ID del técnico (debería venir del JWT)
+            ID_empleado=32014004,
             ID_orden_servicio=id_orden,
             Descripcion_reparacion=descripcion,
-            lista_repuestos=repuestos
+            lista_repuestos=repuestos,
         )
         
         # Registrar reparación

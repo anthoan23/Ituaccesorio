@@ -1,12 +1,9 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.proveedores import Proveedores
 from app.models.productos import Producto
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
-proveedores_modelo = Proveedores()
-productos_modelo = Producto()
 
 
 @proveedores_blueprint.route("/proveedores", methods=["GET"])
@@ -48,11 +45,12 @@ def api_crear_proveedor():
     if nombre == "":
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
 
-    modelo = Proveedores()
+    # Obtener usuario actual
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
     # Validar ID del proveedor (0 significa que el modelo generará el ID automáticamente)
     if id_proveedor in (None, ""):
-        id_val = 0  # El modelo asignará automáticamente el siguiente ID
+        id_val = 0
     else:
         try:
             id_val = int(str(id_proveedor).strip())
@@ -91,28 +89,21 @@ def api_crear_proveedor():
         productos_norm.append({"id_modelo": id_modelo_val, "costo": costo_val})
 
     try:
-        # Asignar valores a la instancia del modelo
-        modelo.id_proveedor = id_val
-        modelo.nombre = nombre
-        modelo.tipo = tipo
-        modelo.celular = celular
-        modelo.correo = correo
-        modelo.direccion = direccion
-        modelo.limite_credito = limite_val
+        modelo = Proveedores(
+            id_proveedor=id_val,
+            nombre=nombre,
+            tipo=tipo,
+            celular=celular,
+            correo=correo,
+            direccion=direccion,
+            limite_credito=limite_val,
+            usuario_id=usuario_id
+        )
 
         if productos_norm:
             new_id = modelo.crear_proveedor_con_productos(productos=productos_norm)
         else:
             new_id = modelo.crear_proveedor()
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear proveedor",
-            descripcion=f"Se creó el proveedor: {nombre} - Tipo: {tipo or 'N/A'} - Límite crédito: {limite_val or 0}",
-            usuario_id=usuario_id,
-            modulo_nombre="Proveedores"
-        )
         
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
@@ -155,28 +146,21 @@ def api_actualizar_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
 
-    modelo = Proveedores()
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     try:
-        # Asignar valores a la instancia del modelo
-        modelo.id_proveedor = id_proveedor
-        modelo.nombre = nombre
-        modelo.tipo = tipo
-        modelo.celular = celular
-        modelo.correo = correo
-        modelo.direccion = direccion
-        modelo.limite_credito = limite_val
+        modelo = Proveedores(
+            id_proveedor=id_proveedor,
+            nombre=nombre,
+            tipo=tipo,
+            celular=celular,
+            correo=correo,
+            direccion=direccion,
+            limite_credito=limite_val,
+            usuario_id=usuario_id
+        )
         
         ok = modelo.actualizar_proveedor()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Actualizar proveedor",
-                descripcion=f"Se actualizó el proveedor ID: {id_proveedor} - Nuevo nombre: {nombre}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
         
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
@@ -210,13 +194,13 @@ def api_verificar_eliminacion_proveedor(id_proveedor: int):
 @jwt_required
 @tiene_permiso('Proveedores', 'eliminar')
 def api_eliminar_proveedor(id_proveedor: int):
-    modelo = Proveedores()
     try:
         # Primero verificar si tiene relaciones activas
-        tiene_relaciones, mensaje = modelo.tiene_relaciones_activas(id_proveedor=id_proveedor)
+        modelo_verif = Proveedores()
+        tiene_relaciones, mensaje = modelo_verif.tiene_relaciones_activas(id_proveedor=id_proveedor)
         
         if tiene_relaciones:
-            detalle = modelo.obtener_detalle_relaciones(id_proveedor=id_proveedor)
+            detalle = modelo_verif.obtener_detalle_relaciones(id_proveedor=id_proveedor)
             return jsonify({
                 "success": False, 
                 "error": mensaje,
@@ -224,20 +208,18 @@ def api_eliminar_proveedor(id_proveedor: int):
             }), 400
         
         # Obtener nombre antes de eliminar
-        proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
+        proveedor = modelo_verif.obtener_proveedor(id_proveedor=id_proveedor)
         nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
         
-        ok = modelo.eliminar_proveedor(id_proveedor=id_proveedor)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Eliminar proveedor",
-                descripcion=f"Se eliminó el proveedor ID: {id_proveedor} - Nombre: {nombre_proveedor}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
+        modelo = Proveedores(
+            id_proveedor=id_proveedor,
+            nombre=nombre_proveedor,
+            usuario_id=usuario_id
+        )
+        
+        ok = modelo.eliminar_proveedor()
         
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:
@@ -279,26 +261,19 @@ def api_upsert_producto_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
 
-    modelo = Proveedores()
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     try:
+        modelo = Proveedores(
+            id_proveedor=id_proveedor,
+            usuario_id=usuario_id
+        )
+        
         ok = modelo.upsert_producto_proveedor(
             id_proveedor=id_proveedor,
             id_modelo=id_modelo_val,
             costo=costo_val,
         )
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
-            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
-            
-            registrar_en_bitacora(
-                accion="Actualizar producto de proveedor",
-                descripcion=f"Se actualizó producto para proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo_val} - Costo: {costo_val}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
         
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
@@ -311,22 +286,15 @@ def api_upsert_producto_proveedor(id_proveedor: int):
 @jwt_required
 @tiene_permiso('Proveedores', 'modificar')
 def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
-    modelo = Proveedores()
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     try:
-        ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
+        modelo = Proveedores(
+            id_proveedor=id_proveedor,
+            usuario_id=usuario_id
+        )
         
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            proveedor = modelo.obtener_proveedor(id_proveedor=id_proveedor)
-            nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
-            
-            registrar_en_bitacora(
-                accion="Eliminar producto de proveedor",
-                descripcion=f"Se eliminó producto del proveedor: {nombre_proveedor} (ID: {id_proveedor}) - Modelo ID: {id_modelo}",
-                usuario_id=usuario_id,
-                modulo_nombre="Proveedores"
-            )
+        ok = modelo.eliminar_producto_proveedor(id_proveedor=id_proveedor, id_modelo=id_modelo)
         
         return jsonify({"success": True, "deleted": bool(ok)})
     except Exception as error:

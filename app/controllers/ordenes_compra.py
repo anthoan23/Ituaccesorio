@@ -49,8 +49,8 @@ def api_proveedores():
 @jwt_required
 @tiene_permiso('Órdenes de compra', 'consultar')
 def api_productos_proveedor(ID_proveedor):
-    orden = OrdenCompra()
-    productos = orden.obtener_productos_proveedor(ID_proveedor)
+    orden = OrdenCompra(id_proveedor=ID_proveedor)
+    productos = orden.obtener_productos_proveedor()
     return jsonify({"success": True, "productos": productos})
 
 
@@ -58,8 +58,8 @@ def api_productos_proveedor(ID_proveedor):
 @jwt_required
 @tiene_permiso('Órdenes de compra', 'consultar')
 def api_detalles_orden(ID_orden_c):
-    orden = OrdenCompra()
-    detalles = orden.obtener_detalles_orden(ID_orden_c)
+    orden = OrdenCompra(id_orden=ID_orden_c)
+    detalles = orden.obtener_detalles_orden()
     if detalles and detalles.get("datos_orden"):
         return jsonify(detalles)
     return jsonify({"error": "Orden no encontrada"}), 404
@@ -73,11 +73,11 @@ def api_agregar_orden_compra():
         data = request.get_json()
         
         # Obtener ID del empleado desde g.user
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", 30124556)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         try:
-            ID_em = int(usuario_id)
+            ID_em = int(usuario_id) if usuario_id else None
         except (ValueError, TypeError):
-            ID_em = 30124556
+            ID_em = None
         
         ID_proveedor = data.get('ID_proveedor')
         productos = data.get('productos', [])
@@ -100,8 +100,13 @@ def api_agregar_orden_compra():
                 continue
             normalized.append((int(mid), int(qty)))
 
-        orden = OrdenCompra()
-        success = orden.agregar_orden_compra(int(ID_em), int(ID_proveedor), normalized)
+        orden = OrdenCompra(
+            id_empleado=int(ID_em) if ID_em else None,
+            id_proveedor=int(ID_proveedor),
+            productos=normalized,
+            usuario_id=usuario_id
+        )
+        success = orden.agregar_orden_compra()
         
         if success:
             return jsonify({"success": True, "message": "Orden de compra agregada exitosamente"}), 201
@@ -122,8 +127,13 @@ def api_anular_orden_compra():
     if not ID_orden_c:
         return jsonify({"success": False, "error": "Falta el campo requerido: ID_orden_c"}), 400
 
-    orden = OrdenCompra()
-    success = orden.anular_orden_compra(ID_orden_c)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
+    orden = OrdenCompra(
+        id_orden=ID_orden_c,
+        usuario_id=usuario_id
+    )
+    success = orden.anular_orden_compra()
     
     if success:
         return jsonify({"success": True, "message": "Orden de compra anulada exitosamente"}), 200
@@ -139,21 +149,21 @@ def api_registrar_entrega(ID_orden_c):
         recibido_por = data.get('recibido_por')
         fecha_entrega = data.get('fecha_entrega')
         
-        print(f"=== Registrando entrega ===")
-        print(f"ID_orden: {ID_orden_c}")
-        print(f"Recibido por: {recibido_por}")
-        print(f"Fecha entrega: {fecha_entrega}")
-        
         if not recibido_por:
             return jsonify({"success": False, "error": "Debe especificar quién recibió la orden"}), 400
         
         if not fecha_entrega:
             fecha_entrega = datetime.now().strftime("%Y-%m-%d")
         
-        orden = OrdenCompra()
-        success = orden.registrar_entrega(ID_orden_c, recibido_por, fecha_entrega)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        print(f"Resultado: {success}")
+        orden = OrdenCompra(
+            id_orden=ID_orden_c,
+            recibido_por=recibido_por,
+            fecha_entrega=fecha_entrega,
+            usuario_id=usuario_id
+        )
+        success = orden.registrar_entrega()
         
         if success:
             return jsonify({"success": True, "message": "Entrega registrada exitosamente"}), 200

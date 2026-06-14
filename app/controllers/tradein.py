@@ -1,18 +1,17 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.models.tradein import TradeIn
-from app.models.bitacora import registrar_en_bitacora
 
 tradein_blueprint = Blueprint("tradein", __name__)
 
 
 def _obtener_usuario_actual():
-    """Obtiene el ID del usuario actual (si está logueado)"""
+    """Obtiene el ID del usuario actual (si está logueado) o None si no"""
     user = getattr(g, 'user', None)
     if not user:
-        return "CLIENTE_NO_AUTENTICADO"
+        return None  # Usuario no autenticado
     if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id") or "CLIENTE")
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or "CLIENTE")
+        return str(user.get("usuario_id") or user.get("id"))
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None))
 
 
 @tradein_blueprint.route("/trade-in", methods=["GET"])
@@ -44,8 +43,12 @@ def obtener_tradein_json():
 # Sin decoradores - acceso completamente público
 def cotizar_tradein():
     datos = request.get_json(silent=True) or {}
-    modelo = TradeIn()
+    
+    # Obtener usuario actual (puede ser None para usuarios no autenticados)
     usuario_id = _obtener_usuario_actual()
+    
+    # Crear instancia del modelo con el usuario_id
+    modelo = TradeIn(usuario_id=usuario_id)
 
     # Validar liberación del equipo
     liberado = str(datos.get("liberado", "")).strip().lower()
@@ -65,8 +68,7 @@ def cotizar_tradein():
     try:
         resultado = modelo.calcular_cotizacion(
             int(id_producto), 
-            datos.get("fallas") or [],
-            usuario_id=usuario_id
+            datos.get("fallas") or []
         )
     except ValueError:
         return jsonify({

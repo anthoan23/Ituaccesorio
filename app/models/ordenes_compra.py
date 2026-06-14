@@ -1,10 +1,24 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 from datetime import datetime
 import mysql.connector
 
 
 class OrdenCompra(conectar):
+    
+    def __init__(self, id_orden: str = None, id_empleado: int = None, 
+                 id_proveedor: int = None, productos: list = None,
+                 recibido_por: str = None, fecha_entrega: str = None,
+                 usuario_id: str = None):
+        super().__init__()
+        self.id_orden = id_orden
+        self.id_empleado = id_empleado
+        self.id_proveedor = id_proveedor
+        self.productos = productos or []
+        self.recibido_por = recibido_por
+        self.fecha_entrega = fecha_entrega
+        self.usuario_id = usuario_id
     
     def enlistar_ordenes_compra(self):
         """Lista órdenes pendientes"""
@@ -69,15 +83,17 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def obtener_detalles_orden(self, ID_orden_c: str):
+    def obtener_detalles_orden(self):
         """Obtiene detalles completos de una orden"""
+        if not self.id_orden:
+            return None
+
         db = self.conexion1()
         if not db:
             return None
 
         cursor = db.cursor(dictionary=True)
         try:
-            # Primero obtener datos de la orden
             cursor.execute("""
                 SELECT 
                     o.ID_orden_compra as ID_orden_c,
@@ -96,14 +112,13 @@ class OrdenCompra(conectar):
                 LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND o.ID_proveedor = s.ID_proveedor
                 WHERE o.ID_orden_compra = %s
                 GROUP BY o.ID_orden_compra
-            """, (ID_orden_c,))
+            """, (self.id_orden,))
             datos_orden = cursor.fetchone()
             
             if not datos_orden:
-                print(f"No se encontró la orden: {ID_orden_c}")
+                print(f"No se encontró la orden: {self.id_orden}")
                 return None
             
-            # Obtener productos de la orden
             cursor.execute("""
                 SELECT 
                     p.Nombre_producto as N_modelo,
@@ -118,7 +133,7 @@ class OrdenCompra(conectar):
                 JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
                 JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE d.ID_orden_compra = %s
-            """, (datos_orden.get("ID_proveedor"), ID_orden_c))
+            """, (datos_orden.get("ID_proveedor"), self.id_orden))
             productos_orden = cursor.fetchall()
 
             return {
@@ -160,8 +175,11 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def obtener_productos_proveedor(self, ID_proveedor: int):
+    def obtener_productos_proveedor(self):
         """Obtiene productos que suministra un proveedor"""
+        if not self.id_proveedor:
+            return []
+
         db = self.conexion1()
         if not db:
             return []
@@ -181,7 +199,7 @@ class OrdenCompra(conectar):
                 JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE s.ID_proveedor = %s
                 ORDER BY p.Nombre_producto ASC
-            """, (ID_proveedor,))
+            """, (self.id_proveedor,))
             return cursor.fetchall()
         except Exception as e:
             print(f"Error obtener_productos_proveedor: {e}")
@@ -190,8 +208,12 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def agregar_orden_compra(self, ID_em: int, ID_proveedor: int, productos: list):
+    def agregar_orden_compra(self) -> bool:
         """Agrega una nueva orden de compra"""
+        if not self.id_empleado or not self.id_proveedor or not self.productos:
+            print("Error: Faltan datos para crear la orden")
+            return False
+
         db = self.conexion1()
         if not db:
             print("Error: No se pudo conectar a la base de datos")
@@ -199,35 +221,38 @@ class OrdenCompra(conectar):
 
         cursor = db.cursor()
         try:
-            if not productos or len(productos) == 0:
+            if len(self.productos) == 0:
                 print("Error: No hay productos para agregar")
                 return False
             
-            # Generar ID para la orden
             cursor.execute("SELECT MAX(CAST(SUBSTRING(ID_orden_compra, 3) AS UNSIGNED)) FROM Orden_compra")
             result = cursor.fetchone()
             last_num = result[0] if result and result[0] else 0
             new_num = last_num + 1
-            ID_orden = f"OC{str(new_num).zfill(7)}"
+            self.id_orden = f"OC{str(new_num).zfill(7)}"
             
-            print(f"Generando orden: {ID_orden}")
-            
-            # Insertar orden
             cursor.execute("""
                 INSERT INTO Orden_compra (ID_orden_compra, ID_empleado, ID_proveedor, Fecha_orden_compra, Estado_orden_compra) 
                 VALUES (%s, %s, %s, NOW(), 'Pendiente')
-            """, (ID_orden, ID_em, ID_proveedor))
+            """, (self.id_orden, self.id_empleado, self.id_proveedor))
             
-            # Insertar detalles
-            for mid, qty in productos:
-                print(f"Insertando producto: ID_producto={mid}, Cantidad={qty}")
+            for mid, qty in self.productos:
                 cursor.execute("""
                     INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
                     VALUES (%s, %s, %s)
-                """, (ID_orden, str(mid), qty))
+                """, (self.id_orden, str(mid), qty))
             
             db.commit()
-            print(f"Orden {ID_orden} creada exitosamente")
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear orden de compra",
+                    descripcion=f"Se creó la orden de compra ID: {self.id_orden} - Proveedor ID: {self.id_proveedor}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                )
+                bitacora.registrar()
+            
             return True
         except mysql.connector.Error as err:
             print(f"Error SQL: {err}")
@@ -241,8 +266,11 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def anular_orden_compra(self, ID_orden_c: str):
+    def anular_orden_compra(self) -> bool:
         """Anula una orden de compra"""
+        if not self.id_orden:
+            return False
+
         db = self.conexion1()
         if not db:
             return False
@@ -253,9 +281,20 @@ class OrdenCompra(conectar):
                 UPDATE Orden_compra 
                 SET Estado_orden_compra = 'Anulada' 
                 WHERE ID_orden_compra = %s AND Estado_orden_compra = 'Pendiente'
-            """, (ID_orden_c,))
+            """, (self.id_orden,))
             db.commit()
-            return cursor.rowcount > 0
+            anulado = cursor.rowcount > 0
+            
+            if anulado and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Anular orden de compra",
+                    descripcion=f"Se anuló la orden de compra ID: {self.id_orden}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                )
+                bitacora.registrar()
+            
+            return anulado
         except Exception as e:
             print(f"Error anular_orden_compra: {e}")
             db.rollback()
@@ -264,8 +303,12 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
     
-    def registrar_entrega(self, ID_orden_c: str, recibido_por: str, fecha_entrega: str):
+    def registrar_entrega(self) -> bool:
         """Registra la entrega de una orden"""
+        if not self.id_orden:
+            print("Error: ID de orden no especificado")
+            return False
+
         db = self.conexion1()
         if not db:
             print("Error: No se pudo conectar a la base de datos")
@@ -273,36 +316,46 @@ class OrdenCompra(conectar):
 
         cursor = db.cursor()
         try:
-            # Verificar si la orden existe y está pendiente
             cursor.execute("""
                 SELECT ID_orden_compra, Estado_orden_compra FROM Orden_compra 
                 WHERE ID_orden_compra = %s
-            """, (ID_orden_c,))
+            """, (self.id_orden,))
             resultado = cursor.fetchone()
             
             if not resultado:
-                print(f"Orden {ID_orden_c} no encontrada")
+                print(f"Orden {self.id_orden} no encontrada")
                 return False
             
             estado_actual = resultado[1] if len(resultado) > 1 else resultado[0]
-            print(f"Estado actual de la orden: {estado_actual}")
             
             if estado_actual != 'Pendiente':
                 print(f"La orden no está pendiente. Estado actual: {estado_actual}")
                 return False
             
-            # Actualizar la orden
+            if not self.fecha_entrega:
+                self.fecha_entrega = datetime.now().strftime("%Y-%m-%d")
+            
             cursor.execute("""
                 UPDATE Orden_compra 
                 SET Estado_orden_compra = 'Completada',
                     Recibido_por = %s,
                     Fecha_entrega = %s
                 WHERE ID_orden_compra = %s AND Estado_orden_compra = 'Pendiente'
-            """, (recibido_por, fecha_entrega, ID_orden_c))
+            """, (self.recibido_por, self.fecha_entrega, self.id_orden))
             
             db.commit()
-            print(f"Orden {ID_orden_c} actualizada. Filas afectadas: {cursor.rowcount}")
-            return cursor.rowcount > 0
+            registrado = cursor.rowcount > 0
+            
+            if registrado and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Registrar entrega de orden",
+                    descripcion=f"Se registró la entrega de la orden ID: {self.id_orden} - Recibido por: {self.recibido_por}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                )
+                bitacora.registrar()
+            
+            return registrado
         except Exception as e:
             print(f"Error registrar_entrega: {e}")
             import traceback

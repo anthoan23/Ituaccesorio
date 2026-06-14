@@ -1,7 +1,7 @@
 from app.models.database import conectar
 import mysql.connector
 from typing import Any, cast
-from app.models.bitacora import registrar_en_bitacora
+from app.models.bitacora import Bitacora
 
 
 class TradeIn(conectar):
@@ -27,6 +27,10 @@ class TradeIn(conectar):
         {"clave": "audifonos", "etiqueta": "Audífonos", "busqueda": "Audifonos"},
         {"clave": "manuales", "etiqueta": "Manuales", "busqueda": "Manual"},
     ]
+
+    def __init__(self, usuario_id: str = None):
+        super().__init__()
+        self.usuario_id = usuario_id  # Puede ser None para usuarios no autenticados
 
     def _obtener_config_falla(self, clave_falla):
         for falla in self.FALLAS_COTIZACION:
@@ -115,7 +119,7 @@ class TradeIn(conectar):
             cursor.close()
             db.close()
 
-    def calcular_cotizacion(self, id_producto, fallas_seleccionadas, usuario_id="CLIENTE"):
+    def calcular_cotizacion(self, id_producto, fallas_seleccionadas):
         """Calcula la cotización de un equipo"""
         equipo = self.consultar_equipo_por_id(id_producto)
         if not equipo:
@@ -160,7 +164,7 @@ class TradeIn(conectar):
 
         monto_estimado = max(precio_base - costo_total_repuestos, 0)
         
-        # Registrar en bitácora
+        # Registrar en bitácora usando el constructor
         descripcion_bitacora = (
             f"Cotización Trade-in | Modelo: {nombre_modelo} | Base: {precio_base} | "
             f"Deducción: {costo_total_repuestos} | Estimado: {monto_estimado}"
@@ -169,15 +173,17 @@ class TradeIn(conectar):
             fallas_texto = ", ".join(detalle["etiqueta"] for detalle in detalles_fallas)
             descripcion_bitacora = f"{descripcion_bitacora} | Fallas: {fallas_texto}"
 
-        registro_bitacora = registrar_en_bitacora(
-            "Cotización Trade-in",
-            descripcion_bitacora,
-            usuario_id=usuario_id,
-            modulo_nombre="Trade-in",
+        # Registrar en bitácora (usuario_id puede ser None para usuarios no autenticados)
+        bitacora = Bitacora(
+            accion="Cotización Trade-in",
+            descripcion=descripcion_bitacora,
+            usuario_id=self.usuario_id or "ANONIMO",
+            modulo_nombre="Trade-in"
         )
+        resultado_bitacora = bitacora.registrar()
         
-        if not registro_bitacora.get("success") and registro_bitacora.get("warning"):
-            advertencias.append(registro_bitacora["warning"])
+        if not resultado_bitacora.get("success") and resultado_bitacora.get("warning"):
+            advertencias.append(resultado_bitacora["warning"])
 
         return {
             "success": True,

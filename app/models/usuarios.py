@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Usuarios:
@@ -16,6 +17,7 @@ class Usuarios:
         foto_perfil: str = "",
         activo: bool = True,
         fecha_creacion: datetime = None,
+        usuario_id: str = None,  # Usuario que realiza la acción
     ):
         self.id = id
         self.nombre = nombre
@@ -25,6 +27,7 @@ class Usuarios:
         self.foto_perfil = foto_perfil
         self.activo = activo
         self.fecha_creacion = fecha_creacion
+        self.usuario_id = usuario_id  # Quien realiza la operación
 
         self.__conexion_bd = conectar()
 
@@ -95,7 +98,6 @@ class Usuarios:
 
         cursor = db.cursor(dictionary=True)
         try:
-            # CORREGIDO: Usar los nombres correctos de columnas
             cursor.execute(
                 """
                 SELECT
@@ -120,7 +122,6 @@ class Usuarios:
 
         cursor = db.cursor()
         try:
-            # La columna es 'ID_empleado'
             cursor.execute(
                 "SELECT 1 FROM Empleado WHERE ID_empleado = %s LIMIT 1",
                 (cedula,),
@@ -254,7 +255,18 @@ class Usuarios:
             )
             db.commit()
             self.id = str(cursor.lastrowid)
-            return f"Usuario agregado exitosamente."
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear usuario",
+                    descripcion=f"Se creó el usuario: {nombre} - Cédula: {cedula} - Rol ID: {rol_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
+            return "Usuario agregado exitosamente."
         except Exception as e:
             print(f"Error al agregar usuario: {e}")
             db.rollback()
@@ -313,6 +325,17 @@ class Usuarios:
                     (nombre, cedula, rol_id, foto_perfil, usuario_id),
                 )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar usuario",
+                    descripcion=f"Se actualizó el usuario ID: {usuario_id} - Nuevo nombre: {nombre} - Rol ID: {rol_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Usuario actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar usuario: {e}")
@@ -352,7 +375,7 @@ class Usuarios:
 
             cursor.execute(
                 """
-                SELECT r.nombre as rol_nombre
+                SELECT r.nombre as rol_nombre, u.nombre as usuario_nombre
                 FROM usuario u
                 INNER JOIN rol r ON r.id = u.rol_id
                 WHERE u.id = %s
@@ -364,8 +387,21 @@ class Usuarios:
             if usuario_rol and usuario_rol["rol_nombre"].lower() == "admin" and total_admins <= 1:
                 return "No se puede eliminar el único administrador del sistema."
 
+            nombre_usuario = usuario_rol["usuario_nombre"] if usuario_rol else "N/A"
+
             cursor.execute("DELETE FROM usuario WHERE id = %s", (usuario_id,))
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar usuario",
+                    descripcion=f"Se eliminó el usuario ID: {usuario_id} - Nombre: {nombre_usuario}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Usuario eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar usuario: {e}")
@@ -521,6 +557,17 @@ class Usuarios:
                     (nombre, foto_perfil, usuario_id),
                 )
             db.commit()
+            
+            # Registrar en bitácora (el usuario actualiza su propio perfil)
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar perfil",
+                    descripcion=f"Usuario actualizó su perfil",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Perfil actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar perfil: {e}")

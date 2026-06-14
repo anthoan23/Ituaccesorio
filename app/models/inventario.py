@@ -2,17 +2,20 @@ from __future__ import annotations
 from decimal import Decimal
 from app.models.database import conectar
 from app.models.productos import Producto
+from app.models.bitacora import Bitacora
 
 
 class Inventario:
     """Modelo para la tabla Existencias_productos"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
-                 existencia: int = 0, costo_venta: Decimal = Decimal(0)):
+                 existencia: int = 0, costo_venta: Decimal = Decimal(0), 
+                 usuario_id: str = None):
         self.id_inventario = id_inventario
         self.id_producto = id_producto
         self.existencia = existencia
         self.costo_venta = costo_venta
+        self.usuario_id = usuario_id  # Usuario que realiza la acción
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -300,6 +303,12 @@ class Inventario:
         if not id_producto:
             raise ValueError("ID del producto es requerido")
         
+        nombre_producto = None
+        # Obtener nombre del producto para bitácora
+        producto_info = self.obtener_producto_por_id(id_producto)
+        if producto_info:
+            nombre_producto = producto_info.get("nombre_producto")
+        
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -308,27 +317,30 @@ class Inventario:
         try:
             cursor = db.cursor()
             
-            # Buscar si ya existe inventario para este producto
             cursor.execute(
                 "SELECT ID_inventario FROM Existencias_productos WHERE ID_producto = %s LIMIT 1",
                 (str(id_producto),)
             )
             row = cursor.fetchone()
             
+            es_nuevo = False
             if row:
-                # Actualizar existente
                 id_inventario = str(row[0])
                 cursor.execute(
                     "UPDATE Existencias_productos SET Existencia = %s, Costo_venta = %s WHERE ID_inventario = %s",
                     (int(existencia), costo_venta, id_inventario)
                 )
+                accion = "Actualizar stock"
+                descripcion = f"Se actualizó stock del producto: {nombre_producto or id_producto} - Nueva existencia: {existencia} - Costo: {costo_venta}"
             else:
-                # Crear nuevo
+                es_nuevo = True
                 id_inventario = self._siguiente_id()
                 cursor.execute("""
                     INSERT INTO Existencias_productos (ID_inventario, ID_producto, Existencia, Costo_venta)
                     VALUES (%s, %s, %s, %s)
                 """, (id_inventario, str(id_producto), int(existencia), costo_venta))
+                accion = "Registrar producto en inventario"
+                descripcion = f"Se registró producto en inventario: {nombre_producto or id_producto} - Existencia: {existencia} - Costo: {costo_venta}"
             
             db.commit()
             
@@ -337,6 +349,16 @@ class Inventario:
                 from app.models.inventario import FotosInventario
                 fotos = FotosInventario()
                 fotos.insertar_foto(id_inventario, foto_inventario)
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion=accion,
+                    descripcion=descripcion,
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Inventario"
+                )
+                bitacora.registrar()
             
             return id_inventario
         except Exception as e:
@@ -357,10 +379,11 @@ class FotosInventario:
     """Modelo para la tabla Fotos_inventario"""
     
     def __init__(self, id_foto_inventario: str = "", id_inventario: str = "", 
-                 foto_inventario: str = ""):
+                 foto_inventario: str = "", usuario_id: str = None):
         self.id_foto_inventario = id_foto_inventario
         self.id_inventario = id_inventario
         self.foto_inventario = foto_inventario
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -417,6 +440,17 @@ class FotosInventario:
                 VALUES (%s, %s, %s)
             """, (new_id, id_inventario, foto_inventario))
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Agregar foto de producto",
+                    descripcion=f"Se agregó foto al inventario ID: {id_inventario}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Inventario"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception as e:
             if db:
@@ -445,7 +479,19 @@ class FotosInventario:
                 WHERE ID_foto_inventario = %s
             """, (foto_inventario, id_foto_inventario))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar foto de producto",
+                    descripcion=f"Se actualizó foto ID: {id_foto_inventario}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Inventario"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception as e:
             db.rollback()
             raise e
@@ -466,7 +512,19 @@ class FotosInventario:
         try:
             cursor.execute("DELETE FROM Fotos_inventario WHERE ID_foto_inventario = %s", (id_foto_inventario,))
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar foto de producto",
+                    descripcion=f"Se eliminó foto ID: {id_foto_inventario}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Inventario"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             db.rollback()
             raise e
