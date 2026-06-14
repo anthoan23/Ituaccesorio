@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.tradein_empleados import TradeInEmpleados
-from app.models.bitacora import registrar_en_bitacora
 import traceback
 import os
 import uuid
@@ -49,36 +48,27 @@ def pagina_tradein_empleados():
 
 # ==================== REGISTRAR NUEVO TRADE-IN ====================
 
-# En la función api_registrar_trade_in
 @tradein_empleados_blueprint.route("/api/tradein", methods=["POST"])
 @jwt_required
 @tiene_permiso('Trade-in', 'registrar')
 def api_registrar_trade_in():
     """Registra un nuevo equipo recibido en trade-in"""
     try:
-        # Obtener datos del formulario (multipart/form-data)
         cliente_id = request.form.get("cliente_id", "").strip()
         id_producto = request.form.get("id_producto", "").strip()
         valor_pagado = request.form.get("valor_pagado", "").strip()
-        
-        # Datos del equipo (opcionales)
-        id_equipo = request.form.get("id_equipo", "").strip() or None  # CAMBIADO: ahora es obligatorio en la práctica
+        id_equipo = request.form.get("id_equipo", "").strip() or None
         color = request.form.get("color", "").strip() or None
         capacidad = request.form.get("capacidad", "").strip() or None
         clave = request.form.get("clave", "").strip() or None
         patron = request.form.get("patron", "").strip() or None
-        observaciones = request.form.get("observaciones", "").strip() or None
         
-        # Validaciones
         if not cliente_id:
             return jsonify({"success": False, "error": "Debe seleccionar un cliente"}), 400
-        
         if not id_producto:
             return jsonify({"success": False, "error": "Debe seleccionar un producto/modelo"}), 400
-        
-        if not id_equipo:  # CAMBIADO: IMEI ahora es obligatorio como ID del equipo
+        if not id_equipo:
             return jsonify({"success": False, "error": "Debe ingresar el IMEI/ID del equipo"}), 400
-        
         if not valor_pagado:
             return jsonify({"success": False, "error": "Debe ingresar el valor pagado"}), 400
         
@@ -87,14 +77,14 @@ def api_registrar_trade_in():
         except ValueError:
             return jsonify({"success": False, "error": "El valor pagado debe ser un número válido"}), 400
         
-        # Obtener empleado
         empleado_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
         empleado_id = str(empleado_id) if empleado_id else None
         
         if not empleado_id:
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
         
-        # Guardar fotos
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
         fotos = []
         archivos = request.files.getlist("fotos")
         for archivo in archivos:
@@ -105,37 +95,18 @@ def api_registrar_trade_in():
             except ValueError as e:
                 return jsonify({"success": False, "error": str(e)}), 400
         
-        modelo = TradeInEmpleados()
-        equipo_existente = modelo.verificar_equipo_existente(id_equipo)
-        
-        if equipo_existente:
-           
-            pass
-        
-        # Registrar trade-in
-        resultado = modelo.registrar_trade_in(
+        modelo = TradeInEmpleados(
             cliente_id=cliente_id,
             id_producto=id_producto,
             valor_pagado=valor_pagado_float,
             empleado_id=empleado_id,
-            id_equipo=id_equipo,  # CAMBIADO: ahora se llama id_equipo
-            color=color,
-            capacidad=capacidad,
-            clave=clave,
-            patron=patron,
-            observaciones=observaciones,
-            fotos=fotos
+            id_equipo=id_equipo,
+            usuario_id=usuario_id
         )
         
+        resultado = modelo.registrar_trade_in(fotos=fotos)
+        
         if resultado["success"]:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Registrar Trade-in",
-                descripcion=f"Se registró nuevo trade-in ID: {resultado['trade_in_id']} - Cliente: {cliente_id} - Equipo ID: {id_equipo} - Valor: {valor_pagado}",
-                usuario_id=usuario_id,
-                modulo_nombre="Trade-in"
-            )
             return jsonify(resultado), 201
         else:
             return jsonify({"success": False, "error": resultado.get("error", "Error al registrar")}), 500
@@ -152,8 +123,8 @@ def api_registrar_trade_in():
 def api_verificar_equipo(id_equipo):
     """Verifica si un equipo ya existe por su ID (IMEI)"""
     try:
-        modelo = TradeInEmpleados()
-        equipo = modelo.verificar_equipo_existente(id_equipo)
+        modelo = TradeInEmpleados(id_equipo=id_equipo)
+        equipo = modelo.verificar_equipo_existente()
         
         if equipo:
             return jsonify({
@@ -169,6 +140,8 @@ def api_verificar_equipo(id_equipo):
     except Exception as e:
         print(f"Error en api_verificar_equipo: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ==================== REGISTRAR TESTS ====================
 
 @tradein_empleados_blueprint.route("/api/tradein/<tradein_id>/tests", methods=["POST"])
@@ -183,25 +156,21 @@ def api_registrar_tests_trade_in(tradein_id):
         if not tests:
             return jsonify({"success": False, "error": "Debe proporcionar al menos un test"}), 400
         
-        # Validar formato de tests
         for test in tests:
             if not test.get("nombre"):
                 return jsonify({"success": False, "error": "Cada test debe tener un nombre"}), 400
             if not test.get("resultado"):
                 return jsonify({"success": False, "error": "Cada test debe tener un resultado"}), 400
         
-        modelo = TradeInEmpleados()
-        resultado = modelo.registrar_tests_trade_in(tradein_id, tests)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        modelo = TradeInEmpleados(
+            trade_in_id=tradein_id,
+            usuario_id=usuario_id
+        )
+        resultado = modelo.registrar_tests_trade_in(tests)
         
         if resultado["success"]:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Registrar tests Trade-in",
-                descripcion=f"Se registraron {len(tests)} tests para trade-in ID: {tradein_id}",
-                usuario_id=usuario_id,
-                modulo_nombre="Trade-in"
-            )
             return jsonify(resultado), 200
         else:
             return jsonify({"success": False, "error": resultado.get("error", "Error al registrar tests")}), 500
@@ -234,8 +203,8 @@ def api_listar_trade_ins():
 def api_trade_ins_por_cliente(cliente_id):
     """Obtiene el historial de trade-ins de un cliente"""
     try:
-        modelo = TradeInEmpleados()
-        resultados = modelo.obtener_trade_ins_por_cliente(cliente_id)
+        modelo = TradeInEmpleados(cliente_id=cliente_id)
+        resultados = modelo.obtener_trade_ins_por_cliente()
         return jsonify({"success": True, "tradeins": resultados})
     except Exception as e:
         print(f"Error en api_trade_ins_por_cliente: {e}")
@@ -250,10 +219,10 @@ def api_trade_ins_por_cliente(cliente_id):
 def api_tradein_detalle(tradein_id):
     """Obtiene el detalle completo de un trade-in"""
     try:
-        modelo = TradeInEmpleados()
-        detalle = modelo.obtener_detalle_trade_in(tradein_id)
-        tests = modelo.obtener_tests_trade_in(tradein_id)
-        fotos = modelo.obtener_fotos_trade_in(tradein_id)
+        modelo = TradeInEmpleados(trade_in_id=tradein_id)
+        detalle = modelo.obtener_detalle_trade_in()
+        tests = modelo.obtener_tests_trade_in()
+        fotos = modelo.obtener_fotos_trade_in()
         
         return jsonify({
             "success": True,
@@ -354,18 +323,15 @@ def api_catalogo_tests():
 def api_eliminar_trade_in(tradein_id):
     """Elimina un trade-in"""
     try:
-        modelo = TradeInEmpleados()
-        resultado = modelo.eliminar_trade_in(tradein_id)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        modelo = TradeInEmpleados(
+            trade_in_id=tradein_id,
+            usuario_id=usuario_id
+        )
+        resultado = modelo.eliminar_trade_in()
         
         if resultado["success"]:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Eliminar Trade-in",
-                descripcion=f"Se eliminó el trade-in ID: {tradein_id}",
-                usuario_id=usuario_id,
-                modulo_nombre="Trade-in"
-            )
             return jsonify(resultado), 200
         else:
             return jsonify({"success": False, "error": resultado.get("error", "Error al eliminar")}), 400

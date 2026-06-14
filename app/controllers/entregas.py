@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
-from app.models.bitacora import registrar_en_bitacora
 from app.models.entrega import EntregaModel
 from app.models.personal_delivery import PersonalDeliveryModel
 import traceback
@@ -12,7 +11,7 @@ entregas_blueprint = Blueprint("entregas", __name__)
 
 @entregas_blueprint.route("/entregas")
 @jwt_required
-@solo_roles(['admin', 'Ventas'])
+@solo_roles(['admin', 'ventas'])
 def pagina_entregas():
     """Panel de gestión de entregas"""
     return render_template(
@@ -54,18 +53,17 @@ def api_crear_personal():
         if not cedula or not nombre or not apellido:
             return jsonify({"success": False, "error": "Cédula, nombre y apellido son obligatorios"}), 400
         
-        modelo = PersonalDeliveryModel()
-        mensaje = modelo.agregar_personal(cedula, nombre, apellido)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        
+        modelo = PersonalDeliveryModel(
+            cedula=cedula,
+            nombre=nombre,
+            apellido=apellido,
+            usuario_id=usuario_id
+        )
+        mensaje = modelo.agregar_personal()
         
         if "exitosamente" in mensaje:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Registrar delivery",
-                descripcion=f"Se registró al delivery: {nombre} {apellido} - Cédula: {cedula}",
-                usuario_id=usuario_id,
-                modulo_nombre="Entregas"
-            )
             return jsonify({"success": True, "message": mensaje}), 201
         else:
             return jsonify({"success": False, "error": mensaje}), 400
@@ -87,18 +85,17 @@ def api_actualizar_personal(cedula):
         if not nombre or not apellido:
             return jsonify({"success": False, "error": "Nombre y apellido son obligatorios"}), 400
         
-        modelo = PersonalDeliveryModel()
-        mensaje = modelo.actualizar_personal(cedula, nombre, apellido)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        
+        modelo = PersonalDeliveryModel(
+            cedula=cedula,
+            nombre=nombre,
+            apellido=apellido,
+            usuario_id=usuario_id
+        )
+        mensaje = modelo.actualizar_personal()
         
         if "exitosamente" in mensaje:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Actualizar delivery",
-                descripcion=f"Se actualizó al delivery con cédula: {cedula}",
-                usuario_id=usuario_id,
-                modulo_nombre="Entregas"
-            )
             return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400
@@ -113,18 +110,15 @@ def api_actualizar_personal(cedula):
 def api_eliminar_personal(cedula):
     """Eliminar delivery"""
     try:
-        modelo = PersonalDeliveryModel()
-        mensaje = modelo.eliminar_personal(cedula)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        
+        modelo = PersonalDeliveryModel(
+            cedula=cedula,
+            usuario_id=usuario_id
+        )
+        mensaje = modelo.eliminar_personal()
         
         if "exitosamente" in mensaje:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Eliminar delivery",
-                descripcion=f"Se eliminó al delivery con cédula: {cedula}",
-                usuario_id=usuario_id,
-                modulo_nombre="Entregas"
-            )
             return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400
@@ -168,17 +162,16 @@ def api_registrar_entrega():
         if not direccion:
             return jsonify({"success": False, "error": "La dirección es obligatoria"}), 400
         
-        modelo = EntregaModel()
-        entrega_id = modelo.registrar_entrega(factura_id, cedula_delivery, direccion, estado)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Registrar entrega",
-            descripcion=f"Se registró la entrega ID: {entrega_id} para factura: {factura_id}",
-            usuario_id=usuario_id,
-            modulo_nombre="Entregas"
+        modelo = EntregaModel(
+            factura_id=factura_id,
+            cedula_delivery=cedula_delivery,
+            direccion=direccion,
+            estado=estado,
+            usuario_id=usuario_id
         )
+        entrega_id = modelo.registrar_entrega()
         
         return jsonify({"success": True, "message": "Entrega registrada exitosamente", "id": entrega_id}), 201
     except ValueError as e:
@@ -201,18 +194,17 @@ def api_actualizar_entrega(entrega_id):
         if not direccion:
             return jsonify({"success": False, "error": "La dirección es obligatoria"}), 400
         
-        modelo = EntregaModel()
-        mensaje = modelo.actualizar_entrega(entrega_id, direccion, estado)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        
+        modelo = EntregaModel(
+            entrega_id=entrega_id,
+            direccion=direccion,
+            estado=estado,
+            usuario_id=usuario_id
+        )
+        mensaje = modelo.actualizar_entrega()
         
         if "exitosamente" in mensaje:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Actualizar entrega",
-                descripcion=f"Se actualizó la entrega ID: {entrega_id}",
-                usuario_id=usuario_id,
-                modulo_nombre="Entregas"
-            )
             return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400
@@ -227,18 +219,15 @@ def api_actualizar_entrega(entrega_id):
 def api_eliminar_entrega(entrega_id):
     """Eliminar entrega"""
     try:
-        modelo = EntregaModel()
-        mensaje = modelo.eliminar_entrega(entrega_id)
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        
+        modelo = EntregaModel(
+            entrega_id=entrega_id,
+            usuario_id=usuario_id
+        )
+        mensaje = modelo.eliminar_entrega()
         
         if "exitosamente" in mensaje:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            
-            registrar_en_bitacora(
-                accion="Eliminar entrega",
-                descripcion=f"Se eliminó la entrega ID: {entrega_id}",
-                usuario_id=usuario_id,
-                modulo_nombre="Entregas"
-            )
             return jsonify({"success": True, "message": mensaje}), 200
         else:
             return jsonify({"success": False, "error": mensaje}), 400

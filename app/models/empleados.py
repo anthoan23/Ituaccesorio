@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import date
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Empleados():
@@ -13,7 +14,8 @@ class Empleados():
                  celular_empleado: str = "",
                  correo_empleado: str = "",
                  direccion_empleado: str = "",
-                 especialidades: list | None = None):
+                 especialidades: list | None = None,
+                 usuario_id: str = None):
         
         self.id_empleado = id_empleado
         self.id_cargo = id_cargo
@@ -23,6 +25,7 @@ class Empleados():
         self.correo_empleado = correo_empleado
         self.direccion_empleado = direccion_empleado
         self.especialidades = especialidades if especialidades is not None else []
+        self.usuario_id = usuario_id
         
         self.__conexion_bd = conectar()
     
@@ -271,6 +274,17 @@ class Empleados():
                         pass
 
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear empleado",
+                    descripcion=f"Se creó el empleado: {cedula} - {nombre} {apellido}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Empleados"
+                )
+                bitacora.registrar()
+            
             return "Empleado agregado exitosamente."
         except Exception as e:
             print(f"Error al agregar empleado: {e}")
@@ -338,6 +352,17 @@ class Empleados():
                         pass
 
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar empleado",
+                    descripcion=f"Se actualizó el empleado ID: {id_empleado} - {nombre} {apellido}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Empleados"
+                )
+                bitacora.registrar()
+
             return "Empleado actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar empleado: {e}")
@@ -353,6 +378,10 @@ class Empleados():
 
         if not id_empleado:
             return "El identificador del empleado no puede estar vacío."
+
+        # Obtener nombre antes de eliminar
+        empleado_info = self.consultar_empleado()
+        nombre_completo = f"{empleado_info.get('nombre', '')} {empleado_info.get('apellido', '')}" if empleado_info else id_empleado
 
         if not self.verificar_empleado():
             return f"El empleado con identificador {id_empleado} no existe."
@@ -374,6 +403,17 @@ class Empleados():
                 (id_empleado,),
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar empleado",
+                    descripcion=f"Se eliminó el empleado ID: {id_empleado} - Nombre: {nombre_completo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Empleados"
+                )
+                bitacora.registrar()
+            
             return "Empleado eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar empleado: {e}")

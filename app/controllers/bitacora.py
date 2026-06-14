@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
-from app.models.bitacora import Bitacora, registrar_en_bitacora
+from app.models.bitacora import Bitacora
 from app.utils.decorators import jwt_required, solo_roles
 
 bitacora_blueprint = Blueprint("bitacora", __name__)
@@ -35,12 +35,15 @@ def registrar_bitacora_api():
             "error": "Los campos 'accion' y 'descripcion' son obligatorios.",
         }), 400
 
-    resultado = registrar_en_bitacora(
-        accion,
-        descripcion,
-        usuario_id=g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM"),
-        modulo_nombre=modulo_nombre,
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+
+    bitacora = Bitacora(
+        accion=accion,
+        descripcion=descripcion,
+        usuario_id=usuario_id,
+        modulo_nombre=modulo_nombre
     )
+    resultado = bitacora.registrar()
 
     estado = 200 if resultado.get("success") else 500
     return jsonify(resultado), estado
@@ -71,13 +74,14 @@ def api_ultimas_notificaciones():
             "descripcion": reg.get("descripcion", ""),
             "modulo_nombre": "General",
             "usuario_id": reg.get("usuario_id", "SYSTEM"),
-            "usuario_nombre": reg.get("usuario_id", "Sistema"),
-            "usuario_foto": None,
+            "usuario_nombre": reg.get("usuario_nombre", "Sistema"),
+            "usuario_foto": reg.get("usuario_foto"),
             "fecha_hora": reg.get("fecha_hora", "")
         }
         notificaciones.append(notificacion)
     
     return jsonify({"success": True, "notificaciones": notificaciones}), 200
+
 
 # ==================== DASHBOARD ====================
 
@@ -87,7 +91,7 @@ def api_actividad_reciente():
     """API para obtener actividad reciente para el dashboard"""
     try:
         modelo = Bitacora()
-        actividades = modelo.listar_actividad_reciente_dashboard(limite=5)
+        actividades = modelo.listar_actividad_reciente(limite=5)
         return jsonify({"success": True, "actividades": actividades})
     except Exception as e:
         print(f"Error en api_actividad_reciente: {e}")

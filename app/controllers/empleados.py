@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.models.bitacora import registrar_en_bitacora
 from app.models.empleados import Empleados
 
 empleados_blueprint = Blueprint("empleados", __name__)
@@ -63,17 +62,8 @@ def api_consultar_empleado():
     if not resultado1:
         return jsonify({"success": False, "error": "Empleado no encontrado."}), 404
     
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-    
-    registrar_en_bitacora(
-        accion="Consultar empleado",
-        descripcion=f"Se consultó el empleado con cédula: {cedula}",
-        usuario_id=usuario_id,
-        modulo_nombre="Empleados"
-    )
     
     if resultado1['cargo'] == 'Técnico':
-        empleados_model = Empleados(id_empleado=cedula)
         resultado2 = empleados_model.consultar_especialidades_empleado()
         return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
     
@@ -108,6 +98,8 @@ def api_agregar_empleado():
             "error": "La cédula, cargo, nombre y apellido son obligatorios.",
         }), 400
 
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     empleados_model = Empleados(
         id_empleado=cedula,
         id_cargo=cargo_id,
@@ -116,20 +108,13 @@ def api_agregar_empleado():
         celular_empleado=celular,
         correo_empleado=correo,
         direccion_empleado=direccion,
-        especialidades=especialidades
+        especialidades=especialidades,
+        usuario_id=usuario_id
     )
     
     mensaje = empleados_model.agregar_empleado()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Crear empleado",
-            descripcion=f"Se creó el empleado: {cedula} - {nombre} {apellido}",
-            usuario_id=usuario_id,
-            modulo_nombre="Empleados"
-        )
         return jsonify({"success": True, "message": mensaje}), 201
     
     return jsonify({"success": False, "error": mensaje}), 400
@@ -167,6 +152,8 @@ def api_actualizar_empleado():
             "error": "La cédula, cargo, nombre y apellido son obligatorios.",
         }), 400
 
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+
     empleados_model = Empleados(
         id_empleado=id_empleado,
         id_cargo=cargo_id,
@@ -175,20 +162,13 @@ def api_actualizar_empleado():
         celular_empleado=celular,
         correo_empleado=correo,
         direccion_empleado=direccion,
-        especialidades=especialidades
+        especialidades=especialidades,
+        usuario_id=usuario_id
     )
     
     mensaje = empleados_model.actualizar_empleado()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Actualizar empleado",
-            descripcion=f"Se actualizó el empleado ID: {id_empleado} - {nombre} {apellido}",
-            usuario_id=usuario_id,
-            modulo_nombre="Empleados"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     
     return jsonify({"success": False, "error": mensaje}), 400
@@ -204,21 +184,16 @@ def api_eliminar_empleado():
     if not id_empleado:
         return jsonify({"success": False, "error": "El ID del empleado es obligatorio."}), 400
 
-    empleados_model = Empleados(id_empleado=id_empleado)
-    empleado_existente = empleados_model.consultar_empleado()
-    nombre_completo = f"{empleado_existente.get('nombre', '')} {empleado_existente.get('apellido', '')}" if empleado_existente else id_empleado
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
+    empleados_model = Empleados(
+        id_empleado=id_empleado,
+        usuario_id=usuario_id
+    )
+    
     mensaje = empleados_model.eliminar_empleado()
 
     if "exitosamente" in mensaje:
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
-        registrar_en_bitacora(
-            accion="Eliminar empleado",
-            descripcion=f"Se eliminó el empleado ID: {id_empleado} - Nombre: {nombre_completo}",
-            usuario_id=usuario_id,
-            modulo_nombre="Empleados"
-        )
         return jsonify({"success": True, "message": mensaje}), 200
     
     return jsonify({"success": False, "error": mensaje}), 400

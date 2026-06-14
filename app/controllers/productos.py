@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from datetime import datetime
 
-from app.models.bitacora import registrar_en_bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto
 from app.models.inventario import Inventario
 
@@ -30,7 +29,7 @@ def pagina_productos():
 @tiene_permiso('Productos', 'consultar')
 def api_listar_clases():
     modelo = ClaseProducto()
-    clases = modelo.listar()
+    clases = modelo.listar_clases()
     return jsonify({"success": True, "clases": clases})
 
 
@@ -44,7 +43,9 @@ def api_crear_clase():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
-    modelo = ClaseProducto(nombre=nombre)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    modelo = ClaseProducto(nombre=nombre, usuario_id=usuario_id)
     try:
         new_id = modelo.crear()
         
@@ -77,9 +78,11 @@ def api_actualizar_clase(id_clase: str):
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
+    # Instanciar el modelo con los atributos
     modelo = ClaseProducto(id_clase=id_clase, nombre=nombre)
+    
     try:
-        ok = modelo.actualizar()
+        ok = modelo.actualizar_clase()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -104,9 +107,11 @@ def api_actualizar_clase(id_clase: str):
 @jwt_required
 @tiene_permiso('Productos', 'eliminar')
 def api_eliminar_clase(id_clase: str):
+    # Instanciar el modelo con los atributos
     modelo = ClaseProducto(id_clase=id_clase)
+    
     try:
-        ok = modelo.eliminar()
+        ok = modelo.eliminar_clase()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -135,7 +140,7 @@ def api_eliminar_clase(id_clase: str):
 def api_listar_marcas():
     id_clase = request.args.get("clase_id", default=None, type=str)
     modelo = MarcaProducto()
-    marcas = modelo.listar(id_clase=id_clase)
+    marcas = modelo.listar_marcas(id_clase=id_clase)
     return jsonify({"success": True, "marcas": marcas})
 
 
@@ -149,7 +154,11 @@ def api_crear_marca():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
 
-    modelo = MarcaProducto(nombre=nombre)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    # Instanciar el modelo con los atributos
+    modelo = MarcaProducto(nombre=nombre, usuario_id=usuario_id)
+    
     try:
         new_id = modelo.crear()
         
@@ -181,9 +190,11 @@ def api_actualizar_marca(id_marca: str):
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
 
+    # Instanciar el modelo con los atributos
     modelo = MarcaProducto(id_marca=id_marca, nombre=nombre)
+    
     try:
-        ok = modelo.actualizar()
+        ok = modelo.actualizar_marca()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -208,9 +219,11 @@ def api_actualizar_marca(id_marca: str):
 @jwt_required
 @tiene_permiso('Productos', 'eliminar')
 def api_eliminar_marca(id_marca: str):
+    # Instanciar el modelo con los atributos
     modelo = MarcaProducto(id_marca=id_marca)
+    
     try:
-        ok = modelo.eliminar()
+        ok = modelo.eliminar_marca()
         
         if ok:
             usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
@@ -242,7 +255,7 @@ def api_listar_modelos():
     q = request.args.get("q", default=None, type=str)
     
     modelo = Producto()
-    productos = modelo.listar(id_marca=id_marca, id_clase=id_clase, q=q)
+    productos = modelo.listar_productos(id_marca=id_marca, id_clase=id_clase, q=q)
     return jsonify({"success": True, "modelos": productos})
 
 
@@ -251,9 +264,10 @@ def api_listar_modelos():
 @tiene_permiso('Productos', 'registrar')
 def api_crear_modelo():
     datos = request.get_json(silent=True) or {}
+    
     nombre = str(datos.get("nombre", "")).strip()
-    id_marca = datos.get("id_marca")
-    id_clase = datos.get("id_clase")
+    id_marca = str(datos.get("id_marca", "")).strip()
+    id_clase = str(datos.get("id_clase", "")).strip()
     descripcion = datos.get("descripcion")
 
     if not nombre:
@@ -263,7 +277,22 @@ def api_crear_modelo():
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    modelo = Producto(id_clase=str(id_clase), id_marca=str(id_marca), nombre=nombre, descripcion=descripcion)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    # Instanciar el modelo con los atributos
+    modelo = Producto(
+        
+        id_clase=id_clase,
+        
+        id_marca=id_marca,
+        
+        nombre=nombre, 
+       
+        descripcion=descripcion,
+        usuario_id=usuario_id
+    
+    )
+    
     try:
         new_id = modelo.crear()
         
@@ -290,9 +319,10 @@ def api_crear_modelo():
 @tiene_permiso('Productos', 'modificar')
 def api_actualizar_modelo(id_modelo: str):
     datos = request.get_json(silent=True) or {}
+    
     nombre = str(datos.get("nombre", "")).strip()
-    id_marca = datos.get("id_marca")
-    id_clase = datos.get("id_clase")
+    id_marca = str(datos.get("id_marca", "")).strip()
+    id_clase = str(datos.get("id_clase", "")).strip()
     descripcion = datos.get("descripcion")
 
     if not nombre:
@@ -302,8 +332,16 @@ def api_actualizar_modelo(id_modelo: str):
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    modelo = Producto(id_producto=id_modelo, id_clase=str(id_clase), id_marca=str(id_marca), 
-                     nombre=nombre, descripcion=descripcion)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    modelo = Producto(
+        id_producto=id_modelo, 
+        id_clase=str(id_clase), 
+        id_marca=str(id_marca), 
+        nombre=nombre, 
+        descripcion=descripcion,
+        usuario_id=usuario_id
+    )
     try:
         ok = modelo.actualizar()
         
@@ -330,11 +368,13 @@ def api_actualizar_modelo(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'eliminar')
 def api_eliminar_modelo(id_modelo: str):
-    modelo = Producto(id_producto=id_modelo)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
+    modelo = Producto(id_producto=id_modelo, usuario_id=usuario_id)
     try:
         # Verificar si el producto tiene stock
-        if modelo.tiene_stock_asociado(id_modelo):
-            stock = modelo.obtener_stock(id_modelo)
+        if modelo.verificar_stock_asociado():
+            stock = modelo.obtener_stock_producto()
             return jsonify({
                 "success": False, 
                 "error": f"No se puede eliminar el producto porque tiene {stock} unidades en inventario. Primero debe eliminar o reducir el stock."
@@ -367,8 +407,8 @@ def api_eliminar_modelo(id_modelo: str):
 def api_verificar_stock_producto(id_modelo: str):
     """Verifica si un producto tiene stock asociado"""
     modelo = Producto(id_producto=id_modelo)
-    tiene_stock = modelo.tiene_stock_asociado(id_modelo)
-    stock = modelo.obtener_stock(id_modelo)
+    tiene_stock = modelo.verificar_stock_asociado()
+    stock = modelo.obtener_stock_producto()
     return jsonify({
         "success": True,
         "tiene_stock": tiene_stock,
@@ -396,7 +436,7 @@ def api_reportes_productos():
     }
     
     modelo = Producto()
-    productos = modelo.listar(
+    productos = modelo.listar_productos(
         id_marca=filtros["marca_id"],
         id_clase=filtros["clase_id"],
         q=filtros["q"]

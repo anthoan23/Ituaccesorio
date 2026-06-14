@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
-
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
+
 
 class Cargo():
 
-    def __init__(self, id_cargo: str = "", nombre_cargo: str = "", descripcion_cargo: str = ""):
+    def __init__(self, id_cargo: str = "", nombre_cargo: str = "", descripcion_cargo: str = "", usuario_id: str = None):
         self.id_cargo = id_cargo
         self.nombre_cargo = nombre_cargo
         self.descripcion_cargo = descripcion_cargo
+        self.usuario_id = usuario_id 
 
         self.__conexion_bd = conectar()
 
@@ -71,8 +72,17 @@ class Cargo():
             while cursor.nextset():
                 pass
             db.commit()
-            mensaje = f"Cargo agregado exitosamente."
-            return mensaje
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear cargo",
+                    descripcion=f"Se creó el cargo: {nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Cargos"
+                )
+                bitacora.registrar()
+            
+            return "Cargo agregado exitosamente."
         except Exception as e:
             print(f"Error al agregar cargo: {e}")
             db.rollback()
@@ -103,8 +113,17 @@ class Cargo():
             sql = "DELETE FROM Cargo WHERE ID_cargo = %s"
             cursor.execute(sql, (cargo_id,))
             db.commit()
-            mensaje = "Cargo eliminado exitosamente."
-            return mensaje
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar cargo",
+                    descripcion=f"Se eliminó el cargo ID: {cargo_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Cargos"
+                )
+                bitacora.registrar()
+            
+            return "Cargo eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar cargo: {e}")
             db.rollback()
@@ -156,6 +175,16 @@ class Cargo():
             """
             cursor.execute(sql, (nuevo_nombre, nueva_descripcion, cargo_id))
             db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar cargo",
+                    descripcion=f"Se actualizó el cargo ID: {cargo_id} - Nuevo nombre: {nuevo_nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Cargos"
+                )
+                bitacora.registrar()
+            
             return "Cargo actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar cargo: {e}")
@@ -199,22 +228,6 @@ class Cargo():
                 (cargo_id,),
             )
             return cursor.fetchone() is not None
-        finally:
-            cursor.close()
-            db.close()
-
-
-    def obtener_cargo_por_id(self, cargo_id):
-        """Obtiene un cargo por su ID"""
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            return None
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            query = "SELECT id_cargo, nombre_cargo, descripcion_cargo FROM Cargo WHERE id_cargo = %s LIMIT 1"
-            cursor.execute(query, (cargo_id,))
-            return cursor.fetchone()
         finally:
             cursor.close()
             db.close()

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Modulo:
-    def __init__(self, id: str = "", nombre: str = "", descripcion: str = ""):
+    def __init__(self, id: str = "", nombre: str = "", descripcion: str = "", usuario_id: str = None):
         self.id = id
         self.nombre = nombre
         self.descripcion = descripcion
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def listar_modulos(self):
@@ -95,7 +97,18 @@ class Modulo:
             )
             db.commit()
             self.id = str(cursor.lastrowid)
-            return f"Módulo agregado exitosamente."
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear módulo",
+                    descripcion=f"Se creó el módulo: {nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
+            return "Módulo agregado exitosamente."
         except Exception as e:
             print(f"Error al agregar módulo: {e}")
             db.rollback()
@@ -138,6 +151,17 @@ class Modulo:
                 (nombre, descripcion, modulo_id),
             )
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar módulo",
+                    descripcion=f"Se actualizó el módulo ID: {modulo_id} - Nuevo nombre: {nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Módulo actualizado exitosamente."
         except Exception as e:
             print(f"Error al actualizar módulo: {e}")
@@ -164,6 +188,17 @@ class Modulo:
         try:
             cursor.execute("DELETE FROM modulo WHERE id = %s", (modulo_id,))
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar módulo",
+                    descripcion=f"Se eliminó el módulo ID: {modulo_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Usuarios"
+                )
+                bitacora.registrar()
+            
             return "Módulo eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar módulo: {e}")

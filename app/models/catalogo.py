@@ -3,52 +3,54 @@ from app.models.database import conectar
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
 
+
 class CatalogoModel:
-    """Modelo para operaciones del catálogo de productos"""
+    """Modelo para operaciones del catálogo de productos (solo lectura)"""
     
-    def __init__(self):
+    def __init__(self, inventario_id: str = None, producto_id: str = None,
+                 clase_id: str = None, marca_id: str = None, q: str = None):
+        self.inventario_id = inventario_id
+        self.producto_id = producto_id
+        self.clase_id = clase_id
+        self.marca_id = marca_id
+        self.q = q
         self.__conexion_bd = conectar()
     
-    def listar_productos_catalogo(
-        self, 
-        clase_id: Optional[str] = None, 
-        marca_id: Optional[str] = None, 
-        q: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def listar_productos_catalogo(self) -> List[Dict[str, Any]]:
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
         
         cursor = db.cursor(dictionary=True)
         try:
-            where = ["i.Existencia > 0"]
+            where = ["e.Existencia > 0"]
             params = []
             
-            if clase_id:
+            if self.clase_id:
                 where.append("p.ID_Clase = %s")
-                params.append(clase_id)
-            if marca_id:
+                params.append(self.clase_id)
+            if self.marca_id:
                 where.append("p.ID_marca = %s")
-                params.append(marca_id)
-            if q:
+                params.append(self.marca_id)
+            if self.q:
                 where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
-                params.append(f"%{q}%")
-                params.append(f"%{q}%")
+                params.append(f"%{self.q}%")
+                params.append(f"%{self.q}%")
             
             where_sql = " AND ".join(where)
             
             query = f"""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
                     COALESCE(cl.Nombre_Clase, '') AS clase,
-                    i.Costo_venta AS precio_usd,
-                    i.Existencia AS stock,
+                    e.Costo_venta AS precio_usd,
+                    e.Existencia AS stock,
                     COALESCE((
                         SELECT fi.Foto_inventario
                         FROM Fotos_inventario fi
-                        WHERE fi.ID_inventario = i.ID_inventario
+                        WHERE fi.ID_inventario = e.ID_inventario
                         ORDER BY fi.ID_foto_inventario DESC
                         LIMIT 1
                     ), '') AS imagen,
@@ -58,10 +60,10 @@ class CatalogoModel:
                     COALESCE((
                         SELECT SUM(dv.Cantidad_articulo)
                         FROM Detalle_venta dv
-                        WHERE dv.ID_inventario = i.ID_inventario
+                        WHERE dv.ID_inventario = e.ID_inventario
                     ), 0) AS veces_vendido
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE {where_sql}
@@ -80,7 +82,10 @@ class CatalogoModel:
             cursor.close()
             db.close()
     
-    def obtener_producto(self, inventario_id: str) -> Optional[Dict[str, Any]]:
+    def obtener_producto(self) -> Optional[Dict[str, Any]]:
+        if not self.inventario_id:
+            return None
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return None
@@ -89,16 +94,16 @@ class CatalogoModel:
         try:
             cursor.execute("""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Costo_venta AS precio_usd,
-                    i.Existencia AS stock
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                    e.Costo_venta AS precio_usd,
+                    e.Existencia AS stock
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                WHERE i.ID_inventario = %s
-            """, (inventario_id,))
+                WHERE e.ID_inventario = %s
+            """, (self.inventario_id,))
             
             row = cursor.fetchone()
             if row and isinstance(row.get("precio_usd"), Decimal):
@@ -134,7 +139,8 @@ class CatalogoModel:
             cursor.close()
             db.close()
     
-    def productos_mas_vendidos(self, limite: int = 5) -> List[Dict[str, Any]]:
+    def productos_mas_vendidos(self) -> List[Dict[str, Any]]:
+        limite = 5
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
@@ -143,16 +149,16 @@ class CatalogoModel:
         try:
             cursor.execute("""
                 SELECT
-                    i.ID_inventario AS id,
+                    e.ID_inventario AS id,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Costo_venta AS precio_usd,
+                    e.Costo_venta AS precio_usd,
                     COALESCE(SUM(dv.Cantidad_articulo), 0) AS veces_vendido
-                FROM Inventario i
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                LEFT JOIN Detalle_venta dv ON dv.ID_inventario = i.ID_inventario
-                GROUP BY i.ID_inventario, p.Nombre_producto, ma.Nombre_marca, i.Costo_venta
+                LEFT JOIN Detalle_venta dv ON dv.ID_inventario = e.ID_inventario
+                GROUP BY e.ID_inventario, p.Nombre_producto, ma.Nombre_marca, e.Costo_venta
                 ORDER BY veces_vendido DESC
                 LIMIT %s
             """, (limite,))

@@ -4,6 +4,7 @@
 
 {% block head_extra %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ordenes_compra.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -262,7 +263,11 @@
         <div class="ui-modal__body">
             <div class="form__group">
                 <label class="form__label">Recibido por:</label>
-                <input type="text" id="entrega-recibido-por" class="form__input" placeholder="Nombre de quien recibe">
+                <input type="text" id="entrega-recibido-por" class="form__input" 
+                       placeholder="Nombre de quien recibe" maxlength="20"
+                       data-validation-rules="soloLetrasNumeros,capitalizar"
+                       title="Solo letras, números, espacios, acentos y ñ">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, números, espacios</small>
             </div>
             <div class="form__group">
                 <label class="form__label">Fecha de entrega:</label>
@@ -338,5 +343,6 @@
 {% endblock %}
 
 {% block scripts %}
+    <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ordenes_compra.js') }}"></script>
 {% endblock %}

@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, render_template, request, g
-from app.models.bitacora import registrar_en_bitacora
 from app.models.empleados import Empleados
 from app.models.ordenes_servicio import Orden_servicio as OrdenServicio
 from app.models.test import Tests
@@ -178,13 +177,7 @@ def crear_orden_servicio():
     
     modelo.registrar_interaccion(nueva_id, id_empleado, "Recepcion")
 
-    # Registrar en bitácora
-    registrar_en_bitacora(
-        accion="Crear orden de servicio",
-        descripcion=f"Se creó orden de servicio ID: {nueva_id} - Cliente ID: {id_cliente_val} - Modelo ID: {id_modelo_val}",
-        usuario_id=usuario_id,
-        modulo_nombre="Órdenes de servicio"
-    )
+
 
     return jsonify({"success": True, "id": nueva_id})
 
@@ -208,13 +201,7 @@ def asignar_orden_servicio(id_orden):
     # Obtener usuario actual
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    # Registrar en bitácora
-    registrar_en_bitacora(
-        accion="Asignar orden de servicio",
-        descripcion=f"Se asignó la orden ID: {id_orden} al empleado ID: {id_empleado_val}",
-        usuario_id=usuario_id,
-        modulo_nombre="Órdenes de servicio"
-    )
+
     
     return jsonify({"success": True})
 
@@ -279,15 +266,7 @@ def registrar_test_orden(id_orden):
 
     test_model = Tests()
     ok = test_model.registrar_test(tuple(valores), id_orden)
-    
-    if ok:
-        # Registrar en bitácora
-        registrar_en_bitacora(
-            accion="Registrar test de orden",
-            descripcion=f"Se registró test para la orden de servicio ID: {id_orden}",
-            usuario_id=usuario_id,
-            modulo_nombre="Órdenes de servicio"
-        )
+
     
     return jsonify({"ok": bool(ok)})
 
@@ -342,12 +321,7 @@ def eliminar_orden_servicio(id_orden):
     # Obtener usuario actual
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    # Registrar en bitácora
-    registrar_en_bitacora(
-        accion="Eliminar orden de servicio",
-        descripcion=f"Se eliminó la orden de servicio ID: {id_orden} - Cliente: {nombre_cliente}",
-        usuario_id=usuario_id,
-        modulo_nombre="Órdenes de servicio"
-    )
+
+
     
     return jsonify({"success": True, "message": "Orden eliminada"})

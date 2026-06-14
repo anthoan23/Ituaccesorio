@@ -1,5 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
+from app.models.bitacora import Bitacora
 
 
 class Proveedores:
@@ -7,7 +8,7 @@ class Proveedores:
     
     def __init__(self, id_proveedor: int = 0, nombre: str = "", 
                  tipo: str = "", celular: str = "", correo: str = "", 
-                 direccion: str = "", limite_credito: int = 0):
+                 direccion: str = "", limite_credito: int = 0, usuario_id: str = None):
         self.id_proveedor = id_proveedor
         self.nombre = nombre
         self.tipo = tipo
@@ -15,6 +16,7 @@ class Proveedores:
         self.correo = correo
         self.direccion = direccion
         self.limite_credito = limite_credito
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -68,8 +70,26 @@ class Proveedores:
             cursor.close()
             db.close()
 
-    def obtener_proveedor(self, id_proveedor: int) -> dict | None:
-        """Obtiene un proveedor por su ID"""
+    def verificar_existencia(self) -> bool:
+        """Verifica si un proveedor existe (usa el atributo id_proveedor)"""
+        if self.id_proveedor == 0:
+            return False
+        db = self._conexion()
+        if not db:
+            return False
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM Proveedor WHERE ID_proveedor = %s LIMIT 1", (self.id_proveedor,))
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_proveedor(self) -> dict | None:
+        """Obtiene un proveedor por su ID (usa el atributo id_proveedor)"""
+        if self.id_proveedor == 0:
+            return None
+            
         db = self._conexion()
         if not db:
             return None
@@ -88,7 +108,7 @@ class Proveedores:
                 FROM Proveedor
                 WHERE ID_proveedor = %s
                 LIMIT 1
-            """, (id_proveedor,))
+            """, (self.id_proveedor,))
             return cursor.fetchone()
         finally:
             cursor.close()
@@ -107,7 +127,7 @@ class Proveedores:
         try:
             cursor = db.cursor()
             
-            # Si no tiene ID, obtener el siguiente
+            # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
             
@@ -122,6 +142,17 @@ class Proveedores:
                   self.direccion or None, self.limite_credito or None))
             
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear proveedor",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
             return self.id_proveedor
         except Exception as e:
             if db:
@@ -161,7 +192,19 @@ class Proveedores:
                   self.correo or None, self.direccion or None, 
                   self.limite_credito or None, self.id_proveedor))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar proveedor",
+                    descripcion=f"Se actualizó el proveedor ID: {proveedor_id} - Nuevo nombre: {self.nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception as e:
             if db:
                 db.rollback()
@@ -173,7 +216,7 @@ class Proveedores:
                 db.close()
 
     def eliminar_proveedor(self) -> bool:
-        """Elimina un proveedor usando el ID de la instancia"""
+        """Elimina un proveedor usando el atributo id_proveedor"""
         if self.id_proveedor == 0:
             raise ValueError("ID del proveedor es requerido para eliminar.")
         
@@ -186,7 +229,19 @@ class Proveedores:
             cursor = db.cursor()
             cursor.execute("DELETE FROM Proveedor WHERE ID_proveedor = %s", (self.id_proveedor,))
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar proveedor",
+                    descripcion=f"Se eliminó el proveedor ID: {proveedor_id} - Nombre: {self.nombre}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             if db:
                 db.rollback()
@@ -257,7 +312,10 @@ class Proveedores:
             
             # Obtener productos suministrados
             cursor.execute("""
-                SELECT p.ID_producto as id, p.Nombre_producto as nombre
+                SELECT 
+                    s.ID_producto as id_modelo,
+                    p.Nombre_producto as nombre,
+                    s.Costo_producto as costo
                 FROM Suministra s
                 JOIN Producto p ON s.ID_producto = p.ID_producto
                 WHERE s.ID_proveedor = %s
@@ -307,7 +365,7 @@ class Proveedores:
             cursor.close()
             db.close()
 
-    def upsert_producto_proveedor(self, id_modelo: str, costo: int | None) -> bool:
+    def upsert_producto_proveedor(self, id_modelo: str = None, costo: int | None = None) -> bool:
         """Inserta o actualiza un producto para este proveedor"""
         if self.id_proveedor == 0:
             raise ValueError("ID del proveedor es requerido")
@@ -327,7 +385,19 @@ class Proveedores:
                 ON DUPLICATE KEY UPDATE Costo_producto = VALUES(Costo_producto)
             """, (self.id_proveedor, id_modelo, costo))
             db.commit()
-            return cursor.rowcount > 0
+            updated = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if updated and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar producto de proveedor",
+                    descripcion=f"Se actualizó producto para proveedor ID: {proveedor_id} - Modelo ID: {id_modelo} - Costo: {costo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return updated
         except Exception as e:
             if db:
                 db.rollback()
@@ -338,7 +408,7 @@ class Proveedores:
             if db:
                 db.close()
 
-    def eliminar_producto_proveedor(self, id_modelo: str) -> bool:
+    def eliminar_producto_proveedor(self, id_modelo: str = None) -> bool:
         """Elimina un producto de este proveedor"""
         if self.id_proveedor == 0:
             raise ValueError("ID del proveedor es requerido")
@@ -357,7 +427,19 @@ class Proveedores:
                 (self.id_proveedor, id_modelo)
             )
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar producto de proveedor",
+                    descripcion=f"Se eliminó producto del proveedor ID: {proveedor_id} - Modelo ID: {id_modelo}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception as e:
             if db:
                 db.rollback()
@@ -381,7 +463,7 @@ class Proveedores:
         try:
             cursor = db.cursor()
             
-            # Si no tiene ID, obtener el siguiente
+            # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
             
@@ -412,6 +494,17 @@ class Proveedores:
                 """, rows)
             
             db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear proveedor",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos)}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Proveedores"
+                )
+                bitacora.registrar()
+            
             return self.id_proveedor
         except Exception as e:
             if db:

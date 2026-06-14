@@ -43,6 +43,7 @@
       soloLetrasNumeros: /^[A-Za-z0-9\s]+$/,
       emailSimple: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
       url: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+      decimal: /^\d+(\.\d{1,2})?$/,
     },
     liveValidation: true,
     showErrorsInline: true,
@@ -96,17 +97,17 @@
       validate: (value) => /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(value),
       message: 'Ingrese un correo electrónico válido'
     },
-    // Teléfono (solo números, espacios, guiones y paréntesis)
+    // Teléfono (solo números, espacios, guiones y paréntesis) - 11 dígitos
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),
-      validate: (value) => /^[\d\s\-+()]{11,11}$/.test(value),
-      message: 'Ingrese un número de teléfono válido'
+      validate: (value) => /^\d{11}$/.test(value.replace(/[\s\-+()]/g, '')),
+      message: 'Ingrese un número de teléfono válido (11 dígitos)'
     },
-    // Cédula/Venezuela (solo números y guiones)
+    // Cédula/Venezuela (solo números)
     cedula: {
-      filter: (value) => value.replace(/[^\d\-]/g, ''),
-      validate: (value) => /^[\d\-]{6,8}$/.test(value),
-      message: 'Ingrese una cédula válida (solo números y guiones)'
+      filter: (value) => value.replace(/[^\d]/g, ''),
+      validate: (value) => /^\d{6,8}$/.test(value),
+      message: 'Ingrese una cédula válida (solo números, 6-8 dígitos)'
     },
     // Sin espacios
     sinEspacios: {
@@ -127,6 +128,25 @@
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'No se permiten caracteres especiales'
+    },
+    // Números decimales (hasta 2 decimales)
+    decimal: {
+      filter: (value) => {
+        // Permitir solo números y un punto decimal
+        let filtered = value.replace(/[^\d.]/g, '');
+        // Prevenir múltiples puntos decimales
+        const parts = filtered.split('.');
+        if (parts.length > 2) {
+          filtered = parts[0] + '.' + parts.slice(1).join('');
+        }
+        // Limitar a 2 decimales
+        if (parts.length === 2 && parts[1].length > 2) {
+          filtered = parts[0] + '.' + parts[1].slice(0, 2);
+        }
+        return filtered;
+      },
+      validate: (value) => /^\d+(\.\d{1,2})?$/.test(value),
+      message: 'Ingrese un número válido (puede incluir hasta 2 decimales)'
     }
   };
 

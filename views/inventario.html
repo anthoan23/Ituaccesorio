@@ -207,6 +207,7 @@
                  name="existencia" 
                  type="number" 
                  min="0" 
+                 step="1"
                  placeholder="0" 
                  aria-label="Existencia" 
                  required
@@ -224,8 +225,8 @@
                  inputmode="decimal" 
                  aria-label="Costo venta" 
                  required
-                 data-validation-rules="soloNumeros"
-                 title="Solo números, puede incluir punto decimal"
+                 data-validation-rules="decimal"
+                 title="Solo números, puede incluir hasta 2 decimales"
                  pattern="^\d+(\.\d{1,2})?$">
           <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (ej: 100, 150.50, 99.99)</small>
         </label>
