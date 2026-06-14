@@ -1,247 +1,487 @@
-{% extends 'components/layout/base.html' %}
-
-{% block title %}Ituaccesorio - Validación de Pagos{% endblock %}
-
-{% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/validacion_pagos.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends 'components/layout/base.html' %} {% block title %}Ituaccesorio -
+Validación de Pagos{% endblock %} {% block head_extra %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/validacion_pagos.css') }}"
+/>
+{% endblock %} {% block content %}
 <main class="page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <ol class="breadcrumb__list">
-            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-            <li aria-current="page">
-                <span class="breadcrumb__current">Validación de Pagos</span>
-            </li>
-        </ol>
-    </nav>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Validación de Pagos</span>
+      </li>
+    </ol>
+  </nav>
 
-    <header class="validacion-header">
-        <div class="validacion-header__copy">
-            <h1 class="validacion-header__title">Validación de Pagos</h1>
-            <p class="validacion-header__subtitle">Revisa los comprobantes de pago y aprueba o rechaza las transacciones</p>
-        </div>
-        <div class="validacion-header__actions">
-            <button id="btn-reportes-pagos" class="btn btn--ghost" type="button">📊 Reportes</button>
-        </div>
-    </header>
+  <header class="validacion-header">
+    <div class="validacion-header__copy">
+      <h1 class="validacion-header__title">Validación de Pagos</h1>
+      <p class="validacion-header__subtitle">
+        Revisa los comprobantes de pago y aprueba o rechaza las transacciones
+      </p>
+    </div>
+    <div class="validacion-header__actions">
+      <button id="btn-reportes-pagos" class="btn btn--ghost" type="button">
+        📊 Reportes
+      </button>
+    </div>
+  </header>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="pendientes">Pendientes</button>
-        <button class="tab-btn" data-tab="aprobados">Aprobados</button>
-        <button class="tab-btn" data-tab="rechazados">Rechazados</button>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pendientes">Pendientes</button>
+    <button class="tab-btn" data-tab="aprobados">Aprobados</button>
+    <button class="tab-btn" data-tab="rechazados">Rechazados</button>
+  </div>
 
-    <div id="pendientes-tab" class="tab-content">
-        <div id="pendientes-list" class="pagos-grid"></div>
-    </div>
-    <div id="aprobados-tab" class="tab-content is-hidden">
-        <div id="aprobados-list" class="pagos-grid"></div>
-    </div>
-    <div id="rechazados-tab" class="tab-content is-hidden">
-        <div id="rechazados-list" class="pagos-grid"></div>
-    </div>
+  <div id="pendientes-tab" class="tab-content">
+    <div id="pendientes-list" class="pagos-grid"></div>
+  </div>
+  <div id="aprobados-tab" class="tab-content is-hidden">
+    <div id="aprobados-list" class="pagos-grid"></div>
+  </div>
+  <div id="rechazados-tab" class="tab-content is-hidden">
+    <div id="rechazados-list" class="pagos-grid"></div>
+  </div>
 </main>
 
 <!-- Modal de rechazo -->
 <div id="rechazo-modal" class="modal-rechazo is-hidden">
-    <div class="modal-panel">
-        <h3>Rechazar pago</h3>
-        <p style="font-size: 0.85rem; color: #666;">Motivo del rechazo:</p>
-        <textarea id="motivo-rechazo" class="motivo-rechazo" placeholder="Ej: Comprobante ilegible, Monto incorrecto..." rows="3"></textarea>
-        <div class="rechazo-actions">
-            <button id="cancelar-rechazo" class="btn btn--ghost">Cancelar</button>
-            <button id="confirmar-rechazo" class="btn btn--yellow">Confirmar rechazo</button>
-        </div>
+  <div class="modal-panel">
+    <h3>Rechazar pago</h3>
+    <p style="font-size: 0.85rem; color: #666">Motivo del rechazo:</p>
+    <textarea
+      id="motivo-rechazo"
+      class="motivo-rechazo"
+      placeholder="Ej: Comprobante ilegible, Monto incorrecto..."
+      rows="3"
+      maxlength="200"
+      data-validation-rules="sinCaracteresEspeciales"
+      title="Sin caracteres especiales"
+    ></textarea>
+    <div class="rechazo-actions">
+      <button id="cancelar-rechazo" class="btn btn--ghost">Cancelar</button>
+      <button id="confirmar-rechazo" class="btn btn--yellow">
+        Confirmar rechazo
+      </button>
     </div>
+  </div>
 </div>
 
 <!-- ==================== MODAL DE REPORTES ==================== -->
-<div id="modal-reportes-pagos" class="ui-modal" data-modal hidden aria-hidden="true">
-    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-pagos-title">
-        <div class="ui-modal__header">
-            <h3 id="reportes-pagos-title" class="ui-modal__title">📊 Reporte de Pagos</h3>
-            <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
-        </div>
-        <div class="ui-modal__body">
-            <!-- Filtros -->
-            <div class="filters-panel__section">
-                <h3 class="filters-panel__title">🔍 Filtros avanzados</h3>
-                
-                <div class="filters-panel__row">
-                    <div class="field">
-                        <label class="field__label">🔎 Búsqueda</label>
-                        <input type="text" id="reporte-busqueda-pagos" class="field__input" placeholder="Factura, nombre del cliente...">
-                        <small class="field-hint">Buscar por ID de factura o nombre del cliente</small>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="field__label">📌 Estado</label>
-                        <select id="reporte-estado-pagos" class="field__input">
-                            <option value="">Todos</option>
-                            <option value="pendiente">⏳ Pendiente</option>
-                            <option value="aprobado">✅ Aprobado</option>
-                            <option value="rechazado">❌ Rechazado</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="filters-panel__row">
-                    <div class="field">
-                        <label class="field__label">💳 Método de pago</label>
-                        <select id="reporte-metodo-pagos" class="field__input">
-                            <option value="">Todos</option>
-                            <option value="pago_movil">📱 Pago Móvil</option>
-                            <option value="zelle">🏦 Zelle</option>
-                            <option value="binance">₿ Binance</option>
-                            <option value="efectivo_usd">💵 Efectivo USD</option>
-                            <option value="efectivo_bs">💵 Efectivo Bs</option>
-                        </select>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="field__label">💰 Moneda</label>
-                        <select id="reporte-moneda-pagos" class="field__input">
-                            <option value="">Todas</option>
-                            <option value="USD">💵 USD</option>
-                            <option value="VES">🇻🇪 VES</option>
-                            <option value="USDT">₿ USDT</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="filters-panel__row">
-                    <div class="field">
-                        <label class="field__label">📅 Fecha desde</label>
-                        <input type="date" id="reporte-fecha-desde-pagos" class="field__input">
-                    </div>
-                    
-                    <div class="field">
-                        <label class="field__label">📅 Fecha hasta</label>
-                        <input type="date" id="reporte-fecha-hasta-pagos" class="field__input">
-                    </div>
-                </div>
-                
-                <div class="filters-panel__row">
-                    <div class="field">
-                        <label class="field__label">💰 Monto mínimo</label>
-                        <input type="number" id="reporte-monto-min-pagos" step="0.01" min="0" class="field__input" placeholder="0.00">
-                    </div>
-                    
-                    <div class="field">
-                        <label class="field__label">💰 Monto máximo</label>
-                        <input type="number" id="reporte-monto-max-pagos" step="0.01" min="0" class="field__input" placeholder="0.00">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botones de acción -->
-            <div class="filters-panel__section">
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
-                    <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">📊 Generar reporte</button>
-                    <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">🗑 Limpiar filtros</button>
-                </div>
-            </div>
-
-            <!-- Resumen estadístico -->
-            <div id="reporte-resumen-pagos" class="filters-panel__section" style="display: none;">
-                <h3 class="filters-panel__title">📈 Resumen</h3>
-                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">
-                    <div class="stat-card" style="background: #e8f5e9; padding: 0.75rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #2e7d32; text-transform: uppercase;">Total transacciones</div>
-                        <div id="reporte-total-pagos" style="font-size: 1.5rem; font-weight: bold; color: #2e7d32;">0</div>
-                    </div>
-                    <div class="stat-card" style="background: #fff3e0; padding: 0.75rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #f5a623; text-transform: uppercase;">Monto total</div>
-                        <div id="reporte-total-monto-pagos" style="font-size: 1.5rem; font-weight: bold; color: #f5a623;">$0</div>
-                    </div>
-                    <div class="stat-card" style="background: #e3f2fd; padding: 0.75rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #1976d2; text-transform: uppercase;">Pendientes</div>
-                        <div id="reporte-pendientes-pagos" style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">0</div>
-                    </div>
-                    <div class="stat-card" style="background: #e8f5e9; padding: 0.75rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #2e7d32; text-transform: uppercase;">Aprobados</div>
-                        <div id="reporte-aprobados-pagos" style="font-size: 1.5rem; font-weight: bold; color: #2e7d32;">0</div>
-                    </div>
-                    <div class="stat-card" style="background: #ffebee; padding: 0.75rem; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #c62828; text-transform: uppercase;">Rechazados</div>
-                        <div id="reporte-rechazados-pagos" style="font-size: 1.5rem; font-weight: bold; color: #c62828;">0</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Previsualización -->
-            <div id="reporte-preview-pagos" class="filters-panel__section" style="display: none;">
-                <h3 class="filters-panel__title">📋 Previsualización</h3>
-                <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Factura</th>
-                                <th>Cliente</th>
-                                <th>Fecha</th>
-                                <th>Método</th>
-                                <th>Referencia</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                                <th>Prod.</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reporte-tabla-pagos">
-                            <tr><td colspan="9" class="table__empty">Selecciona filtros y genera un reporte</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Botones de exportación -->
-            <div class="ui-form__actions">
-                <button id="btn-exportar-excel-pagos" class="ui-btn ui-btn--primary" disabled>📊 Exportar Excel</button>
-                <button id="btn-exportar-pdf-pagos" class="ui-btn ui-btn--primary" disabled>📄 Exportar PDF</button>
-                <button id="btn-imprimir-pagos" class="ui-btn ui-btn--ghost" disabled>🖨 Imprimir</button>
-            </div>
-        </div>
+<div
+  id="modal-reportes-pagos"
+  class="ui-modal"
+  data-modal
+  hidden
+  aria-hidden="true"
+>
+  <div
+    class="ui-modal__dialog ui-modal__dialog--lg"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reportes-pagos-title"
+  >
+    <div class="ui-modal__header">
+      <h3 id="reportes-pagos-title" class="ui-modal__title">
+        📊 Reporte de Pagos
+      </h3>
+      <button
+        class="ui-modal__close"
+        type="button"
+        data-close-modal
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
     </div>
+    <div class="ui-modal__body">
+      <!-- Filtros -->
+      <div class="filters-panel__section">
+        <h3 class="filters-panel__title">🔍 Filtros avanzados</h3>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">🔎 Búsqueda</label>
+            <input
+              type="text"
+              id="reporte-busqueda-pagos"
+              class="field__input"
+              placeholder="Factura, nombre del cliente..."
+              data-validation-rules="sinCaracteresEspeciales"
+              title="Sin caracteres especiales"
+            />
+            <small class="field-hint"
+              >Buscar por ID de factura o nombre del cliente</small
+            >
+          </div>
+
+          <div class="field">
+            <label class="field__label">📌 Estado</label>
+            <select id="reporte-estado-pagos" class="field__input">
+              <option value="">Todos</option>
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="aprobado">✅ Aprobado</option>
+              <option value="rechazado">❌ Rechazado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">💳 Método de pago</label>
+            <select id="reporte-metodo-pagos" class="field__input">
+              <option value="">Todos</option>
+              <option value="pago_movil">📱 Pago Móvil</option>
+              <option value="zelle">🏦 Zelle</option>
+              <option value="binance">₿ Binance</option>
+              <option value="efectivo_usd">💵 Efectivo USD</option>
+              <option value="efectivo_bs">💵 Efectivo Bs</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label">💰 Moneda</label>
+            <select id="reporte-moneda-pagos" class="field__input">
+              <option value="">Todas</option>
+              <option value="USD">💵 USD</option>
+              <option value="VES">🇻🇪 VES</option>
+              <option value="USDT">₿ USDT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">📅 Fecha desde</label>
+            <input
+              type="date"
+              id="reporte-fecha-desde-pagos"
+              class="field__input"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label">📅 Fecha hasta</label>
+            <input
+              type="date"
+              id="reporte-fecha-hasta-pagos"
+              class="field__input"
+            />
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">💰 Monto mínimo</label>
+            <input
+              type="number"
+              id="reporte-monto-min-pagos"
+              step="0.01"
+              min="0"
+              class="field__input"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label">💰 Monto máximo</label>
+            <input
+              type="number"
+              id="reporte-monto-max-pagos"
+              step="0.01"
+              min="0"
+              class="field__input"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="filters-panel__section">
+        <div
+          style="
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+          "
+        >
+          <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">
+            📊 Generar reporte
+          </button>
+          <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">
+            🗑 Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumen estadístico -->
+      <div
+        id="reporte-resumen-pagos"
+        class="filters-panel__section"
+        style="display: none"
+      >
+        <h3 class="filters-panel__title">📈 Resumen</h3>
+        <div
+          class="stats-grid"
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+          "
+        >
+          <div
+            class="stat-card"
+            style="
+              background: #e8f5e9;
+              padding: 0.75rem;
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <div
+              style="
+                font-size: 0.7rem;
+                color: #2e7d32;
+                text-transform: uppercase;
+              "
+            >
+              Total transacciones
+            </div>
+            <div
+              id="reporte-total-pagos"
+              style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
+            >
+              0
+            </div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: #fff3e0;
+              padding: 0.75rem;
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <div
+              style="
+                font-size: 0.7rem;
+                color: #f5a623;
+                text-transform: uppercase;
+              "
+            >
+              Monto total
+            </div>
+            <div
+              id="reporte-total-monto-pagos"
+              style="font-size: 1.5rem; font-weight: bold; color: #f5a623"
+            >
+              $0
+            </div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: #e3f2fd;
+              padding: 0.75rem;
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <div
+              style="
+                font-size: 0.7rem;
+                color: #1976d2;
+                text-transform: uppercase;
+              "
+            >
+              Pendientes
+            </div>
+            <div
+              id="reporte-pendientes-pagos"
+              style="font-size: 1.5rem; font-weight: bold; color: #1976d2"
+            >
+              0
+            </div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: #e8f5e9;
+              padding: 0.75rem;
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <div
+              style="
+                font-size: 0.7rem;
+                color: #2e7d32;
+                text-transform: uppercase;
+              "
+            >
+              Aprobados
+            </div>
+            <div
+              id="reporte-aprobados-pagos"
+              style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
+            >
+              0
+            </div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: #ffebee;
+              padding: 0.75rem;
+              border-radius: 12px;
+              text-align: center;
+            "
+          >
+            <div
+              style="
+                font-size: 0.7rem;
+                color: #c62828;
+                text-transform: uppercase;
+              "
+            >
+              Rechazados
+            </div>
+            <div
+              id="reporte-rechazados-pagos"
+              style="font-size: 1.5rem; font-weight: bold; color: #c62828"
+            >
+              0
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Previsualización -->
+      <div
+        id="reporte-preview-pagos"
+        class="filters-panel__section"
+        style="display: none"
+      >
+        <h3 class="filters-panel__title">📋 Previsualización</h3>
+        <div class="table-wrap" style="max-height: 400px; overflow-y: auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Factura</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Método</th>
+                <th>Referencia</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Prod.</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="reporte-tabla-pagos">
+              <tr>
+                <td colspan="9" class="table__empty">
+                  Selecciona filtros y genera un reporte
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Botones de exportación -->
+      <div class="ui-form__actions">
+        <button
+          id="btn-exportar-excel-pagos"
+          class="ui-btn ui-btn--primary"
+          disabled
+        >
+          📊 Exportar Excel
+        </button>
+        <button
+          id="btn-exportar-pdf-pagos"
+          class="ui-btn ui-btn--primary"
+          disabled
+        >
+          📄 Exportar PDF
+        </button>
+        <button id="btn-imprimir-pagos" class="ui-btn ui-btn--ghost" disabled>
+          🖨 Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal de detalle de venta -->
-<div id="modal-detalle-venta" class="ui-modal" data-modal hidden aria-hidden="true">
-    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="detalle-venta-title">
-        <div class="ui-modal__header">
-            <h3 id="detalle-venta-title" class="ui-modal__title">Detalle de Venta</h3>
-            <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
-        </div>
-        <div class="ui-modal__body">
-            <div id="detalle-venta-info" class="detail-info" style="margin-bottom: 1rem;"></div>
-            <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
-                <table class="table" style="min-width: 600px;">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Marca</th>
-                            <th>Clase</th>
-                            <th>Cantidad</th>
-                            <th>Precio Unitario</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detalle-venta-productos"></tbody>
-                    <tfoot>
-                        <tr id="detalle-venta-total">
-                            <td colspan="5" style="text-align: right; font-weight: bold;">Total:</td>
-                            <td id="detalle-venta-total-amount" style="font-weight: bold;"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
+<div
+  id="modal-detalle-venta"
+  class="ui-modal"
+  data-modal
+  hidden
+  aria-hidden="true"
+>
+  <div
+    class="ui-modal__dialog ui-modal__dialog--lg"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="detalle-venta-title"
+  >
+    <div class="ui-modal__header">
+      <h3 id="detalle-venta-title" class="ui-modal__title">Detalle de Venta</h3>
+      <button
+        class="ui-modal__close"
+        type="button"
+        data-close-modal
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
     </div>
+    <div class="ui-modal__body">
+      <div
+        id="detalle-venta-info"
+        class="detail-info"
+        style="margin-bottom: 1rem"
+      ></div>
+      <div class="table-wrap" style="max-height: 400px; overflow-y: auto">
+        <table class="table" style="min-width: 600px">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Marca</th>
+              <th>Clase</th>
+              <th>Cantidad</th>
+              <th>Precio Unitario</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="detalle-venta-productos"></tbody>
+          <tfoot>
+            <tr id="detalle-venta-total">
+              <td colspan="5" style="text-align: right; font-weight: bold">
+                Total:
+              </td>
+              <td
+                id="detalle-venta-total-amount"
+                style="font-weight: bold"
+              ></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
-{% endblock %}
-
-{% block scripts %}
-<script defer src="{{ url_for('static', filename='js/validacion_pagos.js') }}"></script>
+{% endblock %} {% block scripts %}
+<script
+  defer
+  src="{{ url_for('static', filename='js/validacion_pagos.js') }}"
+></script>
 {% endblock %}

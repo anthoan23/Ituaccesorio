@@ -152,7 +152,8 @@
                     <label class="form__field form__field--full">
                         <span>Dirección de entrega *</span>
                         <textarea name="direccion" rows="3" placeholder="Dirección completa" required
-                            maxlength="60"></textarea>
+                            maxlength="60" data-validation-rules="sinCaracteresEspeciales" title="Sin caracteres especiales"></textarea>
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 60 caracteres)</small>
                     </label>
 
                     <label class="form__field">
@@ -194,20 +195,23 @@
                 <div class="form__grid">
                     <label class="form__field">
                         <span>Cédula *</span>
-                        <input name="cedula" id="personal-cedula" type="text" placeholder="12345678" required maxlength="15">
+                        <input name="cedula" id="personal-cedula" type="text" placeholder="12345678" required 
+                               maxlength="15" data-validation-rules="soloNumeros" title="Solo números">
                         <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números, máximo 15 caracteres</small>
                     </label>
 
                     <label class="form__field">
                         <span>Nombre *</span>
-                        <input name="nombre" id="personal-nombre" type="text" placeholder="Carlos" required maxlength="40">
-                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Máximo 40 caracteres</small>
+                        <input name="nombre" id="personal-nombre" type="text" placeholder="Carlos" required 
+                               maxlength="15" data-validation-rules="soloLetras,capitalizar" title="Solo letras, espacios, acentos y ñ">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 15 caracteres)</small>
                     </label>
 
                     <label class="form__field">
                         <span>Apellido *</span>
-                        <input name="apellido" id="personal-apellido" type="text" placeholder="Pérez" required maxlength="40">
-                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Máximo 40 caracteres</small>
+                        <input name="apellido" id="personal-apellido" type="text" placeholder="Pérez" required 
+                               maxlength="15" data-validation-rules="soloLetras,capitalizar" title="Solo letras, espacios, acentos y ñ">
+                        <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 15 caracteres)</small>
                     </label>
                 </div>
 
