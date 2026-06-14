@@ -699,7 +699,9 @@ const RepuestosService = {
         
         const tablaContainer = document.getElementById('tabla-inventario-repuestos');
         if (tablaContainer) {
+            // 🔧 IMPORTANTE: Remover el event listener anterior ANTES de agregar uno nuevo
             tablaContainer.removeEventListener('click', this.handleInventarioClick);
+            // Agregar el nuevo event listener
             tablaContainer.addEventListener('click', this.handleInventarioClick.bind(this));
         }
 
@@ -727,18 +729,23 @@ const RepuestosService = {
         
         if (!idInventario || !nombreProducto) return;
         
-        if (existencia <= 0) {
-            Utils.showMessage(`❌ "${nombreProducto}" no tiene stock disponible`, true);
-            return;
+        // Prevenir ejecución múltiple
+        if (event.target.hasAttribute('data-processing')) return;
+        event.target.setAttribute('data-processing', 'true');
+        
+        try {
+            if (existencia <= 0) {
+                Utils.showMessage(`❌ "${nombreProducto}" no tiene stock disponible`, true);
+                return;
+            }
+            
+            console.log('Agregando repuesto (click en fila):', idInventario, nombreProducto);
+            this.agregarRepuesto(idInventario, nombreProducto);
+        } finally {
+            setTimeout(() => {
+                event.target.removeAttribute('data-processing');
+            }, 300);
         }
-        
-        console.log('Agregando repuesto (click en fila):', idInventario, nombreProducto);
-        this.agregarRepuesto(idInventario, nombreProducto);
-        
-        // Opcional: Cerrar el modal después de agregar
-        // if (window.UiModal && typeof window.UiModal.close === 'function') {
-        //     window.UiModal.close();
-        // }
     },
 
     renderizarInventario(inventario, tbody) {
@@ -907,14 +914,11 @@ const RepuestosService = {
     },
 
     limpiar() {
-        if (this.repuestosSeleccionados.length > 0) {
-            if (confirm('¿Estás seguro de que deseas limpiar todos los repuestos de la lista?')) {
-                this.repuestosSeleccionados = [];
-                this.renderizarRepuestosUsados();
-                this.actualizarContadorTotal();
-                Utils.showMessage('Lista de repuestos limpiada');
-            }
-        }
+        // Eliminado el confirm, ahora limpia directamente
+        this.repuestosSeleccionados = [];
+        this.renderizarRepuestosUsados();
+        this.actualizarContadorTotal();
+        Utils.showMessage('Lista de repuestos limpiada');
     },
 
     obtenerRepuestos() {
