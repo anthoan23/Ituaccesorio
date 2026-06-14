@@ -89,6 +89,7 @@ class Inventario:
                 JOIN Producto p ON e.ID_producto = p.ID_producto
                 JOIN Clase_producto c ON p.ID_Clase = c.ID_Clase
                 JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                WHERE e.ID_categoria = 2
                 ORDER BY c.Nombre_Clase, m.Nombre_marca, p.Nombre_producto
             """)
             return cursor.fetchall()
