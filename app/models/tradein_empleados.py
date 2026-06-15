@@ -617,7 +617,7 @@ class TradeInEmpleados:
             db.commit()
             
             if self.usuario_id:
-                bitacora = bBitacora(
+                bitacora = Bitacora(
                     accion="Eliminar Trade-in",
                     descripcion=f"Se eliminó el trade-in ID: {self.trade_in_id}",
                     usuario_id=self.usuario_id,

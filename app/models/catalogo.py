@@ -41,17 +41,11 @@ class CatalogoModel:
             
             if self.q:
                 q_str = str(self.q).strip()
-                if q_str:
-                    if len(q_str) < 2:
-                        pass  
-                    elif len(q_str) > 100:
-                        pass  
-                    else:
-                        # Escapar caracteres especiales para LIKE
-                        termino_seguro = q_str.replace('%', '\\%').replace('_', '\\_')
-                        where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
-                        params.append(f"%{termino_seguro}%")
-                        params.append(f"%{termino_seguro}%")
+                if q_str and len(q_str) >= 2 and len(q_str) <= 100:
+                    termino_seguro = q_str.replace('%', '\\%').replace('_', '\\_')
+                    where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
+                    params.append(f"%{termino_seguro}%")
+                    params.append(f"%{termino_seguro}%")
             
             where_sql = " AND ".join(where)
             
@@ -178,7 +172,6 @@ class CatalogoModel:
     
     def productos_mas_vendidos(self, limite: int = 5) -> List[Dict[str, Any]]:
         """Obtiene los productos más vendidos"""
-        # Validación estilo cargo
         try:
             limite_int = int(limite)
             if limite_int <= 0:

@@ -8,29 +8,31 @@ def _obtener_usuario_actual():
     """Obtiene el ID del usuario actual (si está logueado) o None si no"""
     user = getattr(g, 'user', None)
     if not user:
-        return None  # Usuario no autenticado
+        return None
     if isinstance(user, dict):
-        return str(user.get("usuario_id") or user.get("id"))
-    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None))
+        return str(user.get("usuario_id") or user.get("id") or user.get("cedula"))
+    return str(getattr(user, "usuario_id", None) or getattr(user, "id", None) or getattr(user, "cedula", None))
 
 
 @tradein_blueprint.route("/trade-in", methods=["GET"])
-# Sin decoradores - acceso completamente público
 def pagina_tradein():
+    """Página principal de Trade-in - acceso público"""
     modelo = TradeIn()
+    equipos = modelo.consultar_equipos() or []
+    
     return render_template(
         "tradein.html",
         show_navbar=True,
         show_notifications=True,
         active_page="tradein",
-        equipos=modelo.consultar_equipos() or [],
+        equipos=equipos,
         fallas=TradeIn.FALLAS_COTIZACION,
     )
 
 
 @tradein_blueprint.route("/api/trade-in", methods=["GET"])
-# Sin decoradores - acceso completamente público
 def obtener_tradein_json():
+    """API para obtener datos de Trade-in - acceso público"""
     modelo = TradeIn()
     return jsonify({
         "success": True,
@@ -40,8 +42,8 @@ def obtener_tradein_json():
 
 
 @tradein_blueprint.route("/api/trade-in/cotizar", methods=["POST"])
-# Sin decoradores - acceso completamente público
 def cotizar_tradein():
+    """API para calcular cotización - acceso público"""
     datos = request.get_json(silent=True) or {}
     
     # Obtener usuario actual (puede ser None para usuarios no autenticados)
@@ -65,16 +67,16 @@ def cotizar_tradein():
             "error": "Debes seleccionar un equipo para cotizar."
         }), 400
 
-    try:
-        resultado = modelo.calcular_cotizacion(
-            int(id_producto), 
-            datos.get("fallas") or []
-        )
-    except ValueError:
-        return jsonify({
-            "success": False,
-            "error": "El equipo seleccionado no es válido.",
-        }), 400
-
+    resultado = modelo.calcular_cotizacion(id_producto, datos.get("fallas") or [])
     estado = 200 if resultado.get("success") else 400
     return jsonify(resultado), estado
+
+
+@tradein_blueprint.route("/api/trade-in/equipos", methods=["GET"])
+def obtener_equipos():
+    """API para obtener solo la lista de equipos"""
+    modelo = TradeIn()
+    return jsonify({
+        "success": True,
+        "equipos": modelo.consultar_equipos() or []
+    })
