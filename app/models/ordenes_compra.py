@@ -217,9 +217,11 @@ class OrdenCompra(conectar):
             cursor.close()
             db.close()
 
-    def obtener_productos_proveedor(self, ID_proveedor: int):
+    def obtener_productos_proveedor(self, ID_proveedor: int = None):
         """Obtiene productos que suministra un proveedor"""
-        if not self.id_proveedor:
+        proveedor_id = ID_proveedor if ID_proveedor is not None else self.id_proveedor
+        
+        if not proveedor_id:
             return []
 
         db = self.conexion1()
@@ -241,7 +243,7 @@ class OrdenCompra(conectar):
                 LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE s.ID_proveedor = %s
                 ORDER BY p.Nombre_producto ASC
-            """, (self.id_proveedor,))
+            """, (proveedor_id,))
             return cursor.fetchall()
         except Exception as e:
             print(f"Error obtener_productos_proveedor: {e}")
@@ -264,7 +266,7 @@ class OrdenCompra(conectar):
         try:
             cursor = db.cursor()
             
-            if not productos:
+            if not self.productos:  # Cambiado: usar self.productos
                 return False
             
             cursor.execute("SELECT MAX(ID_orden_compra) FROM Orden_compra")
@@ -287,7 +289,7 @@ class OrdenCompra(conectar):
                 VALUES (%s, %s, %s, NOW(), 'Pendiente')
             """, (self.id_orden, self.id_empleado, self.id_proveedor))
             
-            for mid, qty in productos:
+            for mid, qty in self.productos:  # Cambiado: usar self.productos
                 print(f"Insertando producto: ID_producto={mid}, Cantidad={qty}")
                 cursor.execute("""
                     INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
