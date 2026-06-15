@@ -1,7 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
 from datetime import date
-from app.models.empleados import empleado
 
 
 class Orden_servicio():
