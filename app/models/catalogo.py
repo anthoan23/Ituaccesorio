@@ -17,6 +17,7 @@ class CatalogoModel:
         self.__conexion_bd = conectar()
     
     def listar_productos_catalogo(self) -> List[Dict[str, Any]]:
+        """Lista productos del catálogo con filtros opcionales"""
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
@@ -27,15 +28,30 @@ class CatalogoModel:
             params = []
             
             if self.clase_id:
-                where.append("p.ID_Clase = %s")
-                params.append(self.clase_id)
+                clase_id_str = str(self.clase_id).strip()
+                if clase_id_str:
+                    where.append("p.ID_Clase = %s")
+                    params.append(clase_id_str)
+            
             if self.marca_id:
-                where.append("p.ID_marca = %s")
-                params.append(self.marca_id)
+                marca_id_str = str(self.marca_id).strip()
+                if marca_id_str:
+                    where.append("p.ID_marca = %s")
+                    params.append(marca_id_str)
+            
             if self.q:
-                where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
-                params.append(f"%{self.q}%")
-                params.append(f"%{self.q}%")
+                q_str = str(self.q).strip()
+                if q_str:
+                    if len(q_str) < 2:
+                        pass  
+                    elif len(q_str) > 100:
+                        pass  
+                    else:
+                        # Escapar caracteres especiales para LIKE
+                        termino_seguro = q_str.replace('%', '\\%').replace('_', '\\_')
+                        where.append("(p.Nombre_producto LIKE %s OR ma.Nombre_marca LIKE %s)")
+                        params.append(f"%{termino_seguro}%")
+                        params.append(f"%{termino_seguro}%")
             
             where_sql = " AND ".join(where)
             
@@ -78,12 +94,21 @@ class CatalogoModel:
                     r["precio_usd"] = float(r["precio_usd"])
             
             return resultados
+        except Exception as e:
+            print(f"Error en listar_productos_catalogo: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
     
     def obtener_producto(self) -> Optional[Dict[str, Any]]:
+        """Obtiene un producto específico por su inventario_id"""
         if not self.inventario_id:
+            return None
+        
+        inventario_id_str = str(self.inventario_id).strip()
+        
+        if not inventario_id_str:
             return None
         
         db = self.__conexion_bd.conexion1()
@@ -103,7 +128,7 @@ class CatalogoModel:
                 JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 WHERE e.ID_inventario = %s
-            """, (self.inventario_id,))
+            """, (inventario_id_str,))
             
             row = cursor.fetchone()
             if row and isinstance(row.get("precio_usd"), Decimal):
@@ -114,33 +139,55 @@ class CatalogoModel:
             db.close()
     
     def listar_clases(self) -> List[Dict[str, Any]]:
+        """Lista todas las clases de productos disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT ID_Clase AS id, Nombre_Clase AS nombre FROM Clase_producto ORDER BY Nombre_Clase")
+            cursor.execute("""
+                SELECT ID_Clase AS id, Nombre_Clase AS nombre 
+                FROM Clase_producto 
+                WHERE ID_Clase IS NOT NULL
+                ORDER BY Nombre_Clase
+            """)
             return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
     
     def listar_marcas(self) -> List[Dict[str, Any]]:
+        """Lista todas las marcas de productos disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT ID_marca AS id, Nombre_marca AS nombre FROM Marca_producto ORDER BY Nombre_marca")
+            cursor.execute("""
+                SELECT ID_marca AS id, Nombre_marca AS nombre 
+                FROM Marca_producto 
+                WHERE ID_marca IS NOT NULL
+                ORDER BY Nombre_marca
+            """)
             return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
     
-    def productos_mas_vendidos(self) -> List[Dict[str, Any]]:
-        limite = 5
+    def productos_mas_vendidos(self, limite: int = 5) -> List[Dict[str, Any]]:
+        """Obtiene los productos más vendidos"""
+        # Validación estilo cargo
+        try:
+            limite_int = int(limite)
+            if limite_int <= 0:
+                limite_int = 5
+            if limite_int > 50:
+                limite_int = 50
+        except (ValueError, TypeError):
+            limite_int = 5
+        
         db = self.__conexion_bd.conexion1()
         if not db:
             return []
@@ -161,7 +208,7 @@ class CatalogoModel:
                 GROUP BY e.ID_inventario, p.Nombre_producto, ma.Nombre_marca, e.Costo_venta
                 ORDER BY veces_vendido DESC
                 LIMIT %s
-            """, (limite,))
+            """, (limite_int,))
             
             rows = cursor.fetchall()
             for r in rows:
