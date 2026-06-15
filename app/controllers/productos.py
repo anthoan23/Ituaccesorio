@@ -1,41 +1,14 @@
-from flask import Blueprint, jsonify, render_template, request, g, current_app
-from app.utils.decorators import jwt_required, tiene_permiso
+from flask import Blueprint, jsonify, render_template, request, g
 from datetime import datetime
-import os
-import uuid
-from werkzeug.utils import secure_filename
 
+from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.bitacora import Bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto, Categoria
-from app.models.inventario import Inventario, FotosInventario
+from app.models.inventario import Inventario
+from app.utils.helpers import guardar_foto_inventario
+
 
 productos_blueprint = Blueprint("productos", __name__)
-
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-
-def _es_imagen_permitida(nombre_archivo: str) -> bool:
-    return "." in nombre_archivo and nombre_archivo.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
-
-
-def _guardar_foto_inventario(archivo):
-    if not archivo or not getattr(archivo, "filename", ""):
-        return None
-
-    if not _es_imagen_permitida(archivo.filename):
-        raise ValueError("La foto debe ser una imagen válida.")
-
-    nombre_seguro = secure_filename(archivo.filename)
-    _, extension = os.path.splitext(nombre_seguro)
-    extension = extension.lower()[:10] or ".jpg"
-    nombre_final = f"{uuid.uuid4().hex}{extension}"
-
-    carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "inventario")
-    os.makedirs(carpeta_destino, exist_ok=True)
-
-    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-    archivo.save(ruta_fisica)
-    return f"/static/img/evidencias/inventario/{nombre_final}"
 
 
 # ==================== PÁGINAS ====================
@@ -84,10 +57,9 @@ def api_crear_clase():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
-    # Obtener usuario_id
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    modelo = ClaseProducto(nombre=nombre)  # NO pasar usuario_id (ClaseProducto no lo tiene)
+    modelo = ClaseProducto(nombre=nombre)
     
     try:
         new_id = modelo.registrar_clase()
@@ -130,11 +102,9 @@ def api_crear_marca():
     modelo = MarcaProducto(nombre=nombre)
     
     try:
-        new_id = modelo.crear()
+        new_id = modelo.registrar_marca()
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
         
         bitacora = Bitacora(
             accion="Crear marca",
@@ -168,29 +138,17 @@ def api_listar_modelos():
 @jwt_required
 @tiene_permiso('Productos', 'registrar')
 def api_crear_modelo():
-    # Verificar si es FormData (con foto) o JSON
     if request.files:
         datos = request.form.to_dict()
         archivo = request.files.get("foto_inventario")
-        print("=== DATOS RECIBIDOS (FormData) ===")
-        print(datos)
-        print(f"Archivo: {archivo.filename if archivo else 'No'}")
     else:
         datos = request.get_json(silent=True) or {}
         archivo = None
-        print("=== DATOS RECIBIDOS (JSON) ===")
-        print(datos)
     
-    # Extraer campos
     nombre = str(datos.get("modelo", "")).strip()
     id_marca = str(datos.get("id_marca", "")).strip()
     id_clase = str(datos.get("id_clase", "")).strip()
-    id_categoria = datos.get("id_categoria", 0)
     descripcion = datos.get("descripcion", "")
-
-    print(f"Nombre extraído: '{nombre}'")
-    print(f"ID Marca: '{id_marca}'")
-    print(f"ID Clase: '{id_clase}'")
 
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
@@ -199,7 +157,6 @@ def api_crear_modelo():
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    # Crear producto SOLO en la tabla Producto (sin inventario)
     modelo = Producto(
         id_clase=id_clase,
         id_marca=id_marca,
@@ -210,18 +167,14 @@ def api_crear_modelo():
     try:
         new_id = modelo.registrar_producto()
         
-        # Guardar foto si se proporcionó
-        foto_path = None
         if archivo and archivo.filename:
             try:
-                foto_path = _guardar_foto_inventario(archivo)
-                print(f"Foto guardada: {foto_path}")
+                guardar_foto_inventario(archivo)
             except ValueError as e:
                 print(f"Error al guardar foto: {e}")
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
-        # Registrar en bitácora usando la nueva clase Bitacora
         bitacora = Bitacora(
             accion="Crear producto",
             descripcion=f"Producto creado: {nombre} (ID: {new_id})",
@@ -256,7 +209,6 @@ def api_actualizar_modelo(id_modelo: str):
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    # Obtener usuario_id para la bitácora (pero NO pasarlo al modelo Producto)
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 
     modelo = Producto(
@@ -270,7 +222,6 @@ def api_actualizar_modelo(id_modelo: str):
     try:
         ok = modelo.actualizar_producto()
         
-        # Registrar en bitácora después de la actualización
         if ok:
             bitacora = Bitacora(
                 accion="Actualizar producto",
@@ -292,7 +243,7 @@ def api_actualizar_modelo(id_modelo: str):
 def api_eliminar_modelo(id_modelo: str):
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    modelo = Producto(id_producto=id_modelo)  # NO pasar usuario_id aquí
+    modelo = Producto(id_producto=id_modelo)
     
     try:
         if modelo.verificar_stock_asociado():
