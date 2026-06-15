@@ -592,28 +592,29 @@
     }
   }
 
-  function getFormularioPagoHtml(metodo) {
+function getFormularioPagoHtml(metodo) {
     const today = new Date().toISOString().split("T")[0];
 
     let formHtml = `
         <div class="form-pago">
             <h4>${
-              metodo === "pago_movil"
-                ? "Pago Móvil (Bolívares)"
-                : metodo === "zelle"
-                  ? "Zelle (Dólares)"
-                  : metodo === "binance"
-                    ? "Binance (USDT)"
-                    : metodo === "efectivo_bs"
-                      ? "Efectivo (Bolívares)"
-                      : metodo === "efectivo_usd"
-                        ? "Efectivo (Dólares)"
-                        : "Método de pago"
+                metodo === "pago_movil"
+                    ? "Pago Móvil (Bolívares)"
+                    : metodo === "zelle"
+                      ? "Zelle (Dólares)"
+                      : metodo === "binance"
+                        ? "Binance (USDT)"
+                        : metodo === "efectivo_bs"
+                          ? "Efectivo (Bolívares)"
+                          : metodo === "efectivo_usd"
+                            ? "Efectivo (Dólares)"
+                            : "Método de pago"
             }</h4>
             
             <label class="field">
                 <span class="field__label">Fecha del Pago</span>
-                <input type="date" name="fecha_pago" value="${today}" required>
+                <input type="date" name="fecha_pago" value="${today}" max="${today}" required>
+                <small class="field-hint">Solo se permiten fechas actuales o anteriores</small>
             </label>
             
             <label class="field">
@@ -630,7 +631,7 @@
 
     // Para métodos que requieren comprobante (no efectivo)
     if (metodo !== "efectivo_bs" && metodo !== "efectivo_usd") {
-      formHtml += `
+        formHtml += `
             <label class="field">
                 <span class="field__label">Comprobante de Pago (Capture)</span>
                 <input type="file" name="capture" accept="image/*" data-capture-input required>
@@ -640,12 +641,16 @@
     }
 
     formHtml += `
-            <div class="pago-info">${metodo !== "efectivo_bs" && metodo !== "efectivo_usd" ? "El comprobante será verificado por nuestro equipo." : "Pago confirmado al momento de la entrega."}</div>
+            <div class="pago-info">${
+                metodo !== "efectivo_bs" && metodo !== "efectivo_usd"
+                    ? "El comprobante será verificado por nuestro equipo."
+                    : "Pago confirmado al momento de la entrega."
+            }</div>
         </div>
     `;
 
     return formHtml;
-  }
+}
 
   function setupFormularioDinamico() {
     const select = document.getElementById("metodo-pago");

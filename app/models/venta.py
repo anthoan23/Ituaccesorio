@@ -62,8 +62,9 @@ class VentaModel:
         
         cursor = db.cursor()
         try:
+            # ✅ CORREGIDO: Inventario → Existencias_productos
             cursor.execute(
-                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s",
+                "SELECT Existencia FROM Existencias_productos WHERE ID_inventario = %s",
                 (str(inventario_id),)
             )
             row = cursor.fetchone()
@@ -84,8 +85,9 @@ class VentaModel:
         
         cursor = db.cursor()
         try:
+            # ✅ CORREGIDO: Inventario → Existencias_productos
             cursor.execute(
-                "SELECT 1 FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+                "SELECT 1 FROM Existencias_productos WHERE ID_inventario = %s LIMIT 1",
                 (str(inventario_id),)
             )
             return cursor.fetchone() is not None
@@ -106,7 +108,6 @@ class VentaModel:
         if len(cliente_id_str) > 8:
             raise ValueError("El ID del cliente no puede exceder los 8 caracteres.")
         
-        # Validar items
         if not self.items:
             raise ValueError("El carrito no puede estar vacío.")
         
@@ -146,7 +147,6 @@ class VentaModel:
         if self.metodo_pago not in metodos_validos:
             raise ValueError(f"Método de pago inválido. Opciones: {', '.join(metodos_validos)}.")
         
-        # Verificar existencia del cliente
         if not self._verificar_cliente_existe(cliente_id_str):
             raise ValueError(f"El cliente con ID '{cliente_id_str}' no existe.")
         
@@ -169,7 +169,6 @@ class VentaModel:
                 inventario_id = str(item.get("producto_id", item.get("id", "")))
                 cantidad = int(item.get("cantidad", 0))
                 
-                # Verificar stock
                 stock_valido, stock_disponible = self._verificar_stock_disponible(inventario_id, cantidad)
                 if not stock_valido:
                     raise ValueError(f"Stock insuficiente para el producto {inventario_id}. Disponible: {stock_disponible}")
@@ -179,8 +178,9 @@ class VentaModel:
                     VALUES (%s, %s, %s)
                 """, (inventario_id, factura_id, cantidad))
                 
+                # ✅ CORREGIDO: Inventario → Existencias_productos
                 cursor.execute("""
-                    UPDATE Inventario 
+                    UPDATE Existencias_productos 
                     SET Existencia = Existencia - %s 
                     WHERE ID_inventario = %s
                 """, (cantidad, inventario_id))
@@ -232,7 +232,6 @@ class VentaModel:
             capture_image = self.datos_pago.get("capture", "")
             fecha_pago_cliente = self.datos_pago.get("fecha_pago", None)
             
-            # Validar monto si está presente
             if monto is not None:
                 try:
                     monto_float = float(monto)
@@ -241,7 +240,6 @@ class VentaModel:
                 except (ValueError, TypeError):
                     raise ValueError("El monto debe ser un valor numérico válido.")
             
-            # Validar referencia para ciertos métodos
             if self.metodo_pago in ["pago_movil", "zelle", "binance"] and not referencia:
                 raise ValueError(f"La referencia es obligatoria para el método de pago '{self.metodo_pago}'.")
             

@@ -19,22 +19,47 @@ class CarritoModel:
         self.__conexion_bd = conectar()
     
     def _generar_id_lista_compra(self) -> str:
+        """Genera un ID único para la lista de compra"""
         db = self.__conexion_bd.conexion1()
         if not db:
             return "LST0000001"
         
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT MAX(ID_lista_compra) FROM Lista_compra")
+            # Obtener el último ID numérico
+            cursor.execute("""
+                SELECT ID_lista_compra FROM Lista_compra 
+                ORDER BY CAST(SUBSTRING(ID_lista_compra, 4) AS UNSIGNED) DESC 
+                LIMIT 1
+            """)
             row = cursor.fetchone()
-            ultimo_id = row[0] if row else None
             
-            if ultimo_id and ultimo_id.startswith('LST'):
-                num = int(ultimo_id[3:]) + 1
+            if row and row[0] and row[0].startswith('LST'):
+                # Extraer el número y sumar 1
+                num = int(row[0][3:]) + 1
             else:
                 num = 1
             
-            return f"LST{num:07d}"
+            nuevo_id = f"LST{num:07d}"
+            
+            # Verificar que el ID no exista (por si acaso)
+            cursor.execute("SELECT 1 FROM Lista_compra WHERE ID_lista_compra = %s", (nuevo_id,))
+            if cursor.fetchone():
+                # Si existe, seguir incrementando hasta encontrar uno libre
+                while True:
+                    num += 1
+                    nuevo_id = f"LST{num:07d}"
+                    cursor.execute("SELECT 1 FROM Lista_compra WHERE ID_lista_compra = %s", (nuevo_id,))
+                    if not cursor.fetchone():
+                        break
+            
+            return nuevo_id
+        except Exception as e:
+            print(f"Error generando ID: {e}")
+            # Fallback: usar timestamp + random
+            import time
+            import random
+            return f"LST{int(time.time())}{random.randint(10, 99)}"
         finally:
             cursor.close()
             db.close()
@@ -54,20 +79,20 @@ class CarritoModel:
                     lc.ID_lista_compra AS id,
                     lc.ID_inventario AS producto_id,
                     lc.Cantidad_producto AS cantidad,
-                    i.Costo_venta AS precio_usd,
+                    e.Costo_venta AS precio_usd,
                     p.Nombre_producto AS nombre,
                     COALESCE(ma.Nombre_marca, '') AS marca,
-                    i.Existencia AS stock_disponible,
+                    e.Existencia AS stock_disponible,
                     COALESCE((
                         SELECT fi.Foto_inventario
                         FROM Fotos_inventario fi
-                        WHERE fi.ID_inventario = i.ID_inventario
+                        WHERE fi.ID_inventario = e.ID_inventario
                         ORDER BY fi.ID_foto_inventario DESC
                         LIMIT 1
                     ), '') AS imagen
                 FROM Lista_compra lc
-                JOIN Inventario i ON lc.ID_inventario = i.ID_inventario
-                JOIN Producto p ON i.ID_producto = p.ID_producto
+                JOIN Existencias_productos e ON lc.ID_inventario = e.ID_inventario
+                JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 WHERE lc.ID_cliente = %s
                   AND (lc.Estado_lista_compra IS NULL OR lc.Estado_lista_compra = %s)
@@ -95,8 +120,9 @@ class CarritoModel:
         
         cursor = db.cursor()
         try:
+            # Verificar stock
             cursor.execute(
-                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s",
+                "SELECT Existencia FROM Existencias_productos WHERE ID_inventario = %s",
                 (self.inventario_id,)
             )
             stock_row = cursor.fetchone()
@@ -107,6 +133,7 @@ class CarritoModel:
             if stock <= 0:
                 raise ValueError("Producto sin stock")
             
+            # Verificar si el producto ya está en el carrito
             cursor.execute("""
                 SELECT ID_lista_compra, Cantidad_producto
                 FROM Lista_compra
@@ -118,6 +145,7 @@ class CarritoModel:
             existente = cursor.fetchone()
             
             if existente:
+                # Actualizar cantidad existente
                 nueva_cantidad = int(existente[1] or 0) + self.cantidad
                 if nueva_cantidad > stock:
                     raise ValueError("La cantidad supera el stock disponible")
@@ -126,6 +154,7 @@ class CarritoModel:
                     (nueva_cantidad, existente[0])
                 )
             else:
+                # Agregar nuevo producto al carrito
                 if self.cantidad > stock:
                     raise ValueError("La cantidad supera el stock disponible")
                 
@@ -168,7 +197,7 @@ class CarritoModel:
         cursor = db.cursor()
         try:
             cursor.execute(
-                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s",
+                "SELECT Existencia FROM Existencias_productos WHERE ID_inventario = %s",
                 (self.inventario_id,)
             )
             row = cursor.fetchone()
