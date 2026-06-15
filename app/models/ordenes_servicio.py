@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.models.database import conectar
 from datetime import date
+from app.models.empleados import empleado
 
 
 class Orden_servicio():
@@ -19,7 +20,7 @@ class Orden_servicio():
 
         self._conexion = conectar()
 
-    def listar_ordenes_servicio(self):
+    def listar_Orden_servicio(self):
         db = self._conexion.conexion1()
         if not db:
             mensaje = "Error al conectar con la base de datos."
@@ -161,7 +162,7 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-    def empleados_asignados(self, id_orden: int):
+    def empleados_Asignadas(self, id_orden: int):
         db = self._conexion.conexion1()
         if not db:
             return None
@@ -452,74 +453,51 @@ class Orden_servicio():
             db.close()
 
 
+    def ordenes_asignadas_tecnico(self):
 
-
-
-
-
-
-"""
-    def ordenes_asignadas_empleado(self):
-        db = self._conexion.conexion1()
+        db = self._conexion._bd.conexion1()
         if not db:
-            return None
-
-
-    def ordenes_asignadas_tecnico(self)
-        db = self._conexion.conexion1()
-        if not db:
-            return None
-        
+            return "Error al conectar con la base de datos."
+            
         cursor = db.cursor(dictionary=True)
         try:
             sql = (
-     
+                """
+                SELECT 
+                Ordene_servicio.ID_orden_servicio AS id_orden,
+                Orden_servicio.Estado_orden_servicio AS estado,
+                Orden_servicio.Descripcion AS descripcion,
+                Orden_servicio.Costo_reparacion AS costo,
+                Orden_servicio.Nota_orden_servicio AS nota,
+                Orden_servicio.Fecha_entrada AS fecha_e,
+                Orden_servicio.Fecha_salida AS fecha_s,
+                JOIN Equipo ON Orden_servicio.ID_equipo = Equipo.ID_equipo
+                JOIN Cliente ON Orden_servicio.ID_cliente = Cliente.ID_cliente
+                WHERE Orden_servicio.Estado_orden_servicio = 'Asignada' AND Interaccion.Accion = 'Asignada' AND Interaccion.ID_empleado = %s
+                
+                """
             )
-
-
-    def ordenes_asignadas_tecnico(self, id_empleado: int):
-        db = self.conexion1()
-        if not db:
-            return None
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = (
-                "SELECT o.*, "
-                "o.ID_orden_servicio AS ID_orden, "
-                "o.Estado_o AS Estado, "
-                "m.N_modelo AS Modelo, "
-                "c.Nombre_c AS Nombre_cliente, "
-                "c.Apellido_c AS Apellido_cliente "
-                "FROM interaccion i "
-                "JOIN orden_e o ON i.ID_orden = o.ID_orden_servicio "
-                "JOIN modelo_producto m ON o.ID_modelo = m.ID_modelo "
-                "JOIN cliente c ON o.ID_c = c.ID_c "
-                "WHERE i.ID_em = %s AND i.Accion = 'Asignado' "
-                "ORDER BY o.ID_orden_servicio DESC"
-            )
-            cursor.execute(sql, (id_empleado,))
+            cursor.execute(sql, (self.ID_empleado,))
             return cursor.fetchall()
         finally:
             cursor.close()
             db.close()
 
-    
-    
-    
 
-    
-    
+    def registrar_interaccion(self):
+        id_orden = self.ID_orden_servicio
+        id_empleado = self.ID_empleado
+        accion = 'Asignada'
 
-    def registrar_interaccion(self, id_orden: int, id_empleado: int, accion: str):
-        db = self.conexion1()
+
+        db = self._conexion._bd.conexion1()
         if not db:
-            return False
+            return "Error al conectar con la base de datos."
 
         cursor = db.cursor()
         try:
             cursor.execute(
-                "INSERT IGNORE INTO interaccion (ID_orden, ID_em, Accion) VALUES (%s, %s, %s)",
+                "INSERT IGNORE INTO interaccion (ID_orden_servicio, ID_empleado, Accion) VALUES (%s, %s, %s)",
                 (id_orden, id_empleado, accion),
             )
             db.commit()
@@ -532,11 +510,122 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-    def actualizar_revision_cotizacion(self, id_orden: int, revision: str | None = None, costo=None):
+
+
+
+    def verificar_asignacion(self):
+        id_orden = self.ID_orden_servicio
+        id_empleado = self.ID_empleado
+
+        db = self._conexion._bd.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = (
+                """ 
+                SELECT 
+                Ordene_servicio.ID_orden_servicio AS id_orden,
+                Interaccion.ID_empleado AS id_empleado,
+                Ordene_servicio.Estado_orden_servicio AS estado,
+                Interaccion.Accion AS accion
+                FROM Ordene_servicio 
+                INNER JOIN Interaccion ON Ordene_servicio.ID_orden_servicio = Interaccion.ID_orden_servicio
+                WHERE Ordene_servicio.ID_orden_servicio = %s
+                AND Interaccion.ID_empleado = %s 
+                AND Ordene_servicio.Estado_orden_servicio = 'Asignada' 
+                AND Interaccion.Accion = 'Asignada'
+               """  
+            )
+            
+            cursor.execute(sql, (id_orden, id_empleado))
+            asignacion = cursor.fetchone()
+
+            return asignacion
+            
+        except Exception as e:
+            print(f"Error al verificar asignación: {e}")
+            return None
+            
+        finally:
+            cursor.close()
+            db.close()
+
+
+
+    def asignar_orden_empleado(self):
+        id_orden: int = self.ID_orden_servicio
+        id_empleado: int = self.ID_empleado
+
+        asignada = self.verificar_asignacion()
+
+        if asignada:
+            print(f"La orden {id_orden} ya está asignada al empleado {id_empleado}.")
+            return False
+
+        db = self._conexion._bd.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+        
+        cursor = db.cursor()
+        try:
+            db.start_transaction()
+
+            # 2. INSERT en la tabla interaccion
+            sql_interaccion = (
+                "INSERT INTO interaccion (ID_orden_servicio, ID_empleado, Accion) "
+                "VALUES (%s, %s, 'Asignada')"
+            )
+            cursor.execute(sql_interaccion, (id_orden, id_empleado))
+
+            # 3. UPDATE en la tabla orden_e
+            sql_orden = (
+                "UPDATE Orden_servicio "
+                "SET Estado_orden_servicio = 'Asignada' "
+                "WHERE ID_orden_servicio = %s"
+            )
+            cursor.execute(sql_orden, (id_orden,))
+
+            
+            db.commit()
+            print("Asignación realizada con éxito.")
+            return True
+        
+        except Exception as e:
+        
+            db.rollback()
+            print(f"Error al procesar la asignación: {e}")
+            return False
+        
+        finally:
+            cursor.close()
+            db.close()
+
+
+    def actualizar_revision_cotizacion(self):
+        id_orden = self.ID_orden_servicio
+        revision = self.Descripcion_reparacion
+        costo = self.Costo_reparacion
+    
+        """Actualiza la revisión y/o el costo de reparación de una orden.
+
+        Si no se pasan parámetros, usa los atributos de la instancia.
+        Devuelve True si se actualizó al menos una fila, False en caso contrario.
+        """
+        if id_orden is None:
+            id_orden = self.ID_orden_servicio
+
+        if revision is None:
+            revision = self.Descripcion_reparacion
+
+        if costo is None:
+            costo = self.Costo_reparacion
+
         if revision is None and costo is None:
             return False
 
-        db = self.conexion1()
+        db = self._conexion.conexion1()
         if not db:
             return False
 
@@ -552,202 +641,14 @@ class Orden_servicio():
                 params.append(costo)
 
             params.append(id_orden)
-            sql = f"UPDATE orden_e SET {', '.join(fields)} WHERE ID_orden_servicio = %s"
+            sql = f"UPDATE Orden_servicio SET {', '.join(fields)} WHERE ID_orden_servicio = %s"
             cursor.execute(sql, tuple(params))
             db.commit()
             return cursor.rowcount > 0
         except Exception as e:
             db.rollback()
-            print(f"Error al actualizar revisión/cotización: {e}")
+            print(f"Error al actualizar revisión: {e}")
             return False
         finally:
             cursor.close()
             db.close()
-
-
-    def asignar_orden_empleado(self, id_orden: int, id_empleado: int):
-        # 1. Primero verificamos si ya existe esa asignación activa
-        # Usamos la lógica de la función anterior
-        asignada = self.verificar_asignacion(id_orden, id_empleado)
-        
-        if asignada:
-            print(f"La orden {id_orden} ya está asignada al empleado {id_empleado}.")
-            return False
-
-        db = self.conexion1()
-        if not db:
-            return False
-        
-        cursor = db.cursor()
-        try:
-            # Iniciamos la transacción de forma explícita
-            db.start_transaction()
-
-            # 2. INSERT en la tabla interaccion
-            sql_interaccion = (
-                "INSERT INTO interaccion (ID_orden, ID_em, Accion) "
-                "VALUES (%s, %s, 'Asignado')"
-            )
-            cursor.execute(sql_interaccion, (id_orden, id_empleado))
-
-            # 3. UPDATE en la tabla orden_e
-            sql_orden = (
-                "UPDATE orden_e "
-                "SET Estado_o = 'Asignado' "
-                "WHERE ID_orden_servicio = %s"
-            )
-            cursor.execute(sql_orden, (id_orden,))
-
-            # Si ambas consultas fueron exitosas, guardamos los cambios
-            db.commit()
-            print("Asignación realizada con éxito.")
-            return True
-        
-        except Exception as e:
-            # Si algo falla (ej. el ID no existe), deshacemos todo para evitar datos inconsistentes
-            db.rollback()
-            print(f"Error al procesar la asignación: {e}")
-            return False
-        
-        finally:
-            cursor.close()
-            db.close()
-    
-    def liberar_orden(self, id_orden: int, id_empleado: int):
-        # Verificamos si existe una asignación activa para esta orden y empleado
-        asignada = self.verificar_asignacion(id_orden, id_empleado)
-        if not asignada:
-            print(f"No hay asignación activa para la orden {id_orden} y empleado {id_empleado}.")
-            return False
-
-        db = self.conexion1()
-        if not db:
-            return False
-        
-        cursor = db.cursor()
-        try:
-            # Iniciamos la transacción de forma explícita
-            db.start_transaction()
-
-            # Eliminar el registro de asignación en la tabla interaccion
-            sql_delete = (
-                "DELETE FROM interaccion "
-                "WHERE ID_orden = %s AND ID_em = %s AND Accion = 'Asignado'"
-            )
-            cursor.execute(sql_delete, (id_orden, id_empleado))
-
-            # Actualizar el estado de la orden a 'En Proceso'
-            sql_orden = (
-                "UPDATE orden_e "
-                "SET Estado_o = 'En Proceso' "
-                "WHERE ID_orden_servicio = %s"
-            )
-            cursor.execute(sql_orden, (id_orden,))
-
-            # Guardamos los cambios
-            db.commit()
-            print("Liberación realizada con éxito.")
-            return True
-
-        except Exception as e:
-            db.rollback()
-            print(f"Error al liberar la orden: {e}")
-            return False
-
-        finally:
-            cursor.close()
-            db.close()
-    
-    def verificar_asignacion(self, id_orden: int, id_empleado: int):
-        db = self.conexion1()
-        if not db:
-            return None
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            # Relacionamos las tablas por el ID de la orden
-            sql = (
-                "SELECT o.ID_orden_servicio, i.ID_em, o.Estado_o, i.Accion "
-                "FROM orden_e o "
-                "INNER JOIN interaccion i ON o.ID_orden_servicio = i.ID_orden "
-                "WHERE o.ID_orden_servicio = %s "
-                "AND i.ID_em = %s "
-                "AND o.Estado_o = 'Asignado' "
-                "AND i.Accion = 'Asignado'"
-            )
-            
-            # Ejecutamos pasando ambos parámetros
-            cursor.execute(sql, (id_orden, id_empleado))
-            asignacion = cursor.fetchone()
-            
-            # Si encuentra el registro, significa que ambos están en estado 'Asignado'
-            return asignacion
-            
-        except Exception as e:
-            print(f"Error al verificar asignación: {e}")
-            return None
-            
-        finally:
-            cursor.close()
-            db.close()
-
-
-    def Orden_reparada(self, id_orden: int, id_productos, cantidades, id_empleado: int, reparacion: str):
-
-        # Validación básica de parámetros
-        if not isinstance(id_productos, (list, tuple)) or not isinstance(cantidades, (list, tuple)):
-            return False
-        if len(id_productos) != len(cantidades):
-            return False
-
-        db = self.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor()
-        try:
-            db.start_transaction()
-
-            sql_insert = (
-                "INSERT INTO repuestos_u (ID_orden, ID_producto, Cantidad) "
-                "VALUES (%s, %s, %s)"
-            )
-            for pid, qty in zip(id_productos, cantidades):
-                cursor.execute(sql_insert, (id_orden, pid, qty))
-
-            # Guardar texto de reparación en la orden
-            sql_update_reparacion = (
-                "UPDATE orden_e "
-                "SET Reparacion = %s "
-                "WHERE ID_orden_servicio = %s"
-            )
-            cursor.execute(sql_update_reparacion, (reparacion, id_orden))
-
-            # Marcar orden como reparada
-            sql_update = (
-                "UPDATE orden_e "
-                "SET Estado_o = 'Reparado' "
-                "WHERE ID_orden_servicio = %s"
-            )
-            cursor.execute(sql_update, (id_orden,))
-
-            sql_empleado = (
-                "UPDATE interaccion "
-                "SET Accion = 'Reparado' "
-                "WHERE ID_orden = %s AND ID_em = %s"
-            )
-            cursor.execute(sql_empleado, (id_orden, id_empleado))
-
-            db.commit()
-            return True
-
-        except Exception as e:
-            db.rollback()
-            print(f"Error al registrar reparación: {e}")
-            return False
-
-        finally:
-            cursor.close()
-            db.close()
-
-"""
