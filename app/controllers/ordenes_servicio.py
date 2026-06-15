@@ -321,7 +321,4 @@ def eliminar_orden_servicio(id_orden):
     # Obtener usuario actual
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-
-
-    
     return jsonify({"success": True, "message": "Orden eliminada"})
