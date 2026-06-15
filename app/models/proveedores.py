@@ -194,11 +194,11 @@ class Proveedores:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora
+            # Registrar en bitácora (usando self.id_proveedor)
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar proveedor",
-                    descripcion=f"Se actualizó el proveedor ID: {proveedor_id} - Nuevo nombre: {self.nombre}",
+                    descripcion=f"Se actualizó el proveedor ID: {self.id_proveedor} - Nuevo nombre: {self.nombre}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
@@ -231,11 +231,11 @@ class Proveedores:
             db.commit()
             deleted = cursor.rowcount > 0
             
-            # Registrar en bitácora
+            # Registrar en bitácora (usando self.id_proveedor y self.nombre)
             if deleted and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Eliminar proveedor",
-                    descripcion=f"Se eliminó el proveedor ID: {proveedor_id} - Nombre: {self.nombre}",
+                    descripcion=f"Se eliminó el proveedor ID: {self.id_proveedor} - Nombre: {self.nombre}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
@@ -387,11 +387,11 @@ class Proveedores:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora
+            # Registrar en bitácora (usando self.id_proveedor)
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar producto de proveedor",
-                    descripcion=f"Se actualizó producto para proveedor ID: {proveedor_id} - Modelo ID: {id_modelo} - Costo: {costo}",
+                    descripcion=f"Se actualizó producto para proveedor ID: {self.id_proveedor} - Modelo ID: {id_modelo} - Costo: {costo}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
@@ -429,11 +429,11 @@ class Proveedores:
             db.commit()
             deleted = cursor.rowcount > 0
             
-            # Registrar en bitácora
+            # Registrar en bitácora (usando self.id_proveedor)
             if deleted and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Eliminar producto de proveedor",
-                    descripcion=f"Se eliminó producto del proveedor ID: {proveedor_id} - Modelo ID: {id_modelo}",
+                    descripcion=f"Se eliminó producto del proveedor ID: {self.id_proveedor} - Modelo ID: {id_modelo}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
