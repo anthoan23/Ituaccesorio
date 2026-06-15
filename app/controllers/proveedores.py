@@ -47,7 +47,7 @@ def api_crear_proveedor():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
 
-    # Validar ID del proveedor (0 significa que el modelo generará el ID automáticamente)
+    # Validar ID del proveedor
     if id_proveedor in (None, ""):
         id_val = 0
     else:
@@ -62,6 +62,8 @@ def api_crear_proveedor():
             limite_val = None
         else:
             limite_val = int(limite_credito)
+            if limite_val < 0:
+                return jsonify({"success": False, "error": "El límite de crédito no puede ser negativo."}), 400
     except Exception:
         return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
 
@@ -84,15 +86,23 @@ def api_crear_proveedor():
                 costo_val = None
             else:
                 costo_val = int(costo)
+                if costo_val < 0:
+                    return jsonify({"success": False, "error": f"El costo del producto '{id_modelo_val}' no puede ser negativo."}), 400
         except Exception:
             return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
+        
+        # Costo no puede superar límite de crédito
+        if limite_val is not None and costo_val is not None and costo_val > limite_val:
+            return jsonify({
+                "success": False, 
+                "error": f"El costo del producto ID '{id_modelo_val}' ({costo_val} Bs) no puede superar el límite de crédito del proveedor ({limite_val} Bs)."
+            }), 400
+        
         productos_norm.append({"id_modelo": id_modelo_val, "costo": costo_val})
 
     try:
-        # Obtener usuario_id
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
-        # Instanciar modelo con los datos
         modelo = Proveedores(
             id_proveedor=id_val,
             nombre=nombre,
@@ -149,14 +159,27 @@ def api_actualizar_proveedor(id_proveedor: int):
             limite_val = None
         else:
             limite_val = int(limite_credito)
+            if limite_val < 0:
+                return jsonify({"success": False, "error": "El límite de crédito no puede ser negativo."}), 400
     except Exception:
         return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
 
+    # ✅ NUEVA VALIDACIÓN: El nuevo límite no puede ser menor que el costo del producto más caro
+    if limite_val is not None:
+        modelo_temp = Proveedores(id_proveedor=id_proveedor)
+        productos = modelo_temp.listar_productos_por_proveedor() or []
+        
+        if productos:
+            costo_maximo = max((p.get("costo") or 0) for p in productos)
+            if limite_val < costo_maximo:
+                return jsonify({
+                    "success": False, 
+                    "error": f"El nuevo límite de crédito ({limite_val} Bs) no puede ser menor que el costo del producto más caro que ya tiene asignado ({costo_maximo} Bs). Reduzca los costos primero o elimine productos."
+                }), 400
+
     try:
-        # Obtener usuario_id
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
-        # Instanciar modelo con los datos
         modelo = Proveedores(
             id_proveedor=id_proveedor,
             nombre=nombre,
@@ -203,7 +226,6 @@ def api_verificar_eliminacion_proveedor(id_proveedor: int):
 @tiene_permiso('Proveedores', 'eliminar')
 def api_eliminar_proveedor(id_proveedor: int):
     try:
-        # Obtener usuario_id
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
         modelo = Proveedores(
@@ -211,14 +233,11 @@ def api_eliminar_proveedor(id_proveedor: int):
             usuario_id=usuario_id
         )
         
-        # Primero obtener nombre antes de eliminar
         proveedor = modelo.obtener_proveedor()
         nombre_proveedor = proveedor.get("nombre", str(id_proveedor)) if proveedor else str(id_proveedor)
         
-        # Establecer el nombre en el modelo para la bitácora
         modelo.nombre = nombre_proveedor
         
-        # Verificar si tiene relaciones activas
         tiene_relaciones, mensaje = modelo.tiene_relaciones_activas()
         
         if tiene_relaciones:
@@ -268,11 +287,24 @@ def api_upsert_producto_proveedor(id_proveedor: int):
             costo_val = None
         else:
             costo_val = int(costo)
+            if costo_val < 0:
+                return jsonify({"success": False, "error": "El costo no puede ser negativo."}), 400
     except Exception:
         return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
 
+    # ✅ NUEVA VALIDACIÓN: El costo no puede superar el límite de crédito del proveedor
+    if costo_val is not None:
+        proveedor_modelo = Proveedores(id_proveedor=id_proveedor)
+        proveedor = proveedor_modelo.obtener_proveedor()
+        limite_credito = proveedor.get("limite_credito") if proveedor else None
+        
+        if limite_credito is not None and costo_val > limite_credito:
+            return jsonify({
+                "success": False, 
+                "error": f"El costo del producto ({costo_val} Bs) no puede superar el límite de crédito del proveedor ({limite_credito} Bs)."
+            }), 400
+
     try:
-        # Obtener usuario_id
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
         modelo = Proveedores(
@@ -294,7 +326,6 @@ def api_upsert_producto_proveedor(id_proveedor: int):
 @tiene_permiso('Proveedores', 'modificar')
 def api_eliminar_producto_proveedor(id_proveedor: int, id_modelo: str):
     try:
-        # Obtener usuario_id
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
         modelo = Proveedores(
@@ -325,7 +356,6 @@ def api_listar_modelos_para_proveedores():
 @jwt_required
 @tiene_permiso('Proveedores', 'consultar')
 def api_reportes_proveedores():
-    """Obtiene proveedores para reportes con filtros avanzados"""
     from datetime import datetime
     
     datos = request.get_json(silent=True) or {}
@@ -371,7 +401,6 @@ def api_reportes_proveedores():
 @jwt_required
 @tiene_permiso('Proveedores', 'consultar')
 def api_listar_tipos_proveedores():
-    """Lista los tipos de proveedores disponibles para filtros"""
     return jsonify({
         "success": True,
         "tipos": ["Nacional", "Internacional"]

@@ -70,7 +70,7 @@
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
+      .replaceAll("'", '&#39;');
   }
 
   // ==================== MODAL DE FEEDBACK (éxito/error) ====================
@@ -132,9 +132,8 @@
     }
   }
 
-  // ==================== MODAL DE CONFIRMACIÓN MEJORADO ====================
+  // ==================== MODAL DE CONFIRMACIÓN ====================
   function showConfirmModal(mensaje, onConfirmar, soloInformacion = false, productosRelacionados = []) {
-    // Eliminar modal existente si hay
     const modalExistente = document.getElementById('confirmacion-modal-proveedores');
     if (modalExistente) modalExistente.remove();
     
@@ -143,12 +142,14 @@
     const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
     const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
     
-    // Construir mensaje con lista de productos si existe
     let mensajeCompleto = mensaje;
-    if (productosRelacionados && productosRelacionados.length > 0) {
+    
+    if (productosRelacionados && productosRelacionados.length > 0 && !mensaje.includes('Productos asociados:')) {
       mensajeCompleto += '\n\nProductos asociados:\n';
       productosRelacionados.forEach(p => {
-        mensajeCompleto += `• ${p.nombre} (ID: ${p.id})\n`;
+        const nombre = p?.modelo_nombre || p?.nombre || p?.N_modelo || 'Producto sin nombre';
+        const id = p?.id_modelo || p?.id_producto || p?.id || 'N/A';
+        mensajeCompleto += `• ${nombre} (ID: ${id})\n`;
       });
     }
     
@@ -183,7 +184,6 @@
       document.body.style.overflow = '';
     };
     
-    // Botón cancelar (solo si no es solo información)
     if (!soloInformacion) {
       const cancelBtn = document.getElementById('btn-cancelar-confirmacion-proveedores');
       if (cancelBtn) {
@@ -191,7 +191,6 @@
       }
     }
     
-    // Botón confirmar
     const confirmBtn = document.getElementById('btn-confirmar-accion-proveedores');
     if (confirmBtn) {
       confirmBtn.addEventListener('click', async () => {
@@ -202,13 +201,11 @@
       });
     }
     
-    // Botón cerrar (X)
     const closeBtn = modalDiv.querySelector('[data-close-modal]');
     if (closeBtn) {
       closeBtn.addEventListener('click', cerrarModal);
     }
     
-    // Cerrar al hacer click en el backdrop
     modalDiv.addEventListener('click', (e) => {
       if (e.target === modalDiv) cerrarModal();
     });
@@ -408,134 +405,44 @@
     openModal('modal-proveedor-editar');
   }
 
-// ==================== MODAL DE CONFIRMACIÓN MEJORADO ====================
-function showConfirmModal(mensaje, onConfirmar, soloInformacion = false, productosRelacionados = []) {
-  // Eliminar modal existente si hay
-  const modalExistente = document.getElementById('confirmacion-modal-proveedores');
-  if (modalExistente) modalExistente.remove();
-  
-  const esError = soloInformacion && (mensaje.includes('No se puede') || mensaje.includes('productos'));
-  const titulo = soloInformacion ? (esError ? "No se puede eliminar" : "Información") : "Confirmar acción";
-  const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
-  const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
-  
-  // Construir mensaje - evitar duplicación
-  let mensajeCompleto = mensaje;
-  
-  // Solo agregar productos si no están ya incluidos en el mensaje
-  if (productosRelacionados && productosRelacionados.length > 0 && !mensaje.includes('Productos asociados:')) {
-    mensajeCompleto += '\n\nProductos asociados:\n';
-    productosRelacionados.forEach(p => {
-      const nombre = p?.modelo_nombre || p?.nombre || p?.N_modelo || 'Producto sin nombre';
-      const id = p?.id_modelo || p?.id_producto || p?.id || 'N/A';
-      mensajeCompleto += `• ${nombre} (ID: ${id})\n`;
-    });
-  }
-  
-  const modalDiv = document.createElement('div');
-  modalDiv.id = 'confirmacion-modal-proveedores';
-  modalDiv.className = 'ui-modal';
-  modalDiv.setAttribute('data-modal', '');
-  modalDiv.setAttribute('hidden', '');
-  modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10001;display:flex;align-items:center;justify-content:center;';
-  
-  modalDiv.innerHTML = `
-    <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:500px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
-      <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
-        <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;">${titulo}</h3>
-        <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
-      </header>
-      <div class="ui-modal__body" style="padding:1.5rem;">
-        <div style="white-space:pre-wrap;margin:0;font-size:1rem;color:#121212;line-height:1.5;">${escapeHtml(mensajeCompleto)}</div>
-      </div>
-      <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
-        ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
-        <button type="button" class="ui-btn" id="btn-confirmar-accion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modalDiv);
-  document.body.style.overflow = 'hidden';
-  
-  const cerrarModal = () => {
-    modalDiv.remove();
-    document.body.style.overflow = '';
-  };
-  
-  if (!soloInformacion) {
-    const cancelBtn = document.getElementById('btn-cancelar-confirmacion-proveedores');
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', cerrarModal);
-    }
-  }
-  
-  const confirmBtn = document.getElementById('btn-confirmar-accion-proveedores');
-  if (confirmBtn) {
-    confirmBtn.addEventListener('click', async () => {
-      cerrarModal();
-      if (onConfirmar && !soloInformacion) {
-        await onConfirmar();
+  // ==================== FUNCIÓN DE ELIMINACIÓN ====================
+  async function abrirEliminarProveedor(id) {
+    state.currentProveedorId = id;
+    
+    try {
+      const proveedorData = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
+      const proveedor = normalizeProveedor(proveedorData?.proveedor ?? proveedorData);
+      const nombreProveedor = proveedor.nombre || `ID ${id}`;
+      
+      const productosData = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}/productos`, { method: 'GET' });
+      const productos = Array.isArray(productosData?.productos) ? productosData.productos : 
+                        Array.isArray(productosData) ? productosData : [];
+      
+      if (productos.length > 0) {
+        const listaProductos = productos.map(p => {
+          const nombreProducto = p?.modelo_nombre || p?.nombre || p?.N_modelo || p?.modelo || 'Producto';
+          const costo = p?.costo || p?.Costo || '';
+          const costoTexto = costo ? ` (Costo: ${formatMoney(costo)} Bs)` : '';
+          return `• ${nombreProducto}${costoTexto}`;
+        }).join('\n');
+        
+        const mensaje = `No se puede eliminar el proveedor "${nombreProveedor}" porque tiene ${productos.length} producto(s) asociados en el inventario.\n\nProductos asociados:\n${listaProductos}`;
+        showConfirmModal(mensaje, null, true, []);
+      } else {
+        showConfirmModal(`¿Seguro que deseas eliminar el proveedor "${nombreProveedor}"? Esta acción no se puede deshacer.`, async () => {
+          try {
+            await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            await cargarProveedores(($id('f-texto')?.value || '').trim());
+            showFeedback('success', `Proveedor "${nombreProveedor}" eliminado correctamente.`);
+          } catch (e) {
+            showFeedback('error', e.message || 'No se pudo eliminar el proveedor.');
+          }
+        });
       }
-    });
-  }
-  
-  const closeBtn = modalDiv.querySelector('[data-close-modal]');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', cerrarModal);
-  }
-  
-  modalDiv.addEventListener('click', (e) => {
-    if (e.target === modalDiv) cerrarModal();
-  });
-}
-
-// ==================== FUNCIÓN DE ELIMINACIÓN ====================
-async function abrirEliminarProveedor(id) {
-  state.currentProveedorId = id;
-  
-  try {
-    // Obtener el proveedor primero para mostrar su nombre
-    const proveedorData = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
-    const proveedor = normalizeProveedor(proveedorData?.proveedor ?? proveedorData);
-    const nombreProveedor = proveedor.nombre || `ID ${id}`;
-    
-    // Obtener los productos relacionados del proveedor
-    const productosData = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}/productos`, { method: 'GET' });
-    const productos = Array.isArray(productosData?.productos) ? productosData.productos : 
-                      Array.isArray(productosData) ? productosData : [];
-    
-    if (productos.length > 0) {
-      // Construir la lista de productos correctamente
-      const listaProductos = productos.map(p => {
-        // Extraer nombre del producto de diferentes posibles campos
-        const nombreProducto = p?.modelo_nombre || p?.nombre || p?.N_modelo || p?.modelo || 'Producto';
-        // Extraer costo si existe
-        const costo = p?.costo || p?.Costo || '';
-        const costoTexto = costo ? ` (Costo: ${formatMoney(costo)} Bs)` : '';
-        return `• ${nombreProducto}${costoTexto}`;
-      }).join('\n');
-      
-      const mensaje = `No se puede eliminar el proveedor "${nombreProveedor}" porque tiene ${productos.length} producto(s) asociados en el inventario.\n\nProductos asociados:\n${listaProductos}`;
-      
-      // Pasar solo el mensaje, sin duplicar productos
-      showConfirmModal(mensaje, null, true, []);
-    } else {
-      // No tiene productos, se puede eliminar
-      showConfirmModal(`¿Seguro que deseas eliminar el proveedor "${nombreProveedor}"? Esta acción no se puede deshacer.`, async () => {
-        try {
-          await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'DELETE' });
-          await cargarProveedores(($id('f-texto')?.value || '').trim());
-          showFeedback('success', `Proveedor "${nombreProveedor}" eliminado correctamente.`);
-        } catch (e) {
-          showFeedback('error', e.message || 'No se pudo eliminar el proveedor.');
-        }
-      });
+    } catch (e) {
+      showFeedback('error', e.message || 'No se pudo verificar el estado del proveedor.');
     }
-  } catch (e) {
-    showFeedback('error', e.message || 'No se pudo verificar el estado del proveedor.');
   }
-}
 
   function renderProductosEditar(items) {
     const tbody = $id('tabla-proveedor-productos');
@@ -563,8 +470,8 @@ async function abrirEliminarProveedor(id) {
             <td>${marca}</td>
             <td>${clase}</td>
             <td class="col-cost">
-              <input class="table-input" type="number" inputmode="numeric" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
-            </td>
+              <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
+             </td>
           </tr>`;
       })
       .join('');
@@ -711,6 +618,11 @@ async function abrirEliminarProveedor(id) {
 
     if (!idProveedor) throw new Error('Proveedor no seleccionado.');
     if (!idModelo) throw new Error('Selecciona un producto.');
+    
+    // ✅ VALIDACIÓN: No permitir costo negativo
+    if (costo !== '' && Number(costo) < 0) {
+      throw new Error('El costo no puede ser negativo.');
+    }
 
     const payload = {
       id_modelo: Number(idModelo),
@@ -723,12 +635,18 @@ async function abrirEliminarProveedor(id) {
     });
   }
 
+  // ✅ FUNCIÓN MODIFICADA: Agregar validación de costo negativo
   function agregarProductoCrearFromForm() {
     const idModelo = getFormValue('cp-id-modelo');
     const costo = getFormValue('cp-costo');
 
     if (!idModelo) throw new Error('Selecciona un producto.');
     if (costo === '') throw new Error('El costo es obligatorio.');
+    
+    // ✅ VALIDACIÓN: No permitir costo negativo
+    if (Number(costo) < 0) {
+      throw new Error('El costo no puede ser negativo.');
+    }
 
     const modelo = findModeloById(idModelo);
     const existenteIdx = state.productosCrear.findIndex((it) => String(it.id_modelo) === String(idModelo));
@@ -750,9 +668,16 @@ async function abrirEliminarProveedor(id) {
     renderProductosCrear();
   }
 
+  // ✅ FUNCIÓN MODIFICADA: Agregar validación de costo negativo
   async function guardarCostoProductoProveedor(idModelo, costo) {
     const idProveedor = state.currentProveedorId;
     if (!idProveedor) return;
+
+    // ✅ VALIDACIÓN: No permitir costo negativo
+    if (costo !== '' && Number(costo) < 0) {
+      showFeedback('error', 'El costo no puede ser negativo.');
+      return;
+    }
 
     const payload = {
       id_modelo: Number(idModelo),
@@ -835,6 +760,11 @@ async function abrirEliminarProveedor(id) {
     formAgregarProductoCrear?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       try {
+        const costo = getFormValue('cp-costo');
+        // ✅ VALIDACIÓN: No permitir costo negativo
+        if (costo !== '' && Number(costo) < 0) {
+          throw new Error('El costo no puede ser negativo.');
+        }
         agregarProductoCrearFromForm();
         closeModal('modal-proveedor-agregar-producto-crear');
         formAgregarProductoCrear.reset();
@@ -871,6 +801,11 @@ async function abrirEliminarProveedor(id) {
     formAgregarProducto?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       try {
+        const costo = getFormValue('ap-costo');
+        // ✅ VALIDACIÓN: No permitir costo negativo
+        if (costo !== '' && Number(costo) < 0) {
+          throw new Error('El costo no puede ser negativo.');
+        }
         await agregarProductoProveedorFromForm();
         closeModal('modal-proveedor-agregar-producto');
         await cargarProductosProveedorEditar(state.currentProveedorId);
@@ -890,6 +825,13 @@ async function abrirEliminarProveedor(id) {
       const costo = input.value;
 
       if (!idModelo) return;
+
+      // ✅ VALIDACIÓN: No permitir costo negativo
+      if (costo !== '' && Number(costo) < 0) {
+        showFeedback('error', 'El costo no puede ser negativo.');
+        input.value = 0;
+        return;
+      }
 
       try {
         await guardarCostoProductoProveedor(idModelo, costo);
@@ -942,7 +884,7 @@ async function abrirEliminarProveedor(id) {
   }
 })();
 
-// ==================== REPORTES (FUERA DE LA FUNCIÓN ANÓNIMA) ====================
+// ==================== REPORTES ====================
 
 let reporteDatosActuales = [];
 let reporteFiltrosActuales = {};
@@ -1057,7 +999,7 @@ async function generarReporteProveedores() {
     
     if (reporteTabla) {
       if (reporteDatosActuales.length === 0) {
-        reporteTabla.innerHTML = '<tr><td colspan="6" class="table__empty">No hay proveedores con esos filtros</td</tr>';
+        reporteTabla.innerHTML = '<tr><td colspan="6" class="table__empty">No hay proveedores con esos filtros</td></tr>';
       } else {
         reporteTabla.innerHTML = reporteDatosActuales.map(p => `
           <tr>
@@ -1067,7 +1009,7 @@ async function generarReporteProveedores() {
             <td>${escapeHtmlReportes(p.celular || '-')}</td>
             <td>${p.total_productos || 0} productos<br><small>${formatMoneyReportes(p.costo_total || 0)} Bs</small></td>
             <td>${p.limite_credito ? formatMoneyReportes(p.limite_credito) + ' Bs' : '-'}</td>
-           </tr>
+          </tr>
         `).join("");
       }
     }
@@ -1289,7 +1231,7 @@ function imprimirReporteProveedores() {
             </tr>
           `).join('')}
         </tbody>
-      </table>
+      追赶
       <div class="footer">ItuAccesorio System - Reporte Generado Exclusivamente Para ituaccesorio</div>
     </body>
     </html>
@@ -1297,7 +1239,6 @@ function imprimirReporteProveedores() {
   ventana.document.close();
 }
 
-// Abrir modal con UiModal
 if (btnReportes) {
   btnReportes.addEventListener("click", () => {
     limpiarFiltrosReporte();
@@ -1314,14 +1255,12 @@ if (btnReportes) {
   });
 }
 
-// Eventos de los botones
 if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporteProveedores);
 if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
 if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarProveedoresExcel);
 if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarProveedoresPdf);
 if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporteProveedores);
 
-// Cerrar modal con click en backdrop o botón close
 if (modalReportes) {
   modalReportes.addEventListener("click", (event) => {
     const target = event.target;

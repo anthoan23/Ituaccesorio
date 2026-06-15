@@ -119,6 +119,10 @@ class Proveedores:
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
         
+        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
+        if self.limite_credito is not None and self.limite_credito < 0:
+            raise ValueError("El límite de crédito no puede ser negativo.")
+        
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -171,6 +175,10 @@ class Proveedores:
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
         
+        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
+        if self.limite_credito is not None and self.limite_credito < 0:
+            raise ValueError("El límite de crédito no puede ser negativo.")
+        
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -194,7 +202,7 @@ class Proveedores:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora (usando self.id_proveedor)
+            # Registrar en bitácora
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar proveedor",
@@ -231,7 +239,7 @@ class Proveedores:
             db.commit()
             deleted = cursor.rowcount > 0
             
-            # Registrar en bitácora (usando self.id_proveedor y self.nombre)
+            # Registrar en bitácora
             if deleted and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Eliminar proveedor",
@@ -372,6 +380,10 @@ class Proveedores:
         if not id_modelo:
             raise ValueError("ID del modelo es requerido")
         
+        # ✅ VALIDACIÓN: No permitir costo negativo
+        if costo is not None and costo < 0:
+            raise ValueError("El costo del producto no puede ser negativo.")
+        
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -387,7 +399,7 @@ class Proveedores:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora (usando self.id_proveedor)
+            # Registrar en bitácora
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar producto de proveedor",
@@ -429,7 +441,7 @@ class Proveedores:
             db.commit()
             deleted = cursor.rowcount > 0
             
-            # Registrar en bitácora (usando self.id_proveedor)
+            # Registrar en bitácora
             if deleted and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Eliminar producto de proveedor",
@@ -454,6 +466,10 @@ class Proveedores:
         """Crea un proveedor con sus productos iniciales en una transacción"""
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
+        
+        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
+        if self.limite_credito is not None and self.limite_credito < 0:
+            raise ValueError("El límite de crédito no puede ser negativo.")
         
         db = self._conexion()
         if not db:
@@ -483,6 +499,9 @@ class Proveedores:
             for item in (productos or []):
                 id_modelo = item.get("id_modelo")
                 costo = item.get("costo")
+                # ✅ VALIDACIÓN: No permitir costo negativo
+                if costo is not None and costo < 0:
+                    raise ValueError(f"El costo del producto '{id_modelo}' no puede ser negativo.")
                 rows.append((self.id_proveedor, str(id_modelo), 
                             costo if costo in (None, "") else int(costo)))
             
