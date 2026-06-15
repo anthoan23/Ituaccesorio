@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.models.database import conectar
 from decimal import Decimal
+from app.models.bitacora import Bitacora
 
 
 class Categoria:

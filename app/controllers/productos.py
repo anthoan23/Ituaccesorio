@@ -5,7 +5,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 
-from app.models.bitacora import registrar_en_bitacora
+from app.models.bitacora import Bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto, Categoria
 from app.models.inventario import Inventario, FotosInventario
 
@@ -95,14 +95,13 @@ def api_crear_clase():
         usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
         usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
         
-        registrar_en_bitacora(
-            "Crear clase",
-            f"Clase creada: {nombre} (ID: {new_id})",
+        bitacora = Bitacora(
+            accion="Crear producto",
+            descripcion=f"Producto creado: {nombre} (ID: {new_id})",
             usuario_id=usuario_id,
-            modulo_nombre="Productos",
-            usuario_nombre=usuario_nombre,
-            usuario_foto=usuario_foto
+            modulo_nombre="Productos"
         )
+        bitacora.registrar()
         
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
@@ -140,14 +139,13 @@ def api_crear_marca():
         usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
         usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
         
-        registrar_en_bitacora(
-            "Crear marca",
-            f"Marca creada: {nombre} (ID: {new_id})",
+        bitacora = Bitacora(
+            accion="Crear marca",
+            descripcion=f"Marca creada: {nombre} (ID: {new_id})",
             usuario_id=usuario_id,
-            modulo_nombre="Productos",
-            usuario_nombre=usuario_nombre,
-            usuario_foto=usuario_foto
+            modulo_nombre="Productos"
         )
+        bitacora.registrar()
         
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
@@ -204,47 +202,36 @@ def api_crear_modelo():
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-    
-    # Instanciar el modelo con los atributos
+    # Crear producto SOLO en la tabla Producto (sin inventario)
     modelo = Producto(
-        
         id_clase=id_clase,
-        
         id_marca=id_marca,
-        
-        nombre=nombre, 
-       
-        descripcion=descripcion,
-        usuario_id=usuario_id
-    
+        nombre=nombre,
+        descripcion=descripcion
     )
     
     try:
-        new_id = modelo.crear()
+        new_id = modelo.registrar_producto()
         
-        # Guardar foto si se proporcionó (solo guardar, no asociar a inventario aún)
+        # Guardar foto si se proporcionó
         foto_path = None
         if archivo and archivo.filename:
             try:
                 foto_path = _guardar_foto_inventario(archivo)
                 print(f"Foto guardada: {foto_path}")
-                # TODO: Guardar la foto asociada al producto (si agregas una tabla Producto_fotos)
             except ValueError as e:
                 print(f"Error al guardar foto: {e}")
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
         
-        registrar_en_bitacora(
-            "Crear producto",
-            f"Producto creado: {nombre} (ID: {new_id})",
+        # Registrar en bitácora usando la nueva clase Bitacora
+        bitacora = Bitacora(
+            accion="Crear producto",
+            descripcion=f"Producto creado: {nombre} (ID: {new_id})",
             usuario_id=usuario_id,
-            modulo_nombre="Productos",
-            usuario_nombre=usuario_nombre,
-            usuario_foto=usuario_foto
+            modulo_nombre="Productos"
         )
+        bitacora.registrar()
         
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
@@ -271,34 +258,24 @@ def api_actualizar_modelo(id_modelo: str):
         return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
-    
+
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
+
     modelo = Producto(
-        id_producto=id_modelo, 
-        id_clase=str(id_clase), 
-        id_marca=str(id_marca), 
-        nombre=nombre, 
+        id_producto=id_modelo,
+        id_clase=id_clase,
+        id_marca=id_marca,
+        nombre=nombre,
         descripcion=descripcion,
-        usuario_id=usuario_id
+        usuario_id=usuario_id  # Agregar usuario_id para la bitácora en el modelo
     )
+    
     try:
-        ok = modelo.actualizar()
-        
-        if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Actualizar producto",
-                f"Producto actualizado: {nombre} (ID: {id_modelo})",
-                usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
-            )
+        ok = modelo.actualizar_producto()
         
         return jsonify({"success": True, "updated": ok})
     except Exception as error:
+        print(f"Error al actualizar producto: {error}")
         return jsonify({"success": False, "error": str(error)}), 400
 
 
@@ -306,35 +283,35 @@ def api_actualizar_modelo(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'eliminar')
 def api_eliminar_modelo(id_modelo: str):
-    modelo = Producto(id_producto=id_modelo)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    modelo = Producto(id_producto=id_modelo, usuario_id=usuario_id)
+    modelo = Producto(
+        id_producto=id_modelo,
+        usuario_id=usuario_id  # Agregar usuario_id para la bitácora
+    )
+    
     try:
         if modelo.verificar_stock_asociado():
             stock = modelo.obtener_stock_producto()
             return jsonify({
                 "success": False, 
-                "error": f"No se puede eliminar el producto porque tiene {stock} unidades en inventario. Primero debe eliminar o reducir el stock."
+                "error": f"No se puede eliminar el producto porque tiene {stock} unidades en inventario."
             }), 400
         
-        ok = modelo.eliminar()
+        ok = modelo.eliminar_producto()
         
         if ok:
-            usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-            usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-            usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
-            
-            registrar_en_bitacora(
-                "Eliminar producto",
-                f"Producto eliminado (ID: {id_modelo})",
+            bitacora = Bitacora(
+                accion="Eliminar producto",
+                descripcion=f"Producto eliminado (ID: {id_modelo})",
                 usuario_id=usuario_id,
-                modulo_nombre="Productos",
-                usuario_nombre=usuario_nombre,
-                usuario_foto=usuario_foto
+                modulo_nombre="Productos"
             )
+            bitacora.registrar()
         
         return jsonify({"success": True, "deleted": ok})
     except Exception as error:
+        print(f"Error al eliminar producto: {error}")
         return jsonify({"success": False, "error": str(error)}), 400
 
 
