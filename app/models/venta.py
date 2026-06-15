@@ -3,7 +3,7 @@ from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uuid
 
 
@@ -37,13 +37,122 @@ class VentaModel:
         else:
             return "USD"
     
+    def _verificar_cliente_existe(self, cliente_id: str) -> bool:
+        """Verifica si el cliente existe en la base de datos"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT 1 FROM Cliente WHERE ID_cliente = %s LIMIT 1",
+                (str(cliente_id),)
+            )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+    
+    def _verificar_stock_disponible(self, inventario_id: str, cantidad: int) -> tuple[bool, int]:
+        """Verifica el stock disponible de un producto"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return False, 0
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT Existencia FROM Inventario WHERE ID_inventario = %s",
+                (str(inventario_id),)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return False, 0
+            
+            stock = int(row[0] or 0)
+            return stock >= cantidad, stock
+        finally:
+            cursor.close()
+            db.close()
+    
+    def _verificar_producto_existe(self, inventario_id: str) -> bool:
+        """Verifica si un producto existe en el inventario"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT 1 FROM Inventario WHERE ID_inventario = %s LIMIT 1",
+                (str(inventario_id),)
+            )
+            return cursor.fetchone() is not None
+        finally:
+            cursor.close()
+            db.close()
+    
     def crear_venta_desde_carrito(self) -> str:
-        if not self.cliente_id:
-            raise ValueError("Cliente no especificado")
+        """Crea una venta a partir del carrito de compras"""
+        if not self.cliente_id or not str(self.cliente_id).strip():
+            raise ValueError("El ID del cliente no puede estar vacío.")
+        
+        cliente_id_str = str(self.cliente_id).strip()
+        
+        if not cliente_id_str.isdigit():
+            raise ValueError("El ID del cliente debe contener solo números.")
+        
+        if len(cliente_id_str) > 8:
+            raise ValueError("El ID del cliente no puede exceder los 8 caracteres.")
+        
+        # Validar items
+        if not self.items:
+            raise ValueError("El carrito no puede estar vacío.")
+        
+        if not isinstance(self.items, list):
+            raise ValueError("Los items deben ser una lista.")
+        
+        productos_vistos = set()
+        
+        for i, item in enumerate(self.items):
+            producto_id = item.get("producto_id") or item.get("id")
+            
+            if not producto_id:
+                raise ValueError(f"El producto en la posición {i+1} no tiene ID.")
+            
+            producto_id_str = str(producto_id).strip()
+            
+            if not producto_id_str:
+                raise ValueError(f"El ID del producto en la posición {i+1} está vacío.")
+            
+            cantidad = item.get("cantidad", 0)
+            
+            try:
+                cantidad_int = int(cantidad)
+                if cantidad_int <= 0:
+                    raise ValueError(f"La cantidad del producto '{producto_id_str}' debe ser mayor a 0.")
+            except (ValueError, TypeError):
+                raise ValueError(f"La cantidad del producto '{producto_id_str}' no es válida.")
+            
+            if producto_id_str in productos_vistos:
+                raise ValueError(f"El producto '{producto_id_str}' aparece múltiples veces en el carrito.")
+            productos_vistos.add(producto_id_str)
+        
+        if not self.metodo_pago or not self.metodo_pago.strip():
+            raise ValueError("El método de pago no puede estar vacío.")
+        
+        metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        if self.metodo_pago not in metodos_validos:
+            raise ValueError(f"Método de pago inválido. Opciones: {', '.join(metodos_validos)}.")
+        
+        # Verificar existencia del cliente
+        if not self._verificar_cliente_existe(cliente_id_str):
+            raise ValueError(f"El cliente con ID '{cliente_id_str}' no existe.")
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos")
+            raise RuntimeError("Error al conectar a la base de datos.")
         
         factura_id = self._generar_id_factura()
         fecha_actual = datetime.now()
@@ -54,24 +163,16 @@ class VentaModel:
             cursor.execute("""
                 INSERT INTO Venta (ID_factura, ID_empleado, ID_cliente, Moneda, Fecha_venta)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (factura_id, None, self.cliente_id, moneda, fecha_actual))
+            """, (factura_id, self.empleado_id, cliente_id_str, moneda, fecha_actual))
             
             for item in self.items:
                 inventario_id = str(item.get("producto_id", item.get("id", "")))
                 cantidad = int(item.get("cantidad", 0))
                 
-                if cantidad <= 0:
-                    continue
-                
-                cursor.execute(
-                    "SELECT Existencia FROM Inventario WHERE ID_inventario = %s",
-                    (inventario_id,)
-                )
-                row = cursor.fetchone()
-                existencia = int(row[0] or 0) if row else 0
-                
-                if existencia < cantidad:
-                    raise ValueError(f"Stock insuficiente para el producto {inventario_id}")
+                # Verificar stock
+                stock_valido, stock_disponible = self._verificar_stock_disponible(inventario_id, cantidad)
+                if not stock_valido:
+                    raise ValueError(f"Stock insuficiente para el producto {inventario_id}. Disponible: {stock_disponible}")
                 
                 cursor.execute("""
                     INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo)
@@ -89,7 +190,7 @@ class VentaModel:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear venta",
-                    descripcion=f"Se creó la venta {factura_id} para cliente: {self.cliente_id} - Método: {self.metodo_pago}",
+                    descripcion=f"Se creó la venta {factura_id} para cliente: {cliente_id_str} - Método: {self.metodo_pago}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Ventas"
                 )
@@ -98,7 +199,7 @@ class VentaModel:
             self.factura_id = factura_id
             return factura_id
             
-        except Exception:
+        except Exception as e:
             db.rollback()
             raise
         finally:
@@ -106,12 +207,20 @@ class VentaModel:
             db.close()
     
     def guardar_registro_pago(self) -> None:
-        if not self.factura_id:
-            raise ValueError("Factura ID no especificada")
+        """Guarda el registro de pago de una venta"""
+        if not self.factura_id or not self.factura_id.strip():
+            raise ValueError("El ID de la factura no puede estar vacío.")
+        
+        if not self.metodo_pago or not self.metodo_pago.strip():
+            raise ValueError("El método de pago no puede estar vacío.")
+        
+        metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+        if self.metodo_pago not in metodos_validos:
+            raise ValueError(f"Método de pago inválido. Opciones: {', '.join(metodos_validos)}.")
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos")
+            raise RuntimeError("Error al conectar a la base de datos.")
         
         cursor = db.cursor()
         try:
@@ -122,6 +231,19 @@ class VentaModel:
             monto = self.datos_pago.get("monto", None)
             capture_image = self.datos_pago.get("capture", "")
             fecha_pago_cliente = self.datos_pago.get("fecha_pago", None)
+            
+            # Validar monto si está presente
+            if monto is not None:
+                try:
+                    monto_float = float(monto)
+                    if monto_float <= 0:
+                        raise ValueError("El monto debe ser mayor a 0.")
+                except (ValueError, TypeError):
+                    raise ValueError("El monto debe ser un valor numérico válido.")
+            
+            # Validar referencia para ciertos métodos
+            if self.metodo_pago in ["pago_movil", "zelle", "binance"] and not referencia:
+                raise ValueError(f"La referencia es obligatoria para el método de pago '{self.metodo_pago}'.")
             
             fecha_pago = fecha_pago_cliente if fecha_pago_cliente else fecha_actual
             
@@ -138,15 +260,15 @@ class VentaModel:
                 campos.append("Metodo")
                 valores.append(self.metodo_pago)
             
-            if "Referencia" in columnas:
+            if "Referencia" in columnas and referencia:
                 campos.append("Referencia")
                 valores.append(referencia)
             
-            if "Monto" in columnas and monto:
+            if "Monto" in columnas and monto is not None:
                 campos.append("Monto")
                 valores.append(monto)
             
-            if "Capture" in columnas:
+            if "Capture" in columnas and capture_image:
                 campos.append("Capture")
                 valores.append(capture_image)
             
@@ -174,7 +296,7 @@ class VentaModel:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar pago",
-                    descripcion=f"Se registró pago para factura: {self.factura_id} - Método: {self.metodo_pago} - Referencia: {referencia}",
+                    descripcion=f"Se registró pago para factura: {self.factura_id} - Método: {self.metodo_pago}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Ventas"
                 )
@@ -189,6 +311,7 @@ class VentaModel:
             db.close()
     
     def obtener_ventas_hoy(self) -> dict:
+        """Obtiene el resumen de ventas del día"""
         db = self.__conexion_bd.conexion1()
         if not db:
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
