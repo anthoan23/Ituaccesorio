@@ -84,20 +84,17 @@ def api_crear_clase():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
 
-    modelo = ClaseProducto(nombre=nombre)
+    # Obtener usuario_id
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    modelo = ClaseProducto(nombre=nombre, usuario_id=usuario_id)
+    modelo = ClaseProducto(nombre=nombre)  # NO pasar usuario_id (ClaseProducto no lo tiene)
+    
     try:
-        new_id = modelo.crear()
-        
-        # Obtener usuario desde g.user
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        usuario_nombre = g.user.get("usuario_nombre") if isinstance(g.user, dict) else getattr(g.user, "usuario_nombre", "SISTEMA")
-        usuario_foto = g.user.get("foto_perfil") if isinstance(g.user, dict) else getattr(g.user, "foto_perfil", None)
+        new_id = modelo.registrar_clase()
         
         bitacora = Bitacora(
-            accion="Crear producto",
-            descripcion=f"Producto creado: {nombre} (ID: {new_id})",
+            accion="Crear clase",
+            descripcion=f"Clase creada: {nombre} (ID: {new_id})",
             usuario_id=usuario_id,
             modulo_nombre="Productos"
         )
@@ -259,6 +256,7 @@ def api_actualizar_modelo(id_modelo: str):
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
 
+    # Obtener usuario_id para la bitácora (pero NO pasarlo al modelo Producto)
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 
     modelo = Producto(
@@ -266,12 +264,21 @@ def api_actualizar_modelo(id_modelo: str):
         id_clase=id_clase,
         id_marca=id_marca,
         nombre=nombre,
-        descripcion=descripcion,
-        usuario_id=usuario_id  # Agregar usuario_id para la bitácora en el modelo
+        descripcion=descripcion
     )
     
     try:
         ok = modelo.actualizar_producto()
+        
+        # Registrar en bitácora después de la actualización
+        if ok:
+            bitacora = Bitacora(
+                accion="Actualizar producto",
+                descripcion=f"Producto actualizado: {nombre} (ID: {id_modelo})",
+                usuario_id=usuario_id,
+                modulo_nombre="Productos"
+            )
+            bitacora.registrar()
         
         return jsonify({"success": True, "updated": ok})
     except Exception as error:
@@ -285,10 +292,7 @@ def api_actualizar_modelo(id_modelo: str):
 def api_eliminar_modelo(id_modelo: str):
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
-    modelo = Producto(
-        id_producto=id_modelo,
-        usuario_id=usuario_id  # Agregar usuario_id para la bitácora
-    )
+    modelo = Producto(id_producto=id_modelo)  # NO pasar usuario_id aquí
     
     try:
         if modelo.verificar_stock_asociado():

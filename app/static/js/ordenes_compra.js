@@ -76,16 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return data;
     }
 
-    // Mostrar modal de mensaje
+    // función mostrarMensaje
     function mostrarMensaje(mensaje, esError = false) {
-        if (mensajeTexto) {
-            mensajeTexto.textContent = mensaje;
-            mensajeTexto.style.color = esError ? '#dc2626' : '#10b981';
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+        window.FeedbackModal.show({
+        type: esError ? 'error' : 'success',
+        title: esError ? 'Error' : 'Éxito',
+        message: mensaje,
+        });
+    } else {
+        if (esError) {
+        alert(mensaje);
+        } else {
+        console.log(mensaje);
         }
-        if (modalMensaje) modalMensaje.removeAttribute('hidden');
-        setTimeout(() => {
-            if (modalMensaje) modalMensaje.setAttribute('hidden', '');
-        }, 3000);
+    }
     }
 
     // Formatear moneda

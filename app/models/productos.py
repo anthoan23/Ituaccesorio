@@ -399,6 +399,7 @@ class Producto:
             db.close()
 
     def actualizar_producto(self) -> bool:
+        """Actualiza un producto usando los atributos de la instancia"""
         if not self.id_producto:
             raise ValueError("ID del producto es requerido para actualizar.")
         if not self.id_clase or not self.id_marca or not self.nombre:
@@ -418,8 +419,9 @@ class Producto:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora
-            if updated and self.usuario_id:
+            # Registrar en bitácora si existe usuario_id (opcional, no obligatorio)
+            if updated and hasattr(self, 'usuario_id') and self.usuario_id:
+                from app.models.bitacora import Bitacora
                 bitacora = Bitacora(
                     accion="Actualizar producto",
                     descripcion=f"Producto actualizado: {self.nombre} (ID: {self.id_producto})",
