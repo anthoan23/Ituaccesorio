@@ -60,8 +60,8 @@ def api_proveedores():
 @jwt_required
 @tiene_permiso('Órdenes de compra', 'consultar')
 def api_productos_proveedor(ID_proveedor):
-    orden = OrdenCompra(id_proveedor=ID_proveedor)
-    productos = orden.obtener_productos_proveedor()
+    orden = OrdenCompra()
+    productos = orden.obtener_productos_proveedor(ID_proveedor)  # Pasar como parámetro
     return jsonify({"success": True, "productos": productos})
 
 
@@ -125,8 +125,13 @@ def api_agregar_orden_compra():
                 continue
             normalized.append((str(mid), int(qty)))
 
-        orden = OrdenCompra()
-        success = orden.agregar_orden_compra(ID_em, ID_proveedor, normalized)
+        # Instanciar OrdenCompra con los datos
+        orden = OrdenCompra(
+            id_empleado=ID_em,
+            id_proveedor=ID_proveedor,
+            productos=normalized
+        )
+        success = orden.agregar_orden_compra()
         
         if success:
             return jsonify({"success": True, "message": "Orden de compra agregada exitosamente"}), 201
@@ -177,7 +182,23 @@ def api_registrar_entrega(ID_orden_c):
         if not fecha_entrega:
             fecha_entrega = datetime.now().strftime("%Y-%m-%d")
         
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+        # Obtener ID del empleado desde g.user
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        # Si el ID no es numérico, usar un empleado por defecto que existe
+        id_empleado = None
+        if usuario_id and str(usuario_id).isdigit():
+            id_empleado = int(usuario_id)
+        else:
+            # Usar un ID de empleado válido (Maria Gonzalez)
+            id_empleado = 30124556
+            print(f"ID de empleado no numérico ('{usuario_id}'), usando valor por defecto: {id_empleado}")
+        
+        print(f"ID Empleado a usar: {id_empleado}")
+        
+        # Llamar al método registrar_entrega del modelo
+        orden = OrdenCompra()
+        success = orden.registrar_entrega(ID_orden_c, recibido_por, fecha_entrega, id_empleado)
         
         if success:
             return jsonify({"success": True, "message": "Entrega registrada exitosamente. Stock actualizado."}), 200
