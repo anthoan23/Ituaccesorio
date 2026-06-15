@@ -245,6 +245,18 @@ class Empleados():
         # Validaciones
         if not cedula or not cargo_id or not nombre or not apellido:
             return "La cédula, cargo, nombre y apellido son obligatorios."
+        
+        if len(cedula) > 8:
+            return "La cédula no puede exceder los 8 caracteres."
+        
+        if len(nombre) > 50:
+            return "El nombre no puede exceder los 50 caracteres."
+        
+        if len(apellido) > 50:
+            return "El apellido no puede exceder los 50 caracteres."
+        
+        if len(celular) > 7:
+            return "El celular no puede exceder los 7 caracteres."
 
         if self.verificar_empleado():
             return f"El empleado con cédula {cedula} ya existe."
