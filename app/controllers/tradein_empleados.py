@@ -1,43 +1,18 @@
-from flask import Blueprint, jsonify, render_template, request, g
+from flask import Blueprint, jsonify, render_template, request, g, current_app
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.tradein_empleados import TradeInEmpleados
 import traceback
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from flask import current_app
 
 tradein_empleados_blueprint = Blueprint("tradein_empleados", __name__)
-
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-
-def _guardar_foto_trade_in(archivo):
-    """Guarda una foto de trade-in y retorna la ruta"""
-    if not archivo or not getattr(archivo, "filename", ""):
-        return None
-    
-    if not "." in archivo.filename or archivo.filename.rsplit(".", 1)[1].lower() not in ALLOWED_IMAGE_EXTENSIONS:
-        raise ValueError("Formato de imagen no válido")
-    
-    nombre_seguro = secure_filename(archivo.filename)
-    _, extension = os.path.splitext(nombre_seguro)
-    extension = extension.lower()[:10] or ".jpg"
-    nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
-    
-    carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
-    os.makedirs(carpeta_destino, exist_ok=True)
-    
-    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-    archivo.save(ruta_fisica)
-    return f"/static/img/evidencias/trade_in/{nombre_final}"
 
 
 @tradein_empleados_blueprint.route("/empleados/tradein")
 @jwt_required
 @solo_roles(['admin', 'ventas', 'tecnico'])
 def pagina_tradein_empleados():
-    """Panel de gestión de Trade-In para empleados"""
     return render_template(
         "tradein_empleados.html",
         show_navbar=True,
@@ -52,7 +27,6 @@ def pagina_tradein_empleados():
 @jwt_required
 @tiene_permiso('Trade-in', 'registrar')
 def api_registrar_trade_in():
-    """Registra un nuevo equipo recibido en trade-in"""
     try:
         cliente_id = request.form.get("cliente_id", "").strip()
         id_producto = request.form.get("id_producto", "").strip()
@@ -85,15 +59,22 @@ def api_registrar_trade_in():
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
         
+        # Guardar fotos
         fotos = []
         archivos = request.files.getlist("fotos")
         for archivo in archivos:
-            try:
-                ruta = _guardar_foto_trade_in(archivo)
-                if ruta:
-                    fotos.append(ruta)
-            except ValueError as e:
-                return jsonify({"success": False, "error": str(e)}), 400
+            if archivo and getattr(archivo, "filename", ""):
+                nombre_seguro = secure_filename(archivo.filename)
+                _, extension = os.path.splitext(nombre_seguro)
+                extension = extension.lower()[:10] or ".jpg"
+                nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
+                
+                carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
+                os.makedirs(carpeta_destino, exist_ok=True)
+                
+                ruta_fisica = os.path.join(carpeta_destino, nombre_final)
+                archivo.save(ruta_fisica)
+                fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
         
         modelo = TradeInEmpleados(
             cliente_id=cliente_id,
@@ -121,7 +102,6 @@ def api_registrar_trade_in():
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_verificar_equipo(id_equipo):
-    """Verifica si un equipo ya existe por su ID (IMEI)"""
     try:
         modelo = TradeInEmpleados(id_equipo=id_equipo)
         equipo = modelo.verificar_equipo_existente()
@@ -148,7 +128,6 @@ def api_verificar_equipo(id_equipo):
 @jwt_required
 @tiene_permiso('Trade-in', 'modificar')
 def api_registrar_tests_trade_in(tradein_id):
-    """Registra los tests realizados a un equipo trade-in"""
     try:
         datos = request.get_json(silent=True) or {}
         tests = datos.get("tests", [])
@@ -164,10 +143,7 @@ def api_registrar_tests_trade_in(tradein_id):
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
         
-        modelo = TradeInEmpleados(
-            trade_in_id=tradein_id,
-            usuario_id=usuario_id
-        )
+        modelo = TradeInEmpleados(trade_in_id=tradein_id, usuario_id=usuario_id)
         resultado = modelo.registrar_tests_trade_in(tests)
         
         if resultado["success"]:
@@ -187,7 +163,6 @@ def api_registrar_tests_trade_in(tradein_id):
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_listar_trade_ins():
-    """Obtiene todos los trade-ins registrados"""
     try:
         modelo = TradeInEmpleados()
         resultados = modelo.obtener_trade_ins()
@@ -201,7 +176,6 @@ def api_listar_trade_ins():
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_trade_ins_por_cliente(cliente_id):
-    """Obtiene el historial de trade-ins de un cliente"""
     try:
         modelo = TradeInEmpleados(cliente_id=cliente_id)
         resultados = modelo.obtener_trade_ins_por_cliente()
@@ -217,7 +191,6 @@ def api_trade_ins_por_cliente(cliente_id):
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_tradein_detalle(tradein_id):
-    """Obtiene el detalle completo de un trade-in"""
     try:
         modelo = TradeInEmpleados(trade_in_id=tradein_id)
         detalle = modelo.obtener_detalle_trade_in()
@@ -242,7 +215,6 @@ def api_tradein_detalle(tradein_id):
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_tradein_estadisticas():
-    """Obtiene estadísticas de trade-ins"""
     try:
         modelo = TradeInEmpleados()
         estadisticas = modelo.obtener_estadisticas()
@@ -258,7 +230,6 @@ def api_tradein_estadisticas():
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_productos_disponibles():
-    """Obtiene productos disponibles para trade-in"""
     try:
         modelo = TradeInEmpleados()
         productos = modelo.obtener_productos_disponibles()
@@ -272,7 +243,6 @@ def api_productos_disponibles():
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_buscar_clientes():
-    """Busca clientes para autocompletar"""
     try:
         q = request.args.get("q", "").strip()
         modelo = TradeInEmpleados()
@@ -287,7 +257,6 @@ def api_buscar_clientes():
 @jwt_required
 @tiene_permiso('Trade-in', 'consultar')
 def api_catalogo_tests():
-    """Obtiene el catálogo de pruebas disponibles para realizar al equipo"""
     catalogo_tests = [
         {"nombre": "Botón power", "categoria": "Botones"},
         {"nombre": "Botones volumen", "categoria": "Botones"},
@@ -321,14 +290,10 @@ def api_catalogo_tests():
 @jwt_required
 @tiene_permiso('Trade-in', 'eliminar')
 def api_eliminar_trade_in(tradein_id):
-    """Elimina un trade-in"""
     try:
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
         
-        modelo = TradeInEmpleados(
-            trade_in_id=tradein_id,
-            usuario_id=usuario_id
-        )
+        modelo = TradeInEmpleados(trade_in_id=tradein_id, usuario_id=usuario_id)
         resultado = modelo.eliminar_trade_in()
         
         if resultado["success"]:

@@ -3,103 +3,19 @@ import os
 import re
 import requests
 import traceback
+import mysql.connector
 from app.models.login import LoginManager
 from app.utils.decorators import jwt_required
 from app.utils.jwt_utils import clear_auth_cookies, set_auth_cookies
 from app.models.permisos import Permiso
+from app.models.modulos import Modulo
+from app.models.clientes import Clientes as GestionClientes
 
 login_blueprint = Blueprint("login", __name__)
 
 
-def _respuesta_error_por_excepcion(error):
-    """Maneja errores y devuelve respuesta JSON"""
-    print(f"ERROR DETALLADO: {type(error).__name__}: {str(error)}")
-    traceback.print_exc()
-    
-    if isinstance(error, mysql.connector.IntegrityError):
-        errno = getattr(error, "errno", None)
-        if errno == 1062:
-            return jsonify({"success": False, "error": "Ya existe un registro con esos datos."}), 409
-        return jsonify({"success": False, "error": "No se pudo guardar la información por una restricción de datos."}), 409
-    if isinstance(error, (ValueError, TypeError)):
-        return jsonify({"success": False, "error": f"Datos inválidos: {str(error)}"}), 400
-    if isinstance(error, mysql.connector.Error):
-        return jsonify({"success": False, "error": f"Error de base de datos: {str(error)}"}), 500
-    
-    return jsonify({"success": False, "error": f"Ocurrió un error inesperado: {str(error)}"}), 500
-
-
-def _validar_recaptcha(token, remote_ip):
-    """Valida el token de reCAPTCHA"""
-    secret = os.getenv("RECAPTCHA_SECRET_KEY")
-    if not secret:
-        return False, "Captcha no configurado."
-    if not token:
-        return False, "Completa el captcha para continuar."
-    
-    payload = {"secret": secret, "response": token}
-    if remote_ip:
-        payload["remoteip"] = remote_ip
-    
-    try:
-        response = requests.post(
-            "https://www.google.com/recaptcha/api/siteverify",
-            data=payload,
-            timeout=5
-        )
-        data = response.json()
-    except requests.RequestException:
-        return False, "No se pudo validar el captcha. Intenta nuevamente."
-    
-    if data.get("success"):
-        return True, ""
-    return False, "Captcha inválido. Intenta nuevamente."
-
-
-def _es_rol_cliente(nombre_rol):
-    """Verifica si el rol es cliente"""
-    return str(nombre_rol or "").strip().lower() == "cliente"
-
-
-def _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol):
-    """Carga los permisos del usuario para incluirlos en el payload del JWT"""
-    # ADMIN tiene todos los permisos
-    if rol_id == 1 or str(nombre_rol or "").lower() == 'admin':
-        from app.models.modulos import Modulo
-        modulo_model = Modulo()
-        modulos = modulo_model.listar_modulos() or []
-        permisos = {}
-        for modulo in modulos:
-            permisos[modulo['nombre']] = {
-                'consultar': True,
-                'registrar': True,
-                'modificar': True,
-                'eliminar': True
-            }
-        return permisos
-    
-    if not usuario_id:
-        return {}
-    
-    # Cargar permisos desde la base de datos
-    permiso_model = Permiso()
-    permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
-    
-    permisos = {}
-    for p in permisos_db:
-        permisos[p['modulo_nombre']] = {
-            'consultar': bool(p.get('consultar', False)),
-            'registrar': bool(p.get('registrar', False)),
-            'modificar': bool(p.get('modificar', False)),
-            'eliminar': bool(p.get('eliminar', False))
-        }
-    
-    return permisos
-
-
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
-    """Página de login"""
     return render_template(
         "login_phone.html",
         recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY", "")
@@ -108,16 +24,30 @@ def pagina_login():
 
 @login_blueprint.route("/api/login", methods=["POST"])
 def validar_login():
-    """Endpoint de login"""
     try:
         datos = request.get_json(silent=True) or {}
         
         # Validar captcha
         recaptcha_token = datos.get("recaptcha")
-        recaptcha_ok, recaptcha_error = _validar_recaptcha(recaptcha_token, request.remote_addr)
-        if not recaptcha_ok:
-            status = 500 if "no configurado" in recaptcha_error else 400
-            return jsonify({"success": False, "error": recaptcha_error}), status
+        secret = os.getenv("RECAPTCHA_SECRET_KEY")
+        
+        if not secret:
+            return jsonify({"success": False, "error": "Captcha no configurado."}), 500
+        if not recaptcha_token:
+            return jsonify({"success": False, "error": "Completa el captcha para continuar."}), 400
+        
+        try:
+            response = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret, "response": recaptcha_token, "remoteip": request.remote_addr},
+                timeout=5
+            )
+            data = response.json()
+        except requests.RequestException:
+            return jsonify({"success": False, "error": "No se pudo validar el captcha. Intenta nuevamente."}), 500
+        
+        if not data.get("success"):
+            return jsonify({"success": False, "error": "Captcha inválido. Intenta nuevamente."}), 400
 
         nombre = datos.get("nombre")
         password = datos.get("password")
@@ -125,37 +55,50 @@ def validar_login():
         if not nombre or not password:
             return jsonify({"success": False, "error": "Usuario y contraseña son obligatorios."}), 400
 
-        # Validar credenciales
         login_manager = LoginManager()
         usuario = login_manager.validar_usuario(nombre, password)
         
         if not usuario:
             return jsonify({"success": False, "error": "Credenciales inválidas."}), 401
 
-        # Verificar si es cliente y tiene perfil completo
-        es_cliente = _es_rol_cliente(usuario.get("rol_nombre"))
+        es_cliente = str(usuario.get("rol_nombre") or "").strip().lower() == "cliente"
         perfil_completo = True
         
         if es_cliente:
             perfil_completo = login_manager.verificar_perfil_completo_cliente(usuario.get("cedula"))
         
         # Cargar permisos del usuario
-        permisos = _cargar_permisos_usuario(
-            usuario.get("id"), 
-            usuario.get("rol_id"), 
-            usuario.get("rol_nombre")
-        )
+        permisos = {}
+        if usuario.get("rol_id") == 1 or str(usuario.get("rol_nombre") or "").lower() == 'admin':
+            modulo_model = Modulo()
+            modulos = modulo_model.listar_modulos() or []
+            for modulo in modulos:
+                permisos[modulo['nombre']] = {
+                    'consultar': True,
+                    'registrar': True,
+                    'modificar': True,
+                    'eliminar': True
+                }
+        elif usuario.get("id"):
+            permiso_model = Permiso()
+            permisos_db = permiso_model.obtener_permisos_usuario(usuario.get("id")) or []
+            for p in permisos_db:
+                permisos[p['modulo_nombre']] = {
+                    'consultar': bool(p.get('consultar', False)),
+                    'registrar': bool(p.get('registrar', False)),
+                    'modificar': bool(p.get('modificar', False)),
+                    'eliminar': bool(p.get('eliminar', False))
+                }
         
-        # Preparar payload para la cookie
         payload = {
-            "id": usuario.get("id"),  # Cambiado de usuario_id a id
+            "id": usuario.get("id"),
             "usuario_nombre": usuario.get("nombre"),
             "cedula": usuario.get("cedula"),
             "rol_id": usuario.get("rol_id"),
-            "rol_nombre": usuario.get("rol_nombre"),  # Cambiado de nombre_rol a rol_nombre
+            "rol_nombre": usuario.get("rol_nombre"),
             "foto_perfil": usuario.get("foto_perfil"),
             "perfil_completo": perfil_completo,
-            "permisos": permisos,  # Incluir permisos en el payload
+            "permisos": permisos,
         }
         
         resp = make_response(jsonify({
@@ -167,29 +110,31 @@ def validar_login():
         return set_auth_cookies(resp, payload)
         
     except Exception as error:
-        return _respuesta_error_por_excepcion(error)
+        print(f"ERROR DETALLADO: {type(error).__name__}: {str(error)}")
+        traceback.print_exc()
+        
+        if isinstance(error, mysql.connector.IntegrityError):
+            errno = getattr(error, "errno", None)
+            if errno == 1062:
+                return jsonify({"success": False, "error": "Ya existe un registro con esos datos."}), 409
+            return jsonify({"success": False, "error": "No se pudo guardar la información por una restricción de datos."}), 409
+        if isinstance(error, (ValueError, TypeError)):
+            return jsonify({"success": False, "error": f"Datos inválidos: {str(error)}"}), 400
+        if isinstance(error, mysql.connector.Error):
+            return jsonify({"success": False, "error": f"Error de base de datos: {str(error)}"}), 500
+        
+        return jsonify({"success": False, "error": f"Ocurrió un error inesperado: {str(error)}"}), 500
 
 
 @login_blueprint.route("/api/registro/cliente/paso-1", methods=["POST"])
 def registro_cliente_paso_1():
-    """Primer paso: crear solo el usuario"""
-    import traceback
-    import sys
-    
     try:
         datos = request.get_json(silent=True) or {}
-        
-        print("=" * 50)
-        print("DATOS RECIBIDOS:", datos)
-        print("=" * 50)
         
         nombre_usuario = datos.get("nombre", "").strip()
         cedula = datos.get("cedula", "").strip()
         password = datos.get("password", "").strip()
 
-        print(f"Usuario: {nombre_usuario}, Cédula: {cedula}, Password length: {len(password)}")
-
-        # Validaciones
         if not nombre_usuario:
             return jsonify({"success": False, "error": "El nombre de usuario es obligatorio."}), 400
         
@@ -205,35 +150,36 @@ def registro_cliente_paso_1():
         if len(password) < 6:
             return jsonify({"success": False, "error": "La contraseña debe tener al menos 6 caracteres."}), 400
 
-        # Obtener login manager
         login_manager = LoginManager()
 
-        # Verificar si ya existe
         if login_manager.verificar_usuario_existe_por_cedula(cedula):
             return jsonify({"success": False, "error": "Ya existe un usuario con esta cédula."}), 409
 
         if login_manager.verificar_usuario_existe_por_nombre(nombre_usuario):
             return jsonify({"success": False, "error": "El nombre de usuario ya está en uso."}), 409
 
-        # Obtener rol cliente
         rol_cliente = login_manager.obtener_rol_cliente()
-        print(f"Rol cliente encontrado: {rol_cliente}")
         
         if not rol_cliente:
             return jsonify({"success": False, "error": "No existe el rol Cliente configurado."}), 500
 
-        # Crear usuario
         usuario_id = login_manager.crear_usuario(nombre_usuario, cedula, password, rol_cliente["id"])
         
-        print(f"Usuario creado con ID: {usuario_id}")
-        
         if not usuario_id:
-            return jsonify({"success": False, "error": "No se pudo crear la cuenta. Verifica los logs del servidor."}), 500
+            return jsonify({"success": False, "error": "No se pudo crear la cuenta."}), 500
 
-        # Cargar permisos del nuevo usuario (cliente)
-        permisos = _cargar_permisos_usuario(usuario_id, rol_cliente["id"], rol_cliente["nombre"])
+        # Cargar permisos
+        permisos = {}
+        permiso_model = Permiso()
+        permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
+        for p in permisos_db:
+            permisos[p['modulo_nombre']] = {
+                'consultar': bool(p.get('consultar', False)),
+                'registrar': bool(p.get('registrar', False)),
+                'modificar': bool(p.get('modificar', False)),
+                'eliminar': bool(p.get('eliminar', False))
+            }
 
-        # Preparar payload para la cookie
         payload = {
             "id": usuario_id,
             "usuario_nombre": nombre_usuario,
@@ -254,30 +200,19 @@ def registro_cliente_paso_1():
         return set_auth_cookies(resp, payload)
         
     except Exception as error:
-        print("=" * 50)
-        print("ERROR EN PASO-1:")
-        print("Tipo:", type(error).__name__)
-        print("Mensaje:", str(error))
-        print("Traceback completo:")
+        print(f"ERROR EN PASO-1: {type(error).__name__}: {str(error)}")
         traceback.print_exc()
-        print("=" * 50)
-        
-        return jsonify({
-            "success": False, 
-            "error": f"Error interno: {str(error)}"
-        }), 500
+        return jsonify({"success": False, "error": f"Error interno: {str(error)}"}), 500
+
 
 @login_blueprint.route("/api/registro/cliente/paso-2", methods=["POST"])
 @jwt_required
 def registro_cliente_paso_2():
-    """Segundo paso: completar perfil del cliente"""
     try:
-        # Obtener usuario del contexto (g.user)
         usuario = getattr(g, 'user', None)
         if not usuario:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        # Si es diccionario, acceder con .get()
         if isinstance(usuario, dict):
             nombre_rol = usuario.get("rol_nombre", "")
             cedula = usuario.get("cedula", "")
@@ -293,9 +228,7 @@ def registro_cliente_paso_2():
             rol_id = getattr(usuario, "rol_id", "")
             foto_perfil = getattr(usuario, "foto_perfil", "")
         
-        print(f"Usuario autenticado paso-2: id={usuario_id}, rol={nombre_rol}, cedula={cedula}")
-        
-        if not _es_rol_cliente(nombre_rol):
+        if str(nombre_rol or "").strip().lower() != "cliente":
             return jsonify({"success": False, "error": "Solo clientes pueden completar este registro."}), 403
 
         if not cedula:
@@ -308,33 +241,44 @@ def registro_cliente_paso_2():
         correo = datos.get("correo", "").strip()
         direccion = datos.get("direccion", "").strip()
 
-        print(f"Datos recibidos: nombre={nombre}, apellido={apellido}, celular={celular}")
-
         if not nombre or not apellido:
             return jsonify({"success": False, "error": "Nombre y apellido son obligatorios."}), 400
 
         if not celular:
             return jsonify({"success": False, "error": "El número de celular es obligatorio."}), 400
         
-        # Limpiar y validar celular
         celular_limpio = re.sub(r'[\s\-\(\)\+]', '', celular)
         if not celular_limpio.isdigit() or len(celular_limpio) < 10:
             return jsonify({"success": False, "error": "Ingrese un número de teléfono válido (mínimo 10 dígitos)."}), 400
 
-        # Validar correo si se proporcionó
         if correo:
             email_pattern = r'^[^\s@]+@([^\s@]+\.)+[^\s@]+$'
             if not re.match(email_pattern, correo):
                 return jsonify({"success": False, "error": "Ingrese un correo electrónico válido."}), 400
 
-        from app.models.clientes import Clientes as GestionClientes
         modelo_clientes = GestionClientes()
         
-        # Verificar si el cliente ya existe
         existente = modelo_clientes.obtener_cliente_por_id(int(cedula))
         if existente:
-            # Recargar permisos actualizados
-            permisos = _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol)
+            # Recargar permisos
+            permisos = {}
+            if rol_id == 1:
+                modulo_model = Modulo()
+                modulos = modulo_model.listar_modulos() or []
+                for modulo in modulos:
+                    permisos[modulo['nombre']] = {
+                        'consultar': True, 'registrar': True, 'modificar': True, 'eliminar': True
+                    }
+            else:
+                permiso_model = Permiso()
+                permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
+                for p in permisos_db:
+                    permisos[p['modulo_nombre']] = {
+                        'consultar': bool(p.get('consultar', False)),
+                        'registrar': bool(p.get('registrar', False)),
+                        'modificar': bool(p.get('modificar', False)),
+                        'eliminar': bool(p.get('eliminar', False))
+                    }
             
             payload = {
                 "id": usuario_id,
@@ -349,7 +293,6 @@ def registro_cliente_paso_2():
             resp = make_response(jsonify({"success": True, "message": "Perfil ya completado."}))
             return set_auth_cookies(resp, payload)
 
-        # Crear el cliente como PERSONA NATURAL
         cliente_creado = modelo_clientes.crear_cliente(
             cliente_id=int(cedula),
             nombre=nombre,
@@ -362,10 +305,25 @@ def registro_cliente_paso_2():
         if not cliente_creado:
             return jsonify({"success": False, "error": "No se pudo crear el perfil del cliente."}), 500
         
-        print(f"Cliente creado con ID: {cedula}")
-        
-        # Recargar permisos actualizados
-        permisos = _cargar_permisos_usuario(usuario_id, rol_id, nombre_rol)
+        # Recargar permisos
+        permisos = {}
+        if rol_id == 1:
+            modulo_model = Modulo()
+            modulos = modulo_model.listar_modulos() or []
+            for modulo in modulos:
+                permisos[modulo['nombre']] = {
+                    'consultar': True, 'registrar': True, 'modificar': True, 'eliminar': True
+                }
+        else:
+            permiso_model = Permiso()
+            permisos_db = permiso_model.obtener_permisos_usuario(usuario_id) or []
+            for p in permisos_db:
+                permisos[p['modulo_nombre']] = {
+                    'consultar': bool(p.get('consultar', False)),
+                    'registrar': bool(p.get('registrar', False)),
+                    'modificar': bool(p.get('modificar', False)),
+                    'eliminar': bool(p.get('eliminar', False))
+                }
         
         payload = {
             "id": usuario_id,
@@ -385,8 +343,8 @@ def registro_cliente_paso_2():
         traceback.print_exc()
         return jsonify({"success": False, "error": str(error)}), 500
 
+
 @login_blueprint.route('/logout', methods=['GET'])
 def logout():
-    """Cierra la sesión del usuario"""
     resp = redirect(url_for('login.pagina_login'))
     return clear_auth_cookies(resp)

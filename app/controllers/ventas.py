@@ -6,65 +6,12 @@ from app.models.venta import VentaModel
 from app.models.clientes import Clientes
 import requests
 import traceback
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from datetime import datetime
 
 ventas_blueprint = Blueprint("ventas", __name__)
-
-
-def obtener_cliente_id_actual() -> str:
-    """Obtiene el ID del cliente actual desde g.user y verifica que exista en la BD de clientes"""
-    if not g.user:
-        return None
-    
-    # Obtener cédula desde el usuario
-    if isinstance(g.user, dict):
-        cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-    else:
-        cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-    
-    if not cliente_id:
-        return None
-    
-    cliente_id_str = str(cliente_id)
-    
-    # Verificar que el cliente existe en la base de datos del negocio
-    modelo_clientes = Clientes(ID_cliente=cliente_id_str)
-    try:
-        if modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
-            return cliente_id_str
-        return None
-    except Exception as e:
-        print(f"Error al verificar cliente: {e}")
-        return None
-
-
-def get_dolar_rates() -> dict:
-    """Obtiene tasas oficial y paralelo del dólar"""
-    oficial_url = "https://ve.dolarapi.com/v1/dolares/oficial"
-    paralelo_url = "https://ve.dolarapi.com/v1/dolares/paralelo"
-    
-    try:
-        oficial_resp = requests.get(oficial_url, timeout=5)
-        paralelo_resp = requests.get(paralelo_url, timeout=5)
-        
-        oficial = oficial_resp.json().get("promedio", 520.91) if oficial_resp.status_code == 200 else 520.91
-        paralelo = paralelo_resp.json().get("promedio", 710.12) if paralelo_resp.status_code == 200 else 710.12
-        
-        return {"oficial": oficial, "paralelo": paralelo}
-    except:
-        return {"oficial": 520.91, "paralelo": 710.12}
-
-
-def calcular_precios_bs(productos: list, tasas: dict = None) -> list:
-    """Calcula precios en bolívares"""
-    if tasas is None:
-        tasas = get_dolar_rates()
-    
-    for p in productos:
-        precio_usd = float(p.get("precio_usd", 0))
-        p["precio_bs_oficial"] = round(precio_usd * tasas["oficial"], 2)
-        p["precio_bs_paralelo"] = round(precio_usd * tasas["paralelo"], 2)
-    
-    return productos
 
 
 # ==================== VISTAS CLIENTE ====================
@@ -96,12 +43,28 @@ def api_listar_productos_catalogo():
         
         productos = modelo_catalogo.listar_productos_catalogo()
         
-        tasas = get_dolar_rates()
-        productos = calcular_precios_bs(productos, tasas)
+        # Obtener tasas de dólar
+        try:
+            oficial_resp = requests.get("https://ve.dolarapi.com/v1/dolares/oficial", timeout=5)
+            paralelo_resp = requests.get("https://ve.dolarapi.com/v1/dolares/paralelo", timeout=5)
+            tasa_oficial = oficial_resp.json().get("promedio", 520.91) if oficial_resp.status_code == 200 else 520.91
+            tasa_paralelo = paralelo_resp.json().get("promedio", 710.12) if paralelo_resp.status_code == 200 else 710.12
+        except:
+            tasa_oficial = 520.91
+            tasa_paralelo = 710.12
+        
+        # Calcular precios en bolívares
+        for p in productos:
+            precio_usd = float(p.get("precio_usd", 0))
+            p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
+            p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
         
         modelo_mas_vendidos = CatalogoModel()
         mas_vendidos = modelo_mas_vendidos.productos_mas_vendidos()
-        mas_vendidos = calcular_precios_bs(mas_vendidos, tasas)
+        for p in mas_vendidos:
+            precio_usd = float(p.get("precio_usd", 0))
+            p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
+            p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
         
         modelo_clases = CatalogoModel()
         clases = modelo_clases.listar_clases()
@@ -115,7 +78,7 @@ def api_listar_productos_catalogo():
             "mas_vendidos": mas_vendidos,
             "clases": clases,
             "marcas": marcas,
-            "tasas": tasas
+            "tasas": {"oficial": tasa_oficial, "paralelo": tasa_paralelo}
         })
     except Exception as e:
         print(f"Error en api_listar_productos_catalogo: {e}")
@@ -133,15 +96,41 @@ def api_obtener_carrito():
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
-        if not cliente_id:
-            return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0, "tasas": get_dolar_rates()})
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
         
-        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        if not cliente_id:
+            return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
+        
+        cliente_id_str = str(cliente_id)
+        modelo_clientes = Clientes(ID_cliente=cliente_id_str)
+        
+        try:
+            if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
+                return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
+        except:
+            return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
+        
+        modelo_carrito = CarritoModel(cliente_id=cliente_id_str)
         carrito = modelo_carrito.obtener_carrito()
         
-        tasas = get_dolar_rates()
-        carrito = calcular_precios_bs(carrito, tasas)
+        # Obtener tasas de dólar
+        try:
+            oficial_resp = requests.get("https://ve.dolarapi.com/v1/dolares/oficial", timeout=5)
+            paralelo_resp = requests.get("https://ve.dolarapi.com/v1/dolares/paralelo", timeout=5)
+            tasa_oficial = oficial_resp.json().get("promedio", 520.91) if oficial_resp.status_code == 200 else 520.91
+            tasa_paralelo = paralelo_resp.json().get("promedio", 710.12) if paralelo_resp.status_code == 200 else 710.12
+        except:
+            tasa_oficial = 520.91
+            tasa_paralelo = 710.12
+        
+        for p in carrito:
+            precio_usd = float(p.get("precio_usd", 0))
+            p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
+            p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
         
         total_usd = sum(float(p.get("precio_usd", 0)) * int(p.get("cantidad", 0)) for p in carrito)
         total_bs_paralelo = sum(float(p.get("precio_bs_paralelo", 0)) for p in carrito)
@@ -153,7 +142,7 @@ def api_obtener_carrito():
             "total_usd": round(total_usd, 2),
             "total_bs_paralelo": round(total_bs_paralelo, 2),
             "total_bs_oficial": round(total_bs_oficial, 2),
-            "tasas": tasas
+            "tasas": {"oficial": tasa_oficial, "paralelo": tasa_paralelo}
         })
     except Exception as e:
         print(f"Error en api_obtener_carrito: {e}")
@@ -169,8 +158,22 @@ def api_agregar_carrito():
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+        
         if not cliente_id:
+            return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
+        
+        cliente_id_str = str(cliente_id)
+        modelo_clientes = Clientes(ID_cliente=cliente_id_str)
+        
+        try:
+            if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
+                return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
+        except:
             return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
         
         datos = request.get_json(silent=True) or {}
@@ -183,7 +186,7 @@ def api_agregar_carrito():
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         modelo_carrito = CarritoModel(
-            cliente_id=cliente_id,
+            cliente_id=cliente_id_str,
             inventario_id=str(producto_id),
             cantidad=cantidad,
             usuario_id=usuario_id
@@ -207,11 +210,16 @@ def api_eliminar_carrito(producto_id):
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+        
         if not cliente_id:
             return jsonify({"success": True})
         
-        modelo_carrito = CarritoModel(cliente_id=cliente_id, inventario_id=producto_id)
+        modelo_carrito = CarritoModel(cliente_id=str(cliente_id), inventario_id=producto_id)
         modelo_carrito.eliminar_item()
         return jsonify({"success": True})
     except Exception as e:
@@ -227,7 +235,12 @@ def api_actualizar_cantidad():
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+        
         if not cliente_id:
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
         
@@ -236,7 +249,7 @@ def api_actualizar_cantidad():
         cantidad = datos.get("cantidad", 1)
         
         modelo_carrito = CarritoModel(
-            cliente_id=cliente_id,
+            cliente_id=str(cliente_id),
             inventario_id=str(producto_id),
             cantidad=cantidad
         )
@@ -257,11 +270,16 @@ def api_vaciar_carrito():
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+        
         if not cliente_id:
             return jsonify({"success": True})
         
-        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        modelo_carrito = CarritoModel(cliente_id=str(cliente_id))
         modelo_carrito.vaciar_carrito()
         return jsonify({"success": True})
     except Exception as e:
@@ -278,8 +296,22 @@ def pagina_pagos():
     if not hasattr(g, 'user') or not g.user:
         return redirect("/login")
     
-    cliente_id = obtener_cliente_id_actual()
+    # Obtener ID del cliente
+    if isinstance(g.user, dict):
+        cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+    else:
+        cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+    
     if not cliente_id:
+        return redirect("/catalogo")
+    
+    cliente_id_str = str(cliente_id)
+    modelo_clientes = Clientes(ID_cliente=cliente_id_str)
+    
+    try:
+        if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
+            return redirect("/catalogo")
+    except:
         return redirect("/catalogo")
     
     return render_template(
@@ -308,18 +340,26 @@ def api_metodos_pago():
 @jwt_required
 def api_procesar_pago():
     """Procesar el pago y crear la venta"""
-    import os
-    import uuid
-    import traceback
-    from werkzeug.utils import secure_filename
-    from datetime import datetime
-    
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
         
-        cliente_id = obtener_cliente_id_actual()
+        # Obtener ID del cliente
+        if isinstance(g.user, dict):
+            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
+        else:
+            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+        
         if not cliente_id:
+            return jsonify({"success": False, "error": "Cliente no identificado"}), 400
+        
+        cliente_id_str = str(cliente_id)
+        modelo_clientes = Clientes(ID_cliente=cliente_id_str)
+        
+        try:
+            if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
+                return jsonify({"success": False, "error": "Cliente no identificado"}), 400
+        except:
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
         
         # Obtener datos del formulario
@@ -335,7 +375,7 @@ def api_procesar_pago():
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         # Obtener carrito
-        modelo_carrito = CarritoModel(cliente_id=cliente_id)
+        modelo_carrito = CarritoModel(cliente_id=cliente_id_str)
         carrito = modelo_carrito.obtener_carrito()
         if not carrito:
             return jsonify({"success": False, "error": "Carrito vacío"}), 400
@@ -363,7 +403,7 @@ def api_procesar_pago():
         
         # Crear la venta
         modelo_venta = VentaModel(
-            cliente_id=cliente_id,
+            cliente_id=cliente_id_str,
             items=carrito,
             metodo_pago=metodo_pago,
             estado_pago=estado_pago,
