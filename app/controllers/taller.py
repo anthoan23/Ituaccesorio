@@ -13,8 +13,7 @@ taller_blueprint = Blueprint("taller", __name__)
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
-def _is_allowed_image(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
 
 
 @taller_blueprint.route("/taller", methods=["GET"])
