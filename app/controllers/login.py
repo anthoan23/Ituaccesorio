@@ -13,12 +13,14 @@ from app.models.clientes import Clientes as GestionClientes
 
 login_blueprint = Blueprint("login", __name__)
 
+IS_TEST_MODE = os.getenv('ENTORNO_PRUEBA', 'false').lower() in ('1', 'true', 'yes', 'on')
 
 @login_blueprint.route("/login", methods=["GET"])
 def pagina_login():
     return render_template(
         "login_phone.html",
-        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY", "")
+        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY", ""),
+        is_test_mode=IS_TEST_MODE
     )
 
 
@@ -27,27 +29,34 @@ def validar_login():
     try:
         datos = request.get_json(silent=True) or {}
         
-        # Validar captcha
-        recaptcha_token = datos.get("recaptcha")
-        secret = os.getenv("RECAPTCHA_SECRET_KEY")
+        # OBTENER EL ESTADO DEL MODO PRUEBA
+        is_test_mode = os.getenv('ENTORNO_PRUEBA', 'false').lower() in ('1', 'true', 'yes', 'on')
         
-        if not secret:
-            return jsonify({"success": False, "error": "Captcha no configurado."}), 500
-        if not recaptcha_token:
-            return jsonify({"success": False, "error": "Completa el captcha para continuar."}), 400
-        
-        try:
-            response = requests.post(
-                "https://www.google.com/recaptcha/api/siteverify",
-                data={"secret": secret, "response": recaptcha_token, "remoteip": request.remote_addr},
-                timeout=5
-            )
-            data = response.json()
-        except requests.RequestException:
-            return jsonify({"success": False, "error": "No se pudo validar el captcha. Intenta nuevamente."}), 500
-        
-        if not data.get("success"):
-            return jsonify({"success": False, "error": "Captcha inválido. Intenta nuevamente."}), 400
+        if is_test_mode:
+            print("⚠️ Modo de prueba activo: Saltando validación de reCAPTCHA.")
+            # EN MODO PRUEBA, SALTAMOS LA VALIDACIÓN DEL CAPTCHA
+        else:
+            # Validar captcha solo si NO estamos en modo prueba
+            recaptcha_token = datos.get("recaptcha")
+            secret = os.getenv("RECAPTCHA_SECRET_KEY")
+            
+            if not secret:
+                return jsonify({"success": False, "error": "Captcha no configurado."}), 500
+            if not recaptcha_token:
+                return jsonify({"success": False, "error": "Completa el captcha para continuar."}), 400
+            
+            try:
+                response = requests.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={"secret": secret, "response": recaptcha_token, "remoteip": request.remote_addr},
+                    timeout=5
+                )
+                data = response.json()
+            except requests.RequestException:
+                return jsonify({"success": False, "error": "No se pudo validar el captcha. Intenta nuevamente."}), 500
+            
+            if not data.get("success"):
+                return jsonify({"success": False, "error": "Captcha inválido. Intenta nuevamente."}), 400
 
         nombre = datos.get("nombre")
         password = datos.get("password")
