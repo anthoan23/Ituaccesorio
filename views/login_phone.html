@@ -12,6 +12,9 @@
 
 {% block content %}
 	<main class="login-phone">
+		<!-- Elemento oculto para pasar el estado del modo prueba al JavaScript -->
+		<div data-test-mode="{{ 'true' if is_test_mode else 'false' }}" style="display: none;"></div>
+		
 		<section class="login-phone__info" aria-label="Información adicional sobre el login">
 			<img src="{{ url_for('static', filename='img/LOGO COMPLETO.png') }}" alt="Ituaccesorio">
 		</section>
@@ -71,14 +74,23 @@
 									</div>
 								</label>
 
-								{% if recaptcha_site_key %}
+								<!-- CAPTCHA: Solo se muestra si NO está en modo prueba -->
+								{% if recaptcha_site_key and not is_test_mode %}
 									<div class="phone__captcha-wrapper">
 										<div class="phone__captcha">
 											<div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="normal"></div>
 										</div>
 									</div>
 								{% else %}
-									<p class="phone__captcha" role="note">Captcha no configurado. Define <strong>RECAPTCHA_SITE_KEY</strong> y <strong>RECAPTCHA_SECRET_KEY</strong> en el archivo <strong>.env</strong>.</p>
+									<!-- En modo prueba, el captcha está oculto -->
+									<div class="phone__captcha-wrapper" style="display: none;">
+										<div class="phone__captcha">
+											<div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="normal"></div>
+										</div>
+									</div>
+									{% if not recaptcha_site_key %}
+										<p class="phone__captcha" role="note">Captcha no configurado. Define <strong>RECAPTCHA_SITE_KEY</strong> y <strong>RECAPTCHA_SECRET_KEY</strong> en el archivo <strong>.env</strong>.</p>
+									{% endif %}
 								{% endif %}
 								
 								<button class="phone__button" type="submit">INICIAR SESIÓN</button>
@@ -227,7 +239,8 @@
 {% endblock %}
 
 {% block scripts %}
-	{% if recaptcha_site_key %}
+	<!-- SOLO CARGAR reCAPTCHA SI NO ESTÁ EN MODO PRUEBA Y LA CLAVE EXISTE -->
+	{% if recaptcha_site_key and not is_test_mode %}
 		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 	{% endif %}
 	<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>

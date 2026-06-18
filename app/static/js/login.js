@@ -54,6 +54,21 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 	window.__loginPhoneInitialized = true;
 
+	// DETECTAR MODO PRUEBA DESDE EL HTML
+	const testModeElement = document.querySelector('[data-test-mode]');
+	const isTestMode = testModeElement?.dataset?.testMode === 'true';
+	
+	// GUARDAR EN UN OBJETO GLOBAL PARA ACCESO RÁPIDO
+	window.__loginConfig = { isTestMode };
+	
+	// SI ESTÁ EN MODO PRUEBA, OCULTAR EL CAPTCHA VISUALMENTE
+	if (isTestMode) {
+		const captchaWrapper = document.querySelector('.phone__captcha-wrapper');
+		if (captchaWrapper) {
+			captchaWrapper.style.display = 'none';
+		}
+	}
+
 	const form = document.getElementById("login-form");
 	const nombreInput = document.getElementById("login-nombre");
 	const passwordInput = document.getElementById("login-password");
@@ -185,21 +200,29 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		// OBTENER EL ESTADO DEL MODO PRUEBA
+		const isTestMode = window.__loginConfig?.isTestMode || false;
+		
 		const recaptchaContainer = form.querySelector(".g-recaptcha");
 		const recaptchaResponse = form.querySelector('[name="g-recaptcha-response"]')?.value?.trim() || "";
-		if (recaptchaContainer && !recaptchaResponse) {
-			mostrarMensaje("Completa el captcha para continuar.");
-			return;
-		}
-		if (!recaptchaContainer) {
-			mostrarMensaje("Captcha no configurado. Contacta al administrador.");
-			return;
+		
+		// SOLO VALIDAR CAPTCHA SI NO ESTÁ EN MODO PRUEBA
+		if (!isTestMode) {
+			if (recaptchaContainer && !recaptchaResponse) {
+				mostrarMensaje("Completa el captcha para continuar.");
+				return;
+			}
+			if (!recaptchaContainer) {
+				mostrarMensaje("Captcha no configurado. Contacta al administrador.");
+				return;
+			}
 		}
 
 		const payload = {
 			nombre: nombreInput.value.trim(),
 			password: passwordInput.value,
-			recaptcha: recaptchaResponse,
+			// ENVIAR RECAPTCHA SOLO SI NO ESTÁ EN MODO PRUEBA
+			recaptcha: isTestMode ? "test-mode-ignore" : recaptchaResponse,
 		};
 
 		try {

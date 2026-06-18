@@ -255,8 +255,8 @@ class Empleados():
         if len(apellido) > 50:
             return "El apellido no puede exceder los 50 caracteres."
         
-        if len(celular) > 7:
-            return "El celular no puede exceder los 7 caracteres."
+        if len(cedula) < 7:
+            return "La cédula debe tener al menos 7 caracteres."
 
         if self.verificar_empleado():
             return f"El empleado con cédula {cedula} ya existe."

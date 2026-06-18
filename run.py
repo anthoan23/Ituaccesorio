@@ -30,7 +30,7 @@ from types import SimpleNamespace
 
 load_dotenv()
 
-
+is_test_mode = os.getenv('ENTORNO_PRUEBA', 'false').lower() in ('1', 'true', 'yes', 'on')
 
 app = Flask(
     __name__,
@@ -58,8 +58,17 @@ csp = {
     'connect-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
 }
 
-talisman = Talisman(app, content_security_policy=csp)
-csrf = SeaSurf(app)
+if is_test_mode:
+    # 1. Desactivar CSP por completo
+    talisman = Talisman(app, force_https=False, content_security_policy=None)
+    
+    # 2. Desactivar CSRF mediante la configuración antes de inicializar SeaSurf
+    app.config['CSRF_ENABLED'] = False
+    csrf = SeaSurf(app)
+else:
+    # Configuración de producción normal
+    talisman = Talisman(app, content_security_policy=csp)
+    csrf = SeaSurf(app)
 # Aqui se debe registrar el controlador
 app.register_blueprint(home_blueprint)
 app.register_blueprint(empleados_blueprint)
@@ -82,6 +91,7 @@ app.register_blueprint(validacion_pagos_blueprint)
 app.register_blueprint(entregas_blueprint)
 app.register_blueprint(backup_blueprint)
 app.register_blueprint(tradein_empleados_blueprint)
+
 @app.before_request
 def load_user_from_jwt():
     token = request.cookies.get('access_token')
@@ -94,7 +104,18 @@ def load_user_from_jwt():
     if payload:
         g.user = SimpleNamespace(**payload)
     else:
-        g.user = None
+        # Si estamos en modo prueba y no hay credenciales, inyectamos un usuario Mock
+        # para que las plantillas renderizadas no fallen al buscar g.user.rol_nombre, etc.
+        if is_test_mode:
+            g.user = SimpleNamespace(
+                id_usuario=999,
+                username="test_admin",
+                rol_id=1,
+                rol_nombre="admin",
+                permisos={}
+            )
+        else:
+            g.user = None
 
 
 @app.after_request
