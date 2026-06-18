@@ -1,18 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos DOM
-    const vistaPendientes = document.getElementById('vista-pendientes');
-    const vistaEntregadas = document.getElementById('vista-entregadas');
-    const btnPendientes = document.getElementById('btn-pendientes');
-    const btnEntregadas = document.getElementById('btn-entregadas');
+    // Elementos DOM - SOLO PARA ÓRDENES DE COMPRA
     const tablaPendientes = document.getElementById('tabla-ordenes-pendientes');
-    const tablaEntregadas = document.getElementById('tabla-ordenes-entregadas');
     const btnRegistrar = document.getElementById('btn-registrar-entrada');
     const modalRegistro = document.getElementById('modal-registrar-entrada');
     const modalProveedores = document.getElementById('modal-seleccionar-proveedor');
     const modalProductos = document.getElementById('modal-seleccionar-productos');
     const modalDetalle = document.getElementById('modal-detalle-orden');
     const modalAnular = document.getElementById('modal-confirmar-anular-orden');
-    const modalEntrega = document.getElementById('modal-registrar-entrega');
     const modalMensaje = document.getElementById('modal-mensaje');
     const btnBuscarProveedor = document.getElementById('btn-desplegar-proveedores');
     const btnBuscarProductos = document.getElementById('btn-desplegar-productos');
@@ -25,9 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const entradaIdProveedor = document.getElementById('entrada-id-proveedor');
     const entradaNombreProveedor = document.getElementById('entrada-nombre-proveedor');
     const btnConfirmarAnular = document.getElementById('btn-confirmar-anular-orden');
-    const btnConfirmarEntrega = document.getElementById('btn-confirmar-entrega');
-    const entregaRecibidoPor = document.getElementById('entrega-recibido-por');
-    const entregaFecha = document.getElementById('entrega-fecha');
     const mensajeTexto = document.getElementById('mensaje-texto');
     const btnCerrarMensaje = document.getElementById('btn-cerrar-mensaje');
 
@@ -38,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let productosSeleccionados = [];
     let proveedorSeleccionado = null;
     let ordenParaAnular = null;
-    let ordenParaEntrega = null;
 
     // CSRF Token
     const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || '';
@@ -78,19 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // función mostrarMensaje
     function mostrarMensaje(mensaje, esError = false) {
-    if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
-        window.FeedbackModal.show({
-        type: esError ? 'error' : 'success',
-        title: esError ? 'Error' : 'Éxito',
-        message: mensaje,
-        });
-    } else {
-        if (esError) {
-        alert(mensaje);
+        if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+            window.FeedbackModal.show({
+                type: esError ? 'error' : 'success',
+                title: esError ? 'Error' : 'Éxito',
+                message: mensaje,
+            });
         } else {
-        console.log(mensaje);
+            if (esError) {
+                alert(mensaje);
+            } else {
+                console.log(mensaje);
+            }
         }
-    }
     }
 
     // Formatear moneda
@@ -103,11 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Formatear fecha
     function formatDate(dateStr) {
         if (!dateStr) return 'Fecha no disponible';
-        
-        if (dateStr === '%Y-%m-%d') {
-            return 'Fecha por definir';
-        }
-        
         try {
             if (typeof dateStr === 'string') {
                 const datePart = dateStr.substring(0, 10);
@@ -125,25 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return dateStr;
         } catch (error) {
-            console.error("Error formateando fecha:", dateStr, error);
             return dateStr || 'Fecha inválida';
-        }
-    }
-    
-    // Cambiar vista
-    function cambiarVista(vista) {
-        if (vista === 'pendientes') {
-            if (vistaPendientes) vistaPendientes.classList.remove('hidden');
-            if (vistaEntregadas) vistaEntregadas.classList.add('hidden');
-            if (btnPendientes) btnPendientes.classList.add('is-active');
-            if (btnEntregadas) btnEntregadas.classList.remove('is-active');
-            cargarOrdenesPendientes();
-        } else {
-            if (vistaPendientes) vistaPendientes.classList.add('hidden');
-            if (vistaEntregadas) vistaEntregadas.classList.remove('hidden');
-            if (btnPendientes) btnPendientes.classList.remove('is-active');
-            if (btnEntregadas) btnEntregadas.classList.add('is-active');
-            cargarOrdenesEntregadas();
         }
     }
 
@@ -169,77 +136,42 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td class="table__actions">
                                 <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
                                 <button class="btn btn--small btn-anular" data-id="${escapeHtml(orden.ID_orden_c)}">Anular</button>
-                                <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}">Registrar entrega</button>
                             </td>
                         </tr>
                     `;
                 }).join('');
             } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.穷';
+                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando órdenes:', error);
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
         }
     }
 
-    // Cargar órdenes entregadas
-    async function cargarOrdenesEntregadas() {
-        if (!tablaEntregadas) return;
+    // Cargar empleados
+    async function cargarEmpleados() {
+        const selectEmpleado = document.getElementById('entrada-id-empleado');
+        if (!selectEmpleado) return;
         
         try {
-            const data = await fetchJson('/api/ordenes_compra/entregadas');
+            const data = await fetchJson('/api/empleados');
+            empleados = data || [];
             
-            if (Array.isArray(data) && data.length > 0) {
-                tablaEntregadas.innerHTML = data.map(orden => {
-                    const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
-                    const fechaEntrega = orden.Fecha_entrega ? formatDate(orden.Fecha_entrega) : 'Fecha no disponible';
-                    
-                    return `
-                        <tr>
-                            <td>${escapeHtml(orden.ID_orden_c)}</td>
-                            <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
-                            <td>${escapeHtml(fechaEntrega)}</td>
-                            <td>${escapeHtml(orden.Recibido_por || '-')}</td>
-                            <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
-                            <td class="table__actions">
-                                <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+            if (empleados.length > 0) {
+                selectEmpleado.innerHTML = '<option value="">Seleccione un empleado</option>' +
+                    empleados.map(e => {
+                        const textoMostrar = `${e.nombre} ${e.apellido} (${e.cedula})`;
+                        return `<option value="${e.cedula}">${escapeHtml(textoMostrar)}</option>`;
+                    }).join('');
             } else {
-                tablaEntregadas.innerHTML = '</tr><td colspan="6" class="table__empty">No hay órdenes de compra entregadas.穷';
+                selectEmpleado.innerHTML = '<option value="">No hay empleados registrados</option>';
             }
         } catch (error) {
-            console.error('Error cargando órdenes entregadas:', error);
-            tablaEntregadas.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.穷';
+            console.error('Error cargando empleados:', error);
+            selectEmpleado.innerHTML = '<option value="">Error al cargar empleados</option>';
         }
     }
-
-// Cargar empleados - Versión simplificada
-async function cargarEmpleados() {
-    const selectEmpleado = document.getElementById('entrada-id-empleado');
-    if (!selectEmpleado) return;
-    
-    try {
-        const data = await fetchJson('/api/empleados');
-        empleados = data || [];
-        
-        if (empleados.length > 0) {
-            selectEmpleado.innerHTML = '<option value="">Seleccione un empleado</option>' +
-                empleados.map(e => {
-                    const textoMostrar = `${e.nombre} ${e.apellido} (${e.cedula})`;
-                    return `<option value="${e.cedula}">${escapeHtml(textoMostrar)}</option>`;
-                }).join('');
-        } else {
-            selectEmpleado.innerHTML = '<option value="">No hay empleados registrados</option>';
-        }
-    } catch (error) {
-        console.error('Error cargando empleados:', error);
-        selectEmpleado.innerHTML = '<option value="">Error al cargar empleados</option>';
-    }
-}
 
     // Cargar proveedores
     async function cargarProveedores() {
@@ -256,14 +188,14 @@ async function cargarEmpleados() {
                         <td>${escapeHtml(p.nombre)}</td>
                         <td>${escapeHtml(p.celular || '-')}</td>
                         <td>${escapeHtml(p.correo || '-')}</td>
-                    </table>
+                    </tr>
                 `).join('');
             } else {
-                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.穷';
+                listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">No hay proveedores registrados.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando proveedores:', error);
-            listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.穷';
+            listaProveedores.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar proveedores.</td></tr>';
         }
     }
 
@@ -285,11 +217,11 @@ async function cargarEmpleados() {
                     </tr>
                 `).join('');
             } else {
-                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.穷';
+                listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Este proveedor no tiene productos registrados.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando productos:', error);
-            listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.穷';
+            listaProductos.innerHTML = '<tr><td colspan="4" class="table__empty">Error al cargar productos.</td></tr>';
         }
     }
 
@@ -298,7 +230,7 @@ async function cargarEmpleados() {
         if (!tablaSeleccionados) return;
         
         if (productosSeleccionados.length === 0) {
-            tablaSeleccionados.innerHTML = '<table><td colspan="5" class="table__empty">Aún no hay productos seleccionados.穷';
+            tablaSeleccionados.innerHTML = '<tr><td colspan="5" class="table__empty">Aún no hay productos seleccionados.</td></tr>';
             actualizarTotal();
             return;
         }
@@ -352,72 +284,10 @@ async function cargarEmpleados() {
         document.body.style.overflow = '';
     }
 
-// Cargar productos de la orden para preview
-async function cargarProductosOrdenParaEntrega(idOrden) {
-    const container = document.getElementById('entrega-productos-preview');
-    if (!container) return;
-    
-    try {
-        const data = await fetchJson(`/api/detalles_orden/${idOrden}`, { method: 'GET' });
-        const productos = data.productos_orden || [];
-        
-        if (productos.length > 0) {
-            // Calcular total
-            let totalBs = 0;
-            productos.forEach(p => {
-                totalBs += Number(p.Costo || 0) * Number(p.Cantidad_p || 0);
-            });
-            
-            container.innerHTML = `
-                <div class="entrega-preview">
-                    <div class="entrega-preview-header">
-                        Productos a recibir
-                    </div>
-                    <table class="entrega-preview-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th style="text-align: center;">Cantidad</th>
-                                <th style="text-align: right;">Costo unitario</th>
-                                <th style="text-align: right;">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${productos.map(p => `
-                                <tr>
-                                    <td>${escapeHtml(p.N_modelo)}</td>
-                                    <td style="text-align: center;">${escapeHtml(p.Cantidad_p)}</td>
-                                    <td style="text-align: right;">Bs. ${formatMoney(p.Costo)}</td>
-                                    <td style="text-align: right;">Bs. ${formatMoney(p.sup_total)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" style="text-align: right; font-weight: 600;">Total:</td>
-                                <td style="text-align: right; font-weight: 600;">Bs. ${formatMoney(totalBs)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            `;
-        } else {
-            container.innerHTML = '<div class="entrega-preview-empty">⚠️ No hay productos en esta orden</div>';
-        }
-    } catch (error) {
-        console.error('Error cargando productos:', error);
-        container.innerHTML = '<div class="entrega-preview-empty">❌ Error al cargar productos</div>';
-    }
-}
-
     // Ver detalle de orden
     async function verDetalle(id) {
-        console.log("=== VER DETALLE ===");
-        console.log("ID de orden a buscar:", id);
-        
         try {
             const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
-            console.log("Respuesta del servidor:", data);
             
             const detalle = data.datos_orden;
             const productos = data.productos_orden || [];
@@ -466,14 +336,13 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
                             </tr>
                         `).join('');
                     } else {
-                        productosContainer.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos en esta orden.穷';
+                        productosContainer.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos en esta orden.</td></tr>';
                     }
                 }
 
                 if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
                 openModal(modalDetalle);
             } else {
-                console.error("No se encontró la orden:", id);
                 mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
             }
         } catch (error) {
@@ -483,9 +352,6 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
     }
 
     // Event Listeners
-    if (btnPendientes) btnPendientes.addEventListener('click', () => cambiarVista('pendientes'));
-    if (btnEntregadas) btnEntregadas.addEventListener('click', () => cambiarVista('entregadas'));
-
     if (btnRegistrar) {
         btnRegistrar.addEventListener('click', () => {
             limpiarFormulario();
@@ -602,7 +468,6 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
                 return;
             }
             
-            // Obtener el empleado seleccionado
             const selectEmpleado = document.getElementById('entrada-id-empleado');
             const ID_empleado = selectEmpleado?.value;
             
@@ -616,8 +481,6 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
                 ID_empleado: parseInt(ID_empleado),
                 productos: productosSeleccionados.map(p => [String(p.id_modelo), p.cantidad])
             };
-
-            console.log("Payload enviado:", payload);
 
             try {
                 const response = await fetchJson('/api/ordenes_compra/agregar', {
@@ -652,14 +515,6 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
             } else if (btn.classList.contains('btn-anular')) {
                 ordenParaAnular = id;
                 if (modalAnular) openModal(modalAnular);
-            } else if (btn.classList.contains('btn-entrega')) {
-                ordenParaEntrega = id;
-                if (entregaRecibidoPor) entregaRecibidoPor.value = '';
-                if (entregaFecha) entregaFecha.value = new Date().toISOString().slice(0, 10);
-                
-                await cargarProductosOrdenParaEntrega(id);
-                
-                if (modalEntrega) openModal(modalEntrega);
             }
         });
     }
@@ -685,61 +540,6 @@ async function cargarProductosOrdenParaEntrega(idOrden) {
             } catch (error) {
                 console.error('Error anulando orden:', error);
                 mostrarMensaje(error.message || 'Error al anular la orden.', true);
-            }
-        });
-    }
-
-    // Confirmar entrega
-    if (btnConfirmarEntrega) {
-        btnConfirmarEntrega.addEventListener('click', async () => {
-            if (!ordenParaEntrega) return;
-            
-            const recibidoPor = entregaRecibidoPor?.value.trim();
-            const fechaEntrega = entregaFecha?.value;
-            
-            if (!recibidoPor) {
-                mostrarMensaje('Debe especificar quién recibe la orden.', true);
-                return;
-            }
-            
-            if (!fechaEntrega) {
-                mostrarMensaje('Debe especificar la fecha de entrega.', true);
-                return;
-            }
-            
-            btnConfirmarEntrega.disabled = true;
-            btnConfirmarEntrega.textContent = 'Procesando...';
-            
-            try {
-                const response = await fetchJson(`/api/ordenes_compra/${ordenParaEntrega}/entrega`, {
-                    method: 'POST',
-                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
-                });
-                if (response.success) {
-                    mostrarMensaje('Entrega registrada exitosamente. Stock actualizado.');
-                    closeModal(modalEntrega);
-                    ordenParaEntrega = null;
-                    cargarOrdenesPendientes();
-                    cargarOrdenesEntregadas();
-                } else {
-                    mostrarMensaje(response.error || 'Error al registrar la entrega.', true);
-                }
-            } catch (error) {
-                console.error('Error registrando entrega:', error);
-                mostrarMensaje(error.message || 'Error al registrar la entrega.', true);
-            } finally {
-                btnConfirmarEntrega.disabled = false;
-                btnConfirmarEntrega.textContent = 'Registrar entrega';
-            }
-        });
-    }
-
-    // Acciones en tabla de entregadas
-    if (tablaEntregadas) {
-        tablaEntregadas.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.btn-ver');
-            if (btn && btn.dataset.id) {
-                await verDetalle(btn.dataset.id);
             }
         });
     }
