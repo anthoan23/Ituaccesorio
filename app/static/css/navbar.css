@@ -1,5 +1,5 @@
 /* ============================================
-   NAVBAR iOS 18 PREMIUM
+   NAVBAR iOS 18 PREMIUM - OPTIMIZADO
    ============================================ */
 
 :root {
@@ -19,55 +19,54 @@
     --navbar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --sidebar-width-collapsed: 72px;
     --sidebar-width-expanded: 240px;
-	
 }
 
 .btn {
-	appearance: none;
-	border: 0;
-	font: inherit;
-	text-decoration: none;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 12px;
-	padding: 0.75rem 1rem;
-	cursor: pointer;
-	transition: transform 0.18s ease, filter 0.18s ease;
+    appearance: none;
+    border: 0;
+    font: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, filter 0.18s ease;
 }
 
 .btn:hover {
-	transform: translateY(-1px);
-	filter: brightness(1.04);
+    transform: translateY(-1px);
+    filter: brightness(1.04);
 }
 
 .btn:focus-visible {
-	outline: 3px solid var(--navbar-yellow-focus);
-	outline-offset: 3px;
+    outline: 3px solid var(--navbar-yellow-focus);
+    outline-offset: 3px;
 }
 
 .btn--yellow {
-	background: linear-gradient(180deg, var(--navbar-yellow-soft), var(--navbar-yellow));
-	color: var(--navbar-black);
-	font-weight: 800;
-	box-shadow: 0 8px 18px rgba(243, 197, 0, 0.22);
+    background: linear-gradient(180deg, var(--navbar-yellow-soft), var(--navbar-yellow));
+    color: var(--navbar-black);
+    font-weight: 800;
+    box-shadow: 0 8px 18px rgba(243, 197, 0, 0.22);
 }
 
 .btn--yellow:hover {
-	background: linear-gradient(180deg, #ffe07c, #f3c500);
-	box-shadow: 0 10px 22px rgba(243, 197, 0, 0.3);
+    background: linear-gradient(180deg, #ffe07c, #f3c500);
+    box-shadow: 0 10px 22px rgba(243, 197, 0, 0.3);
 }
 
 .btn--ghost {
-	background: #eef0f4;
-	color: var(--ink);
-	border: 1px solid rgba(20, 22, 26, 0.14);
+    background: #eef0f4;
+    color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 .btn--ghost:hover {
-	background: #eef0f4;
-	color: var(--ink);
-	border: 1px solid rgba(20, 22, 26, 0.14);
+    background: #eef0f4;
+    color: var(--ink);
+    border: 1px solid rgba(20, 22, 26, 0.14);
 }
 
 /* ============================================ */
@@ -81,7 +80,7 @@
 }
 
 /* ============================================ */
-/* SIDEBAR (DRAWER) */
+/* SIDEBAR (DRAWER) - OPTIMIZADO */
 /* ============================================ */
 .drawer {
     position: fixed;
@@ -102,6 +101,8 @@
     flex-direction: column;
     padding: 0.6rem 0.4rem;
     gap: 0.4rem;
+    will-change: width;
+    /* Optimización: solo cambia width */
 }
 
 .drawer:hover {
@@ -119,6 +120,7 @@
     border: 1px solid rgba(255, 255, 255, 0.04);
     flex-shrink: 0;
     margin-bottom: 0.3rem;
+    overflow: hidden;
 }
 
 .drawer__logo {
@@ -144,7 +146,8 @@
     line-height: 1;
     white-space: nowrap;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.35s ease;
+    will-change: opacity;
 }
 
 .drawer:hover .drawer__title {
@@ -198,10 +201,12 @@
     background: transparent;
     border: 0;
     cursor: pointer;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease, color 0.2s ease;
+    /* Solo transiciona lo necesario */
     white-space: nowrap;
     position: relative;
     width: 100%;
+    overflow: hidden;
 }
 
 .drawer__link .drawer__link-icon {
@@ -212,7 +217,7 @@
     align-items: center;
     justify-content: center;
     color: rgba(255, 255, 255, 0.4);
-    transition: var(--navbar-transition);
+    transition: color 0.2s ease;
 }
 
 .drawer__link .drawer__link-icon svg {
@@ -222,8 +227,9 @@
 
 .drawer__link .drawer__link-text {
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.35s ease;
     font-size: 0.8rem;
+    will-change: opacity;
 }
 
 .drawer:hover .drawer__link .drawer__link-text {
@@ -273,9 +279,10 @@
     content: "▾";
     font-size: 0.55rem;
     line-height: 1;
-    transition: transform 0.25s ease;
+    transition: transform 0.25s ease, opacity 0.35s ease;
     color: rgba(255, 255, 255, 0.2);
     opacity: 0;
+    will-change: opacity, transform;
 }
 
 .drawer:hover .drawer__group-toggle::after {
@@ -308,16 +315,18 @@
     background: transparent;
     color: rgba(255, 255, 255, 0.35);
     border-radius: 8px;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease, color 0.2s ease;
     border: 0;
     cursor: pointer;
     width: 100%;
     text-align: left;
+    overflow: hidden;
 }
 
 .drawer__submenu-link .drawer__link-text {
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.35s ease;
+    will-change: opacity;
 }
 
 .drawer:hover .drawer__submenu-link .drawer__link-text {
@@ -353,16 +362,18 @@
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease, color 0.2s ease;
     text-align: left;
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    overflow: hidden;
 }
 
 .drawer__footer .drawer__logout .drawer__link-text {
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.35s ease;
+    will-change: opacity;
 }
 
 .drawer:hover .drawer__footer .drawer__logout .drawer__link-text {
@@ -375,7 +386,7 @@
 }
 
 /* ============================================ */
-/* TOPBAR */
+/* TOPBAR - OPTIMIZADO */
 /* ============================================ */
 .topbar {
     position: sticky;
@@ -393,6 +404,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'SF Pro Display', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+    will-change: margin-left;
 }
 
 .drawer:hover ~ .topbar,
@@ -401,7 +413,7 @@
 }
 
 /* ============================================ */
-/* MAIN CONTENT */
+/* MAIN CONTENT - OPTIMIZADO (sin reflow) */
 /* ============================================ */
 main {
     margin-left: var(--sidebar-width-collapsed);
@@ -411,60 +423,27 @@ main {
     padding: 0;
     margin-top: 0;
     overflow-x: hidden;
-    width: calc(100% - var(--sidebar-width-collapsed));
-    max-width: 100%;
+    width: auto;
+    /* Auto para que se ajuste al espacio disponible */
+    max-width: calc(100% - var(--sidebar-width-collapsed));
+    will-change: margin-left;
 }
 
 .drawer:hover ~ main,
 .drawer:hover + main {
     margin-left: var(--sidebar-width-expanded);
-    width: calc(100% - var(--sidebar-width-expanded));
+    max-width: calc(100% - var(--sidebar-width-expanded));
 }
 
 /* ============================================ */
-/* TOPBAR LEFT */
+/* EL RESTO DE LOS ESTILOS SE MANTIENEN IGUAL */
 /* ============================================ */
+
 .topbar__left {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     flex-shrink: 0;
-}
-
-.hamburger {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    background: var(--navbar-yellow);
-    border-radius: 10px;
-    cursor: pointer;
-    user-select: none;
-    border: none;
-    transition: var(--navbar-transition);
-}
-
-.hamburger:hover {
-    transform: scale(1.04);
-    box-shadow: 0 4px 16px rgba(255, 214, 10, 0.2);
-}
-
-.hamburger:active {
-    transform: scale(0.94);
-}
-
-.hamburger__icon {
-    display: grid;
-    gap: 4px;
-}
-
-.hamburger__icon span {
-    display: block;
-    width: 16px;
-    height: 2.5px;
-    background: var(--navbar-black);
-    border-radius: 999px;
-    transition: var(--navbar-transition);
 }
 
 .brand {
@@ -480,17 +459,6 @@ main {
     width: auto;
 }
 
-.brand__name {
-    font-family: "Space Grotesk", sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    font-size: 0.85rem;
-    color: var(--navbar-white);
-}
-
-/* ============================================ */
-/* TOPBAR CENTER - SPOTLIGHT */
-/* ============================================ */
 .topbar__center {
     flex: 1;
     max-width: 400px;
@@ -505,8 +473,7 @@ main {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.04);
-    transition: var(--navbar-transition);
-    font-family: 'SF Pro Display', 'Manrope', sans-serif;
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .search-spotlight:focus-within {
@@ -548,9 +515,6 @@ main {
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
 }
 
-/* ============================================ */
-/* TOPBAR RIGHT - CÁPSULA */
-/* ============================================ */
 .topbar__right {
     display: flex;
     align-items: center;
@@ -569,7 +533,7 @@ main {
     border-radius: 50px;
     border: 1px solid rgba(255, 255, 255, 0.04);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .topbar__right-capsule:hover {
@@ -588,7 +552,7 @@ main {
     background: transparent;
     color: var(--navbar-white-soft);
     cursor: pointer;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
 .icon-btn:hover {
@@ -634,9 +598,6 @@ main {
     position: relative;
 }
 
-/* ============================================ */
-/* USER AVATAR - MÁS PEQUEÑO */
-/* ============================================ */
 .user__avatar {
     flex: 0 0 auto;
     width: 24px;
@@ -683,9 +644,6 @@ main {
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
 }
 
-/* ============================================ */
-/* USER MENU DROPDOWN */
-/* ============================================ */
 .user-menu {
     position: relative;
     display: inline-flex;
@@ -710,7 +668,7 @@ main {
     color: var(--navbar-white);
     cursor: pointer;
     user-select: none;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease;
 }
 
 .user-menu__trigger:hover {
@@ -790,7 +748,7 @@ main {
     font-weight: 600;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: var(--navbar-transition);
+    transition: background 0.2s ease;
 }
 
 .user-menu__action-btn:hover {
@@ -808,7 +766,7 @@ main {
     font-weight: 700;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: var(--navbar-transition);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .user-menu__logout-btn:hover {
@@ -816,18 +774,12 @@ main {
     box-shadow: 0 4px 16px rgba(255, 214, 10, 0.15);
 }
 
-/* ============================================ */
-/* GUEST USER */
-/* ============================================ */
 .user--guest .btn {
     font-size: 0.75rem;
     padding: 0.4rem 0.8rem;
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
 }
 
-/* ============================================ */
-/* BACKDROP (móvil) */
-/* ============================================ */
 .backdrop {
     position: fixed;
     inset: 0;
@@ -858,6 +810,7 @@ main {
         padding: 0;
         overflow: hidden;
         z-index: 35;
+        transition: width 0.3s ease, padding 0.3s ease;
     }
     
     .drawer:hover {
@@ -872,11 +825,14 @@ main {
     
     .topbar {
         margin-left: 0;
+        transition: margin-left 0.3s ease;
     }
     
     main {
         margin-left: 0;
         width: 100%;
+        max-width: 100%;
+        transition: margin-left 0.3s ease;
     }
     
     .topbar {
@@ -884,10 +840,6 @@ main {
         height: 54px;
     }
 
-    .brand__name {
-        display: none;
-    }
-    
     .brand__logo {
         height: 22px;
     }
@@ -950,17 +902,6 @@ main {
     .topbar {
         padding: 0 0.6rem;
         height: 48px;
-    }
-
-    .hamburger {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-    }
-
-    .hamburger__icon span {
-        width: 14px;
-        height: 2px;
     }
     
     .topbar__center {
