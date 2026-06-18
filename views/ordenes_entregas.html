@@ -1,0 +1,331 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Órdenes de Entregas / Recepción{% endblock %}
+
+{% block head_extra %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ordenes_compra.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
+    <style>
+        .ordenes-entregas-hero {
+            position: relative;
+            padding: 2rem 2.5rem;
+            border-radius: 22px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            background: rgba(243, 197, 0, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(243, 197, 0, 0.25);
+            box-shadow: 0 8px 32px rgba(243, 197, 0, 0.12);
+        }
+
+        /* Efecto de fondo amarillo desenfocado */
+        .ordenes-entregas-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 40%, rgba(243, 197, 0, 0.35) 0%, rgba(243, 197, 0, 0.05) 50%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ordenes-entregas-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            right: -10%;
+            width: 50%;
+            height: 150%;
+            background: radial-gradient(ellipse at 70% 60%, rgba(243, 197, 0, 0.25) 0%, rgba(243, 197, 0, 0.03) 40%, transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ordenes-entregas-hero__copy {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ordenes-entregas-hero__eyebrow {
+            margin: 0;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(243, 197, 0, 0.9);
+            font-weight: 700;
+        }
+
+        .ordenes-entregas-hero__title {
+            margin: 0.6rem 0 0.4rem;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            line-height: 1.05;
+            color: #ffffff;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .ordenes-entregas-hero__subtitle {
+            margin: 0.4rem 0 0;
+            max-width: 60ch;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1.05rem;
+            font-weight: 500;
+            text-shadow: 0 1px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        /* ============================================
+           MANTENER EL RESTO DE ESTILOS
+           ============================================ */
+        .hidden {
+            display: none !important;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-pendiente {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .btn--small {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            margin: 0 0.15rem;
+            cursor: pointer;
+        }
+
+        .entrega-preview {
+            margin-top: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .entrega-preview-header {
+            background: #f9fafb;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+        }
+
+        .entrega-preview-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .entrega-preview-table th,
+        .entrega-preview-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .entrega-preview-table th {
+            background: #ffffff;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .entrega-preview-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .ordenes-entregas-hero {
+                padding: 1.5rem 1.2rem;
+                border-radius: 16px;
+            }
+
+            .ordenes-entregas-hero__title {
+                font-size: clamp(1.4rem, 5vw, 2rem);
+            }
+
+            .ordenes-entregas-hero__subtitle {
+                font-size: 0.92rem;
+            }
+
+            .ordenes-entregas-hero::before {
+                width: 80%;
+                top: -30%;
+                left: -30%;
+            }
+
+            .ordenes-entregas-hero::after {
+                width: 70%;
+                bottom: -30%;
+                right: -20%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ordenes-entregas-hero {
+                padding: 1.2rem 1rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="page ordenes-entregas-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li class="breadcrumb__separator">></li>
+            <li aria-current="page">Órdenes de Entregas / Recepción</li>
+        </ol>
+    </nav>
+
+    <header class="ordenes-entregas-hero">
+        <div class="ordenes-entregas-hero__copy">
+            <p class="ordenes-entregas-hero__eyebrow">Gestión de recepción</p>
+            <h1 class="ordenes-entregas-hero__title">Órdenes de Entregas de Proveedores</h1>
+            <p class="ordenes-entregas-hero__subtitle">Registra la recepción de productos y actualiza el stock</p>
+        </div>
+    </header>
+
+    <section class="content">
+        <nav class="vista-switcher">
+            <button class="vista-switcher__btn is-active" id="btn-pendientes">Pendientes de entrega</button>
+            <button class="vista-switcher__btn" id="btn-entregadas">Historial de entregas</button>
+        </nav>
+
+        <!-- Vista Pendientes -->
+        <div id="vista-pendientes">
+            <article class="card card--table">
+                <div class="card__header">
+                    <div class="card__header-left">
+                        <h2 class="card__title">Órdenes pendientes de entrega</h2>
+                        <p class="card__subtitle">Órdenes listas para recibir en inventario.</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID orden</th>
+                                <th>Proveedor</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Costo total</th>
+                                <th class="table__actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ordenes-entregas-pendientes">
+                            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+
+        <!-- Vista Entregadas -->
+        <div id="vista-entregadas" class="hidden">
+            <article class="card card--table">
+                <div class="card__header">
+                    <div class="card__header-left">
+                        <h2 class="card__title">Historial de entregas</h2>
+                        <p class="card__subtitle">Registros de recepción de mercancía.</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID entrega</th>
+                                <th>ID orden</th>
+                                <th>Proveedor</th>
+                                <th>Fecha entrega</th>
+                                <th>Recibido por</th>
+                                <th class="table__actions">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ordenes-entregas-historial">
+                            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+
+<!-- Modal Registrar Entrega -->
+<div id="modal-registrar-entrega" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Registrar entrega</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div class="form__group">
+                <label class="form__label">Recibido por:</label>
+                <input type="text" id="entrega-recibido-por" class="form__input" 
+                       placeholder="Nombre de quien recibe" maxlength="20"
+                       data-validation-rules="soloLetrasNumeros,capitalizar"
+                       title="Solo letras, números, espacios, acentos y ñ">
+                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, números, espacios</small>
+            </div>
+            <div class="form__group">
+                <label class="form__label">Fecha de entrega:</label>
+                <input type="date" id="entrega-fecha" class="form__input">
+            </div>
+            <div id="entrega-productos-preview" class="entrega-preview"></div>
+            <div class="form__actions form__actions--end" style="margin-top: 1rem;">
+                <button class="btn btn--ghost" data-close-modal>Cancelar</button>
+                <button id="btn-confirmar-entrega" class="btn btn--primary">Registrar entrega</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Orden -->
+<div id="modal-detalle-orden" class="ui-modal" data-modal hidden>
+    <div class="ui-modal__dialog">
+        <div class="ui-modal__header">
+            <h3 class="ui-modal__title">Detalle de orden</h3>
+            <button class="ui-modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="ui-modal__body">
+            <div id="detalle-orden-info">Cargando...</div>
+            <div class="table-wrap" style="margin-top: 1rem;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Costo</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalle-orden-productos">
+                        <tr><td colspan="5" class="table__empty">No hay productos</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="form__total" style="margin-top: 1rem;">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ordenes_entregas.js') }}?v=2"></script>
+{% endblock %}

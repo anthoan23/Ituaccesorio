@@ -399,7 +399,7 @@ def api_procesar_pago():
             except Exception as e:
                 print(f"Error guardando archivo: {e}")
         
-        estado_pago = "Pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
+        estado_pago = "pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
         
         # Crear la venta
         modelo_venta = VentaModel(

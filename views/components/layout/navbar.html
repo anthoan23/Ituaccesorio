@@ -3,338 +3,655 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/notificaciones.css') }}">
 <script src="{{ url_for('static', filename='js/notificaciones.js') }}" defer></script>
 
+<!-- ============================================ -->
+<!-- SIDEBAR (DRAWER) - HOVER EXPAND -->
+<!-- ============================================ -->
+<aside class="drawer" id="main-drawer" aria-label="Menú lateral">
+    <div class="drawer__header">
+        <div class="drawer__logo">
+            <img src="{{ url_for('static', filename='img/LOGO.png') }}" alt="iTuAccesorio">
+        </div>
+        <span class="drawer__title">Menú</span>
+    </div>
+
+    <div class="drawer__nav-wrapper">
+        <nav class="drawer__nav" id="drawerNav" data-nav-container>
+            {# Verificar si es admin #}
+            {% set es_admin = g.user and (g.user.rol_id == 1 or g.user.rol_nombre == 'admin') %}
+            
+            {% if es_admin %}
+                {# ==================== ADMIN: VER TODO ==================== #}
+                
+                <a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Dashboard</span>
+                </a>
+
+                {# 1. Empleados #}
+                {% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Empleados</span>
+                </button>
+                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+                    <a class="drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">
+                        <span class="drawer__link-text">Lista de empleados</span>
+                    </a>
+                    <a class="drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">
+                        <span class="drawer__link-text">Especialidades</span>
+                    </a>
+                    <a class="drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">
+                        <span class="drawer__link-text">Cargos</span>
+                    </a>
+                </div>
+
+                {# 2. Clientes #}
+                <a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Clientes</span>
+                </a>
+
+                {# 3. Productos #}
+                <a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="10" x2="16" y2="10"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Productos</span>
+                </a>
+
+                {# 4. Órdenes de servicio #}
+                <a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Órdenes de servicio</span>
+                </a>
+
+                {# 5. Taller #}
+                <a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Taller</span>
+                </a>
+
+                {# 6. Proveedores #}
+                <a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Proveedores</span>
+                </a>
+
+                {# 7. Inventario #}
+                <a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Inventario</span>
+                </a>
+
+                {# 8. Compras #}
+                <a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"/>
+                            <circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Compras</span>
+                </a>
+
+                {# 9. Entregas #}
+                <a class="drawer__link {% if active_page == 'ordenes_entregas' %}is-active{% endif %}" href="{{ url_for('ordenes_entregas.pagina_ordenes_entregas') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="15" height="13" rx="1"/>
+                            <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                            <circle cx="5.5" cy="18" r="2.5"/>
+                            <circle cx="18.5" cy="18" r="2.5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Entregas</span>
+                </a>
+
+                {# 10. Trade-in clientes #}
+                <a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Cotizar Trade-in</span>
+                </a>
+
+                {# 11. Trade-in empleados #}
+                <a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Gestión Trade-in</span>
+                </a>
+
+                {# 12. Ventas #}
+                <a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                            <line x1="8" y1="15" x2="16" y2="15"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Ventas</span>
+                </a>
+
+                {# 13. Usuarios #}
+                <a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Usuarios</span>
+                </a>
+
+                {# 14. Bitácora #}
+                <a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Bitácora</span>
+                </a>
+
+            {% elif g.user %}
+                {# ==================== USUARIO NORMAL ==================== #}
+                {% set tiene_permisos = g.user.permisos is defined and g.user.permisos %}
+                
+                {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Dashboard</span>
+                </a>
+                {% endif %}
+
+                <a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="10" x2="16" y2="10"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Catálogo</span>
+                </a>
+
+                {# Empleados - Solo si tiene permisos #}
+                {% if tiene_permisos %}
+                {% set tiene_empleados = g.user.permisos.get('Empleados', {}).get('consultar', false) if tiene_permisos else false %}
+                {% set tiene_especialidades = g.user.permisos.get('Especialidades', {}).get('consultar', false) if tiene_permisos else false %}
+                {% set tiene_cargos = g.user.permisos.get('Cargos', {}).get('consultar', false) if tiene_permisos else false %}
+                
+                {% if tiene_empleados or tiene_especialidades or tiene_cargos %}
+                {% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
+                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Empleados</span>
+                </button>
+                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+                    {% if tiene_empleados %}
+                    <a class="drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">
+                        <span class="drawer__link-text">Lista de empleados</span>
+                    </a>
+                    {% endif %}
+                    {% if tiene_especialidades %}
+                    <a class="drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">
+                        <span class="drawer__link-text">Especialidades</span>
+                    </a>
+                    {% endif %}
+                    {% if tiene_cargos %}
+                    <a class="drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">
+                        <span class="drawer__link-text">Cargos</span>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                {# Clientes #}
+                {% if tiene_permisos and g.user.permisos.get('Clientes', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Clientes</span>
+                </a>
+                {% endif %}
+
+                {# Productos #}
+                {% if tiene_permisos and g.user.permisos.get('Productos', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="10" x2="16" y2="10"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Productos</span>
+                </a>
+                {% endif %}
+
+                {# Órdenes de servicio #}
+                {% if tiene_permisos and g.user.permisos.get('Órdenes de servicio', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Órdenes de servicio</span>
+                </a>
+                {% endif %}
+
+                {# Taller #}
+                {% if tiene_permisos and g.user.permisos.get('Taller', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Taller</span>
+                </a>
+                {% endif %}
+
+                {# Proveedores #}
+                {% if tiene_permisos and g.user.permisos.get('Proveedores', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Proveedores</span>
+                </a>
+                {% endif %}
+
+                {# Inventario #}
+                {% if tiene_permisos and g.user.permisos.get('Inventario', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Inventario</span>
+                </a>
+                {% endif %}
+
+                {# Compras #}
+                {% if tiene_permisos and g.user.permisos.get('Órdenes de compra', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"/>
+                            <circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Compras</span>
+                </a>
+                {% endif %}
+
+                {# Entregas #}
+                {% if tiene_permisos and g.user.permisos.get('Entregas', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'ordenes_entregas' %}is-active{% endif %}" href="{{ url_for('ordenes_entregas.pagina_ordenes_entregas') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="15" height="13" rx="1"/>
+                            <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                            <circle cx="5.5" cy="18" r="2.5"/>
+                            <circle cx="18.5" cy="18" r="2.5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Entregas</span>
+                </a>
+                {% endif %}
+
+                {# Trade-in #}
+                <a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Cotizar Trade-in</span>
+                </a>
+
+                {# Trade-in empleados #}
+                {% if tiene_permisos and g.user.permisos.get('Trade-in', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Gestión Trade-in</span>
+                </a>
+                {% endif %}
+
+                {# Ventas #}
+                {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                            <line x1="8" y1="15" x2="16" y2="15"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Ventas</span>
+                </a>
+                {% endif %}
+
+                {# Usuarios #}
+                {% if tiene_permisos and g.user.permisos.get('Usuarios', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Usuarios</span>
+                </a>
+                {% endif %}
+
+                {# Bitácora #}
+                {% if tiene_permisos and g.user.permisos.get('Bitácora', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Bitácora</span>
+                </a>
+                {% endif %}
+                
+            {% else %}
+                {# ==================== USUARIO NO LOGUEADO ==================== #}
+                <a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="10" x2="16" y2="10"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Catálogo</span>
+                </a>
+                <a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Cotizar Trade-in</span>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <div class="drawer__footer">
+        {% if g.user %}
+        <form action="{{ url_for('login.logout') }}" method="GET">
+            <button class="drawer__logout" type="submit">
+                <span class="drawer__link-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </span>
+                <span class="drawer__link-text">Cerrar sesión</span>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</aside>
+
+<!-- ============================================ -->
+<!-- TOPBAR - SIN HAMBURGUESA -->
+<!-- ============================================ -->
 <header class="topbar">
-	<div class="topbar__left">
-		<button class="hamburger" id="menu-toggle-btn" aria-label="Abrir menú" type="button">
-			<span class="hamburger__icon" aria-hidden="true">
-				<span></span>
-				<span></span>
-				<span></span>
-			</span>
-		</button>
+    <div class="topbar__left">
+        <a class="brand" href="/" aria-label="Ir al inicio">
+            <img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="iTuAccesorio">
+        </a>
+    </div>
 
-		<a class="brand" href="/" aria-label="Ir al inicio">
-			<img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
-		</a>
-	</div>
+    <div class="topbar__center">
+        <div class="search-spotlight">
+            <svg class="search-spotlight__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" class="search-spotlight__input" placeholder="Buscar en iTuAccesorio..." />
+            <kbd class="search-spotlight__shortcut">⌘K</kbd>
+        </div>
+    </div>
 
-	<div class="topbar__right">
-		{% if g.user %}
-		<!-- Notificaciones -->
-			<div class="notifications" data-notifications-root>
-				<button class="icon-btn icon-btn--notifications" type="button" aria-label="Notificaciones" data-notifications-toggle>
-					<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-						<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/>
-					</svg>
-					<span class="notifications__badge" data-notifications-badge hidden>0</span>
-				</button>
-				
-				<div class="notifications__panel" data-notifications-panel hidden>
-					<div class="notifications__header">
-						<strong>Notificaciones</strong>
-						<small data-notifications-status>Conectando...</small>
-					</div>
-					
-					<div class="notifications__list" data-notifications-list></div>
-					
-					<div class="notifications__empty" data-notifications-empty hidden>
-						No hay notificaciones nuevas
-					</div>
-				</div>
-			</div>
+    <div class="topbar__right">
+        <div class="topbar__right-capsule">
+            {% if g.user %}
+            <!-- Notificaciones -->
+            <div class="notifications" data-notifications-root>
+                <button class="icon-btn" type="button" aria-label="Notificaciones" data-notifications-toggle>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                    </svg>
+                    <span class="notifications__badge" data-notifications-badge hidden>0</span>
+                </button>
+                
+                <div class="notifications__panel" data-notifications-panel hidden>
+                    <div class="notifications__header">
+                        <strong>Notificaciones</strong>
+                        <small data-notifications-status>Conectando...</small>
+                    </div>
+                    
+                    <div class="notifications__list" data-notifications-list></div>
+                    
+                    <div class="notifications__empty" data-notifications-empty hidden>
+                        No hay notificaciones nuevas
+                    </div>
+                </div>
+            </div>
 
-		<!-- Botón del carrito en navbar - SOLO SE MUESTRA EN EL MÓDULO DE CATÁLOGO -->
-		{% if active_page == 'catalogo' %}
-		<button id="cart-nav-btn" class="icon-btn icon-btn--cart" aria-label="Abrir carrito">
-			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
-			</svg>
-			<span id="cart-nav-count" class="cart-badge">0</span>
-		</button>
-		{% endif %}
+            <!-- Mensajes -->
+            <button class="icon-btn" aria-label="Mensajes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+            </button>
 
-		<details class="user-menu">
-			<summary class="user-menu__trigger">
-				<span class="user__avatar" aria-hidden="true">
-					{% if g.user.foto_perfil %}
-					<img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
-					{% else %}
-					<span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
-					{% endif %}
-				</span>
-				<span class="user__meta">
-					<strong class="user__name">{{ g.user.usuario_nombre }}</strong>
-					<span class="user__role">{{ g.user.rol_nombre }}</span>
-				</span>
-				<svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-					<path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-			</summary>
+            <!-- User Menu -->
+            <details class="user-menu">
+                <summary class="user-menu__trigger">
+                    <span class="user__avatar" aria-hidden="true">
+                        {% if g.user.foto_perfil %}
+                        <img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
+                        {% else %}
+                        <span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="user__meta">
+                        <strong class="user__name">{{ g.user.usuario_nombre }}</strong>
+                        <span class="user__role">{{ g.user.rol_nombre }}</span>
+                    </span>
+                    <svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </summary>
 
-			<div class="user-menu__panel" role="menu" aria-label="Menú de usuario">
-				<div class="user-menu__identity">
-					<span class="user-menu__identity-avatar" aria-hidden="true">
-						{% if g.user.foto_perfil %}
-						<img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
-						{% else %}
-						<span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
-						{% endif %}
-					</span>
-					<span class="user-menu__label">Usuario</span>
-					<strong class="user-menu__full-name">{{ g.user.usuario_nombre }}</strong>
-					<span class="user-menu__role-text">{{ g.user.rol_nombre }}</span>
-				</div>
+                <div class="user-menu__panel" role="menu" aria-label="Menú de usuario">
+                    <div class="user-menu__identity">
+                        <span class="user-menu__identity-avatar" aria-hidden="true">
+                            {% if g.user.foto_perfil %}
+                            <img class="user__avatar-image" src="{{ g.user.foto_perfil }}" alt="">
+                            {% else %}
+                            <span class="user__avatar-initial">{{ (g.user.usuario_nombre[:1] if g.user.usuario_nombre else 'U')|upper }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="user-menu__label">Usuario</span>
+                        <strong class="user-menu__full-name">{{ g.user.usuario_nombre }}</strong>
+                        <span class="user-menu__role-text">{{ g.user.rol_nombre }}</span>
+                    </div>
 
-				<form class="user-menu__logout" action="{{ url_for('login.logout') }}" method="GET">
-					<button class="user-menu__action-btn" type="button" data-open-modal="modal-mi-perfil">Editar perfil</button>
-					<button class="user-menu__logout-btn" type="submit">Cerrar sesión</button>
-				</form>
-			</div>
-		</details>
-		{% else %}
-		<div class="user user--guest">
-			<a class="btn btn--yellow" href="{{ url_for('login.pagina_login') }}">Iniciar sesión</a>
-		</div>
-		{% endif %}
-	</div>
+                    <form class="user-menu__logout" action="{{ url_for('login.logout') }}" method="GET">
+                        <button class="user-menu__action-btn" type="button" data-open-modal="modal-mi-perfil">Editar perfil</button>
+                        <button class="user-menu__logout-btn" type="submit">Cerrar sesión</button>
+                    </form>
+                </div>
+            </details>
+            {% else %}
+            <div class="user user--guest">
+                <a class="btn btn--yellow" href="{{ url_for('login.pagina_login') }}">Iniciar sesión</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </header>
 
+<!-- BACKDROP (para móvil) -->
 <div class="backdrop" id="menu-backdrop"></div>
-
-<aside class="drawer" id="main-drawer" aria-label="Menú lateral">
-	<div class="drawer__header">
-		<span class="drawer__title">Menú</span>
-	</div>
-
-	<div class="drawer__nav-wrapper">
-		<button class="nav-scroll-btn nav-scroll-up" aria-label="Subir menú" type="button"></button>
-		<nav class="drawer__nav" id="drawerNav" data-nav-container>
-			{# Verificar si es admin #}
-			{% set es_admin = g.user and (g.user.rol_id == 1 or g.user.rol_nombre == 'admin') %}
-			
-			{% if es_admin %}
-				{# ==================== ADMIN: VER TODO ==================== #}
-				
-				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-
-				{# 1. Empleados #}
-				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
-					<span>Empleados</span>
-				</button>
-				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Lista de empleados</a>
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
-				</div>
-
-				{# 2. Clientes #}
-				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
-
-				{# 3. Productos #}
-				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-
-				{# 4. Órdenes de servicio #}
-				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
-
-				{# 5. Taller #}
-				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
-
-				{# 6. Proveedores #}
-				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
-
-				{# 7. Inventario #}
-				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
-
-				{# 8. Compras #}
-				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Compras</a>
-
-				{# 9. Entregas #}
-				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Entregas</a>
-
-				{# 10. Trade-in clientes #}
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Cotizar Trade-in</a>
-
-				{# 11. Trade-in empleados (SOLO ADMIN) #}
-				<a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">Gestión Trade-in</a>
-
-				{# 12. Ventas #}
-				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
-
-				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Delivery</a>
-
-
-				{# 13. Usuarios #}
-				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
-
-				{# 14. Bitácora #}
-				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
-
-
-			{% elif g.user %}
-				{# ==================== USUARIO NORMAL (EMPLEADO O CLIENTE LOGUEADO) ==================== #}
-				{# Verificar si tiene permisos (solo para empleados) #}
-				{% set tiene_permisos = g.user.permisos is defined and g.user.permisos %}
-				{% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'dashboard' %}is-active{% endif %}" href="/">Dashboard</a>
-				{% endif %}
-
-				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-
-				{# 1. Empleados - Solo si tiene permisos de empleados #}
-				{% if tiene_permisos %}
-				{% set tiene_empleados = g.user.permisos.get('Empleados', {}).get('consultar', false) if tiene_permisos else false %}
-				{% set tiene_especialidades = g.user.permisos.get('Especialidades', {}).get('consultar', false) if tiene_permisos else false %}
-				{% set tiene_cargos = g.user.permisos.get('Cargos', {}).get('consultar', false) if tiene_permisos else false %}
-				
-				{% if tiene_empleados or tiene_especialidades or tiene_cargos %}
-				{% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-				<button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
-					<span>Empleados</span>
-				</button>
-				<div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
-					{% if tiene_empleados %}
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">Lista de empleados</a>
-					{% endif %}
-					{% if tiene_especialidades %}
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'especialidades' %}is-active{% endif %}" href="{{ url_for('especialidades.pagina_especialidades') }}">Especialidades</a>
-					{% endif %}
-					{% if tiene_cargos %}
-					<a class="drawer__link drawer__submenu-link {% if active_page == 'cargos' %}is-active{% endif %}" href="{{ url_for('cargos.pagina_cargos') }}">Cargos</a>
-					{% endif %}
-				</div>
-				{% endif %}
-				{% endif %}
-
-				{# 2. Clientes - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Clientes', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'clientes' %}is-active{% endif %}" href="{{ url_for('clientes.pagina_clientes') }}">Clientes</a>
-				{% endif %}
-
-				{# 3. Productos - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Productos', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'productos' %}is-active{% endif %}" href="{{ url_for('productos.pagina_productos') }}">Productos</a>
-				{% endif %}
-
-				{# 4. Órdenes de servicio - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Órdenes de servicio', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'ordenes_servicio' %}is-active{% endif %}" href="{{ url_for('ordenes_servicio.pagina_ordenes_servicio') }}">Órdenes de servicio</a>
-				{% endif %}
-
-				{# 5. Taller - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Taller', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'taller' %}is-active{% endif %}" href="{{ url_for('taller.pagina_taller') }}">Taller</a>
-				{% endif %}
-
-				{# 6. Proveedores - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Proveedores', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'proveedores' %}is-active{% endif %}" href="{{ url_for('proveedores.pagina_proveedores') }}">Proveedores</a>
-				{% endif %}
-
-				{# 7. Inventario - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Inventario', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'inventario' %}is-active{% endif %}" href="{{ url_for('home.inventario') }}">Inventario</a>
-				{% endif %}
-
-				{# 8. Compras - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Órdenes de compra', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'ordenes_compra' %}is-active{% endif %}" href="{{ url_for('ordenes_compra.pagina_ordenes_compra') }}">Compras</a>
-				{% endif %}
-
-				{# 9. Entregas - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Entregas', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
-				{% endif %}
-
-				{# 10. Trade-in clientes (visible para TODOS los usuarios logueados) #}
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Cotizar Trade-in</a>
-
-				{# 11. Trade-in empleados (SOLO SI TIENE PERMISO DE TRADE-IN) #}
-				{% if tiene_permisos and g.user.permisos.get('Trade-in', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'tradein_empleados' %}is-active{% endif %}" href="{{ url_for('tradein_empleados.pagina_tradein_empleados') }}">Gestión Trade-in</a>
-				{% endif %}
-
-				{# 12. Ventas - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">Ventas</a>
-				{% endif %}
-
-				{% if tiene_permisos and g.user.permisos.get('Entregas', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'entregas' %}is-active{% endif %}" href="/entregas">Entregas</a>
-				{% endif %}
-
-				{# 13. Usuarios - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Usuarios', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">Usuarios</a>
-				{% endif %}
-
-				{# 14. Bitácora - Solo si tiene permisos #}
-				{% if tiene_permisos and g.user.permisos.get('Bitácora', {}).get('consultar', false) %}
-				<a class="drawer__link {% if active_page == 'bitacora' %}is-active{% endif %}" href="{{ url_for('bitacora.pagina_bitacora') }}">Bitácora</a>
-				{% endif %}
-				
-			{% else %}
-				{# ==================== USUARIO NO LOGUEADO (CLIENTE): SOLO CATÁLOGO Y COTIZAR TRADE-IN ==================== #}
-				<a class="drawer__link {% if active_page == 'catalogo' %}is-active{% endif %}" href="{{ url_for('ventas.pagina_catalogo') }}">Catálogo</a>
-				<a class="drawer__link {% if active_page == 'tradein' %}is-active{% endif %}" href="{{ url_for('tradein.pagina_tradein') }}">Cotizar Trade-in</a>
-				{# NOTA: Los clientes NO ven "Gestión Trade-in" #}
-			{% endif %}
-		</nav>
-		<button class="nav-scroll-btn nav-scroll-down" aria-label="Bajar menú" type="button"></button>
-	</div>
-
-	<div class="drawer__footer">
-		{% if g.user %}
-		<form action="{{ url_for('login.logout') }}" method="GET">
-			<button class="drawer__logout btn btn--ghost" type="submit">Cerrar sesión</button>
-		</form>
-		{% endif %}
-	</div>
-</aside>
 
 {% if g.user %}
 {% call modal('modal-mi-perfil', 'Mi perfil', 'sm') %}
-	<form id="mi-perfil-form" class="ui-form" autocomplete="off">
-		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-		<label class="ui-field">
-			<span>Usuario</span>
-			<input id="mi-perfil-nombre" name="nombre" type="text" value="{{ g.user.usuario_nombre or '' }}" required maxlength="50">
-		</label>
-		<label class="ui-field">
-			<span>Cédula</span>
-			<input id="mi-perfil-cedula" type="text" value="{{ g.user.cedula or g.user.cedula_personal or '' }}" readonly data-validator-disabled="true">
-		</label>
-		<label class="ui-field">
-			<span>Rol</span>
-			<input id="mi-perfil-rol" type="text" value="{{ g.user.rol_nombre or '' }}" readonly data-validator-disabled="true">
-		</label>
-		<label class="ui-field">
-			<span>Nueva contraseña (opcional)</span>
-			<div class="password-field">
-				<input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar" minlength="6" maxlength="50">
-				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
-			</div>
-		</label>
-		<label class="ui-field">
-			<span>Confirmar contraseña</span>
-			<div class="password-field">
-				<input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña" minlength="6" maxlength="50">
-				<button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
-			</div>
-		</label>
-		<label class="ui-field">
-			<span>Foto de perfil</span>
-			<input id="mi-perfil-foto-input" name="foto_perfil" type="file" accept="image/*" hidden data-validator-disabled="true">
-			<button id="mi-perfil-foto-btn" class="ui-btn ui-btn--ghost" type="button">Subir foto</button>
-			<small id="mi-perfil-foto-name" class="user-menu__hint">Ningún archivo seleccionado</small>
-			<div class="user-menu__avatar-preview">
-				<img id="mi-perfil-foto-preview" src="{{ g.user.foto_perfil if g.user.foto_perfil else url_for('static', filename='img/LOGO.png') }}" alt="Vista previa de foto de perfil">
-			</div>
-		</label>
-		<div class="ui-form__actions">
-			<button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
-			<button class="ui-btn ui-btn--primary" type="submit">Guardar cambios</button>
-		</div>
-	</form>
+    <form id="mi-perfil-form" class="ui-form" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <label class="ui-field">
+            <span>Usuario</span>
+            <input id="mi-perfil-nombre" name="nombre" type="text" value="{{ g.user.usuario_nombre or '' }}" required maxlength="50">
+        </label>
+        <label class="ui-field">
+            <span>Cédula</span>
+            <input id="mi-perfil-cedula" type="text" value="{{ g.user.cedula or g.user.cedula_personal or '' }}" readonly data-validator-disabled="true">
+        </label>
+        <label class="ui-field">
+            <span>Rol</span>
+            <input id="mi-perfil-rol" type="text" value="{{ g.user.rol_nombre or '' }}" readonly data-validator-disabled="true">
+        </label>
+        <label class="ui-field">
+            <span>Nueva contraseña (opcional)</span>
+            <div class="password-field">
+                <input id="mi-perfil-password" name="password" type="password" placeholder="Dejar vacío para no cambiar" minlength="6" maxlength="50">
+                <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+            </div>
+        </label>
+        <label class="ui-field">
+            <span>Confirmar contraseña</span>
+            <div class="password-field">
+                <input id="mi-perfil-password-confirm" type="password" placeholder="Repite la nueva contraseña" minlength="6" maxlength="50">
+                <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña">Mostrar</button>
+            </div>
+        </label>
+        <label class="ui-field">
+            <span>Foto de perfil</span>
+            <input id="mi-perfil-foto-input" name="foto_perfil" type="file" accept="image/*" hidden data-validator-disabled="true">
+            <button id="mi-perfil-foto-btn" class="ui-btn ui-btn--ghost" type="button">Subir foto</button>
+            <small id="mi-perfil-foto-name" class="user-menu__hint">Ningún archivo seleccionado</small>
+            <div class="user-menu__avatar-preview">
+                <img id="mi-perfil-foto-preview" src="{{ g.user.foto_perfil if g.user.foto_perfil else url_for('static', filename='img/LOGO.png') }}" alt="Vista previa de foto de perfil">
+            </div>
+        </label>
+        <div class="ui-form__actions">
+            <button class="ui-btn ui-btn--ghost" type="button" data-close-modal>Cancelar</button>
+            <button class="ui-btn ui-btn--primary" type="submit">Guardar cambios</button>
+        </div>
+    </form>
 {% endcall %}
 {% endif %}

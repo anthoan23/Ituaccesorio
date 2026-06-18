@@ -136,6 +136,14 @@ class ClaseProducto:
         
         cursor = db.cursor()
         try:
+            # Validación: Verificar si ya existe una clase con el mismo nombre
+            cursor.execute(
+                "SELECT 1 FROM Clase_producto WHERE Nombre_Clase = %s LIMIT 1",
+                (self.nombre,)
+            )
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe una clase con el nombre '{self.nombre}'.")
+            
             new_id = self._siguiente_id()
             cursor.execute(
                 "INSERT INTO Clase_producto (ID_Clase, Nombre_Clase) VALUES (%s, %s)",
@@ -143,6 +151,17 @@ class ClaseProducto:
             )
             db.commit()
             self.id_clase = new_id
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear clase",
+                    descripcion=f"Clase creada: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception:
             db.rollback()
@@ -246,6 +265,14 @@ class MarcaProducto:
         
         cursor = db.cursor()
         try:
+            # Validación: Verificar si ya existe una marca con el mismo nombre
+            cursor.execute(
+                "SELECT 1 FROM Marca_producto WHERE Nombre_marca = %s LIMIT 1",
+                (self.nombre,)
+            )
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe una marca con el nombre '{self.nombre}'.")
+            
             new_id = self._siguiente_id()
             cursor.execute(
                 "INSERT INTO Marca_producto (ID_marca, Nombre_marca) VALUES (%s, %s)",
@@ -253,6 +280,17 @@ class MarcaProducto:
             )
             db.commit()
             self.id_marca = new_id
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear marca",
+                    descripcion=f"Marca creada: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception:
             db.rollback()
@@ -266,13 +304,15 @@ class Producto:
     """Modelo para la tabla Producto"""
     
     def __init__(self, id_producto: str = "", id_clase: str = "", id_marca: str = "", 
-                 nombre: str = "", descripcion: str | None = None, id_categoria: int = 0):
+                 nombre: str = "", descripcion: str | None = None, id_categoria: int = 0,
+                 usuario_id: str = None):
         self.id_producto = id_producto
         self.id_clase = id_clase
         self.id_marca = id_marca
         self.nombre = nombre
         self.descripcion = descripcion
         self.id_categoria = id_categoria
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -383,6 +423,31 @@ class Producto:
         
         cursor = db.cursor()
         try:
+            # Validación: Verificar que la clase exista
+            cursor.execute(
+                "SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1",
+                (self.id_clase,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"La clase con ID '{self.id_clase}' no existe.")
+            
+            # Validación: Verificar que la marca exista
+            cursor.execute(
+                "SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1",
+                (self.id_marca,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"La marca con ID '{self.id_marca}' no existe.")
+            
+            # Validación: Verificar si ya existe un producto con el mismo nombre, clase y marca
+            cursor.execute("""
+                SELECT 1 FROM Producto 
+                WHERE Nombre_producto = %s AND ID_Clase = %s AND ID_marca = %s
+                LIMIT 1
+            """, (self.nombre, self.id_clase, self.id_marca))
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe un producto con el nombre '{self.nombre}' en esta clase y marca.")
+            
             new_id = self._siguiente_id()
             cursor.execute("""
                 INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion)
@@ -390,6 +455,17 @@ class Producto:
             """, (new_id, self.id_clase, self.id_marca, self.nombre, self.descripcion))
             db.commit()
             self.id_producto = new_id
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Crear producto",
+                    descripcion=f"Producto creado: {self.nombre} (ID: {new_id})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
             return new_id
         except Exception:
             db.rollback()
@@ -399,7 +475,6 @@ class Producto:
             db.close()
 
     def actualizar_producto(self) -> bool:
-        """Actualiza un producto usando los atributos de la instancia"""
         if not self.id_producto:
             raise ValueError("ID del producto es requerido para actualizar.")
         if not self.id_clase or not self.id_marca or not self.nombre:
@@ -411,6 +486,40 @@ class Producto:
         
         cursor = db.cursor()
         try:
+            # Validación: Verificar que el producto exista
+            cursor.execute(
+                "SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1",
+                (self.id_producto,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"El producto con ID '{self.id_producto}' no existe.")
+            
+            # Validación: Verificar que la clase exista
+            cursor.execute(
+                "SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1",
+                (self.id_clase,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"La clase con ID '{self.id_clase}' no existe.")
+            
+            # Validación: Verificar que la marca exista
+            cursor.execute(
+                "SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1",
+                (self.id_marca,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"La marca con ID '{self.id_marca}' no existe.")
+            
+            # Validación: Verificar nombre duplicado (excluyendo el producto actual)
+            cursor.execute("""
+                SELECT 1 FROM Producto 
+                WHERE Nombre_producto = %s AND ID_Clase = %s AND ID_marca = %s 
+                AND ID_producto != %s
+                LIMIT 1
+            """, (self.nombre, self.id_clase, self.id_marca, self.id_producto))
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe otro producto con el nombre '{self.nombre}' en esta clase y marca.")
+            
             cursor.execute("""
                 UPDATE Producto
                 SET ID_Clase = %s, ID_marca = %s, Nombre_producto = %s, Descripcion = %s
@@ -419,9 +528,8 @@ class Producto:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora si existe usuario_id (opcional, no obligatorio)
-            if updated and hasattr(self, 'usuario_id') and self.usuario_id:
-                from app.models.bitacora import Bitacora
+            # Registrar en bitácora
+            if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar producto",
                     descripcion=f"Producto actualizado: {self.nombre} (ID: {self.id_producto})",
@@ -448,6 +556,14 @@ class Producto:
         
         cursor = db.cursor()
         try:
+            # Validación: Verificar que el producto exista
+            cursor.execute(
+                "SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1",
+                (self.id_producto,)
+            )
+            if not cursor.fetchone():
+                raise ValueError(f"El producto con ID '{self.id_producto}' no existe.")
+            
             # Primero eliminar fotos del inventario
             cursor.execute("""
                 DELETE fi FROM Fotos_inventario fi
@@ -465,7 +581,19 @@ class Producto:
             cursor.execute("DELETE FROM Producto WHERE ID_producto = %s", (self.id_producto,))
             
             db.commit()
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Registrar en bitácora
+            if deleted and self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar producto",
+                    descripcion=f"Producto eliminado (ID: {self.id_producto})",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Productos"
+                )
+                bitacora.registrar()
+            
+            return deleted
         except Exception:
             db.rollback()
             raise

@@ -495,3 +495,44 @@ class ValidacionPagosModel:
         finally:
             cursor.close()
             db.close()
+
+# Agregar al final de la clase ValidacionPagosModel en app/models/validacion_pagos.py
+
+    def actualizar_fecha_pago(self) -> None:
+        """Actualiza la fecha de pago a la fecha actual"""
+        if not self.factura_id:
+            return
+        
+        db = self._conexion()
+        if not db:
+            return
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                UPDATE Metodo_pago 
+                SET Fecha_pago = %s 
+                WHERE ID_factura = %s
+            """, (datetime.now(), self.factura_id))
+            db.commit()
+        except Exception as e:
+            print(f"Error en actualizar_fecha_pago: {e}")
+            db.rollback()
+        finally:
+            cursor.close()
+            db.close()
+
+    def obtener_reporte_detalle_ventas(self) -> Dict[str, Any]:
+        """Obtiene reporte detallado de una venta"""
+        detalle = self.obtener_detalle_venta()
+        if detalle:
+            return {"success": True, "detalle": detalle}
+        return {"success": False, "error": "No se encontró detalle para la venta"}
+
+    def obtener_metodos_pago_disponibles(self) -> List[str]:
+        """Retorna lista de métodos de pago disponibles"""
+        return ["pago_movil", "zelle", "binance", "efectivo_usd", "efectivo_bs"]
+
+    def obtener_monedas_disponibles(self) -> List[str]:
+        """Retorna lista de monedas disponibles"""
+        return ["USD", "VES", "USDT"]
