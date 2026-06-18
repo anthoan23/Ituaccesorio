@@ -12,7 +12,7 @@ class VentaModel:
     
     def __init__(self, factura_id: str = None, cliente_id: str = None, 
                  empleado_id: str = None, items: List[Dict[str, Any]] = None,
-                 metodo_pago: str = None, estado_pago: str = "Pendiente",
+                 metodo_pago: str = None, estado_pago: str = "pendiente",
                  datos_pago: Dict[str, Any] = None, usuario_id: str = None):
         self.factura_id = factura_id
         self.cliente_id = cliente_id
