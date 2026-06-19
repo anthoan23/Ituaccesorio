@@ -9,12 +9,13 @@ class OrdenEntregaModel:
     
     def __init__(self, id_orden: str = None, recibido_por: str = None,
                  fecha_entrega: str = None, id_empleado: int = None,
-                 usuario_id: str = None):
+                 usuario_id: str = None, id_entrega: str = None):
         self.id_orden = id_orden
         self.recibido_por = recibido_por
         self.fecha_entrega = fecha_entrega
         self.id_empleado = id_empleado
         self.usuario_id = usuario_id
+        self.id_entrega = id_entrega
         self.__conexion_bd = conectar()
     
     def _conexion(self):
@@ -51,7 +52,8 @@ class OrdenEntregaModel:
                     ei.ID_orden_compra as ID_orden_c,
                     DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
                     p.Nombre_proveedor as Proveedor,
-                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por
+                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por,
+                    o.Estado_orden_compra as Estado_orden
                 FROM Entrega_inventario ei
                 JOIN Orden_compra o ON ei.ID_orden_compra = o.ID_orden_compra
                 JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
@@ -62,6 +64,36 @@ class OrdenEntregaModel:
         except Exception as e:
             print(f"Error listar_entregas: {e}")
             return []
+        finally:
+            cursor.close()
+            db.close()
+    
+    def obtener_entrega(self, id_entrega: str):
+        """Obtiene los detalles de una entrega específica"""
+        db = self._conexion()
+        if not db:
+            return None
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    ei.ID_entrega_inventario as ID_entrega,
+                    ei.ID_orden_compra as ID_orden_c,
+                    DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
+                    p.Nombre_proveedor as Proveedor,
+                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por,
+                    o.Estado_orden_compra as Estado_orden
+                FROM Entrega_inventario ei
+                JOIN Orden_compra o ON ei.ID_orden_compra = o.ID_orden_compra
+                JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
+                JOIN Empleado e ON ei.ID_empleado = e.ID_empleado
+                WHERE ei.ID_entrega_inventario = %s
+            """, (id_entrega,))
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error obtener_entrega: {e}")
+            return None
         finally:
             cursor.close()
             db.close()
@@ -113,6 +145,7 @@ class OrdenEntregaModel:
             
             # 3. Generar ID para la entrega
             id_entrega = self._generar_id_entrega()
+            self.id_entrega = id_entrega
             
             # 4. Insertar en Entrega_inventario
             cursor.execute("""
@@ -194,6 +227,151 @@ class OrdenEntregaModel:
             
         except Exception as e:
             print(f"Error registrar_entrega: {e}")
+            if db:
+                db.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
+    # ==================== NUEVOS MÉTODOS ====================
+
+    def editar_entrega(self) -> bool:
+        """Edita los datos de una entrega existente"""
+        if not self.id_entrega:
+            return False
+
+        db = self._conexion()
+        if not db:
+            return False
+
+        cursor = None
+        try:
+            cursor = db.cursor()
+            
+            # Verificar que la entrega existe
+            cursor.execute("""
+                SELECT ID_entrega_inventario FROM Entrega_inventario 
+                WHERE ID_entrega_inventario = %s
+            """, (self.id_entrega,))
+            if not cursor.fetchone():
+                return False
+            
+            # Actualizar fecha y recibido_por
+            cursor.execute("""
+                UPDATE Entrega_inventario 
+                SET Fecha_entrega_inventario = %s
+                WHERE ID_entrega_inventario = %s
+            """, (self.fecha_entrega, self.id_entrega))
+            
+            # Nota: Recibido_por está en el modelo pero no en la tabla Entrega_inventario
+            # Si quieres almacenarlo, necesitas agregar una columna o usar otra tabla
+            
+            db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Editar entrega",
+                    descripcion=f"Se editó la entrega ID: {self.id_entrega}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                )
+                bitacora.registrar()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error editar_entrega: {e}")
+            if db:
+                db.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
+    def eliminar_entrega(self) -> bool:
+        """
+        Elimina (anula) una entrega.
+        Revierta el stock de cada producto y cambia la orden a Pendiente.
+        """
+        if not self.id_entrega:
+            return False
+
+        db = self._conexion()
+        if not db:
+            return False
+
+        cursor = None
+        try:
+            cursor = db.cursor()
+            
+            # 1. Verificar que la entrega existe
+            cursor.execute("""
+                SELECT ID_orden_compra FROM Entrega_inventario 
+                WHERE ID_entrega_inventario = %s
+            """, (self.id_entrega,))
+            resultado = cursor.fetchone()
+            if not resultado:
+                return False
+            
+            id_orden = resultado[0]
+            
+            # 2. Obtener los productos entregados con sus cantidades
+            cursor.execute("""
+                SELECT a.ID_inventario, a.Cantidad_entregada
+                FROM Abastece a
+                WHERE a.ID_entrega_inventario = %s
+            """, (self.id_entrega,))
+            productos_entregados = cursor.fetchall()
+            
+            # 3. Revertir el stock de cada producto
+            for inv_id, cantidad in productos_entregados:
+                cursor.execute("""
+                    UPDATE Existencias_productos 
+                    SET Existencia = GREATEST(Existencia - %s, 0)
+                    WHERE ID_inventario = %s
+                """, (cantidad, inv_id))
+            
+            # 4. Eliminar registros de Abastece
+            cursor.execute("""
+                DELETE FROM Abastece 
+                WHERE ID_entrega_inventario = %s
+            """, (self.id_entrega,))
+            
+            # 5. Eliminar la entrega
+            cursor.execute("""
+                DELETE FROM Entrega_inventario 
+                WHERE ID_entrega_inventario = %s
+            """, (self.id_entrega,))
+            
+            # 6. Cambiar la orden a Pendiente
+            cursor.execute("""
+                UPDATE Orden_compra 
+                SET Estado_orden_compra = 'Pendiente'
+                WHERE ID_orden_compra = %s
+            """, (id_orden,))
+            
+            db.commit()
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Eliminar entrega",
+                    descripcion=f"Se eliminó la entrega ID: {self.id_entrega} - Orden: {id_orden}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Entregas"
+                )
+                bitacora.registrar()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error eliminar_entrega: {e}")
             if db:
                 db.rollback()
             return False

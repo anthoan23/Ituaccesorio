@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ==================== ICONOS SVG ====================
+    const Iconos = {
+        lapiz: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+        basura: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+        ojo: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+    };
+
     // Elementos DOM
     const vistaPendientes = document.getElementById('vista-pendientes');
     const vistaEntregadas = document.getElementById('vista-entregadas');
@@ -8,12 +15,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const tablaHistorial = document.getElementById('tabla-ordenes-entregas-historial');
     const modalDetalle = document.getElementById('modal-detalle-orden');
     const modalEntrega = document.getElementById('modal-registrar-entrega');
+    const modalEditar = document.getElementById('modal-editar-entrega');
+    const modalEliminar = document.getElementById('modal-confirmar-eliminar-entrega');
     const btnConfirmarEntrega = document.getElementById('btn-confirmar-entrega');
+    const btnGuardarEditar = document.getElementById('btn-guardar-editar-entrega');
+    const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-entrega');
     const entregaRecibidoPor = document.getElementById('entrega-recibido-por');
     const entregaFecha = document.getElementById('entrega-fecha');
 
     // Estado
     let ordenParaEntrega = null;
+    let entregaParaEditar = null;
+    let entregaParaEliminar = null;
 
     // CSRF Token
     const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || '';
@@ -34,8 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
             ...options.headers
         };
-
-        console.log("Fetching:", url, options.method || 'GET');
 
         const response = await fetch(url, {
             ...options,
@@ -101,6 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     // Cambiar vista
     function cambiarVista(vista) {
         if (vista === 'pendientes') {
@@ -118,14 +139,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    //Cargar pendientes de entrega - usa /api/ordenes_entregas/pendientes
+    // ==================== CARGAR PENDIENTES CON ICONOS ====================
     async function cargarPendientes() {
         if (!tablaPendientes) return;
         
         try {
-            console.log("Cargando pendientes desde /api/ordenes_entregas/pendientes");
             const data = await fetchJson('/api/ordenes_entregas/pendientes');
-            console.log("Datos recibidos:", data);
             
             if (Array.isArray(data) && data.length > 0) {
                 tablaPendientes.innerHTML = data.map(orden => `
@@ -136,8 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span class="status-badge status-pendiente">${escapeHtml(orden.Estado || 'Pendiente')}</span></td>
                         <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
                         <td class="table__actions">
-                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}">Ver</button>
-                            <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}">Registrar entrega</button>
+                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
+                            <button class="btn btn--small btn-editar" data-id="${escapeHtml(orden.ID_orden_c)}" title="Editar orden">${Iconos.lapiz}</button>
+                            <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}" title="Registrar entrega">Registrar</button>
                         </td>
                     </tr>
                 `).join('');
@@ -150,44 +170,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-// Cargar historial de entregas
-async function cargarHistorial() {
-    console.log("📋 cargarHistorial() INICIADO");
-    if (!tablaHistorial) {
-        console.error("❌ tablaHistorial es NULL");
-        return;
-    }
-    
-    try {
-        const data = await fetchJson('/api/ordenes_entregas/historial');
-        console.log("📊 Datos historial:", data);
+    // ==================== CARGAR HISTORIAL CON ICONOS ====================
+    async function cargarHistorial() {
+        if (!tablaHistorial) return;
         
-        if (Array.isArray(data) && data.length > 0) {
-            tablaHistorial.innerHTML = data.map(entrega => `
-                <tr>
-                    <td>${escapeHtml(entrega.ID_entrega)}</td>
-                    <td>${escapeHtml(entrega.ID_orden_c)}</td>
-                    <td>${escapeHtml(entrega.Proveedor || 'Sin proveedor')}</td>
-                    <td>${escapeHtml(formatDate(entrega.Fecha_entrega))}</td>
-                    <td>${escapeHtml(entrega.Recibido_por || '-')}</td>
-                    <td class="table__actions">
-                        <button class="btn btn--small btn-ver" data-id="${escapeHtml(entrega.ID_orden_c)}">Ver orden</button>
-                    </td>
-                </tr>
-            `).join('');
-        } else {
-            tablaHistorial.innerHTML = '<tr><td colspan="6" class="table__empty">No hay entregas registradas.</td></tr>';
+        try {
+            const data = await fetchJson('/api/ordenes_entregas/historial');
+            
+            if (Array.isArray(data) && data.length > 0) {
+                tablaHistorial.innerHTML = data.map(entrega => `
+                    <tr>
+                        <td>${escapeHtml(entrega.ID_entrega)}</td>
+                        <td>${escapeHtml(entrega.ID_orden_c)}</td>
+                        <td>${escapeHtml(entrega.Proveedor || 'Sin proveedor')}</td>
+                        <td>${escapeHtml(formatDate(entrega.Fecha_entrega))}</td>
+                        <td>${escapeHtml(entrega.Recibido_por || '-')}</td>
+                        <td class="table__actions">
+                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(entrega.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
+                            <button class="btn btn--small btn-editar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Modificar entrega">${Iconos.lapiz}</button>
+                            <button class="btn btn--small btn-eliminar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Eliminar entrega">${Iconos.basura}</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tablaHistorial.innerHTML = '<tr><td colspan="6" class="table__empty">No hay entregas registradas.</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error cargando historial:', error);
+            tablaHistorial.innerHTML = `<tr><td colspan="6" class="table__empty">Error: ${escapeHtml(error.message)}</td></tr>`;
         }
-    } catch (error) {
-        console.error('❌ Error cargando historial:', error);
-        tablaHistorial.innerHTML = `<tr><td colspan="6" class="table__empty">Error: ${escapeHtml(error.message)}</td></tr>`;
     }
-}
 
     // Ver detalle de orden
     async function verDetalle(id) {
         try {
-            console.log("Ver detalle de orden:", id);
             const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
             
             const detalle = data.datos_orden;
@@ -252,13 +268,12 @@ async function cargarHistorial() {
         }
     }
 
-    // ✅ CORREGIDO: Cargar productos de la orden para preview de entrega
+    // Cargar productos de la orden para preview de entrega
     async function cargarProductosOrdenParaEntrega(idOrden) {
         const container = document.getElementById('entrega-productos-preview');
         if (!container) return;
         
         try {
-            console.log("Cargando productos para entrega:", idOrden);
             const data = await fetchJson(`/api/ordenes_entregas/${idOrden}/productos`, { method: 'GET' });
             const productos = data.productos || [];
             
@@ -310,34 +325,95 @@ async function cargarHistorial() {
         }
     }
 
+    // ==================== EDITAR ENTREGA ====================
+    async function abrirEditarEntrega(idEntrega) {
+        entregaParaEditar = idEntrega;
+        
+        try {
+            const data = await fetchJson(`/api/ordenes_entregas/${idEntrega}`, { method: 'GET' });
+            
+            if (data.success && data.entrega) {
+                const e = data.entrega;
+                document.getElementById('editar-id-entrega').value = e.ID_entrega;
+                document.getElementById('editar-id-orden-entrega').value = e.ID_orden_c;
+                document.getElementById('editar-recibido-por').value = e.Recibido_por || '';
+                
+                if (e.Fecha_entrega) {
+                    const dateParts = e.Fecha_entrega.split('/');
+                    if (dateParts.length === 3) {
+                        document.getElementById('editar-fecha-entrega').value = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+                    }
+                }
+                
+                openModal(modalEditar);
+            } else {
+                mostrarMensaje('No se pudo cargar la entrega para editar.', true);
+            }
+        } catch (error) {
+            console.error('Error cargando entrega para editar:', error);
+            mostrarMensaje(error.message || 'Error al cargar la entrega.', true);
+        }
+    }
+
+    // ==================== ELIMINAR ENTREGA ====================
+    function abrirEliminarEntrega(idEntrega) {
+        entregaParaEliminar = idEntrega;
+        const textoEl = document.getElementById('texto-confirmar-eliminar-entrega');
+        if (textoEl) {
+            textoEl.textContent = `¿Seguro que deseas eliminar la entrega "${idEntrega}"? Se revertirá el stock de los productos. Esta acción no se puede deshacer.`;
+        }
+        if (modalEliminar) {
+            openModal(modalEliminar);
+        }
+    }
+
+    async function confirmarEliminarEntrega() {
+        if (!entregaParaEliminar) return;
+        
+        try {
+            const response = await fetchJson(`/api/ordenes_entregas/${entregaParaEliminar}/eliminar`, {
+                method: 'DELETE'
+            });
+            if (response.success) {
+                mostrarMensaje('Entrega eliminada exitosamente. Stock revertido.');
+                if (modalEliminar) closeModal(modalEliminar);
+                entregaParaEliminar = null;
+                cargarHistorial();
+                cargarPendientes();
+            } else {
+                mostrarMensaje(response.error || 'Error al eliminar la entrega.', true);
+            }
+        } catch (error) {
+            console.error('Error eliminando entrega:', error);
+            mostrarMensaje(error.message || 'Error al eliminar la entrega.', true);
+        }
+    }
+
+    // ==================== ABRIR EDITAR ORDEN (desde pendientes) ====================
+    async function abrirEditarOrden(idOrden) {
+        // Redirigir a la página de órdenes de compra con el modal de edición
+        // O abrir un modal similar al de órdenes de compra
+        mostrarMensaje('Para editar la orden ve a la sección de Órdenes de Compra', false);
+        // Alternativa: redirigir
+        // window.location.href = `/ordenes_compra?editar=${idOrden}`;
+    }
+
     // Abrir modal
     function openModal(modal) {
         if (modal) modal.removeAttribute('hidden');
         document.body.style.overflow = 'hidden';
     }
 
-    // Cerrar modal
     function closeModal(modal) {
         if (modal) modal.setAttribute('hidden', '');
         document.body.style.overflow = '';
-    }
-
-    // Escape HTML
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
     }
 
     // Event Listeners
     if (btnPendientes) btnPendientes.addEventListener('click', () => cambiarVista('pendientes'));
     if (btnEntregadas) btnEntregadas.addEventListener('click', () => cambiarVista('entregadas'));
 
-    // Acciones en tabla de pendientes
+    // ==================== ACCIONES EN TABLA DE PENDIENTES ====================
     if (tablaPendientes) {
         tablaPendientes.addEventListener('click', async (e) => {
             const btn = e.target.closest('button');
@@ -347,6 +423,9 @@ async function cargarHistorial() {
 
             if (btn.classList.contains('btn-ver')) {
                 await verDetalle(id);
+            } else if (btn.classList.contains('btn-editar')) {
+                // Editar orden - redirigir a órdenes de compra
+                mostrarMensaje('Para editar la orden ve a la sección de Órdenes de Compra', false);
             } else if (btn.classList.contains('btn-entrega')) {
                 ordenParaEntrega = id;
                 if (entregaRecibidoPor) entregaRecibidoPor.value = '';
@@ -359,17 +438,26 @@ async function cargarHistorial() {
         });
     }
 
-    // Acciones en tabla de historial
+    // ==================== ACCIONES EN TABLA DE HISTORIAL ====================
     if (tablaHistorial) {
         tablaHistorial.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.btn-ver');
-            if (btn && btn.dataset.id) {
-                await verDetalle(btn.dataset.id);
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            if (btn.classList.contains('btn-ver')) {
+                const id = btn.dataset.id;
+                if (id) await verDetalle(id);
+            } else if (btn.classList.contains('btn-editar-entrega')) {
+                const id = btn.dataset.id;
+                if (id) await abrirEditarEntrega(id);
+            } else if (btn.classList.contains('btn-eliminar-entrega')) {
+                const id = btn.dataset.id;
+                if (id) abrirEliminarEntrega(id);
             }
         });
     }
 
-    // ✅ CORREGIDO: Confirmar entrega - usa /api/ordenes_entregas
+    // Confirmar entrega
     if (btnConfirmarEntrega) {
         btnConfirmarEntrega.addEventListener('click', async () => {
             if (!ordenParaEntrega) return;
@@ -391,7 +479,6 @@ async function cargarHistorial() {
             btnConfirmarEntrega.textContent = 'Procesando...';
             
             try {
-                console.log("Registrando entrega para orden:", ordenParaEntrega);
                 const response = await fetchJson(`/api/ordenes_entregas/${ordenParaEntrega}/registrar`, {
                     method: 'POST',
                     body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
@@ -415,6 +502,57 @@ async function cargarHistorial() {
         });
     }
 
+    // Guardar edición de entrega
+    if (btnGuardarEditar) {
+        btnGuardarEditar.addEventListener('click', async () => {
+            if (!entregaParaEditar) return;
+            
+            const recibidoPor = document.getElementById('editar-recibido-por')?.value.trim();
+            const fechaEntrega = document.getElementById('editar-fecha-entrega')?.value;
+            
+            if (!recibidoPor) {
+                mostrarMensaje('Debe especificar quién recibió la orden.', true);
+                return;
+            }
+            
+            if (!fechaEntrega) {
+                mostrarMensaje('Debe especificar la fecha de entrega.', true);
+                return;
+            }
+            
+            btnGuardarEditar.disabled = true;
+            btnGuardarEditar.textContent = 'Guardando...';
+            
+            try {
+                const response = await fetchJson(`/api/ordenes_entregas/${entregaParaEditar}/editar`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
+                });
+                if (response.success) {
+                    mostrarMensaje('Entrega actualizada exitosamente.');
+                    closeModal(modalEditar);
+                    entregaParaEditar = null;
+                    cargarHistorial();
+                } else {
+                    mostrarMensaje(response.error || 'Error al actualizar la entrega.', true);
+                }
+            } catch (error) {
+                console.error('Error actualizando entrega:', error);
+                mostrarMensaje(error.message || 'Error al actualizar la entrega.', true);
+            } finally {
+                btnGuardarEditar.disabled = false;
+                btnGuardarEditar.textContent = 'Actualizar entrega';
+            }
+        });
+    }
+
+    // Confirmar eliminación de entrega
+    if (btnConfirmarEliminar) {
+        btnConfirmarEliminar.addEventListener('click', async () => {
+            await confirmarEliminarEntrega();
+        });
+    }
+
     // Cerrar modales
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -424,6 +562,5 @@ async function cargarHistorial() {
     });
 
     // Cargar datos iniciales
-    console.log("=== Iniciando ordenes_entregas.js ===");
     cargarPendientes();
 });

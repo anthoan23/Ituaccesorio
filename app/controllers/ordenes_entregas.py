@@ -24,12 +24,8 @@ def pagina_ordenes_entregas():
 @tiene_permiso('Entregas', 'consultar')
 def api_ordenes_entregas_pendientes():
     """Lista órdenes pendientes de entrega"""
-    print("=== api_ordenes_entregas_pendientes llamada ===")
     orden = OrdenCompra()
     ordenes = orden.listar_ordenes_pendientes()
-    print(f"Órdenes encontradas: {len(ordenes)}")
-    for o in ordenes:
-        print(f"  - {o.get('ID_orden_c')}: {o.get('Estado')}")
     return jsonify(ordenes)
 
 
@@ -38,12 +34,8 @@ def api_ordenes_entregas_pendientes():
 @tiene_permiso('Entregas', 'consultar')
 def api_ordenes_entregas_historial():
     """Lista entregas realizadas"""
-    print("=== api_ordenes_entregas_historial llamada ===")
     entrega = OrdenEntregaModel()
     entregas = entrega.listar_entregas()
-    print(f"Entregas encontradas: {len(entregas)}")
-    for e in entregas:
-        print(f"  - {e.get('ID_entrega')}: {e.get('ID_orden_c')} - {e.get('Recibido_por')}")
     return jsonify(entregas)
 
 
@@ -97,6 +89,84 @@ def api_registrar_entrega(id_orden):
             return jsonify({"success": False, "error": "No se pudo registrar la entrega"}), 500
     except Exception as e:
         print(f"Error en api_registrar_entrega: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==================== NUEVAS RUTAS PARA CRUD COMPLETO ====================
+
+@ordenes_entregas_blueprint.route('/api/ordenes_entregas/<string:id_entrega>', methods=['GET'])
+@jwt_required
+@tiene_permiso('Entregas', 'consultar')
+def api_obtener_entrega(id_entrega):
+    """Obtiene los detalles de una entrega específica"""
+    entrega = OrdenEntregaModel()
+    datos = entrega.obtener_entrega(id_entrega)
+    if datos:
+        return jsonify({"success": True, "entrega": datos})
+    return jsonify({"success": False, "error": "Entrega no encontrada"}), 404
+
+
+@ordenes_entregas_blueprint.route('/api/ordenes_entregas/<string:id_entrega>/editar', methods=['PUT'])
+@jwt_required
+@tiene_permiso('Entregas', 'modificar')
+def api_editar_entrega(id_entrega):
+    """Edita los datos de una entrega existente"""
+    try:
+        data = request.get_json()
+        recibido_por = data.get('recibido_por')
+        fecha_entrega = data.get('fecha_entrega')
+        
+        if not recibido_por:
+            return jsonify({"success": False, "error": "Debe especificar quién recibió la orden"}), 400
+        
+        if not fecha_entrega:
+            return jsonify({"success": False, "error": "Debe especificar la fecha de entrega"}), 400
+        
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        entrega = OrdenEntregaModel(
+            id_entrega=id_entrega,
+            recibido_por=recibido_por,
+            fecha_entrega=fecha_entrega,
+            usuario_id=usuario_id
+        )
+        
+        success = entrega.editar_entrega()
+        
+        if success:
+            return jsonify({"success": True, "message": "Entrega actualizada exitosamente."}), 200
+        else:
+            return jsonify({"success": False, "error": "No se pudo actualizar la entrega"}), 500
+    except Exception as e:
+        print(f"Error en api_editar_entrega: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@ordenes_entregas_blueprint.route('/api/ordenes_entregas/<string:id_entrega>/eliminar', methods=['DELETE'])
+@jwt_required
+@tiene_permiso('Entregas', 'eliminar')
+def api_eliminar_entrega(id_entrega):
+    """Elimina (anula) una entrega, revierte el stock y vuelve la orden a Pendiente"""
+    try:
+        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+        
+        entrega = OrdenEntregaModel(
+            id_entrega=id_entrega,
+            usuario_id=usuario_id
+        )
+        
+        success = entrega.eliminar_entrega()
+        
+        if success:
+            return jsonify({"success": True, "message": "Entrega eliminada exitosamente. Stock revertido."}), 200
+        else:
+            return jsonify({"success": False, "error": "No se pudo eliminar la entrega"}), 500
+    except Exception as e:
+        print(f"Error en api_eliminar_entrega: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
