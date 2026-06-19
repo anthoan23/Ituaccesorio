@@ -27,6 +27,58 @@ body {
                 linear-gradient(135deg, #1a1b1f 0%, #23252b 48%, #111215 100%);
 }
 
+/* Estilos para los botones de acción con íconos SVG */
+.table__actions .btn--small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid rgba(18, 18, 18, 0.1);
+    background: #ffffff;
+    color: rgba(18, 18, 18, 0.7);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.table__actions .btn--small:hover {
+    background: rgba(243, 197, 0, 0.1);
+    border-color: rgba(243, 197, 0, 0.3);
+    color: #0A0A0A;
+    transform: translateY(-1px);
+}
+
+.table__actions .btn--small:active {
+    transform: scale(0.92);
+}
+
+.table__actions .btn--small svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Estilos específicos para cada acción */
+.table__actions .btn-ver:hover {
+    background: rgba(0, 122, 255, 0.1);
+    border-color: rgba(0, 122, 255, 0.3);
+    color: #007AFF;
+}
+
+.table__actions .btn-editar:hover {
+    background: rgba(255, 214, 10, 0.15);
+    border-color: rgba(255, 214, 10, 0.3);
+    color: #FFD60A;
+}
+
+.table__actions .btn-eliminar:hover {
+    background: rgba(255, 69, 58, 0.1);
+    border-color: rgba(255, 69, 58, 0.3);
+    color: #FF3B30;
+}
+
 .page, .orders-page {
     width: min(1180px, calc(100% - 2rem));
     margin: 0 auto;
