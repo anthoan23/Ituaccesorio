@@ -64,7 +64,7 @@ if is_test_mode:
     talisman = Talisman(app, force_https=False, content_security_policy=None)
     
     # 2. Desactivar CSRF mediante la configuración antes de inicializar SeaSurf
-    app.config['CSRF_ENABLED'] = False
+    app.config['CSRF_DISABLE'] = True
     csrf = SeaSurf(app)
 else:
     # Configuración de producción normal
