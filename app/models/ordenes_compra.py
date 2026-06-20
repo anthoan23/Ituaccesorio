@@ -146,9 +146,10 @@ class OrdenCompra:
             total = cursor.fetchone()
             datos_orden["Costo_venta"] = float(total["Costo_venta"]) if total else 0
             
-            # Productos de la orden
+            # Productos de la orden - INCLUYE ID_producto
             cursor.execute("""
                 SELECT 
+                    d.ID_producto,
                     p.Nombre_producto as N_modelo,
                     COALESCE(mp.Nombre_marca, 'Sin marca') as N_marca,
                     COALESCE(cp.Nombre_Clase, 'Sin clase') as N_clase,
@@ -338,6 +339,107 @@ class OrdenCompra:
             
         except Exception as e:
             print(f"Error agregar_orden_compra: {e}")
+            if db:
+                db.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
+    def actualizar_orden_compra(self) -> bool:
+        """Actualiza una orden de compra existente"""
+        print(f"🔧 actualizar_orden_compra() iniciado para orden: {self.id_orden}")
+        print(f"   Empleado: {self.id_empleado}, Proveedor: {self.id_proveedor}")
+        print(f"   Productos: {self.productos}")
+        
+        if not self.id_orden:
+            raise ValueError("ID de orden es requerido para actualizar")
+        if not self.id_empleado or not self.id_proveedor or not self.productos:
+            raise ValueError("Empleado, proveedor y productos son requeridos")
+
+        db = self._conexion()
+        if not db:
+            raise RuntimeError("No se pudo conectar a la base de datos.")
+
+        cursor = None
+        try:
+            cursor = db.cursor()
+            
+            # Verificar que la orden existe y está pendiente
+            cursor.execute(
+                "SELECT ID_orden_compra, Estado_orden_compra FROM Orden_compra WHERE ID_orden_compra = %s",
+                (self.id_orden,)
+            )
+            result = cursor.fetchone()
+            print(f"📊 Resultado verificación: {result}")
+            
+            if not result:
+                print(f"❌ Orden {self.id_orden} no encontrada")
+                return False
+            
+            if result[1] != 'Pendiente':
+                print(f"❌ La orden {self.id_orden} no está pendiente (estado: {result[1]})")
+                return False
+
+            # ✅ VALIDACIÓN: Verificar que todos los productos existan en la tabla Producto
+            print("🔍 Verificando productos...")
+            for mid, qty in self.productos:
+                cursor.execute(
+                    "SELECT ID_producto FROM Producto WHERE ID_producto = %s",
+                    (str(mid),)
+                )
+                producto_existe = cursor.fetchone()
+                if not producto_existe:
+                    print(f"❌ Producto con ID '{mid}' no existe en la tabla Producto")
+                    raise ValueError(f"El producto con ID '{mid}' no existe en el catálogo")
+                print(f"✅ Producto {mid} existe")
+
+            # Actualizar empleado y proveedor
+            cursor.execute("""
+                UPDATE Orden_compra 
+                SET ID_empleado = %s, ID_proveedor = %s
+                WHERE ID_orden_compra = %s
+            """, (self.id_empleado, self.id_proveedor, self.id_orden))
+            
+            print(f"✅ UPDATE Orden_compra afectó {cursor.rowcount} filas")
+            
+            # Eliminar detalles antiguos
+            cursor.execute(
+                "DELETE FROM Detalle_orden WHERE ID_orden_compra = %s",
+                (self.id_orden,)
+            )
+            print(f"✅ DELETE Detalle_orden afectó {cursor.rowcount} filas")
+            
+            # Insertar nuevos detalles
+            for mid, qty in self.productos:
+                cursor.execute("""
+                    INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
+                    VALUES (%s, %s, %s)
+                """, (self.id_orden, str(mid), qty))
+                print(f"✅ INSERT Detalle_orden: producto={mid}, cantidad={qty}")
+            
+            db.commit()
+            print("✅ Transacción completada exitosamente")
+            
+            # Registrar en bitácora
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Actualizar orden de compra",
+                    descripcion=f"Se actualizó la orden de compra ID: {self.id_orden}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                )
+                bitacora.registrar()
+                print("✅ Bitácora registrada")
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error actualizar_orden_compra: {e}")
+            import traceback
+            traceback.print_exc()
             if db:
                 db.rollback()
             return False
