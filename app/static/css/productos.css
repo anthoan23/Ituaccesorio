@@ -93,6 +93,166 @@ body {
 	align-items: start;
 }
 
+/* ===== Datatable de productos: estilo glassmorphic ===== */
+.card--table {
+	background: rgba(255, 255, 255, 0.06);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(243, 197, 0, 0.45);
+	box-shadow: 0 8px 32px rgba(243, 197, 0, 0.12), var(--shadow);
+	color: #ffffff;
+}
+
+.card--table .card__title {
+	color: #ffffff;
+}
+
+.card--table .table th {
+	color: rgba(255, 255, 255, 0.62);
+	border-bottom: 1px solid rgba(243, 197, 0, 0.25);
+}
+
+.card--table .table td {
+	color: #ffffff;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card--table .product-name {
+	color: #ffffff;
+}
+
+.card--table .product-sku {
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.card--table .chip {
+	background: rgba(243, 197, 0, 0.1);
+	border: 1px solid rgba(243, 197, 0, 0.3);
+	color: #ffffff;
+}
+
+.card--table .status {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(243, 197, 0, 0.25);
+	color: #ffffff;
+}
+
+.card--table .icon-action {
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(243, 197, 0, 0.3);
+	color: #ffffff;
+}
+
+.card--table .icon-action:hover {
+	background: rgba(243, 197, 0, 0.18);
+	border-color: rgba(243, 197, 0, 0.55);
+}
+
+.card--table .product-thumb {
+	border: 1px solid rgba(243, 197, 0, 0.3);
+}
+
+/* Buscador adaptado al estilo glass/amarillo */
+.filters-panel input,
+.filters-panel select {
+	background: rgba(255, 255, 255, 0.06);
+	color: #ffffff;
+	border: 1px solid rgba(243, 197, 0, 0.35);
+}
+
+.filters-panel input::placeholder {
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.filters-panel input:focus,
+.filters-panel select:focus {
+	border-color: rgba(243, 197, 0, 0.8);
+	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+}
+
+.filters-panel select option {
+	color: #121212;
+}
+
+/* Paginador: botones amarillos con texto negro */
+.pager__btn {
+	background: var(--yellow);
+	color: #121212;
+	border: 1px solid rgba(243, 197, 0, 0.6);
+	font-weight: 900;
+	transition: transform 0.15s ease, filter 0.2s ease;
+}
+
+.pager__btn:hover {
+	background: var(--yellow-soft);
+	transform: translateY(-1px);
+}
+
+.pager__btn:disabled {
+	background: rgba(243, 197, 0, 0.35);
+	color: rgba(18, 18, 18, 0.5);
+	cursor: not-allowed;
+	transform: none;
+}
+
+.card--table .pager__pages {
+	color: rgba(255, 255, 255, 0.75);
+}
+
+/* ===== table-controls: buscador y botones del datatable ===== */
+.card--table .table-controls {
+	color: #ffffff;
+}
+
+.card--table .table-controls__search,
+.card--table .table-controls__size {
+	color: rgba(255, 255, 255, 0.65);
+}
+
+.card--table .table-controls__input,
+.card--table .table-controls__select {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(243, 197, 0, 0.35);
+	color: #ffffff;
+}
+
+.card--table .table-controls__input::placeholder {
+	color: rgba(255, 255, 255, 0.45);
+}
+
+.card--table .table-controls__input:focus,
+.card--table .table-controls__select:focus {
+	border-color: rgba(243, 197, 0, 0.8);
+	box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+}
+
+.card--table .table-controls__select option {
+	color: #121212;
+}
+
+.card--table .table-controls__btn {
+	background: var(--yellow);
+	border: 1px solid rgba(243, 197, 0, 0.6);
+	color: #121212;
+	font-weight: 900;
+	transition: transform 0.15s ease, filter 0.2s ease;
+}
+
+.card--table .table-controls__btn:hover:not(:disabled) {
+	background: var(--yellow-soft);
+	transform: translateY(-1px);
+}
+
+.card--table .table-controls__btn:disabled {
+	background: rgba(243, 197, 0, 0.35);
+	color: rgba(18, 18, 18, 0.55);
+	border-color: rgba(243, 197, 0, 0.3);
+}
+
+.card--table .table-controls__info {
+	color: rgba(255, 255, 255, 0.7);
+}
+
 .products-grid__full {
 	grid-column: 1 / -1;
 }
@@ -127,17 +287,17 @@ body {
 	overflow: auto;
 }
 
-/* En el modal, los botones ghost deben verse sobre fondo blanco */
+/* En el modal, los botones ghost deben verse sobre fondo oscuro/glass */
 .modal .btn--ghost {
-	background: #eef0f4;
-	color: var(--ink);
-	border: 1px solid rgba(20, 22, 26, 0.14);
+	background: rgba(255, 255, 255, 0.06);
+	color: #ffffff;
+	border: 1px solid rgba(243, 197, 0, 0.3);
 }
 
 .modal .btn--ghost:hover {
-	background: #eef0f4;
-	color: var(--ink);
-	border: 1px solid rgba(20, 22, 26, 0.14);
+	background: rgba(243, 197, 0, 0.15);
+	color: #ffffff;
+	border: 1px solid rgba(243, 197, 0, 0.5);
 }
 
 .table__header {
@@ -399,6 +559,41 @@ body {
 .filters-panel {
 	position: sticky;
 	top: 90px;
+	background: rgba(255, 255, 255, 0.06);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(243, 197, 0, 0.45);
+	box-shadow: 0 8px 32px rgba(243, 197, 0, 0.12), var(--shadow);
+	color: #ffffff;
+}
+
+.filters-panel .card__title {
+	color: #ffffff;
+}
+
+.filters-panel__section {
+	border-top: 1px solid rgba(243, 197, 0, 0.2);
+}
+
+.filters-panel__title {
+	color: rgba(255, 255, 255, 0.78);
+}
+
+.filters-panel .field__label {
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.filters-panel .tree details {
+	border: 1px solid rgba(243, 197, 0, 0.25);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.filters-panel .tree summary {
+	color: rgba(255, 255, 255, 0.72);
+}
+
+.filters-panel .tree ul {
+	color: rgba(255, 255, 255, 0.76);
 }
 
 .filters-panel__section {
@@ -406,15 +601,6 @@ body {
 	padding-top: 1rem;
 	border-top: 1px solid rgba(17, 24, 39, 0.08);
 }
-
-.filters-panel__title {
-	margin: 0 0 0.75rem;
-	font-family: "Space Grotesk", sans-serif;
-	font-weight: 900;
-	font-size: 0.98rem;
-	color: rgba(18, 18, 18, 0.78);
-}
-
 .filters-panel__row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -532,11 +718,78 @@ textarea:focus {
 .modal__panel {
     position: relative;
     z-index: 10001;
-    background: white;
+    background: rgba(30, 30, 30, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(243, 197, 0, 0.45);
     border-radius: 20px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 32px rgba(243, 197, 0, 0.1);
     animation: modalFadeIn 0.2s ease-out;
     padding: 1.5rem;
+    color: #ffffff;
+}
+
+.modal__panel .card__title {
+    color: #ffffff;
+}
+
+.modal__panel .filters-panel__section {
+    border-top: 1px solid rgba(243, 197, 0, 0.2);
+}
+
+.modal__panel .field__label,
+.modal__panel .field-hint {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.modal__panel input,
+.modal__panel select,
+.modal__panel textarea {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    color: #ffffff;
+}
+
+.modal__panel input::placeholder,
+.modal__panel textarea::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.modal__panel select option {
+    color: #121212;
+}
+
+.modal__panel input:focus,
+.modal__panel select:focus,
+.modal__panel textarea:focus {
+    border-color: rgba(243, 197, 0, 0.8);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+}
+
+.modal__panel .table th {
+    color: rgba(255, 255, 255, 0.65);
+    border-bottom: 1px solid rgba(243, 197, 0, 0.2);
+}
+
+.modal__panel .table td {
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal__panel .table__empty,
+.modal__panel .helper {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.modal__panel .icon-action {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(243, 197, 0, 0.3);
+    color: #ffffff;
+}
+
+.modal__panel .icon-action:hover {
+    background: rgba(243, 197, 0, 0.18);
+    border-color: var(--yellow);
 }
 
 @keyframes modalFadeIn {
