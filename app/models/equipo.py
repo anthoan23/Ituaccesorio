@@ -3,8 +3,9 @@ from app.models.database import conectar
 from app.models.productos import Producto
 
 class Equipo(Producto):
-    def __init__(self, ID_equipo: int, Color: str, Capacidad: None, Clave: None, Patron: int):
+    def __init__(self, ID_equipo: str, ID_producto: str = None, Color: str = None, Capacidad: str = None, Clave: str = None, Patron: str = None):
         self.ID_equipo = ID_equipo
+        self.ID_producto = ID_producto
         self.Color = Color
         self.Capacidad = Capacidad
         self.Clave = Clave
@@ -52,11 +53,12 @@ class Equipo(Producto):
             db.close()
 
     def registrar_equipo(self) -> str:
-        id_equipo = self.ID_equipo.strip()
-        color = self.Color.strip()
-        capacidad = self.Capacidad.strip()
-        clave = self.Clave.strip()
-        patron = self.Patron.strip()
+        id_equipo = (self.ID_equipo or "").strip()
+        id_producto = (self.ID_producto or "").strip() or None
+        color = (self.Color or "").strip()
+        capacidad = (self.Capacidad or "").strip()
+        clave = (self.Clave or "").strip() if self.Clave is not None else None
+        patron = (self.Patron or "").strip() if self.Patron is not None else None
        
        # Comienzan las validaciones
 
@@ -72,7 +74,7 @@ class Equipo(Producto):
         if not color:
             return "El color del equipo es obligatorio."
         
-        if len(color) >30:
+        if len(color) > 30:
             return "El color del equipo no puede tener más de 30 caracteres."
         
         if not capacidad:
@@ -84,15 +86,53 @@ class Equipo(Producto):
         
         cursor = db.cursor()
         try:
-             #verificar si el ID del equipo ya existe
-
-            cursor.execute("SELECT ID_quipo FROM equipo WHERE ID_equipo = %s", (id_equipo,))
+            cursor.execute("SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s", (id_equipo,))
             if cursor.fetchone():
                 return f"El IMEI del equipo '{id_equipo}' ya existe. Por favor verifica de nuevo el IMEI."
             
             cursor.execute(
-                "INSERT INTO equipo (ID_equipo, Color, Capacidad, Clave, Patron) VALUES (%s, %s, %s, %s, %s)",
-                (id_equipo, color, capacidad, clave, patron)
+                "INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron) VALUES (%s, %s, %s, %s, %s, %s)",
+                (id_equipo, id_producto, color, capacidad, clave, patron)
+            )
+            db.commit()
+            return f"El equipo con ID {id_equipo} se registró exitosamente."
+        except Exception as e:
+            db.rollback()
+            return f"Error al registrar el equipo: {e}"
+        finally:
+            cursor.close()
+            db.close()
+
+    def registrar_equipo_minimo(self) -> str:
+        id_equipo = (self.ID_equipo or "").strip()
+        id_producto = (self.ID_producto or "").strip() or None
+        color = (self.Color or "").strip() if self.Color is not None else None
+        capacidad = (self.Capacidad or "").strip() if self.Capacidad is not None else None
+        clave = (self.Clave or "").strip() if self.Clave is not None else None
+        patron = (self.Patron or "").strip() if self.Patron is not None else None
+
+        if not id_equipo:
+            return "El ID del equipo es obligatorio."
+        
+        if not id_equipo.isdigit():
+            return "El ID del equipo debe ser un número entero."
+        
+        if len(id_equipo) > 15:
+            return "El ID del equipo no puede tener más de 15 dígitos."
+
+        db = self._conexion.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s", (id_equipo,))
+            if cursor.fetchone():
+                return "exists"
+
+            cursor.execute(
+                "INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron) VALUES (%s, %s, %s, %s, %s, %s)",
+                (id_equipo, id_producto, color, capacidad, clave, patron)
             )
             db.commit()
             return f"El equipo con ID {id_equipo} se registró exitosamente."
@@ -103,6 +143,36 @@ class Equipo(Producto):
             cursor.close()
             db.close()
         
+    def actualizar_producto_equipo(self) -> str:
+        id_equipo = (self.ID_equipo or "").strip()
+        id_producto = (self.ID_producto or "").strip()
+
+        if not id_equipo:
+            return "El ID del equipo es obligatorio."
+        if not id_producto:
+            return "El ID del producto es obligatorio para actualizar el equipo."
+
+        db = self._conexion.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "UPDATE Equipo SET ID_producto = %s WHERE ID_equipo = %s",
+                (id_producto, id_equipo)
+            )
+            db.commit()
+            if cursor.rowcount == 0:
+                return f"No se encontró el equipo con ID {id_equipo}."
+            return f"El equipo con ID {id_equipo} se actualizó con el modelo {id_producto}."
+        except Exception as e:
+            db.rollback()
+            return f"Error al actualizar el equipo: {e}"
+        finally:
+            cursor.close()
+            db.close()
+    
     def actualizar_equipo(self) -> str:
         id_equipo = self.ID_equipo.strip()
         color = self.Color.strip()

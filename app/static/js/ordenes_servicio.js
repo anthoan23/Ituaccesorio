@@ -1,6 +1,14 @@
+const Iconos = {
+	ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`,
+	asignar: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>`
+};
+
 document.addEventListener("DOMContentLoaded", () => {
 	const csrfToken = document.getElementById("csrf-token")?.value || "";
-	const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
+	const tablaOrdenes = document.getElementById("tabla-ordenes");
+	const tablaOrdenesEstadoBody = document.getElementById("modal-ordenes-estado-body");
+	const modalOrdenesEstadoSubtitle = document.getElementById("modal-ordenes-estado-subtitle");
+	const estadoCards = document.querySelectorAll("[data-estado-card]");
 	const tablaPendientes = document.getElementById("tabla-pendientes");
 	const tablaAsignadas = document.getElementById("tabla-asignadas");
 	const tablaRevisadas = document.getElementById("tabla-revisadas");
@@ -9,9 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	const statAsignadas = document.getElementById("stat-asignadas");
 	const statRevisadas = document.getElementById("stat-revisadas");
 	const formOrden = document.getElementById("form-orden-servicio");
+	const btnVerificarEquipo = document.getElementById("btn-verificar-equipo");
 	const btnVerificarCliente = document.getElementById("btn-verificar-cliente");
 	const btnCrearCliente = document.getElementById("btn-crear-cliente");
 	const clienteStatus = document.getElementById("cliente-status");
+	const equipoStatus = document.getElementById("equipo-status");
 	const selectModelo = document.getElementById("orden-modelo");
 	const inputFecha = document.getElementById("orden-fecha");
 	const selectOrdenAsignar = document.getElementById("select-orden-asignar");
@@ -40,20 +50,81 @@ document.addEventListener("DOMContentLoaded", () => {
 	init();
 
 	function init() {
-		if (inputFecha && !inputFecha.value) {
+		// Establecer fecha mínima de hoy
+		if (inputFecha) {
 			const hoy = new Date();
-			inputFecha.value = hoy.toISOString().slice(0, 10);
+			const fechaHoy = hoy.toISOString().slice(0, 10);
+			inputFecha.min = fechaHoy;
+			if (!inputFecha.value) {
+				inputFecha.value = fechaHoy;
+			}
 		}
 
+		// Filtrar IMEI para solo números
+		const inputImei = document.getElementById("orden-id-equipo");
+		if (inputImei) {
+			inputImei.addEventListener("input", (e) => {
+				e.target.value = e.target.value.replace(/[^0-9]/g, "");
+			});
+		}
+
+		// Filtrar cédula para solo números
+		const inputCedula = document.getElementById("cliente-cedula");
+		if (inputCedula) {
+			inputCedula.addEventListener("input", (e) => {
+				e.target.value = e.target.value.replace(/[^0-9]/g, "");
+			});
+		}
+
+		// Validador de patrón (1-9, sin repetición, con guiones automáticos)
+		const inputPatron = document.getElementById("orden-patron");
+		if (inputPatron) {
+			inputPatron.addEventListener("input", (e) => {
+				let value = e.target.value.replace(/[^0-9-]/g, ""); // Solo números y guiones
+				let numbers = value.replace(/-/g, "").split(""); // Extraer números
+				
+				// Validar que no haya repetidos y que todos estén entre 1-9
+				let used = new Set();
+				let validNumbers = [];
+				for (let num of numbers) {
+					if (num >= "1" && num <= "9" && !used.has(num)) {
+						validNumbers.push(num);
+						used.add(num);
+					}
+				}
+				
+				// Limitar a máximo 9 números (1-9)
+				validNumbers = validNumbers.slice(0, 9);
+				
+				// Agregar guiones
+				e.target.value = validNumbers.join("-");
+			});
+		}
+
+		// Validador de celular (solo números, máximo 11)
+		const inputCelular = document.getElementById("cliente-celular");
+		if (inputCelular) {
+			inputCelular.addEventListener("input", (e) => {
+				e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 11);
+			});
+		}
+
+		btnVerificarEquipo?.addEventListener("click", verificarEquipo);
 		btnVerificarCliente?.addEventListener("click", verificarCliente);
 		btnCrearCliente?.addEventListener("click", registrarClienteDesdeFormulario);
 		formOrden?.addEventListener("submit", onSubmitOrden);
 		btnAsignarOrden?.addEventListener("click", asignarOrden);
+		document.getElementById("btn-asignar-tecnico")?.addEventListener("click", () => {
+			if (window.UiModal && typeof window.UiModal.openById === "function") {
+				window.UiModal.openById("modal-asignar-tecnico");
+			}
+		});
 		btnCargarTrabajos?.addEventListener("click", cargarTrabajosTecnico);
 		formRevision?.addEventListener("submit", guardarRevision);
 		formFotos?.addEventListener("submit", guardarFotos);
 		inputFotos?.addEventListener("change", () => renderPreviewFotos(inputFotos.files));
 		document.addEventListener("click", onTablaClick);
+		bindEstadoCards();
 
 		cargarModelos();
 		cargarTecnicos();
@@ -162,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				return;
 			}
 			const cliente = data.cliente || {};
-			clienteActualId = cliente.ID_c || cedula;
+			clienteActualId = cliente.id || cedula;
 			setFieldValue("cliente-nombre", cliente.nombre || "");
 			setFieldValue("cliente-apellido", cliente.apellido || "");
 			setFieldValue("cliente-celular", cliente.celular || "");
@@ -176,6 +247,60 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	async function verificarEquipo() {
+		const idEquipo = getFieldValue("orden-id-equipo");
+		if (!idEquipo) {
+			setEquipoStatus("Ingresa el IMEI/ID del equipo para verificar.", true);
+			return;
+		}
+
+		// Validar que solo contenga números
+		if (!/^\d+$/.test(idEquipo)) {
+			setEquipoStatus("El IMEI solo puede contener números.", true);
+			return;
+		}
+
+		if (idEquipo.length !== 15) {
+			setEquipoStatus("El IMEI debe tener exactamente 15 caracteres.", true);
+			return;
+		}
+
+		try {
+			const authToken = getAuthToken();
+			const response = await fetch(`/api/ordenes-servicio/equipo/${encodeURIComponent(idEquipo)}`, {
+				credentials: "same-origin",
+				headers: {
+					"Accept": "application/json",
+					...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+					...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+				},
+			});
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok || data.success === false) {
+				setEquipoStatus("No se pudo verificar el equipo.", true);
+				return;
+			}
+
+			if (data.exists) {
+				const equipo = data.equipo || {};
+				setEquipoStatus("Equipo existente encontrado. Usa los datos cargados.");
+				if (equipo.id_modelo && selectModelo) {
+					selectModelo.value = String(equipo.id_modelo);
+				}
+			} else {
+				setEquipoStatus("Equipo no encontrado. Se creará al guardar la orden.", true);
+			}
+		} catch (error) {
+			setEquipoStatus("No se pudo verificar el equipo.", true);
+		}
+	}
+
+	function setEquipoStatus(message, isError = false) {
+		if (!equipoStatus) return;
+		equipoStatus.textContent = message;
+		equipoStatus.classList.toggle("is-error", isError);
+	}
+
 	async function registrarClienteDesdeFormulario() {
 		try {
 			const payload = obtenerClientePayload();
@@ -183,6 +308,19 @@ document.addEventListener("DOMContentLoaded", () => {
 				setClienteStatus("Cédula, nombre, apellido y celular son obligatorios.", true);
 				return;
 			}
+			
+			// Validar celular (solo números, exactamente 11)
+			if (!/^\d{11}$/.test(payload.celular)) {
+				setClienteStatus("El celular debe tener exactamente 11 dígitos.", true);
+				return;
+			}
+			
+			// Validar email si se proporciona
+			if (payload.correo && !isValidEmail(payload.correo)) {
+				setClienteStatus("El correo electrónico no es válido.", true);
+				return;
+			}
+			
 			const data = await fetchJson("/api/clientes", {
 				method: "POST",
 				body: JSON.stringify(payload),
@@ -211,6 +349,110 @@ document.addEventListener("DOMContentLoaded", () => {
 		event.preventDefault();
 		if (!formOrden) return;
 
+		// Validar IMEI
+		const idEquipo = getFieldValue("orden-id-equipo");
+		if (!idEquipo) {
+			mostrarToast("El IMEI del equipo es obligatorio.", true);
+			return;
+		}
+		if (!/^\d+$/.test(idEquipo)) {
+			mostrarToast("El IMEI solo puede contener números.", true);
+			return;
+		}
+		if (idEquipo.length !== 15) {
+			mostrarToast("El IMEI debe tener exactamente 15 caracteres.", true);
+			return;
+		}
+
+		// Validar fecha (el input type date con min previene fechas pasadas)
+		const fechaIngreso = inputFecha?.value;
+		if (!fechaIngreso) {
+			mostrarToast("La fecha de ingreso es obligatoria.", true);
+			return;
+		}
+
+		// Validar modelo (debe haber uno del dropdown O uno personalizado, no ambos vacíos)
+		const idModelo = selectModelo?.value;
+		const modeloCustom = getFieldValue("orden-modelo-custom");
+		if (!idModelo && !modeloCustom) {
+			mostrarToast("Debes seleccionar un modelo o escribir uno personalizado.", true);
+			return;
+		}
+
+		// Validar que modelo personalizado no pase 30 caracteres
+		if (modeloCustom && modeloCustom.length > 30) {
+			mostrarToast("El modelo personalizado no puede exceder 30 caracteres.", true);
+			return;
+		}
+
+		// Validar patrón si se proporciona
+		const patron = getFieldValue("orden-patron");
+		if (patron) {
+			const patronClean = patron.replace(/-/g, "");
+			if (!/^[1-9]+$/.test(patronClean)) {
+				mostrarToast("El patrón solo puede contener números del 1 al 9.", true);
+				return;
+			}
+			if (patronClean.length !== new Set(patronClean).size) {
+				mostrarToast("El patrón no puede contener números repetidos.", true);
+				return;
+			}
+			if (patronClean.length > 9) {
+				mostrarToast("El patrón no puede tener más de 9 números.", true);
+				return;
+			}
+		}
+
+		// Validar clave (máximo 30 caracteres)
+		const clave = getFieldValue("orden-clave");
+		if (clave && clave.length > 30) {
+			mostrarToast("La clave no puede exceder 30 caracteres.", true);
+			return;
+		}
+
+		// Validar descripción (máximo 100 caracteres)
+		const descripcion = getFieldValue("orden-descripcion");
+		if (!descripcion) {
+			mostrarToast("La descripción del problema es obligatoria.", true);
+			return;
+		}
+		if (descripcion.length > 100) {
+			mostrarToast("La descripción no puede exceder 100 caracteres.", true);
+			return;
+		}
+
+		// Validar nota (máximo 50 caracteres)
+		const nota = getFieldValue("orden-nota");
+		if (nota && nota.length > 50) {
+			mostrarToast("Las notas no pueden exceder 50 caracteres.", true);
+			return;
+		}
+
+		// Validar correo si se proporciona
+		const correo = getFieldValue("cliente-correo");
+		if (correo && !isValidEmail(correo)) {
+			mostrarToast("El correo electrónico no es válido.", true);
+			return;
+		}
+
+		// Validar celular
+		const celular = getFieldValue("cliente-celular");
+		if (celular && !/^\d{11}$/.test(celular)) {
+			mostrarToast("El celular debe tener exactamente 11 dígitos.", true);
+			return;
+		}
+
+		// Validar cédula (8 caracteres, solo números)
+		const cedula = getFieldValue("cliente-cedula");
+		if (!cedula) {
+			mostrarToast("La cédula del cliente es obligatoria.", true);
+			return;
+		}
+		if (!/^\d{8}$/.test(cedula)) {
+			mostrarToast("La cédula debe tener exactamente 8 dígitos numéricos.", true);
+			return;
+		}
+
 		let clienteId = clienteActualId;
 		if (!clienteId) {
 			await registrarClienteDesdeFormulario();
@@ -223,12 +465,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		const payload = {
 			id_cliente: clienteId,
-			id_modelo: selectModelo?.value,
-			fecha_ingreso: inputFecha?.value,
-			patron: getFieldValue("orden-patron"),
-			clave: getFieldValue("orden-clave"),
-			descripcion: getFieldValue("orden-descripcion"),
-			nota: getFieldValue("orden-nota"),
+			id_equipo: idEquipo,
+			id_modelo: idModelo || null,
+			modelo_custom: modeloCustom || null,
+			fecha_ingreso: fechaIngreso,
+			patron: patron,
+			clave: clave,
+			color: getFieldValue("orden-color"),
+			capacidad: getFieldValue("orden-capacidad"),
+			descripcion: descripcion,
+			nota: nota,
 		};
 
 		try {
@@ -238,6 +484,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 			mostrarToast("Orden creada correctamente.");
 			formOrden.reset();
+			if (window.UiModal && typeof window.UiModal.closeById === "function") {
+				window.UiModal.closeById("modal-nueva-orden");
+			}
 			clienteActualId = null;
 			setClienteStatus("");
 			if (btnCrearCliente) btnCrearCliente.hidden = true;
@@ -301,6 +550,77 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	function bindEstadoCards() {
+		estadoCards.forEach((card) => {
+			const estado = card.dataset.estadoCard;
+			if (!estado) return;
+			card.addEventListener("click", () => onEstadoCardClick(estado));
+			card.addEventListener("keydown", (event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					onEstadoCardClick(estado);
+				}
+			});
+		});
+	}
+
+	async function onEstadoCardClick(estado) {
+		const label = {
+			pendiente: "Pendientes",
+			asignada: "Asignadas",
+			revisada: "Revisadas",
+			reparada: "Reparadas",
+		}[estado] || "Órdenes";
+		const estadoParam = {
+			pendiente: "Pendiente",
+			asignada: "Asignado",
+			revisada: "Revisado",
+			reparada: "Reparado",
+		}[estado] || estado;
+		try {
+			const data = await fetchJson(`/api/ordenes-servicio/ordenes?estado=${encodeURIComponent(estadoParam)}`);
+			renderModalOrdenesEstado(label, data.ordenes || []);
+			if (window.UiModal && typeof window.UiModal.openById === "function") {
+				window.UiModal.openById("modal-ordenes-estado");
+			}
+		} catch (error) {
+			console.error(`Error cargando órdenes ${estado}`, error);
+			if (modalOrdenesEstadoSubtitle) {
+				modalOrdenesEstadoSubtitle.textContent = "No se pudo cargar la información.";
+			}
+		}
+	}
+
+	function renderModalOrdenesEstado(label, ordenesEstado) {
+		if (modalOrdenesEstadoSubtitle) {
+			modalOrdenesEstadoSubtitle.textContent = `Órdenes ${label}`;
+		}
+		if (!tablaOrdenesEstadoBody) return;
+		// Filtrar órdenes excluyendo "En Proceso"
+		const ordenesFiltradas = ordenesEstado.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
+		if (!ordenesFiltradas.length) {
+			tablaOrdenesEstadoBody.innerHTML = '<tr><td colspan="8">No hay órdenes en esta categoría.</td></tr>';
+			return;
+		}
+		tablaOrdenesEstadoBody.innerHTML = ordenesFiltradas.map((orden) => {
+			const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
+			const badgeClass = getEstadoBadgeClass(orden.Estado);
+			return `
+				<tr>
+					<td>${escapeHtml(orden.ID_orden)}</td>
+					<td><span class="badge ${badgeClass}">${escapeHtml(orden.Estado ?? "")}</span></td>
+					<td>${escapeHtml(clienteNombre)}</td>
+					<td>${escapeHtml(orden.Equipo ?? "")}</td>
+					<td>${escapeHtml(orden.Modelo ?? "")}</td>
+					<td>${escapeHtml(orden.Des_cliente ?? "")}</td>
+					<td>${escapeHtml(formatFecha(getFechaOrden(orden)))}</td>
+					<td class="table__actions">
+						<button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
+					</td>
+				</tr>`;
+		}).join("");
+	}
+
 	async function cargarOrdenesEstado(estado, tablaDestino) {
 		if (!tablaDestino) return;
 		try {
@@ -313,25 +633,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function renderTablaOrdenes() {
 		if (!tablaOrdenes) return;
-		if (!ordenes.length) {
-			tablaOrdenes.innerHTML = '<tr><td colspan="7">No hay órdenes registradas.</td></tr>';
+		// Filtrar órdenes excluyendo "En Proceso" que es exclusivo de taller
+		const ordenesFiltradas = ordenes.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
+		if (!ordenesFiltradas.length) {
+			tablaOrdenes.innerHTML = '<tr><td colspan="8">No hay órdenes registradas.</td></tr>';
 			return;
 		}
 
-		tablaOrdenes.innerHTML = ordenes.map((orden) => {
+		tablaOrdenes.innerHTML = ordenesFiltradas.map((orden) => {
 			const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
+			const badgeClass = getEstadoBadgeClass(orden.Estado);
 			return `
 				<tr>
 					<td>${escapeHtml(orden.ID_orden)}</td>
-					<td>${escapeHtml(orden.Estado)}</td>
+					<td><span class="badge ${badgeClass}">${escapeHtml(orden.Estado)}</span></td>
 					<td>${escapeHtml(clienteNombre)}</td>
+					<td>${escapeHtml(orden.Equipo ?? "")}</td>
 					<td>${escapeHtml(orden.Modelo ?? "")}</td>
 					<td>${escapeHtml(orden.Des_cliente ?? "")}</td>
 					<td>${escapeHtml(formatFecha(getFechaOrden(orden)))}</td>
 					<td class="table__actions">
 						<div class="row-actions">
-							<button type="button" class="btn btn--ghost" data-action="ver-detalle" data-id="${escapeHtml(orden.ID_orden)}">Detalle</button>
-							<button type="button" class="btn btn--primary" data-action="seleccionar-asignacion" data-id="${escapeHtml(orden.ID_orden)}">Asignar</button>
+							<button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
+							<button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
 						</div>
 					</td>
 				</tr>
@@ -365,9 +689,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		const pendientes = count("pendiente");
 		const asignadas = count("asignado");
 		const revisadas = ordenes.filter((o) => ["revisado", "en revisión", "en revision"].includes(String(o.Estado || "").toLowerCase())).length;
+		const reparadas = count("reparado");
 		if (statPendientes) statPendientes.textContent = String(pendientes);
 		if (statAsignadas) statAsignadas.textContent = String(asignadas);
 		if (statRevisadas) statRevisadas.textContent = String(revisadas);
+		if (document.getElementById("stat-reparadas")) {
+			document.getElementById("stat-reparadas").textContent = String(reparadas);
+		}
 	}
 
 	function renderSelectOrdenesAsignar() {
@@ -709,6 +1037,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		return field && "value" in field ? String(field.value).trim() : "";
 	}
 
+	function isValidEmail(email) {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return emailRegex.test(email);
+	}
+
 	function setFieldValue(fieldId, value) {
 		const field = document.getElementById(fieldId);
 		if (field && "value" in field) {
@@ -735,5 +1068,22 @@ document.addEventListener("DOMContentLoaded", () => {
 			.replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;")
 			.replace(/'/g, "&#039;");
+	}
+
+	function getEstadoBadgeClass(estado) {
+		const estadoLower = String(estado ?? "").toLowerCase().trim();
+		if (estadoLower.includes("pendient")) {
+			return "badge--pendiente";
+		}
+		if (estadoLower.includes("asign")) {
+			return "badge--asignada";
+		}
+		if (estadoLower.includes("revis")) {
+			return "badge--revisada";
+		}
+		if (estadoLower.includes("repar")) {
+			return "badge--reparada";
+		}
+		return "badge--pendiente";
 	}
 });

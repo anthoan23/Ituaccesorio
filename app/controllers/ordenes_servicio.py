@@ -126,39 +126,127 @@ def detalle_orden_servicio(id_orden):
     )
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/equipo/<string:id_equipo>", methods=["GET"])
 @jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def verificar_equipo_orden(id_equipo):
+    id_equipo = (id_equipo or "").strip()
+    
+    # Validar que el IMEI tenga exactamente 15 caracteres y solo números
+    if len(id_equipo) != 15:
+        return jsonify({"success": False, "error": "El IMEI debe tener exactamente 15 caracteres."}), 400
+    if not id_equipo.isdigit():
+        return jsonify({"success": False, "error": "El IMEI solo puede contener números."}), 400
+    
+    modelo_equipo = Equipo(ID_equipo=id_equipo)
+    equipo = modelo_equipo.Consultar_equipo_por_id()
+    if not equipo:
+        return jsonify({"success": True, "exists": False})
+
+    return jsonify({
+        "success": True,
+        "exists": True,
+        "equipo": {
+            "id_equipo": equipo.get("ID_equipo"),
+            "id_modelo": equipo.get("ID_producto"),
+            "color": equipo.get("Color"),
+            "capacidad": equipo.get("Capacidad"),
+            "clave": equipo.get("Clave"),
+            "patron": equipo.get("Patron"),
+        },
+    })
+
+
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @tiene_permiso('Órdenes de servicio', 'registrar')
 def crear_orden_servicio():
+    from datetime import datetime, date
+    import re
+    
     datos = request.get_json(silent=True) or {}
     id_cliente = datos.get("id_cliente")
+    id_equipo = datos.get("id_equipo")
     id_modelo = datos.get("id_modelo")
+    modelo_custom = (datos.get("modelo_custom") or "").strip() or None
     descripcion = (datos.get("descripcion") or "").strip()
-    patron = datos.get("patron")
-    clave = (datos.get("clave") or "").strip()
+    patron = (datos.get("patron") or "").strip() or None
+    clave = (datos.get("clave") or "").strip() or None
+    color = (datos.get("color") or "").strip() or None
+    capacidad = (datos.get("capacidad") or "").strip() or None
     fecha_ingreso = (datos.get("fecha_ingreso") or "").strip()
     nota = (datos.get("nota") or "").strip() or None
 
-    if not id_cliente or not id_modelo or not descripcion or not fecha_ingreso:
-        return jsonify({"success": False, "error": "Cliente, modelo, descripción y fecha son obligatorios."}), 400
+    # Validar que haya modelo O modelo personalizado, pero no ambos vacíos
+    if not id_modelo and not modelo_custom:
+        return jsonify({"success": False, "error": "Debes seleccionar un modelo o escribir uno personalizado."}), 400
+
+    if not id_cliente or not id_equipo or not descripcion or not fecha_ingreso:
+        return jsonify({"success": False, "error": "Cliente, equipo, descripción y fecha son obligatorios."}), 400
+
+    # Validar longitudes de campos
+    if modelo_custom and len(modelo_custom) > 30:
+        return jsonify({"success": False, "error": "El modelo personalizado no puede exceder 30 caracteres."}), 400
+    
+    if clave and len(clave) > 30:
+        return jsonify({"success": False, "error": "La clave no puede exceder 30 caracteres."}), 400
+    
+    if len(descripcion) > 100:
+        return jsonify({"success": False, "error": "La descripción no puede exceder 100 caracteres."}), 400
+    
+    if nota and len(nota) > 50:
+        return jsonify({"success": False, "error": "Las notas no pueden exceder 50 caracteres."}), 400
+
+    # Validar que el IMEI tenga exactamente 15 caracteres y solo números
+    id_equipo = (id_equipo or "").strip()
+    if len(id_equipo) != 15:
+        return jsonify({"success": False, "error": "El IMEI del equipo debe tener exactamente 15 caracteres."}), 400
+    if not id_equipo.isdigit():
+        return jsonify({"success": False, "error": "El IMEI solo puede contener números."}), 400
+
+    # Validar que la fecha no sea pasada
+    try:
+        fecha_obj = datetime.strptime(fecha_ingreso, "%Y-%m-%d").date()
+        hoy = date.today()
+        if fecha_obj < hoy:
+            return jsonify({"success": False, "error": "La fecha de ingreso no puede ser anterior a hoy."}), 400
+    except ValueError:
+        return jsonify({"success": False, "error": "Formato de fecha inválido."}), 400
 
     try:
         id_cliente_val = int(id_cliente)
-        id_modelo_val = int(id_modelo)
+        id_modelo_val = int(id_modelo) if id_modelo else None
     except Exception:
         return jsonify({"success": False, "error": "Cliente o modelo inválido."}), 400
 
+    # Validar patrón (formato: 1-8-5-2-9, números del 1 al 9, sin repetición)
     patron_val = None
-    if patron not in (None, ""):
-        try:
-            patron_val = int(patron)
-        except Exception:
-            patron_val = None
+    if patron and patron.strip():
+        patron_clean = patron.replace("-", "")
+        # Validar que solo contenga números del 1 al 9
+        if not re.match(r"^[1-9]+$", patron_clean):
+            return jsonify({"success": False, "error": "El patrón solo puede contener números del 1 al 9."}), 400
+        # Validar que no haya repetidos
+        if len(patron_clean) != len(set(patron_clean)):
+            return jsonify({"success": False, "error": "El patrón no puede contener números repetidos."}), 400
+        # Validar que tenga máximo 9 números
+        if len(patron_clean) > 9:
+            return jsonify({"success": False, "error": "El patrón no puede tener más de 9 números."}), 400
+        patron_val = patron_clean
+
+    # Si hay id_modelo, usarlo; de lo contrario, usar modelo_custom
+    modelo_equipo = Equipo(ID_equipo=id_equipo, ID_producto=id_modelo_val, Color=color, Capacidad=capacidad)
+    equipo_existente = modelo_equipo.Consultar_equipo_por_id()
+    if not equipo_existente:
+        mensaje_equipo = modelo_equipo.registrar_equipo_minimo()
+        if mensaje_equipo is None or mensaje_equipo.startswith("Error"):
+            return jsonify({"success": False, "error": f"No se pudo registrar el equipo: {mensaje_equipo or 'Error desconocido'}."}), 400
 
     modelo = OrdenServicio()
     nueva_id = modelo.crear_orden(
         id_cliente=id_cliente_val,
+        id_equipo=id_equipo,
         id_modelo=id_modelo_val,
+        modelo_custom=modelo_custom,
         descripcion=descripcion,
         patron=patron_val,
         clave=clave or None,
@@ -290,14 +378,6 @@ def actualizar_estado_orden(id_orden):
     
     # Obtener usuario actual
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-    
-    # Registrar en bitácora
-    registrar_en_bitacora(
-        accion="Actualizar estado de orden",
-        descripcion=f"Se actualizó el estado de la orden ID: {id_orden} a: {nuevo_estado}",
-        usuario_id=usuario_id,
-        modulo_nombre="Órdenes de servicio"
-    )
     
     return jsonify({"success": True, "message": "Estado actualizado"})
 

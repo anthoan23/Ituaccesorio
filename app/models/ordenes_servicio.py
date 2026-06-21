@@ -1,8 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
 from datetime import date
-from app.models.empleados import Empleados
-
 
 
 class Orden_servicio():
@@ -48,6 +46,46 @@ class Orden_servicio():
             return cursor.fetchall()
         except Exception as e:
             print(f"Error al listar órdenes de servicio: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+    def listado_ordenes_servicio(self, estados=None):
+        """Lista órdenes de servicio, opcionalmente filtradas por lista de estados."""
+        db = self._conexion.conexion1()
+        if not db:
+            return []
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT
+                    o.ID_orden_servicio AS ID_orden,
+                    o.Estado_orden_servicio AS Estado,
+                    o.ID_cliente AS ID_cliente,
+                    COALESCE(CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente), cj.Razon_social, 'Cliente no especificado') AS Nombre_cliente,
+                    COALESCE(p.Nombre_producto, '') AS Modelo,
+                    o.Descripcion_reparacion AS Des_cliente,
+                    o.Fecha_entrada AS Fecha_e,
+                    e.ID_equipo AS Equipo
+                FROM Orden_servicio o
+                INNER JOIN Equipo e ON o.ID_equipo = e.ID_equipo
+                LEFT JOIN Cliente c ON o.ID_cliente = c.ID_cliente
+                LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
+                LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
+            """
+            if estados:
+                placeholders = ",".join(["%s"] * len(estados))
+                sql = sql.strip() + f" WHERE o.Estado_orden_servicio IN ({placeholders}) ORDER BY o.ID_orden_servicio DESC"
+                cursor.execute(sql, tuple(estados))
+            else:
+                sql = sql.strip() + " ORDER BY o.ID_orden_servicio DESC"
+                cursor.execute(sql)
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al listar órdenes de servicio con filtro: {e}")
             return []
         finally:
             cursor.close()
@@ -402,7 +440,7 @@ class Orden_servicio():
 
 
     def registrar_orden(self):
-        id_cliente = self.ID_cliente.strip()
+        id_cliente = (self.ID_cliente or "").strip()
         id_equipo = self.ID_equipo
         Estado_orden_servicio = 'pendiente'
         descripcion = self.Descripcion_reparacion
@@ -417,7 +455,7 @@ class Orden_servicio():
         if len(descripcion) > 1000:
             return "La descripción de la reparación no puede exceder los 1000 caracteres."
 
-        if id_cliente.isdigit():
+        if not str(id_cliente).isdigit():
             return "El ID del cliente debe ser solo numeros."
 
         if len(id_cliente) > 8:
@@ -429,7 +467,7 @@ class Orden_servicio():
         if fecha_entrada < fecha_actual:
             return "La fecha de entrada no puede ser anterior a la fecha actual."
         
-        db = self._conexion._bd.conexion1()
+        db = self._conexion.conexion1()
         if not db:
             return "Error al conectar con la base de datos."
             
@@ -449,6 +487,93 @@ class Orden_servicio():
             db.rollback()
             print(f"Error al registrar la orden de servicio: {e}")
             return "Error al registrar la orden de servicio."
+        finally:
+            cursor.close()
+            db.close()
+
+
+    def _generar_nuevo_id_orden(self) -> str | None:
+        db = self._conexion.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT MAX(ID_orden_servicio) FROM Orden_servicio")
+            row = cursor.fetchone()
+            ultimo_id = row[0] if row else None
+            if not ultimo_id:
+                return "OS0000001"
+            numero_str = ''.join(ch for ch in str(ultimo_id) if ch.isdigit())
+            try:
+                numero = int(numero_str)
+            except Exception:
+                numero = 0
+            return f"OS{numero + 1:07d}"
+        except Exception as e:
+            print(f"Error al generar nuevo ID de orden: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+
+
+    def crear_orden(self, id_cliente: str, id_equipo: str, id_modelo: str = None, descripcion: str = None, patron=None, clave=None, fecha_ingreso=None, nota=None, modelo_custom=None):
+        if not id_cliente or not id_equipo or not descripcion or not fecha_ingreso:
+            return None
+
+        # Validar que haya modelo O modelo personalizado
+        if not id_modelo and not modelo_custom:
+            return None
+
+        if not str(id_cliente).isdigit():
+            return None
+        
+        if id_modelo and not str(id_modelo).isdigit():
+            return None
+
+        order_id = self._generar_nuevo_id_orden()
+        if not order_id:
+            return None
+
+        db = self._conexion.conexion1()
+        if not db:
+            return None
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO Orden_servicio (
+                    ID_orden_servicio,
+                    ID_cliente,
+                    ID_equipo,
+                    Estado_orden_servicio,
+                    Descripcion_reparacion,
+                    Clave,
+                    Patron,
+                    Fecha_entrada,
+                    Nota_orden_servicio
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    order_id,
+                    str(id_cliente),
+                    str(id_equipo),
+                    'Pendiente',
+                    descripcion,
+                    clave,
+                    patron,
+                    fecha_ingreso,
+                    nota,
+                )
+            )
+            db.commit()
+            return order_id
+        except Exception as e:
+            db.rollback()
+            print(f"Error al crear la orden de servicio: {e}")
+            return None
         finally:
             cursor.close()
             db.close()
@@ -485,13 +610,19 @@ class Orden_servicio():
             db.close()
 
 
-    def registrar_interaccion(self):
-        id_orden = self.ID_orden_servicio
-        id_empleado = self.ID_empleado
-        accion = 'Asignada'
+    def registrar_interaccion(self, id_orden=None, id_empleado=None, accion=None):
+        """Registra una interacción de una orden con un empleado.
+        
+        Si no se pasan parámetros, usa los atributos de la instancia.
+        """
+        id_orden = id_orden or self.ID_orden_servicio
+        id_empleado = id_empleado or self.ID_empleado
+        accion = accion or 'Asignada'
 
+        if not id_orden or not id_empleado or not accion:
+            return False
 
-        db = self._conexion._bd.conexion1()
+        db = self._conexion.conexion1()
         if not db:
             return "Error al conectar con la base de datos."
 
@@ -559,28 +690,28 @@ class Orden_servicio():
         id_orden: int = self.ID_orden_servicio
         id_empleado: int = self.ID_empleado
 
-        asignada = self.verificar_asignacion()
+        asignada = self.verificar_asignacion() if (id_orden == self.ID_orden_servicio and id_empleado == self.ID_empleado) else None
 
         if asignada:
             print(f"La orden {id_orden} ya está asignada al empleado {id_empleado}.")
             return False
 
-        db = self._conexion._bd.conexion1()
+        db = self._conexion.conexion1()
         if not db:
-            return "Error al conectar con la base de datos."
+            return False
         
         cursor = db.cursor()
         try:
             db.start_transaction()
 
-            # 2. INSERT en la tabla interaccion
+            # INSERT en la tabla interaccion
             sql_interaccion = (
                 "INSERT INTO interaccion (ID_orden_servicio, ID_empleado, Accion) "
                 "VALUES (%s, %s, 'Asignada')"
             )
             cursor.execute(sql_interaccion, (id_orden, id_empleado))
 
-            # 3. UPDATE en la tabla orden_e
+            # UPDATE en la tabla orden_servicio
             sql_orden = (
                 "UPDATE Orden_servicio "
                 "SET Estado_orden_servicio = 'Asignada' "
@@ -649,6 +780,26 @@ class Orden_servicio():
         except Exception as e:
             db.rollback()
             print(f"Error al actualizar revisión: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+    def eliminar_orden(self, id_orden):
+        """Elimina la orden (primero las dependencias si no hay ON DELETE CASCADE)."""
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        cursor = db.cursor()
+        try:
+            # Las tablas relacionadas (Interaccion, Fotos_orden_servicio, etc.) deberían tener ON DELETE CASCADE
+            sql = "DELETE FROM Orden_servicio WHERE ID_orden_servicio = %s"
+            cursor.execute(sql, (id_orden,))
+            db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            db.rollback()
+            print(f"Error en eliminar_orden: {e}")
             return False
         finally:
             cursor.close()
