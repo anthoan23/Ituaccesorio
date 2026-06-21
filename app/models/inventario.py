@@ -203,6 +203,35 @@ class Inventario:
             if db:
                 db.close()
 
+    """JUAN sapo no borres esto es para el taller"""
+    def listar_inventario_taller(self):
+       
+        db = self._conexion()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    e.ID_inventario,
+                    p.Nombre_producto,
+                    m.Nombre_marca,
+                    c.Nombre_Clase,
+                    e.Existencia,
+                    e.Costo_venta 
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
+                JOIN Clase_producto c ON p.ID_Clase = c.ID_Clase
+                JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                WHERE e.ID_categoria = 2
+                ORDER BY c.Nombre_Clase, m.Nombre_marca, p.Nombre_producto
+            """)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            db.close()
+
 
 class FotosInventario:
     """Modelo para la tabla Fotos_inventario"""
