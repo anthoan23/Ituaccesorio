@@ -11,7 +11,7 @@
   <main class="page especialidades-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <ol class="breadcrumb__list">
-        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>    
+        <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
         <li aria-current="page">
           <span class="breadcrumb__current">Especialidades</span>
         </li>
@@ -20,14 +20,16 @@
 
     <header class="especialidades-hero">
       <div class="especialidades-hero__copy">
-        <p class="especialidades-hero__eyebrow">Gestión de personal</p>
+        <p class="especialidades-hero__eyebrow">Gestión de especialidades</p>
         <h1 class="especialidades-hero__title">Especialidades</h1>
+        <p class="especialidades-hero__description">Vista simple para consultar y registrar especialidades.</p>
       </div>
 
       <div class="stats stats--single" aria-label="Resumen de especialidades">
         <article class="stat-card">
           <span class="stat-card__label">Especialidades</span>
-          <strong class="stat-card__value" data-count="0">0</strong>
+          <strong class="stat-card__value" data-count="7">0</strong>
+          <small class="stat-card__meta">Total de especialidades visibles</small>
         </article>
       </div>
     </header>
@@ -37,9 +39,7 @@
         <div class="card__header">
           <div class="card__header-left">
             <h2 class="card__title">Catálogo de especialidades</h2>
-          </div>
-          <div class="card__actions">
-            <button id="btn-actualizar-especialidades" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
+            <p class="card__subtitle">Tabla principal de especialidades registradas.</p>
           </div>
         </div>
 
@@ -62,38 +62,48 @@
         <div class="card__header">
           <div class="card__header-left">
             <h2 class="card__title">Registrar nueva especialidad</h2>
+            <p class="card__subtitle">Completa nombre y descripción para crear una especialidad.</p>
           </div>
         </div>
 
-        <form id="form-especialidad" class="especialidad-form" autocomplete="off">
+        <form id="form-especialidad" class="cargo-form" autocomplete="off">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           
-          <label class="especialidad-form__field especialidad-form__field--full">
-            <span>Nombre de la especialidad</span>
+          <label class="cargo-form__field">
+            <span>Nombre</span>
             <input type="text" 
                    name="nombre_especialidad" 
                    placeholder="Ej: Soporte Técnico" 
-                   required 
+                   minlength="4"
                    maxlength="30"
+                   required
                    data-validation-rules="soloLetras,capitalizar"
                    title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (mínimo 4 caracteres)</small>
           </label>
-          
-          <label class="especialidad-form__field especialidad-form__field--full">
+
+          <label class="cargo-form__field cargo-form__field--full">
             <span>Descripción</span>
             <textarea name="descripcion_especialidad" 
                       rows="4" 
-                      placeholder="Ej: Responsable de la reparación y mantenimiento de equipos" 
-                      required 
-                      maxlength="255"
+                      placeholder="Ej: Responsable de la reparación y mantenimiento de equipos"
+                      minlength="4"
+                      maxlength="250"
+                      required
                       data-validation-rules="sinNumeros,sinSimbolos"
                       title="No se permiten números ni símbolos especiales"></textarea>
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (máximo 255 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (mínimo 4 caracteres)</small>
           </label>
           
-          <div class="especialidad-form__actions especialidad-form__actions--top">
-            <button class="ui-btn ui-btn--primary btn-glow" type="submit">Registrar nueva especialidad</button>
+          <div class="cargo-form__actions cargo-form__actions--top cargo-form__actions--center">
+            <button class="btn-icon-action--success" type="submit">
+              Registrar especialidad
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+            </button>
           </div>
         </form>
       </article>
@@ -105,27 +115,29 @@
         <input type="hidden" name="id_especialidad" id="editar-id-especialidad">
 
         <div class="ui-form__grid ui-form__grid--one">
-          <label class="especialidad-form__field especialidad-form__field--full">
+          <label class="cargo-form__field">
             <span>Nombre</span>
             <input id="editar-nombre-especialidad" 
                    type="text" 
                    name="nombre_especialidad" 
-                   required 
+                   required
+                   minlength="4"
                    maxlength="30"
                    data-validation-rules="soloLetras,capitalizar"
                    title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (mínimo 4 caracteres)</small>
           </label>
-          <label class="especialidad-form__field especialidad-form__field--full">
+          <label class="cargo-form__field cargo-form__field--full">
             <span>Descripción</span>
             <textarea id="editar-descripcion-especialidad" 
                       name="descripcion_especialidad" 
                       rows="4" 
-                      required 
-                      maxlength="255"
+                      required
+                      minlength="4"
+                      maxlength="250"
                       data-validation-rules="sinNumeros,sinSimbolos"
                       title="No se permiten números ni símbolos especiales"></textarea>
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (máximo 255 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (mínimo 4 caracteres)</small>
           </label>
         </div>
 

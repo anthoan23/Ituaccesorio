@@ -87,6 +87,35 @@ const Utils = {
     }
 };
 
+// ============================================
+// 2.5 FUNCIÓN PARA LIMPIAR FORMULARIOS
+// ============================================
+function resetFormFields(form) {
+    if (!form) return;
+    
+    // Resetear valores del formulario
+    form.reset();
+    
+    // Limpiar estados de validación usando el validador global
+    if (window.FieldValidator && typeof window.FieldValidator.resetForm === 'function') {
+        window.FieldValidator.resetForm(form);
+    } else {
+        // Fallback: limpiar manualmente
+        const inputs = form.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.classList.remove('field-success', 'field-error');
+            input.removeAttribute('aria-invalid');
+            
+            // Limpiar mensajes de error
+            const errorElement = input.closest('.field-validator-wrapper')?.querySelector('.field-message');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
+            }
+        });
+    }
+}
+
 // Iconos SVG (igual que en especialidades)
 const Iconos = {
     lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
@@ -160,7 +189,7 @@ function renderTabla(cargos) {
                     <td>${descripcion}</td>
                     <td class="table__actions">
                         <div class="row-actions" aria-label="Acciones del cargo">
-                            <button class="icon-action" type="button" data-action="editar" 
+                            <button class="icon-action icon-action--edit" type="button" data-action="editar" 
                                     data-id="${id}" 
                                     data-nombre="${nombre}" 
                                     data-descripcion="${descripcion}" 
@@ -201,9 +230,47 @@ function abrirModalEditar(button) {
     const nombre = button.getAttribute("data-nombre") || "";
     const descripcion = button.getAttribute("data-descripcion") || "";
 
+    // PRIMERO: Cargar los datos
     if (inputEditarId) inputEditarId.value = id;
     if (inputEditarNombre) inputEditarNombre.value = nombre;
     if (inputEditarDescripcion) inputEditarDescripcion.value = descripcion === "-" ? "" : descripcion;
+    
+    // DESPUÉS: Limpiar estados de validación (sin borrar los valores)
+    const formEditar = document.getElementById("form-editar-cargo");
+    if (formEditar) {
+        // Solo limpiar clases y estados, NO resetear valores
+        const inputs = formEditar.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.classList.remove('field-success', 'field-error');
+            input.removeAttribute('aria-invalid');
+            
+            // Limpiar mensajes de error
+            const errorElement = input.closest('.field-validator-wrapper')?.querySelector('.field-message');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
+            }
+        });
+        
+        // Si existe el validador global, usarlo solo para limpiar clases
+        if (window.FieldValidator && typeof window.FieldValidator.resetForm === 'function') {
+            // Guardar los valores actuales
+            const values = {};
+            inputs.forEach(input => {
+                values[input.name || input.id] = input.value;
+            });
+            
+            window.FieldValidator.resetForm(formEditar);
+            
+            // Restaurar los valores
+            inputs.forEach(input => {
+                const key = input.name || input.id;
+                if (values[key] !== undefined) {
+                    input.value = values[key];
+                }
+            });
+        }
+    }
     
     openModal("modal-editar-cargo");
 }
@@ -247,7 +314,11 @@ async function registrarCargo(event) {
         
         if (result.success) {
             Utils.showMessage(result.message || "Cargo registrado correctamente.");
-            formCrear.reset();
+            
+            // Limpiar el formulario y sus estados de validación
+            resetFormFields(formCrear);
+            
+            // Recargar la tabla
             await cargarCargos();
         } else {
             Utils.showMessage(result.message || "No fue posible registrar el cargo.", true);
@@ -263,6 +334,7 @@ async function actualizarCargo(event) {
     const inputEditarId = document.getElementById("editar-id-cargo");
     const inputEditarNombre = document.getElementById("editar-nombre-cargo");
     const inputEditarDescripcion = document.getElementById("editar-descripcion-cargo");
+    const formEditar = document.getElementById("form-editar-cargo");
 
     const idCargo = inputEditarId?.value.trim() || "";
     const payload = {
@@ -284,7 +356,16 @@ async function actualizarCargo(event) {
         
         if (result.success) {
             Utils.showMessage(result.message || "Cargo modificado correctamente.");
+            
+            // Cerrar el modal
             closeModal("modal-editar-cargo");
+            
+            // Limpiar el formulario de edición después de cerrar
+            if (formEditar) {
+                resetFormFields(formEditar);
+            }
+            
+            // Recargar la tabla
             await cargarCargos();
         } else {
             Utils.showMessage(result.message || "No fue posible modificar el cargo.", true);
@@ -324,7 +405,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.getElementById("tabla-cargos");
     const formCrear = document.getElementById("form-cargo");
     const formEditar = document.getElementById("form-editar-cargo");
-    const btnActualizar = document.getElementById("btn-actualizar-cargos");
     const btnConfirmarEliminar = document.getElementById("btn-confirmar-eliminar-cargo");
 
     // Evento del formulario de creación
@@ -357,12 +437,21 @@ document.addEventListener("DOMContentLoaded", () => {
         btnConfirmarEliminar.addEventListener("click", eliminarCargo);
     }
 
-    // Evento del botón actualizar
-    if (btnActualizar) {
-        btnActualizar.addEventListener("click", () => {
-            cargarCargos().catch((error) => {
-                Utils.showMessage(error.message || "No fue posible actualizar los cargos.", true);
-            });
+    // Evento para limpiar el formulario de edición cuando se cierra el modal
+    const modalEditar = document.getElementById("modal-editar-cargo");
+    if (modalEditar) {
+        // Escuchar cuando el modal se cierra
+        const observer = new MutationObserver(() => {
+            if (modalEditar.hasAttribute('hidden') || modalEditar.style.display === 'none') {
+                if (formEditar) {
+                    resetFormFields(formEditar);
+                }
+            }
+        });
+        
+        observer.observe(modalEditar, {
+            attributes: true,
+            attributeFilter: ['hidden', 'style']
         });
     }
 
