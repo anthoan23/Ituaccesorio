@@ -1,0 +1,166 @@
+/* ============================================
+   THEME TOKENS - Modo oscuro (default) y claro
+   ============================================
+   Este archivo se carga ANTES de cualquier otro CSS.
+   Todas las páginas y componentes deben consumir estas
+   variables en vez de colores fijos para que el toggle
+   de modo claro/oscuro funcione en todo el sistema.
+*/
+
+:root {
+    /* ====== VARIABLES EXISTENTES ====== */
+    --bg: #1e1e1e;
+    --bg-gradient: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%), radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%), linear-gradient(135deg, #1e1e1e, #2a2a2a);
+    --ink: #121212;
+    --text-strong: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.65);
+    --text-muted-soft: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(243, 197, 0, 0.45);
+    --glass-blur: 16px;
+    --glass-shadow: 0 8px 32px rgba(243, 197, 0, 0.12), 0 18px 45px rgba(0, 0, 0, 0.35);
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --input-border: rgba(243, 197, 0, 0.35);
+    --input-placeholder: rgba(255, 255, 255, 0.45);
+    --input-text: #ffffff;
+    --card: #ffffff;
+    --muted: rgba(18, 18, 18, 0.68);
+    --line: rgba(0, 0, 0, 0.12);
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+    --radius: 22px;
+    --yellow: #f3c500;
+    --yellow-soft: #f8dd69;
+    --danger: #ef4444;
+    --ghost-bg: rgba(255, 255, 255, 0.06);
+    --ghost-border: rgba(243, 197, 0, 0.3);
+    --ghost-text: #ffffff;
+    --ghost-hover-bg: rgba(243, 197, 0, 0.15);
+    --navbar-yellow: #FFD60A;
+    --navbar-yellow-soft: #FFE17A;
+    --navbar-black: #0A0A0A;
+    --navbar-white: #FFFFFF;
+    --navbar-white-soft: rgba(255, 255, 255, 0.88);
+    --navbar-white-muted: rgba(255, 255, 255, 0.6);
+    --navbar-white-border: rgba(255, 255, 255, 0.08);
+    --navbar-white-bg-soft: rgba(255, 255, 255, 0.06);
+    --navbar-topbar-start: rgba(10, 10, 10, 0.92);
+    --navbar-topbar-end: rgba(10, 10, 10, 0.85);
+    --navbar-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+
+    /* ====== VARIABLES DASHBOARD (oscuro) ====== */
+    --bg-primary: #0A0A0A;
+    --bg-secondary: #151515;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.07);
+    --bg-input: #1a1a1a;
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #A1A1AA;
+    --text-muted-dash: #6B6B76;
+    
+    --blue: #007AFF;
+    --green: #34C759;
+    --red: #FF3B30;
+    
+    --border-color: rgba(255, 255, 255, 0.04);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --shadow-dash: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.2);
+    
+    --radius-sm: 14px;
+    --radius-lg: 28px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --table-header: rgba(255, 255, 255, 0.02);
+    --table-row: transparent;
+    --table-row-hover: rgba(255, 255, 255, 0.03);
+    --table-border: rgba(255, 255, 255, 0.03);
+
+    /* ====== VARIABLES SIDEBAR (oscuro) ====== */
+    --sidebar-bg: #0A0A0A;
+    --sidebar-shadow: rgba(0, 0, 0, 0.3);
+    --sidebar-border: rgba(255, 255, 255, 0.04);
+    --sidebar-text: #FFFFFF;
+    --sidebar-link-color: rgba(255, 255, 255, 0.55);
+    --sidebar-link-hover: rgba(255, 255, 255, 0.05);
+    --sidebar-link-hover-text: #FFFFFF;
+    --sidebar-icon-color: rgba(255, 255, 255, 0.4);
+    --sidebar-header-bg: rgba(255, 255, 255, 0.03);
+    --sidebar-header-border: rgba(255, 255, 255, 0.04);
+    --sidebar-scrollbar: rgba(255, 214, 10, 0.25);
+}
+
+[data-theme="light"] {
+    /* ====== VARIABLES EXISTENTES (light) ====== */
+    --bg: #e8e8ed;
+    --bg-gradient: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.08) 0%, transparent 40%), radial-gradient(circle at 70% 90%, rgba(18, 18, 18, 0.02) 0%, transparent 42%), linear-gradient(135deg, #e8e8ed, #dddee3);
+    --text-strong: #1a1a1e;
+    --text-muted: rgba(26, 26, 30, 0.6);
+    --text-muted-soft: rgba(26, 26, 30, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(243, 197, 0, 0.5);
+    --glass-shadow: 0 8px 28px rgba(243, 197, 0, 0.08), 0 14px 36px rgba(18, 18, 18, 0.06);
+    --input-bg: #f5f5f8;
+    --input-border: rgba(18, 18, 18, 0.12);
+    --input-placeholder: rgba(18, 18, 18, 0.35);
+    --input-text: #1a1a1e;
+    --muted: rgba(26, 26, 30, 0.6);
+    --line: rgba(0, 0, 0, 0.08);
+    --shadow: 0 12px 32px rgba(18, 18, 18, 0.06);
+    --ghost-bg: rgba(18, 18, 18, 0.04);
+    --ghost-border: rgba(18, 18, 18, 0.12);
+    --ghost-text: #1a1a1e;
+    --ghost-hover-bg: rgba(243, 197, 0, 0.15);
+    --navbar-black: #1a1a1e;
+    --navbar-white: #1a1a1e;
+    --navbar-white-soft: rgba(26, 26, 30, 0.75);
+    --navbar-white-muted: rgba(26, 26, 30, 0.5);
+    --navbar-white-border: rgba(26, 26, 30, 0.06);
+    --navbar-white-bg-soft: rgba(26, 26, 30, 0.04);
+    --navbar-topbar-start: rgba(245, 245, 248, 0.92);
+    --navbar-topbar-end: rgba(245, 245, 248, 0.85);
+    --navbar-shadow: 0 12px 32px rgba(18, 18, 18, 0.08);
+
+    /* ====== VARIABLES DASHBOARD (light - más suaves) ====== */
+    --bg-primary: #E8E8ED;
+    --bg-secondary: #EDEDF2;
+    --bg-card: #F5F5F8;
+    --bg-card-hover: #E3E3E8;
+    --bg-input: #F5F5F8;
+    
+    --text-primary: #1A1A1E;
+    --text-secondary: #5C5C60;
+    --text-muted-dash: #8A8A90;
+    
+    --blue: #007AFF;
+    --green: #34C759;
+    --red: #FF3B30;
+    
+    --border-color: rgba(0, 0, 0, 0.06);
+    --border-light: rgba(0, 0, 0, 0.10);
+    --shadow-dash: 0 8px 28px rgba(0, 0, 0, 0.06);
+    --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.04);
+    
+    --table-header: #EDEDF2;
+    --table-row: #F5F5F8;
+    --table-row-hover: #E3E3E8;
+    --table-border: rgba(0, 0, 0, 0.06);
+
+    /* ====== VARIABLES SIDEBAR (light - más suaves) ====== */
+    --sidebar-bg: #F5F5F8;
+    --sidebar-shadow: rgba(0, 0, 0, 0.06);
+    --sidebar-border: rgba(26, 26, 30, 0.06);
+    --sidebar-text: #1A1A1E;
+    --sidebar-link-color: rgba(26, 26, 30, 0.45);
+    --sidebar-link-hover: rgba(26, 26, 30, 0.04);
+    --sidebar-link-hover-text: #1A1A1E;
+    --sidebar-icon-color: rgba(26, 26, 30, 0.35);
+    --sidebar-header-bg: rgba(26, 26, 30, 0.02);
+    --sidebar-header-border: rgba(26, 26, 30, 0.04);
+    --sidebar-scrollbar: rgba(26, 26, 30, 0.12);
+    
+}
+
+body {
+    background: var(--bg-gradient);
+}

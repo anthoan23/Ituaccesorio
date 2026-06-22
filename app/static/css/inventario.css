@@ -134,7 +134,7 @@ body {
   letter-spacing: 0.14em;
   font-size: 0.76rem;
   font-weight: 800;
-  color: rgb(15, 15, 15);
+  color: rgb(255, 255, 255);
 }
 
 .hero h1 {
@@ -257,12 +257,18 @@ body {
   gap: 1rem;
 }
 
+/* ====================================================== */
+/* PANEL - ESTILO GLASSMORPHIC (igual que productos.css) */
+/* ====================================================== */
 .panel {
-  background: var(--inv-panel);
-  color: var(--inv-ink);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.45);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.12), var(--inv-shadow);
   border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
   padding: 1.15rem 1.2rem;
+  color: #ffffff;
 }
 
 .panel--table {
@@ -282,6 +288,7 @@ body {
 .panel--soft {
   background: linear-gradient(145deg, rgba(243, 197, 0, 0.95), rgba(255, 229, 125, 0.95));
   color: #171717;
+  border: 1px solid rgba(243, 197, 0, 0.6);
 }
 
 .panel__header {
@@ -296,11 +303,12 @@ body {
   margin: 0;
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.18rem;
+  color: #ffffff;
 }
 
 .panel__note {
   margin: -0.25rem 0 0;
-  color: var(--inv-muted);
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.55;
 }
 
@@ -310,141 +318,12 @@ body {
   flex-wrap: wrap;
 }
 
-.btn {
-  appearance: none;
-  border: 0;
-  font: inherit;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  padding: 0.8rem 1rem;
-  cursor: pointer;
-  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.btn--ghost {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
-}
-
-.btn--ghost:hover {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
-}
-
-.btn:focus-visible {
-  outline: 3px solid rgba(243, 197, 0, 0.32);
-  outline-offset: 3px;
-}
-
-.btn--primary {
-  background: linear-gradient(180deg, var(--inv-accent-soft), var(--inv-accent));
-  color: #151515;
-  font-weight: 900;
-  box-shadow: 0 14px 28px rgba(243, 197, 0, 0.2);
-}
-
-/*
-  Importante: navbar.css también define .btn/.btn--ghost y se carga desde navbar.html
-  (después del head), por lo que puede pisar los estilos del módulo Inventario.
-  Estas reglas más específicas aseguran contraste correcto dentro de esta página.
-*/
-.inventario-page .btn {
-  filter: none;
-}
-
-.inventario-page .panel .btn--ghost {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
-}
-
-.inventario-page .panel .btn--ghost:hover {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
-}
-
-.inventario-page .panel .btn--ghost:focus-visible {
-  outline: 3px solid rgba(243, 197, 0, 0.32);
-  outline-offset: 3px;
-}
-
-.btn--disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.inventory-form {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.inventory-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.inventory-form__actions {
-  display: flex;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.inventory-form .field {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.inventory-form .field__label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--inv-muted);
-  font-weight: 800;
-}
-
-.inventory-form input,
-.inventory-form select {
-  width: 100%;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  border-radius: 14px;
-  padding: 0.8rem 0.9rem;
-  font: inherit;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--inv-ink);
-  outline: none;
-}
-
-.inventory-form input::placeholder {
-  color: rgba(18, 20, 24, 0.42);
-}
-
-.inventory-form input:focus,
-.inventory-form select:focus {
-  border-color: rgba(243, 197, 0, 0.85);
-  box-shadow: 0 0 0 4px rgba(243, 197, 0, 0.16);
-}
-
+/* ====================================================== */
+/* TABLA - ESTILOS GLASSMORPHIC */
+/* ====================================================== */
 .table-wrap {
   overflow-x: auto;
   border-radius: 18px;
-}
-
-.table-note {
-  margin: 0.9rem 0 0;
-  color: var(--inv-muted);
-  font-size: 0.92rem;
 }
 
 .table {
@@ -460,17 +339,31 @@ body {
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--inv-muted);
-  border-bottom: 1px solid var(--inv-line);
-  background: rgba(17, 24, 39, 0.02);
+  color: rgba(255, 255, 255, 0.62);
+  border-bottom: 1px solid rgba(243, 197, 0, 0.25);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .table tbody td {
   padding: 0.75rem 0.7rem;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: middle;
+  color: #ffffff;
 }
 
+.table tbody tr:hover {
+  background: rgba(243, 197, 0, 0.06);
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table tbody tr:nth-child(even):hover {
+  background: rgba(243, 197, 0, 0.06);
+}
+
+/* Columnas de la tabla */
 .inventory-table th,
 .inventory-table td {
   overflow: hidden;
@@ -513,14 +406,17 @@ body {
   white-space: nowrap;
 }
 
+/* ====================================================== */
+/* THUMBNAILS Y BADGES */
+/* ====================================================== */
 .inventory-thumb {
   display: inline-block;
   width: 54px;
   height: 42px;
   border-radius: 12px;
   object-fit: cover;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  background: rgba(17, 24, 39, 0.06);
+  border: 1px solid rgba(243, 197, 0, 0.3);
+  background: rgba(243, 197, 0, 0.1);
 }
 
 .inventory-thumb--empty {
@@ -531,17 +427,15 @@ body {
   width: auto;
   height: auto;
   min-height: 42px;
-  color: var(--inv-muted);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
   font-weight: 800;
+  border: 1px solid rgba(243, 197, 0, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.table tbody tr:nth-child(even) {
-  background: rgba(17, 24, 39, 0.02);
-}
-
-.badge,
-.status {
+.badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -552,33 +446,172 @@ body {
 }
 
 .badge--good {
-  background: rgba(16, 185, 129, 0.14);
-  color: #127d55;
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
 }
 
 .badge--warn {
   background: rgba(243, 197, 0, 0.18);
-  color: #8f6c00;
+  color: #f3c500;
+}
+
+.badge--danger {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.82rem;
 }
 
 .status--good {
-  background: rgba(16, 185, 129, 0.1);
-  color: #127d55;
+  background: rgba(52, 199, 89, 0.12);
+  color: #34c759;
 }
 
 .status--warn {
-  background: rgba(245, 158, 11, 0.12);
-  color: #a86400;
+  background: rgba(243, 197, 0, 0.15);
+  color: #f3c500;
 }
 
+.status--danger {
+  background: rgba(255, 59, 48, 0.12);
+  color: #ff3b30;
+}
+
+/* ====================================================== */
+/* BOTONES */
+/* ====================================================== */
+.btn {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  font-weight: 800;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(243, 197, 0, 0.3);
+}
+
+.btn--ghost:hover {
+  background: rgba(243, 197, 0, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(243, 197, 0, 0.5);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(243, 197, 0, 0.32);
+  outline-offset: 3px;
+}
+
+.btn--primary {
+  background: linear-gradient(180deg, #f8dd69, #f3c500);
+  color: #151515;
+  font-weight: 900;
+  box-shadow: 0 14px 28px rgba(243, 197, 0, 0.25);
+}
+
+.btn--primary:hover {
+  background: linear-gradient(180deg, #ffe57d, #f8dd69);
+  box-shadow: 0 14px 32px rgba(243, 197, 0, 0.35);
+}
+
+.btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ====================================================== */
+/* FORMULARIOS */
+/* ====================================================== */
+.inventory-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.inventory-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.inventory-form__actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.inventory-form .field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.inventory-form .field__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 800;
+}
+
+.inventory-form input,
+.inventory-form select {
+  width: 100%;
+  border: 1px solid rgba(243, 197, 0, 0.35);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  outline: none;
+}
+
+.inventory-form input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.inventory-form input:focus,
+.inventory-form select:focus {
+  border-color: rgba(243, 197, 0, 0.8);
+  box-shadow: 0 0 0 4px rgba(243, 197, 0, 0.16);
+}
+
+.inventory-form select option {
+  color: #121212;
+}
+
+/* ====================================================== */
+/* HIERARCHY Y MINI-LIST */
+/* ====================================================== */
 .hierarchy {
   display: grid;
   gap: 0.75rem;
 }
 
 .hierarchy__group {
-  background: rgba(17, 24, 39, 0.03);
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(243, 197, 0, 0.15);
   border-radius: 18px;
   padding: 0.95rem 1rem;
   display: grid;
@@ -589,20 +622,20 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--inv-muted);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 800;
 }
 
 .hierarchy__meta,
 .mini-list__left span,
 .repuesto span {
-  color: var(--inv-muted);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.92rem;
 }
 
 .hierarchy__arrow {
   text-align: center;
-  color: var(--inv-accent-deep);
+  color: #f3c500;
   font-size: 1.1rem;
   font-weight: 900;
 }
@@ -622,8 +655,9 @@ body {
   gap: 1rem;
   padding: 0.95rem 1rem;
   border-radius: 18px;
-  background: rgba(17, 24, 39, 0.03);
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 197, 0, 0.1);
+  color: #ffffff;
 }
 
 .mini-list__left {
@@ -636,7 +670,7 @@ body {
   border-radius: 999px;
   padding: 0.38rem 0.7rem;
   background: rgba(243, 197, 0, 0.16);
-  color: #7f5c00;
+  color: #f3c500;
   font-weight: 800;
   font-size: 0.8rem;
 }
@@ -653,13 +687,15 @@ body {
   gap: 1rem;
   padding: 0.95rem 1rem;
   border-radius: 18px;
-  background: rgba(17, 24, 39, 0.03);
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 197, 0, 0.1);
+  color: #ffffff;
 }
 
 .repuesto__qty {
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.15rem;
+  color: #f3c500;
 }
 
 .progress-list {
@@ -673,12 +709,13 @@ body {
   justify-content: space-between;
   gap: 1rem;
   font-weight: 800;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .progress {
   height: 10px;
   border-radius: 999px;
-  background: rgba(17, 24, 39, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
@@ -686,41 +723,51 @@ body {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #171717;
+  background: #f3c500;
 }
 
 .progress__accent {
   background: linear-gradient(180deg, #f7e07b, #f3c500);
 }
 
-/* ==================== ESTILOS PARA MODAL DE REPORTES ==================== */
+/* ====================================================== */
+/* MODAL DE REPORTES - ESTILO GLASSMORPHIC */
+/* ====================================================== */
 
 #modal-reportes .field__input {
   width: 100%;
-  border: 1px solid rgba(18, 18, 18, 0.12);
+  border: 1px solid rgba(243, 197, 0, 0.35);
   border-radius: 12px;
   padding: 0.75rem 0.85rem;
   font-size: 0.95rem;
   font-family: "Manrope", sans-serif;
   outline: none;
-  background: #ffffff;
-  color: #121212;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+#modal-reportes .field__input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 #modal-reportes .field__input:focus {
-  border-color: rgba(243, 197, 0, 0.7);
-  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.22);
+  border-color: rgba(243, 197, 0, 0.8);
+  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
 }
 
 #modal-reportes select.field__input {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 1rem;
   padding-right: 2.5rem;
+}
+
+#modal-reportes select.field__input option {
+  color: #121212;
 }
 
 #modal-reportes .filters-panel__row {
@@ -733,7 +780,7 @@ body {
 #modal-reportes .filters-panel__section {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
+  border-top: 1px solid rgba(243, 197, 0, 0.2);
 }
 
 #modal-reportes .filters-panel__title {
@@ -741,7 +788,7 @@ body {
   font-family: "Space Grotesk", sans-serif;
   font-weight: 900;
   font-size: 0.98rem;
-  color: rgba(18, 18, 18, 0.78);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 #modal-reportes .field {
@@ -751,7 +798,7 @@ body {
 
 #modal-reportes .field__label {
   font-size: 0.78rem;
-  color: rgba(18, 18, 18, 0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -763,7 +810,7 @@ body {
   gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
+  border-top: 1px solid rgba(243, 197, 0, 0.2);
 }
 
 /* Botones dentro del modal */
@@ -785,20 +832,24 @@ body {
 
 #modal-reportes .ui-btn--primary {
   color: #111111;
-  background: linear-gradient(180deg, #f3c500, #f8dd69);
-  box-shadow: 0 14px 30px rgba(243, 197, 0, 0.2);
+  background: linear-gradient(180deg, #f8dd69, #f3c500);
+  box-shadow: 0 14px 30px rgba(243, 197, 0, 0.25);
+}
+
+#modal-reportes .ui-btn--primary:hover {
+  background: linear-gradient(180deg, #ffe57d, #f8dd69);
 }
 
 #modal-reportes .ui-btn--ghost {
-  background: #eef0f4;
-  color: #121212;
-  border: 1px solid rgba(20, 22, 26, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(243, 197, 0, 0.3);
 }
 
 #modal-reportes .ui-btn--ghost:hover {
-  background: #eef0f4;
-  color: #121212;
-  border: 1px solid rgba(20, 22, 26, 0.14);
+  background: rgba(243, 197, 0, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(243, 197, 0, 0.5);
 }
 
 #modal-reportes .ui-btn:disabled {
@@ -811,7 +862,7 @@ body {
 #modal-reportes .table-wrap {
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.1);
+  border: 1px solid rgba(243, 197, 0, 0.15);
 }
 
 #modal-reportes .table {
@@ -823,27 +874,27 @@ body {
 #modal-reportes .table th,
 #modal-reportes .table td {
   padding: 0.75rem;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  border-bottom: 1px solid rgba(243, 197, 0, 0.1);
   text-align: left;
   vertical-align: middle;
 }
 
 #modal-reportes .table th {
-  background: #f8f9fa;
+  background: rgba(243, 197, 0, 0.08);
   font-weight: 800;
   font-size: 0.85rem;
-  color: #121212;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 #modal-reportes .table td {
   font-size: 0.85rem;
-  color: #121212;
+  color: #ffffff;
 }
 
 #modal-reportes .table__empty {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* Badges de estado */
@@ -856,26 +907,28 @@ body {
 }
 
 #modal-reportes .status-out {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
 }
 
 #modal-reportes .status-low {
-  background: #ffedd5;
-  color: #f59e0b;
+  background: rgba(243, 197, 0, 0.15);
+  color: #f3c500;
 }
 
 #modal-reportes .status-good {
-  background: #dcfce7;
-  color: #10b981;
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
 }
 
 #modal-reportes .status-normal {
-  background: #e0e7ff;
-  color: #3b82f6;
+  background: rgba(0, 122, 255, 0.15);
+  color: #007aff;
 }
 
-/* Responsive */
+/* ====================================================== */
+/* RESPONSIVE */
+/* ====================================================== */
 @media (max-width: 640px) {
   #modal-reportes .filters-panel__row {
     grid-template-columns: 1fr;
@@ -930,4 +983,250 @@ body {
   .inventory-form__grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ====================================================== */
+/* CONTROLES DE TABLA */
+/* ====================================================== */
+
+/* ----- Buscador y controles ----- */
+.panel--table .table-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+.panel--table .table-controls__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.panel--table .table-controls__right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.panel--table .table-controls__search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.panel--table .table-controls__input {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    border-radius: 12px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    font-family: "Manrope", sans-serif;
+    outline: none;
+    color: #ffffff;
+    width: 200px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.panel--table .table-controls__input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.panel--table .table-controls__input:focus {
+    border-color: rgba(243, 197, 0, 0.8);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+}
+
+.panel--table .table-controls__size {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.panel--table .table-controls__select {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    border-radius: 12px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    font-family: "Manrope", sans-serif;
+    outline: none;
+    color: #ffffff;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+.panel--table .table-controls__select:focus {
+    border-color: rgba(243, 197, 0, 0.8);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+}
+
+.panel--table .table-controls__select option {
+    color: #121212;
+}
+
+.panel--table .table-controls__info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* ----- Botones de paginación (amarillos con texto negro) ----- */
+.panel--table .pager {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.panel--table .pager__btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(243, 197, 0, 0.6);
+    background: var(--yellow);
+    color: #121212;
+    cursor: pointer;
+    font-weight: 900;
+    font-size: 0.9rem;
+    font-family: "Manrope", sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.panel--table .pager__btn:hover:not(:disabled) {
+    background: #f8dd69;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(243, 197, 0, 0.25);
+}
+
+.panel--table .pager__btn:disabled {
+    background: rgba(243, 197, 0, 0.35);
+    color: rgba(18, 18, 18, 0.5);
+    border-color: rgba(243, 197, 0, 0.3);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.panel--table .pager__pages {
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.9rem;
+}
+
+/* ----- Botón de Reportes (igual que en productos) ----- */
+.panel--table .btn--reportes {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(243, 197, 0, 0.3);
+    border-radius: 12px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 800;
+    font-size: 0.9rem;
+    font-family: "Manrope", sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.panel--table .btn--reportes:hover {
+    background: rgba(243, 197, 0, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(243, 197, 0, 0.5);
+    transform: translateY(-1px);
+}
+
+.panel--table .btn--reportes:focus-visible {
+    outline: 3px solid rgba(243, 197, 0, 0.32);
+    outline-offset: 3px;
+}
+
+/* ----- Botón Registrar (amarillo con texto negro) ----- */
+.panel--table .btn--registrar {
+    background: var(--yellow);
+    color: #121212;
+    border: none;
+    border-radius: 12px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 800;
+    font-size: 0.9rem;
+    font-family: "Manrope", sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel--table .btn--registrar:hover {
+    background: #f8dd69;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(243, 197, 0, 0.25);
+}
+
+.panel--table .btn--registrar:focus-visible {
+    outline: 3px solid rgba(243, 197, 0, 0.32);
+    outline-offset: 3px;
+}
+
+.panel--table .btn--registrar .btn__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.12);
+    font-weight: 900;
+}
+
+/* ====================================================== */
+/* RESPONSIVE - CONTROLES DE TABLA */
+/* ====================================================== */
+@media (max-width: 768px) {
+    .panel--table .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .panel--table .table-controls__left,
+    .panel--table .table-controls__right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .panel--table .table-controls__input {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .panel--table .table-controls__input {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .panel--table .pager__btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
 }
