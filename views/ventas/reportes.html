@@ -1,0 +1,364 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Reportes de Ventas{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reportes_ventas.css') }}?v=20260613">
+{% endblock %}
+
+{% block content %}
+<main class="page">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Reportes de Ventas</span>
+      </li>
+    </ol>
+  </nav>
+
+  <header class="page-header">
+    <div class="page-header__copy">
+      <h1 class="page-header__title">📊 Reportes de Ventas</h1>
+      <p class="page-header__subtitle">
+        Consulta el historial de ventas y registra nuevas ventas locales
+      </p>
+    </div>
+    <div class="page-header__actions">
+      <button id="btn-venta-local" class="btn btn--yellow" type="button">
+        ➕ Nueva Venta Local
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="reportes">📊 Reportes</button>
+    <button class="tab-btn" data-tab="ventas-local">🏪 Ventas Locales</button>
+  </div>
+
+  <!-- ==================== TAB REPORTES ==================== -->
+  <div id="reportes-tab" class="tab-content">
+    <div class="reportes-container card">
+      <!-- Filtros -->
+      <div class="filters-panel__section">
+        <h3 class="filters-panel__title">🔍 Filtros de búsqueda</h3>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">🔎 Búsqueda</label>
+            <input
+              type="text"
+              id="reporte-busqueda"
+              class="field__input"
+              placeholder="Factura, cliente..."
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label">📌 Estado</label>
+            <select id="reporte-estado" class="field__input">
+              <option value="">Todos</option>
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="aprobado">✅ Aprobado</option>
+              <option value="rechazado">❌ Rechazado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">💳 Método de pago</label>
+            <select id="reporte-metodo" class="field__input">
+              <option value="">Todos</option>
+              <option value="pago_movil">📱 Pago Móvil</option>
+              <option value="zelle">🏦 Zelle</option>
+              <option value="binance">₿ Binance</option>
+              <option value="efectivo_usd">💵 Efectivo USD</option>
+              <option value="efectivo_bs">💵 Efectivo Bs</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label">💰 Moneda</label>
+            <select id="reporte-moneda" class="field__input">
+              <option value="">Todas</option>
+              <option value="USD">💵 USD</option>
+              <option value="VES">🇻🇪 VES</option>
+              <option value="USDT">₿ USDT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">📅 Fecha desde</label>
+            <input type="date" id="reporte-fecha-desde" class="field__input" />
+          </div>
+
+          <div class="field">
+            <label class="field__label">📅 Fecha hasta</label>
+            <input type="date" id="reporte-fecha-hasta" class="field__input" />
+          </div>
+        </div>
+
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">💰 Monto mínimo</label>
+            <input
+              type="number"
+              id="reporte-monto-min"
+              step="0.01"
+              min="0"
+              class="field__input"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label">💰 Monto máximo</label>
+            <input
+              type="number"
+              id="reporte-monto-max"
+              step="0.01"
+              min="0"
+              class="field__input"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        <div class="filters-panel__actions">
+          <button id="btn-generar-reporte" class="btn btn--yellow">📊 Generar reporte</button>
+          <button id="btn-limpiar-filtros" class="btn btn--ghost">🗑 Limpiar filtros</button>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div id="reporte-resumen" class="filters-panel__section" style="display: none;">
+        <h3 class="filters-panel__title">📈 Resumen</h3>
+        <div class="stats-grid">
+          <div class="stat-card stat-card--total">
+            <div class="stat-card__label">Total transacciones</div>
+            <div class="stat-card__value" id="reporte-total">0</div>
+          </div>
+          <div class="stat-card stat-card--monto">
+            <div class="stat-card__label">Monto total</div>
+            <div class="stat-card__value" id="reporte-total-monto">$0.00</div>
+          </div>
+          <div class="stat-card stat-card--pendiente">
+            <div class="stat-card__label">Pendientes</div>
+            <div class="stat-card__value" id="reporte-pendientes">0</div>
+          </div>
+          <div class="stat-card stat-card--aprobado">
+            <div class="stat-card__label">Aprobados</div>
+            <div class="stat-card__value" id="reporte-aprobados">0</div>
+          </div>
+          <div class="stat-card stat-card--rechazado">
+            <div class="stat-card__label">Rechazados</div>
+            <div class="stat-card__value" id="reporte-rechazados">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div id="reporte-preview" class="filters-panel__section" style="display: none;">
+        <h3 class="filters-panel__title">📋 Resultados</h3>
+        <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Factura</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Método</th>
+                <th>Referencia</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="reporte-tabla">
+              <tr>
+                <td colspan="8" class="table__empty">
+                  Selecciona filtros y genera un reporte
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Exportar -->
+      <div class="filters-panel__section" id="reporte-export" style="display: none;">
+        <div class="filters-panel__actions">
+          <button id="btn-exportar-excel" class="btn btn--yellow">📊 Exportar Excel</button>
+          <button id="btn-exportar-pdf" class="btn btn--yellow">📄 Exportar PDF</button>
+          <button id="btn-imprimir" class="btn btn--ghost">🖨 Imprimir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB VENTAS LOCALES ==================== -->
+  <div id="ventas-local-tab" class="tab-content is-hidden">
+    <div class="card">
+      <h3 class="card__title">🏪 Ventas Locales Registradas</h3>
+      <p style="color: #666; margin-bottom: 1rem;">
+        Historial de ventas realizadas directamente en tienda física.
+      </p>
+
+      <div class="filters-panel__section">
+        <div class="filters-panel__row">
+          <div class="field">
+            <label class="field__label">🔎 Buscar</label>
+            <input
+              type="text"
+              id="venta-local-busqueda"
+              class="field__input"
+              placeholder="Factura o cliente..."
+            />
+          </div>
+          <div class="field">
+            <label class="field__label">📅 Fecha</label>
+            <input type="date" id="venta-local-fecha" class="field__input" />
+          </div>
+        </div>
+        <div class="filters-panel__actions">
+          <button id="btn-buscar-ventas-locales" class="btn btn--yellow">🔍 Buscar</button>
+          <button id="btn-limpiar-filtros-locales" class="btn btn--ghost">🗑 Limpiar</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Factura</th>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th>Método</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="ventas-locales-tabla">
+            <tr>
+              <td colspan="7" class="table__empty">Cargando ventas locales...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ==================== MODAL NUEVA VENTA LOCAL ==================== -->
+<div id="venta-local-modal" class="modal is-hidden">
+  <div class="modal__backdrop" data-modal-close="true"></div>
+  <div class="modal__panel card venta-local-panel">
+    <div class="cart-header">
+      <h3 class="card__title">🛒 Nueva Venta Local</h3>
+      <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
+    </div>
+
+    <form id="form-venta-local">
+      <div class="filters-panel__row">
+        <div class="field">
+          <label class="field__label">👤 Cliente</label>
+          <input
+            type="text"
+            id="cliente-id"
+            class="field__input"
+            list="clientes-list"
+            placeholder="ID o nombre del cliente"
+            autocomplete="off"
+          />
+          <datalist id="clientes-list"></datalist>
+          <small class="field-hint">Escribe el ID o nombre del cliente</small>
+        </div>
+
+        <div class="field">
+          <label class="field__label">💳 Método de pago</label>
+          <select id="metodo-local" class="field__input">
+            <option value="">-- Selecciona --</option>
+            <option value="pago_movil">📱 Pago Móvil (Bs)</option>
+            <option value="zelle">🏦 Zelle (USD)</option>
+            <option value="binance">₿ Binance (USDT)</option>
+            <option value="efectivo_bs">💵 Efectivo (Bs)</option>
+            <option value="efectivo_usd">💵 Efectivo (USD)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filters-panel__row">
+        <div class="field">
+          <label class="field__label">📦 Producto</label>
+          <select id="producto-select" class="field__input">
+            <option value="">-- Selecciona --</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label">🔢 Cantidad</label>
+          <input type="number" id="cantidad-local" class="field__input" value="1" min="1" />
+        </div>
+      </div>
+
+      <div class="filters-panel__actions">
+        <button type="button" id="agregar-producto-local" class="btn btn--yellow">➕ Agregar producto</button>
+      </div>
+
+      <div class="filters-panel__section">
+        <h4>Productos agregados</h4>
+        <div id="items-local-list" class="items-local"></div>
+      </div>
+
+      <div class="filters-panel__actions">
+        <button type="button" class="btn btn--ghost" data-modal-close="true">Cancelar</button>
+        <button type="submit" class="btn btn--yellow">✅ Registrar Venta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL DETALLE VENTA ==================== -->
+<div id="modal-detalle-venta" class="ui-modal" data-modal hidden aria-hidden="true">
+  <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="detalle-venta-title">
+    <div class="ui-modal__header">
+      <h3 id="detalle-venta-title" class="ui-modal__title">Detalle de Venta</h3>
+      <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+    </div>
+    <div class="ui-modal__body">
+      <div id="detalle-venta-info" class="detail-info" style="margin-bottom: 1rem;"></div>
+      <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
+        <table class="table" style="min-width: 600px;">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Marca</th>
+              <th>Clase</th>
+              <th>Cantidad</th>
+              <th>Precio Unitario</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="detalle-venta-productos"></tbody>
+          <tfoot>
+            <tr id="detalle-venta-total">
+              <td colspan="5" style="text-align: right; font-weight: bold;">Total:</td>
+              <td id="detalle-venta-total-amount" style="font-weight: bold;"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/reportes_ventas.js') }}"></script>
+{% endblock %}
