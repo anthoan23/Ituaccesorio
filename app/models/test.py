@@ -97,11 +97,11 @@ class Tests():
             cursor.close()
             db.close()
     
-   
+    """ EDUIN NO TOQUES MI CODIGOOOOOOOOOOOO"""
     def registrar_revision_test(self) -> str:
         
-        id_orden = self.ID_orden.strip() if self.ID_orden else ""
-        id_empleado = self.ID_empleado.strip() if self.ID_empleado else ""
+        id_orden = self.ID_orden
+        id_empleado = self.ID_empleado
 
         # Validaciones previas básicas
         if not id_orden or len(id_orden) > 10:

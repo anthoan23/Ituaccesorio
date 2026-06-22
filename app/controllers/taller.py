@@ -102,7 +102,7 @@ def consultar_test():
 
 @taller_blueprint.route("/api/taller/guardar-revision", methods=["POST"])
 @jwt_required
-@tiene_permiso('Taller', 'registrar')
+@tiene_permiso('Taller', 'editar')
 def guardar_revision_tecnica():
     id_orden = request.json.get("id_orden")
     id_empleado = 32014004

@@ -7,7 +7,6 @@ head_extra %}
 />
 {% endblock %} {% block content %}
 <main class="page">
-  <!-- Breadcrumb -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -19,22 +18,12 @@ head_extra %}
         >
           Taller
         </button>
-        <span
-          class="breadcrumb__separator"
-          id="breadcrumb-separator"
-          style="display: none"
-          >/</span
-        >
-        <span
-          class="breadcrumb__section"
-          id="breadcrumb-section"
-          style="display: none"
-        ></span>
+        <span class="breadcrumb__separator" id="breadcrumb-separator">/</span>
+        <span class="breadcrumb__section" id="breadcrumb-section"></span>
       </li>
     </ol>
   </nav>
 
-  <!-- CSRF Token -->
   <input
     type="hidden"
     id="csrf-token"
@@ -42,7 +31,6 @@ head_extra %}
     value="{{ csrf_token() }}"
   />
 
-  <!-- Header Hero -->
   <div class="taller-top-grid">
     <header class="taller-hero">
       <h1 class="taller-hero__title">Taller</h1>
@@ -52,9 +40,6 @@ head_extra %}
     </header>
   </div>
 
-  <!-- ============================================ -->
-  <!-- VISTA 1: ÓRDENES DE SERVICIO -->
-  <!-- ============================================ -->
   <section class="content vista-1" aria-label="Ordenes de servicio">
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
       <button
@@ -93,9 +78,6 @@ head_extra %}
     </article>
   </section>
 
-  <!-- ============================================ -->
-  <!-- VISTA 2: DETALLE DE LA ORDEN -->
-  <!-- ============================================ -->
   <section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
       <button
@@ -130,21 +112,15 @@ head_extra %}
       </div>
 
       <div class="device-detail" id="detalle-dispositivo">
-        <!-- Información de la orden -->
         <div id="order-info" class="device-detail__grid">
           <p class="device-detail__empty">
             Todavía no has seleccionado ninguna orden.
           </p>
         </div>
 
-        <!-- Fotos del dispositivo -->
-        <div
-          id="order-photos"
-          class="device-photos-wrap"
-          aria-live="polite"
-        ></div>
+        <div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
 
-        <div class="device-detail__actions" style="margin-top: 1rem">
+        <div class="device-detail__actions">
           <button
             type="button"
             class="form-btn form-btn--primary"
@@ -154,18 +130,13 @@ head_extra %}
           </button>
         </div>
 
-        <!-- Tests realizados -->
         <div id="order-tests" class="device-tests"></div>
 
-        <!-- Personas asignadas -->
         <div id="order-people" class="device-people" aria-live="polite"></div>
       </div>
     </article>
   </section>
 
-  <!-- ============================================ -->
-  <!-- VISTA 3: FORMULARIO DE REVISIÓN TÉCNICA -->
-  <!-- ============================================ -->
   <section class="content vista-3" aria-label="Formulario de revisión" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
       <button
@@ -217,11 +188,9 @@ head_extra %}
         />
 
         <div class="service-form__grid">
-          <!-- Componentes de prueba (se cargan dinámicamente con JS) -->
           <div class="test-options-grid" id="test-componentes-grid"></div>
 
-          <!-- Observaciones -->
-          <label class="field field--full" style="margin-top: 1rem">
+          <label class="field field--full">
             <span>Observaciones</span>
             <textarea
               name="observaciones"
@@ -250,9 +219,6 @@ head_extra %}
     </article>
   </section>
 
-  <!-- ============================================ -->
-  <!-- VISTA 4: FORMULARIO DE REPARACIÓN (ACTUALIZADA) -->
-  <!-- ============================================ -->
   <section class="content vista-4" aria-label="Reparación" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
       <button
@@ -288,10 +254,7 @@ head_extra %}
         </p>
       </div>
 
-      <div
-        class="device-detail__actions"
-        style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap"
-      >
+      <div class="device-detail__actions">
         <button
           type="button"
           class="form-btn form-btn--primary"
@@ -303,48 +266,25 @@ head_extra %}
           type="button"
           class="form-btn form-btn--ghost"
           id="btn-limpiar-repuestos"
-          style="display: none"
         >
           🗑️ Limpiar lista
         </button>
       </div>
 
-      <!-- Repuestos usados - SECCIÓN MEJORADA -->
       <div class="repair-used-parts">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-          "
-        >
-          <h3 class="card__subtitle" style="margin: 0">
-            🔧 Repuestos usados en esta reparación
-          </h3>
-          <span
-            id="repuestos-total-count"
-            class="estado-badge estado-default"
-            style="background: #6c757d; font-size: 0.7rem"
-            >0 unidades</span
-          >
+        <div>
+          <h3 class="card__subtitle">🔧 Repuestos usados en esta reparación</h3>
+          <span id="repuestos-total-count" class="estado-badge estado-default">0 unidades</span>
         </div>
         <div id="repuestos-usados-list" class="repuestos-list-container">
-          <div
-            class="device-detail__empty"
-            style="text-align: center; padding: 2rem"
-          >
+          <div class="device-detail__empty">
             📦 No hay repuestos agregados aún.<br />
-            <small
-              >Haz clic en "Inventario de repuestos" para agregar
-              productos.</small
-            >
+            <small>Haz clic en "Inventario de repuestos" para agregar productos.</small>
           </div>
         </div>
       </div>
 
-      <!-- Descripción de la reparación -->
-      <label class="field field--full" style="margin-top: 1rem">
+      <label class="field field--full">
         <span>Descripción de la reparación</span>
         <textarea
           id="reparacion-textarea"
@@ -362,7 +302,7 @@ head_extra %}
         </small>
       </label>
 
-      <div class="service-form__actions" style="margin-top: 1rem">
+      <div class="service-form__actions">
         <button
           type="button"
           class="form-btn form-btn--ghost"
@@ -381,9 +321,6 @@ head_extra %}
     </article>
   </section>
 
-  <!-- ============================================ -->
-  <!-- VISTA 5: REPARACIONES ASIGNADAS -->
-  <!-- ============================================ -->
   <section class="content vista-5" aria-label="Reparaciones asignadas" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
       <button
@@ -423,25 +360,13 @@ head_extra %}
   </section>
 </main>
 
-<!-- ============================================ -->
-<!-- MODALES -->
-<!-- ============================================ -->
-
-<!-- Modal para ver detalle de orden antes de tomarla -->
 {% call modal('modal-preview-orden', 'Detalle de la orden', 'lg') %}
 <div id="modal-preview-body">
   <div id="modal-order-info" class="device-detail__grid">
     <p class="device-detail__empty">Cargando información...</p>
   </div>
-  <div
-    id="modal-order-tests"
-    class="device-tests"
-    style="margin-top: 1rem"
-  ></div>
-  <div
-    class="service-form__actions"
-    style="margin-top: 1.5rem; justify-content: center"
-  >
+  <div id="modal-order-tests" class="device-tests"></div>
+  <div class="service-form__actions">
     <button type="button" class="form-btn form-btn--ghost" data-close-modal>
       Cancelar
     </button>
@@ -456,42 +381,31 @@ head_extra %}
 </div>
 {% endcall %}
 
-<!-- Modal de inventario de repuestos (MEJORADO) -->
-{% call modal('modal-inventario-repuestos', '📦 Inventario de repuestos', 'lg')
-%}
+{% call modal('modal-inventario-repuestos', '📦 Inventario de repuestos', 'lg') %}
 <div id="modal-inventario-body">
-  <div class="table-wrap" style="max-height: 450px; overflow-y: auto">
-    <table
-      class="table"
-      id="tabla-inventario-repuestos"
-      style="min-width: 600px"
-    >
+  <div class="table-wrap">
+    <table class="table" id="tabla-inventario-repuestos">
       <thead>
         <tr>
-          <th style="width: 15%">ID</th>
-          <th style="width: 35%">Producto</th>
-          <th style="width: 15%">Marca</th>
-          <th style="width: 15%">Clase</th>
-          <th style="width: 10%">Stock</th>
+          <th>ID</th>
+          <th>Producto</th>
+          <th>Marca</th>
+          <th>Clase</th>
+          <th>Stock</th>
         </tr>
       </thead>
       <tbody id="tabla-inventario-body">
         <tr>
-          <td colspan="6" style="text-align: center; padding: 2rem">
+          <td colspan="5">
             <div>🔄 Cargando inventario...</div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div
-    class="service-form__actions"
-    style="margin-top: 1rem; justify-content: space-between"
-  >
+  <div class="service-form__actions">
     <div>
-      <small class="field-hint"
-        >💡 Haz clic en "Agregar" para añadir repuestos a la lista</small
-      >
+      <small class="field-hint">💡 Haz clic en "Agregar" para añadir repuestos a la lista</small>
     </div>
     <div>
       <button type="button" class="form-btn form-btn--ghost" data-close-modal>
@@ -502,35 +416,31 @@ head_extra %}
 </div>
 {% endcall %}
 
-<!-- Modal para ver detalles del test -->
 {% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
 <div id="modal-test-body" class="test-modal-grid"></div>
 {% endcall %}
 
-<!-- Modal para registrar fotos -->
 {% call modal('modal-fotos-registrar', 'Registrar fotos del dispositivo', 'lg') %}
-    <div id="modal-fotos-body">
-        <div class="photo-dropzone" id="photo-dropzone">
-            <span class="photo-dropzone__title">📸 Arrastra o haz clic</span>
-            <span class="photo-dropzone__subtitle">Sube fotos del dispositivo (JPG, PNG)</span>
-            <input type="file" id="fotos-input" multiple accept="image/jpeg,image/png,image/jpg">
-        </div>
-        <div id="fotos-preview" class="device-photos" style="margin-top: 1rem;"></div>
-        <div class="service-form__actions" style="margin-top: 1rem;">
-            <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
-            <button type="button" id="btn-subir-fotos" class="form-btn form-btn--primary">Subir fotos</button>
-        </div>
-    </div>
+<div id="modal-fotos-body">
+  <div class="photo-dropzone" id="photo-dropzone">
+    <span class="photo-dropzone__title">📸 Arrastra o haz clic</span>
+    <span class="photo-dropzone__subtitle">Sube fotos del dispositivo (JPG, PNG)</span>
+    <input type="file" id="fotos-input" multiple accept="image/jpeg,image/png,image/jpg">
+  </div>
+  <div id="fotos-preview" class="device-photos"></div>
+  <div class="service-form__actions">
+    <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
+    <button type="button" id="btn-subir-fotos" class="form-btn form-btn--primary">Subir fotos</button>
+  </div>
+</div>
 {% endcall %}
 
-<!-- Modal para ver foto ampliada -->
 {% call modal('modal-photo-view', 'Vista previa', 'lg') %}
-<div style="text-align: center">
+<div>
   <img
     id="modal-photo-view-img"
     src=""
     alt="Vista previa"
-    style="max-width: 100%; max-height: 80vh"
   />
 </div>
 {% endcall %} {% block scripts %}

@@ -6,7 +6,7 @@
 // --------------------------------
 // 1. CONFIGURACIÓN GLOBAL
 // --------------------------------
-const CONFIG = {
+const TALLER_CONFIG = {
     API: {
         ORDENES: '/api/taller/ordenes',
         REPARACIONES_ASIGNADAS: '/api/taller/reparaciones-asignadas',
@@ -35,7 +35,45 @@ const CONFIG = {
 };
 
 // --------------------------------
-// 2. UTILIDADES
+// 2. ICONOS SVG - Estilo proveedores
+// --------------------------------
+function iconEye() {
+    return `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.7a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" fill="currentColor"/>
+        </svg>`;
+}
+
+function iconPencil() {
+    return `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08ZM20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="currentColor"/>
+        </svg>`;
+}
+
+function iconTrash() {
+    return `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" fill="currentColor"/>
+        </svg>`;
+}
+
+function iconCheck() {
+    return `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
+        </svg>`;
+}
+
+function iconPlay() {
+    return `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M8 5v14l11-7L8 5z" fill="currentColor"/>
+        </svg>`;
+}
+
+// --------------------------------
+// 3. UTILIDADES
 // --------------------------------
 const Utils = {
     getCsrfToken() {
@@ -90,9 +128,10 @@ const Utils = {
     },
 
     escapeHtml(str) {
-        if (!str) return '';
+        if (str === undefined || str === null) return '';
+        const text = String(str);  // Convierte números a string
         const div = document.createElement('div');
-        div.textContent = str;
+        div.textContent = text;
         return div.innerHTML;
     },
 
@@ -100,7 +139,7 @@ const Utils = {
         if (!message) return;
         console[isError ? 'error' : 'log'](message);
         if (isError) {
-            alert(`❌ Error: ${message}`);
+            console.log(`❌ Error: ${message}`);
         } else {
             console.log(`✅ ${message}`);
         }
@@ -118,6 +157,8 @@ const Utils = {
     },
 
     getEstadoClase(estado) {
+        // ✅ Convertir a string y luego a minúsculas
+        const estadoStr = String(estado || '').toLowerCase().trim();
         const estados = {
             'pendiente': 'estado-pendiente',
             'en revisión': 'estado-revision',
@@ -126,7 +167,7 @@ const Utils = {
             'entregado': 'estado-entregado',
             'asignada': 'estado-asignada'
         };
-        return estados[String(estado || '').toLowerCase()] || 'estado-default';
+        return estados[estadoStr] || 'estado-default';
     },
 
     obtenerIdEmpleadoActual() {
@@ -152,24 +193,24 @@ const Utils = {
 };
 
 // --------------------------------
-// 3. GESTOR DE VISTAS
+// 4. GESTOR DE VISTAS
 // --------------------------------
 const ViewManager = {
-    currentView: CONFIG.VISTAS.ORDENES,
+    currentView: TALLER_CONFIG.VISTAS.ORDENES,
     
     labels: {
-        [CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
-        [CONFIG.VISTAS.DETALLE]: 'Información de la orden',
-        [CONFIG.VISTAS.REVISION]: 'Revisión',
-        [CONFIG.VISTAS.REPARACION]: 'Reparación',
-        [CONFIG.VISTAS.ASIGNADAS]: 'Reparaciones asignadas'
+        [TALLER_CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
+        [TALLER_CONFIG.VISTAS.DETALLE]: 'Información de la orden',
+        [TALLER_CONFIG.VISTAS.REVISION]: 'Revisión',
+        [TALLER_CONFIG.VISTAS.REPARACION]: 'Reparación',
+        [TALLER_CONFIG.VISTAS.ASIGNADAS]: 'Reparaciones asignadas'
     },
 
     activate(targetClass) {
         console.log('Activando vista:', targetClass);
         
-        const showBreadcrumb = [CONFIG.VISTAS.DETALLE, CONFIG.VISTAS.REVISION, 
-                                 CONFIG.VISTAS.REPARACION, CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
+        const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION, 
+                                 TALLER_CONFIG.VISTAS.REPARACION, TALLER_CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
         
         document.querySelectorAll('.content').forEach(panel => {
             panel.hidden = !panel.classList.contains(targetClass);
@@ -191,18 +232,18 @@ const ViewManager = {
         
         this.currentView = targetClass;
         
-        if (targetClass === CONFIG.VISTAS.ORDENES) {
+        if (targetClass === TALLER_CONFIG.VISTAS.ORDENES) {
             OrdenesService.cargar();
-        } else if (targetClass === CONFIG.VISTAS.ASIGNADAS) {
+        } else if (targetClass === TALLER_CONFIG.VISTAS.ASIGNADAS) {
             ReparacionesService.cargarAsignadas();
-        } else if (targetClass === CONFIG.VISTAS.REVISION) {
+        } else if (targetClass === TALLER_CONFIG.VISTAS.REVISION) {
             const ordenActual = OrdenesService.obtenerOrdenActual();
             if (ordenActual) {
                 document.getElementById('orden-id').textContent = ordenActual;
                 document.getElementById('id_orden_servicio_revision').value = ordenActual;
             }
             RevisionService.iniciar();
-        } else if (targetClass === CONFIG.VISTAS.REPARACION) {
+        } else if (targetClass === TALLER_CONFIG.VISTAS.REPARACION) {
             const ordenActual = OrdenesService.obtenerOrdenActual();
             if (ordenActual) {
                 document.getElementById('reparacion-orden-id').textContent = ordenActual;
@@ -218,12 +259,12 @@ const ViewManager = {
                 if (target) this.activate(target);
             });
         });
-        this.activate(CONFIG.VISTAS.ORDENES);
+        this.activate(TALLER_CONFIG.VISTAS.ORDENES);
     }
 };
 
 // --------------------------------
-// 4. SERVICIO DE ÓRDENES
+// 5. SERVICIO DE ÓRDENES
 // --------------------------------
 const OrdenesService = {
     ordenActualId: null,
@@ -233,7 +274,7 @@ const OrdenesService = {
         if (!tbody) return;
 
         try {
-            const data = await Utils.fetchJson(CONFIG.API.ORDENES, { method: 'GET' });
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.ORDENES, { method: 'GET' });
             const ordenes = Array.isArray(data) ? data : data?.ordenes || data?.data || [];
             this.renderizar(ordenes, tbody);
         } catch (error) {
@@ -258,8 +299,8 @@ const OrdenesService = {
                 <td data-label="Fecha ingreso">${Utils.formatDate(orden.fecha_e)}</td>
                 <td class="table__actions" data-label="Acciones">
                     <div class="row-actions">
-                        <button type="button" class="table-action" data-accion="ver-orden" data-id="${orden.id_orden}">Ver orden</button>
-                        <button type="button" class="table-action table-action--accent" data-accion="tomar-orden" data-id="${orden.id_orden}">Tomar orden</button>
+                        <button class="icon-action" type="button" data-accion="ver-orden" data-id="${orden.id_orden}" aria-label="Ver orden">${iconEye()}</button>
+                        <button class="icon-action icon-action--accent" type="button" data-accion="tomar-orden" data-id="${orden.id_orden}" aria-label="Tomar orden">${iconCheck()}</button>
                     </div>
                 </td>
             </tr>
@@ -285,7 +326,7 @@ const OrdenesService = {
         }
 
         try {
-            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ id_orden: idOrden })
             });
@@ -343,7 +384,7 @@ const OrdenesService = {
                                 <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
                                 <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="table-action" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}">Ver detalles</button>
+                                    <button class="icon-action" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${iconEye()}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -371,7 +412,7 @@ const OrdenesService = {
         const subtitle = document.getElementById('detalle-orden-subtitle');
         
         try {
-            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ id_orden: idOrden })
             });
@@ -393,7 +434,7 @@ const OrdenesService = {
 
             this.actualizarTitulosVistas(idOrden, orden?.Modelo);
             
-            ViewManager.activate(CONFIG.VISTAS.DETALLE);
+            ViewManager.activate(TALLER_CONFIG.VISTAS.DETALLE);
         } catch (error) {
             console.error('Error al consultar orden:', error);
         }
@@ -437,7 +478,7 @@ const OrdenesService = {
                                 <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
                                 <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="table-action" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}">Ver detalles</button>
+                                    <button class="icon-action" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${iconEye()}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -458,7 +499,7 @@ const OrdenesService = {
         btn.style.cssText = 'margin-top: 1rem; width: 100%;';
         btn.innerHTML = '🔧 Realizar revisión técnica';
         btn.addEventListener('click', () => {
-            ViewManager.activate(CONFIG.VISTAS.REVISION);
+            ViewManager.activate(TALLER_CONFIG.VISTAS.REVISION);
         });
         
         container.appendChild(btn);
@@ -485,7 +526,7 @@ const OrdenesService = {
         try {
             const idEmpleado = Utils.obtenerIdEmpleadoActual();
             
-            await Utils.fetchJson(CONFIG.API.ASIGNAR_ORDEN, {
+            await Utils.fetchJson(TALLER_CONFIG.API.ASIGNAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
                     id_orden: idOrden,
@@ -499,7 +540,7 @@ const OrdenesService = {
             
             await this.cargar();
             
-            if (ViewManager.currentView === CONFIG.VISTAS.ASIGNADAS) {
+            if (ViewManager.currentView === TALLER_CONFIG.VISTAS.ASIGNADAS) {
                 await ReparacionesService.cargarAsignadas();
             }
             
@@ -512,7 +553,7 @@ const OrdenesService = {
 };
 
 // --------------------------------
-// 5. SERVICIO DE REVISIONES
+// 6. SERVICIO DE REVISIONES
 // --------------------------------
 const RevisionService = {
     iniciar() {
@@ -548,7 +589,7 @@ const RevisionService = {
 
     async calcularProximoNumeroTest(ordenId) {
         try {
-            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_ORDEN, {
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ id_orden: ordenId })
             });
@@ -573,7 +614,7 @@ const RevisionService = {
 
         console.log('Cargando componentes de prueba...');
         
-        container.innerHTML = CONFIG.COMPONENTES_TEST.map(comp => {
+        container.innerHTML = TALLER_CONFIG.COMPONENTES_TEST.map(comp => {
             const nombreLegible = comp.replace(/_/g, ' ')
                 .replace('Btn', 'Botón')
                 .replace('Cam', 'Cámara')
@@ -627,7 +668,7 @@ const RevisionService = {
         }
 
         try {
-            await Utils.fetchJson(CONFIG.API.GUARDAR_REVISION, {
+            await Utils.fetchJson(TALLER_CONFIG.API.GUARDAR_REVISION, {
                 method: 'POST',
                 body: JSON.stringify({
                     id_orden: idOrden,
@@ -640,7 +681,7 @@ const RevisionService = {
             document.getElementById('form-revision-tecnica')?.reset();
             
             setTimeout(() => {
-                ViewManager.activate(CONFIG.VISTAS.DETALLE);
+                ViewManager.activate(TALLER_CONFIG.VISTAS.DETALLE);
                 OrdenesService.verDetalle(idOrden);
             }, 1500);
         } catch (error) {
@@ -660,7 +701,7 @@ const RevisionService = {
         }
 
         try {
-            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_TEST, {
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_TEST, {
                 method: 'POST',
                 body: JSON.stringify({ id_orden: idOrden, numero_test: numeroTest })
             });
@@ -686,7 +727,7 @@ const RevisionService = {
 };
 
 // --------------------------------
-// 6. SERVICIO DE REPUESTOS (MODIFICADO - CLICK EN FILA)
+// 7. SERVICIO DE REPUESTOS (MODIFICADO - CLICK EN FILA)
 // --------------------------------
 const RepuestosService = {
     repuestosSeleccionados: [],
@@ -699,14 +740,12 @@ const RepuestosService = {
         
         const tablaContainer = document.getElementById('tabla-inventario-repuestos');
         if (tablaContainer) {
-            // 🔧 IMPORTANTE: Remover el event listener anterior ANTES de agregar uno nuevo
             tablaContainer.removeEventListener('click', this.handleInventarioClick);
-            // Agregar el nuevo event listener
             tablaContainer.addEventListener('click', this.handleInventarioClick.bind(this));
         }
 
         try {
-            const data = await Utils.fetchJson(CONFIG.API.CONSULTAR_INVENTARIO, { method: 'GET' });
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_INVENTARIO, { method: 'GET' });
             console.log('Datos del inventario (listar_inventario_taller):', data);
             
             const inventario = Array.isArray(data) ? data : data?.inventario || data?.data || [];
@@ -718,18 +757,15 @@ const RepuestosService = {
     },
 
     handleInventarioClick(event) {
-        // Buscar la fila (tr) más cercana al elemento clickeado
         const row = event.target.closest('tr');
         if (!row) return;
         
-        // Obtener los datos de la fila
         const idInventario = row.getAttribute('data-id');
         const nombreProducto = row.getAttribute('data-nombre');
         const existencia = parseInt(row.getAttribute('data-existencia') || '0');
         
         if (!idInventario || !nombreProducto) return;
         
-        // Prevenir ejecución múltiple
         if (event.target.hasAttribute('data-processing')) return;
         event.target.setAttribute('data-processing', 'true');
         
@@ -764,7 +800,6 @@ const RepuestosService = {
             const existencia = item.Existencia || 0;
             const costoVenta = item.Costo_venta || 0;
             
-            // Clase CSS para la fila según disponibilidad de stock
             const rowClass = existencia > 0 ? 'inventario-row-clickable' : 'inventario-row-sinstock';
             const cursorStyle = existencia > 0 ? 'pointer' : 'not-allowed';
             
@@ -787,7 +822,6 @@ const RepuestosService = {
             `;
         }).join('');
         
-        // Agregar estilos hover para las filas clickeables
         const style = document.createElement('style');
         style.textContent = `
             .inventario-row-clickable:hover {
@@ -914,7 +948,6 @@ const RepuestosService = {
     },
 
     limpiar() {
-        // Eliminado el confirm, ahora limpia directamente
         this.repuestosSeleccionados = [];
         this.renderizarRepuestosUsados();
         this.actualizarContadorTotal();
@@ -927,7 +960,7 @@ const RepuestosService = {
 };
 
 // --------------------------------
-// 7. SERVICIO DE REPARACIONES
+// 8. SERVICIO DE REPARACIONES
 // --------------------------------
 const ReparacionesService = {
     async cargarAsignadas() {
@@ -935,7 +968,7 @@ const ReparacionesService = {
         if (!tbody) return;
 
         try {
-            const data = await Utils.fetchJson(CONFIG.API.REPARACIONES_ASIGNADAS, { 
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.REPARACIONES_ASIGNADAS, { 
                 method: 'POST',
                 body: JSON.stringify({})
             });
@@ -961,9 +994,9 @@ const ReparacionesService = {
                 <td data-label="Fecha ingreso">${Utils.formatDate(rep.fecha_e)}</td>
                 <td class="table__actions" data-label="Acciones">
                     <div class="row-actions">
-                        <button type="button" class="table-action" data-accion="ver" data-id="${rep.id_orden}">Ver detalle</button>
-                        <button type="button" class="table-action" data-accion="iniciar-reparacion" data-id="${rep.id_orden}">Iniciar reparación</button>
-                        <button type="button" class="table-action table-action--danger" data-accion="liberar-orden" data-id="${rep.id_orden}">Liberar orden</button>
+                        <button class="icon-action" type="button" data-accion="ver" data-id="${rep.id_orden}" aria-label="Ver detalle">${iconEye()}</button>
+                        <button class="icon-action icon-action--accent" type="button" data-accion="iniciar-reparacion" data-id="${rep.id_orden}" aria-label="Iniciar reparación">${iconPlay()}</button>
+                        <button class="icon-action icon-action--danger" type="button" data-accion="liberar-orden" data-id="${rep.id_orden}" aria-label="Liberar orden">${iconTrash()}</button>
                     </div>
                 </td>
             </tr>
@@ -990,7 +1023,7 @@ const ReparacionesService = {
         
         setTimeout(() => {
             OrdenesService.verDetalle(ordenId);
-            ViewManager.activate(CONFIG.VISTAS.REPARACION);
+            ViewManager.activate(TALLER_CONFIG.VISTAS.REPARACION);
         }, 500);
     },
 
@@ -998,7 +1031,7 @@ const ReparacionesService = {
         try {
             const idEmpleado = Utils.obtenerIdEmpleadoActual();
             
-            await Utils.fetchJson(CONFIG.API.LIBERAR_ORDEN, {
+            await Utils.fetchJson(TALLER_CONFIG.API.LIBERAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
                     id_orden: idOrden,
@@ -1039,21 +1072,18 @@ const ReparacionesService = {
         try {
             const idEmpleado = Utils.obtenerIdEmpleadoActual();
             
-            // ✅ CORREGIDO: Usar los nombres correctos que espera el backend
             const payload = {
                 id_orden: ordenId,
-                descripcion_reparacion: reparacionTexto,      // ← CORREGIDO
-                repuestos_utilizados: repuestos.map(r => ({   // ← CORREGIDO
+                descripcion_reparacion: reparacionTexto,
+                repuestos_utilizados: repuestos.map(r => ({
                     id_inventario: r.id,
                     cantidad: r.cantidad
                 }))
             };
             
-            // NOTA: No incluyas id_empleado aquí porque el backend lo asigna automáticamente (32014004)
-            
             console.log('Guardando reparación:', payload);
             
-            const response = await Utils.fetchJson(CONFIG.API.GUARDAR_REPARACION, {
+            const response = await Utils.fetchJson(TALLER_CONFIG.API.GUARDAR_REPARACION, {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
@@ -1066,7 +1096,7 @@ const ReparacionesService = {
             await OrdenesService.cargar();
             await this.cargarAsignadas();
             
-            ViewManager.activate(CONFIG.VISTAS.ORDENES);
+            ViewManager.activate(TALLER_CONFIG.VISTAS.ORDENES);
             
         } catch (error) {
             console.error('Error al guardar reparación:', error);
@@ -1076,14 +1106,13 @@ const ReparacionesService = {
 };
 
 // --------------------------------
-// 8. INICIALIZACIÓN Y EVENTOS
+// 9. INICIALIZACIÓN Y EVENTOS
 // --------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     console.log('DOM cargado - Inicializando taller.js');
     
     ViewManager.init();
 
-    // Contador de caracteres para el textarea
     const reparacionTextarea = document.getElementById('reparacion-textarea');
     if (reparacionTextarea) {
         const contadorSpan = document.getElementById('caracteres-contador');
