@@ -1,26 +1,10 @@
 /* ============================================
-   NAVBAR iOS 18 PREMIUM - OPTIMIZADO
+   NAVBAR iOS 18 PREMIUM - UNIFICADO CON THEME.CSS
    ============================================ */
 
-:root {
-    --navbar-yellow: #FFD60A;
-    --navbar-yellow-soft: #FFE17A;
-    --navbar-black: #0A0A0A;
-    --navbar-white: #FFFFFF;
-    --navbar-white-soft: rgba(255, 255, 255, 0.88);
-    --navbar-white-muted: rgba(255, 255, 255, 0.6);
-    --navbar-white-border: rgba(255, 255, 255, 0.08);
-    --navbar-white-bg-soft: rgba(255, 255, 255, 0.06);
-    --navbar-topbar-start: rgba(10, 10, 10, 0.92);
-    --navbar-topbar-end: rgba(10, 10, 10, 0.85);
-    --navbar-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-    --navbar-radius: 16px;
-    --navbar-radius-lg: 20px;
-    --navbar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --sidebar-width-collapsed: 72px;
-    --sidebar-width-expanded: 240px;
-}
-
+/* ============================================ */
+/* BOTONES */
+/* ============================================ */
 .btn {
     appearance: none;
     border: 0;
@@ -41,12 +25,12 @@
 }
 
 .btn:focus-visible {
-    outline: 3px solid var(--navbar-yellow-focus);
+    outline: 3px solid var(--yellow);
     outline-offset: 3px;
 }
 
 .btn--yellow {
-    background: linear-gradient(180deg, var(--navbar-yellow-soft), var(--navbar-yellow));
+    background: linear-gradient(180deg, var(--yellow-soft), var(--yellow));
     color: var(--navbar-black);
     font-weight: 800;
     box-shadow: 0 8px 18px rgba(243, 197, 0, 0.22);
@@ -58,42 +42,29 @@
 }
 
 .btn--ghost {
-    background: #eef0f4;
-    color: var(--ink);
-    border: 1px solid rgba(20, 22, 26, 0.14);
+    background: var(--glass-bg);
+    color: var(--text-strong);
+    border: 1px solid var(--glass-border);
 }
 
 .btn--ghost:hover {
-    background: #eef0f4;
-    color: var(--ink);
-    border: 1px solid rgba(20, 22, 26, 0.14);
+    background: var(--ghost-hover-bg);
 }
 
 /* ============================================ */
-/* FUENTES GLOBALES */
-/* ============================================ */
-.topbar,
-.drawer,
-.user-menu,
-.search-spotlight {
-    font-family: 'SF Pro Display', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* ============================================ */
-/* SIDEBAR (DRAWER) - OPTIMIZADO */
+/* SIDEBAR (DRAWER) - AHORA USA VARIABLES */
 /* ============================================ */
 .drawer {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
-    width: var(--sidebar-width-collapsed);
-    background: radial-gradient(circle at top right, rgba(255, 214, 10, 0.06), transparent 28%),
-                linear-gradient(180deg, #0A0A0A 0%, #101010 100%);
+    width: var(--sidebar-width-collapsed, 72px);
+    background: var(--sidebar-bg, #0A0A0A);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 2px 0 32px rgba(0, 0, 0, 0.3);
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 2px 0 32px var(--sidebar-shadow, rgba(0, 0, 0, 0.3));
+    border-right: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.04));
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 30;
     overflow: hidden;
@@ -102,11 +73,10 @@
     padding: 0.6rem 0.4rem;
     gap: 0.4rem;
     will-change: width;
-    /* Optimización: solo cambia width */
 }
 
 .drawer:hover {
-    width: var(--sidebar-width-expanded);
+    width: var(--sidebar-width-expanded, 240px);
 }
 
 /* ===== DRAWER HEADER ===== */
@@ -116,8 +86,8 @@
     gap: 0.5rem;
     padding: 0.5rem 0.7rem;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--sidebar-header-bg, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--sidebar-header-border, rgba(255, 255, 255, 0.04));
     flex-shrink: 0;
     margin-bottom: 0.3rem;
     overflow: hidden;
@@ -141,7 +111,7 @@
 .drawer__title {
     font-family: "Space Grotesk", sans-serif;
     font-weight: 700;
-    color: #FFFFFF;
+    color: var(--sidebar-text, #FFFFFF);
     font-size: 0.85rem;
     line-height: 1;
     white-space: nowrap;
@@ -169,7 +139,7 @@
     overflow-x: hidden;
     padding-right: 3px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 214, 10, 0.2) transparent;
+    scrollbar-color: var(--sidebar-scrollbar, rgba(255, 214, 10, 0.2)) transparent;
 }
 
 .drawer__nav::-webkit-scrollbar {
@@ -181,7 +151,7 @@
 }
 
 .drawer__nav::-webkit-scrollbar-thumb {
-    background: rgba(255, 214, 10, 0.25);
+    background: var(--sidebar-scrollbar, rgba(255, 214, 10, 0.25));
     border-radius: 999px;
 }
 
@@ -193,7 +163,7 @@
     min-height: 36px;
     padding: 0.4rem 0.6rem;
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--sidebar-link-color, rgba(255, 255, 255, 0.55));
     text-decoration: none;
     font-family: 'SF Pro Display', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 500;
@@ -202,7 +172,6 @@
     border: 0;
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease;
-    /* Solo transiciona lo necesario */
     white-space: nowrap;
     position: relative;
     width: 100%;
@@ -216,7 +185,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--sidebar-icon-color, rgba(255, 255, 255, 0.4));
     transition: color 0.2s ease;
 }
 
@@ -230,6 +199,7 @@
     transition: opacity 0.35s ease;
     font-size: 0.8rem;
     will-change: opacity;
+    white-space: nowrap;
 }
 
 .drawer:hover .drawer__link .drawer__link-text {
@@ -237,27 +207,27 @@
 }
 
 .drawer__link:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #FFFFFF;
+    background: var(--sidebar-link-hover, rgba(255, 255, 255, 0.05));
+    color: var(--sidebar-link-hover-text, #FFFFFF);
 }
 
 .drawer__link:hover .drawer__link-icon {
-    color: #FFFFFF;
+    color: var(--sidebar-link-hover-text, #FFFFFF);
 }
 
 .drawer__link.is-active {
-    background: var(--navbar-yellow);
-    color: #000000;
+    background: var(--yellow);
+    color: var(--navbar-black);
     font-weight: 600;
     box-shadow: 0 4px 16px rgba(255, 214, 10, 0.15);
 }
 
 .drawer__link.is-active .drawer__link-icon {
-    color: #000000;
+    color: var(--navbar-black);
 }
 
 .drawer__link.is-active:hover {
-    background: var(--navbar-yellow-soft);
+    background: var(--yellow-soft);
 }
 
 /* ===== GROUP TOGGLE ===== */
@@ -269,6 +239,7 @@
     justify-content: space-between;
     font: inherit;
     cursor: pointer;
+    background: transparent;
 }
 
 .drawer__group-toggle .drawer__link-text {
@@ -280,7 +251,7 @@
     font-size: 0.55rem;
     line-height: 1;
     transition: transform 0.25s ease, opacity 0.35s ease;
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--sidebar-link-color, rgba(255, 255, 255, 0.2));
     opacity: 0;
     will-change: opacity, transform;
 }
@@ -293,13 +264,17 @@
     transform: rotate(180deg);
 }
 
+.drawer__group-toggle.is-active {
+    color: var(--sidebar-link-hover-text, #FFFFFF);
+}
+
 /* ===== SUBMENU ===== */
 .drawer__submenu {
     display: grid;
     gap: 0.1rem;
     margin-left: 0.4rem;
     padding-left: 0.4rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.04);
+    border-left: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.04));
     overflow: hidden;
 }
 
@@ -308,12 +283,14 @@
 }
 
 .drawer__submenu-link {
+    display: flex;
+    align-items: center;
     min-height: 30px;
     padding: 0.3rem 0.6rem 0.3rem 0.6rem;
     font-size: 0.75rem;
     font-family: 'SF Pro Display', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     background: transparent;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--sidebar-link-color, rgba(255, 255, 255, 0.35));
     border-radius: 8px;
     transition: background 0.2s ease, color 0.2s ease;
     border: 0;
@@ -321,12 +298,14 @@
     width: 100%;
     text-align: left;
     overflow: hidden;
+    text-decoration: none;
 }
 
 .drawer__submenu-link .drawer__link-text {
     opacity: 0;
     transition: opacity 0.35s ease;
     will-change: opacity;
+    white-space: nowrap;
 }
 
 .drawer:hover .drawer__submenu-link .drawer__link-text {
@@ -334,20 +313,20 @@
 }
 
 .drawer__submenu-link:hover {
-    background: rgba(255, 255, 255, 0.04);
-    color: #FFFFFF;
+    background: var(--sidebar-link-hover, rgba(255, 255, 255, 0.04));
+    color: var(--sidebar-link-hover-text, #FFFFFF);
 }
 
 .drawer__submenu-link.is-active {
     background: rgba(255, 214, 10, 0.06);
-    color: #FFFFFF;
-    box-shadow: inset 2px 0 0 var(--navbar-yellow);
+    color: var(--sidebar-link-hover-text, #FFFFFF);
+    box-shadow: inset 2px 0 0 var(--yellow);
 }
 
 /* ===== DRAWER FOOTER ===== */
 .drawer__footer {
     padding-top: 0.4rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.04));
     flex-shrink: 0;
 }
 
@@ -355,9 +334,9 @@
     width: 100%;
     padding: 0.4rem 0.6rem;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.03);
-    color: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    background: var(--sidebar-header-bg, rgba(255, 255, 255, 0.03));
+    color: var(--sidebar-link-color, rgba(255, 255, 255, 0.35));
+    border: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.03));
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
@@ -374,6 +353,7 @@
     opacity: 0;
     transition: opacity 0.35s ease;
     will-change: opacity;
+    white-space: nowrap;
 }
 
 .drawer:hover .drawer__footer .drawer__logout .drawer__link-text {
@@ -381,12 +361,26 @@
 }
 
 .drawer__footer .drawer__logout:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #FFFFFF;
+    background: var(--sidebar-link-hover, rgba(255, 255, 255, 0.06));
+    color: var(--sidebar-link-hover-text, #FFFFFF);
+}
+
+.drawer__footer .drawer__logout .drawer__link-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sidebar-icon-color, rgba(255, 255, 255, 0.4));
+}
+
+.drawer__footer .drawer__logout:hover .drawer__link-icon {
+    color: var(--sidebar-link-hover-text, #FFFFFF);
 }
 
 /* ============================================ */
-/* TOPBAR - OPTIMIZADO */
+/* TOPBAR */
 /* ============================================ */
 .topbar {
     position: sticky;
@@ -397,11 +391,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 1.5rem;
-    margin-left: var(--sidebar-width-collapsed);
-    background: linear-gradient(180deg, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.85));
+    margin-left: var(--sidebar-width-collapsed, 72px);
+    background: var(--navbar-topbar-start);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--navbar-white-border);
     transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'SF Pro Display', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     will-change: margin-left;
@@ -409,36 +403,34 @@
 
 .drawer:hover ~ .topbar,
 .drawer:hover + .topbar {
-    margin-left: var(--sidebar-width-expanded);
+    margin-left: var(--sidebar-width-expanded, 240px);
 }
 
 /* ============================================ */
-/* MAIN CONTENT - OPTIMIZADO (sin reflow) */
+/* MAIN CONTENT */
 /* ============================================ */
 main {
-    margin-left: var(--sidebar-width-collapsed);
+    margin-left: var(--sidebar-width-collapsed, 72px);
     transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     min-height: 100vh;
-    background: #0A0A0A;
+    background: var(--bg-primary);
     padding: 0;
     margin-top: 0;
     overflow-x: hidden;
     width: auto;
-    /* Auto para que se ajuste al espacio disponible */
-    max-width: calc(100% - var(--sidebar-width-collapsed));
+    max-width: calc(100% - var(--sidebar-width-collapsed, 72px));
     will-change: margin-left;
 }
 
 .drawer:hover ~ main,
 .drawer:hover + main {
-    margin-left: var(--sidebar-width-expanded);
-    max-width: calc(100% - var(--sidebar-width-expanded));
+    margin-left: var(--sidebar-width-expanded, 240px);
+    max-width: calc(100% - var(--sidebar-width-expanded, 240px));
 }
 
 /* ============================================ */
-/* EL RESTO DE LOS ESTILOS SE MANTIENEN IGUAL */
+/* TOPBAR ELEMENTOS */
 /* ============================================ */
-
 .topbar__left {
     display: flex;
     align-items: center;
@@ -470,15 +462,15 @@ main {
     align-items: center;
     gap: 8px;
     padding: 5px 12px 5px 14px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--navbar-white-bg-soft);
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--navbar-white-border);
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .search-spotlight:focus-within {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: var(--navbar-yellow);
+    background: var(--navbar-white-bg-soft);
+    border-color: var(--yellow);
     box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.05);
 }
 
@@ -506,12 +498,12 @@ main {
 
 .search-spotlight__shortcut {
     padding: 2px 7px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--navbar-white-bg-soft);
     border-radius: 6px;
     font-size: 9px;
     color: var(--navbar-white-muted);
     font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--navbar-white-border);
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
 }
 
@@ -527,18 +519,18 @@ main {
     align-items: center;
     gap: 0.1rem;
     padding: 0.15rem 0.15rem 0.15rem 0.3rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--navbar-white-bg-soft);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--navbar-white-border);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .topbar__right-capsule:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.06);
+    background: var(--navbar-white-bg-soft);
+    border-color: var(--navbar-white-border);
 }
 
 .icon-btn {
@@ -556,7 +548,7 @@ main {
 }
 
 .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--navbar-white-bg-soft);
     color: var(--navbar-white);
 }
 
@@ -569,13 +561,11 @@ main {
     height: 15px;
 }
 
-.icon-btn .badge,
-.icon-btn .cart-badge,
 .notifications__badge {
     position: absolute;
     top: -2px;
     right: -2px;
-    background: #FF3B30;
+    background: var(--red);
     color: #FFFFFF;
     border-radius: 999px;
     font-size: 8px;
@@ -594,10 +584,26 @@ main {
     display: none;
 }
 
-.notifications {
-    position: relative;
+/* ===== Toggle de modo claro/oscuro ===== */
+.theme-toggle__icon--sun {
+    display: none;
 }
 
+.theme-toggle__icon--moon {
+    display: block;
+}
+
+[data-theme="light"] .theme-toggle__icon--sun {
+    display: block;
+}
+
+[data-theme="light"] .theme-toggle__icon--moon {
+    display: none;
+}
+
+/* ============================================ */
+/* USER MENU */
+/* ============================================ */
 .user__avatar {
     flex: 0 0 auto;
     width: 24px;
@@ -606,7 +612,7 @@ main {
     overflow: hidden;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #FFD60A, #FFB800);
+    background: linear-gradient(135deg, var(--yellow), var(--yellow-soft));
     box-shadow: 0 2px 8px rgba(255, 214, 10, 0.15);
     color: var(--navbar-black);
     font-family: "Space Grotesk", sans-serif;
@@ -672,7 +678,7 @@ main {
 }
 
 .user-menu__trigger:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--navbar-white-bg-soft);
 }
 
 .user-menu__chevron {
@@ -693,12 +699,12 @@ main {
     right: 0;
     min-width: 200px;
     padding: 0.5rem;
-    border-radius: var(--navbar-radius-lg);
-    background: rgba(18, 18, 18, 0.98);
+    border-radius: 16px;
+    background: var(--glass-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     z-index: 40;
 }
 
@@ -707,7 +713,24 @@ main {
     gap: 0.1rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--navbar-white-border);
+}
+
+.user-menu__identity-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--yellow), var(--yellow-soft));
+    margin-bottom: 0.3rem;
+}
+
+.user-menu__identity-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .user-menu__label {
@@ -742,7 +765,7 @@ main {
     border-radius: 10px;
     border: none;
     padding: 0.4rem 0.6rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--navbar-white-bg-soft);
     color: var(--navbar-white);
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
     font-weight: 600;
@@ -752,7 +775,7 @@ main {
 }
 
 .user-menu__action-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--navbar-white-bg-soft);
 }
 
 .user-menu__logout-btn {
@@ -760,7 +783,7 @@ main {
     border: 0;
     border-radius: 10px;
     padding: 0.5rem 0.6rem;
-    background: linear-gradient(180deg, var(--navbar-yellow-soft), var(--navbar-yellow));
+    background: linear-gradient(180deg, var(--yellow-soft), var(--yellow));
     color: var(--navbar-black);
     font-family: 'SF Pro Display', 'Manrope', sans-serif;
     font-weight: 700;
@@ -937,4 +960,44 @@ main {
         width: 90vw;
         padding: 0.5rem;
     }
+}
+
+/* ============================================ */
+/* LOGO - Modo claro/oscuro */
+/* ============================================ */
+.brand__logo {
+    height: 26px;
+    width: auto;
+    transition: filter 0.3s ease;
+}
+
+.drawer__logo img {
+    transition: filter 0.3s ease;
+}
+
+/* En modo claro, invertir colores del logo */
+[data-theme="light"] .brand__logo {
+    filter: invert(1) brightness(0.9);
+}
+
+/* En modo oscuro, normal */
+[data-theme="dark"] .brand__logo {
+    filter: invert(0);
+}
+
+.drawer__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* En modo claro, invertir colores del logo */
+[data-theme="light"] .drawer__logo img {
+    filter: invert(1) brightness(0.9);
+}
+
+/* En modo oscuro, normal */
+[data-theme="dark"] .drawer__logo img {
+    filter: invert(0);
 }

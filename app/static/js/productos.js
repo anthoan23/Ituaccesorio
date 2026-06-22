@@ -42,9 +42,40 @@
   const MAX = {
     clase: 30,
     marca: 30,
-    producto: 30,
+    producto: 50,
     descripcion: 300,
   };
+
+  // ==================== VALIDACIÓN DE SEGURIDAD ====================
+  
+  /**
+   * Valida que un ID sea válido para productos (alfanumérico)
+   */
+  function validarIdProducto(id) {
+    if (!id || id === '' || id === null || id === undefined) {
+      return false;
+    }
+    const idStr = String(id).trim();
+    return /^[a-zA-Z0-9]+$/.test(idStr) && idStr.length > 0;
+  }
+
+  /**
+   * Muestra un mensaje de error de seguridad
+   */
+  function mostrarErrorSeguridad(mensaje) {
+    const msg = mensaje || 'Se ha detectado una acción no válida. Por favor, recarga la página e intenta nuevamente.';
+    
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+      window.FeedbackModal.show({
+        type: 'error',
+        title: 'Acción no permitida',
+        message: msg,
+        duration: 5000
+      });
+    } else {
+      mostrarModalConfirmacion(`${msg}`, null, true, 'error');
+    }
+  }
 
   // ==================== MODAL DE CONFIRMACIÓN ====================
   
@@ -94,7 +125,7 @@
         </header>
         <div class="ui-modal__body" style="padding:1.5rem;">
           <div style="text-align:center;font-size:3rem;margin-bottom:0.5rem;">${icono}</div>
-          <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;text-align:center;">${mensaje}</p>
+          <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;text-align:center;white-space:pre-wrap;">${mensaje}</p>
         </div>
         <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
           ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
@@ -140,7 +171,7 @@
     if (soloInformacion || esExito || esError) {
       setTimeout(() => {
         if (document.getElementById('confirmacion-modal')) cerrarModal();
-      }, 3000);
+      }, 4000);
     }
   }
 
@@ -153,7 +184,7 @@
           message: message,
         });
       } else {
-        alert(message);
+        mostrarModalConfirmacion(message, null, true, 'error');
       }
     } else if (type === 'success') {
       if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
@@ -163,7 +194,7 @@
           message: message,
         });
       } else {
-        console.log(message);
+        mostrarModalConfirmacion(message, null, true, 'success');
       }
     } else {
       console.log(message);
@@ -224,6 +255,10 @@
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
+      // Mejorar mensaje de error para 404
+      if (response.status === 404) {
+        throw new Error(`404: ${data.error || 'El recurso solicitado no existe.'}`);
+      }
       throw new Error(data.error || "No se pudo completar la operación.");
     }
     return data;
@@ -245,6 +280,9 @@
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
+      if (response.status === 404) {
+        throw new Error(`404: ${data.error || 'El recurso solicitado no existe.'}`);
+      }
       throw new Error(data.error || "No se pudo completar la operación.");
     }
     return data;
@@ -513,9 +551,20 @@
     return state.modelos.find((m) => String(m.id) === String(id));
   }
 
+  // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
+
   async function prepararFormularioEdicion(idModelo) {
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
+    if (!validarIdProducto(idModelo)) {
+      mostrarErrorSeguridad('El ID del producto que intentas editar no es válido.');
+      return;
+    }
+    
     const modelo = findModeloById(idModelo);
-    if (!modelo || !formProducto) return;
+    if (!modelo || !formProducto) {
+      mostrarErrorSeguridad(`El producto con ID "${idModelo}" no existe o ha sido eliminado.`);
+      return;
+    }
 
     resetFormToCreate();
     const title = document.getElementById("producto-modal-title");
@@ -538,93 +587,81 @@
     if (pDescripcion) pDescripcion.value = modelo.descripcion || "";
   }
 
-async function onSubmitProducto(event) {
+  async function onSubmitProducto(event) {
     event.preventDefault();
     if (!formProducto) return;
     if (isSubmitting) return;
 
     if (!validarFormularioAntesDeEnviar(formProducto, 'producto')) {
-        return;
+      return;
     }
 
     const idModelo = String(formProducto.querySelector("input[name='id_modelo']")?.value || "").trim();
     const nombreModelo = String(pModelo?.value || "").trim();
     const descripcion = String(pDescripcion?.value || "").trim();
     
-    console.log("=== VALORES DEL FORMULARIO ===");
-    console.log("ID Modelo:", idModelo);
-    console.log("Nombre producto:", nombreModelo);
-    console.log("Descripción:", descripcion);
-    console.log("Clase seleccionada:", pClase?.value);
-    console.log("Marca seleccionada:", pMarca?.value);
-    console.log("Categoría seleccionada:", pCategoria?.value);
-    
     if (!nombreModelo) {
-        notify("error", "El nombre del producto es obligatorio.");
-        return;
+      notify("error", "El nombre del producto es obligatorio.");
+      return;
     }
 
     try {
-        isSubmitting = true;
-        const submitBtn = formProducto.querySelector("button[type='submit']");
-        if (submitBtn) submitBtn.disabled = true;
+      isSubmitting = true;
+      const submitBtn = formProducto.querySelector("button[type='submit']");
+      if (submitBtn) submitBtn.disabled = true;
 
-        if (isCreatingNewBrand) {
-            throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
-        }
+      if (isCreatingNewBrand) {
+        throw new Error("Primero guarda la marca con el botón 'Guardar marca'.");
+      }
 
-        if (isCreatingNewClass) {
-            throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
-        }
+      if (isCreatingNewClass) {
+        throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
+      }
 
-        const claseIdFinal = Number(pClase?.value || 0);
-        if (!claseIdFinal) throw new Error("La clase es obligatoria.");
+      const claseIdFinal = Number(pClase?.value || 0);
+      if (!claseIdFinal) throw new Error("La clase es obligatoria.");
 
-        const finalMarcaId = Number(pMarca?.value || 0);
-        if (!finalMarcaId) throw new Error("La marca es obligatoria.");
+      const finalMarcaId = Number(pMarca?.value || 0);
+      if (!finalMarcaId) throw new Error("La marca es obligatoria.");
 
-        validateMaxLen("Producto", nombreModelo, MAX.producto);
-        validateMaxLen("Descripción", descripcion, MAX.descripcion);
+      validateMaxLen("Producto", nombreModelo, MAX.producto);
+      validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
-        if (idModelo) {
-            // Editar producto - usar JSON
-            await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
-                method: "PUT",
-                body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
-            });
-        } else {
-            // Crear producto - usar FormData para la foto
-            const formData = new FormData(formProducto);
-            
-            // Asegurar que los campos requeridos estén presentes
-            formData.set("modelo", nombreModelo);
-            formData.set("id_marca", String(finalMarcaId));
-            formData.set("id_clase", String(claseIdFinal));
-            formData.set("descripcion", descripcion || "");
-            formData.set("id_categoria", pCategoria?.value || "0");
-            
-            console.log("FormData a enviar:");
-            for (let pair of formData.entries()) {
-                if (pair[0] !== "foto_inventario" || pair[1] instanceof File) {
-                    console.log(pair[0] + ": " + (pair[1] instanceof File ? pair[1].name : pair[1]));
-                }
-            }
-            
-            await fetchFormData("/api/productos/modelos", formData);
-        }
+      if (idModelo) {
+        // Editar producto - usar JSON
+        await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
+          method: "PUT",
+          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+        });
+      } else {
+        // Crear producto - usar FormData para la foto
+        const formData = new FormData(formProducto);
+        
+        formData.set("modelo", nombreModelo);
+        formData.set("id_marca", String(finalMarcaId));
+        formData.set("id_clase", String(claseIdFinal));
+        formData.set("descripcion", descripcion || "");
+        formData.set("id_categoria", pCategoria?.value || "0");
+        
+        await fetchFormData("/api/productos/modelos", formData);
+      }
 
-        closeModal();
-        await recargarModelosSegunFiltros();
-        notify("success", "Producto guardado correctamente.");
+      closeModal();
+      await recargarModelosSegunFiltros();
+      notify("success", "Producto guardado correctamente.");
     } catch (err) {
-        console.error("Error:", err);
+      console.error("Error:", err);
+      if (err.message && err.message.includes('404')) {
+        mostrarErrorSeguridad('El producto que intentas modificar ya no existe en el sistema.');
+      } else {
         notify("error", err?.message || "No se pudo guardar.");
+      }
     } finally {
-        isSubmitting = false;
-        const submitBtn = formProducto.querySelector("button[type='submit']");
-        if (submitBtn) submitBtn.disabled = false;
+      isSubmitting = false;
+      const submitBtn = formProducto.querySelector("button[type='submit']");
+      if (submitBtn) submitBtn.disabled = false;
     }
-}
+  }
 
   async function onGuardarClaseClick() {
     try {
@@ -707,9 +744,15 @@ async function onSubmitProducto(event) {
     }
   }
 
-  // ==================== ELIMINAR PRODUCTO ====================
+  // ==================== ELIMINAR PRODUCTO CON VALIDACIÓN ====================
   
   async function eliminarProducto(id, nombreProducto) {
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
+    if (!validarIdProducto(id)) {
+      mostrarErrorSeguridad('El ID del producto que intentas eliminar no es válido.');
+      return;
+    }
+    
     try {
       const data = await fetchJson(`/api/productos/modelos/${encodeURIComponent(id)}/verificar-stock`, { method: 'GET' });
       const tieneStock = data.tiene_stock || false;
@@ -729,12 +772,20 @@ async function onSubmitProducto(event) {
             await recargarModelosSegunFiltros();
             notify("success", `Producto "${nombreProducto}" eliminado correctamente.`);
           } catch (err) {
-            notify("error", err?.message || "No se pudo eliminar el producto.");
+            if (err.message && err.message.includes('404')) {
+              mostrarErrorSeguridad(`El producto "${nombreProducto}" ya no existe en el sistema.`);
+            } else {
+              notify("error", err?.message || "No se pudo eliminar el producto.");
+            }
           }
         });
       }
     } catch (err) {
-      notify("error", "No se pudo verificar el stock del producto. Intente nuevamente.");
+      if (err.message && (err.message.includes('404') || err.message.includes('no existe'))) {
+        mostrarErrorSeguridad(`El producto "${nombreProducto}" ya no existe en el sistema.`);
+      } else {
+        notify("error", "No se pudo verificar el stock del producto. Intente nuevamente.");
+      }
     }
   }
 
@@ -756,6 +807,12 @@ async function onSubmitProducto(event) {
 
     event.stopPropagation();
     event.preventDefault();
+
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido ANTES de cualquier acción
+    if (!validarIdProducto(id)) {
+      mostrarErrorSeguridad('El ID del producto no es válido.');
+      return;
+    }
 
     if (action === "edit") {
       await prepararFormularioEdicion(id);
@@ -862,7 +919,7 @@ async function onSubmitProducto(event) {
       
       if (reporteTabla) {
         if (reporteDatosActuales.length === 0) {
-          reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td</tr>';
+          reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
         } else {
           reporteTabla.innerHTML = reporteDatosActuales.map(p => `
             <tr>
@@ -1136,7 +1193,7 @@ async function onSubmitProducto(event) {
   if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarAPdf);
   if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporte);
 
-  // ==================== FIN REPORTES ====================
+  // ==================== INICIALIZACIÓN ====================
 
   async function init() {
     closeModal();

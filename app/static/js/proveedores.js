@@ -25,6 +25,37 @@
     );
   }
 
+  // ==================== VALIDACIÓN DE SEGURIDAD ====================
+  
+  /**
+   * Valida que un ID de proveedor sea válido (numérico)
+   */
+  function validarIdProveedor(id) {
+    if (!id || id === '' || id === null || id === undefined) {
+      return false;
+    }
+    const idStr = String(id).trim();
+    return /^\d+$/.test(idStr) && idStr.length > 0 && parseInt(idStr) > 0;
+  }
+
+  /**
+   * Muestra un mensaje de error de seguridad para proveedores
+   */
+  function mostrarErrorSeguridadProveedor(mensaje) {
+    const msg = mensaje || 'Se ha detectado una acción no válida. Por favor, recarga la página e intenta nuevamente.';
+    
+    if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+      window.FeedbackModal.show({
+        type: 'error',
+        title: 'Acción no permitida',
+        message: msg,
+        duration: 5000
+      });
+    } else {
+      showFeedback('error', `${msg}`);
+    }
+  }
+
   async function fetchJson(url, options = {}) {
     const headers = new Headers(options.headers || {});
     headers.set('Accept', 'application/json');
@@ -58,6 +89,12 @@
       const msg = isJson
         ? (payload && (payload.error || payload.message)) || JSON.stringify(payload)
         : String(payload || res.statusText);
+      
+      // ✅ Mejorar mensaje de error para 404
+      if (res.status === 404) {
+        throw new Error(`404: ${msg || 'El recurso solicitado no existe.'}`);
+      }
+      
       throw new Error(msg || `HTTP ${res.status}`);
     }
 
@@ -370,46 +407,81 @@
     if (el) el.textContent = value ?? '';
   }
 
+  // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
+
   async function abrirVerProveedor(id) {
-    state.currentProveedorId = id;
-    const data = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
-    const p = normalizeProveedor(data?.proveedor ?? data);
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
+    if (!validarIdProveedor(id)) {
+      mostrarErrorSeguridadProveedor('El ID del proveedor que intentas ver no es válido.');
+      return;
+    }
+    
+    try {
+      state.currentProveedorId = id;
+      const data = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
+      const p = normalizeProveedor(data?.proveedor ?? data);
 
-    setText('v-id', p.id);
-    setText('v-nombre', p.nombre);
-    setText('v-tipo', p.tipo);
-    setText('v-celular', p.celular);
-    setText('v-correo', p.correo);
-    setText('v-limite', p.limite_credito !== '' ? formatMoney(p.limite_credito) : '');
-    setText('v-direccion', p.direccion);
+      setText('v-id', p.id);
+      setText('v-nombre', p.nombre);
+      setText('v-tipo', p.tipo);
+      setText('v-celular', p.celular);
+      setText('v-correo', p.correo);
+      setText('v-limite', p.limite_credito !== '' ? formatMoney(p.limite_credito) : '');
+      setText('v-direccion', p.direccion);
 
-    await cargarProductosProveedorVer(p.id, data?.productos);
-    openModal('modal-proveedor-ver');
+      await cargarProductosProveedorVer(p.id, data?.productos);
+      openModal('modal-proveedor-ver');
+    } catch (e) {
+      if (e.message && (e.message.includes('404') || e.message.includes('no encontrado'))) {
+        mostrarErrorSeguridadProveedor(`El proveedor con ID "${id}" no existe en el sistema.`);
+      } else {
+        showFeedback('error', e.message || 'No se pudo cargar la información del proveedor.');
+      }
+    }
   }
 
   async function abrirEditarProveedor(id) {
-    state.currentProveedorId = id;
-    const data = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
-    const p = normalizeProveedor(data?.proveedor ?? data);
-
-    setValue('e-id-hidden', p.id);
-    setValue('e-id', p.id);
-    setValue('e-nombre', p.nombre);
-    setValue('e-tipo', p.tipo);
-    setValue('e-celular', p.celular);
-    setValue('e-correo', p.correo);
-    setValue('e-direccion', p.direccion);
-    setValue('e-limite', p.limite_credito);
-
-    await cargarProductosProveedorEditar(p.id, data?.productos);
-    openModal('modal-proveedor-editar');
-  }
-
-  // ==================== FUNCIÓN DE ELIMINACIÓN ====================
-  async function abrirEliminarProveedor(id) {
-    state.currentProveedorId = id;
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
+    if (!validarIdProveedor(id)) {
+      mostrarErrorSeguridadProveedor('El ID del proveedor que intentas editar no es válido.');
+      return;
+    }
     
     try {
+      state.currentProveedorId = id;
+      const data = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
+      const p = normalizeProveedor(data?.proveedor ?? data);
+
+      setValue('e-id-hidden', p.id);
+      setValue('e-id', p.id);
+      setValue('e-nombre', p.nombre);
+      setValue('e-tipo', p.tipo);
+      setValue('e-celular', p.celular);
+      setValue('e-correo', p.correo);
+      setValue('e-direccion', p.direccion);
+      setValue('e-limite', p.limite_credito);
+
+      await cargarProductosProveedorEditar(p.id, data?.productos);
+      openModal('modal-proveedor-editar');
+    } catch (e) {
+      if (e.message && (e.message.includes('404') || e.message.includes('no encontrado'))) {
+        mostrarErrorSeguridadProveedor(`El proveedor con ID "${id}" no existe en el sistema.`);
+      } else {
+        showFeedback('error', e.message || 'No se pudo cargar la información del proveedor.');
+      }
+    }
+  }
+
+  async function abrirEliminarProveedor(id) {
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
+    if (!validarIdProveedor(id)) {
+      mostrarErrorSeguridadProveedor('El ID del proveedor que intentas eliminar no es válido.');
+      return;
+    }
+    
+    try {
+      state.currentProveedorId = id;
+      
       const proveedorData = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
       const proveedor = normalizeProveedor(proveedorData?.proveedor ?? proveedorData);
       const nombreProveedor = proveedor.nombre || `ID ${id}`;
@@ -435,12 +507,20 @@
             await cargarProveedores(($id('f-texto')?.value || '').trim());
             showFeedback('success', `Proveedor "${nombreProveedor}" eliminado correctamente.`);
           } catch (e) {
-            showFeedback('error', e.message || 'No se pudo eliminar el proveedor.');
+            if (e.message && (e.message.includes('404') || e.message.includes('no encontrado'))) {
+              mostrarErrorSeguridadProveedor(`El proveedor "${nombreProveedor}" ya no existe en el sistema.`);
+            } else {
+              showFeedback('error', e.message || 'No se pudo eliminar el proveedor.');
+            }
           }
         });
       }
     } catch (e) {
-      showFeedback('error', e.message || 'No se pudo verificar el estado del proveedor.');
+      if (e.message && (e.message.includes('404') || e.message.includes('no encontrado'))) {
+        mostrarErrorSeguridadProveedor(`El proveedor con ID "${id}" no existe en el sistema.`);
+      } else {
+        showFeedback('error', e.message || 'No se pudo verificar el estado del proveedor.');
+      }
     }
   }
 
@@ -619,7 +699,6 @@
     if (!idProveedor) throw new Error('Proveedor no seleccionado.');
     if (!idModelo) throw new Error('Selecciona un producto.');
     
-    // ✅ VALIDACIÓN: No permitir costo negativo
     if (costo !== '' && Number(costo) < 0) {
       throw new Error('El costo no puede ser negativo.');
     }
@@ -635,7 +714,6 @@
     });
   }
 
-  // ✅ FUNCIÓN MODIFICADA: Agregar validación de costo negativo
   function agregarProductoCrearFromForm() {
     const idModelo = getFormValue('cp-id-modelo');
     const costo = getFormValue('cp-costo');
@@ -643,7 +721,6 @@
     if (!idModelo) throw new Error('Selecciona un producto.');
     if (costo === '') throw new Error('El costo es obligatorio.');
     
-    // ✅ VALIDACIÓN: No permitir costo negativo
     if (Number(costo) < 0) {
       throw new Error('El costo no puede ser negativo.');
     }
@@ -668,12 +745,10 @@
     renderProductosCrear();
   }
 
-  // ✅ FUNCIÓN MODIFICADA: Agregar validación de costo negativo
   async function guardarCostoProductoProveedor(idModelo, costo) {
     const idProveedor = state.currentProveedorId;
     if (!idProveedor) return;
 
-    // ✅ VALIDACIÓN: No permitir costo negativo
     if (costo !== '' && Number(costo) < 0) {
       showFeedback('error', 'El costo no puede ser negativo.');
       return;
@@ -731,6 +806,12 @@
       const id = btn.getAttribute('data-id');
       if (!action || !id) return;
 
+      // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido ANTES de cualquier acción
+      if (!validarIdProveedor(id)) {
+        mostrarErrorSeguridadProveedor('El ID del proveedor no es válido.');
+        return;
+      }
+
       try {
         if (action === 'ver') await abrirVerProveedor(id);
         if (action === 'editar') await abrirEditarProveedor(id);
@@ -761,7 +842,6 @@
       ev.preventDefault();
       try {
         const costo = getFormValue('cp-costo');
-        // ✅ VALIDACIÓN: No permitir costo negativo
         if (costo !== '' && Number(costo) < 0) {
           throw new Error('El costo no puede ser negativo.');
         }
@@ -802,7 +882,6 @@
       ev.preventDefault();
       try {
         const costo = getFormValue('ap-costo');
-        // ✅ VALIDACIÓN: No permitir costo negativo
         if (costo !== '' && Number(costo) < 0) {
           throw new Error('El costo no puede ser negativo.');
         }
@@ -826,7 +905,6 @@
 
       if (!idModelo) return;
 
-      // ✅ VALIDACIÓN: No permitir costo negativo
       if (costo !== '' && Number(costo) < 0) {
         showFeedback('error', 'El costo no puede ser negativo.');
         input.value = 0;
@@ -943,6 +1021,9 @@ async function fetchJsonReportes(url, options = {}) {
   
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.success === false) {
+    if (response.status === 404) {
+      throw new Error(`404: ${data.error || 'El recurso solicitado no existe.'}`);
+    }
     throw new Error(data.error || "Error en la operación");
   }
   return data;
@@ -1231,7 +1312,7 @@ function imprimirReporteProveedores() {
             </tr>
           `).join('')}
         </tbody>
-      追赶
+      </table>
       <div class="footer">ItuAccesorio System - Reporte Generado Exclusivamente Para ituaccesorio</div>
     </body>
     </html>

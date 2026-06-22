@@ -1,4 +1,47 @@
 document.addEventListener("DOMContentLoaded", () => {
+	// ==================== MODO CLARO / OSCURO ====================
+
+	const themeToggleBtn = document.querySelector('[data-theme-toggle]');
+
+	function getStoredTheme() {
+		try {
+			return localStorage.getItem('theme');
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function setStoredTheme(theme) {
+		try {
+			localStorage.setItem('theme', theme);
+		} catch (e) {
+			/* almacenamiento no disponible, seguimos sin persistir */
+		}
+	}
+
+	function applyTheme(theme) {
+		document.documentElement.setAttribute('data-theme', theme);
+		if (themeToggleBtn) {
+			themeToggleBtn.setAttribute(
+				'aria-label',
+				theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'
+			);
+		}
+	}
+
+	// El <head> ya aplicó el tema guardado antes del primer paint;
+	// aquí solo sincronizamos el aria-label y dejamos listo el click.
+	applyTheme(document.documentElement.getAttribute('data-theme') || getStoredTheme() || 'dark');
+
+	if (themeToggleBtn) {
+		themeToggleBtn.addEventListener('click', () => {
+			const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+			const next = current === 'light' ? 'dark' : 'light';
+			applyTheme(next);
+			setStoredTheme(next);
+		});
+	}
+
 	// ==================== CONTROL DEL MENÚ HAMBURGUESA ====================
 	
 	const menuToggle = document.getElementById('menu-toggle-btn');
