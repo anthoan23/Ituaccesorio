@@ -1,3 +1,10 @@
+/* ============================================
+   TABLE-TOOLS.CSS - UNIFICADO CON THEME.CSS
+   ============================================
+   Los botones SIEMPRE son amarillos con texto negro
+   en ambos modos (claro/oscuro)
+*/
+
 .table-controls {
     display: flex;
     flex-wrap: wrap;
@@ -5,7 +12,7 @@
     justify-content: space-between;
     gap: 0.75rem 1rem;
     margin: 0 0 0.75rem;
-    color: var(--ink, #14161a);
+    color: var(--text-primary);
 }
 
 .table-controls__search {
@@ -17,25 +24,29 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--muted, #68707d);
+    color: var(--text-secondary);
 }
 
 .table-controls__input {
     flex: 1 1 auto;
     min-width: 160px;
-    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 0.6rem 0.75rem;
     font: inherit;
     font-weight: 600;
-    color: var(--ink, #14161a);
-    background: var(--panel, #ffffff);
+    color: var(--input-text);
+    background: var(--input-bg);
 }
 
 .table-controls__input:focus {
     outline: none;
-    border-color: rgba(243, 197, 0, 0.75);
+    border-color: var(--yellow);
     box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+}
+
+.table-controls__input::placeholder {
+    color: var(--input-placeholder);
 }
 
 .table-controls__meta {
@@ -51,29 +62,37 @@
     gap: 0.45rem;
 }
 
+/* ============================================ */
+/* BOTONES - SIEMPRE AMARILLOS CON TEXTO NEGRO */
+/* ============================================ */
 .table-controls__btn {
-    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border: 1px solid rgba(243, 197, 0, 0.6);
     border-radius: 12px;
-    background: var(--panel, #ffffff);
-    color: var(--ink, #14161a);
+    background: var(--yellow);
+    color: #121212;
     padding: 0.45rem 0.7rem;
     cursor: pointer;
     font: inherit;
-    font-weight: 700;
+    font-weight: 900;
+    transition: transform 0.15s ease, filter 0.2s ease, background 0.2s ease;
+}
+
+.table-controls__btn:hover:not(:disabled) {
+    background: var(--yellow-soft);
+    transform: translateY(-1px);
 }
 
 .table-controls__btn:disabled {
-    opacity: 0.6;
+    background: rgba(243, 197, 0, 0.35);
+    color: rgba(18, 18, 18, 0.55);
+    border-color: rgba(243, 197, 0, 0.3);
     cursor: not-allowed;
+    transform: none;
 }
 
-.table-controls__info {
-    font-size: 0.85rem;
-    color: var(--muted, #68707d);
-    min-width: 120px;
-    text-align: center;
-}
-
+/* ============================================ */
+/* SELECTOR DE FILAS - CON VARIABLES */
+/* ============================================ */
 .table-controls__size {
     display: flex;
     align-items: center;
@@ -82,23 +101,37 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--muted, #68707d);
+    color: var(--text-secondary);
 }
 
 .table-controls__select {
-    border: 1px solid var(--line, rgba(20, 22, 26, 0.12));
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 0.45rem 0.6rem;
     font: inherit;
     font-weight: 600;
-    background: var(--panel, #ffffff);
-    color: var(--ink, #14161a);
+    background: var(--input-bg);
+    color: var(--input-text);
 }
 
 .table-controls__select:focus {
     outline: none;
-    border-color: rgba(243, 197, 0, 0.75);
+    border-color: var(--yellow);
     box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+}
+
+.table-controls__select option {
+    color: var(--text-primary);
+}
+
+/* ============================================ */
+/* INFORMACIÓN DE PAGINACIÓN */
+/* ============================================ */
+.table-controls__info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 120px;
+    text-align: center;
 }
 
 .table-controls.is-empty {

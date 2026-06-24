@@ -122,7 +122,7 @@ body {
 }
 
 /* ============================================ */
-/* HERO */
+/* HERO - GLASSMORPHIC AMARILLO */
 /* ============================================ */
 .taller-hero {
     display: grid;
@@ -134,12 +134,22 @@ body {
     width: fit-content;
     max-width: 100%;
     margin-right: auto;
+<<<<<<< HEAD
+    background: rgba(243, 197, 0, 0.10);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+    transition: all 0.3s ease;
+=======
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: var(--radius);
     box-shadow: var(--glass-shadow);
+>>>>>>> 06e20a3bcc29ab1acaa93bffaca9800c29e32397
 }
 
 .taller-hero__title {
@@ -1748,6 +1758,245 @@ body {
         padding: 0.5rem 0.4rem;
         font-size: 0.8rem;
     }
+<<<<<<< HEAD
+}
+
+/* ============================================ */
+/* MODO CLARO - TALLER HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .taller-hero {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .taller-hero .taller-hero__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .taller-hero .taller-hero__description {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__subtitle {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .table-wrap {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table th {
+    color: rgba(26, 26, 30, 0.6);
+    background: rgba(243, 197, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table td {
+    color: #1A1A1E;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .table tbody tr:hover {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .icon-action {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .icon-action:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .table-action {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .table-action:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .table-action--accent {
+    background: var(--yellow);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .table-action--danger {
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #DC2626;
+}
+
+[data-theme="light"] .table-action--danger:hover {
+    background: rgba(220, 38, 38, 0.12);
+}
+
+[data-theme="light"] .form-btn--ghost {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1A1A1E;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .form-btn--ghost:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .form-btn--primary {
+    background: var(--yellow);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .field {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .field > span,
+[data-theme="light"] .field > label > span {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .field input,
+[data-theme="light"] .field select,
+[data-theme="light"] .field textarea {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .field input::placeholder,
+[data-theme="light"] .field textarea::placeholder {
+    color: rgba(26, 26, 30, 0.4);
+}
+
+[data-theme="light"] .field select option {
+    color: #1A1A1E;
+    background: #FFFFFF;
+}
+
+[data-theme="light"] .field-hint {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .device-detail {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .detail-group {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .detail-label {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .detail-value {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .repuesto-item {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .repuesto-nombre {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .repuesto-cantidad-control label {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .repuesto-cantidad-input {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .vista-switcher__btn {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .vista-switcher__btn:hover {
+    color: #1A1A1E;
+    border-bottom-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .vista-switcher__btn.is-active {
+    color: #1A1A1E;
+    border-bottom-color: var(--yellow);
+}
+
+[data-theme="light"] .ui-modal__dialog {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .ui-modal__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .ui-modal__body {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .ui-modal__close {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .ui-modal__close:hover {
+    color: #1A1A1E;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .ui-modal__header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ui-modal__footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .estado-badge {
+    color: #1A1A1E;
+    border-color: rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .estado-pendiente { background: #fef3c7; color: #d97706; }
+[data-theme="light"] .estado-revision { background: #e0f2fe; color: #0369a1; }
+[data-theme="light"] .estado-reparacion { background: #fed7aa; color: #c2410c; }
+[data-theme="light"] .estado-completado { background: #d1fae5; color: #059669; }
+[data-theme="light"] .estado-entregado { background: #f3f4f6; color: #6b7280; }
+[data-theme="light"] .estado-asignada { background: #dbeafe; color: #2563eb; }
+[data-theme="light"] .estado-default { background: #f3f4f6; color: #6b7280; }
+=======
 
     .service-form__actions {
         flex-direction: column;
@@ -1780,3 +2029,4 @@ body {
         font-size: 22px;
     }
 }
+>>>>>>> 06e20a3bcc29ab1acaa93bffaca9800c29e32397

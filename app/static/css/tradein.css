@@ -35,12 +35,21 @@ body {
   padding: 1.4rem 0 2.4rem;
 }
 
+/* Tradein Hero - GLASSMORPHIC AMARILLO */
 .tradein-hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1.1rem;
   margin-bottom: 1.1rem;
+  background: rgba(243, 197, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+  transition: all 0.3s ease;
 }
 
 .tradein-hero__copy {
@@ -49,7 +58,7 @@ body {
 
 .tradein-hero__eyebrow {
   margin: 0 0 0.4rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -62,6 +71,7 @@ body {
   font-weight: 900;
   letter-spacing: -0.03em;
   font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  color: #ffffff;
 }
 
 .tradein-hero__subtitle {
@@ -493,4 +503,137 @@ body {
 .cotizacion-manual h3 {
     margin: 0 0 1rem 0;
     font-size: 1rem;
+}
+
+/* ============================================ */
+/* MODO CLARO - TRADEIN HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .tradein-hero {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .tradein-hero .tradein-hero__eyebrow {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .tradein-hero .tradein-hero__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-hero .tradein-hero__subtitle {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__subtitle {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .tradein-field__label {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-field__input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-field__input:focus {
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.15);
+}
+
+[data-theme="light"] .tradein-choice,
+[data-theme="light"] .tradein-check {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .tradein-choice:hover,
+[data-theme="light"] .tradein-check:hover {
+    border-color: var(--yellow);
+}
+
+[data-theme="light"] .tradein-result__price-wrap {
+    background: rgba(243, 197, 0, 0.12);
+    border: 1px solid rgba(243, 197, 0, 0.25);
+}
+
+[data-theme="light"] .tradein-result__price {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-result__grid > div,
+[data-theme="light"] .tradein-result__section {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-result__grid span {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .tradein-result__grid strong {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-list li {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .tradein-result__messages {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .stat-card {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .label {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .gestion-tabs {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .gestion-tab {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .gestion-tab:hover {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .gestion-tab.active {
+    background: var(--yellow);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .cotizacion-manual {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .tradein-alert {
+    background: rgba(220, 53, 69, 0.08);
+    color: #DC2626;
 }
