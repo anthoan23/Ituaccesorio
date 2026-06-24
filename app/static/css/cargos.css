@@ -106,7 +106,7 @@ body {
 	color: inherit;
 }
 
-/* Hero Section */
+/* Hero Section - GLASSMORPHIC AMARILLO */
 .cargos-hero {
 	display: grid;
 	grid-template-columns: 1fr auto;
@@ -123,11 +123,14 @@ body {
 }
 
 .cargos-hero__copy {
-	background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(243, 197, 0, 0.10);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(243, 197, 0, 0.35);
 	border-radius: var(--radius);
 	padding: 1.4rem 1.5rem;
-	box-shadow: var(--shadow);
+	box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+	transition: all 0.3s ease;
 }
 
 .cargos-hero__eyebrow {
@@ -144,6 +147,7 @@ body {
 	font-family: "Space Grotesk", sans-serif;
 	font-size: clamp(2rem, 3vw, 3.25rem);
 	line-height: 0.98;
+	color: #ffffff;
 }
 
 .cargos-hero__description {
@@ -185,6 +189,7 @@ body {
 	margin-top: 0.4rem;
 	font-family: "Space Grotesk", sans-serif;
 	font-size: 2rem;
+	color: #ffffff;
 }
 
 .stat-card__meta {
@@ -226,7 +231,6 @@ body {
 	box-shadow: 0 14px 30px rgba(243, 197, 0, 0.2);
 }
 
-/* Botón con resplandor */
 .btn-glow {
 	box-shadow: 0 0 15px var(--accent-glow), 0 14px 30px rgba(243, 197, 0, 0.2);
 	transition: box-shadow 0.3s ease, transform 0.15s ease;
@@ -385,7 +389,6 @@ body {
 	gap: 0.5rem;
 }
 
-/* Iconos de acción como en especialidades */
 .icon-action {
 	width: 38px;
 	height: 38px;
@@ -520,4 +523,133 @@ body {
 	.table__actions {
 		width: auto;
 	}
+}
+
+/* ============================================ */
+/* MODO CLARO - CARGOS HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .cargos-hero__copy {
+	background: rgba(243, 197, 0, 0.18);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(243, 197, 0, 0.50);
+	box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .cargos-hero__copy .cargos-hero__title {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .cargos-hero__copy .cargos-hero__eyebrow {
+	color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .cargos-hero__copy .cargos-hero__description {
+	color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .stat-card {
+	background: rgba(255, 255, 255, 0.75);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(243, 197, 0, 0.35);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .stat-card__label {
+	color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .stat-card .stat-card__value {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .stat-card .stat-card__meta {
+	color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .panel,
+[data-theme="light"] .card {
+	background: rgba(255, 255, 255, 0.85);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(0, 0, 0, 0.06);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .card__title {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .card__subtitle {
+	color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .table-wrap {
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table th {
+	color: rgba(26, 26, 30, 0.6);
+	background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .table td {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .table tbody tr:hover {
+	background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .icon-action {
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .icon-action:hover {
+	background: rgba(243, 197, 0, 0.12);
+	border-color: rgba(243, 197, 0, 0.3);
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .ui-btn--ghost,
+[data-theme="light"] .btn--ghost {
+	background: rgba(255, 255, 255, 0.8);
+	color: #1A1A1E;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ui-btn--ghost:hover,
+[data-theme="light"] .btn--ghost:hover {
+	background: rgba(243, 197, 0, 0.12);
+	border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .breadcrumb__list {
+	color: rgba(26, 26, 30, 0.6);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .breadcrumb a {
+	color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .breadcrumb a:hover {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .breadcrumb li[aria-current="page"] {
+	color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .breadcrumb__current {
+	color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .breadcrumb__current:hover {
+	color: #1A1A1E;
 }

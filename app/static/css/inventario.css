@@ -27,7 +27,7 @@ body {
 }
 
 
-/* Breadcrumb (copiado de empleados, adaptado) */
+/* Breadcrumb */
 .breadcrumb {
 	font-size: 14px;
 	margin: 0.75rem 0 1rem;
@@ -106,6 +106,7 @@ body {
   gap: 1rem;
 }
 
+/* Hero - GLASSMORPHIC AMARILLO */
 .hero {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -120,11 +121,14 @@ body {
 }
 
 .hero__copy {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(243, 197, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
   border-radius: 26px;
   padding: 1.45rem 1.55rem;
-  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--inv-shadow);
+  transition: all 0.3s ease;
 }
 
 .eyebrow,
@@ -134,7 +138,7 @@ body {
   letter-spacing: 0.14em;
   font-size: 0.76rem;
   font-weight: 800;
-  color: rgb(255, 255, 255);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .hero h1 {
@@ -143,6 +147,7 @@ body {
   font-size: clamp(2rem, 3vw, 3.2rem);
   line-height: 0.98;
   max-width: 12ch;
+  color: #ffffff;
 }
 
 .hero__text {
@@ -258,7 +263,7 @@ body {
 }
 
 /* ====================================================== */
-/* PANEL - ESTILO GLASSMORPHIC (igual que productos.css) */
+/* PANEL - ESTILO GLASSMORPHIC */
 /* ====================================================== */
 .panel {
   background: rgba(255, 255, 255, 0.06);
@@ -1229,4 +1234,240 @@ body {
         height: 32px;
         font-size: 0.8rem;
     }
+}
+
+/* ============================================ */
+/* MODO CLARO - INVENTARIO HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .hero__copy {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .hero__copy .eyebrow {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .hero__copy h1 {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .hero__copy .hero__text {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .stat-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .stat-card__label {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .stat-card .stat-card__value {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .stat-card .stat-card__hint {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel__note {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .table thead th {
+    color: rgba(26, 26, 30, 0.6);
+    background: rgba(243, 197, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table tbody td {
+    color: #1A1A1E;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .table tbody tr:hover {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .table tbody tr:nth-child(even):hover {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .inventory-thumb {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .badge--good {
+    background: rgba(52, 199, 89, 0.12);
+    color: #059669;
+}
+
+[data-theme="light"] .badge--warn {
+    background: rgba(243, 197, 0, 0.15);
+    color: #D97706;
+}
+
+[data-theme="light"] .badge--danger {
+    background: rgba(255, 59, 48, 0.12);
+    color: #DC2626;
+}
+
+[data-theme="light"] .chip {
+    background: rgba(243, 197, 0, 0.12);
+    color: #1A1A1E;
+    border-color: rgba(243, 197, 0, 0.2);
+}
+
+[data-theme="light"] .chip:hover {
+    background: rgba(243, 197, 0, 0.2);
+}
+
+[data-theme="light"] .btn--ghost {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1A1A1E;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .btn--ghost:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .breadcrumb__list {
+    color: rgba(26, 26, 30, 0.6);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .breadcrumb a {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .breadcrumb a:hover {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .breadcrumb li[aria-current="page"] {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .breadcrumb__current {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .breadcrumb__current:hover {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel--table .table-controls {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel--table .table-controls__search {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .panel--table .table-controls__input {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel--table .table-controls__input::placeholder {
+    color: rgba(26, 26, 30, 0.4);
+}
+
+[data-theme="light"] .panel--table .table-controls__size {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .panel--table .table-controls__select {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231A1A1E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+[data-theme="light"] .panel--table .table-controls__select option {
+    color: #1A1A1E;
+    background: #FFFFFF;
+}
+
+[data-theme="light"] .panel--table .table-controls__info {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .panel--table .pager__pages {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .panel--table .btn--reportes {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1A1A1E;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .panel--table .btn--reportes:hover {
+    background: rgba(243, 197, 0, 0.12);
+    color: #1A1A1E;
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .mini-list__item,
+[data-theme="light"] .repuesto {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .mini-list__left span,
+[data-theme="light"] .repuesto span {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .hierarchy__group {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .hierarchy__label {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .hierarchy__meta {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .progress-row {
+    color: rgba(26, 26, 30, 0.8);
+}
+
+[data-theme="light"] .panel--soft {
+    background: linear-gradient(145deg, rgba(243, 197, 0, 0.85), rgba(255, 229, 125, 0.85));
+    color: #1A1A1E;
 }

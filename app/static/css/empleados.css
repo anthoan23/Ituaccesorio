@@ -118,11 +118,14 @@ body {
 }
 
 .empleados-hero__copy {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(243, 197, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
   border-radius: var(--radius);
   padding: 1.4rem 1.5rem;
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+  transition: all 0.3s ease;
 }
 
 .empleados-hero__eyebrow,
@@ -879,4 +882,50 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(243, 197, 0, 0.8);
+}
+
+/* ============================================ */
+/* MODO CLARO - EMPLEADOS HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .empleados-hero__copy {
+  background: rgba(243, 197, 0, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.50);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .empleados-hero__copy .empleados-hero__title {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .empleados-hero__copy .empleados-hero__eyebrow {
+  color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .empleados-hero__copy .empleados-hero__description {
+  color: rgba(26, 26, 30, 0.7);
+}
+
+/* ============================================ */
+/* MODO CLARO - STAT CARDS (hijos del hero) */
+/* ============================================ */
+[data-theme="light"] .stat-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .stat-card__label {
+  color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .stat-card .stat-card__value {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .stat-card .stat-card__meta {
+  color: rgba(26, 26, 30, 0.5);
 }

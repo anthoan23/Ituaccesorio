@@ -1,16 +1,16 @@
-
-/* ========== HERO ========== */
+/* ========== HERO - GLASSMORPHIC AMARILLO ========== */
 .ordenes-entregas-hero {
     position: relative;
     padding: 2rem 2.5rem;
     border-radius: 22px;
     margin-bottom: 1.5rem;
     overflow: hidden;
-    background: rgba(243, 197, 0, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(243, 197, 0, 0.25);
-    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.12);
+    background: rgba(243, 197, 0, 0.10);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), 0 22px 55px rgba(0, 0, 0, 0.28);
+    transition: all 0.3s ease;
 }
 
 .ordenes-entregas-hero::before {
@@ -49,7 +49,7 @@
     font-size: 0.78rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(243, 197, 0, 0.9);
+    color: rgba(255, 255, 255, 0.78);
     font-weight: 700;
 }
 
@@ -106,7 +106,6 @@
 }
 
 /* ========== BOTONES DE ACCIÓN CON ÍCONOS ========== */
-/* Estos estilos deben coincidir con ordenes_compra.css */
 .table__actions {
     text-align: right;
     white-space: nowrap;
@@ -164,10 +163,8 @@
     color: #FF3B30;
 }
 
-/* Botón "Registrar entrega" en la tabla de pendientes */
-/* ========== BOTÓN REGISTRAR ENTREGA MÁS ANCHO ========== */
 .btn-entrega {
-    padding: 0.4rem 1rem; /* Más padding horizontal */
+    padding: 0.4rem 1rem;
     min-width: 150px;
     font-size: 0.7rem;
 }
@@ -399,4 +396,120 @@
 /* ========== UTILITY ========== */
 .hidden {
     display: none !important;
+}
+
+/* ============================================ */
+/* MODO CLARO - ORDENES ENTREGAS HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .ordenes-entregas-hero {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .entregas-hero__copy h1 {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .ordenes-entregas-hero .ordenes-entregas-hero__eyebrow {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .ordenes-entregas-hero .ordenes-entregas-hero__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .ordenes-entregas-hero .ordenes-entregas-hero__subtitle {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .vista-switcher {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .vista-switcher__btn {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .vista-switcher__btn:hover {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .vista-switcher__btn.is-active {
+    background: var(--yellow);
+    color: #1A1A1E;
+    box-shadow: 0 2px 8px rgba(243, 197, 0, 0.15);
+}
+
+[data-theme="light"] .table__actions .btn--small {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .table__actions .btn--small:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .status-pendiente {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+[data-theme="light"] .status-completada {
+    background: #d1fae5;
+    color: #059669;
+}
+
+[data-theme="light"] .status-anulada {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+[data-theme="light"] .entrega-preview {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .entrega-preview-header {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .entrega-preview-table th {
+    background: rgba(255, 255, 255, 0.8);
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .entrega-preview-table td {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .device-detail__grid {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .device-detail__label {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .device-detail__value {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .form__label {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .form__input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .form__input:read-only {
+    background: rgba(243, 197, 0, 0.08);
 }

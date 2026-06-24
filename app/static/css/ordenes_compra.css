@@ -119,6 +119,7 @@ body {
     font-weight: 800;
 }
 
+/* Hero - GLASSMORPHIC AMARILLO */
 .orders-hero {
     display: grid;
     justify-items: start;
@@ -128,11 +129,13 @@ body {
     padding: 1.4rem 1.5rem;
     width: fit-content;
     max-width: 100%;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(243, 197, 0, 0.10);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
     border-radius: 22px;
-    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.24);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+    transition: all 0.3s ease;
 }
 
 .orders-hero__eyebrow {
@@ -140,7 +143,7 @@ body {
     font-size: 0.78rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--yellow-soft);
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .orders-hero__title {
@@ -534,4 +537,130 @@ body {
     .vista-switcher {
         grid-template-columns: 1fr;
     }
+}
+
+/* ============================================ */
+/* MODO CLARO - ORDENES COMPRA HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .orders-hero {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .orders-hero .orders-hero__eyebrow {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .orders-hero .orders-hero__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .orders-hero .orders-hero__description {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .card__subtitle {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .table thead th {
+    color: rgba(26, 26, 30, 0.6);
+    background: rgba(243, 197, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table tbody td {
+    color: #1A1A1E;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .table tbody tr.row-selectable:hover {
+    background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .table .btn--small {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .table .btn--small:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .btn--ghost {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1A1A1E;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .btn--ghost:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .breadcrumb__list {
+    color: rgba(26, 26, 30, 0.6);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .breadcrumb a {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .breadcrumb a:hover {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .breadcrumb li[aria-current="page"] {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .vista-switcher {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .vista-switcher__btn {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .vista-switcher__btn:hover {
+    color: #1A1A1E;
+    border-bottom-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .vista-switcher__btn.is-active {
+    color: #1A1A1E;
+    border-bottom-color: var(--yellow);
+}
+
+[data-theme="light"] .detail-item {
+    background: rgba(243, 197, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .device-detail__label {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .device-detail__value {
+    color: #1A1A1E;
 }
