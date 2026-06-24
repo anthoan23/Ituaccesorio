@@ -134,10 +134,10 @@ const Utils = {
   showMessage(message, isError = false) {
     if (!message) return;
     if (isError) {
-      alert(message);
+      console.log(message);
       return;
     }
-    console.info(message);
+    console.log(message);
   },
 
   capitalizarTexto(texto) {
