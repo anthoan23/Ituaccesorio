@@ -1,7 +1,8 @@
+<!-- app/templates/backup.html -->
 {% extends 'components/layout/base.html' %}
 {% from 'components/ui/modal.html' import modal %}
 
-{% block title %}Ituaccesorio - Copias de Seguridad{% endblock %}
+{% block title %}Ituaccesorio - Respaldo de Base de Datos{% endblock %}
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/backup.css') }}">
@@ -9,112 +10,167 @@
 
 {% block content %}
   <main class="page backup-page">
+    <!-- Breadcrumb, Hero y Stats (igual que antes) -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <ol class="breadcrumb__list">
         <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
         <li aria-current="page">
-          <span class="breadcrumb__current">Copias de Seguridad</span>
+          <span class="breadcrumb__current">Respaldo de BD</span>
         </li>
       </ol>
     </nav>
 
     <header class="backup-hero">
       <div class="backup-hero__copy">
-        <p class="backup-hero__eyebrow">Administración de datos</p>
-        <h1 class="backup-hero__title">Copias de Seguridad</h1>
-        <p class="backup-hero__description">
-          Realice copias de seguridad completas que incluyen tablas, registros, triggers, funciones y procedimientos almacenados.
-        </p>
+        <p class="backup-hero__eyebrow">Gestión de respaldos</p>
+        <h1 class="backup-hero__title">Respaldo de Base de Datos</h1>
+        <p class="backup-hero__description">Administra los respaldos de las bases de datos del sistema.</p>
+      </div>
+
+      <div class="stats stats--single" aria-label="Resumen de respaldos">
+        <article class="stat-card">
+          <span class="stat-card__label">Respaldos</span>
+          <strong class="stat-card__value" data-count="0">0</strong>
+          <small class="stat-card__meta">Total de respaldos registrados</small>
+        </article>
       </div>
     </header>
 
-    <section class="backup-grid" aria-label="Gestión de backups">
-      <!-- Tarjeta para ituaaccesoriobd -->
-      <article class="card backup-card" data-database="ituaccesoriobd">
-        <div class="card__header">
-          <div class="card__icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="card__header-left">
-            <h2 class="card__title">Base de datos principal</h2>
-            <p class="card__subtitle">ituaccesoriobd</p>
-          </div>
-        </div>
-        <div class="card__body">
-          <div class="backup-actions">
-            <button class="ui-btn ui-btn--primary btn-backup" type="button" data-database="ituaccesoriobd">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" fill="currentColor"/>
-              </svg>
-              Descargar Backup
-            </button>
-            <button class="ui-btn ui-btn--ghost btn-restore" type="button" data-database="ituaccesoriobd">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
-              </svg>
-              Restaurar Backup
-            </button>
-          </div>
-        </div>
-      </article>
+    <section class="backup-actions">
+      <div class="backup-actions__group">
+        <button id="btn-crear-backup" class="btn-icon-action--success" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Crear Backup
+        </button>
+        <button id="btn-subir-backup" class="btn-icon-action--info" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Subir Backup
+        </button>
+      </div>
+    </section>
 
-      <!-- Tarjeta para seguridad -->
-      <article class="card backup-card" data-database="seguridad">
+    <section class="content backup-grid">
+      <article class="card card--table backup-table-card" aria-label="Respaldos registrados">
         <div class="card__header">
-          <div class="card__icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 11.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" fill="currentColor"/>
-            </svg>
-          </div>
           <div class="card__header-left">
-            <h2 class="card__title">Base de datos de seguridad</h2>
-            <p class="card__subtitle">seguridad</p>
+            <h2 class="card__title">Historial de Respaldos</h2>
+            <p class="card__subtitle">Todos los respaldos generados y subidos al sistema.</p>
           </div>
         </div>
-        <div class="card__body">
-          <div class="backup-actions">
-            <button class="ui-btn ui-btn--primary btn-backup" type="button" data-database="seguridad">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" fill="currentColor"/>
-              </svg>
-              Descargar Backup
-            </button>
-            <button class="ui-btn ui-btn--ghost btn-restore" type="button" data-database="seguridad">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
-              </svg>
-              Restaurar Backup
-            </button>
-          </div>
+
+        <div class="table-wrap table-wrap--tall" role="region" aria-label="Tabla de respaldos">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Nombre</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th class="table__actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-backups"></tbody>
+          </table>
         </div>
       </article>
     </section>
 
-    <!-- Modal para restaurar backup -->
-    {% call modal('modal-restore', 'Restaurar Backup', 'md') %}
-      <form id="form-restore" class="ui-form" enctype="multipart/form-data">
+    <!-- Modales (los mismos de antes) -->
+    {% call modal('modal-seleccionar-bd', 'Seleccionar Base de Datos', 'sm') %}
+      <p class="confirm-text">¿De qué base de datos deseas crear un respaldo?</p>
+      <div class="backup-options">
+        <button class="backup-option" data-tipo="seguridad">
+          <span class="backup-option__icon">🔒</span>
+          <span class="backup-option__name">Seguridad</span>
+          <span class="backup-option__desc">Base de datos de usuarios y permisos</span>
+        </button>
+        <button class="backup-option" data-tipo="ituaccesorio">
+          <span class="backup-option__icon">📦</span>
+          <span class="backup-option__name">Ituaccesorio</span>
+          <span class="backup-option__desc">Base de datos del negocio principal</span>
+        </button>
+      </div>
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      </div>
+    {% endcall %}
+
+    {% call modal('modal-subir-backup', 'Subir Backup', 'sm') %}
+      <form id="form-subir-backup" class="ui-form" enctype="multipart/form-data" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" id="restore_database" name="database_name">
-        
-        <div class="alert alert--warning">
-          <strong>⚠️ Advertencia:</strong>
-          <p>La restauración sobrescribirá completamente la base de datos seleccionada. 
-          Se recomienda hacer un backup antes de restaurar.</p>
+        <div class="ui-form__grid ui-form__grid--one">
+          <label class="backup-form__field">
+            <span>Tipo de Base de Datos</span>
+            <select name="tipo_bd" required>
+              <option value="">Seleccionar...</option>
+              <option value="seguridad">Seguridad</option>
+              <option value="ituaccesorio">Ituaccesorio</option>
+            </select>
+          </label>
+          <label class="backup-form__field">
+            <span>Archivo SQL</span>
+            <input type="file" name="archivo" accept=".sql" required>
+            <small class="field-hint">Solo archivos .sql</small>
+          </label>
         </div>
-
-        <div class="ui-form__field">
-          <label for="backup_file">Archivo SQL</label>
-          <input type="file" id="backup_file" name="backup_file" accept=".sql" required>
-          <small>Seleccione un archivo .sql generado previamente (máximo 100MB)</small>
-        </div>
-
         <div class="ui-form__actions">
           <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
-          <button type="submit" class="ui-btn ui-btn--primary">Restaurar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Subir Backup</button>
         </div>
       </form>
+    {% endcall %}
+
+    <!-- Modal para eliminar backup -->
+    {% call modal('modal-eliminar-backup', 'Eliminar Backup', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <p id="texto-confirmar-eliminar-backup" class="confirm-text">¿Estás seguro de que quieres eliminar este respaldo?</p>
+      <div class="ui-form__actions">
+        <button id="btn-confirmar-eliminar-backup" type="button" class="ui-btn ui-btn--danger">Sí, eliminar</button>
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      </div>
+    {% endcall %}
+
+    <!-- NUEVO: Modal para restaurar backup con advertencia -->
+    {% call modal('modal-restaurar-backup', 'Restaurar Backup', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="restaurar-id-backup" value="">
+      
+      <div class="restaurar-warning">
+        <div class="restaurar-warning__icon">⚠️</div>
+        <h3 class="restaurar-warning__title">¡Advertencia importante!</h3>
+        <p class="restaurar-warning__text">
+          Estás a punto de restaurar el backup <strong id="restaurar-nombre-backup">"nombre"</strong>.
+        </p>
+        <p class="restaurar-warning__text restaurar-warning__text--danger">
+          <strong>Esta acción puede causar pérdida de datos irreversibles.</strong>
+          La base de datos actual será reemplazada completamente por la versión del backup.
+        </p>
+        <p class="restaurar-warning__text">
+          Asegúrate de haber realizado un backup reciente antes de continuar.
+        </p>
+        <div class="restaurar-warning__checkbox">
+          <label>
+            <input type="checkbox" id="confirmar-restauracion">
+            <span>Entiendo el riesgo y estoy seguro de querer restaurar este backup</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button id="btn-confirmar-restaurar-backup" type="button" class="ui-btn ui-btn--danger" disabled>
+          Sí, restaurar backup
+        </button>
+      </div>
     {% endcall %}
   </main>
 {% endblock %}

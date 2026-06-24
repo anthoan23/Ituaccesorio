@@ -205,7 +205,6 @@ const Iconos = {
     }
 
     // ==================== REGISTRAR NUEVO TRADE-IN ====================
-    // Cargar SOLO iPhones (productos de la marca Apple/iPhone)
     async function cargarProductos() {
         try {
             const data = await fetchJson("/api/tradein/productos");
@@ -214,12 +213,10 @@ const Iconos = {
             
             select.innerHTML = '<option value="">Seleccionar iPhone...</option>';
             
-            // Filtrar solo productos que sean iPhone (marca Apple o nombre que contenga iPhone)
             const productos = data.productos || [];
             const iPhones = productos.filter(producto => {
                 const marca = (producto.marca || "").toLowerCase();
                 const nombre = (producto.nombre || "").toLowerCase();
-                // Filtrar por marca Apple o que el nombre contenga "iphone"
                 return marca === 'apple' || marca === 'iphone' || nombre.includes('iphone');
             });
             
@@ -320,90 +317,89 @@ const Iconos = {
     }
 
     // Enviar formulario de registro
-    // En la función del submit del formulario, agregar validación para id_equipo
-const formRegistrar = document.getElementById("form-registrar-tradein");
-if (formRegistrar) {
-    formRegistrar.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        const clienteId = document.getElementById("cliente-id")?.value;
-        if (!clienteId) {
-            mostrarToast("Debe seleccionar un cliente válido", "error");
-            return;
-        }
-        
-        const productoId = document.getElementById("producto-id")?.value;
-        if (!productoId) {
-            mostrarToast("Debe seleccionar un iPhone válido", "error");
-            return;
-        }
-        
-        const idEquipo = document.getElementById("id_equipo")?.value;  // CAMBIADO
-        if (!idEquipo) {
-            mostrarToast("Debe ingresar el IMEI/ID del equipo", "error");
-            return;
-        }
-        
-        const valorPagado = document.getElementById("valor-pagado")?.value;
-        if (!valorPagado || Number(valorPagado) <= 0) {
-            mostrarToast("Debe ingresar un valor pagado válido", "error");
-            return;
-        }
-        
-        // Opcional: verificar si el equipo ya existe
-        try {
-            const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
-                headers: { "Authorization": `Bearer ${getAuthToken()}` }
-            });
-            const checkData = await checkResponse.json();
-            if (checkData.exists) {
-                if (!confirm(`⚠️ El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${checkData.producto_nombre}\nColor: ${checkData.color || 'N/A'}\nCapacidad: ${checkData.capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`)) {
-                    return;
+    const formRegistrar = document.getElementById("form-registrar-tradein");
+    if (formRegistrar) {
+        formRegistrar.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const clienteId = document.getElementById("cliente-id")?.value;
+            if (!clienteId) {
+                mostrarToast("Debe seleccionar un cliente válido", "error");
+                return;
+            }
+            
+            const productoId = document.getElementById("producto-id")?.value;
+            if (!productoId) {
+                mostrarToast("Debe seleccionar un iPhone válido", "error");
+                return;
+            }
+            
+            const idEquipo = document.getElementById("id_equipo")?.value;
+            if (!idEquipo) {
+                mostrarToast("Debe ingresar el IMEI/ID del equipo", "error");
+                return;
+            }
+            
+            const valorPagado = document.getElementById("valor-pagado")?.value;
+            if (!valorPagado || Number(valorPagado) <= 0) {
+                mostrarToast("Debe ingresar un valor pagado válido", "error");
+                return;
+            }
+            
+            // Verificar si el equipo ya existe
+            try {
+                const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
+                    headers: { "Authorization": `Bearer ${getAuthToken()}` }
+                });
+                const checkData = await checkResponse.json();
+                if (checkData.exists) {
+                    if (!confirm(`⚠️ El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${checkData.equipo?.producto_nombre || 'N/A'}\nColor: ${checkData.equipo?.Color || 'N/A'}\nCapacidad: ${checkData.equipo?.Capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`)) {
+                        return;
+                    }
                 }
+            } catch (err) {
+                console.log("Equipo nuevo o error:", err);
             }
-        } catch (err) {
-            // El equipo no existe o error, continuar normalmente
-            console.log("Equipo nuevo o error:", err);
-        }
-        
-        const formData = new FormData(formRegistrar);
-        
-        const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
-        const textoOriginal = btnSubmit.textContent;
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = "Registrando...";
-        
-        try {
-            const response = await fetch("/api/tradein", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${getAuthToken()}`
-                },
-                body: formData
-            });
             
-            const data = await response.json();
+            const formData = new FormData(formRegistrar);
             
-            if (data.success) {
-                mostrarToast(data.message || "Trade-in registrado correctamente");
-                cerrarModal("modal-registrar");
-                formRegistrar.reset();
-                if (fotosPreview) fotosPreview.innerHTML = "";
-                if (clienteIdInput) clienteIdInput.value = "";
-                if (clienteSearch) clienteSearch.value = "";
-                await cargarEstadisticas();
-                await cargarTradeIns();
-            } else {
-                mostrarToast(data.error || "Error al registrar", "error");
+            const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
+            const textoOriginal = btnSubmit.textContent;
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "Registrando...";
+            
+            try {
+                const response = await fetch("/api/tradein", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${getAuthToken()}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    mostrarToast(data.message || "Trade-in registrado correctamente");
+                    cerrarModal("modal-registrar");
+                    formRegistrar.reset();
+                    if (fotosPreview) fotosPreview.innerHTML = "";
+                    if (clienteIdInput) clienteIdInput.value = "";
+                    if (clienteSearch) clienteSearch.value = "";
+                    await cargarEstadisticas();
+                    await cargarTradeIns();
+                } else {
+                    mostrarToast(data.error || "Error al registrar", "error");
+                }
+            } catch (err) {
+                mostrarToast(err.message || "Error de conexión", "error");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = textoOriginal;
             }
-        } catch (err) {
-            mostrarToast(err.message || "Error de conexión", "error");
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = textoOriginal;
-        }
-    });
-}
+        });
+    }
+
     // ==================== TESTS ====================
     async function cargarCatalogoTests() {
         try {
@@ -427,7 +423,7 @@ if (formRegistrar) {
                     <div class="equipo-info-card">
                         <strong>📱 ${escapeHtml(detalle.producto_nombre || "N/A")}</strong>
                         ${detalle.marca ? `<span>🏷️ ${escapeHtml(detalle.marca)}</span>` : ''}
-                        ${detalle.IMEI ? `<span>🔢 IMEI: ${escapeHtml(detalle.IMEI)}</span>` : ''}
+                        ${detalle.imei ? `<span>🔢 IMEI: ${escapeHtml(detalle.imei)}</span>` : ''}
                         <span>👤 ${escapeHtml(detalle.cliente_nombre)} ${escapeHtml(detalle.cliente_apellido || "")}</span>
                     </div>
                 `;
@@ -609,7 +605,7 @@ if (formRegistrar) {
                         </div>
                         <div class="detalle-item">
                             <strong>IMEI</strong>
-                            <span>${escapeHtml(detalle.IMEI || "N/A")}</span>
+                            <span>${escapeHtml(detalle.imei || "N/A")}</span>
                         </div>
                         ${detalle.Clave ? `
                         <div class="detalle-item">
