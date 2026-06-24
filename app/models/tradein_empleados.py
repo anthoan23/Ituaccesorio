@@ -1,10 +1,9 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+from app.models.equipo import Equipo
 from datetime import datetime
-from decimal import Decimal
 from typing import List, Dict, Any, Optional
-import json
 
 
 class TradeInEmpleados:
@@ -13,7 +12,9 @@ class TradeInEmpleados:
     def __init__(self, trade_in_id: str = None, empleado_id: str = None, 
                  cliente_id: str = None, id_producto: str = None, 
                  id_equipo: str = None, valor_pagado: float = None,
-                 usuario_id: str = None):
+                 usuario_id: str = None, color: str = None, 
+                 capacidad: str = None, clave: str = None, patron: str = None,
+                 observaciones: str = None):
         self.trade_in_id = trade_in_id
         self.empleado_id = empleado_id
         self.cliente_id = cliente_id
@@ -21,10 +22,14 @@ class TradeInEmpleados:
         self.id_equipo = id_equipo
         self.valor_pagado = valor_pagado
         self.usuario_id = usuario_id
+        self.color = color
+        self.capacidad = capacidad
+        self.clave = clave
+        self.patron = patron
+        self.observaciones = observaciones
         self.__conexion_bd = conectar()
     
     def _conexion(self):
-        """Retorna la conexión a la base de datos de negocio (ituaccesoriobd)"""
         return self.__conexion_bd.conexion1()
     
     def _generar_id_trade_in(self) -> str:
@@ -106,32 +111,74 @@ class TradeInEmpleados:
         
         cursor = db.cursor()
         try:
-            # 1. Verificar si el equipo ya existe
-            cursor.execute(
-                "SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s LIMIT 1",
-                (self.id_equipo,)
-            )
-            row = cursor.fetchone()
+            # 1. Verificar si el equipo ya existe por IMEI
+            cursor.execute("SELECT ID_equipo, ID_producto FROM Equipo WHERE ID_equipo = %s", (self.id_equipo,))
+            equipo_existente = cursor.fetchone()
             
-            if row:
-                equipo_id = row[0]
-            else:
+            if equipo_existente:
+                # El equipo ya existe - actualizar datos si es necesario
                 equipo_id = self.id_equipo
-                cursor.execute("""
-                    INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (equipo_id, self.id_producto, None, None, None, None))
+                equipo_producto_id = equipo_existente[1] if len(equipo_existente) > 1 else None
+                
+                # Si el equipo existe pero tiene un producto diferente, actualizarlo
+                if equipo_producto_id != self.id_producto:
+                    equipo = Equipo(
+                        ID_equipo=self.id_equipo,
+                        ID_producto=self.id_producto,
+                        Color=self.color,
+                        Capacidad=self.capacidad,
+                        Clave=self.clave,
+                        Patron=self.patron
+                    )
+                    resultado = equipo.actualizar_equipo()
+                    if "Error" in resultado and "no se encontró" not in resultado:
+                        print(f"Advertencia al actualizar equipo: {resultado}")
+                else:
+                    # Solo actualizar campos opcionales si se proporcionaron
+                    if self.color or self.capacidad or self.clave or self.patron:
+                        equipo = Equipo(
+                            ID_equipo=self.id_equipo,
+                            ID_producto=None,  # No actualizar producto
+                            Color=self.color,
+                            Capacidad=self.capacidad,
+                            Clave=self.clave,
+                            Patron=self.patron
+                        )
+                        resultado = equipo.actualizar_equipo()
+                        if "Error" in resultado and "no se encontró" not in resultado:
+                            print(f"Advertencia al actualizar equipo: {resultado}")
+            else:
+                # 2. Crear NUEVO equipo con el producto asociado
+                equipo = Equipo(
+                    ID_equipo=self.id_equipo,
+                    ID_producto=self.id_producto,
+                    Color=self.color,
+                    Capacidad=self.capacidad,
+                    Clave=self.clave,
+                    Patron=self.patron
+                )
+                resultado = equipo.registrar_equipo()
+                if "Error" in resultado:
+                    return {"success": False, "error": resultado}
             
-            # 2. Crear registro de trade-in
+            # 3. Crear registro de trade-in usando ID_equipo
             self.trade_in_id = self._generar_id_trade_in()
             fecha_actual = datetime.now()
             
             cursor.execute("""
                 INSERT INTO Trade_in (ID_Trade_in, ID_empleado, ID_cliente, ID_equipo, Numero_utilizado, Fecha_realizado, cotizacion)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (self.trade_in_id, self.empleado_id, self.cliente_id, equipo_id, 0, fecha_actual, self.valor_pagado))
+            """, (
+                self.trade_in_id, 
+                self.empleado_id, 
+                self.cliente_id, 
+                self.id_equipo,
+                0, 
+                fecha_actual, 
+                self.valor_pagado
+            ))
             
-            # 3. Guardar fotos si las hay
+            # 4. Guardar fotos si las hay
             if fotos:
                 for foto_url in fotos:
                     id_foto = self._generar_id_foto_trade_in()
@@ -146,7 +193,7 @@ class TradeInEmpleados:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar Trade-in",
-                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo ID: {self.id_equipo} - Valor: {self.valor_pagado}",
+                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo: {self.id_equipo} - Producto: {self.id_producto} - Valor: {self.valor_pagado}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Trade-in"
                 )
@@ -154,9 +201,9 @@ class TradeInEmpleados:
             
             return {
                 "success": True,
-                "message": f"Trade-in registrado correctamente",
+                "message": "Trade-in registrado correctamente",
                 "trade_in_id": self.trade_in_id,
-                "equipo_id": equipo_id
+                "equipo_id": self.id_equipo
             }
             
         except Exception as e:
@@ -253,17 +300,26 @@ class TradeInEmpleados:
                     t.Numero_utilizado,
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
-                    e.ID_equipo AS imei,
+                    -- Datos del equipo
                     e.Color,
                     e.Capacidad,
+                    e.Clave,
+                    e.Patron,
+                    -- Datos del producto (linkeado desde Equipo)
+                    p.ID_producto AS producto_id,
                     p.Nombre_producto AS producto_nombre,
                     p.Descripcion AS producto_descripcion,
+                    -- Datos de clase y marca
+                    cl.Nombre_Clase AS clase,
+                    m.Nombre_marca AS marca,
+                    m.ID_marca AS id_marca,
+                    cl.ID_Clase AS id_clase,
+                    -- Datos del cliente
                     COALESCE(pn.Nombre_cliente, '') AS cliente_nombre,
                     COALESCE(pn.Apellido_cliente, '') AS cliente_apellido,
                     c.Celular_cliente AS cliente_celular,
                     c.Correo_cliente AS cliente_correo,
-                    cl.Nombre_Clase AS clase,
-                    m.Nombre_marca AS marca
+                    c.Direccion_cliente AS cliente_direccion
                 FROM Trade_in t
                 LEFT JOIN Equipo e ON t.ID_equipo = e.ID_equipo
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
@@ -304,12 +360,15 @@ class TradeInEmpleados:
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
                     p.Nombre_producto AS producto_nombre,
-                    e.ID_equipo AS imei,
                     e.Color,
-                    e.Capacidad
+                    e.Capacidad,
+                    m.Nombre_marca AS marca,
+                    cl.Nombre_Clase AS clase
                 FROM Trade_in t
                 LEFT JOIN Equipo e ON t.ID_equipo = e.ID_equipo
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE t.ID_cliente = %s
                 ORDER BY t.Fecha_realizado DESC
             """, (self.cliente_id,))
@@ -343,21 +402,26 @@ class TradeInEmpleados:
                     t.Numero_utilizado,
                     t.Fecha_realizado AS fecha,
                     t.cotizacion AS valor_pagado,
+                    -- Datos del equipo
                     e.ID_equipo AS imei,
                     e.Color,
                     e.Capacidad,
                     e.Clave,
                     e.Patron,
+                    -- Datos del producto
                     p.ID_producto AS producto_id,
                     p.Nombre_producto AS producto_nombre,
                     p.Descripcion AS producto_descripcion,
+                    -- Datos de clase y marca
+                    cl.Nombre_Clase AS clase,
+                    m.Nombre_marca AS marca,
+                    -- Datos del cliente
                     COALESCE(pn.Nombre_cliente, '') AS cliente_nombre,
                     COALESCE(pn.Apellido_cliente, '') AS cliente_apellido,
                     c.Celular_cliente AS cliente_celular,
                     c.Correo_cliente AS cliente_correo,
                     c.Direccion_cliente AS cliente_direccion,
-                    cl.Nombre_Clase AS clase,
-                    m.Nombre_marca AS marca,
+                    -- Datos del empleado
                     emp.Nombre_empleado AS empleado_nombre,
                     emp.Apellido_empleado AS empleado_apellido
                 FROM Trade_in t
@@ -469,7 +533,7 @@ class TradeInEmpleados:
     # ==================== CATÁLOGOS PARA FORMULARIOS ====================
     
     def obtener_productos_disponibles(self) -> List[Dict[str, Any]]:
-        """Obtiene productos disponibles para registrar en trade-in"""
+        """Obtiene productos disponibles para registrar en trade-in (solo iPhones)"""
         db = self._conexion()
         if not db:
             return []
@@ -488,41 +552,10 @@ class TradeInEmpleados:
                 INNER JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 INNER JOIN Marca_producto m ON p.ID_marca = m.ID_marca
                 WHERE cl.ID_Clase = '1' 
-                  AND m.ID_marca = '1'
-                  AND p.Nombre_producto NOT LIKE '%funda%'
-                  AND p.Nombre_producto NOT LIKE '%cargador%'
-                  AND p.Nombre_producto NOT LIKE '%pantalla%'
-                  AND p.Nombre_producto NOT LIKE '%protector%'
-                  AND p.Nombre_producto NOT LIKE '%mica%'
-                  AND p.Nombre_producto NOT LIKE '%case%'
-                  AND p.Nombre_producto NOT LIKE '%cover%'
-                  AND p.Nombre_producto NOT LIKE '%cable%'
-                  AND p.Nombre_producto NOT LIKE '%audifonos%'
-                  AND p.Nombre_producto NOT LIKE '%airpods%'
+                  AND (m.ID_marca = '1' OR m.Nombre_marca = 'Iphone' OR m.Nombre_marca = 'Apple')
                 ORDER BY p.Nombre_producto
             """)
-            resultados = cursor.fetchall()
-            
-            if not resultados:
-                cursor.execute("""
-                    SELECT 
-                        p.ID_producto AS id,
-                        p.Nombre_producto AS nombre,
-                        cl.Nombre_Clase AS clase,
-                        m.Nombre_marca AS marca,
-                        m.ID_marca AS id_marca,
-                        cl.ID_Clase AS id_clase
-                    FROM Producto p
-                    INNER JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
-                    INNER JOIN Marca_producto m ON p.ID_marca = m.ID_marca
-                    WHERE (cl.ID_Clase = '1' OR cl.Nombre_Clase = 'Telefono')
-                      AND (m.ID_marca = '1' OR m.Nombre_marca = 'Apple')
-                    ORDER BY p.Nombre_producto
-                """)
-                resultados = cursor.fetchall()
-            
-            return resultados
-            
+            return cursor.fetchall()
         except Exception as e:
             print(f"Error en obtener_productos_disponibles: {e}")
             return []
@@ -568,7 +601,7 @@ class TradeInEmpleados:
             db.close()
     
     def verificar_equipo_existente(self) -> Optional[Dict[str, Any]]:
-        """Verifica si un equipo ya existe por su ID (IMEI)"""
+        """Verifica si un equipo ya existe por su ID (IMEI) y trae sus datos"""
         if not self.id_equipo:
             return None
         
@@ -581,12 +614,19 @@ class TradeInEmpleados:
             cursor.execute("""
                 SELECT 
                     e.ID_equipo,
+                    e.ID_producto,
                     e.Color,
                     e.Capacidad,
+                    e.Clave,
+                    e.Patron,
                     p.Nombre_producto AS producto_nombre,
-                    p.ID_producto AS producto_id
+                    p.ID_producto AS producto_id,
+                    m.Nombre_marca AS marca,
+                    cl.Nombre_Clase AS clase
                 FROM Equipo e
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE e.ID_equipo = %s
             """, (self.id_equipo,))
             return cursor.fetchone()
@@ -600,7 +640,7 @@ class TradeInEmpleados:
     # ==================== ELIMINAR ====================
     
     def eliminar_trade_in(self) -> Dict[str, Any]:
-        """Elimina un trade-in"""
+        """Elimina un trade-in y sus relaciones"""
         if not self.trade_in_id:
             return {"success": False, "error": "ID de trade-in no especificado"}
         
@@ -610,8 +650,13 @@ class TradeInEmpleados:
         
         cursor = db.cursor()
         try:
+            # Eliminar fotos asociadas
             cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
+            
+            # Eliminar tests asociados
             cursor.execute("DELETE FROM Test_realizados_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
+            
+            # Eliminar el trade-in
             cursor.execute("DELETE FROM Trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
             
             db.commit()
