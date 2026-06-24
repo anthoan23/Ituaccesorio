@@ -106,6 +106,7 @@
 
     {% call modal('modal-asignar-tecnico', 'Asignar orden a técnico', 'md') %}
       <form class="ui-form" autocomplete="off" id="form-asignar-tecnico">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
             <span>Orden pendiente</span>
@@ -131,6 +132,8 @@
 
     {% call modal('modal-nueva-orden', 'Nueva orden de servicio', 'lg') %}
       <form class="ui-form" autocomplete="off" id="form-orden-servicio">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
             <span>IMEI / ID del equipo *</span>
@@ -258,6 +261,50 @@
         </div>
       </form>
     {% endcall %}
+
+    {# Modal para detalle de orden - se asume que existe en otro archivo o se agrega aquí #}
+    {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
+      <input type="hidden" id="detalle-orden-id" value="">
+      <div id="detalle-info"></div>
+      <div id="detalle-responsables"></div>
+      <div id="detalle-fotos"></div>
+      <div id="detalle-tests"></div>
+      <div class="modal__footer modal__footer--right">
+        <button type="button" class="btn btn--ghost" data-close-modal="modal-detalle-orden">Cerrar</button>
+      </div>
+    {% endcall %}
+
+    {# Modal para revisión - se asume que existe en otro archivo o se agrega aquí #}
+    {% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
+      <form id="form-revision-orden">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="revision-orden-id" value="">
+        <!-- Campos de revisión aquí -->
+        <div class="modal__footer modal__footer--right">
+          <button type="button" class="btn btn--ghost" data-close-modal="modal-revision-orden">Cancelar</button>
+          <button type="submit" class="btn btn--yellow">Guardar revisión</button>
+        </div>
+      </form>
+    {% endcall %}
+
+    {# Modal para fotos - se asume que existe en otro archivo o se agrega aquí #}
+    {% call modal('modal-fotos-orden', 'Agregar fotos', 'lg') %}
+      <form id="form-fotos-orden" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="fotos-orden-id" value="">
+        <label class="form__field">
+          <span>Fotos</span>
+          <input id="input-fotos-orden" type="file" name="fotos" multiple accept="image/*">
+        </label>
+        <div id="preview-fotos"></div>
+        <div class="modal__footer modal__footer--right">
+          <button type="button" class="btn btn--ghost" data-close-modal="modal-fotos-orden">Cancelar</button>
+          <button type="submit" class="btn btn--yellow">Subir fotos</button>
+        </div>
+      </form>
+    {% endcall %}
+
+</main>
 {% endblock %}
 
 {% block scripts %}

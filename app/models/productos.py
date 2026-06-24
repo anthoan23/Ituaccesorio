@@ -170,6 +170,8 @@ class ClaseProducto:
             cursor.close()
             db.close()
 
+    
+
 
 class MarcaProducto:
     """Modelo para la tabla Marca_producto"""
