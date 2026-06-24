@@ -20,7 +20,7 @@
 
     <header class="cargos-hero">
       <div class="cargos-hero__copy">
-        <p class="cargos-hero__eyebrow">Gestión de personal</p>
+        <p class="cargos-hero__eyebrow">Gestión de cargos</p>
         <h1 class="cargos-hero__title">Cargos</h1>
         <p class="cargos-hero__description">Vista simple para consultar y registrar cargos.</p>
       </div>
@@ -40,9 +40,6 @@
           <div class="card__header-left">
             <h2 class="card__title">Catálogo de cargos</h2>
             <p class="card__subtitle">Tabla principal de cargos registrados.</p>
-          </div>
-          <div class="card__actions">
-            <button id="btn-actualizar-cargos" class="ui-btn ui-btn--primary" type="button">Actualizar</button>
           </div>
         </div>
 
@@ -96,8 +93,15 @@
                         title="No se permiten números ni símbolos especiales"></textarea>
               <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">No se permiten números ni símbolos especiales (mínimo 4 caracteres)</small>
             </label>
-          <div class="cargo-form__actions cargo-form__actions--top">
-            <button class="ui-btn ui-btn--primary" type="submit">Registrar nuevo cargo</button>
+          <div class="cargo-form__actions cargo-form__actions--top cargo-form__actions--center">
+              <button class="btn-icon-action--success" type="submit">
+                  Registrar nuevo cargo
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                      <polyline points="17 21 17 13 7 13 7 21"/>
+                      <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+              </button>
           </div>
         </form>
       </article>

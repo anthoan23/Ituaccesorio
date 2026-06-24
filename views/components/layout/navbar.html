@@ -178,8 +178,12 @@
                     <span class="drawer__link-text">Gestión Trade-in</span>
                 </a>
 
-                {# 12. Ventas #}
-                <a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                {# ==================== 12. VENTAS (AGRUPADO) ==================== #}
+                {% set ventas_active = active_page in ['validar_pagos', 'reportes_ventas'] %}
+                <button class="drawer__link drawer__group-toggle {% if ventas_active %}is-active{% endif %}" 
+                        data-nav-group-toggle="ventas-group" 
+                        aria-controls="ventas-group" 
+                        aria-expanded="{{ 'true' if ventas_active else 'false' }}">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -188,7 +192,17 @@
                         </svg>
                     </span>
                     <span class="drawer__link-text">Ventas</span>
-                </a>
+                </button>
+                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" {% if not ventas_active %}hidden{% endif %}>
+                    <a class="drawer__submenu-link {% if active_page == 'validar_pagos' %}is-active{% endif %}" 
+                       href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                        <span class="drawer__link-text">Validación de Pagos</span>
+                    </a>
+                    <a class="drawer__submenu-link {% if active_page == 'reportes_ventas' %}is-active{% endif %}" 
+                       href="{{ url_for('reportes_ventas.pagina_reportes_ventas') }}">
+                        <span class="drawer__link-text">Reportes de Ventas</span>
+                    </a>
+                </div>
 
                 {# 13. Usuarios #}
                 <a class="drawer__link {% if active_page == 'usuarios' %}is-active{% endif %}" href="{{ url_for('usuarios.pagina_usuarios') }}">
@@ -419,9 +433,27 @@
                 </a>
                 {% endif %}
 
-                {# Ventas #}
-                {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
-                <a class="drawer__link {% if active_page == 'validar_pagos' %}is-active{% endif %}" href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                {# backup #}
+                {% if tiene_permisos and g.user.permisos.get('Backup', {}).get('consultar', false) %}
+                <a class="drawer__link {% if active_page == 'backup' %}is-active{% endif %}" href="{{ url_for('backup.pagina_backup') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Respaldo de BD</span>
+                </a>
+                {% endif %}
+
+                {# ==================== VENTAS (AGRUPADO) ==================== #}
+                {% if tiene_permisos and (g.user.permisos.get('Ventas', {}).get('consultar', false) or g.user.permisos.get('Reportes Ventas', {}).get('consultar', false)) %}
+                {% set ventas_active = active_page in ['validar_pagos', 'reportes_ventas'] %}
+                <button class="drawer__link drawer__group-toggle {% if ventas_active %}is-active{% endif %}" 
+                        data-nav-group-toggle="ventas-group" 
+                        aria-controls="ventas-group" 
+                        aria-expanded="{{ 'true' if ventas_active else 'false' }}">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -430,7 +462,21 @@
                         </svg>
                     </span>
                     <span class="drawer__link-text">Ventas</span>
-                </a>
+                </button>
+                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" {% if not ventas_active %}hidden{% endif %}>
+                    {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
+                    <a class="drawer__submenu-link {% if active_page == 'validar_pagos' %}is-active{% endif %}" 
+                       href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
+                        <span class="drawer__link-text">Validación de Pagos</span>
+                    </a>
+                    {% endif %}
+                    {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
+                    <a class="drawer__submenu-link {% if active_page == 'reportes_ventas' %}is-active{% endif %}" 
+                       href="{{ url_for('reportes_ventas.pagina_reportes_ventas') }}">
+                        <span class="drawer__link-text">Reportes de Ventas</span>
+                    </a>
+                    {% endif %}
+                </div>
                 {% endif %}
 
                 {# Usuarios #}

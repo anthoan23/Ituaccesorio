@@ -36,7 +36,9 @@ def api_registrar_trade_in():
         capacidad = request.form.get("capacidad", "").strip() or None
         clave = request.form.get("clave", "").strip() or None
         patron = request.form.get("patron", "").strip() or None
+        observaciones = request.form.get("observaciones", "").strip() or None
         
+        # Validaciones
         if not cliente_id:
             return jsonify({"success": False, "error": "Debe seleccionar un cliente"}), 400
         if not id_producto:
@@ -51,6 +53,7 @@ def api_registrar_trade_in():
         except ValueError:
             return jsonify({"success": False, "error": "El valor pagado debe ser un número válido"}), 400
         
+        # Obtener usuario
         empleado_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
         empleado_id = str(empleado_id) if empleado_id else None
         
@@ -76,13 +79,19 @@ def api_registrar_trade_in():
                 archivo.save(ruta_fisica)
                 fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
         
+        # Crear instancia del modelo con todos los datos
         modelo = TradeInEmpleados(
             cliente_id=cliente_id,
             id_producto=id_producto,
             valor_pagado=valor_pagado_float,
             empleado_id=empleado_id,
             id_equipo=id_equipo,
-            usuario_id=usuario_id
+            usuario_id=usuario_id,
+            color=color,
+            capacidad=capacidad,
+            clave=clave,
+            patron=patron,
+            observaciones=observaciones
         )
         
         resultado = modelo.registrar_trade_in(fotos=fotos)

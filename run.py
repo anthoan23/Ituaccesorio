@@ -22,6 +22,7 @@ from app.controllers.ordenes_entregas import ordenes_entregas_blueprint
 from app.controllers.cargos import cargos_blueprint
 from app.controllers.especialidades import especialidades_blueprint
 from app.controllers.validacion_pagos import validacion_pagos_blueprint
+from app.controllers.reportes_ventas import reportes_ventas_blueprint
 from app.controllers.entregas import entregas_blueprint
 from app.controllers.backup import backup_blueprint
 from app.controllers.tradein_empleados import tradein_empleados_blueprint
@@ -93,7 +94,7 @@ app.register_blueprint(validacion_pagos_blueprint)
 app.register_blueprint(entregas_blueprint)
 app.register_blueprint(backup_blueprint)
 app.register_blueprint(tradein_empleados_blueprint)
-
+app.register_blueprint(reportes_ventas_blueprint)
 @app.before_request
 def load_user_from_jwt():
     token = request.cookies.get('access_token')

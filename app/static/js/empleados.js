@@ -7,16 +7,39 @@ const CONFIG = {
     CONSULTAR: '/api/empleados/consultar',
     LISTA: '/api/empleados/lista',
     GRAFICOS: '/api/empleados/graficos',
-    VERIFICAR_CEDULA: '/api/empleados/verificar-cedula' // Nueva endpoint para verificar cédula
+    VERIFICAR_CEDULA: '/api/empleados/verificar-cedula'
   },
   CHART_COLORS: {
     PIE_1: {
       BACKGROUND: ['#ffce54', '#f3c500', '#ffe36b', '#e67e00', '#d4a017', '#f39c12', '#e67e22', '#f1c40f'],
       BORDER: ['#ffce54', '#f3c500', '#ffe36b', '#e67e00', '#d4a017', '#f39c12', '#e67e22', '#f1c40f']
     },
+    // NUEVA PALETA DE COLORES MEJORADA PARA ESPECIALIDADES
     PIE_2: {
-      BACKGROUND: ['rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'],
-      BORDER: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)']
+      BACKGROUND: [
+        '#FF6B6B',  // Rojo coral
+        '#4ECDC4',  // Turquesa
+        '#FFE66D',  // Amarillo
+        '#A8E6CF',  // Verde menta
+        '#FF8A5C',  // Naranja
+        '#6C5B7B',  // Morado
+        '#F08A5D',  // Salmón
+        '#B83B5E',  // Rosa oscuro
+        '#2F9292',  // Verde azulado
+        '#FFD93D'   // Amarillo brillante
+      ],
+      BORDER: [
+        '#FF6B6B',
+        '#4ECDC4',
+        '#FFE66D',
+        '#A8E6CF',
+        '#FF8A5C',
+        '#6C5B7B',
+        '#F08A5D',
+        '#B83B5E',
+        '#2F9292',
+        '#FFD93D'
+      ]
     }
   }
 };
@@ -111,10 +134,10 @@ const Utils = {
   showMessage(message, isError = false) {
     if (!message) return;
     if (isError) {
-      alert(message);
+      console.log(message);
       return;
     }
-    console.info(message);
+    console.log(message);
   },
 
   capitalizarTexto(texto) {
@@ -630,7 +653,7 @@ function renderTabla(empleados) {
   if (!tbody) return;
 
   if (!empleados || empleados.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="table__empty">No hay empleados para mostrar.</td></td>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="table__empty">No hay empleados para mostrar.</td></tr>`;
     if (contador) {
       contador.setAttribute("data-count", "0");
       contador.textContent = "0";
@@ -776,7 +799,10 @@ function crearGraficoPie(canvasId, colors, labels, data) {
       plugins: {
         legend: { 
           position: 'bottom',
-          labels: { font: { size: 11 } }
+          labels: { 
+            font: { size: 11 },
+            color: '#ffffff'
+          }
         },
         tooltip: {
           callbacks: {
@@ -1170,12 +1196,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (cargoSelect) {
     cargoSelect.removeEventListener('change', toggleEspecialidades);
     cargoSelect.addEventListener('change', toggleEspecialidades);
-  }
-  
-  const btnActualizar = document.getElementById('btn-actualizar-empleados');
-  if (btnActualizar) {
-    btnActualizar.removeEventListener('click', cargarEmpleados);
-    btnActualizar.addEventListener('click', cargarEmpleados);
   }
   
   const btnNuevo = document.querySelector('[data-open-modal="modal-registrar-empleado"]');

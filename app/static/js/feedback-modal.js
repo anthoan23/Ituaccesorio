@@ -127,6 +127,9 @@
 
     if (u.includes("/api/taller/consultar-test")) return false;
 
+    if (u.includes("/api/reportes-ventas/listar")) return false;
+
+
     return true;
   }
   
