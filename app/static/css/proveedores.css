@@ -164,7 +164,7 @@ body {
 
 .providers-grid {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 320px;
+	grid-template-columns: minmax(0, 1fr);
 	gap: 1.1rem;
 	align-items: start;
 }
@@ -440,7 +440,7 @@ body {
 /* Contenedor de botones de acción */
 .row-actions {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: center;
 	align-items: center;
 	gap: 0.35rem;
 	flex-wrap: nowrap;

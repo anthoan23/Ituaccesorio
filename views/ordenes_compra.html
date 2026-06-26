@@ -132,22 +132,25 @@
     <nav class="breadcrumb" aria-label="Breadcrumb">
         <ol class="breadcrumb__list">
             <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
-            <li class="breadcrumb__separator">></li>
             <li aria-current="page">Órdenes de compra</li>
         </ol>
     </nav>
 
     <!-- HERO CON FONDO AMARILLO -->
-    <header class="orders-hero">
-        <div class="orders-hero__copy">
-            <p class="orders-hero__eyebrow">Gestión de compras</p>
+    <div class="orders-hero">
+        <div>
             <h1 class="orders-hero__title">Órdenes de compra</h1>
-            <p class="orders-hero__description">Gestiona las órdenes de compra a tus proveedores</p>
+            <p class="orders-hero__subtitle">Gestión de órdenes de compra a proveedores</p>
         </div>
         <div class="orders-hero__actions">
-            <button id="btn-registrar-entrada" class="btn btn--primary">Registrar orden</button>
+            <!-- BOTÓN REGISTRAR - MISMO ESTILO QUE PRODUCTOS -->
+            <button id="btn-registrar-entrada" class="btn btn--yellow" type="button">
+                <span class="btn__icon" aria-hidden="true">+</span>
+                Registrar orden
+            </button>
         </div>
-    </header>
+    </div>
+
 
     <section class="content">
         <!-- ✅ SOLO UNA VISTA: Órdenes pendientes -->

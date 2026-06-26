@@ -58,7 +58,7 @@
       </div>
     </article>
 
-    <aside class="card filters-panel" aria-label="Búsqueda">
+    <!-- <aside class="card filters-panel" aria-label="Búsqueda">
       <h2 class="card__title">Búsqueda</h2>
 
       <div class="filters-panel__section" aria-label="Buscar proveedor">
@@ -74,7 +74,7 @@
       </div>
 
       <p class="helper" aria-label="Nota">Tip: escribe parte del nombre para filtrar.</p>
-    </aside>
+    </aside> -->
   </section>
 
   <!-- Modal Registrar Proveedor -->
@@ -97,9 +97,9 @@
                      inputmode="text" 
                      placeholder="Ej: J-12345678-9"
                      maxlength="12"
-                     data-validation-rules="sinEspacios"
-                     title="Formato: J-12345678-9">
-              <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formato: J-12345678-9 (sin espacios)</small>
+                     data-validation-rules="rif"
+                     title="Formato: J-12345678-9 (solo números y guiones)">
+              <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formato: J-12345678-9 (solo números y guiones)</small>
             </label>
 
             <label class="ui-field">
@@ -221,8 +221,8 @@
 
           <div class="ui-form__grid">
             <label class="ui-field">
-              <span>ID proveedor</span>
-              <input id="e-id" name="id_readonly" type="number" inputmode="numeric" placeholder="Ej: 1" disabled>
+              <span>RIF</span>
+              <input id="e-id" name="id_readonly" type="text" placeholder="Ej: J-12345678-9" disabled style="background:#f0f0f0;">
             </label>
 
             <label class="ui-field ui-field--full">
@@ -303,7 +303,7 @@
             <button class="btn btn--yellow btn--sm" type="button" data-open-modal="modal-proveedor-agregar-producto">
               Agregar producto
             </button>
-            <span class="helper helper--inline">Se guardan al cambiar el costo.</span>
+            <span class="helper helper--inline">El costo se actualiza automáticamente al escribir.</span>
           </div>
 
           <div class="table-wrap" role="region" aria-label="Tabla de productos del proveedor">
@@ -314,6 +314,7 @@
                   <th>Marca</th>
                   <th>Clase</th>
                   <th class="col-cost">Costo</th>
+                  <th class="table__actions">Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla-proveedor-productos"></tbody>
