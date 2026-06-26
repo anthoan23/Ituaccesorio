@@ -664,3 +664,7 @@ body {
 [data-theme="light"] .device-detail__value {
     color: #1A1A1E;
 }
+
+[data-theme="light"] body {
+    color: #1A1A1E;
+}

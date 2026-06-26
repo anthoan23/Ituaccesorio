@@ -6,8 +6,7 @@ from werkzeug.utils import secure_filename
 
 from decimal import Decimal, InvalidOperation
 
-from app.models.inventario import Inventario, FotosInventario
-from app.models.productos import Producto
+from app.models.inventario import Inventario
 from app.utils.decorators import jwt_required, tiene_permiso
 
 inventario_blueprint = Blueprint("inventario", __name__)
@@ -64,17 +63,6 @@ def api_productos_sin_stock():
     inv = Inventario()
     productos = inv.listar_productos_sin_stock()
     return jsonify({"success": True, "productos": productos})
-
-
-# ==================== FOTOS DE INVENTARIO ====================
-
-@inventario_blueprint.route("/api/inventario/fotos/<string:id_inventario>", methods=["GET"])
-@jwt_required
-@tiene_permiso('Inventario', 'consultar')
-def api_listar_fotos_inventario(id_inventario: str):
-    modelo = FotosInventario(id_inventario=id_inventario)
-    lista = modelo.listar_fotos()
-    return jsonify({"success": True, "fotos": lista})
 
 
 # ==================== REPORTES ====================

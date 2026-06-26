@@ -409,7 +409,7 @@
     box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-[data-theme="light"] .entregas-hero__copy h1 {
+[data-theme="light"] body {
     color: #1A1A1E;
 }
 
@@ -417,7 +417,7 @@
     color: rgba(26, 26, 30, 0.7);
 }
 
-[data-theme="light"] .ordenes-entregas-hero .ordenes-entregas-hero__title {
+[data-theme="light"] .ordenes-entregas-hero__title h1 {
     color: #1A1A1E;
 }
 
