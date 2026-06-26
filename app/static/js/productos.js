@@ -17,9 +17,6 @@
 
   const fClase = document.getElementById("f-clase");
   const fMarca = document.getElementById("f-marca");
-  const fTexto = document.getElementById("f-texto");
-  const btnAplicar = document.getElementById("btn-aplicar");
-  const btnLimpiar = document.getElementById("btn-limpiar");
 
   const pClase = document.getElementById("p-clase");
   const pClaseNuevaWrap = document.getElementById("p-clase-nueva-wrap");
@@ -48,9 +45,6 @@
 
   // ==================== VALIDACIÓN DE SEGURIDAD ====================
   
-  /**
-   * Valida que un ID sea válido para productos (alfanumérico)
-   */
   function validarIdProducto(id) {
     if (!id || id === '' || id === null || id === undefined) {
       return false;
@@ -59,9 +53,6 @@
     return /^[a-zA-Z0-9]+$/.test(idStr) && idStr.length > 0;
   }
 
-  /**
-   * Muestra un mensaje de error de seguridad
-   */
   function mostrarErrorSeguridad(mensaje) {
     const msg = mensaje || 'Se ha detectado una acción no válida. Por favor, recarga la página e intenta nuevamente.';
     
@@ -77,8 +68,6 @@
     }
   }
 
-  // ==================== MODAL DE CONFIRMACIÓN ====================
-  
   function mostrarModalConfirmacion(mensaje, onConfirmar, soloInformacion = false, tipo = 'info') {
     const modalExistente = document.getElementById('confirmacion-modal');
     if (modalExistente) modalExistente.remove();
@@ -120,16 +109,16 @@
     modalDiv.innerHTML = `
       <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
         <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
-          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;">${titulo}</h3>
-          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
+          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:#121212;">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#666;">×</button>
         </header>
-        <div class="ui-modal__body" style="padding:1.5rem;">
+        <div class="ui-modal__body" style="padding:1.5rem 1.5rem 0.5rem 1.5rem;">
           <div style="text-align:center;font-size:3rem;margin-bottom:0.5rem;">${icono}</div>
-          <p id="confirmacion-modal-mensaje" style="margin:0;font-size:1rem;color:#121212;text-align:center;white-space:pre-wrap;">${mensaje}</p>
+          <p id="confirmacion-modal-mensaje" style="margin:0 0 1rem 0;font-size:1rem;color:#121212;text-align:center;white-space:pre-wrap;line-height:1.5;">${mensaje}</p>
         </div>
-        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
+        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem 1.5rem 1.5rem;border-top:1px solid #e5e7eb;">
           ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
-          <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
+          <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1.5rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;min-width:100px;">${btnTexto}</button>
         </div>
       </div>
     `;
@@ -255,7 +244,6 @@
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
-      // Mejorar mensaje de error para 404
       if (response.status === 404) {
         throw new Error(`404: ${data.error || 'El recurso solicitado no existe.'}`);
       }
@@ -352,7 +340,13 @@
 
   function setNewClassMode(isNew) {
     isCreatingNewClass = Boolean(isNew);
-    if (pClaseNuevaWrap) pClaseNuevaWrap.classList.toggle("is-hidden", !isNew);
+    if (pClaseNuevaWrap) {
+      if (isNew) {
+        pClaseNuevaWrap.classList.remove("is-hidden");
+      } else {
+        pClaseNuevaWrap.classList.add("is-hidden");
+      }
+    }
     if (pClaseNueva) {
       pClaseNueva.required = Boolean(isNew);
       if (!isNew && pClaseNueva.value) pClaseNueva.value = "";
@@ -366,7 +360,13 @@
 
   function setNewBrandMode(isNew) {
     isCreatingNewBrand = Boolean(isNew);
-    if (pMarcaNuevaWrap) pMarcaNuevaWrap.classList.toggle("is-hidden", !isNew);
+    if (pMarcaNuevaWrap) {
+      if (isNew) {
+        pMarcaNuevaWrap.classList.remove("is-hidden");
+      } else {
+        pMarcaNuevaWrap.classList.add("is-hidden");
+      }
+    }
     if (pMarcaNueva) {
       pMarcaNueva.required = Boolean(isNew);
       if (!isNew && pMarcaNueva.value) pMarcaNueva.value = "";
@@ -469,11 +469,10 @@
     renderCategoriaSelect();
   }
 
-  async function cargarModelos({ claseId = "", marcaId = "", q = "" } = {}) {
+  async function cargarModelos({ claseId = "", marcaId = "" } = {}) {
     const params = new URLSearchParams();
     if (claseId) params.set("clase_id", String(claseId));
     if (marcaId) params.set("marca_id", String(marcaId));
-    if (q) params.set("q", String(q));
     const url = `/api/productos/modelos${params.toString() ? `?${params}` : ""}`;
 
     const data = await fetchJson(url, { method: "GET" });
@@ -519,7 +518,6 @@
   function aplicarFiltrosYRender() {
     const claseId = fClase ? String(fClase.value || "") : "";
     const marcaId = fMarca ? String(fMarca.value || "") : "";
-    const q = fTexto ? String(fTexto.value || "").trim() : "";
 
     let modelos = state.modelos;
     if (claseId) {
@@ -527,10 +525,6 @@
     }
     if (marcaId) {
       modelos = modelos.filter((m) => String(m.id_marca || "") === String(marcaId));
-    }
-    if (q) {
-      const qNorm = q.toLowerCase();
-      modelos = modelos.filter((m) => String(m.nombre || "").toLowerCase().includes(qNorm));
     }
     renderTabla(modelos);
   }
@@ -542,8 +536,7 @@
   async function recargarModelosSegunFiltros() {
     const claseId = fClase ? String(fClase.value || "") : "";
     const marcaId = fMarca ? String(fMarca.value || "") : "";
-    const q = fTexto ? String(fTexto.value || "").trim() : "";
-    await cargarModelos({ claseId, marcaId, q });
+    await cargarModelos({ claseId, marcaId });
     aplicarFiltrosYRender();
   }
 
@@ -554,7 +547,6 @@
   // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
 
   async function prepararFormularioEdicion(idModelo) {
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
     if (!validarIdProducto(idModelo)) {
       mostrarErrorSeguridad('El ID del producto que intentas editar no es válido.');
       return;
@@ -628,13 +620,11 @@
       validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
       if (idModelo) {
-        // Editar producto - usar JSON
         await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
           method: "PUT",
           body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
         });
       } else {
-        // Crear producto - usar FormData para la foto
         const formData = new FormData(formProducto);
         
         formData.set("modelo", nombreModelo);
@@ -669,6 +659,8 @@
 
       if (!isCreatingNewClass) {
         setNewClassMode(true);
+        if (pClaseNueva) pClaseNueva.focus();
+        return;
       }
 
       const nombreClase = String(pClaseNueva?.value || "").trim();
@@ -692,8 +684,6 @@
       renderClaseFormSelect();
       if (pClase) pClase.value = String(data.id || "");
 
-      if (pMarca) pMarca.value = "";
-
       setNewClassMode(false);
       if (pClaseNueva) pClaseNueva.value = "";
       
@@ -711,6 +701,8 @@
 
       if (!isCreatingNewBrand) {
         setNewBrandMode(true);
+        if (pMarcaNueva) pMarcaNueva.focus();
+        return;
       }
 
       const nombreMarca = String(pMarcaNueva?.value || "").trim();
@@ -747,7 +739,6 @@
   // ==================== ELIMINAR PRODUCTO CON VALIDACIÓN ====================
   
   async function eliminarProducto(id, nombreProducto) {
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
     if (!validarIdProducto(id)) {
       mostrarErrorSeguridad('El ID del producto que intentas eliminar no es válido.');
       return;
@@ -808,7 +799,6 @@
     event.stopPropagation();
     event.preventDefault();
 
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido ANTES de cualquier acción
     if (!validarIdProducto(id)) {
       mostrarErrorSeguridad('El ID del producto no es válido.');
       return;
@@ -1201,6 +1191,9 @@
     if (btnNuevo) {
       btnNuevo.addEventListener("click", async () => {
         resetFormToCreate();
+        // Asegurar que los inputs de nueva clase/marca estén ocultos al abrir el modal
+        setNewClassMode(false);
+        setNewBrandMode(false);
         if (!state.clases.length) await cargarClases();
         if (!state.marcas.length) await cargarMarcas();
         await cargarCategorias();
@@ -1209,11 +1202,15 @@
     }
 
     if (btnNuevaClase) {
-      btnNuevaClase.addEventListener("click", async () => {
-        setNewClassMode(!isCreatingNewClass);
+      btnNuevaClase.addEventListener("click", async (e) => {
+        e.preventDefault();
         if (isCreatingNewClass) {
+          // Si ya estaba abierto, cancelar
+          setNewClassMode(false);
+          if (pClase) pClase.focus();
+        } else {
+          setNewClassMode(true);
           if (pClase) pClase.value = "";
-          renderMarcaFormSelect([]);
           setNewBrandMode(false);
           if (pClaseNueva) pClaseNueva.focus({ preventScroll: true });
         }
@@ -1221,10 +1218,16 @@
     }
 
     if (btnNuevaMarca) {
-      btnNuevaMarca.addEventListener("click", async () => {
-        setNewBrandMode(!isCreatingNewBrand);
+      btnNuevaMarca.addEventListener("click", async (e) => {
+        e.preventDefault();
         if (isCreatingNewBrand) {
+          // Si ya estaba abierto, cancelar
+          setNewBrandMode(false);
+          if (pMarca) pMarca.focus();
+        } else {
+          setNewBrandMode(true);
           if (pMarca) pMarca.value = "";
+          setNewClassMode(false);
           if (pMarcaNueva) pMarcaNueva.focus({ preventScroll: true });
         }
       });
@@ -1268,22 +1271,6 @@
 
     if (fClase) fClase.addEventListener("change", onFiltroClaseChange);
     if (fMarca) fMarca.addEventListener("change", recargarModelosSegunFiltros);
-    if (btnAplicar) btnAplicar.addEventListener("click", recargarModelosSegunFiltros);
-    if (btnLimpiar) {
-      btnLimpiar.addEventListener("click", async () => {
-        if (fTexto) fTexto.value = "";
-        if (fClase) fClase.value = "";
-        if (fMarca) fMarca.value = "";
-        await recargarModelosSegunFiltros();
-      });
-    }
-
-    if (pClase) {
-      pClase.addEventListener("change", async () => {
-        if (isCreatingNewClass) setNewClassMode(false);
-        if (pMarca) pMarca.value = "";
-      });
-    }
 
     try {
       await cargarClases();

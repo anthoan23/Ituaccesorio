@@ -712,6 +712,7 @@ input:focus {
 	border: 1px solid rgba(17, 24, 39, 0.12);
 	border-radius: 14px;
 	background: rgba(17, 24, 39, 0.03);
+	color: rgba(255, 255, 255, 0.86);
 }
 
 .detail-item--full {
@@ -720,7 +721,7 @@ input:focus {
 
 .detail-label {
 	font-size: 0.78rem;
-	color: rgba(18, 18, 18, 0.6);
+	color: rgba(255, 255, 255, 0.6);
 	font-weight: 900;
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
@@ -728,7 +729,7 @@ input:focus {
 
 .detail-value {
 	font-weight: 900;
-	color: rgba(18, 18, 18, 0.86);
+	color: rgba(255, 255, 255, 0.86);
 }
 
 .confirm-text {
@@ -941,5 +942,17 @@ input:focus {
 }
 
 [data-theme="light"] .breadcrumb__current:hover {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .detail-item {
+	color: #1A1A1E;
+}
+
+[data-theme="light"] .detail-label {
+	color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .detail-value {
 	color: #1A1A1E;
 }
