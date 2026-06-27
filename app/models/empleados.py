@@ -143,7 +143,7 @@ class Empleados():
 
     def consultar_empleado(self):
         """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
-        cedula = self.id_empleado.strip()
+        cedula = str(self.id_empleado).strip()
         
         if not cedula:
             return None

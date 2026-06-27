@@ -62,7 +62,7 @@ class Equipo:
             return "El ID del producto es obligatorio."
         
         if len(str(self.ID_equipo)) > 16:
-            return "El ID del equipo no puede tener más de 16 caracteres."
+            return "El ID del equipo no puede tener más de 15 caracteres."
         
         db = self._conexion_bd()
         if not db:

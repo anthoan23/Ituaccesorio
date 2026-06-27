@@ -85,16 +85,24 @@ class Orden_servicio():
                 LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
             """
-            if estados:
+            if estados and len(estados) > 0:
                 placeholders = ",".join(["%s"] * len(estados))
                 sql = sql.strip() + f" WHERE o.Estado_orden_servicio IN ({placeholders}) ORDER BY o.ID_orden_servicio DESC"
+                print(f"[DEBUG] SQL con filtro: {sql}")
+                print(f"[DEBUG] Estados: {estados}")
                 cursor.execute(sql, tuple(estados))
             else:
                 sql = sql.strip() + " ORDER BY o.ID_orden_servicio DESC"
+                print(f"[DEBUG] SQL sin filtro: {sql}")
                 cursor.execute(sql)
-            return cursor.fetchall()
+        
+            resultados = cursor.fetchall()
+            print(f"[DEBUG] Resultados obtenidos: {len(resultados)}")
+            return resultados
         except Exception as e:
             print(f"Error al listar órdenes de servicio con filtro: {e}")
+            import traceback
+            traceback.print_exc()
             return []
         finally:
             cursor.close()
@@ -362,7 +370,9 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
+
     def asignar_orden_empleado(self):
+
         db = self._conexion.conexion1()
         if not db:
             self._ultimo_error = "Error al conectar con la base de datos"
@@ -396,6 +406,7 @@ class Orden_servicio():
         finally:
             cursor.close()
             db.close()
+
 
     def liberar_orden_empleado(self):
         db = self._conexion.conexion1()
@@ -461,59 +472,6 @@ class Orden_servicio():
             db.rollback()
             print(f"Error al registrar la reparación: {e}")
             return {"error": f"Error en la base de datos: {str(e)}"}
-        finally:
-            cursor.close()
-            db.close()
-
-
-    def registrar_orden(self):
-        id_cliente = (self.ID_cliente or "").strip()
-        id_equipo = self.ID_equipo
-        Estado_orden_servicio = 'Pendiente'
-        descripcion = self.Descripcion_reparacion
-        fecha_entrada = self.Fecha_entrada
-        fecha_salida = self.Fecha_salida
-        nota = self.Nota_orden_servicio
-        fecha_actual = date.today()
-
-        if not id_cliente or not id_equipo or not descripcion or not fecha_entrada:
-            return "Los campos ID_cliente, ID_equipo, Descripcion_reparacion y Fecha_entrada son obligatorios."
-
-        if len(descripcion) > 1000:
-            return "La descripción de la reparación no puede exceder los 1000 caracteres."
-
-        if not str(id_cliente).isdigit():
-            return "El ID del cliente debe ser solo numeros."
-
-        if len(id_cliente) > 8:
-            return "El ID del cliente no puede tener más de 8 caracteres."
-    
-        if fecha_salida and fecha_salida < fecha_entrada:
-            return "La fecha de salida no puede ser anterior a la fecha de entrada."
-   
-        if fecha_entrada < fecha_actual:
-            return "La fecha de entrada no puede ser anterior a la fecha actual."
-        
-        db = self._conexion.conexion1()
-        if not db:
-            return "Error al conectar con la base de datos."
-            
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-            """
-             INSERT INTO orden_servicio (
-             ID_cliente, ID_equipo,
-             Estado_orden_servicio,Descripcion_reparacion, 
-             Fecha_entrada, Fecha_salida, Nota_orden_servicio) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-             (id_cliente, id_equipo, Estado_orden_servicio, descripcion, fecha_entrada, fecha_salida, nota)
-            )
-            db.commit()
-            return "Orden de servicio registrada exitosamente."
-        except Exception as e:
-            db.rollback()
-            print(f"Error al registrar la orden de servicio: {e}")
-            return "Error al registrar la orden de servicio."
         finally:
             cursor.close()
             db.close()

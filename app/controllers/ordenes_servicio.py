@@ -78,12 +78,77 @@ def pagina_ordenes_servicio():
     )
 
 
+# ============================================
+# RUTAS API - ORDEN DE LAS RUTAS IMPORTANTE
+# ============================================
+
+# Primero las rutas más específicas
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos", methods=["GET"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def listar_tecnicos():
+    modelo = Empleados()
+    tecnicos = modelo.listar_tecnicos() or []
+    return jsonify({"success": True, "tecnicos": tecnicos})
+
+
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos/<int:id_empleado>/ordenes", methods=["GET"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def listar_ordenes_tecnico(id_empleado):
+    modelo = OrdenServicio()
+    modelo.ID_empleado = id_empleado
+    ordenes = modelo.ordenes_asignadas_tecnico() or []
+    return jsonify({"success": True, "ordenes": ordenes})
+
+
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/equipo/<string:id_equipo>", methods=["GET"])
+@jwt_required
+def verificar_equipo(id_equipo):
+    """Verifica si un equipo existe por su ID (IMEI)"""
+    if not id_equipo or not id_equipo.isdigit():
+        return jsonify({"success": False, "error": "IMEI inválido."}), 400
+    
+    if len(id_equipo) != 15:
+        return jsonify({"success": False, "error": "El IMEI debe tener 15 dígitos."}), 400
+    
+    modelo = Equipo()
+    modelo.ID_equipo = id_equipo
+    equipo = modelo.Consultar_equipo_por_id()
+    
+    if equipo:
+        return jsonify({
+            "success": True,
+            "exists": True,
+            "equipo": {
+                "id": equipo.get("ID_equipo"),
+                "id_modelo": equipo.get("ID_producto"),
+                "color": equipo.get("Color"),
+                "capacidad": equipo.get("Capacidad"),
+                "clave": equipo.get("Clave"),
+                "patron": equipo.get("Patron"),
+                "nombre_producto": equipo.get("Nombre_producto"),
+                "marca": equipo.get("Nombre_marca"),
+                "clase": equipo.get("Nombre_Clase"),
+            }
+        })
+    else:
+        return jsonify({"success": True, "exists": False})
+
+
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes", methods=["GET"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_ordenes_servicio():
     estado = (request.args.get("estado") or "").strip()
-    estados = [s.strip() for s in estado.split(",") if s.strip()] if estado else []
+    
+    # Si el estado contiene comas, dividirlo en múltiples estados
+    if ',' in estado:
+        estados = [s.strip() for s in estado.split(',') if s.strip()]
+    else:
+        estados = [s.strip() for s in estado.split(",") if s.strip()] if estado else []
+    
+    print(f"[DEBUG] Estados recibidos: {estados}")
     
     if estados:
         normalizadas = []
@@ -94,44 +159,28 @@ def listar_ordenes_servicio():
             elif st_lower in ("asignada", "asignado"):
                 normalizadas.append("Asignada")
             elif st_lower in ("revisado", "revisada", "en revision", "en revisión"):
-                normalizadas.extend(["Revisado", "En revisión"])
+                normalizadas.append("Revisado")
             elif st_lower in ("reparada", "reparado"):
                 normalizadas.append("Reparada")
             else:
+                # Si no coincide con ningún estado conocido, guardar el original
                 normalizadas.append(st)
+        
+        # Eliminar duplicados manteniendo el orden
         estados = list(dict.fromkeys(normalizadas))
+        print(f"[DEBUG] Estados normalizados: {estados}")
 
     modelo = OrdenServicio()
     try:
-        ordenes = modelo.listado_ordenes_servicio(estados or None) or []
+        ordenes = modelo.listado_ordenes_servicio(estados if estados else None) or []
+        print(f"[DEBUG] Órdenes encontradas: {len(ordenes)}")
         return jsonify({"success": True, "ordenes": ordenes})
     except Exception as error:
+        print(f"[ERROR] Error al listar órdenes: {error}")
         return jsonify({"success": False, "error": str(error)}), 500
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>", methods=["GET"])
-@jwt_required
-@tiene_permiso('Órdenes de servicio', 'consultar')
-def detalle_orden_servicio(id_orden):
-    ordenes = OrdenServicio()
-    tests = Tests()
-    detalle = ordenes.detalles_orden(id_orden)
-    if not detalle:
-        return jsonify({"success": False, "error": "Orden no encontrada."}), 404
-    fotos = ordenes.fotos_orden(id_orden) or []
-    tests_orden = tests.buscar_test_por_orden(id_orden) or []
-    empleados = ordenes.empleados_asignados(id_orden) or []
-    return jsonify(
-        {
-            "success": True,
-            "detalle_orden": detalle,
-            "fotos_orden": fotos,
-            "test_orden": tests_orden,
-            "empleados_orden": empleados,
-        }
-    )
-
-
+# Ruta para crear una nueva orden (POST)
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'registrar')
@@ -154,9 +203,6 @@ def crear_orden_servicio():
     capacidad = (datos.get("capacidad") or "").strip()
     descripcion = (datos.get("descripcion") or "").strip()
     nota = (datos.get("nota") or "").strip() or None
-    
-    # IMPORTANTE: Ignorar fecha_ingreso si viene (se asigna automáticamente en el backend)
-    # fecha_ingreso = datos.get("fecha_ingreso")  # NO USAR
     
     # Datos del cliente (por si hay que registrarlo)
     nombre_cliente = (datos.get("nombre") or "").strip()
@@ -326,14 +372,11 @@ def crear_orden_servicio():
     print(f"  descripcion: {descripcion}")
     print(f"  nota: {nota}")
     
-
-    id_empleado = (usuario_id)
+    id_empleado = usuario_id
        
-    
     orden_model = OrdenServicio()
     orden_model.ID_empleado = id_empleado
     
-    # IMPORTANTE: NO ENVIAR fecha_ingreso, se asigna automáticamente en el procedure
     nueva_id = orden_model.crear_orden(
         id_cliente=str(id_cliente_val),
         id_equipo=imei,
@@ -361,27 +404,52 @@ def crear_orden_servicio():
     })
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/asignar", methods=["POST"])
+# Ruta para obtener detalle de una orden específica
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def detalle_orden_servicio(id_orden):
+    ordenes = OrdenServicio()
+    tests = Tests()
+    detalle = ordenes.detalles_orden(id_orden)
+    if not detalle:
+        return jsonify({"success": False, "error": "Orden no encontrada."}), 404
+    fotos = ordenes.fotos_orden(id_orden) or []
+    tests_orden = tests.buscar_test_por_orden(id_orden) or []
+    empleados = ordenes.empleados_asignados(id_orden) or []
+    return jsonify(
+        {
+            "success": True,
+            "detalle_orden": detalle,
+            "fotos_orden": fotos,
+            "test_orden": tests_orden,
+            "empleados_orden": empleados,
+        }
+    )
+
+
+# Ruta para asignar una orden
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/asignar", methods=["POST"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'modificar')
 def asignar_orden_servicio(id_orden):
     datos = request.get_json(silent=True) or {}
     id_empleado = datos.get("id_empleado")
     
-    print(f"[DEBUG] Asignando orden {id_orden} al empleado {id_empleado}")
+    print(f"[DEBUG] === ASIGNANDO ORDEN ===")
+    print(f"[DEBUG] ID Orden: {id_orden} (type: {type(id_orden)})")
+    print(f"[DEBUG] ID Empleado: {id_empleado} (type: {type(id_empleado)})")
     
     try:
         id_empleado_val = int(id_empleado)
     except (ValueError, TypeError):
         return jsonify({"success": False, "error": "ID de empleado inválido. Debe ser un número."}), 400
 
-    # Verificar que la orden existe
     modelo = OrdenServicio()
-    detalle = modelo.detalles_orden(str(id_orden))
+    detalle = modelo.detalles_orden(id_orden)
     if not detalle:
         return jsonify({"success": False, "error": f"La orden #{id_orden} no existe."}), 404
     
-    # Verificar que la orden esté en estado Pendiente
     estado_actual = detalle.get("Estado", "")
     print(f"[DEBUG] Estado actual de la orden: '{estado_actual}'")
     
@@ -391,21 +459,18 @@ def asignar_orden_servicio(id_orden):
             "error": f"La orden está en estado '{estado_actual}'. Solo se pueden asignar órdenes en estado 'Pendiente'."
         }), 400
 
-    # Verificar que el empleado existe
-    empleado_model = Empleados()
-    empleado = empleado_model.consultar_empleado(id_empleado_val)
+    empleado_model = Empleados(id_empleado = id_empleado_val)
+    empleado = empleado_model.consultar_empleado()
+
     if not empleado:
         return jsonify({"success": False, "error": f"El técnico con ID {id_empleado_val} no existe."}), 400
 
-    # Configurar el modelo para la asignación
     modelo.ID_orden_servicio = id_orden
     modelo.ID_empleado = id_empleado_val
     
-    # Intentar asignar
     ok = modelo.asignar_orden_empleado()
     
     if not ok:
-        # Verificar si hay un error almacenado en el modelo
         error_msg = getattr(modelo, '_ultimo_error', 'Error desconocido al asignar la orden.')
         print(f"[ERROR] Falló la asignación: {error_msg}")
         return jsonify({"success": False, "error": error_msg}), 400
@@ -416,26 +481,8 @@ def asignar_orden_servicio(id_orden):
     })
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos", methods=["GET"])
-@jwt_required
-@tiene_permiso('Órdenes de servicio', 'consultar')
-def listar_tecnicos():
-    modelo = Empleados()
-    tecnicos = modelo.listar_tecnicos() or []
-    return jsonify({"success": True, "tecnicos": tecnicos})
-
-
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos/<int:id_empleado>/ordenes", methods=["GET"])
-@jwt_required
-@tiene_permiso('Órdenes de servicio', 'consultar')
-def listar_ordenes_tecnico(id_empleado):
-    modelo = OrdenServicio()
-    modelo.ID_empleado = id_empleado
-    ordenes = modelo.ordenes_asignadas_tecnico() or []
-    return jsonify({"success": True, "ordenes": ordenes})
-
-
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/revision", methods=["POST"])
+# Ruta para registrar una revisión
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/revision", methods=["POST"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'modificar')
 def registrar_test_orden(id_orden):
@@ -443,7 +490,6 @@ def registrar_test_orden(id_orden):
     
     empleado_id = g.user.get("cedula")
     
-
     campos = [
         'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
         'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
@@ -477,11 +523,11 @@ def registrar_test_orden(id_orden):
     return jsonify({"ok": bool(ok)})
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>/estado", methods=["PUT"])
+# Ruta para actualizar estado
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/estado", methods=["PUT"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'modificar')
 def actualizar_estado_orden(id_orden):
-    """Actualiza el estado de una orden de servicio"""
     datos = request.get_json(silent=True) or {}
     nuevo_estado = datos.get("estado", "").strip()
     
@@ -497,11 +543,11 @@ def actualizar_estado_orden(id_orden):
     return jsonify({"success": True, "message": "Estado actualizado"})
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<int:id_orden>", methods=["DELETE"])
+# Ruta para eliminar orden
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["DELETE"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'eliminar')
 def eliminar_orden_servicio(id_orden):
-    """Elimina una orden de servicio"""
     modelo = OrdenServicio()
     ok = modelo.eliminar_orden(id_orden)
     if not ok:
@@ -509,44 +555,9 @@ def eliminar_orden_servicio(id_orden):
     return jsonify({"success": True, "message": "Orden eliminada"})
 
 
-@ordenes_servicio_blueprint.route("/api/ordenes-servicio/equipo/<string:id_equipo>", methods=["GET"])
-@jwt_required
-def verificar_equipo(id_equipo):
-    """Verifica si un equipo existe por su ID (IMEI)"""
-    if not id_equipo or not id_equipo.isdigit():
-        return jsonify({"success": False, "error": "IMEI inválido."}), 400
-    
-    if len(id_equipo) != 15:
-        return jsonify({"success": False, "error": "El IMEI debe tener 15 dígitos."}), 400
-    
-    modelo = Equipo()
-    modelo.ID_equipo = id_equipo
-    equipo = modelo.Consultar_equipo_por_id()
-    
-    if equipo:
-        return jsonify({
-            "success": True,
-            "exists": True,
-            "equipo": {
-                "id": equipo.get("ID_equipo"),
-                "id_modelo": equipo.get("ID_producto"),
-                "color": equipo.get("Color"),
-                "capacidad": equipo.get("Capacidad"),
-                "clave": equipo.get("Clave"),
-                "patron": equipo.get("Patron"),
-                "nombre_producto": equipo.get("Nombre_producto"),
-                "marca": equipo.get("Nombre_marca"),
-                "clase": equipo.get("Nombre_Clase"),
-            }
-        })
-    else:
-        return jsonify({"success": True, "exists": False})
-
-
 @ordenes_servicio_blueprint.route("/api/productos/modelos", methods=["GET"])
 @jwt_required
 def listar_modelos():
-    """Lista los modelos de productos disponibles"""
     from app.models.database import conectar
     db = conectar().conexion1()
     if not db:
@@ -574,11 +585,10 @@ def listar_modelos():
         db.close()
 
 
-@ordenes_servicio_blueprint.route("/api/taller/ordenes/<int:id_orden>/fotos", methods=["POST"])
+@ordenes_servicio_blueprint.route("/api/taller/ordenes/<string:id_orden>/fotos", methods=["POST"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'modificar')
 def subir_fotos_orden(id_orden):
-    """Sube fotos para una orden de servicio"""
     try:
         archivos = request.files.getlist('fotos')
         if not archivos or all(f.filename == '' for f in archivos):

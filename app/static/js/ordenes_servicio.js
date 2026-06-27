@@ -63,9 +63,12 @@ const Utils = {
         const payload = isJson ? await response.json() : await response.text();
 
         if (!response.ok) {
-            const msg =
-                (isJson && payload && (payload.message || payload.error)) ||
-                String(payload || response.statusText || "Error en la solicitud");
+            let msg = "";
+            if (isJson && payload) {
+                msg = payload.message || payload.error || payload.Mensaje || "Error en la solicitud";
+            } else {
+                msg = String(payload || response.statusText || "Error en la solicitud");
+            }
             throw new Error(msg);
         }
 
@@ -84,6 +87,7 @@ const Utils = {
     showMessage(message, isError = false) {
         if (!message) return;
         if (isError) {
+            alert(`❌ ${message}`);
         } else {
             console.info(`✅ ${message}`);
         }
@@ -123,14 +127,12 @@ const Utils = {
         return hoy.toISOString().slice(0, 10);
     },
 
-    // Extraer solo el número de una orden con formato OS0000010
-    extraerNumeroOrden(idOrden) {
-        if (!idOrden) return null;
-        const match = String(idOrden).match(/\d+/);
-        if (match) {
-            return parseInt(match[0], 10);
-        }
-        return parseInt(idOrden, 10);
+    soloLetras(value) {
+        return /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]*$/.test(value);
+    },
+
+    soloNumeros(value) {
+        return /^\d*$/.test(value);
     }
 };
 
@@ -201,13 +203,9 @@ function getDomElements() {
         btnAsignarOrden: document.getElementById("btn-asignar-orden"),
         btnCargarTrabajos: document.getElementById("btn-cargar-trabajos"),
         detalleOrdenId: document.getElementById("detalle-orden-id"),
-        detalleInfo: document.getElementById("detalle-info"),
-        detalleResponsables: document.getElementById("detalle-responsables"),
-        detalleFotos: document.getElementById("detalle-fotos"),
-        detalleTests: document.getElementById("detalle-tests"),
         revisionOrdenId: document.getElementById("revision-orden-id"),
-        formRevision: document.getElementById("form-revision-orden"),
         fotosOrdenId: document.getElementById("fotos-orden-id"),
+        formRevision: document.getElementById("form-revision-orden"),
         formFotos: document.getElementById("form-fotos-orden"),
         inputFotos: document.getElementById("input-fotos-orden"),
         previewFotos: document.getElementById("preview-fotos"),
@@ -264,16 +262,35 @@ function renderTablaEstado(tablaDestino, lista) {
         tablaDestino.innerHTML = '<tr><td colspan="5">Sin órdenes.</td></tr>';
         return;
     }
+
+    const esPendiente = tablaDestino.id === 'tabla-pendientes';
+
     tablaDestino.innerHTML = lista.map((orden) => {
         const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
+        const estado = orden.Estado || orden.estado || '';
+        const badgeClass = Utils.getEstadoBadgeClass(estado);
+
+        let acciones = `
+            <button type="button" class="btn btn--ghost" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
+        `;
+
+        if (esPendiente) {
+            acciones += `
+                <button type="button" class="btn btn--yellow" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}">Asignar</button>
+            `;
+        }
+
         return `
             <tr>
                 <td>${Utils.escapeHtml(orden.ID_orden)}</td>
+                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
                 <td>${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
                 <td class="table__actions">
-                    <button type="button" class="btn btn--ghost" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
+                    <div class="row-actions">
+                        ${acciones}
+                    </div>
                 </td>
             </tr>
         `;
@@ -288,171 +305,58 @@ function renderModalOrdenesEstado(label, ordenesEstado) {
     if (!tablaOrdenesEstadoBody) return;
 
     const ordenesFiltradas = ordenesEstado.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
+
     if (!ordenesFiltradas.length) {
-        tablaOrdenesEstadoBody.innerHTML = '<tr><td colspan="8">No hay órdenes en esta categoría.</td></tr>';
+        tablaOrdenesEstadoBody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align:center; padding:2rem; color: #6d7480;">
+                    No hay órdenes en estado <strong>${label.toLowerCase()}</strong>
+                </td>
+            </tr>`;
         return;
     }
 
+    const mostrarAsignar = label.toLowerCase().includes('pendiente');
+
     tablaOrdenesEstadoBody.innerHTML = ordenesFiltradas.map((orden) => {
         const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
-        const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
+        const estado = orden.Estado || orden.estado || '';
+        const badgeClass = Utils.getEstadoBadgeClass(estado);
+
+        let acciones = `
+            <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
+        `;
+
+        if (mostrarAsignar) {
+            acciones += `
+                <button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
+            `;
+        }
+
         return `
             <tr>
                 <td>${Utils.escapeHtml(orden.ID_orden)}</td>
-                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(orden.Estado ?? "")}</span></td>
+                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.Equipo ?? "")}</td>
                 <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
                 <td>${Utils.escapeHtml(orden.Des_cliente ?? "")}</td>
                 <td>${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
                 <td class="table__actions">
-                    <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
+                    <div class="row-actions">
+                        ${acciones}
+                    </div>
                 </td>
             </tr>`;
     }).join("");
-}
 
-function renderDetalleInfo(detalle) {
-    const { detalleInfo } = getDomElements();
-    if (!detalleInfo) return;
-    if (!detalle) {
-        detalleInfo.innerHTML = "<p>No hay información disponible.</p>";
-        return;
-    }
-
-    const getField = (...keys) => {
-        for (const k of keys) {
-            if (k in detalle && detalle[k] !== null && detalle[k] !== undefined && String(detalle[k]).trim() !== "") {
-                return detalle[k];
-            }
+    setTimeout(() => {
+        const modalBody = document.getElementById('modal-ordenes-estado-body');
+        if (modalBody) {
+            modalBody.removeEventListener('click', onModalEstadoClick);
+            modalBody.addEventListener('click', onModalEstadoClick);
         }
-        return "";
-    };
-
-    const cliente = `${getField("Nombre_cliente")} ${getField("Apellido_cliente")}`.trim();
-    const fecha = getField("Fecha_e", "Fecha", "Fecha_o", "Fecha_ingreso");
-    const items = [
-        ["ID orden", getField("ID_orden", "ID")],
-        ["Estado", getField("Estado")],
-        ["Cliente", cliente],
-        ["Modelo", getField("Modelo")],
-        ["Fecha ingreso", Utils.formatFecha(fecha)],
-        ["Descripción", getField("Des_cliente")],
-        ["Nota", getField("Nota")],
-        ["Cotización", getField("Costo_reparacion")],
-        ["Reparación", getField("Reparacion")],
-        ["Revisión", getField("Revision")],
-    ];
-
-    const html = `
-        <div class="device-detail__grid">
-            ${items
-                .filter(([, value]) => value !== "")
-                .map(([label, value]) => `
-                    <div class="detail-item">
-                        <span class="device-detail__label">${Utils.escapeHtml(label)}</span>
-                        <span class="device-detail__value">${Utils.escapeHtml(value)}</span>
-                    </div>
-                `)
-                .join("")}
-        </div>`;
-    detalleInfo.innerHTML = html || "<p>Sin información disponible.</p>";
-}
-
-function renderResponsables(empleados) {
-    const { detalleResponsables } = getDomElements();
-    if (!detalleResponsables) return;
-
-    const roles = [
-        { label: "Guardó la orden", acciones: ["Recepcion"] },
-        { label: "Asignada a", acciones: ["Asignada"] },
-        { label: "Reparó", acciones: ["Reparada"] },
-        { label: "Revisó", acciones: ["Revisión"] },
-    ];
-
-    const responsables = {};
-    empleados.forEach((item) => {
-        const accion = item.Accion || item.accion;
-        if (!accion) return;
-        const nombre = `${item.Nombre_em ?? ""} ${item.Apellido_em ?? ""}`.trim();
-        if (!responsables[accion]) responsables[accion] = [];
-        responsables[accion].push(`${nombre} (${item.ID_em})`);
-    });
-
-    const rows = `
-        <div class="device-detail__grid">
-            ${roles.map((rol) => {
-                const nombres = rol.acciones
-                    .flatMap((accion) => responsables[accion] || [])
-                    .filter(Boolean);
-                return `
-                    <div class="detail-item">
-                        <span class="device-detail__label">${Utils.escapeHtml(rol.label)}</span>
-                        <span class="device-detail__value">${Utils.escapeHtml(nombres.length ? nombres.join(", ") : "Sin registro")}</span>
-                    </div>
-                `;
-            }).join("")}
-        </div>`;
-    detalleResponsables.innerHTML = rows;
-}
-
-function renderFotos(fotos) {
-    const { detalleFotos } = getDomElements();
-    if (!detalleFotos) return;
-    if (!fotos.length) {
-        detalleFotos.innerHTML = "<p>No hay fotos registradas.</p>";
-        return;
-    }
-
-    detalleFotos.innerHTML = `
-        <h3>Fotos</h3>
-        <div class="device-photos">
-            ${fotos.map((foto) => {
-                let src = foto.Foto_e || foto.foto || foto.url || "";
-                if (src && !src.startsWith("/") && !src.startsWith("http")) {
-                    src = `/${src}`;
-                }
-                return `
-                    <div class="img-wrap">
-                        <img src="${Utils.escapeHtml(src)}" alt="Evidencia">
-                    </div>`;
-            }).join("")}
-        </div>`;
-}
-
-function renderTests(tests) {
-    const { detalleTests } = getDomElements();
-    if (!detalleTests) return;
-    if (!tests.length) {
-        detalleTests.innerHTML = "<p>No hay tests registrados.</p>";
-        return;
-    }
-
-    detalleTests.innerHTML = `
-        <h3>Historial de revisiones</h3>
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Número</th>
-                        <th>Observaciones</th>
-                        <th>Costo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tests.map((test) => `
-                        <tr>
-                            <td>${Utils.escapeHtml(Utils.formatFecha(test.Fecha_e ?? test.Fecha ?? ""))}</td>
-                            <td>${Utils.escapeHtml(test.Num_test ?? "")}</td>
-                            <td>${Utils.escapeHtml(test.Observaciones ?? "")}</td>
-                            <td>${Utils.escapeHtml(test.Costo_reparacion ?? "0")}</td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>
-        </div>
-    `;
+    }, 50);
 }
 
 function renderSelectTecnicos(select, tecnicos) {
@@ -528,7 +432,7 @@ async function cargarOrdenes() {
         await Promise.all([
             cargarOrdenesEstado("Pendiente", tablaPendientes),
             cargarOrdenesEstado("Asignada", tablaAsignadas),
-            cargarOrdenesEstado("Revisado", tablaRevisadas),
+            cargarOrdenesEstado(["Revisado", "Revisada", "En revisión", "En revision"], tablaRevisadas),
         ]);
     } catch (error) {
         console.error("Error cargando órdenes:", error);
@@ -539,7 +443,8 @@ async function cargarOrdenes() {
 async function cargarOrdenesEstado(estado, tablaDestino) {
     if (!tablaDestino) return;
     try {
-        const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estado)}`);
+        const estadoParam = Array.isArray(estado) ? estado.join(',') : estado;
+        const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`);
         renderTablaEstado(tablaDestino, data.ordenes || []);
     } catch (error) {
         tablaDestino.innerHTML = '<tr><td colspan="5">No se pudieron cargar las órdenes.</td></tr>';
@@ -599,7 +504,10 @@ function actualizarEstadisticas(ordenesData) {
     const count = (estado) => ordenesData.filter((o) => String(o.Estado || "").toLowerCase() === estado).length;
     const pendientes = count("pendiente");
     const asignadas = count("asignada");
-    const revisadas = ordenesData.filter((o) => ["revisado", "en revisión", "en revision"].includes(String(o.Estado || "").toLowerCase())).length;
+    const revisadas = ordenesData.filter((o) => {
+        const estado = String(o.Estado || "").toLowerCase();
+        return estado.includes("revis");
+    }).length;
     const reparadas = count("reparada");
 
     const { statPendientes, statAsignadas, statRevisadas } = getDomElements();
@@ -631,7 +539,7 @@ function limpiarClienteForm() {
     setFieldValue("cliente-celular", "");
     setFieldValue("cliente-correo", "");
     setFieldValue("cliente-direccion", "");
-    setFieldValue("cliente-tipo", "");
+    setFieldValue("cliente-tipo", "natural");
 }
 
 function getFieldValue(fieldId) {
@@ -729,6 +637,12 @@ async function verificarEquipo() {
                     capSelect.value = equipo.capacidad;
                 }
             }
+            if (equipo.patron) {
+                setFieldValue("orden-patron", equipo.patron);
+            }
+            if (equipo.clave) {
+                setFieldValue("orden-clave", equipo.clave);
+            }
         } else {
             setEquipoStatus("Equipo no encontrado. Se creará al guardar la orden.", true);
         }
@@ -808,6 +722,17 @@ async function onSubmitOrden(event) {
         return;
     }
 
+    // Validar color (solo letras, máximo 15 caracteres)
+    const color = getFieldValue("orden-color");
+    if (color && color.length > 15) {
+        Utils.showMessage("El color no puede exceder los 15 caracteres.", true);
+        return;
+    }
+    if (color && !Utils.soloLetras(color)) {
+        Utils.showMessage("El color solo debe contener letras.", true);
+        return;
+    }
+
     const idModelo = selectModelo?.value;
     const modeloCustom = getFieldValue("orden-modelo-custom");
     if (!idModelo && !modeloCustom) {
@@ -817,6 +742,11 @@ async function onSubmitOrden(event) {
 
     if (modeloCustom && modeloCustom.length > 30) {
         Utils.showMessage("El modelo personalizado no puede exceder 30 caracteres.", true);
+        return;
+    }
+    // Validar modelo personalizado (solo letras, números, espacios y guiones)
+    if (modeloCustom && !/^[a-zA-Z0-9\s\-]+$/.test(modeloCustom)) {
+        Utils.showMessage("El modelo solo puede contener letras, números, espacios y guiones.", true);
         return;
     }
 
@@ -858,6 +788,34 @@ async function onSubmitOrden(event) {
         return;
     }
 
+    // Validar nombre y apellido (solo letras, máximo 20 caracteres)
+    const nombre = getFieldValue("cliente-nombre");
+    const apellido = getFieldValue("cliente-apellido");
+    
+    if (nombre && nombre.length > 20) {
+        Utils.showMessage("El nombre no puede exceder los 20 caracteres.", true);
+        return;
+    }
+    if (nombre && !Utils.soloLetras(nombre)) {
+        Utils.showMessage("El nombre solo debe contener letras.", true);
+        return;
+    }
+    if (apellido && apellido.length > 20) {
+        Utils.showMessage("El apellido no puede exceder los 20 caracteres.", true);
+        return;
+    }
+    if (apellido && !Utils.soloLetras(apellido)) {
+        Utils.showMessage("El apellido solo debe contener letras.", true);
+        return;
+    }
+
+    // Validar dirección (máximo 50 caracteres)
+    const direccion = getFieldValue("cliente-direccion");
+    if (direccion && direccion.length > 50) {
+        Utils.showMessage("La dirección no puede exceder los 50 caracteres.", true);
+        return;
+    }
+
     let clienteId = clienteActualId;
     if (!clienteId) {
         try {
@@ -869,14 +827,11 @@ async function onSubmitOrden(event) {
             setFieldValue("cliente-celular", cliente.celular || "");
             setFieldValue("cliente-correo", cliente.correo || "");
             setFieldValue("cliente-direccion", cliente.direccion || "");
+            setFieldValue("cliente-tipo", cliente.tipo || "natural");
         } catch (e) {}
     }
 
     if (!clienteId) {
-        const nombre = getFieldValue("cliente-nombre");
-        const apellido = getFieldValue("cliente-apellido");
-        const celular = getFieldValue("cliente-celular");
-
         if (!nombre || !apellido || !celular) {
             Utils.showMessage("Para registrar un nuevo cliente, completa nombre, apellido y celular.", true);
             return;
@@ -891,21 +846,25 @@ async function onSubmitOrden(event) {
         return;
     }
 
+    // Obtener la fecha actual
+    const fechaActual = Utils.getFechaActual();
+
     const payload = {
         id_cliente: clienteId,
         id_equipo: idEquipo,
         id_modelo: idModelo || null,
         modelo_custom: modeloCustom || null,
-        color: getFieldValue("orden-color") || "",
+        color: color || "",
         capacidad: getFieldValue("orden-capacidad") || "",
         descripcion: descripcion,
         nota: nota || null,
-        nombre: getFieldValue("cliente-nombre") || "",
-        apellido: getFieldValue("cliente-apellido") || "",
-        celular: getFieldValue("cliente-celular") || "",
-        correo: getFieldValue("cliente-correo") || "",
-        direccion: getFieldValue("cliente-direccion") || "",
+        nombre: nombre || "",
+        apellido: apellido || "",
+        celular: celular || "",
+        correo: correo || "",
+        direccion: direccion || "",
         tipo: getFieldValue("cliente-tipo") || "natural",
+        fecha_ingreso: fechaActual,
     };
 
     try {
@@ -922,8 +881,9 @@ async function onSubmitOrden(event) {
         setClienteStatus("");
         if (btnCrearCliente) btnCrearCliente.hidden = true;
 
+        // Establecer la fecha actual nuevamente
         if (inputFecha) {
-            inputFecha.value = "";
+            inputFecha.value = Utils.getFechaActual();
         }
 
         await cargarOrdenes();
@@ -933,30 +893,62 @@ async function onSubmitOrden(event) {
     }
 }
 
+// ============================================
+// FUNCIÓN DE DETALLE DE ORDEN
+// ============================================
 async function abrirDetalleOrden(idOrden) {
     try {
-        // Extraer solo el número para la URL
-        const numeroOrden = Utils.extraerNumeroOrden(idOrden);
-        if (!numeroOrden) {
-            Utils.showMessage("ID de orden inválido.", true);
-            return;
-        }
-        
-        console.log(`Obteniendo detalle de orden #${numeroOrden}`);
-        
-        const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${numeroOrden}`);
+        console.log(`Obteniendo detalle de orden: ${idOrden}`);
+
+        const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}`);
         ordenActualId = idOrden;
         testsOrdenActual = data.test_orden || [];
+
+        const detalle = data.detalle_orden || {};
+
+        const avatarInicial = document.getElementById('detalle-inicial-orden');
+        const estadoBadge = document.getElementById('detalle-estado-badge-orden');
+        const ordenIdLabel = document.getElementById('detalle-orden-id-label');
+        const fechaLabel = document.getElementById('detalle-fecha-label-orden');
+
+        if (avatarInicial) {
+            const num = (detalle.ID_orden || idOrden || '').replace(/\D/g, '').slice(-2) || '#';
+            avatarInicial.textContent = num;
+        }
+
+        if (estadoBadge) {
+            const estado = detalle.Estado || 'Pendiente';
+            estadoBadge.textContent = estado;
+            estadoBadge.className = `badge ${Utils.getEstadoBadgeClass(estado)}`;
+        }
+
+        if (ordenIdLabel) ordenIdLabel.textContent = detalle.ID_orden || idOrden || '---';
+        if (fechaLabel) fechaLabel.textContent = Utils.formatFecha(detalle.Fecha_e) || '--/--/----';
+
+        const clienteEl = document.getElementById('detalle-cliente-orden');
+        const equipoEl = document.getElementById('detalle-equipo-orden');
+        const modeloEl = document.getElementById('detalle-modelo-orden');
+        const costoEl = document.getElementById('detalle-costo-orden');
+        const descripcionEl = document.getElementById('detalle-descripcion-orden');
+
+        const clienteNombre = `${detalle.Nombre_cliente || ''} ${detalle.Apellido_cliente || ''}`.trim() || 'No especificado';
+        if (clienteEl) clienteEl.textContent = clienteNombre;
+        if (equipoEl) equipoEl.textContent = detalle.Equipo || 'No especificado';
+        if (modeloEl) modeloEl.textContent = detalle.Modelo || 'No especificado';
+        if (costoEl) {
+            const costo = detalle.Costo_reparacion;
+            costoEl.textContent = costo ? `$${Number(costo).toFixed(2)}` : 'Sin cotizar';
+        }
+        if (descripcionEl) descripcionEl.textContent = detalle.Des_cliente || 'Sin descripción';
+
+        renderResponsablesOrden(data.empleados_orden || []);
+        renderFotosOrden(data.fotos_orden || []);
+        renderTestsOrden(data.test_orden || []);
 
         const { detalleOrdenId, revisionOrdenId, fotosOrdenId } = getDomElements();
         if (detalleOrdenId) detalleOrdenId.value = String(idOrden);
         if (revisionOrdenId) revisionOrdenId.value = String(idOrden);
         if (fotosOrdenId) fotosOrdenId.value = String(idOrden);
-
-        renderDetalleInfo(data.detalle_orden);
-        renderResponsables(data.empleados_orden || []);
-        renderFotos(data.fotos_orden || []);
-        renderTests(data.test_orden || []);
 
         openModal("modal-detalle-orden");
     } catch (error) {
@@ -965,18 +957,115 @@ async function abrirDetalleOrden(idOrden) {
     }
 }
 
+function renderResponsablesOrden(empleados) {
+    const container = document.getElementById('detalle-responsables-orden');
+    if (!container) return;
+
+    if (!empleados || !empleados.length) {
+        container.innerHTML = '<p class="detail-empty">Sin responsables registrados.</p>';
+        return;
+    }
+
+    const roles = [
+        { label: "📋 Recepción", acciones: ["Recepcion"] },
+        { label: "👤 Asignada a", acciones: ["Asignada"] },
+        { label: "🔧 Reparó", acciones: ["Reparada"] },
+        { label: "✅ Revisó", acciones: ["Revisión"] },
+    ];
+
+    const responsables = {};
+    empleados.forEach((item) => {
+        const accion = item.Accion || item.accion;
+        if (!accion) return;
+        const nombre = `${item.Nombre_em ?? ""} ${item.Apellido_em ?? ""}`.trim() || item.ID_em;
+        if (!responsables[accion]) responsables[accion] = [];
+        responsables[accion].push(nombre);
+    });
+
+    container.innerHTML = roles.map((rol) => {
+        const nombres = rol.acciones
+            .flatMap((accion) => responsables[accion] || [])
+            .filter(Boolean);
+        return `
+            <div class="detalle-item">
+                <label>${rol.label}</label>
+                <p>${nombres.length ? nombres.join(", ") : "—"}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+function renderFotosOrden(fotos) {
+    const container = document.getElementById('detalle-fotos-orden');
+    if (!container) return;
+
+    if (!fotos || !fotos.length) {
+        container.innerHTML = '<p class="detail-empty">No hay fotos registradas.</p>';
+        return;
+    }
+
+    container.innerHTML = fotos.map((foto) => {
+        let src = foto.Foto_e || foto.foto || foto.url || "";
+        if (src && !src.startsWith("/") && !src.startsWith("http")) {
+            src = `/${src}`;
+        }
+        return `
+            <div class="img-wrap" onclick="window.open('${Utils.escapeHtml(src)}', '_blank')" title="Ver imagen ampliada">
+                <img src="${Utils.escapeHtml(src)}" alt="Evidencia" loading="lazy">
+            </div>
+        `;
+    }).join("");
+}
+
+function renderTestsOrden(tests) {
+    const container = document.getElementById('detalle-tests-orden');
+    if (!container) return;
+
+    if (!tests || !tests.length) {
+        container.innerHTML = '<p class="detail-empty">No hay revisiones registradas.</p>';
+        return;
+    }
+
+    const html = `
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>N°</th>
+                        <th>Observaciones</th>
+                        <th>Costo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tests.map((test) => `
+                        <tr>
+                            <td>${Utils.escapeHtml(Utils.formatFecha(test.Fecha_e ?? test.Fecha ?? ""))}</td>
+                            <td>${Utils.escapeHtml(test.Num_test ?? "")}</td>
+                            <td>${Utils.escapeHtml(test.Observaciones ?? test.Resultado_test ?? "")}</td>
+                            <td>${test.Costo_reparacion ? `$${Number(test.Costo_reparacion).toFixed(2)}` : "—"}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
 // ============================================
-// FUNCIÓN DE ASIGNACIÓN CORREGIDA
+// FUNCIÓN DE ASIGNACIÓN
 // ============================================
 async function asignarOrden() {
     const selectOrden = document.getElementById("select-orden-asignar");
     const selectTecnico = document.getElementById("modal-tecnico-select");
-    
+
     const idOrden = selectOrden?.value;
     const idTecnico = selectTecnico?.value;
-    
-    console.log("Valor orden:", idOrden);
-    console.log("Valor técnico:", idTecnico);
+
+    console.log("=== ASIGNANDO ORDEN ===");
+    console.log("ID Orden:", idOrden);
+    console.log("ID Técnico:", idTecnico);
 
     if (!idOrden || idOrden === "") {
         Utils.showMessage("Por favor, selecciona una orden pendiente.", true);
@@ -988,38 +1077,36 @@ async function asignarOrden() {
         return;
     }
 
-    // Extraer solo el número de la orden para la URL
-    const numeroOrden = Utils.extraerNumeroOrden(idOrden);
-    if (!numeroOrden) {
-        Utils.showMessage("ID de orden inválido.", true);
-        return;
-    }
+    const url = `${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}/asignar`;
+    const payload = { id_empleado: parseInt(idTecnico, 10) };
+
+    console.log("URL:", url);
+    console.log("Payload:", payload);
 
     try {
-        console.log(`Asignando orden #${numeroOrden} (${idOrden}) al técnico ${idTecnico}`);
-        
-        const result = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${numeroOrden}/asignar`, {
+        const result = await Utils.fetchJson(url, {
             method: "POST",
-            body: JSON.stringify({ 
-                id_empleado: parseInt(idTecnico, 10) 
-            }),
+            body: JSON.stringify(payload),
         });
 
-        console.log("Resultado asignación:", result);
-        
+        console.log("Resultado:", result);
         Utils.showMessage("✅ Orden asignada correctamente.");
         closeModal("modal-asignar-tecnico");
         await cargarOrdenes();
-        
+
         if (selectOrden) selectOrden.value = "";
         if (selectTecnico) selectTecnico.value = "";
-        
+
     } catch (error) {
-        console.error("Error asignando orden:", error);
+        console.error("Error completo:", error);
+        console.error("Mensaje de error:", error.message);
         Utils.showMessage(`❌ ${error.message || "No se pudo asignar la orden."}`, true);
     }
 }
 
+// ============================================
+// FUNCIÓN DE REVISIÓN
+// ============================================
 async function guardarRevision(event) {
     event.preventDefault();
     const { revisionOrdenId, formRevision } = getDomElements();
@@ -1027,13 +1114,6 @@ async function guardarRevision(event) {
 
     if (!idOrden) {
         Utils.showMessage("Selecciona una orden.", true);
-        return;
-    }
-
-    // Extraer solo el número para la URL
-    const numeroOrden = Utils.extraerNumeroOrden(idOrden);
-    if (!numeroOrden) {
-        Utils.showMessage("ID de orden inválido.", true);
         return;
     }
 
@@ -1054,7 +1134,7 @@ async function guardarRevision(event) {
     payload.Observaciones = formRevision?.querySelector('[name="Observaciones"]')?.value || "";
 
     try {
-        await Utils.fetchJson(`${CONFIG.API.ORDENES}/${numeroOrden}/revision`, {
+        await Utils.fetchJson(`${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}/revision`, {
             method: "POST",
             body: JSON.stringify(payload),
         });
@@ -1069,19 +1149,15 @@ async function guardarRevision(event) {
     }
 }
 
+// ============================================
+// FUNCIÓN DE FOTOS
+// ============================================
 async function guardarFotos(event) {
     event.preventDefault();
     const { fotosOrdenId, formFotos } = getDomElements();
     const idOrden = fotosOrdenId?.value || ordenActualId;
 
     if (!idOrden || !formFotos) return;
-
-    // Extraer solo el número para la URL
-    const numeroOrden = Utils.extraerNumeroOrden(idOrden);
-    if (!numeroOrden) {
-        Utils.showMessage("ID de orden inválido.", true);
-        return;
-    }
 
     const formData = new FormData(formFotos);
     const csrf = Utils.getCsrfToken();
@@ -1092,7 +1168,7 @@ async function guardarFotos(event) {
         if (csrf) headers.set("X-CSRFToken", csrf);
         if (token) headers.set("Authorization", `Bearer ${token}`);
 
-        const response = await fetch(`/api/taller/ordenes/${numeroOrden}/fotos`, {
+        const response = await fetch(`/api/taller/ordenes/${encodeURIComponent(idOrden)}/fotos`, {
             method: "POST",
             body: formData,
             headers,
@@ -1115,7 +1191,7 @@ async function guardarFotos(event) {
 }
 
 // ============================================
-// 11. EVENTOS DE TABLA (Delegación)
+// 11. EVENTOS DE TABLA
 // ============================================
 function onTablaClick(event) {
     const btn = event.target.closest("button[data-action]");
@@ -1140,6 +1216,30 @@ function onTablaClick(event) {
     }
 }
 
+function onModalEstadoClick(event) {
+    const btn = event.target.closest("button[data-action]");
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    if (action === "ver-detalle") {
+        abrirDetalleOrden(id);
+        return;
+    }
+
+    if (action === "seleccionar-asignacion") {
+        const selectOrden = document.getElementById("select-orden-asignar");
+        if (selectOrden) {
+            selectOrden.value = String(id);
+            closeModal("modal-ordenes-estado");
+            openModal("modal-asignar-tecnico");
+        }
+        return;
+    }
+}
+
 function onEstadoCardClick(estado) {
     const label = {
         pendiente: "Pendientes",
@@ -1148,16 +1248,25 @@ function onEstadoCardClick(estado) {
         reparada: "Reparadas",
     }[estado] || "Órdenes";
 
-    const estadoParam = {
+    const estadoParamMap = {
         pendiente: "Pendiente",
         asignada: "Asignada",
-        revisada: "Revisado",
+        revisada: "Revisado,Revisada,En revisión,En revision",
         reparada: "Reparado",
-    }[estado] || estado;
+    };
+
+    const estadoParam = estadoParamMap[estado] || estado;
+
+    console.log(`[DEBUG] Buscando órdenes ${label} con estado: ${estadoParam}`);
 
     Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`)
         .then((data) => {
-            renderModalOrdenesEstado(label, data.ordenes || []);
+            console.log(`[DEBUG] Órdenes ${label} encontradas:`, data.ordenes);
+            if (data.ordenes && data.ordenes.length > 0) {
+                renderModalOrdenesEstado(label, data.ordenes);
+            } else {
+                renderModalOrdenesEstado(label, []);
+            }
             openModal("modal-ordenes-estado");
         })
         .catch((error) => {
@@ -1166,6 +1275,7 @@ function onEstadoCardClick(estado) {
             if (modalOrdenesEstadoSubtitle) {
                 modalOrdenesEstadoSubtitle.textContent = "No se pudo cargar la información.";
             }
+            Utils.showMessage(`Error al cargar órdenes ${label}: ${error.message}`, true);
         });
 }
 
@@ -1188,11 +1298,15 @@ document.addEventListener("DOMContentLoaded", () => {
         tablaOrdenes,
     } = getDomElements();
 
+    // Establecer la fecha actual en el campo de fecha
     if (inputFecha) {
-        const hoy = new Date();
-        const fechaHoy = hoy.toISOString().slice(0, 10);
-        inputFecha.min = fechaHoy;
-        inputFecha.value = "";
+        const fechaActual = Utils.getFechaActual();
+        inputFecha.value = fechaActual;
+        inputFecha.min = fechaActual;
+        inputFecha.max = fechaActual;
+        inputFecha.readOnly = true;
+        inputFecha.style.backgroundColor = '#f5f5f5';
+        inputFecha.style.cursor = 'not-allowed';
     }
 
     const inputImei = document.getElementById("orden-id-equipo");
@@ -1209,6 +1323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validador de patrón (solo números y guiones)
     const inputPatron = document.getElementById("orden-patron");
     if (inputPatron) {
         inputPatron.addEventListener("input", (e) => {
@@ -1227,6 +1342,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validador de celular (solo números)
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
         inputCelular.addEventListener("input", (e) => {
@@ -1234,10 +1350,75 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validador de clave (no permite espacios)
     const inputClave = document.getElementById("orden-clave");
     if (inputClave) {
         inputClave.addEventListener("input", (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 30);
+            e.target.value = e.target.value.replace(/\s/g, "").slice(0, 30);
+        });
+    }
+
+    // Validador de color (solo letras, máximo 15 caracteres)
+    const inputColor = document.getElementById("orden-color");
+    if (inputColor) {
+        inputColor.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
+            if (value.length > 15) {
+                value = value.slice(0, 15);
+            }
+            e.target.value = value;
+        });
+    }
+
+    // Validador de nombre (solo letras, máximo 20 caracteres)
+    const inputNombre = document.getElementById("cliente-nombre");
+    if (inputNombre) {
+        inputNombre.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
+            if (value.length > 20) {
+                value = value.slice(0, 20);
+            }
+            // Capitalizar
+            const palabras = value.split(' ');
+            value = palabras.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+            e.target.value = value;
+        });
+    }
+
+    // Validador de apellido (solo letras, máximo 20 caracteres)
+    const inputApellido = document.getElementById("cliente-apellido");
+    if (inputApellido) {
+        inputApellido.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
+            if (value.length > 20) {
+                value = value.slice(0, 20);
+            }
+            // Capitalizar
+            const palabras = value.split(' ');
+            value = palabras.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+            e.target.value = value;
+        });
+    }
+
+    // Validador de dirección (máximo 50 caracteres)
+    const inputDireccion = document.getElementById("cliente-direccion");
+    if (inputDireccion) {
+        inputDireccion.addEventListener("input", (e) => {
+            if (e.target.value.length > 50) {
+                e.target.value = e.target.value.slice(0, 50);
+            }
+        });
+    }
+
+    // Validador de modelo personalizado (solo letras, números, espacios y guiones)
+    const inputModeloCustom = document.getElementById("orden-modelo-custom");
+    if (inputModeloCustom) {
+        inputModeloCustom.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-Z0-9\s\-]/g, "");
+            if (value.length > 30) {
+                value = value.slice(0, 30);
+            }
+            e.target.value = value;
         });
     }
 
@@ -1245,16 +1426,21 @@ document.addEventListener("DOMContentLoaded", () => {
     btnVerificarCliente?.addEventListener("click", verificarCliente);
     btnCrearCliente?.addEventListener("click", registrarClienteDesdeFormulario);
     formOrden?.addEventListener("submit", onSubmitOrden);
-    
+
     if (btnAsignarOrden) {
         btnAsignarOrden.addEventListener("click", asignarOrden);
     }
-    
+
     btnCargarTrabajos?.addEventListener("click", cargarTrabajosTecnico);
     formRevision?.addEventListener("submit", guardarRevision);
     formFotos?.addEventListener("submit", guardarFotos);
     inputFotos?.addEventListener("change", () => renderPreviewFotos(inputFotos.files));
     tablaOrdenes?.addEventListener("click", onTablaClick);
+
+    const modalEstadoBody = document.getElementById('modal-ordenes-estado-body');
+    if (modalEstadoBody) {
+        modalEstadoBody.addEventListener('click', onModalEstadoClick);
+    }
 
     document.getElementById("btn-asignar-tecnico")?.addEventListener("click", () => {
         openModal("modal-asignar-tecnico");
@@ -1274,7 +1460,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("btn-nueva-orden")?.addEventListener("click", () => {
         if (inputFecha) {
-            inputFecha.value = "";
+            inputFecha.value = Utils.getFechaActual();
         }
     });
 
