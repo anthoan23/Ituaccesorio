@@ -1,7 +1,4 @@
 from __future__ import annotations
-
-from datetime import date
-
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -43,17 +40,8 @@ class Especialidad():
     def agregar_especialidad(self) -> str:
         nombre = self.nombre_especialidad.strip()
         descripcion = self.descripcion_especialidad.strip()
-
-        if not nombre or not descripcion:
-            return "El nombre y la descripción de la especialidad no pueden estar vacíos."
         
-        if len(nombre) > 30:
-            return "El nombre de la especialidad no puede exceder los 30 caracteres."
-        
-        if len(descripcion) > 255:
-            return "La descripción de la especialidad no puede exceder los 255 caracteres."
-        
-        if self.verificar_especialidad():
+        if self.obtener_id_por_nombre():
             return f"La especialidad '{nombre}' ya existe."
 
         db = self.__conexion_bd.conexion1()
@@ -88,9 +76,6 @@ class Especialidad():
 
     def eliminar_especialidad(self) -> str:
         especialidad_id = self.id_especialidad.strip()
-
-        if not especialidad_id:
-            return "El identificador de la especialidad no puede estar vacío."
         
         if not self.verificar_especialidad_por_id():
             return f"La especialidad con identificador {especialidad_id} no existe."
@@ -130,19 +115,6 @@ class Especialidad():
         especialidad_id = self.id_especialidad.strip()
         nuevo_nombre = self.nombre_especialidad.strip()
         nueva_descripcion = self.descripcion_especialidad.strip()
-
-        # Validaciones
-        if not especialidad_id:
-            return "El identificador de la especialidad es obligatorio."
-
-        if not nuevo_nombre or not nueva_descripcion:
-            return "El nombre y la descripción de la especialidad no pueden estar vacíos."
-
-        if len(nuevo_nombre) > 30:
-            return "El nombre de la especialidad no puede exceder los 30 caracteres."
-
-        if len(nueva_descripcion) > 255:
-            return "La descripción de la especialidad no puede exceder los 255 caracteres."
 
         # Verificar si la especialidad existe
         if not self.verificar_especialidad_por_id():
@@ -185,25 +157,6 @@ class Especialidad():
         finally:
             cursor.close()
             db.close()
-    
-    def verificar_especialidad(self) -> bool:
-        # Usar el atributo nombre_especialidad
-        especialidad = self.nombre_especialidad.strip()
-        
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "SELECT 1 FROM Especialidad WHERE Nombre_especialidad = %s LIMIT 1",
-                (especialidad,),
-            )
-            return cursor.fetchone() is not None
-        finally:
-            cursor.close()
-            db.close()
 
     def verificar_especialidad_por_id(self) -> bool:
         especialidad_id = self.id_especialidad.strip()
@@ -223,10 +176,8 @@ class Especialidad():
             cursor.close()
             db.close()
 
-    def obtener_especialidad_por_id(self, especialidad_id: str = None):
-        id_buscar = especialidad_id or self.id_especialidad
-        if not id_buscar:
-            return None
+    def obtener_especialidad_por_id(self):
+        id_buscar = self.id_especialidad
 
         db = self.__conexion_bd.conexion1()
         if not db:

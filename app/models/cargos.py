@@ -4,7 +4,7 @@ from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
 
-class Cargo():
+class Cargo:
 
     def __init__(self, id_cargo: str = "", nombre_cargo: str = "", descripcion_cargo: str = "", usuario_id: str = None):
         self.id_cargo = id_cargo
@@ -42,21 +42,8 @@ class Cargo():
         nombre = self.nombre_cargo.strip()
         descripcion = self.descripcion_cargo.strip()
 
-        # Validaciones
-        if not nombre or not descripcion:
-            mensaje = "El nombre y la descripción del cargo no pueden estar vacíos."
-            return mensaje
-        
-        if len(nombre) > 30:
-            mensaje = "El nombre del cargo no puede exceder los 30 caracteres."
-            return mensaje
-        
-        if len(descripcion) > 255:
-            mensaje = "La descripción del cargo no puede exceder los 255 caracteres."
-            return mensaje
-        
-        # Verificar si el cargo ya existe
-        if self.verificar_cargo():
+
+        if self.obtener_id_por_nombre():
             mensaje = f"El cargo '{nombre}' ya existe."
             return mensaje
 
@@ -95,10 +82,6 @@ class Cargo():
     def eliminar_cargo(self) -> str:
         # Usar el atributo id_cargo
         cargo_id = self.id_cargo.strip()
-
-        if not cargo_id:
-            mensaje = "El identificador del cargo no puede estar vacío."
-            return mensaje
         
         if not self.verificar_cargo_por_id():
             return f"El cargo con identificador {cargo_id} no existe."
@@ -139,19 +122,6 @@ class Cargo():
         nuevo_nombre = self.nombre_cargo.strip()
         nueva_descripcion = self.descripcion_cargo.strip()
 
-        # Validaciones
-        if not cargo_id:
-            return "El identificador del cargo es obligatorio."
-
-        if not nuevo_nombre or not nueva_descripcion:
-            return "El nombre y la descripción del cargo no pueden estar vacíos."
-
-        if len(nuevo_nombre) > 30:
-            return "El nombre del cargo no puede exceder los 30 caracteres."
-
-        if len(nueva_descripcion) > 255:
-            return "La descripción del cargo no puede exceder los 255 caracteres."
-
         # Verificar si el cargo existe
         if not self.verificar_cargo_por_id():
             return f"El cargo con identificador {cargo_id} no existe."
@@ -190,25 +160,6 @@ class Cargo():
             print(f"Error al actualizar cargo: {e}")
             db.rollback()
             return "Error al actualizar cargo."
-        finally:
-            cursor.close()
-            db.close()
-    
-    def verificar_cargo(self) -> bool:
-        # Usar el atributo nombre_cargo
-        cargo = self.nombre_cargo.strip()
-        
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            return False
-
-        cursor = db.cursor()
-        try:
-            cursor.execute(
-                "SELECT 1 FROM Cargo WHERE Nombre_cargo = %s LIMIT 1",
-                (cargo,),
-            )
-            return cursor.fetchone() is not None
         finally:
             cursor.close()
             db.close()
