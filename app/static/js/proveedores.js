@@ -27,20 +27,14 @@
 
   // ==================== VALIDACIÓN DE SEGURIDAD ====================
   
-  /**
-   * Valida que un ID de proveedor sea válido (numérico)
-   */
   function validarIdProveedor(id) {
     if (!id || id === '' || id === null || id === undefined) {
       return false;
     }
     const idStr = String(id).trim();
-    return /^\d+$/.test(idStr) && idStr.length > 0 && parseInt(idStr) > 0;
+    return /^[a-zA-Z0-9\-]+$/.test(idStr) && idStr.length > 0;
   }
 
-  /**
-   * Muestra un mensaje de error de seguridad para proveedores
-   */
   function mostrarErrorSeguridadProveedor(mensaje) {
     const msg = mensaje || 'Se ha detectado una acción no válida. Por favor, recarga la página e intenta nuevamente.';
     
@@ -90,7 +84,6 @@
         ? (payload && (payload.error || payload.message)) || JSON.stringify(payload)
         : String(payload || res.statusText);
       
-      // ✅ Mejorar mensaje de error para 404
       if (res.status === 404) {
         throw new Error(`404: ${msg || 'El recurso solicitado no existe.'}`);
       }
@@ -110,7 +103,7 @@
       .replaceAll("'", '&#39;');
   }
 
-  // ==================== MODAL DE FEEDBACK (éxito/error) ====================
+  // ==================== MODAL DE FEEDBACK ====================
   function showFeedback(type, message, title) {
     if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
       window.FeedbackModal.show({
@@ -121,7 +114,6 @@
       return;
     }
     
-    // Fallback si no existe FeedbackModal
     const modal = document.getElementById('feedback-modal');
     if (modal) {
       const titleEl = modal.querySelector('#feedback-modal-title');
@@ -163,7 +155,6 @@
         });
       }
     } else {
-      // Fallback final
       if (type === 'error') alert(message);
       else console.log(message);
     }
@@ -410,7 +401,6 @@
   // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
 
   async function abrirVerProveedor(id) {
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
     if (!validarIdProveedor(id)) {
       mostrarErrorSeguridadProveedor('El ID del proveedor que intentas ver no es válido.');
       return;
@@ -441,7 +431,6 @@
   }
 
   async function abrirEditarProveedor(id) {
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
     if (!validarIdProveedor(id)) {
       mostrarErrorSeguridadProveedor('El ID del proveedor que intentas editar no es válido.');
       return;
@@ -473,7 +462,6 @@
   }
 
   async function abrirEliminarProveedor(id) {
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido
     if (!validarIdProveedor(id)) {
       mostrarErrorSeguridadProveedor('El ID del proveedor que intentas eliminar no es válido.');
       return;
@@ -524,38 +512,97 @@
     }
   }
 
-  function renderProductosEditar(items) {
+function renderProductosEditar(items) {
     const tbody = $id('tabla-proveedor-productos');
     if (!tbody) return;
 
     if (!items.length) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="table__empty">Este proveedor no tiene productos asignados.</td>
-        </tr>`;
-      return;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="table__empty">Este proveedor no tiene productos asignados.</td>
+            </tr>`;
+        return;
     }
 
     tbody.innerHTML = items
-      .map((it) => {
-        const idModelo = escapeHtml(it?.ID_modelo ?? it?.id_modelo ?? it?.id ?? '');
-        const modelo = escapeHtml(it?.modelo_nombre ?? it?.N_modelo ?? it?.modelo ?? '');
-        const marca = escapeHtml(it?.marca_nombre ?? it?.N_marca ?? it?.marca ?? '');
-        const clase = escapeHtml(it?.clase_nombre ?? it?.N_clase ?? it?.clase ?? '');
-        const costo = it?.costo ?? it?.Costo ?? '';
+        .map((it) => {
+            const idModelo = escapeHtml(it?.ID_modelo ?? it?.id_modelo ?? it?.id ?? '');
+            const modelo = escapeHtml(it?.modelo_nombre ?? it?.N_modelo ?? it?.modelo ?? '');
+            const marca = escapeHtml(it?.marca_nombre ?? it?.N_marca ?? it?.marca ?? '');
+            const clase = escapeHtml(it?.clase_nombre ?? it?.N_clase ?? it?.clase ?? '');
+            const costo = it?.costo ?? it?.Costo ?? '';
 
-        return `
-          <tr>
-            <td>${modelo}</td>
-            <td>${marca}</td>
-            <td>${clase}</td>
-            <td class="col-cost">
-              <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
-             </td>
-          </tr>`;
-      })
-      .join('');
-  }
+            return `
+                <tr>
+                    <td>${modelo}</td>
+                    <td>${marca}</td>
+                    <td>${clase}</td>
+                    <td class="col-cost">
+                        <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
+                    </td>
+                    <td class="table__actions">
+                        <div class="row-actions" aria-label="Acciones" style="display:flex;justify-content:center;align-items:center;">
+                            <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${iconTrash()}</button>
+                        </div>
+                    </td>
+                </tr>`;
+        })
+        .join('');
+
+    // ✅ AGREGAR CONSOLE.LOG PARA DEPURAR
+    tbody.querySelectorAll('input[data-action="guardar-costo"]').forEach(input => {
+        console.log('🔍 Input de costo encontrado:', input);
+        console.log('🔍 ID del modelo:', input.dataset.idModelo);
+        console.log('🔍 Valor actual:', input.value);
+
+        // Log cuando el input recibe focus
+        input.addEventListener('focus', () => {
+            console.log('🎯 Input enfocado - ID modelo:', input.dataset.idModelo);
+        });
+
+        // Log cuando el input pierde focus (blur)
+        input.addEventListener('blur', () => {
+            console.log('👋 Input perdió foco - ID modelo:', input.dataset.idModelo);
+            console.log('👋 Valor actual:', input.value);
+        });
+
+        // Log cuando el input cambia (change)
+        input.addEventListener('change', (e) => {
+            console.log('🔄 Evento CHANGE disparado - ID modelo:', input.dataset.idModelo);
+            console.log('🔄 Valor anterior:', input.defaultValue);
+            console.log('🔄 Valor nuevo:', input.value);
+            console.log('🔄 Evento:', e);
+        });
+
+        // Log cuando se presiona una tecla (keydown)
+        input.addEventListener('keydown', (e) => {
+            console.log('⌨️ Tecla presionada:', e.key);
+            console.log('⌨️ ID modelo:', input.dataset.idModelo);
+            if (e.key === 'Enter') {
+                console.log('⚠️ ENTER presionado!');
+            }
+        });
+
+        // Log cuando se hace clic en las flechas del input number
+        input.addEventListener('input', (e) => {
+            console.log('📝 Evento INPUT (cambio en tiempo real) - ID modelo:', input.dataset.idModelo);
+            console.log('📝 Valor actual:', input.value);
+        });
+
+        // Prevenir que el Enter en el input de costo envíe el formulario
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                console.log('🚫 ENTER capturado - previniendo submit del formulario');
+                e.preventDefault();
+                e.stopPropagation();
+                // Disparar el cambio manualmente
+                const event = new Event('change', { bubbles: true });
+                input.dispatchEvent(event);
+                input.blur();
+            }
+        });
+    });
+}
 
   function renderProductosCrear() {
     const tbody = $id('tabla-proveedor-productos-crear');
@@ -583,7 +630,7 @@
             <td>${marca}</td>
             <td>${clase}</td>
             <td class="col-cost">${formatMoney(costo)} $</td>
-            <td class="table__actions">
+            <td class="table__actions" style="display:flex;justify-content:center;align-items:center;">
               <div class="row-actions" aria-label="Acciones">
                 <button class="icon-action icon-action--danger" type="button" data-action="quitar-producto-crear" data-id-modelo="${idModelo}" aria-label="Quitar">${iconTrash()}</button>
               </div>
@@ -644,13 +691,19 @@
   }
 
   async function crearProveedorFromForm() {
+    // Validar que el RIF no sea solo números
+    const rif = getFormValue('c-id').trim();
+    if (rif && /^\d+$/.test(rif)) {
+      throw new Error('El RIF no puede ser solo números. Use el formato J-12345678-9');
+    }
+    
     const productos = state.productosCrear.map((it) => ({
       id_modelo: Number(it.id_modelo),
       costo: it.costo === '' ? null : Number(it.costo),
     }));
 
     const payload = {
-      id: getFormValue('c-id') ? Number(getFormValue('c-id')) : null,
+      id: rif || null,
       nombre: getFormValue('c-nombre').trim(),
       tipo: getFormValue('c-tipo') || null,
       celular: getFormValue('c-celular') || null,
@@ -684,11 +737,21 @@
     });
   }
 
-  async function eliminarProveedorActual() {
-    const id = state.currentProveedorId;
-    if (!id) return;
-
-    await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  async function eliminarProductoProveedor(idModelo) {
+    const idProveedor = state.currentProveedorId;
+    if (!idProveedor) return;
+    
+    showConfirmModal(`¿Seguro que deseas eliminar este producto del proveedor?`, async () => {
+      try {
+        await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos/${encodeURIComponent(idModelo)}`, { 
+          method: 'DELETE' 
+        });
+        await cargarProductosProveedorEditar(idProveedor);
+        showFeedback('success', 'Producto eliminado del proveedor correctamente.');
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudo eliminar el producto.');
+      }
+    });
   }
 
   async function agregarProductoProveedorFromForm() {
@@ -705,7 +768,7 @@
 
     const payload = {
       id_modelo: Number(idModelo),
-      costo: Number(costo),
+      costo: costo === '' ? null : Number(costo),
     };
 
     await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos`, {
@@ -745,25 +808,29 @@
     renderProductosCrear();
   }
 
-  async function guardarCostoProductoProveedor(idModelo, costo) {
+ async function guardarCostoProductoProveedor(idModelo, costo) {
     const idProveedor = state.currentProveedorId;
     if (!idProveedor) return;
 
     if (costo !== '' && Number(costo) < 0) {
-      showFeedback('error', 'El costo no puede ser negativo.');
-      return;
+        showFeedback('error', 'El costo no puede ser negativo.');
+        return;
     }
 
     const payload = {
-      id_modelo: Number(idModelo),
-      costo: costo === '' ? null : Number(costo),
+        id_modelo: Number(idModelo),
+        costo: costo === '' ? null : Number(costo),
     };
 
-    await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  }
+    try {
+        await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+    } catch (error) {
+        showFeedback('error', error.message || 'No se pudo actualizar el costo.');
+    }
+}
 
   function bindEvents() {
     const btnAplicar = $id('btn-aplicar');
@@ -806,7 +873,6 @@
       const id = btn.getAttribute('data-id');
       if (!action || !id) return;
 
-      // ✅ VALIDACIÓN DE SEGURIDAD: Verificar que el ID sea válido ANTES de cualquier acción
       if (!validarIdProveedor(id)) {
         mostrarErrorSeguridadProveedor('El ID del proveedor no es válido.');
         return;
@@ -895,28 +961,59 @@
       }
     });
 
-    const tbodyProductosEditar = $id('tabla-proveedor-productos');
+const tbodyProductosEditar = $id('tabla-proveedor-productos');
     tbodyProductosEditar?.addEventListener('change', async (ev) => {
-      const input = ev.target?.closest?.('input[data-action="guardar-costo"][data-id-modelo]');
-      if (!input) return;
+        console.log('🔔 EVENTO CHANGE CAPTURADO en tbodyProductosEditar');
+        console.log('🔔 Target:', ev.target);
+        console.log('🔔 Target tagName:', ev.target?.tagName);
+        
+        const input = ev.target?.closest?.('input[data-action="guardar-costo"][data-id-modelo]');
+        console.log('🔔 Input encontrado:', input);
+        
+        if (!input) {
+            console.log('❌ No es un input de costo, ignorando...');
+            return;
+        }
 
-      const idModelo = input.getAttribute('data-id-modelo');
-      const costo = input.value;
+        // ✅ Prevenir que el evento se propague al formulario
+        ev.stopPropagation();
+        console.log('✅ Evento stopPropagation ejecutado');
 
+        const idModelo = input.getAttribute('data-id-modelo');
+        const costo = input.value;
+        console.log('📊 ID modelo:', idModelo);
+        console.log('📊 Costo:', costo);
+        console.log('📊 Costo como número:', Number(costo));
+
+        if (!idModelo) {
+            console.log('❌ No hay ID de modelo');
+            return;
+        }
+
+        if (costo !== '' && Number(costo) < 0) {
+            console.log('❌ Costo negativo detectado');
+            showFeedback('error', 'El costo no puede ser negativo.');
+            input.value = 0;
+            return;
+        }
+
+        console.log('✅ Guardando costo...');
+        try {
+            await guardarCostoProductoProveedor(idModelo, costo);
+            console.log('✅ Costo guardado exitosamente (SIN MODAL)');
+        } catch (e) {
+            console.log('❌ Error al guardar costo:', e);
+            showFeedback('error', e.message || 'No se pudo actualizar el costo.');
+        }
+    });
+
+    // Eliminar producto del proveedor en edición
+    tbodyProductosEditar?.addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest?.('button[data-action="eliminar-producto-editar"][data-id-modelo]');
+      if (!btn) return;
+      const idModelo = btn.getAttribute('data-id-modelo');
       if (!idModelo) return;
-
-      if (costo !== '' && Number(costo) < 0) {
-        showFeedback('error', 'El costo no puede ser negativo.');
-        input.value = 0;
-        return;
-      }
-
-      try {
-        await guardarCostoProductoProveedor(idModelo, costo);
-        showFeedback('success', 'Costo actualizado correctamente.');
-      } catch (e) {
-        showFeedback('error', e.message || 'No se pudo actualizar el costo.');
-      }
+      await eliminarProductoProveedor(idModelo);
     });
 
     document.addEventListener('click', async (ev) => {

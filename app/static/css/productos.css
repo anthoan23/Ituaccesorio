@@ -24,7 +24,7 @@ body {
 }
 
 /* ============================================ */
-/* HERO / ENCABEZADO */
+/* HERO / ENCABEZADO - SIN GLASSMORPHIC */
 /* ============================================ */
 .products-hero {
     display: flex;
@@ -207,6 +207,7 @@ body {
 
 .filters-panel select option {
     color: var(--text-primary);
+    background: var(--bg-secondary);
 }
 
 .filters-panel__row {
@@ -581,6 +582,7 @@ body {
 
 .modal__panel select option {
     color: var(--text-primary);
+    background: var(--bg-secondary);
 }
 
 .modal__panel input:focus,
@@ -671,6 +673,7 @@ textarea:focus {
 
 select option {
     color: var(--text-primary);
+    background: var(--bg-secondary);
 }
 
 /* ============================================ */
@@ -696,6 +699,13 @@ select option {
     gap: 0.35rem;
     color: var(--text-secondary);
     font-weight: 700;
+}
+
+/* ============================================ */
+/* UTILITY - Ocultar elementos */
+/* ============================================ */
+.is-hidden {
+    display: none !important;
 }
 
 /* ============================================ */

@@ -4,7 +4,7 @@ from app.models.database import conectar
 
 
 class Inventario:
-    """Modelo para la tabla Existencias_productos - SOLO LECTURA"""
+    """Modelo para la tabla Existencias_productos"""
     
     def __init__(self, id_inventario: str = "", id_producto: str = "", 
                  existencia: int = 0, costo_venta: Decimal = Decimal(0), 
@@ -13,7 +13,7 @@ class Inventario:
         self.id_producto = id_producto
         self.existencia = existencia
         self.costo_venta = costo_venta
-        self.usuario_id = usuario_id  # Usuario que realiza la acción
+        self.usuario_id = usuario_id
         self.__conexion_bd = conectar()
 
     def _conexion(self):
@@ -56,34 +56,34 @@ class Inventario:
 
     def listar_inventario_por_modelo(self, nombre_modelo: str = None):
         """Lista inventario filtrado por modelo"""
+        if not nombre_modelo:
+            return self.listar_inventario()
+        
         db = self._conexion()
         if not db:
             return []
         
         cursor = db.cursor(dictionary=True)
         try:
-            if nombre_modelo:
-                cursor.execute("""
-                    SELECT 
-                        e.ID_inventario AS id_inventario,
-                        e.ID_producto AS id_producto,
-                        e.Existencia AS existencia,
-                        e.Costo_venta AS costo_venta,
-                        p.Nombre_producto AS nombre_producto,
-                        ma.Nombre_marca AS nombre_marca,
-                        cl.Nombre_Clase AS nombre_clase,
-                        (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
-                         WHERE fi.ID_inventario = e.ID_inventario 
-                         ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
-                    FROM Existencias_productos e
-                    JOIN Producto p ON e.ID_producto = p.ID_producto
-                    LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
-                    LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
-                    WHERE p.Nombre_producto LIKE %s
-                    ORDER BY cl.Nombre_Clase, ma.Nombre_marca, p.Nombre_producto
-                """, (f"%{nombre_modelo}%",))
-            else:
-                return self.listar_inventario()
+            cursor.execute("""
+                SELECT 
+                    e.ID_inventario AS id_inventario,
+                    e.ID_producto AS id_producto,
+                    e.Existencia AS existencia,
+                    e.Costo_venta AS costo_venta,
+                    p.Nombre_producto AS nombre_producto,
+                    ma.Nombre_marca AS nombre_marca,
+                    cl.Nombre_Clase AS nombre_clase,
+                    (SELECT fi.Foto_inventario FROM Fotos_inventario fi 
+                     WHERE fi.ID_inventario = e.ID_inventario 
+                     ORDER BY fi.ID_foto_inventario DESC LIMIT 1) AS foto_inventario
+                FROM Existencias_productos e
+                JOIN Producto p ON e.ID_producto = p.ID_producto
+                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+                WHERE p.Nombre_producto LIKE %s
+                ORDER BY cl.Nombre_Clase, ma.Nombre_marca, p.Nombre_producto
+            """, (f"%{nombre_modelo}%",))
             
             rows = cursor.fetchall() or []
             for row in rows:
@@ -203,9 +203,12 @@ class Inventario:
             if db:
                 db.close()
 
-    """JUAN sapo no borres esto es para el taller"""
+    # ============================================
+    # FUNCIONES PARA EL TALLER (MANTENER)
+    # ============================================
+    
     def listar_inventario_taller(self):
-       
+        """Lista inventario para el módulo de taller (categoría 2)"""
         db = self._conexion()
         if not db:
             return []
@@ -228,104 +231,6 @@ class Inventario:
                 ORDER BY c.Nombre_Clase, m.Nombre_marca, p.Nombre_producto
             """)
             return cursor.fetchall()
-        finally:
-            cursor.close()
-            db.close()
-
-
-class FotosInventario:
-    """Modelo para la tabla Fotos_inventario"""
-    
-    def __init__(self, id_foto_inventario: str = "", id_inventario: str = "", 
-                 foto_inventario: str = "", usuario_id: str = None):
-        self.id_foto_inventario = id_foto_inventario
-        self.id_inventario = id_inventario
-        self.foto_inventario = foto_inventario
-        self.usuario_id = usuario_id
-        self.__conexion_bd = conectar()
-
-    def _conexion(self):
-        return self.__conexion_bd.conexion1()
-
-    def _siguiente_id(self) -> str:
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT COALESCE(MAX(CAST(ID_foto_inventario AS UNSIGNED)), 0) + 1 FROM Fotos_inventario")
-            row = cursor.fetchone()
-            return str(int(row[0] or 0))
-        finally:
-            cursor.close()
-            db.close()
-
-    def listar_fotos(self):
-        if not self.id_inventario:
-            return []
-        
-        db = self._conexion()
-        if not db:
-            return []
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT ID_foto_inventario AS id, ID_inventario AS id_inventario, 
-                       Foto_inventario AS foto
-                FROM Fotos_inventario
-                WHERE ID_inventario = %s
-                ORDER BY ID_foto_inventario DESC
-            """, (self.id_inventario,))
-            return cursor.fetchall() or []
-        finally:
-            cursor.close()
-            db.close()
-
-    def registrar_foto(self) -> str:
-        if not self.id_inventario or not self.foto_inventario:
-            raise ValueError("ID de inventario y foto son requeridos")
-        
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-        cursor = None
-        try:
-            cursor = db.cursor()
-            self.id_foto_inventario = self._siguiente_id()
-            cursor.execute("""
-                INSERT INTO Fotos_inventario (ID_foto_inventario, ID_inventario, Foto_inventario)
-                VALUES (%s, %s, %s)
-            """, (self.id_foto_inventario, self.id_inventario, self.foto_inventario))
-            db.commit()
-            return self.id_foto_inventario
-        except Exception as e:
-            if db:
-                db.rollback()
-            raise e
-        finally:
-            if cursor:
-                cursor.close()
-            if db:
-                db.close()
-
-    def eliminar_foto(self) -> bool:
-        if not self.id_foto_inventario:
-            raise ValueError("ID de foto es requerido")
-        
-        db = self._conexion()
-        if not db:
-            raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute("DELETE FROM Fotos_inventario WHERE ID_foto_inventario = %s", (self.id_foto_inventario,))
-            db.commit()
-            return cursor.rowcount > 0
-        except Exception as e:
-            db.rollback()
-            raise e
         finally:
             cursor.close()
             db.close()
