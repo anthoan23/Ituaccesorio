@@ -31,7 +31,7 @@ body {
     padding: 1.4rem 1.1rem 2.2rem;
 }
 
-/* Hero section */
+/* Hero - GLASSMORPHIC AMARILLO */
 .hero {
     display: grid;
     grid-template-columns: 1.3fr 1fr;
@@ -40,11 +40,14 @@ body {
 }
 
 .hero__copy {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(243, 197, 0, 0.10);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
     border-radius: var(--radius);
     padding: 1.5rem;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
+    transition: all 0.3s ease;
 }
 
 .eyebrow {
@@ -61,6 +64,7 @@ body {
     font-family: "Space Grotesk", sans-serif;
     font-size: clamp(1.8rem, 3vw, 2.8rem);
     line-height: 1.1;
+    color: #ffffff;
 }
 
 /* Stats cards */
@@ -91,6 +95,7 @@ body {
     margin-top: 0.4rem;
     font-family: "Space Grotesk", sans-serif;
     font-size: 2rem;
+    color: #ffffff;
 }
 
 /* Board layout */
@@ -787,4 +792,165 @@ body.modal-open {
     z-index: 10;
     pointer-events: none;
     font-weight: normal;
+}
+
+/* ============================================ */
+/* MODO CLARO - USUARIOS HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .hero__copy {
+    background: rgba(243, 197, 0, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(243, 197, 0, 0.50);
+    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .hero__copy .eyebrow {
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .hero__copy h1 {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .stat-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(243, 197, 0, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .stat-card__label {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .stat-card .stat-card__value {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel__title {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .table th {
+    color: rgba(26, 26, 30, 0.6);
+    background: rgba(243, 197, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table td {
+    color: #1A1A1E;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .icon-action {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .icon-action:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .chip {
+    background: rgba(243, 197, 0, 0.12);
+    color: #1A1A1E;
+    border-color: rgba(243, 197, 0, 0.2);
+}
+
+[data-theme="light"] .btn--ghost {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1A1A1E;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .btn--ghost:hover {
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .tab {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .tab:hover {
+    background: rgba(243, 197, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tab.is-active {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .tab.is-active::after {
+    background: var(--yellow);
+}
+
+[data-theme="light"] .modal__dialog {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .panel__eyebrow {
+    color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .form__field > span {
+    color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.15);
+}
+
+[data-theme="light"] .password-toggle {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .permisos-container {
+    background: rgba(243, 197, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .permiso-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .permiso-modulo {
+    color: #1A1A1E;
+}
+
+[data-theme="light"] .foto-perfil-preview {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .form__hint {
+    color: rgba(26, 26, 30, 0.5);
 }

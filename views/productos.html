@@ -59,7 +59,7 @@
     </article>
 
     <aside class="card filters-panel" aria-label="Filtros de catálogo">
-      <h2 class="card__title">Filtros y Búsqueda</h2>
+      <h2 class="card__title">Filtros</h2>
 
       <div class="filters-panel__section" aria-label="Clase y marca">
         <h3 class="filters-panel__title">Clase y marca</h3>
@@ -73,27 +73,16 @@
           <select id="f-marca" aria-label="Marca"></select>
         </label>
       </div>
-
-      <div class="filters-panel__section" aria-label="Búsqueda">
-        <h3 class="filters-panel__title">Búsqueda</h3>
-        <label class="field">
-          <span class="field__label">Texto</span>
-          <input id="f-texto" type="search" placeholder="Buscar texto" aria-label="Buscar" maxlength="50">
-        </label>
-        <div class="filters-panel__actions">
-          <button id="btn-aplicar" class="btn btn--yellow" type="button">Aplicar</button>
-          <button id="btn-limpiar" class="btn btn--ghost" type="button">Limpiar</button>
-        </div>
-      </div>
     </aside>
   </section>
 
+  <!-- Modal Registrar Producto -->
   <div id="modal-registro-producto" class="modal is-hidden" aria-hidden="true">
     <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-    <div class="modal__panel card" role="dialog" aria-modal="true" aria-label="Registrar producto">
-      <h2 id="producto-modal-title" class="card__title">Registrar producto</h2>
+    <div class="modal__panel card" role="dialog" aria-modal="true" aria-label="Registrar producto" style="padding: 1.5rem;">
+      <h2 id="producto-modal-title" class="card__title" style="margin-bottom: 1rem;">Registrar producto</h2>
 
-      <div class="filters-panel__section" aria-label="Datos del producto">
+      <div class="filters-panel__section" aria-label="Datos del producto" style="margin-top: 0; padding-top: 0; border-top: none;">
         <form id="form-producto" action="#" method="post" autocomplete="off" enctype="multipart/form-data">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id_modelo" value="">
@@ -111,7 +100,8 @@
             </div>
           </div>
 
-          <label id="p-clase-nueva-wrap" class="field is-hidden">
+          <!-- Campo oculto para nueva clase (se muestra al hacer clic en "Nueva clase") -->
+          <div id="p-clase-nueva-wrap" class="field is-hidden" style="margin-top: 0.75rem;">
             <span class="field__label">Nombre de la clase <span class="required-indicator">*</span></span>
             <input id="p-clase-nueva" 
                    type="text" 
@@ -121,13 +111,13 @@
                    maxlength="30"
                    data-validation-rules="soloLetras,capitalizar"
                    title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
-            <div class="filters-panel__actions" aria-label="Acciones de clase">
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
+            <div class="filters-panel__actions" aria-label="Acciones de clase" style="margin-top: 0.5rem;">
               <button id="btn-guardar-clase" class="btn btn--yellow" type="button">Guardar clase</button>
             </div>
-          </label>
+          </div>
 
-          <div class="filters-panel__row">
+          <div class="filters-panel__row" style="margin-top: 0.75rem;">
             <label class="field">
               <span class="field__label">Marca <span class="required-indicator">*</span></span>
               <select id="p-marca" name="id_marca" aria-label="Marca" required>
@@ -140,7 +130,8 @@
             </div>
           </div>
 
-          <label id="p-marca-nueva-wrap" class="field is-hidden">
+          <!-- Campo oculto para nueva marca (se muestra al hacer clic en "Nueva marca") -->
+          <div id="p-marca-nueva-wrap" class="field is-hidden" style="margin-top: 0.75rem;">
             <span class="field__label">Nombre de la marca <span class="required-indicator">*</span></span>
             <input id="p-marca-nueva" 
                    type="text" 
@@ -150,21 +141,21 @@
                    maxlength="30"
                    data-validation-rules="soloLetrasNumeros,capitalizar"
                    title="Solo letras, números, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
-            <div class="filters-panel__actions" aria-label="Acciones de marca">
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
+            <div class="filters-panel__actions" aria-label="Acciones de marca" style="margin-top: 0.5rem;">
               <button id="btn-guardar-marca" class="btn btn--yellow" type="button">Guardar marca</button>
             </div>
-          </label>
+          </div>
 
-          <label class="field">
+          <label class="field" style="margin-top: 0.75rem;">
             <span class="field__label">Categoría</span>
             <select id="p-categoria" name="id_categoria" aria-label="Categoría">
               <option value="0">Sin categoría</option>
             </select>
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Clasificación adicional del producto</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Clasificación adicional del producto</small>
           </label>
 
-          <label class="field">
+          <label class="field" style="margin-top: 0.75rem;">
             <span class="field__label">Producto <span class="required-indicator">*</span></span>
             <input id="p-modelo" 
                    type="text" 
@@ -173,12 +164,12 @@
                    aria-label="Producto" 
                    required
                    maxlength="50"
-                   data-validation-rules="soloLetrasNumeros,sinCaracteresEspeciales"
+                   data-validation-rules="soloLetrasNumeros,capitalizar,sinCaracteresEspeciales"
                    title="Solo letras, números, espacios, guiones y paréntesis">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
           </label>
 
-          <label class="field">
+          <label class="field" style="margin-top: 0.75rem;">
             <span class="field__label">Descripción</span>
             <textarea id="p-descripcion" 
                       name="descripcion" 
@@ -188,16 +179,16 @@
                       maxlength="300"
                       data-validation-rules="sinCaracteresEspeciales"
                       title="Sin caracteres especiales"></textarea>
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 300 caracteres)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 300 caracteres)</small>
           </label>
 
-          <label class="field">
+          <label class="field" style="margin-top: 0.75rem;">
             <span class="field__label">Foto del producto</span>
             <input id="p-foto" name="foto_inventario" type="file" accept="image/*">
-            <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
+            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
           </label>
 
-          <div class="filters-panel__actions" aria-label="Acciones del formulario">
+          <div class="filters-panel__actions" aria-label="Acciones del formulario" style="margin-top: 1.5rem;">
             <button class="btn btn--yellow" type="submit">Guardar</button>
             <button id="btn-cancelar-producto" class="btn btn--ghost" type="button">Cancelar</button>
             <button class="btn btn--ghost" type="reset">Limpiar</button>
@@ -210,13 +201,13 @@
   <!-- Modal de Reportes -->
   <div id="modal-reportes" class="modal is-hidden" aria-hidden="true">
     <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-    <div class="modal__panel card" style="max-width: 800px; width: 90%;" role="dialog" aria-modal="true" aria-label="Reportes de productos">
+    <div class="modal__panel card" style="max-width: 800px; width: 90%; padding: 1.5rem;" role="dialog" aria-modal="true" aria-label="Reportes de productos">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 class="card__title">Reporte de Productos</h2>
         <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
       </div>
 
-      <div class="filters-panel__section">
+      <div class="filters-panel__section" style="margin-top: 0; padding-top: 0; border-top: none;">
         <h3 class="filters-panel__title">Filtros avanzados</h3>
         
         <div class="filters-panel__row">

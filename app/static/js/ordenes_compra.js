@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==================== ICONOS SVG CON ESTILOS ====================
     const Iconos = {
-        lapiz: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
-        basura: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
-        ojo: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+        lapiz: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+        basura: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>`,
+        ojo: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 6c0 2.5-2.5 5-8 5s-8-2.5-8-5 2.5-5 8-5 8 2.5 8 5zm-8-7c-6 0-10 4.5-10 7s4 7 10 7 10-4.5 10-7-4-7-10-7z" fill="currentColor"/></svg>`
     };
 
     // Estado
@@ -129,43 +129,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Cargar órdenes pendientes
-    async function cargarOrdenesPendientes() {
-        if (!tablaPendientes) return;
+// Cargar órdenes pendientes
+async function cargarOrdenesPendientes() {
+    if (!tablaPendientes) return;
+    
+    try {
+        const data = await fetchJson('/api/ordenes_compra');
         
-        try {
-            const data = await fetchJson('/api/ordenes_compra');
-            
-            if (Array.isArray(data) && data.length > 0) {
-                tablaPendientes.innerHTML = data.map(orden => {
-                    const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
-                    const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
-                    const estado = orden.Estado || 'Pendiente';
-                    const estadoClass = estado === 'Pendiente' ? 'status-pendiente' : 'status-completada';
-                    
-                    return `
-                        <tr data-id="${escapeHtml(orden.ID_orden_c)}">
-                            <td>${escapeHtml(orden.ID_orden_c)}</td>
-                            <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
-                            <td>${escapeHtml(fecha)}</td>
-                            <td><span class="status-badge ${estadoClass}">${escapeHtml(estado)}</span></td>
-                            <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
-                            <td class="table__actions">
-                                <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
-                                <button class="btn btn--small btn-editar" data-id="${escapeHtml(orden.ID_orden_c)}" title="Modificar">${Iconos.lapiz}</button>
-                                <button class="btn btn--small btn-eliminar" data-id="${escapeHtml(orden.ID_orden_c)}" title="Eliminar">${Iconos.basura}</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
-            }
-        } catch (error) {
-            console.error('Error cargando órdenes:', error);
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
+        if (Array.isArray(data) && data.length > 0) {
+            tablaPendientes.innerHTML = data.map(orden => {
+                const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
+                const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
+                const estado = orden.Estado || 'Pendiente';
+                const estadoClass = estado === 'Pendiente' ? 'status--pending' : 'status--approved';
+                
+                return `
+                    <tr data-id="${escapeHtml(orden.ID_orden_c)}">
+                        <td><span class="order-id">${escapeHtml(orden.ID_orden_c)}</span></td>
+                        <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
+                        <td>${escapeHtml(fecha)}</td>
+                        <td><span class="status ${estadoClass}"><span class="status__dot"></span>${escapeHtml(estado)}</span></td>
+                        <td class="order-total">Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
+                        <td class="table__actions">
+                            <div class="row-actions" aria-label="Acciones de la orden">
+                                <button class="icon-action" type="button" aria-label="Ver detalles" data-action="ver" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.ojo}</button>
+                                <button class="icon-action" type="button" aria-label="Editar" data-action="editar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.lapiz}</button>
+                                <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="eliminar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.basura}</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
         }
+    } catch (error) {
+        console.error('Error cargando órdenes:', error);
+        tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
     }
+}
 
     // ==================== CARGAR EMPLEADOS ====================
     
@@ -893,23 +895,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Acciones en tabla de pendientes
-    if (tablaPendientes) {
-        tablaPendientes.addEventListener('click', async (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            const id = btn.dataset.id;
-            if (!id) return;
+// Acciones en tabla de pendientes
+if (tablaPendientes) {
+    tablaPendientes.addEventListener('click', async (e) => {
+        // Buscar el botón más cercano con data-action
+        const btn = e.target.closest('.icon-action');
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        if (!action || !id) return;
 
-            if (btn.classList.contains('btn-ver')) {
-                await verDetalle(id);
-            } else if (btn.classList.contains('btn-editar')) {
-                await abrirEditarOrden(id);
-            } else if (btn.classList.contains('btn-eliminar')) {
-                abrirEliminarOrden(id);
-            }
-        });
-    }
+        if (action === 'ver') {
+            await verDetalle(id);
+        } else if (action === 'editar') {
+            await abrirEditarOrden(id);
+        } else if (action === 'eliminar') {
+            abrirEliminarOrden(id);
+        }
+    });
+}
 
     // Confirmar eliminación
     if (btnConfirmarEliminar) {

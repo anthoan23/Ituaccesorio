@@ -80,18 +80,21 @@ body {
   font-weight: 700;
 }
 
-/* Header */
+/* Header - GLASSMORPHIC AMARILLO */
 .tradein-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.1rem;
   margin-bottom: 1.5rem;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(243, 197, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
   border-radius: 26px;
   padding: 1.45rem 1.55rem;
-  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--inv-shadow);
+  transition: all 0.3s ease;
 }
 
 .tradein-header__title {
@@ -979,4 +982,207 @@ body {
 
 body.modal-open {
   overflow: hidden;
+}
+
+/* ============================================ */
+/* MODO CLARO - TRADEIN EMPLEADOS HERO GLASSMORPHIC */
+/* ============================================ */
+[data-theme="light"] .tradein-header {
+  background: rgba(243, 197, 0, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(243, 197, 0, 0.50);
+  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .tradein-header .tradein-header__title {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .tradein-header .tradein-header__subtitle {
+  color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .stat-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 197, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-card .stat-card__value {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .stat-card .stat-card__label {
+  color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .card__title {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .card__subtitle {
+  color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .table thead th {
+  color: rgba(26, 26, 30, 0.6);
+  background: rgba(243, 197, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table tbody td {
+  color: #1A1A1E;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .table tbody tr:hover {
+  background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .icon-action {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(26, 26, 30, 0.7);
+}
+
+[data-theme="light"] .icon-action:hover {
+  background: rgba(243, 197, 0, 0.12);
+  border-color: rgba(243, 197, 0, 0.3);
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .btn--ghost {
+  background: rgba(255, 255, 255, 0.8);
+  color: #1A1A1E;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .btn--ghost:hover {
+  background: rgba(243, 197, 0, 0.12);
+  border-color: rgba(243, 197, 0, 0.3);
+}
+
+[data-theme="light"] .breadcrumb__list {
+  color: rgba(26, 26, 30, 0.6);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .breadcrumb a {
+  color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .breadcrumb a:hover {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .breadcrumb__current {
+  color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .chip {
+  background: rgba(243, 197, 0, 0.12);
+  color: #1A1A1E;
+  border-color: rgba(243, 197, 0, 0.2);
+}
+
+[data-theme="light"] .badge--success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+[data-theme="light"] .badge--warning {
+  background: rgba(243, 197, 0, 0.15);
+  color: #D97706;
+}
+
+[data-theme="light"] .search-box .form-input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .search-box .form-input::placeholder {
+  color: rgba(26, 26, 30, 0.4);
+}
+
+[data-theme="light"] .modal__dialog {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .modal__title {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .modal__close {
+  color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .modal__close:hover {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .form__label {
+  color: rgba(26, 26, 30, 0.6);
+}
+
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-textarea,
+[data-theme="light"] .form-select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .form-hint {
+  color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .detalle-section {
+  background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .detalle-item strong {
+  color: rgba(26, 26, 30, 0.5);
+}
+
+[data-theme="light"] .detalle-item span {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .test-categoria {
+  background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .test-item {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .test-nombre {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .equipo-info-card {
+  background: rgba(243, 197, 0, 0.08);
+}
+
+[data-theme="light"] .equipo-info-card strong {
+  color: #1A1A1E;
+}
+
+[data-theme="light"] .equipo-info-card span {
+  color: rgba(26, 26, 30, 0.6);
 }

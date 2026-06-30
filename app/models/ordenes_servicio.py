@@ -4,7 +4,7 @@ from app.models.database import conectar
 
 
 class Orden_servicio():
-    def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio: str = None, ID_empleado: int = None, lista_repuestos=None):
+    def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, Descripcion_reparacion: str = None, Costo_reparacion: float = None, Nota_orden_servicio: str = None, Fecha_entrada = None, Fecha_salida = None, ID_foto_orden_servicio: str = None, Foto_orden_servicio = None, ID_empleado: int = None, lista_repuestos=None):
         self.ID_orden_servicio = ID_orden_servicio
         self.Estado_orden_servicio = Estado_orden_servicio
         self.Descripcion_reparacion = Descripcion_reparacion
@@ -126,7 +126,7 @@ class Orden_servicio():
             db.close()
 
 
-    def consultar_orden(self,):
+    def consultar_orden(self):
         id_orden = self.ID_orden_servicio
         db = self._conexion.conexion1()
         if not db:
@@ -134,7 +134,8 @@ class Orden_servicio():
         
         cursor = db.cursor(dictionary=True)
         try:
-            sql =""" SELECT o.*, 
+            # 1. Consultar la orden
+            sql = """ SELECT o.*, 
                 p.Nombre_producto AS Modelo, 
                 o.Estado_orden_servicio AS Estado,
                 CASE 
@@ -144,19 +145,34 @@ class Orden_servicio():
                     END AS nombre_cliente,
                 o.Descripcion_reparacion AS Descripcion,
                 o.Nota_orden_servicio AS Nota
-                FROM Orden_servicio o JOIN Equipo e ON o.ID_equipo = e.ID_equipo 
+                FROM Orden_servicio o 
+                JOIN Equipo e ON o.ID_equipo = e.ID_equipo 
                 JOIN Cliente c ON o.ID_cliente = c.ID_cliente
                 JOIN Producto p ON e.ID_producto = p.ID_producto
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 WHERE o.ID_orden_servicio = %s"""
-
             
             cursor.execute(sql, (id_orden,))
             orden = cursor.fetchone()
-        
+            
+            # Si no se encontró la orden, retornar None
+            if not orden:
+                return None
+            
+            # 2. Consultar las fotos de la orden (usando la misma conexión)
+            sql_fotos = "SELECT * FROM Fotos_orden_servicio WHERE ID_orden_servicio = %s"
+            cursor.execute(sql_fotos, (id_orden,))
+            fotos = cursor.fetchall()
+            
+            # 3. Agregar las fotos al resultado
+            orden['fotos'] = fotos if fotos else []
+            
             return orden
-        
+            
+        except Exception as e:
+            print(f"Error al consultar la orden: {e}")
+            return None
         finally:
             cursor.close()
             db.close()
@@ -182,115 +198,130 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-    def consultar_fotos_orden(self,):
-        id_orden = self.ID_orden_servicio
-        db = self._conexion.conexion1()
-        if not db:
-            return None
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = (
-                "SELECT * FROM Fotos_orden_servicio "
-                "WHERE ID_orden_servicio = %s"
-            )
-            cursor.execute(sql, (id_orden,))
-            fotos = cursor.fetchall()
-        
-            return fotos
-        
-        finally:
-            cursor.close()
-            db.close()
 
-    
-    def verificar_foto_existe_por_ruta(self) -> bool:
-        ruta_foto = self.Foto_orden_servicio.strip()
-     
-        """Verifica si una foto existe por su ruta o nombre de archivo"""
+    def verificar_foto_existe_por_id(self) -> bool:
+        """Verifica si una foto existe por su ID"""
+        id_foto = self.ID_foto_orden_servicio
+        if not id_foto:
+            return False
+            
         db = self._conexion.conexion1()
         if not db:
-         return False
+            return False
 
         cursor = db.cursor()
         try:
             cursor.execute(
-            "SELECT 1 FROM Fotos_orden_servicio WHERE Ruta_foto = %s LIMIT 1",
-            (ruta_foto.strip(),),
-        )
+                "SELECT 1 FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s LIMIT 1",
+                (id_foto.strip(),)
+            )
             return cursor.fetchone() is not None
+        except Exception as e:
+            print(f"Error al verificar foto por ID: {e}")
+            return False
         finally:
             cursor.close()
             db.close()
 
 
 
-    def agregar_foto_orden_servicio(self) -> str:
-        id_foto = self.ID_foto_orden_servicio.strip()
-        ruta_foto = self.Foto_orden_servicio.strip()
-
-        if len(id_foto) > 10:
-            return "El ID de la foto no puede tener más de 10 caracteres."
+ 
+           
+    def eliminar_foto_orden_servicio(self) -> dict:
+        """
+        Elimina una foto de la base de datos y retorna la ruta para eliminar el archivo físico
         
-        if len(ruta_foto) > 255:
-            return "La ruta de la foto no puede tener más de 255 caracteres."
+        Returns:
+            dict: {'success': bool, 'mensaje': str, 'ruta_foto': str, 'id_orden': str}
+        """
+        id_foto = self.ID_foto_orden_servicio
         
-        if self.verificar_foto_existe_por_ruta():
-            mensaje = f"La foto '{ruta_foto}' ya existe."
-            return mensaje
-
-        db = self._conexion.conexion()
+        if not id_foto:
+            return {"success": False, "error": "ID de foto no proporcionado"}
+        
+        db = self._conexion.conexion1()
         if not db:
-            mesaje = "Error al conectar con la base de datos."
-            return mesaje
+            return {"success": False, "error": "Error al conectar con la base de datos."}
         
-        cursor = db.cursor()
+        cursor = db.cursor(dictionary=True)
         try:
-            sql = 'CALL Agregar_foto(%s, %s)' 
-            cursor.execute(sql, (ruta_foto))
-            while cursor.nextset():
-                pass
+            # Obtener la ruta de la foto y el ID de orden antes de eliminar
+            cursor.execute(
+                "SELECT Foto_orden_servicio, ID_orden_servicio FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s",
+                (id_foto,)
+            )
+            foto = cursor.fetchone()
+            
+            if not foto:
+                return {"success": False, "error": f"No se encontró una foto con ID {id_foto}"}
+            
+            ruta_foto = foto.get('Foto_orden_servicio')
+            id_orden = foto.get('ID_orden_servicio')
+            
+            # Eliminar el registro
+            cursor.execute(
+                "DELETE FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s",
+                (id_foto,)
+            )
             db.commit()
-            mensaje = f"Foto agregada exitosamente."
-            return mensaje
+            
+            return {
+                "success": True,
+                "mensaje": f"La foto con ID {id_foto} se eliminó exitosamente",
+                "ruta_foto": ruta_foto,
+                "id_orden": id_orden
+            }
         except Exception as e:
-            print(f"Error al agregar la foto: {e}")
             db.rollback()
-            mensaje = "Error al agregar la foto."
-            return mensaje
-
+            print(f"Error al eliminar la foto: {e}")
+            return {"success": False, "error": f"Error al eliminar la foto: {str(e)}"}
         finally:
             cursor.close()
-            db.close()    
-           
-    def eliminar_foto_orden_servicio(self) -> str:
-        id_foto = self.ID_foto_orden_servicio.strip()
+            db.close()
 
-        if not id_foto:
-            mensaje = "El ID de la foto es obligatorio."
-            return mensaje
+
+
+    def registrar_fotos(self,) -> dict:
+ 
+        id_orden = self.ID_orden_servicio
+        lista_rutas = self.Foto_orden_servicio
         
-        if not self.verificar_foto_existe_por_id():
-            mensaje = f"No se encontró una foto con ID {id_foto} para eliminar."
-            return mensaje
-        
-        db = self._conexion.conexion()
+        db = self._conexion.conexion1()
         if not db:
-            mensaje = "Error al conectar con la base de datos."
-            return mensaje
+            return {"success": False, "error": "Error al conectar con la base de datos."}
         
         cursor = db.cursor()
         try:
-            sql = "DELETE FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s"
-            cursor.execute(sql, (id_foto,))
+            # Convertir lista a JSON
+            import json
+            json_fotos = json.dumps(lista_rutas)
+            
+            # Llamar al procedimiento almacenado
+            cursor.callproc('sp_registrar_fotos_orden', (id_orden, json_fotos))
+            
+            # Consumir resultados
+            resultado = None
+            for result in cursor.stored_results():
+                resultado = result.fetchall()
+            
             db.commit()
-            mensaje = f"La foto con ID {id_foto} se eliminó exitosamente."
-            return mensaje
+            
+            return {
+                "success": True,
+                "mensaje": f"{len(lista_rutas)} fotos registradas exitosamente",
+                "data": resultado
+            }
         except Exception as e:
-            print(f"Error al eliminar la foto: {e}")
             db.rollback()
-            mensaje = "Error al eliminar la foto."
-            return mensaje
+            print(f"Error al registrar fotos: {e}")
+            error_msg = str(e)
+            # Extraer mensaje de error del procedimiento si está disponible
+            if "MESSAGE_TEXT" in error_msg:
+                import re
+                match = re.search(r"MESSAGE_TEXT: (.*?)(?:,|$)", error_msg)
+                if match:
+                    error_msg = match.group(1).strip()
+            return {"success": False, "error": f"Error al registrar fotos: {error_msg}"}
         finally:
             cursor.close()
             db.close()

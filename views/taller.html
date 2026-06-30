@@ -1,21 +1,19 @@
-{% extends 'components/layout/base.html' %} {% from 'components/ui/modal.html'
-import modal %} {% block title %}Ituaccesorio - Taller{% endblock %} {% block
-head_extra %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/taller.css') }}"
-/>
-{% endblock %} {% block content %}
+{% extends 'components/layout/base.html' %} 
+{% from 'components/ui/modal.html' import modal %} 
+
+{% block title %}Ituaccesorio - Taller{% endblock %} 
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/taller.css') }}" />
+{% endblock %} 
+
+{% block content %}
 <main class="page">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
       <li>
-        <button
-          class="breadcrumb__current"
-          type="button"
-          data-view-target="vista-1"
-        >
+        <button class="breadcrumb__current" type="button" data-view-target="vista-1">
           Taller
         </button>
         <span class="breadcrumb__separator" id="breadcrumb-separator">/</span>
@@ -24,41 +22,34 @@ head_extra %}
     </ol>
   </nav>
 
-  <input
-    type="hidden"
-    id="csrf-token"
-    name="_csrf_token"
-    value="{{ csrf_token() }}"
-  />
+  <input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}" />
 
-  <div class="taller-top-grid">
-    <header class="taller-hero">
-      <h1 class="taller-hero__title">Taller</h1>
-      <p class="taller-hero__description">
-        Gestiona órdenes de servicio, revisiones y reparaciones.
-      </p>
-    </header>
-  </div>
+  <header class="taller-hero">
+    <h1 class="taller-hero__title">Taller</h1>
+    <p class="taller-hero__description">
+      Gestiona órdenes de servicio, revisiones y reparaciones.
+    </p>
+  </header>
 
-  <section class="content vista-1" aria-label="Ordenes de servicio">
+  <!-- ==================== VISTA 1: ÓRDENES ==================== -->
+  <section class="content vista-1" aria-label="Órdenes de servicio">
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-      <button
-        class="vista-switcher__btn is-active"
-        type="button"
-        data-view-target="vista-1"
-      >
+      <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-1">
         Órdenes de servicio
       </button>
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-5"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-5">
         Reparaciones asignadas
       </button>
     </nav>
 
-    <article class="card card--table" aria-label="Ordenes de servicio">
+    <article class="card card--table" aria-label="Órdenes de servicio">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Órdenes de servicio</h2>
+          <p class="card__subtitle">Lista de órdenes pendientes en el taller.</p>
+        </div>
+      </div>
+
       <div class="table-wrap">
         <table class="table">
           <thead>
@@ -69,7 +60,7 @@ head_extra %}
               <th>Nombre cliente</th>
               <th>Modelo</th>
               <th>Fecha ingreso</th>
-              <th class="table__actions">Acción</th>
+              <th class="table__actions">Acciones</th>
             </tr>
           </thead>
           <tbody id="tabla-ordenes-servicio"></tbody>
@@ -78,114 +69,77 @@ head_extra %}
     </article>
   </section>
 
+  <!-- ==================== VISTA 2: DETALLE ==================== -->
   <section class="content vista-2" aria-label="Detalle del dispositivo" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-2"
-      >
+      <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-2">
         Información de la orden
       </button>
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-3"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-3">
         Revisión
       </button>
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-4"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-4">
         Reparación
       </button>
     </nav>
 
     <article class="card card--form" aria-label="Detalle del dispositivo">
-      <div class="form__header">
-        <h2 class="card__title">Detalle del dispositivo seleccionado</h2>
-        <p class="form__subtitle" id="detalle-orden-subtitle">
-          Selecciona una orden para ver toda su información.
-        </p>
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Detalle del dispositivo seleccionado</h2>
+          <p class="card__subtitle" id="detalle-orden-subtitle">
+            Selecciona una orden para ver toda su información.
+          </p>
+        </div>
       </div>
 
       <div class="device-detail" id="detalle-dispositivo">
         <div id="order-info" class="device-detail__grid">
-          <p class="device-detail__empty">
-            Todavía no has seleccionado ninguna orden.
-          </p>
+          <p class="device-detail__empty">Todavía no has seleccionado ninguna orden.</p>
         </div>
 
+        <!-- Contenedor para las fotos (se llena dinámicamente) -->
         <div id="order-photos" class="device-photos-wrap" aria-live="polite"></div>
 
+        <div id="order-tests" class="device-tests"></div>
+        <div id="order-people" class="device-people" aria-live="polite"></div>
+
         <div class="device-detail__actions">
-          <button
-            type="button"
-            class="form-btn form-btn--primary"
-            data-open-modal="modal-fotos-registrar"
-          >
-            Registrar fotos
+          <button type="button" class="ui-btn ui-btn--primary" data-open-modal="modal-fotos-registrar">
+            📸 Registrar fotos
           </button>
         </div>
-
-        <div id="order-tests" class="device-tests"></div>
-
-        <div id="order-people" class="device-people" aria-live="polite"></div>
       </div>
     </article>
   </section>
 
+  <!-- ==================== VISTA 3: REVISIÓN ==================== -->
   <section class="content vista-3" aria-label="Formulario de revisión" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-2"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-2">
         Información de la orden
       </button>
-      <button
-        class="vista-switcher__btn is-active"
-        type="button"
-        data-view-target="vista-3"
-      >
+      <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-3">
         Revisión
       </button>
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-4"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-4">
         Reparación
       </button>
     </nav>
 
     <article class="card card--form" aria-label="Formulario de revisión">
-      <div class="form__header">
-        <h2 class="card__title">Formulario de revisión</h2>
-        <p class="form__subtitle">
-          Revisión de la orden (<span id="orden-id">-</span>)
-        </p>
-        <label class="field field--full">
-          <span>Número de test: <span id="test-id-form">-</span></span>
-        </label>
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Formulario de revisión</h2>
+          <p class="card__subtitle">
+            Revisión de la orden <strong>#<span id="orden-id">-</span></strong>
+          </p>
+        </div>
       </div>
 
       <form class="service-form" id="form-revision-tecnica" autocomplete="off">
-        <input
-          type="hidden"
-          id="id_orden_servicio_revision"
-          name="id_orden"
-          value=""
-        />
-        <input
-          type="hidden"
-          id="numero_test_revision"
-          name="Num_test"
-          value=""
-        />
+        <input type="hidden" id="id_orden_servicio_revision" name="id_orden" value="" />
+        <input type="hidden" id="numero_test_revision" name="Num_test" value="" />
 
         <div class="service-form__grid">
           <div class="test-options-grid" id="test-componentes-grid"></div>
@@ -200,18 +154,15 @@ head_extra %}
               data-validation-rules="sinCaracteresEspeciales"
               title="Sin caracteres especiales"
             ></textarea>
+            <small class="field-hint">Sin caracteres especiales como &lt; &gt; { } [ ] | \ ^</small>
           </label>
         </div>
 
         <div class="service-form__actions">
-          <button
-            type="button"
-            class="form-btn form-btn--ghost"
-            data-view-target="vista-2"
-          >
+          <button type="button" class="ui-btn ui-btn--ghost" data-view-target="vista-2">
             Cancelar
           </button>
-          <button type="submit" class="form-btn form-btn--primary">
+          <button type="submit" class="ui-btn ui-btn--primary">
             Guardar revisión
           </button>
         </div>
@@ -219,54 +170,37 @@ head_extra %}
     </article>
   </section>
 
+  <!-- ==================== VISTA 4: REPARACIÓN ==================== -->
   <section class="content vista-4" aria-label="Reparación" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-2"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-2">
         Información de la orden
       </button>
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-3"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-3">
         Revisión
       </button>
-      <button
-        class="vista-switcher__btn is-active"
-        type="button"
-        data-view-target="vista-4"
-      >
+      <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-4">
         Reparación
       </button>
     </nav>
 
     <article class="card card--form" aria-label="Trabajo de reparación">
-      <div class="form__header">
-        <h2 class="card__title">
-          Reparación <span id="reparacion-orden-id">-</span>
-        </h2>
-        <p class="form__subtitle">
-          Modelo del producto: <strong id="reparacion-modelo">-</strong>
-        </p>
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">
+            Reparación <span id="reparacion-orden-id">-</span>
+          </h2>
+          <p class="card__subtitle">
+            Modelo del producto: <strong id="reparacion-modelo">-</strong>
+          </p>
+        </div>
       </div>
 
       <div class="device-detail__actions">
-        <button
-          type="button"
-          class="form-btn form-btn--primary"
-          id="btn-inventario-repuestos"
-        >
+        <button type="button" class="ui-btn ui-btn--primary" id="btn-inventario-repuestos">
           📦 Inventario de repuestos
         </button>
-        <button
-          type="button"
-          class="form-btn form-btn--ghost"
-          id="btn-limpiar-repuestos"
-        >
+        <button type="button" class="ui-btn ui-btn--ghost" id="btn-limpiar-repuestos">
           🗑️ Limpiar lista
         </button>
       </div>
@@ -297,52 +231,40 @@ head_extra %}
           title="Sin caracteres especiales"
         ></textarea>
         <small class="field-hint">
-          <span id="caracteres-contador">0</span>/500 caracteres - Sin
-          caracteres especiales como &lt; &gt; { } [ ] | \ ^
+          <span id="caracteres-contador">0</span>/500 caracteres - Sin caracteres especiales como &lt; &gt; { } [ ] | \ ^
         </small>
       </label>
 
       <div class="service-form__actions">
-        <button
-          type="button"
-          class="form-btn form-btn--ghost"
-          data-view-target="vista-2"
-        >
+        <button type="button" class="ui-btn ui-btn--ghost" data-view-target="vista-2">
           Cancelar
         </button>
-        <button
-          type="button"
-          id="btn-guardar-reparacion"
-          class="form-btn form-btn--primary"
-        >
+        <button type="button" id="btn-guardar-reparacion" class="ui-btn ui-btn--primary">
           ✅ Guardar reparación
         </button>
       </div>
     </article>
   </section>
 
+  <!-- ==================== VISTA 5: REPARACIONES ASIGNADAS ==================== -->
   <section class="content vista-5" aria-label="Reparaciones asignadas" hidden>
     <nav class="vista-switcher" aria-label="Seleccionar vista del taller">
-      <button
-        class="vista-switcher__btn"
-        type="button"
-        data-view-target="vista-1"
-      >
+      <button class="vista-switcher__btn" type="button" data-view-target="vista-1">
         Órdenes de servicio
       </button>
-      <button
-        class="vista-switcher__btn is-active"
-        type="button"
-        data-view-target="vista-5"
-      >
+      <button class="vista-switcher__btn is-active" type="button" data-view-target="vista-5">
         Reparaciones asignadas
       </button>
     </nav>
 
-    <article
-      class="card card--table assigned-repairs"
-      aria-label="Reparaciones asignadas al usuario"
-    >
+    <article class="card card--table assigned-repairs" aria-label="Reparaciones asignadas al usuario">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Reparaciones asignadas</h2>
+          <p class="card__subtitle">Órdenes que has tomado para reparar.</p>
+        </div>
+      </div>
+
       <div class="table-wrap">
         <table class="table">
           <thead>
@@ -360,27 +282,28 @@ head_extra %}
   </section>
 </main>
 
+<!-- ==================== MODALES ==================== -->
+
+<!-- Modal: Previsualización de orden -->
 {% call modal('modal-preview-orden', 'Detalle de la orden', 'lg') %}
 <div id="modal-preview-body">
   <div id="modal-order-info" class="device-detail__grid">
     <p class="device-detail__empty">Cargando información...</p>
   </div>
+  <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
   <div id="modal-order-tests" class="device-tests"></div>
   <div class="service-form__actions">
-    <button type="button" class="form-btn form-btn--ghost" data-close-modal>
+    <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>
       Cancelar
     </button>
-    <button
-      type="button"
-      id="modal-tomar-orden-btn"
-      class="form-btn form-btn--primary"
-    >
+    <button type="button" id="modal-tomar-orden-btn" class="ui-btn ui-btn--primary">
       Tomar orden
     </button>
   </div>
 </div>
 {% endcall %}
 
+<!-- Modal: Inventario de repuestos -->
 {% call modal('modal-inventario-repuestos', '📦 Inventario de repuestos', 'lg') %}
 <div id="modal-inventario-body">
   <div class="table-wrap">
@@ -396,19 +319,17 @@ head_extra %}
       </thead>
       <tbody id="tabla-inventario-body">
         <tr>
-          <td colspan="5">
-            <div>🔄 Cargando inventario...</div>
-          </td>
+          <td colspan="5" style="text-align: center;">🔄 Cargando inventario...</td>
         </tr>
       </tbody>
     </table>
   </div>
   <div class="service-form__actions">
     <div>
-      <small class="field-hint">💡 Haz clic en "Agregar" para añadir repuestos a la lista</small>
+      <small class="field-hint">💡 Haz clic en una fila para agregar el repuesto a la lista</small>
     </div>
     <div>
-      <button type="button" class="form-btn form-btn--ghost" data-close-modal>
+      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>
         Cerrar
       </button>
     </div>
@@ -416,33 +337,60 @@ head_extra %}
 </div>
 {% endcall %}
 
+<!-- Modal: Detalle del test -->
 {% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
 <div id="modal-test-body" class="test-modal-grid"></div>
 {% endcall %}
 
-{% call modal('modal-fotos-registrar', 'Registrar fotos del dispositivo', 'lg') %}
+
+<!-- Modal: Registrar fotos -->
+{% call modal('modal-fotos-registrar', '📸 Registrar fotos del dispositivo', 'lg') %}
 <div id="modal-fotos-body">
   <div class="photo-dropzone" id="photo-dropzone">
     <span class="photo-dropzone__title">📸 Arrastra o haz clic</span>
-    <span class="photo-dropzone__subtitle">Sube fotos del dispositivo (JPG, PNG)</span>
-    <input type="file" id="fotos-input" multiple accept="image/jpeg,image/png,image/jpg">
+    <span class="photo-dropzone__subtitle">Sube fotos del dispositivo (JPG, PNG, WEBP)</span>
+    <input type="file" id="fotos-input" name="fotos" multiple accept="image/jpeg,image/png,image/jpg,image/webp" />
   </div>
-  <div id="fotos-preview" class="device-photos"></div>
+  <div id="fotos-preview" class="photo-preview-grid"></div>
   <div class="service-form__actions">
-    <button type="button" class="form-btn form-btn--ghost" data-close-modal>Cancelar</button>
-    <button type="button" id="btn-subir-fotos" class="form-btn form-btn--primary">Subir fotos</button>
+    <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+    <button type="button" id="btn-subir-fotos" class="ui-btn ui-btn--primary" disabled>Subir fotos</button>
   </div>
 </div>
 {% endcall %}
 
-{% call modal('modal-photo-view', 'Vista previa', 'lg') %}
-<div>
-  <img
-    id="modal-photo-view-img"
-    src=""
-    alt="Vista previa"
-  />
+<!-- ============================================ -->
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO -->
+<!-- ============================================ -->
+<div class="ui-modal" id="modal-confirm-eliminar" hidden role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+  <div class="ui-modal__overlay" data-close-modal></div>
+  <div class="ui-modal__dialog ui-modal__dialog--sm">
+    <div class="ui-modal__header">
+      <h3 class="ui-modal__title">⚠️ Confirmar eliminación</h3>
+      <button class="ui-modal__close" data-close-modal aria-label="Cerrar">✕</button>
+    </div>
+    <div class="ui-modal__body">
+      <div class="confirm-modal-content">
+        <div class="confirm-icon">🗑️</div>
+        <div class="confirm-message">¿Estás seguro de eliminar esta foto?</div>
+        <div class="confirm-submessage">Esta acción no se puede deshacer.</div>
+        <div class="confirm-modal-actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="button" id="confirm-eliminar-foto-btn" class="ui-btn ui-btn--danger">Sí, eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-{% endcall %} {% block scripts %}
+
+<!-- Modal: Vista previa de foto -->
+{% call modal('modal-photo-view', 'Vista previa', 'lg') %}
+<div style="text-align: center;">
+  <img id="modal-photo-view-img" src="" alt="Vista previa" style="max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain;" />
+</div>
+{% endcall %}
+
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/taller.js') }}"></script>
-{% endblock %} {% endblock %}
+{% endblock %}
+{% endblock %}

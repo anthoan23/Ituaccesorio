@@ -234,7 +234,7 @@ def api_crear_backup():
                     print(f"Error exporting view {view_name}: {e}")
             
             # ========================================
-            # 3. EXPORTAR PROCEDIMIENTOS ALMACENADOS
+            # 3. EXPORTAR PROCEDIMIENTOS ALMACENADOS (con DELIMITER)
             # ========================================
             file.write("\n-- ============================================\n")
             file.write("-- PROCEDIMIENTOS ALMACENADOS\n")
@@ -254,18 +254,19 @@ def api_crear_backup():
                     cursor.execute(f"SHOW CREATE PROCEDURE `{proc_name}`")
                     result = cursor.fetchone()
                     if result:
-                        # El resultado tiene: Procedure, sql_mode, Create Procedure, character_set_client, collation_connection, Database Collation
                         create_proc = result[2] if len(result) > 2 else result[0]
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"-- Procedure structure for `{proc_name}`\n")
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"DROP PROCEDURE IF EXISTS `{proc_name}`;\n")
-                        file.write(f"{create_proc};\n\n")
+                        file.write(f"DELIMITER ;;\n")
+                        file.write(f"{create_proc} ;;\n")
+                        file.write(f"DELIMITER ;\n\n")
                 except Exception as e:
                     print(f"Error exporting procedure {proc_name}: {e}")
             
             # ========================================
-            # 4. EXPORTAR FUNCIONES
+            # 4. EXPORTAR FUNCIONES (con DELIMITER)
             # ========================================
             file.write("\n-- ============================================\n")
             file.write("-- FUNCIONES\n")
@@ -290,12 +291,14 @@ def api_crear_backup():
                         file.write(f"-- Function structure for `{func_name}`\n")
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"DROP FUNCTION IF EXISTS `{func_name}`;\n")
-                        file.write(f"{create_func};\n\n")
+                        file.write(f"DELIMITER ;;\n")
+                        file.write(f"{create_func} ;;\n")
+                        file.write(f"DELIMITER ;\n\n")
                 except Exception as e:
                     print(f"Error exporting function {func_name}: {e}")
             
             # ========================================
-            # 5. EXPORTAR TRIGGERS
+            # 5. EXPORTAR TRIGGERS (con DELIMITER)
             # ========================================
             file.write("\n-- ============================================\n")
             file.write("-- TRIGGERS\n")
@@ -314,18 +317,19 @@ def api_crear_backup():
                     cursor.execute(f"SHOW CREATE TRIGGER `{trigger_name}`")
                     result = cursor.fetchone()
                     if result:
-                        # El resultado tiene: Trigger, sql_mode, Create Trigger, character_set_client, collation_connection, Database Collation
                         create_trigger = result[2] if len(result) > 2 else result[0]
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"-- Trigger structure for `{trigger_name}`\n")
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"DROP TRIGGER IF EXISTS `{trigger_name}`;\n")
-                        file.write(f"{create_trigger};\n\n")
+                        file.write(f"DELIMITER ;;\n")
+                        file.write(f"{create_trigger} ;;\n")
+                        file.write(f"DELIMITER ;\n\n")
                 except Exception as e:
                     print(f"Error exporting trigger {trigger_name}: {e}")
             
             # ========================================
-            # 6. EXPORTAR EVENTOS
+            # 6. EXPORTAR EVENTOS (con DELIMITER)
             # ========================================
             file.write("\n-- ============================================\n")
             file.write("-- EVENTOS\n")
@@ -349,7 +353,9 @@ def api_crear_backup():
                         file.write(f"-- Event structure for `{event_name}`\n")
                         file.write(f"-- ----------------------------------------------------\n")
                         file.write(f"DROP EVENT IF EXISTS `{event_name}`;\n")
-                        file.write(f"{create_event};\n\n")
+                        file.write(f"DELIMITER ;;\n")
+                        file.write(f"{create_event} ;;\n")
+                        file.write(f"DELIMITER ;\n\n")
                 except Exception as e:
                     print(f"Error exporting event {event_name}: {e}")
             
