@@ -1,6 +1,6 @@
 -- ============================================
 -- Backup de: ituaccesoriobd
--- Fecha: 2026-06-24 16:24:28
+-- Fecha: 2026-06-30 20:08:35
 -- Tipo: ituaccesorio
 -- ============================================
 
@@ -402,7 +402,9 @@ INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripci
 ('ESP0000005', 'Reparación Android', 'Especialista en reparación de dispositivos Android'),
 ('ESP0000006', 'Cambio de Pantalla', 'Especialista en cambio de pantallas'),
 ('ESP0000007', 'Reparación Placa', 'Especialista en reparación de placas madre'),
-('ESP0000008', 'Software', 'Especialista en problemas de software');
+('ESP0000008', 'Software', 'Especialista en problemas de software'),
+('ESP0000009', 'Prueba Uno', 'dddddd'),
+('ESP0000010', 'Rdfdf', 'DFDFD');
 
 -- ----------------------------------------------------
 -- Table structure for `Existencias_productos`
@@ -426,7 +428,7 @@ CREATE TABLE `Existencias_productos` (
 -- ----------------------------------------------------
 INSERT INTO `Existencias_productos` (`ID_inventario`, `ID_producto`, `Existencia`, `Costo_venta`, `ID_categoria`) VALUES
 ('1', '1', 10, '800.00', 2),
-('10', '10', 15, '80.00', 2),
+('10', '10', 14, '80.00', 2),
 ('2', '2', 0, '350.00', 2),
 ('3', '3', 8, '950.00', NULL),
 ('4', '4', 12, '850.00', NULL),
@@ -481,7 +483,8 @@ INSERT INTO `Fotos_orden_servicio` (`ID_foto_orden_servicio`, `ID_orden_servicio
 ('FOS000002', 'OS0000001', '/static/img/evidencias/orden_servicio/os1_2.jpeg'),
 ('FOS000003', 'OS0000002', '/static/img/evidencias/orden_servicio/os2_1.jpeg'),
 ('FOS000004', 'OS0000003', '/static/img/evidencias/orden_servicio/os3_1.jpeg'),
-('FOS000005', 'OS0000005', '/static/img/evidencias/orden_servicio/os5_1.jpeg');
+('FOS000005', 'OS0000005', '/static/img/evidencias/orden_servicio/os5_1.jpeg'),
+('FOS000006', 'OS0000025', '/static/img/evidencias/taller/OS0000025/54a0a2acb2e64b5abbfd322e9d6ea48e.jpg');
 
 -- ----------------------------------------------------
 -- Table structure for `Fotos_trade_in`
@@ -578,8 +581,13 @@ INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`,
 ('INT000029', 'OS0000004', 32014004, 'Reparada'),
 ('INT000030', 'OS0000004', 32014004, 'Revisión'),
 ('INT000031', 'OS0000034', 32014004, 'Reparada'),
-('INT000032', 'OS0000025', 32014004, 'Asignada'),
-('INT000033', 'OS0000023', 32014004, 'Asignada');
+('INT000032', 'OS0000025', 32014004, 'Reparada'),
+('INT000033', 'OS0000023', 32014004, 'Asignada'),
+('INT000034', 'OS0000033', 32014004, 'En proceso'),
+('INT000035', 'OS0000027', 32014004, 'En proceso'),
+('INT000036', 'OS0000026', 32014004, 'En proceso'),
+('INT000037', 'OS0000025', 32014004, 'Revisión'),
+('INT000038', 'OS0000033', 32014004, 'Asignada');
 
 -- ----------------------------------------------------
 -- Table structure for `Lista_compra`
@@ -732,15 +740,15 @@ INSERT INTO `Orden_servicio` (`ID_orden_servicio`, `ID_equipo`, `ID_cliente`, `E
 ('OS0000022', 'EQ0000003', '44567890', 'Pendiente', NULL, '0.00', 'Falla crítica de encendido', '2026-06-24 11:45:27', NULL),
 ('OS0000023', 'EQ0000004', '55678901', 'Asignada', NULL, '0.00', 'Batería inflada', '2026-06-24 11:45:27', NULL),
 ('OS0000024', 'EQ0000005', '66789012', 'Pendiente', NULL, '0.00', 'Mantenimiento preventivo completo', '2026-06-24 11:45:27', NULL),
-('OS0000025', 'EQ0000001', '44567890', 'Asignada', NULL, '0.00', 'Falla de software / bucle de inicio', '2026-06-24 11:45:27', NULL),
-('OS0000026', 'EQ0000002', '55678901', 'Pendiente', NULL, '0.00', 'Cambiar cristal trasero roto', '2026-06-24 11:45:27', NULL),
+('OS0000025', 'EQ0000001', '44567890', 'Reparada', 'ssssssssssssss', '0.00', 'Falla de software / bucle de inicio', '2026-06-24 11:45:27', '2026-06-24 17:30:25'),
+('OS0000026', 'EQ0000002', '55678901', 'En proceso', NULL, '0.00', 'Cambiar cristal trasero roto', '2026-06-24 11:45:27', NULL),
 ('OS0000027', 'EQ0000001', '22345678', 'En proceso', 'Evaluando circuitos en tarjeta principal', '50.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000028', 'EQ0000002', '22345678', 'En proceso', 'Desensamblando módulo de pantalla dañado', '85.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000029', 'EQ0000003', '44567890', 'En proceso', 'Soldando nuevo pin de carga tipo C', '30.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000030', 'EQ0000004', '55678901', 'En proceso', 'Limpieza por ultrasonido debido a humedad', '40.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000031', 'EQ0000005', '66789012', 'En proceso', 'Reinstalando sistema operativo y firmware', '25.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000032', 'EQ0000001', '33456789', 'En proceso', 'Removiendo corto circuito en etapa de potencia', '60.00', NULL, '2026-06-24 11:45:27', NULL),
-('OS0000033', 'EQ0000002', '44567890', 'En proceso', 'Removiendo pegamento viejo para cambio de batería', '45.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000033', 'EQ0000002', '44567890', 'Asignada', 'Removiendo pegamento viejo para cambio de batería', '45.00', NULL, '2026-06-24 11:45:27', NULL),
 ('OS0000034', 'EQ0000003', '55678901', 'Reparada', 'lklklklkllklkljj', '20.00', NULL, '2026-06-24 11:45:27', '2026-06-24 12:02:10');
 
 -- ----------------------------------------------------
@@ -891,6 +899,7 @@ INSERT INTO `Repuestos_usados` (`ID_orden_servicio`, `ID_inventario`, `Cantidad_
 ('OS0000003', '7', 1),
 ('OS0000004', '2', 12),
 ('OS0000005', '5', 3),
+('OS0000025', '10', 1),
 ('OS0000034', '2', 3);
 
 -- ----------------------------------------------------
@@ -1047,7 +1056,30 @@ INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`) V
 ('TST000105', 6, 'Manuales', 'Funciona'),
 ('TST000106', 6, 'Observaciones', 'dsdsdsdsdsdsdsdsd'),
 ('TST000107', 1, 'Btn power', 'Funciona'),
-('TST000108', 1, 'Observaciones', 'dddddddddddd');
+('TST000108', 1, 'Observaciones', 'dddddddddddd'),
+('TST000109', 1, 'Btn power', 'Funciona'),
+('TST000110', 1, 'Cornetas', 'Funciona'),
+('TST000111', 1, 'Mica', 'Funciona'),
+('TST000112', 1, 'LCD', 'Funciona'),
+('TST000113', 1, 'Tactil', 'Funciona'),
+('TST000114', 1, 'Btn vol', 'Funciona'),
+('TST000115', 1, 'Btn sil', 'Funciona'),
+('TST000116', 1, 'Puerto carga', 'Funciona'),
+('TST000117', 1, 'Wifi', 'Funciona'),
+('TST000118', 1, 'Cam pos', 'Funciona'),
+('TST000119', 1, 'Cam del', 'Funciona'),
+('TST000120', 1, 'Flash', 'Funciona'),
+('TST000121', 1, 'Senal', 'Funciona'),
+('TST000122', 1, 'Microfono', 'Funciona'),
+('TST000123', 1, 'Sensor proximidad', 'Funciona'),
+('TST000124', 1, 'Face id', 'Funciona'),
+('TST000125', 1, 'Bluetooth', 'Funciona'),
+('TST000126', 1, 'Caja', 'Funciona'),
+('TST000127', 1, 'Cargador', 'Funciona'),
+('TST000128', 1, 'Cable', 'Funciona'),
+('TST000129', 1, 'Auricular', 'Funciona'),
+('TST000130', 1, 'Manuales', 'Funciona'),
+('TST000131', 1, 'Observaciones', 'sssssssssssssssssssssssss');
 
 -- ----------------------------------------------------
 -- Table structure for `Test_realizados_interaccion`
@@ -1175,7 +1207,30 @@ INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`) VALUES
 ('INT000028', 'TST000105'),
 ('INT000028', 'TST000106'),
 ('INT000030', 'TST000107'),
-('INT000030', 'TST000108');
+('INT000030', 'TST000108'),
+('INT000037', 'TST000109'),
+('INT000037', 'TST000110'),
+('INT000037', 'TST000111'),
+('INT000037', 'TST000112'),
+('INT000037', 'TST000113'),
+('INT000037', 'TST000114'),
+('INT000037', 'TST000115'),
+('INT000037', 'TST000116'),
+('INT000037', 'TST000117'),
+('INT000037', 'TST000118'),
+('INT000037', 'TST000119'),
+('INT000037', 'TST000120'),
+('INT000037', 'TST000121'),
+('INT000037', 'TST000122'),
+('INT000037', 'TST000123'),
+('INT000037', 'TST000124'),
+('INT000037', 'TST000125'),
+('INT000037', 'TST000126'),
+('INT000037', 'TST000127'),
+('INT000037', 'TST000128'),
+('INT000037', 'TST000129'),
+('INT000037', 'TST000130'),
+('INT000037', 'TST000131');
 
 -- ----------------------------------------------------
 -- Table structure for `Test_realizados_trade_in`
@@ -1286,35 +1341,35 @@ INSERT INTO `Venta` (`ID_factura`, `ID_empleado`, `ID_cliente`, `Moneda`, `Fecha
 DROP PROCEDURE IF EXISTS `Crear_cargo`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_cargo`(
-    IN p_Nombre_cargo VARCHAR(30),
-    IN p_Descripcion_cargo VARCHAR(250)
-    
+IN p_Nombre_cargo VARCHAR(30),
+IN p_Descripcion_cargo VARCHAR(250)
+
 )
 BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
+DECLARE ultimo_id VARCHAR(10);
+DECLARE siguiente_numero INT;
+DECLARE nuevo_id VARCHAR(10);
 
-    -- 1. Buscamos el ID más alto actual en la tabla Cargo
-    SELECT MAX(`ID_cargo`) INTO ultimo_id FROM `Cargo`;
+-- 1. Buscamos el ID más alto actual en la tabla Cargo
+SELECT MAX(`ID_cargo`) INTO ultimo_id FROM `Cargo`;
 
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
+-- 2. Si la tabla está vacía, empezamos en 1.
+--    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
+IF ultimo_id IS NULL THEN
+SET siguiente_numero = 1;
+ELSE
+SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
+END IF;
 
-    -- 3. Formateamos el nuevo ID (Ej: 'CRG' + '000004')
-    SET nuevo_id = CONCAT('CRG', LPAD(siguiente_numero, 7, '0'));
+-- 3. Formateamos el nuevo ID (Ej: 'CRG' + '000004')
+SET nuevo_id = CONCAT('CRG', LPAD(siguiente_numero, 7, '0'));
 
-    -- 4. Insertamos el registro
-    INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) 
-    VALUES (nuevo_id, p_Nombre_cargo, p_Descripcion_cargo);
+-- 4. Insertamos el registro
+INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`)
+VALUES (nuevo_id, p_Nombre_cargo, p_Descripcion_cargo);
 
-    -- (Opcional) Mostramos el resultado
-    SELECT * FROM `Cargo` WHERE `ID_cargo` = nuevo_id;
+-- (Opcional) Mostramos el resultado
+SELECT * FROM `Cargo` WHERE `ID_cargo` = nuevo_id;
 END ;;
 DELIMITER ;
 
@@ -1324,34 +1379,34 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `Crear_especialidad`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_especialidad`(
-    IN p_Nombre_especialidad VARCHAR(30),
-    IN p_Descripcion_especialidad VARCHAR(250)
+IN p_Nombre_especialidad VARCHAR(30),
+IN p_Descripcion_especialidad VARCHAR(250)
 )
 BEGIN
-    DECLARE ultimo_id VARCHAR(10);
-    DECLARE siguiente_numero INT;
-    DECLARE nuevo_id VARCHAR(10);
+DECLARE ultimo_id VARCHAR(10);
+DECLARE siguiente_numero INT;
+DECLARE nuevo_id VARCHAR(10);
 
-    -- 1. Buscamos el ID más alto actual en la tabla Especialidad
-    SELECT MAX(`ID_especialidad`) INTO ultimo_id FROM `Especialidad`;
+-- 1. Buscamos el ID más alto actual en la tabla Especialidad
+SELECT MAX(`ID_especialidad`) INTO ultimo_id FROM `Especialidad`;
 
-    -- 2. Si la tabla está vacía, empezamos en 1. 
-    --    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
-    IF ultimo_id IS NULL THEN
-        SET siguiente_numero = 1;
-    ELSE
-        SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
+-- 2. Si la tabla está vacía, empezamos en 1.
+--    Si ya hay datos, extraemos los números (desde la posición 4) y sumamos 1.
+IF ultimo_id IS NULL THEN
+SET siguiente_numero = 1;
+ELSE
+SET siguiente_numero = CAST(SUBSTRING(ultimo_id, 4) AS UNSIGNED) + 1;
+END IF;
 
-    -- 3. Formateamos el nuevo ID (Ej: 'ESP' + '0000001' = 'ESP0000001')
-    SET nuevo_id = CONCAT('ESP', LPAD(siguiente_numero, 7, '0'));
+-- 3. Formateamos el nuevo ID (Ej: 'ESP' + '0000001' = 'ESP0000001')
+SET nuevo_id = CONCAT('ESP', LPAD(siguiente_numero, 7, '0'));
 
-    -- 4. Insertamos el registro
-    INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) 
-    VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
+-- 4. Insertamos el registro
+INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`)
+VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
 
-    -- 5. Mostramos el resultado del registro creado
-    SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
+-- 5. Mostramos el resultado del registro creado
+SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
 END ;;
 DELIMITER ;
 
@@ -1361,65 +1416,65 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `Listar_ordenes_servicio_con_equipo`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Listar_ordenes_servicio_con_equipo`(
-    -- Parámetros opcionales para filtrar
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_Estado_orden_servicio VARCHAR(20),
-    IN p_ID_cliente VARCHAR(10)
+-- Parámetros opcionales para filtrar
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_Estado_orden_servicio VARCHAR(20),
+IN p_ID_cliente VARCHAR(10)
 )
 BEGIN
-    -- Consulta principal que une Orden_servicio con Equipo y tablas relacionadas
-    SELECT 
-        -- Datos de la orden de servicio
-        os.ID_orden_servicio,
-        os.Estado_orden_servicio,
-        os.Descripcion_reparacion,
-        os.Costo_reparacion,
-        os.Nota_orden_servicio,
-        os.Fecha_entrada,
-        os.Fecha_salida,
-        
-        -- Datos del cliente (a través de Orden_servicio)
-        os.ID_cliente,
-        pn.Nombre_cliente,
-        pn.Apellido_cliente,
-        c.Celular_cliente,
-        c.Correo_cliente,
-        c.Direccion_cliente,
-        
-        -- Datos del equipo asociado
-        e.ID_equipo,
-        e.IMEI,
-        e.Color,
-        e.Capacidad,
-        e.Clave,
-        e.Patron,
-        
-        -- Datos del producto (asociado al equipo)
-        e.ID_producto,
-        prod.Nombre_producto,
-        prod.Descripcion,
-        
-        -- Datos de la clase del producto
-        cp.Nombre_Clase AS Clase_producto,
-        
-        -- Datos de la marca
-        mp.Nombre_marca AS Marca_producto
-        
-    FROM Orden_servicio os
-    INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
-    INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
-    INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
-    INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
-    INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
-    LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente  -- LEFT JOIN porque puede ser cliente jurídico también
-    
-    WHERE 
-        (p_ID_orden_servicio IS NULL OR os.ID_orden_servicio = p_ID_orden_servicio)
-        AND (p_Estado_orden_servicio IS NULL OR os.Estado_orden_servicio = p_Estado_orden_servicio)
-        AND (p_ID_cliente IS NULL OR os.ID_cliente = p_ID_cliente)
-        
-    ORDER BY os.Fecha_entrada DESC;
-    
+-- Consulta principal que une Orden_servicio con Equipo y tablas relacionadas
+SELECT
+-- Datos de la orden de servicio
+os.ID_orden_servicio,
+os.Estado_orden_servicio,
+os.Descripcion_reparacion,
+os.Costo_reparacion,
+os.Nota_orden_servicio,
+os.Fecha_entrada,
+os.Fecha_salida,
+
+-- Datos del cliente (a través de Orden_servicio)
+os.ID_cliente,
+pn.Nombre_cliente,
+pn.Apellido_cliente,
+c.Celular_cliente,
+c.Correo_cliente,
+c.Direccion_cliente,
+
+-- Datos del equipo asociado
+e.ID_equipo,
+e.IMEI,
+e.Color,
+e.Capacidad,
+e.Clave,
+e.Patron,
+
+-- Datos del producto (asociado al equipo)
+e.ID_producto,
+prod.Nombre_producto,
+prod.Descripcion,
+
+-- Datos de la clase del producto
+cp.Nombre_Clase AS Clase_producto,
+
+-- Datos de la marca
+mp.Nombre_marca AS Marca_producto
+
+FROM Orden_servicio os
+INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
+INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
+INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
+INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
+LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente  -- LEFT JOIN porque puede ser cliente jurídico también
+
+WHERE
+(p_ID_orden_servicio IS NULL OR os.ID_orden_servicio = p_ID_orden_servicio)
+AND (p_Estado_orden_servicio IS NULL OR os.Estado_orden_servicio = p_Estado_orden_servicio)
+AND (p_ID_cliente IS NULL OR os.ID_cliente = p_ID_cliente)
+
+ORDER BY os.Fecha_entrada DESC;
+
 END ;;
 DELIMITER ;
 
@@ -1429,84 +1484,84 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `sp_asignar_orden_servicio`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_asignar_orden_servicio`(
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_ID_empleado INT
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_ID_empleado INT
 )
 BEGIN
-    DECLARE v_estado_actual VARCHAR(20);
-    DECLARE v_tiene_asignacion INT;
-    DECLARE v_ultimo_id_int VARCHAR(10);
-    DECLARE v_siguiente_num_int INT;
-    DECLARE v_nuevo_id_interaccion VARCHAR(10);
-    
-    -- Manejo de errores
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    -- Iniciar transacción
-    START TRANSACTION;
-    
-    -- 1. Verificar el estado actual de la orden de servicio
-    SELECT Estado_orden_servicio INTO v_estado_actual
-    FROM Orden_servicio
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
-    
-    -- Si no existe la orden, mostrar error
-    IF v_estado_actual IS NULL THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio no existe';
-    END IF;
-    
-    -- Verificar que no esté asignada
-    IF v_estado_actual = 'Asignada' THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio ya está asignada';
-    END IF;
-    
-    -- 2. Verificar que no exista una interacción con acción 'Asignada' para esta orden
-    SELECT COUNT(*) INTO v_tiene_asignacion
-    FROM Interaccion
-    WHERE ID_orden_servicio = p_ID_orden_servicio 
-      AND Accion = 'Asignada';
-    
-    IF v_tiene_asignacion > 0 THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio ya tiene un registro de asignación previa';
-    END IF;
-    
-    -- 3. Cambiar el estado de la orden a 'Asignada'
-    UPDATE Orden_servicio
-    SET Estado_orden_servicio = 'Asignada'
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
-    
-    -- 4. Generar nuevo ID para la interacción
-    SELECT MAX(ID_interaccion) INTO v_ultimo_id_int FROM Interaccion;
-    
-    IF v_ultimo_id_int IS NULL THEN
-        SET v_siguiente_num_int = 1;
-    ELSE
-        SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
-    END IF;
-    
-    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
-    
-    -- 5. Insertar registro en Interaccion
-    INSERT INTO Interaccion (ID_interaccion, ID_orden_servicio, ID_empleado, Accion)
-    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Asignada');
-    
-    -- Confirmar transacción
-    COMMIT;
-    
-    -- 6. Devolver resultado
-    SELECT 
-        p_ID_orden_servicio AS ID_orden_servicio,
-        'Asignada' AS Nuevo_estado,
-        v_nuevo_id_interaccion AS ID_interaccion,
-        'Orden de servicio asignada correctamente' AS Mensaje;
-        
+DECLARE v_estado_actual VARCHAR(20);
+DECLARE v_tiene_asignacion INT;
+DECLARE v_ultimo_id_int VARCHAR(10);
+DECLARE v_siguiente_num_int INT;
+DECLARE v_nuevo_id_interaccion VARCHAR(10);
+
+-- Manejo de errores
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+RESIGNAL;
+END;
+
+-- Iniciar transacción
+START TRANSACTION;
+
+-- 1. Verificar el estado actual de la orden de servicio
+SELECT Estado_orden_servicio INTO v_estado_actual
+FROM Orden_servicio
+WHERE ID_orden_servicio = p_ID_orden_servicio;
+
+-- Si no existe la orden, mostrar error
+IF v_estado_actual IS NULL THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio no existe';
+END IF;
+
+-- Verificar que no esté asignada
+IF v_estado_actual = 'Asignada' THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio ya está asignada';
+END IF;
+
+-- 2. Verificar que no exista una interacción con acción 'Asignada' para esta orden
+SELECT COUNT(*) INTO v_tiene_asignacion
+FROM Interaccion
+WHERE ID_orden_servicio = p_ID_orden_servicio
+AND Accion = 'Asignada';
+
+IF v_tiene_asignacion > 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio ya tiene un registro de asignación previa';
+END IF;
+
+-- 3. Cambiar el estado de la orden a 'Asignada'
+UPDATE Orden_servicio
+SET Estado_orden_servicio = 'Asignada'
+WHERE ID_orden_servicio = p_ID_orden_servicio;
+
+-- 4. Generar nuevo ID para la interacción
+SELECT MAX(ID_interaccion) INTO v_ultimo_id_int FROM Interaccion;
+
+IF v_ultimo_id_int IS NULL THEN
+SET v_siguiente_num_int = 1;
+ELSE
+SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
+END IF;
+
+SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+
+-- 5. Insertar registro en Interaccion
+INSERT INTO Interaccion (ID_interaccion, ID_orden_servicio, ID_empleado, Accion)
+VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Asignada');
+
+-- Confirmar transacción
+COMMIT;
+
+-- 6. Devolver resultado
+SELECT
+p_ID_orden_servicio AS ID_orden_servicio,
+'Asignada' AS Nuevo_estado,
+v_nuevo_id_interaccion AS ID_interaccion,
+'Orden de servicio asignada correctamente' AS Mensaje;
+
 END ;;
 DELIMITER ;
 
@@ -1516,71 +1571,71 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `sp_liberar_orden_servicio`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_liberar_orden_servicio`(
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_ID_empleado INT
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_ID_empleado INT
 )
 BEGIN
-    DECLARE v_estado_actual VARCHAR(20);
-    DECLARE v_tiene_asignacion INT;
-    
-    -- Manejo de errores
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    -- Iniciar transacción
-    START TRANSACTION;
-    
-    -- 1. Verificar el estado actual de la orden de servicio
-    SELECT Estado_orden_servicio INTO v_estado_actual
-    FROM Orden_servicio
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
-    
-    -- Si no existe la orden, mostrar error
-    IF v_estado_actual IS NULL THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio no existe';
-    END IF;
-    
-    -- Verificar que esté asignada (solo se puede liberar una orden asignada)
-    IF v_estado_actual != 'Asignada' THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio no está asignada, no se puede liberar';
-    END IF;
-    
-    -- 2. Verificar que exista una interacción con acción 'Asignada' para esta orden
-    SELECT COUNT(*) INTO v_tiene_asignacion
-    FROM Interaccion
-    WHERE ID_orden_servicio = p_ID_orden_servicio 
-      AND Accion = 'Asignada';
-    
-    IF v_tiene_asignacion = 0 THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio no tiene registro de asignación previa';
-    END IF;
-    
-    -- 3. Cambiar el estado de la orden a 'En proceso'
-    UPDATE Orden_servicio
-    SET Estado_orden_servicio = 'En proceso'
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
-    
-    -- 4. Modificar la interacción existente: cambiar acción de 'Asignada' a 'En proceso'
-    UPDATE Interaccion
-    SET Accion = 'En proceso'
-    WHERE ID_orden_servicio = p_ID_orden_servicio 
-      AND Accion = 'Asignada';
-    
-    -- Confirmar transacción
-    COMMIT;
-    
-    -- 5. Devolver resultado
-    SELECT 
-        p_ID_orden_servicio AS ID_orden_servicio,
-        'En proceso' AS Nuevo_estado,
-        'Interacción actualizada correctamente' AS Mensaje;
-        
+DECLARE v_estado_actual VARCHAR(20);
+DECLARE v_tiene_asignacion INT;
+
+-- Manejo de errores
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+RESIGNAL;
+END;
+
+-- Iniciar transacción
+START TRANSACTION;
+
+-- 1. Verificar el estado actual de la orden de servicio
+SELECT Estado_orden_servicio INTO v_estado_actual
+FROM Orden_servicio
+WHERE ID_orden_servicio = p_ID_orden_servicio;
+
+-- Si no existe la orden, mostrar error
+IF v_estado_actual IS NULL THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio no existe';
+END IF;
+
+-- Verificar que esté asignada (solo se puede liberar una orden asignada)
+IF v_estado_actual != 'Asignada' THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio no está asignada, no se puede liberar';
+END IF;
+
+-- 2. Verificar que exista una interacción con acción 'Asignada' para esta orden
+SELECT COUNT(*) INTO v_tiene_asignacion
+FROM Interaccion
+WHERE ID_orden_servicio = p_ID_orden_servicio
+AND Accion = 'Asignada';
+
+IF v_tiene_asignacion = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio no tiene registro de asignación previa';
+END IF;
+
+-- 3. Cambiar el estado de la orden a 'En proceso'
+UPDATE Orden_servicio
+SET Estado_orden_servicio = 'En proceso'
+WHERE ID_orden_servicio = p_ID_orden_servicio;
+
+-- 4. Modificar la interacción existente: cambiar acción de 'Asignada' a 'En proceso'
+UPDATE Interaccion
+SET Accion = 'En proceso'
+WHERE ID_orden_servicio = p_ID_orden_servicio
+AND Accion = 'Asignada';
+
+-- Confirmar transacción
+COMMIT;
+
+-- 5. Devolver resultado
+SELECT
+p_ID_orden_servicio AS ID_orden_servicio,
+'En proceso' AS Nuevo_estado,
+'Interacción actualizada correctamente' AS Mensaje;
+
 END ;;
 DELIMITER ;
 
@@ -1590,79 +1645,79 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `sp_registrar_fotos_orden`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_fotos_orden`(
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_Json_Fotos JSON
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_Json_Fotos JSON
 )
 BEGIN
-    DECLARE v_ultimo_id_foto VARCHAR(10);
-    DECLARE v_siguiente_num_foto INT;
-    DECLARE v_nuevo_id_foto VARCHAR(10);
-    
-    DECLARE v_items_count INT DEFAULT 0;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_ruta_foto VARCHAR(255);
-    DECLARE v_orden_existe INT DEFAULT 0;
-    
-    -- Manejo de errores
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Verificar que la orden existe
-    SELECT COUNT(*) INTO v_orden_existe
-    FROM Orden_servicio
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
-    
-    IF v_orden_existe = 0 THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'La orden de servicio no existe';
-    END IF;
-    
-    -- Validar que el JSON no esté vacío
-    IF p_Json_Fotos IS NULL OR JSON_LENGTH(p_Json_Fotos) = 0 THEN
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'No se proporcionaron fotos para registrar';
-    END IF;
-    
-    SET v_items_count = JSON_LENGTH(p_Json_Fotos);
-    
-    WHILE i < v_items_count DO
-        -- Extraer la ruta de la foto del JSON
-        SET v_ruta_foto = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Fotos, CONCAT('$[', i, ']')));
-        
-        -- Validar que la ruta no esté vacía
-        IF v_ruta_foto IS NOT NULL AND v_ruta_foto != '' THEN
-            -- Generar nuevo ID para la foto
-            SELECT MAX(`ID_foto_orden_servicio`) INTO v_ultimo_id_foto FROM `Fotos_orden_servicio`;
-            
-            IF v_ultimo_id_foto IS NULL THEN
-                SET v_siguiente_num_foto = 1;
-            ELSE
-                SET v_siguiente_num_foto = CAST(SUBSTRING(v_ultimo_id_foto, 4) AS UNSIGNED) + 1;
-            END IF;
-            
-            SET v_nuevo_id_foto = CONCAT('FOS', LPAD(v_siguiente_num_foto, 6, '0'));
-            
-            -- Insertar la foto
-            INSERT INTO `Fotos_orden_servicio` (`ID_foto_orden_servicio`, `ID_orden_servicio`, `Foto_orden_servicio`)
-            VALUES (v_nuevo_id_foto, p_ID_orden_servicio, v_ruta_foto);
-        END IF;
-        
-        SET i = i + 1;
-    END WHILE;
-    
-    COMMIT;
-    
-    -- Devolver resultado
-    SELECT 
-        p_ID_orden_servicio AS ID_orden_servicio,
-        v_items_count AS Total_fotos_registradas,
-        'Fotos registradas exitosamente' AS Mensaje;
-        
+DECLARE v_ultimo_id_foto VARCHAR(10);
+DECLARE v_siguiente_num_foto INT;
+DECLARE v_nuevo_id_foto VARCHAR(10);
+
+DECLARE v_items_count INT DEFAULT 0;
+DECLARE i INT DEFAULT 0;
+DECLARE v_ruta_foto VARCHAR(255);
+DECLARE v_orden_existe INT DEFAULT 0;
+
+-- Manejo de errores
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+RESIGNAL;
+END;
+
+START TRANSACTION;
+
+-- Verificar que la orden existe
+SELECT COUNT(*) INTO v_orden_existe
+FROM Orden_servicio
+WHERE ID_orden_servicio = p_ID_orden_servicio;
+
+IF v_orden_existe = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'La orden de servicio no existe';
+END IF;
+
+-- Validar que el JSON no esté vacío
+IF p_Json_Fotos IS NULL OR JSON_LENGTH(p_Json_Fotos) = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'No se proporcionaron fotos para registrar';
+END IF;
+
+SET v_items_count = JSON_LENGTH(p_Json_Fotos);
+
+WHILE i < v_items_count DO
+-- Extraer la ruta de la foto del JSON
+SET v_ruta_foto = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Fotos, CONCAT('$[', i, ']')));
+
+-- Validar que la ruta no esté vacía
+IF v_ruta_foto IS NOT NULL AND v_ruta_foto != '' THEN
+-- Generar nuevo ID para la foto
+SELECT MAX(`ID_foto_orden_servicio`) INTO v_ultimo_id_foto FROM `Fotos_orden_servicio`;
+
+IF v_ultimo_id_foto IS NULL THEN
+SET v_siguiente_num_foto = 1;
+ELSE
+SET v_siguiente_num_foto = CAST(SUBSTRING(v_ultimo_id_foto, 4) AS UNSIGNED) + 1;
+END IF;
+
+SET v_nuevo_id_foto = CONCAT('FOS', LPAD(v_siguiente_num_foto, 6, '0'));
+
+-- Insertar la foto
+INSERT INTO `Fotos_orden_servicio` (`ID_foto_orden_servicio`, `ID_orden_servicio`, `Foto_orden_servicio`)
+VALUES (v_nuevo_id_foto, p_ID_orden_servicio, v_ruta_foto);
+END IF;
+
+SET i = i + 1;
+END WHILE;
+
+COMMIT;
+
+-- Devolver resultado
+SELECT
+p_ID_orden_servicio AS ID_orden_servicio,
+v_items_count AS Total_fotos_registradas,
+'Fotos registradas exitosamente' AS Mensaje;
+
 END ;;
 DELIMITER ;
 
@@ -1672,136 +1727,136 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `sp_registrar_reparacion`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_reparacion`(
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_ID_empleado INT,
-    IN p_Descripcion_reparacion VARCHAR(300),
-    IN p_Json_Repuestos JSON
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_ID_empleado INT,
+IN p_Descripcion_reparacion VARCHAR(300),
+IN p_Json_Repuestos JSON
 )
 BEGIN
-    DECLARE v_estado_actual VARCHAR(20);
-    DECLARE v_id_interaccion_asignada VARCHAR(10);
+DECLARE v_estado_actual VARCHAR(20);
+DECLARE v_id_interaccion_asignada VARCHAR(10);
 
-    DECLARE v_items_count INT DEFAULT 0;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_id_inventario VARCHAR(10);
-    DECLARE v_cantidad INT;
-    DECLARE v_existencia_actual INT;
-    DECLARE v_error_msg VARCHAR(255);
+DECLARE v_items_count INT DEFAULT 0;
+DECLARE i INT DEFAULT 0;
+DECLARE v_id_inventario VARCHAR(10);
+DECLARE v_cantidad INT;
+DECLARE v_existencia_actual INT;
+DECLARE v_error_msg VARCHAR(255);
 
-    -- Manejador de excepciones mejorado para capturar errores nativos correctamente
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        DECLARE v_mysql_error INT;
-        ROLLBACK;
-        GET DIAGNOSTICS CONDITION 1 
-            @err_msg = MESSAGE_TEXT,
-            v_mysql_error = MYSQL_ERRNO;
-        
-        IF @err_msg IS NULL THEN
-            SET @err_msg = 'Error desconocido en la base de datos';
-        ELSE
-            SET @err_msg = CONCAT('Error (', v_mysql_error, '): ', @err_msg);
-        END IF;
-        
-        RESIGNAL SET MESSAGE_TEXT = @err_msg;
-    END;
+-- Manejador de excepciones mejorado para capturar errores nativos correctamente
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+DECLARE v_mysql_error INT;
+ROLLBACK;
+GET DIAGNOSTICS CONDITION 1
+@err_msg = MESSAGE_TEXT,
+v_mysql_error = MYSQL_ERRNO;
 
-    START TRANSACTION;
+IF @err_msg IS NULL THEN
+SET @err_msg = 'Error desconocido en la base de datos';
+ELSE
+SET @err_msg = CONCAT('Error (', v_mysql_error, '): ', @err_msg);
+END IF;
 
-    -- Verificar que la orden exista
-    SELECT Estado_orden_servicio INTO v_estado_actual
-    FROM Orden_servicio
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
+RESIGNAL SET MESSAGE_TEXT = @err_msg;
+END;
 
-    IF v_estado_actual IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden de servicio no existe';
-    END IF;
+START TRANSACTION;
 
-    -- CORRECCIÓN: Permitir que proceda si está en 'Asignada' o 'En proceso'
-    IF v_estado_actual != 'Asignada' AND v_estado_actual != 'En proceso' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden debe estar en estado Asignada o En proceso';
-    END IF;
+-- Verificar que la orden exista
+SELECT Estado_orden_servicio INTO v_estado_actual
+FROM Orden_servicio
+WHERE ID_orden_servicio = p_ID_orden_servicio;
 
-    -- CORRECCIÓN: Buscar interacción en estado 'Asignada' o 'En proceso'
-    SELECT ID_interaccion INTO v_id_interaccion_asignada
-    FROM Interaccion
-    WHERE ID_orden_servicio = p_ID_orden_servicio 
-      AND Accion IN ('Asignada', 'En proceso')
-    ORDER BY ID_interaccion DESC -- Trae la última interacción generada
-    LIMIT 1;
+IF v_estado_actual IS NULL THEN
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden de servicio no existe';
+END IF;
 
-    IF v_id_interaccion_asignada IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se encontro una interaccion valida para procesar';
-    END IF;
+-- CORRECCIÓN: Permitir que proceda si está en 'Asignada' o 'En proceso'
+IF v_estado_actual != 'Asignada' AND v_estado_actual != 'En proceso' THEN
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La orden debe estar en estado Asignada o En proceso';
+END IF;
 
-    -- Actualizar interaccion
-    UPDATE Interaccion SET Accion = 'Reparada'
-    WHERE ID_interaccion = v_id_interaccion_asignada;
+-- CORRECCIÓN: Buscar interacción en estado 'Asignada' o 'En proceso'
+SELECT ID_interaccion INTO v_id_interaccion_asignada
+FROM Interaccion
+WHERE ID_orden_servicio = p_ID_orden_servicio
+AND Accion IN ('Asignada', 'En proceso')
+ORDER BY ID_interaccion DESC -- Trae la última interacción generada
+LIMIT 1;
 
-    -- Actualizar orden
-    UPDATE Orden_servicio
-    SET Estado_orden_servicio = 'Reparada',
-        Descripcion_reparacion = p_Descripcion_reparacion,
-        Fecha_salida = NOW()
-    WHERE ID_orden_servicio = p_ID_orden_servicio;
+IF v_id_interaccion_asignada IS NULL THEN
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se encontro una interaccion valida para procesar';
+END IF;
 
-    -- Procesar repuestos
-    IF p_Json_Repuestos IS NOT NULL AND JSON_VALID(p_Json_Repuestos) AND JSON_LENGTH(p_Json_Repuestos) > 0 THEN
-        SET v_items_count = JSON_LENGTH(p_Json_Repuestos);
+-- Actualizar interaccion
+UPDATE Interaccion SET Accion = 'Reparada'
+WHERE ID_interaccion = v_id_interaccion_asignada;
 
-        WHILE i < v_items_count DO
-            SET v_id_inventario = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].id_inventario')));
-            SET v_cantidad = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].cantidad')));
+-- Actualizar orden
+UPDATE Orden_servicio
+SET Estado_orden_servicio = 'Reparada',
+Descripcion_reparacion = p_Descripcion_reparacion,
+Fecha_salida = NOW()
+WHERE ID_orden_servicio = p_ID_orden_servicio;
 
-            IF v_id_inventario IS NULL OR v_id_inventario = '' THEN
-                SET v_error_msg = CONCAT('Error: No se pudo extraer id_inventario en indice ', i);
-                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
-            END IF;
+-- Procesar repuestos
+IF p_Json_Repuestos IS NOT NULL AND JSON_VALID(p_Json_Repuestos) AND JSON_LENGTH(p_Json_Repuestos) > 0 THEN
+SET v_items_count = JSON_LENGTH(p_Json_Repuestos);
 
-            IF v_cantidad IS NULL OR v_cantidad <= 0 THEN
-                SET v_error_msg = CONCAT('Cantidad invalida para el repuesto ', v_id_inventario);
-                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
-            END IF;
+WHILE i < v_items_count DO
+SET v_id_inventario = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].id_inventario')));
+SET v_cantidad = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Repuestos, CONCAT('$[', i, '].cantidad')));
 
-            -- CORRECCIÓN: Se cambió de 'Inventario' a 'Existencias_productos'
-            SELECT Existencia INTO v_existencia_actual
-            FROM Existencias_productos
-            WHERE ID_inventario = v_id_inventario;
+IF v_id_inventario IS NULL OR v_id_inventario = '' THEN
+SET v_error_msg = CONCAT('Error: No se pudo extraer id_inventario en indice ', i);
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+END IF;
 
-            IF v_existencia_actual IS NULL THEN
-                SET v_error_msg = CONCAT('El repuesto con ID ', v_id_inventario, ' no existe en Existencias_productos');
-                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
-            END IF;
+IF v_cantidad IS NULL OR v_cantidad <= 0 THEN
+SET v_error_msg = CONCAT('Cantidad invalida para el repuesto ', v_id_inventario);
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+END IF;
 
-            IF v_existencia_actual < v_cantidad THEN
-                SET v_error_msg = CONCAT('Stock insuficiente para ', v_id_inventario,
-                    ': disponible ', v_existencia_actual, ', requerido ', v_cantidad);
-                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
-            END IF;
+-- CORRECCIÓN: Se cambió de 'Inventario' a 'Existencias_productos'
+SELECT Existencia INTO v_existencia_actual
+FROM Existencias_productos
+WHERE ID_inventario = v_id_inventario;
 
-            -- NOTA: Asegúrate de tener creada la tabla Repuestos_usados si vas a usar esta sección
-            INSERT INTO Repuestos_usados (ID_orden_servicio, ID_inventario, Cantidad_usada)
-            VALUES (p_ID_orden_servicio, v_id_inventario, v_cantidad)
-            ON DUPLICATE KEY UPDATE Cantidad_usada = Cantidad_usada + v_cantidad;
+IF v_existencia_actual IS NULL THEN
+SET v_error_msg = CONCAT('El repuesto con ID ', v_id_inventario, ' no existe en Existencias_productos');
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+END IF;
 
-            -- CORRECCIÓN: Descontar stock de la tabla correcta 'Existencias_productos'
-            UPDATE Existencias_productos
-            SET Existencia = Existencia - v_cantidad
-            WHERE ID_inventario = v_id_inventario;
+IF v_existencia_actual < v_cantidad THEN
+SET v_error_msg = CONCAT('Stock insuficiente para ', v_id_inventario,
+': disponible ', v_existencia_actual, ', requerido ', v_cantidad);
+SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
+END IF;
 
-            SET i = i + 1;
-        END WHILE;
-    END IF;
+-- NOTA: Asegúrate de tener creada la tabla Repuestos_usados si vas a usar esta sección
+INSERT INTO Repuestos_usados (ID_orden_servicio, ID_inventario, Cantidad_usada)
+VALUES (p_ID_orden_servicio, v_id_inventario, v_cantidad)
+ON DUPLICATE KEY UPDATE Cantidad_usada = Cantidad_usada + v_cantidad;
 
-    COMMIT;
+-- CORRECCIÓN: Descontar stock de la tabla correcta 'Existencias_productos'
+UPDATE Existencias_productos
+SET Existencia = Existencia - v_cantidad
+WHERE ID_inventario = v_id_inventario;
 
-    SELECT
-        p_ID_orden_servicio AS ID_orden_servicio,
-        'Reparada' AS Nuevo_estado,
-        v_id_interaccion_asignada AS ID_interaccion_actualizada,
-        p_Descripcion_reparacion AS Descripcion_reparacion,
-        IFNULL(v_items_count, 0) AS Total_repuestos_usados,
-        'Orden reparada exitosamente' AS Mensaje;
+SET i = i + 1;
+END WHILE;
+END IF;
+
+COMMIT;
+
+SELECT
+p_ID_orden_servicio AS ID_orden_servicio,
+'Reparada' AS Nuevo_estado,
+v_id_interaccion_asignada AS ID_interaccion_actualizada,
+p_Descripcion_reparacion AS Descripcion_reparacion,
+IFNULL(v_items_count, 0) AS Total_repuestos_usados,
+'Orden reparada exitosamente' AS Mensaje;
 
 END ;;
 DELIMITER ;
@@ -1812,95 +1867,95 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `sp_registrar_revision_test`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_revision_test`(
-    IN p_ID_orden_servicio VARCHAR(10),
-    IN p_ID_empleado INT,
-    IN p_Num_test INT,            -- El número identificador del lote de test
-    IN p_Json_Tests JSON          -- El arreglo: [{"nombre":"Mica", "resultado":"Funciona"}, ...]
+IN p_ID_orden_servicio VARCHAR(10),
+IN p_ID_empleado INT,
+IN p_Num_test INT,            -- El número identificador del lote de test
+IN p_Json_Tests JSON          -- El arreglo: [{"nombre":"Mica", "resultado":"Funciona"}, ...]
 )
 BEGIN
-    -- Variables para generar ID_interaccion (Formato 'INT0000001')
-    DECLARE v_ultimo_id_int VARCHAR(10);
-    DECLARE v_siguiente_num_int INT;
-    DECLARE v_nuevo_id_interaccion VARCHAR(10);
-    
-    -- Variables para generar ID_test dentro del ciclo (Formato 'TST0000001')
-    DECLARE v_ultimo_id_tes VARCHAR(10);
-    DECLARE v_siguiente_num_tes INT;
-    DECLARE v_nuevo_id_test VARCHAR(10);
-    
-    -- Variables para el control del Ciclo Repetitivo (Bucle WHILE)
-    DECLARE v_items_count INT DEFAULT 0;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_nombre_comp VARCHAR(50);
-    DECLARE v_resultado_comp VARCHAR(300);
+-- Variables para generar ID_interaccion (Formato 'INT0000001')
+DECLARE v_ultimo_id_int VARCHAR(10);
+DECLARE v_siguiente_num_int INT;
+DECLARE v_nuevo_id_interaccion VARCHAR(10);
 
-    -- Manejo de errores: Si algo falla, deshace todo (Rollback)
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
+-- Variables para generar ID_test dentro del ciclo (Formato 'TST0000001')
+DECLARE v_ultimo_id_tes VARCHAR(10);
+DECLARE v_siguiente_num_tes INT;
+DECLARE v_nuevo_id_test VARCHAR(10);
 
-    -- Iniciamos la transacción segura
-    START TRANSACTION;
+-- Variables para el control del Ciclo Repetitivo (Bucle WHILE)
+DECLARE v_items_count INT DEFAULT 0;
+DECLARE i INT DEFAULT 0;
+DECLARE v_nombre_comp VARCHAR(50);
+DECLARE v_resultado_comp VARCHAR(300);
 
-    -- =========================================================================
-    -- PASO 1: INSERTAR EN LA TABLA Interaccion CON ID AUTOGENERADO
-    -- =========================================================================
-    SELECT MAX(`ID_interaccion`) INTO v_ultimo_id_int FROM `Interaccion`;
+-- Manejo de errores: Si algo falla, deshace todo (Rollback)
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+RESIGNAL;
+END;
 
-    IF v_ultimo_id_int IS NULL THEN
-        SET v_siguiente_num_int = 1;
-    ELSE
-        SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
-    END IF;
+-- Iniciamos la transacción segura
+START TRANSACTION;
 
-    SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+-- =========================================================================
+-- PASO 1: INSERTAR EN LA TABLA Interaccion CON ID AUTOGENERADO
+-- =========================================================================
+SELECT MAX(`ID_interaccion`) INTO v_ultimo_id_int FROM `Interaccion`;
 
-    -- Registro inicial requerido
-    INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`)
-    VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Revisión');
+IF v_ultimo_id_int IS NULL THEN
+SET v_siguiente_num_int = 1;
+ELSE
+SET v_siguiente_num_int = CAST(SUBSTRING(v_ultimo_id_int, 4) AS UNSIGNED) + 1;
+END IF;
+
+SET v_nuevo_id_interaccion = CONCAT('INT', LPAD(v_siguiente_num_int, 6, '0'));
+
+-- Registro inicial requerido
+INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`)
+VALUES (v_nuevo_id_interaccion, p_ID_orden_servicio, p_ID_empleado, 'Revisión');
 
 
-    -- =========================================================================
-    -- PASO 2: CICLO REPETITIVO PARA PROCESAR EL ARREGLO E INSERTAR EN Test Y LA INTERMEDIA
-    -- =========================================================================
-    SET v_items_count = JSON_LENGTH(p_Json_Tests);
-    
-    WHILE i < v_items_count DO
-        -- 2.1 Extraer los datos del componente actual del lote JSON
-        SET v_nombre_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
-        SET v_resultado_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
-        
-        -- 2.2 Generar el ID_test dinámico (Formato 'TST0000001') para este componente específico
-        SELECT MAX(`ID_test`) INTO v_ultimo_id_tes FROM `Test`;
-        
-        IF v_ultimo_id_tes IS NULL THEN
-            SET v_siguiente_num_tes = 1;
-        ELSE
-            SET v_siguiente_num_tes = CAST(SUBSTRING(v_ultimo_id_tes, 4) AS UNSIGNED) + 1;
-        END IF;
-        
-        SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_tes, 6, '0'));
-        
-        -- 2.3 Insertar el registro en la tabla Test usando los nombres correctos de columnas
-        -- CORREGIDO: Usar 'Num_test' (parámetro) y 'Resultado_test' (columna correcta)
-        INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`)
-        VALUES (v_nuevo_id_test, p_Num_test, v_nombre_comp, v_resultado_comp);
-        
-        -- 2.4 Insertar la relación de los códigos en la tabla Test_realizados_interaccion
-        INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`)
-        VALUES (v_nuevo_id_interaccion, v_nuevo_id_test);
-        
-        -- Avanzar al siguiente elemento del arreglo
-        SET i = i + 1;
-    END WHILE;
+-- =========================================================================
+-- PASO 2: CICLO REPETITIVO PARA PROCESAR EL ARREGLO E INSERTAR EN Test Y LA INTERMEDIA
+-- =========================================================================
+SET v_items_count = JSON_LENGTH(p_Json_Tests);
 
-    -- Guardar de manera permanente todos los cambios
-    COMMIT;
+WHILE i < v_items_count DO
+-- 2.1 Extraer los datos del componente actual del lote JSON
+SET v_nombre_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
+SET v_resultado_comp = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
 
-    -- Devolver resumen para tu backend
-    SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
+-- 2.2 Generar el ID_test dinámico (Formato 'TST0000001') para este componente específico
+SELECT MAX(`ID_test`) INTO v_ultimo_id_tes FROM `Test`;
+
+IF v_ultimo_id_tes IS NULL THEN
+SET v_siguiente_num_tes = 1;
+ELSE
+SET v_siguiente_num_tes = CAST(SUBSTRING(v_ultimo_id_tes, 4) AS UNSIGNED) + 1;
+END IF;
+
+SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_tes, 6, '0'));
+
+-- 2.3 Insertar el registro en la tabla Test usando los nombres correctos de columnas
+-- CORREGIDO: Usar 'Num_test' (parámetro) y 'Resultado_test' (columna correcta)
+INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`)
+VALUES (v_nuevo_id_test, p_Num_test, v_nombre_comp, v_resultado_comp);
+
+-- 2.4 Insertar la relación de los códigos en la tabla Test_realizados_interaccion
+INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`)
+VALUES (v_nuevo_id_interaccion, v_nuevo_id_test);
+
+-- Avanzar al siguiente elemento del arreglo
+SET i = i + 1;
+END WHILE;
+
+-- Guardar de manera permanente todos los cambios
+COMMIT;
+
+-- Devolver resumen para tu backend
+SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
 
 END ;;
 DELIMITER ;
