@@ -1,9 +1,12 @@
 from flask import Blueprint, jsonify, render_template, request, g, redirect
-from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
+from app.utils.decorators import jwt_required, solo_roles
 from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
 from app.models.venta import VentaModel
 from app.models.clientes import Clientes
+from app.utils.validators import (
+    validar_sin_caracteres_especiales
+)
 import requests
 import traceback
 import os
@@ -34,6 +37,12 @@ def api_listar_productos_catalogo():
         clase_id = request.args.get("clase_id", type=str)
         marca_id = request.args.get("marca_id", type=str)
         q = request.args.get("q", "")
+        
+        # Validar filtros de búsqueda
+        if q:
+            error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
+            if error:
+                return jsonify({"success": False, "error": error}), 400
         
         modelo_catalogo = CatalogoModel(
             clase_id=clase_id,
@@ -87,6 +96,34 @@ def api_listar_productos_catalogo():
 
 
 # ==================== CARRITO ====================
+
+def _validar_carrito_data(data):
+    """
+    Función auxiliar para validar los datos del carrito.
+    
+    Args:
+        data (dict): Datos del carrito
+    
+    Returns:
+        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
+    """
+    producto_id = data.get("producto_id")
+    cantidad = data.get("cantidad", 1)
+    
+    if not producto_id:
+        return "El campo Producto es obligatorio.", 400
+    
+    try:
+        cantidad = int(cantidad)
+        if cantidad < 1:
+            return "La cantidad debe ser al menos 1.", 400
+        if cantidad > 999:
+            return "La cantidad no puede exceder 999.", 400
+    except (ValueError, TypeError):
+        return "La cantidad debe ser un número válido.", 400
+    
+    return None, 200
+
 
 @ventas_blueprint.route("/api/carrito", methods=["GET"])
 @jwt_required
@@ -177,11 +214,14 @@ def api_agregar_carrito():
             return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
         
         datos = request.get_json(silent=True) or {}
+        
+        # Validar datos
+        error, status = _validar_carrito_data(datos)
+        if error:
+            return jsonify({"success": False, "error": error}), status
+        
         producto_id = datos.get("producto_id")
         cantidad = datos.get("cantidad", 1)
-        
-        if not producto_id:
-            return jsonify({"success": False, "error": "Producto no especificado"}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
@@ -245,6 +285,12 @@ def api_actualizar_cantidad():
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
         
         datos = request.get_json(silent=True) or {}
+        
+        # Validar datos
+        error, status = _validar_carrito_data(datos)
+        if error:
+            return jsonify({"success": False, "error": error}), status
+        
         producto_id = datos.get("producto_id")
         cantidad = datos.get("cantidad", 1)
         
@@ -289,6 +335,53 @@ def api_vaciar_carrito():
 
 # ==================== PROCESO DE PAGO ====================
 
+def _validar_pago_data(data, files):
+    """
+    Función auxiliar para validar los datos del pago.
+    
+    Args:
+        data (dict): Datos del formulario
+        files (dict): Archivos del formulario
+    
+    Returns:
+        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
+    """
+    metodo_pago = data.get("metodo_pago", "").strip()
+    
+    if not metodo_pago:
+        return "El método de pago es obligatorio.", 400
+    
+    # Validar método de pago
+    metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_bs", "efectivo_usd"]
+    if metodo_pago not in metodos_validos:
+        return f"Método de pago '{metodo_pago}' no válido.", 400
+    
+    # Validar referencia si se proporciona
+    referencia = data.get("referencia", "").strip()
+    if referencia:
+        error = validar_sin_caracteres_especiales(referencia, 1, 100, "Referencia", permitir_espacios=True)
+        if error:
+            return error, 400
+    
+    # Validar monto si se proporciona
+    monto = data.get("monto", "").strip()
+    if monto:
+        try:
+            monto_float = float(monto)
+            if monto_float < 0:
+                return "El monto no puede ser negativo.", 400
+        except (ValueError, TypeError):
+            return "El monto debe ser un número válido.", 400
+    
+    # Validar que se haya subido una captura para métodos que lo requieren
+    capture_file = files.get("capture")
+    if metodo_pago not in ("efectivo_bs", "efectivo_usd"):
+        if not capture_file or not getattr(capture_file, "filename", ""):
+            return "Debe subir una captura del comprobante de pago.", 400
+    
+    return None, 200
+
+
 @ventas_blueprint.route("/pagar")
 @jwt_required
 def pagina_pagos():
@@ -311,7 +404,7 @@ def pagina_pagos():
     try:
         if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
             return redirect("/catalogo")
-    except:
+    except:  # noqa: E722
         return redirect("/catalogo")
     
     return render_template(
@@ -359,8 +452,13 @@ def api_procesar_pago():
         try:
             if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
                 return jsonify({"success": False, "error": "Cliente no identificado"}), 400
-        except:
+        except:  # noqa: E722
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
+        
+        # Validar datos del pago
+        error, status = _validar_pago_data(request.form, request.files)
+        if error:
+            return jsonify({"success": False, "error": error}), status
         
         # Obtener datos del formulario
         metodo_pago = request.form.get("metodo_pago")
@@ -368,9 +466,6 @@ def api_procesar_pago():
         referencia = request.form.get("referencia", "")
         monto = request.form.get("monto", None)
         capture_file = request.files.get("capture")
-        
-        if not metodo_pago:
-            return jsonify({"success": False, "error": "Método de pago no seleccionado"}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         

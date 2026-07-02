@@ -1,5 +1,4 @@
 from app.models.database import conectar
-import mysql.connector
 from typing import Any, cast, Optional, Dict, List
 from decimal import Decimal
 from app.models.bitacora import Bitacora

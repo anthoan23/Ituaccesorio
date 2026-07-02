@@ -228,6 +228,19 @@
                     <span class="drawer__link-text">Bitácora</span>
                 </a>
 
+                {# 15. Mantenimiento y Backup de BD #}
+                <a class="drawer__link {% if active_page == 'backup' %}is-active{% endif %}" href="{{ url_for('backup.pagina_backup') }}">
+                    <span class="drawer__link-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path>
+                            <path d="M12 12a3 3 0 1 0 3 3" stroke-dasharray="1 1"></path> 
+                        </svg>
+                    </span>
+                    <span class="drawer__link-text">Mantenimiento de BD</span>
+                </a>
+
             {% elif g.user %}
                 {# ==================== USUARIO NORMAL ==================== #}
                 {% set tiene_permisos = g.user.permisos is defined and g.user.permisos %}
