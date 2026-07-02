@@ -430,7 +430,7 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-     #-----------Esto es de amuel----------------------------------
+     #-----------Esto es de manuel----------------------------------
             
 
 
