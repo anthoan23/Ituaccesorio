@@ -26,6 +26,68 @@ def api_listar_clientes():
     return jsonify({"success": True, "clientes": clientes})
 
 
+@clientes_blueprint.route("/api/clientes/<string:id_cliente>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Clientes', 'consultar')
+def api_obtener_cliente(id_cliente):
+    id_cliente = (id_cliente or "").strip()
+    if not id_cliente:
+        return jsonify({"success": False, "message": "La cédula del cliente es obligatoria."}), 400
+
+    cliente_model = Clientes(ID_cliente=id_cliente)
+    cliente = cliente_model.obtener_datos_cliente_completo(cliente_id=id_cliente)
+    if not cliente:
+        return jsonify({"success": False, "message": "Cliente no encontrado."}), 404
+    return jsonify({"success": True, "cliente": cliente})
+
+
+@clientes_blueprint.route("/api/clientes", methods=["POST"])
+@jwt_required
+@tiene_permiso('Clientes', 'registrar')
+def api_registrar_cliente():
+    import re
+    
+    data = request.get_json(silent=True) or request.form
+    Id_cliente = data.get("cedula", "").strip()
+    nombre_cliente = data.get("nombre", "").strip()
+    apellido_cliente = data.get("apellido", "").strip()
+    direccion_cliente = data.get("direccion", "").strip()
+    telefono_cliente = data.get("celular", "").strip()
+    correo_cliente = data.get("correo", "").strip()
+    
+    if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
+        return jsonify({"success": False, "message": "Cédula, nombre, apellido y celular son obligatorios."}), 400
+
+    # Validar cédula: 8 dígitos, solo números
+    if not re.match(r"^\d{8}$", Id_cliente):
+        return jsonify({"success": False, "message": "La cédula debe tener exactamente 8 dígitos numéricos."}), 400
+
+    # Validar celular: 11 dígitos, solo números
+    if not re.match(r"^\d{11}$", telefono_cliente):
+        return jsonify({"success": False, "message": "El celular debe tener exactamente 11 dígitos numéricos."}), 400
+
+    # Validar correo si se proporciona
+    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
+        return jsonify({"success": False, "message": "El correo electrónico no es válido."}), 400
+
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    cliente_model = Persona_natural(
+        Cedula_cliente=Id_cliente,
+        Nombre_cliente=nombre_cliente,
+        Apellido_cliente=apellido_cliente,
+        Direccion_cliente=direccion_cliente,
+        Telefono_cliente=telefono_cliente,
+        Correo_cliente=correo_cliente,
+        usuario_id=usuario_actual_id
+    )
+    mensaje = cliente_model.registrar_persona_natural()
+
+    if "exitosamente" in mensaje:
+        return jsonify({"success": True, "message": mensaje, "id": Id_cliente}), 201
+    else:
+        return jsonify({"success": False, "message": mensaje}), 400
+
+
 @clientes_blueprint.route("/api/clientes/natural", methods=["POST"])
 @jwt_required
 @tiene_permiso('Clientes', 'registrar')
