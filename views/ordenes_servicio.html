@@ -136,7 +136,7 @@
 
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
-            <span>IMEI / ID del equipo *</span>
+            <span>IMEI</span>
             <input id="orden-id-equipo" name="id_equipo" type="text" placeholder="Ej: 123456789012345" required maxlength="15" pattern="[0-9]{15}" inputmode="numeric">
           </label>
           <label class="form__field" style="display:flex; flex-direction:column; gap:.5rem;">
@@ -148,7 +148,7 @@
 
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
-            <span>Modelo *</span>
+            <span>Modelo</span>
             <select id="orden-modelo" name="id_modelo">
               <option value="">Seleccione modelo</option>
             </select>
@@ -199,7 +199,7 @@
 
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
-            <span>Cédula cliente *</span>
+            <span>Cédula cliente</span>
             <input id="cliente-cedula" name="cedula" type="text" placeholder="Ej: 12345678" required maxlength="8" inputmode="numeric">
           </label>
           <label class="form__field" style="display:flex; flex-direction:column; gap:.5rem;">
@@ -214,19 +214,19 @@
 
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
-            <span>Nombre *</span>
+            <span>Nombre</span>
             <input id="cliente-nombre" name="nombre" type="text" placeholder="Nombre del cliente" maxlength="20" pattern="[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+" title="Solo letras, máximo 20 caracteres">
           </label>
           <label class="form__field">
-            <span>Apellido *</span>
+            <span>Apellido</span>
             <input id="cliente-apellido" name="apellido" type="text" placeholder="Apellido del cliente" maxlength="20" pattern="[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+" title="Solo letras, máximo 20 caracteres">
           </label>
         </div>
 
         <div class="ui-form__grid ui-form__grid--two">
           <label class="form__field">
-            <span>Celular (11 dígitos) *</span>
-            <input id="cliente-celular" name="celular" type="text" placeholder="04121234567" maxlength="11" required>
+            <span>Celular</span>
+            <input id="cliente-celular" name="celular" type="text" placeholder="04121234567" maxlength="11" required pattern="(0412|0414|0416|0422|0424|0426)[0-9]{7}" title="Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos">
           </label>
           <label class="form__field">
             <span>Correo</span>
@@ -249,12 +249,12 @@
         </div>
 
         <label class="form__field">
-          <span>Descripción del problema * (máx. 100 caracteres)</span>
+          <span>Descripción del problema</span>
           <textarea id="orden-descripcion" name="descripcion" rows="4" required placeholder="Describe la falla o servicio solicitado" maxlength="100"></textarea>
         </label>
 
         <label class="form__field">
-          <span>Notas adicionales (máx. 50 caracteres)</span>
+          <span>Notas adicionales</span>
           <textarea id="orden-nota" name="nota" rows="3" placeholder="Notas extras para el técnico o entrega" maxlength="50"></textarea>
         </label>
 
@@ -265,68 +265,16 @@
       </form>
     {% endcall %}
 
-    {# Modal para detalle de orden - Estilo igual a empleados #}
+    {# Modal para detalle de orden - Estilo igual a taller #}
     {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
       <input type="hidden" id="detalle-orden-id" value="">
       
-      <div class="orden-detalle">
-        <!-- Avatar con inicial y estado -->
-        <div class="orden-detalle__avatar">
-          <div class="avatar-orden" id="detalle-avatar-orden">
-            <span id="detalle-inicial-orden">#</span>
-          </div>
-          <span class="badge badge--pendiente" id="detalle-estado-badge-orden">Pendiente</span>
+      <div id="modal-preview-body">
+        <div id="modal-order-info" class="device-detail__grid">
+          <p class="device-detail__empty">Cargando información...</p>
         </div>
-
-        <!-- Grid de información -->
-        <div class="orden-detalle__grid">
-          <div class="detalle-item">
-            <label>ID Orden</label>
-            <p id="detalle-orden-id-label">---</p>
-          </div>
-          <div class="detalle-item">
-            <label>Fecha ingreso</label>
-            <p id="detalle-fecha-label-orden">--/--/----</p>
-          </div>
-          <div class="detalle-item">
-            <label>Cliente</label>
-            <p id="detalle-cliente-orden">---</p>
-          </div>
-          <div class="detalle-item">
-            <label>Equipo</label>
-            <p id="detalle-equipo-orden">---</p>
-          </div>
-          <div class="detalle-item">
-            <label>Modelo</label>
-            <p id="detalle-modelo-orden">---</p>
-          </div>
-          <div class="detalle-item">
-            <label>Costo</label>
-            <p id="detalle-costo-orden">---</p>
-          </div>
-          <div class="detalle-item detalle-item--full">
-            <label>Descripción del problema</label>
-            <p id="detalle-descripcion-orden">---</p>
-          </div>
-        </div>
-
-        <!-- Responsables -->
-        <div class="orden-detalle__section">
-          <h4 class="orden-detalle__section-title">👥 Responsables</h4>
-          <div id="detalle-responsables-orden" class="responsables-grid"></div>
-        </div>
-
-        <!-- Fotos -->
-        <div class="orden-detalle__section">
-          <h4 class="orden-detalle__section-title">📸 Fotos de evidencia</h4>
-          <div id="detalle-fotos-orden" class="fotos-grid"></div>
-        </div>
-
-        <!-- Tests/Revisiones -->
-        <div class="orden-detalle__section">
-          <h4 class="orden-detalle__section-title">📋 Historial de revisiones</h4>
-          <div id="detalle-tests-orden" class="tests-table-wrap"></div>
-        </div>
+        <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
+        <div id="modal-order-tests" class="device-tests"></div>
       </div>
 
       <div class="modal__footer modal__footer--right">

@@ -459,7 +459,7 @@ def asignar_orden_servicio(id_orden):
             "error": f"La orden está en estado '{estado_actual}'. Solo se pueden asignar órdenes en estado 'Pendiente'."
         }), 400
 
-    empleado_model = Empleados(id_empleado = id_empleado_val)
+    empleado_model = Empleados(id_empleado=str(id_empleado_val))
     empleado = empleado_model.consultar_empleado()
 
     if not empleado:

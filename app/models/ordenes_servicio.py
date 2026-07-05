@@ -4,7 +4,6 @@ from datetime import date
 import sys
 
 
-
 class Orden_servicio():
     def __init__(self, ID_orden_servicio: int = None, Estado_orden_servicio: str = None, 
                  Descripcion_reparacion: str = None, Costo_reparacion: float = None, 
@@ -184,7 +183,7 @@ class Orden_servicio():
             db.close()
 
 
-    def consultar_orden(self):
+    def consultar_orden(self,):
         id_orden = self.ID_orden_servicio
         db = self._conexion.conexion1()
         if not db:
@@ -192,8 +191,7 @@ class Orden_servicio():
         
         cursor = db.cursor(dictionary=True)
         try:
-            # 1. Consultar la orden
-            sql = """ SELECT o.*, 
+            sql =""" SELECT o.*, 
                 p.Nombre_producto AS Modelo, 
                 o.Estado_orden_servicio AS Estado,
                 CASE 
@@ -209,32 +207,12 @@ class Orden_servicio():
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 WHERE o.ID_orden_servicio = %s"""
+
             
             cursor.execute(sql, (id_orden,))
             orden = cursor.fetchone()
         
             return orden
-        
-        finally:
-            cursor.close()
-            db.close()
-
-    def empleados_asignados(self, id_orden: int):
-        db = self._conexion.conexion1()
-        if not db:
-            return None
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = (
-                "SELECT i.Accion, e.* "
-                "FROM Interaccion i JOIN Empleado e ON i.ID_empleado = e.ID_empleado "
-                "WHERE i.ID_orden_servicio = %s"
-            )
-            cursor.execute(sql, (id_orden,))
-            empleados = cursor.fetchall()
-        
-            return empleados
         
         finally:
             cursor.close()
@@ -295,133 +273,98 @@ class Orden_servicio():
         try:
             cursor.execute(
                 "SELECT 1 FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s LIMIT 1",
-                (id_foto.strip(),)
+                (id_foto,)
             )
             return cursor.fetchone() is not None
-        except Exception as e:
-            print(f"Error al verificar foto por ID: {e}")
-            return False
         finally:
             cursor.close()
             db.close()
 
-
-
- 
-           
-    def eliminar_foto_orden_servicio(self) -> dict:
-        """
-        Elimina una foto de la base de datos y retorna la ruta para eliminar el archivo físico
-        
-        Returns:
-            dict: {'success': bool, 'mensaje': str, 'ruta_foto': str, 'id_orden': str}
-        """
+    def agregar_foto_orden_servicio(self) -> str:
         id_foto = self.ID_foto_orden_servicio
-        
-        if not id_foto:
-            return {"success": False, "error": "ID de foto no proporcionado"}
-        
-        db = self._conexion.conexion1()
-        if not db:
-            return {"success": False, "error": "Error al conectar con la base de datos."}
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            # Obtener la ruta de la foto y el ID de orden antes de eliminar
-            cursor.execute(
-                "SELECT Foto_orden_servicio, ID_orden_servicio FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s",
-                (id_foto,)
-            )
-            foto = cursor.fetchone()
-            
-            if not foto:
-                return {"success": False, "error": f"No se encontró una foto con ID {id_foto}"}
-            
-            ruta_foto = foto.get('Foto_orden_servicio')
-            id_orden = foto.get('ID_orden_servicio')
-            
-            # Eliminar el registro
-            cursor.execute(
-                "DELETE FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s",
-                (id_foto,)
-            )
-            db.commit()
-            
-            return {
-                "success": True,
-                "mensaje": f"La foto con ID {id_foto} se eliminó exitosamente",
-                "ruta_foto": ruta_foto,
-                "id_orden": id_orden
-            }
-        except Exception as e:
-            db.rollback()
-            print(f"Error al eliminar la foto: {e}")
-            return {"success": False, "error": f"Error al eliminar la foto: {str(e)}"}
-        finally:
-            cursor.close()
-            db.close()
-
-
-
-    def registrar_fotos(self,) -> dict:
- 
         id_orden = self.ID_orden_servicio
-        lista_rutas = self.Foto_orden_servicio
+        ruta_foto = self.Foto_orden_servicio.strip()
+
+        if not id_foto:
+            return "El ID de la foto es obligatorio."
         
+        if len(str(id_foto)) > 10:
+            return "El ID de la foto no puede tener más de 10 caracteres."
+        
+        if len(ruta_foto) > 255:
+            return "La ruta de la foto no puede tener más de 255 caracteres."
+        
+        if self.verificar_foto_existe_por_ruta():
+            return f"La foto '{ruta_foto}' ya existe."
+
         db = self._conexion.conexion1()
         if not db:
-            return {"success": False, "error": "Error al conectar con la base de datos."}
+            return "Error al conectar con la base de datos."
         
         cursor = db.cursor()
         try:
-            # Convertir lista a JSON
-            import json
-            json_fotos = json.dumps(lista_rutas)
-            
-            # Llamar al procedimiento almacenado
-            cursor.callproc('sp_registrar_fotos_orden', (id_orden, json_fotos))
-            
-            # Consumir resultados
-            resultado = None
-            for result in cursor.stored_results():
-                resultado = result.fetchall()
-            
+            sql = """INSERT INTO Fotos_orden_servicio 
+                     (ID_foto_orden_servicio, ID_orden_servicio, Foto_orden_servicio) 
+                     VALUES (%s, %s, %s)"""
+            cursor.execute(sql, (id_foto, id_orden, ruta_foto))
             db.commit()
-            
-            return {
-                "success": True,
-                "mensaje": f"{len(lista_rutas)} fotos registradas exitosamente",
-                "data": resultado
-            }
+            return "Foto agregada exitosamente."
         except Exception as e:
+            print(f"Error al agregar la foto: {e}")
             db.rollback()
-            print(f"Error al registrar fotos: {e}")
-            error_msg = str(e)
-            # Extraer mensaje de error del procedimiento si está disponible
-            if "MESSAGE_TEXT" in error_msg:
-                import re
-                match = re.search(r"MESSAGE_TEXT: (.*?)(?:,|$)", error_msg)
-                if match:
-                    error_msg = match.group(1).strip()
-            return {"success": False, "error": f"Error al registrar fotos: {error_msg}"}
+            return "Error al agregar la foto."
+        finally:
+            cursor.close()
+            db.close()    
+           
+    def eliminar_foto_orden_servicio(self) -> str:
+        id_foto = self.ID_foto_orden_servicio.strip()
+
+        if not id_foto:
+            mensaje = "El ID de la foto es obligatorio."
+            return mensaje
+        
+        if not self.verificar_foto_existe_por_id():
+            mensaje = f"No se encontró una foto con ID {id_foto} para eliminar."
+            return mensaje
+        
+        db = self._conexion.conexion1()
+        if not db:
+            mensaje = "Error al conectar con la base de datos."
+            return mensaje
+        
+        cursor = db.cursor()
+        try:
+            sql = "DELETE FROM Fotos_orden_servicio WHERE ID_foto_orden_servicio = %s"
+            cursor.execute(sql, (id_foto,))
+            db.commit()
+            mensaje = f"La foto con ID {id_foto} se eliminó exitosamente."
+            return mensaje
+        except Exception as e:
+            print(f"Error al eliminar la foto: {e}")
+            db.rollback()
+            mensaje = "Error al eliminar la foto."
+            return mensaje
         finally:
             cursor.close()
             db.close()
+
 
     def asignar_orden_empleado(self):
+
         db = self._conexion.conexion1()
         if not db:
+            self._ultimo_error = "Error al conectar con la base de datos"
             return False
         
         cursor = db.cursor()
         try:
+            print(f"[DEBUG] Asignando orden {self.ID_orden_servicio} al empleado {self.ID_empleado}")
             sql = "CALL sp_asignar_orden_servicio(%s, %s);"
             cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
             
             # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
-            # Esto es crucial para evitar el error "Commands out of sync"
             while cursor.nextset():
-                # Consumir cualquier resultado pendiente
                 try:
                     cursor.fetchall()
                 except:
@@ -443,6 +386,7 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
+
     def liberar_orden_empleado(self):
         db = self._conexion.conexion1()
         if not db:
@@ -453,7 +397,6 @@ class Orden_servicio():
             sql = "CALL sp_liberar_orden_servicio(%s, %s);"
             cursor.execute(sql, (self.ID_orden_servicio, self.ID_empleado))
             
-            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES
             while cursor.nextset():
                 try:
                     cursor.fetchall()
@@ -477,19 +420,16 @@ class Orden_servicio():
         
         cursor = db.cursor(dictionary=True)
         try:
-            # Ejecutar el procedimiento almacenado
             sql = "CALL sp_registrar_reparacion(%s, %s, %s, %s);"
             cursor.execute(sql, (
                 self.ID_orden_servicio,
                 self.ID_empleado,
                 self.Descripcion_reparacion,
-                self.lista_repuestos  # Debe venir como JSON string
+                self.lista_repuestos
             ))
             
-            # Obtener el resultado (SELECT final del procedimiento)
             resultado = cursor.fetchone()
             
-            # CONSUMIR TODOS LOS RESULTADOS PENDIENTES (importante!)
             while cursor.nextset():
                 try:
                     cursor.fetchall()
@@ -498,9 +438,7 @@ class Orden_servicio():
             
             db.commit()
             
-            # Verificar si el resultado es exitoso
             if resultado and isinstance(resultado, dict):
-                # Si el procedimiento retorna un mensaje en alguna clave
                 mensaje = resultado.get('mensaje') or resultado.get('Mensaje') or resultado.get('resultado')
                 if mensaje and "exitosamente" in str(mensaje).lower():
                     return {"success": True, "mensaje": mensaje, "data": resultado}
@@ -650,9 +588,59 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-    def actualizar_estado(self, id_orden: str, nuevo_estado: str) -> bool:
-        """Actualiza el estado de una orden de servicio"""
-        if not id_orden or not nuevo_estado:
+
+    def ordenes_asignadas_tecnico(self):
+        db = self._conexion.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+            
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = (
+                """
+                SELECT 
+                    o.ID_orden_servicio AS ID_orden,
+                    o.Estado_orden_servicio AS Estado,
+                    o.Descripcion_reparacion AS descripcion,
+                    o.Costo_reparacion AS costo,
+                    o.Nota_orden_servicio AS nota,
+                    o.Fecha_entrada AS fecha_e,
+                    o.Fecha_salida AS fecha_s,
+                    p.Nombre_producto AS modelo,
+                    COALESCE(CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente), cj.Razon_social, 'Cliente no especificado') AS Nombre_cliente
+                FROM Orden_servicio o
+                INNER JOIN Equipo e ON o.ID_equipo = e.ID_equipo
+                INNER JOIN Producto p ON e.ID_producto = p.ID_producto
+                INNER JOIN Cliente c ON o.ID_cliente = c.ID_cliente
+                LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
+                INNER JOIN Interaccion i ON o.ID_orden_servicio = i.ID_orden_servicio
+                WHERE o.Estado_orden_servicio = 'Asignada' 
+                AND i.Accion = 'Asignada' 
+                AND i.ID_empleado = %s
+                ORDER BY o.ID_orden_servicio DESC
+                """
+            )
+            cursor.execute(sql, (self.ID_empleado,))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en ordenes_asignadas_tecnico: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+
+    def registrar_interaccion(self, id_orden=None, id_empleado=None, accion=None):
+        """Registra una interacción de una orden con un empleado.
+        
+        Si no se pasan parámetros, usa los atributos de la instancia.
+        """
+        id_orden = id_orden or self.ID_orden_servicio
+        id_empleado = id_empleado or self.ID_empleado
+        accion = accion or 'Asignada'
+
+        if not id_orden or not id_empleado or not accion:
             return False
 
         db = self._conexion.conexion1()
@@ -750,16 +738,23 @@ class Orden_servicio():
 
         cursor = db.cursor()
         try:
-            cursor.execute("""
-                UPDATE Orden_servicio 
-                SET Estado_orden_servicio = %s 
-                WHERE ID_orden_servicio = %s
-            """, (nuevo_estado, id_orden))
+            fields = []
+            params = []
+            if revision is not None:
+                fields.append("Descripcion_reparacion = %s")
+                params.append(revision)
+            if costo is not None:
+                fields.append("Costo_reparacion = %s")
+                params.append(costo)
+
+            params.append(id_orden)
+            sql = f"UPDATE Orden_servicio SET {', '.join(fields)} WHERE ID_orden_servicio = %s"
+            cursor.execute(sql, tuple(params))
             db.commit()
             return cursor.rowcount > 0
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_estado: {e}")
+            print(f"Error al actualizar revisión: {e}")
             return False
         finally:
             cursor.close()
@@ -827,58 +822,76 @@ class Orden_servicio():
             cursor.close()
             db.close()
 
-    def eliminar_orden(self, id_orden):
-        """Elimina la orden (primero las dependencias si no hay ON DELETE CASCADE)."""
+    def fotos_orden(self, id_orden: str) -> list:
+        """Obtiene las fotos de una orden de servicio"""
         db = self._conexion.conexion1()
         if not db:
-            return False
-        cursor = db.cursor()
+            return []
+
+        cursor = db.cursor(dictionary=True)
         try:
-            sql = "DELETE FROM Orden_servicio WHERE ID_orden_servicio = %s"
-            cursor.execute(sql, (id_orden,))
-            db.commit()
-            return cursor.rowcount > 0
+            cursor.execute("""
+                SELECT ID_foto_orden_servicio, Foto_orden_servicio AS Foto_e
+                FROM Fotos_orden_servicio
+                WHERE ID_orden_servicio = %s
+            """, (id_orden,))
+            return cursor.fetchall()
         except Exception as e:
-            db.rollback()
-            print(f"Error en eliminar_orden: {e}")
-            return False
+            print(f"Error en fotos_orden: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
 
-    def agregar_foto_orden_servicio(self) -> str:
-        id_foto = self.ID_foto_orden_servicio
-        id_orden = self.ID_orden_servicio
-        ruta_foto = self.Foto_orden_servicio.strip()
+    def empleados_asignados(self, id_orden: str) -> list:
+        """Obtiene los empleados que han interactuado con la orden"""
+        db = self._conexion.conexion1()
+        if not db:
+            return []
 
-        if not id_foto:
-            return "El ID de la foto es obligatorio."
-        
-        if len(str(id_foto)) > 10:
-            return "El ID de la foto no puede tener más de 10 caracteres."
-        
-        if len(ruta_foto) > 255:
-            return "La ruta de la foto no puede tener más de 255 caracteres."
-        
-        if self.verificar_foto_existe_por_ruta():
-            return f"La foto '{ruta_foto}' ya existe."
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    i.Accion,
+                    i.ID_empleado AS ID_em,
+                    e.Nombre_empleado AS Nombre_em,
+                    e.Apellido_empleado AS Apellido_em
+                FROM Interaccion i
+                INNER JOIN Empleado e ON i.ID_empleado = e.ID_empleado
+                WHERE i.ID_orden_servicio = %s
+                ORDER BY i.ID_interaccion DESC
+            """, (id_orden,))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error en empleados_asignados: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+    def actualizar_estado(self, id_orden: str, nuevo_estado: str) -> bool:
+        """Actualiza el estado de una orden de servicio"""
+        if not id_orden or not nuevo_estado:
+            return False
 
         db = self._conexion.conexion1()
         if not db:
-            return "Error al conectar con la base de datos."
-        
+            return False
+
         cursor = db.cursor()
         try:
-            sql = """INSERT INTO Fotos_orden_servicio 
-                        (ID_foto_orden_servicio, ID_orden_servicio, Foto_orden_servicio) 
-                        VALUES (%s, %s, %s)"""
-            cursor.execute(sql, (id_foto, id_orden, ruta_foto))
+            cursor.execute("""
+                UPDATE Orden_servicio 
+                SET Estado_orden_servicio = %s 
+                WHERE ID_orden_servicio = %s
+            """, (nuevo_estado, id_orden))
             db.commit()
-            return "Foto agregada exitosamente."
+            return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error al agregar la foto: {e}")
             db.rollback()
-            return "Error al agregar la foto."
+            print(f"Error en actualizar_estado: {e}")
+            return False
         finally:
             cursor.close()
-            db.close()    
+            db.close()

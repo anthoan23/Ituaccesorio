@@ -103,7 +103,7 @@ class Equipo:
             """, (self.ID_equipo, self.ID_producto, color, capacidad, clave, patron))
             
             db.commit()
-            return f"Equipo {self.ID_equipo} registrado correctamente."
+            return f"Equipo {self.ID_equipo} registrado exitosamente."
         except Exception as e:
             db.rollback()
             return f"Error al registrar el equipo: {e}"
