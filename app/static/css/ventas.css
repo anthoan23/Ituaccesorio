@@ -749,8 +749,13 @@ textarea:focus {
 	display: flex;
 	justify-content: space-between;
 	gap: 1rem;
-	flex-wrap: wrap;
-	font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.6);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    color: #111111;
 	color: #111111;
 }
 
@@ -783,8 +788,11 @@ textarea:focus {
 
 .modal-rechazo .modal-panel {
 	width: min(420px, 100%);
-	background: #ffffff;
+	background: rgba(255,255,255,0.6);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
 	border-radius: 20px;
+	border: 1px solid rgba(255,255,255,0.14);
 }
 
 .venta-local-panel {
@@ -927,8 +935,29 @@ textarea:focus {
 	max-width: 1240px;
 	display: grid;
 	gap: 0.7rem;
+	background: rgba(255,255,255,0.55);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	border: 1px solid rgba(255,255,255,0.12);
+	border-radius: 12px;
+
+
+/* Light theme overrides for glassmorphic components */
+[data-theme="light"] .pago-card,
+[data-theme="light"] .resumen-card,
+[data-theme="light"] .modal-rechazo .modal-panel {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(17,24,39,0.06);
+    color: #0b0b0b;
 }
 
+/* Dark theme tweaks to keep glass effect readable */
+[data-theme="dark"] .pago-card,
+[data-theme="dark"] .resumen-card,
+[data-theme="dark"] .modal-rechazo .modal-panel {
+    background: rgba(2,6,23,0.45);
+    border: 1px solid rgba(255,255,255,0.04);
+    color: #e6eef8;
 .catalog-hero__eyebrow {
 	margin: 0;
 	text-transform: uppercase;

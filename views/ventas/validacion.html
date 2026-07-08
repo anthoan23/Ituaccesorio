@@ -23,9 +23,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
       </p>
     </div>
     <div class="validacion-header__actions">
-      <button id="btn-reportes-pagos" class="btn btn--ghost" type="button">
-        📊 Reportes
-      </button>
+      <button id="btn-reportes-pagos" class="btn btn--ghost" type="button">Reportes</button>
     </div>
   </header>
 
@@ -49,8 +47,8 @@ Validación de Pagos{% endblock %} {% block head_extra %}
 <!-- Modal de rechazo -->
 <div id="rechazo-modal" class="modal-rechazo is-hidden">
   <div class="modal-panel">
-    <h3>Rechazar pago</h3>
-    <p style="font-size: 0.85rem; color: #666">Motivo del rechazo:</p>
+  <h3>Rechazar pago</h3>
+  <p class="modal-note">Motivo del rechazo:</p>
     <textarea
       id="motivo-rechazo"
       class="motivo-rechazo"
@@ -84,9 +82,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
     aria-labelledby="reportes-pagos-title"
   >
     <div class="ui-modal__header">
-      <h3 id="reportes-pagos-title" class="ui-modal__title">
-        📊 Reporte de Pagos
-      </h3>
+      <h3 id="reportes-pagos-title" class="ui-modal__title">Reporte de Pagos</h3>
       <button
         class="ui-modal__close"
         type="button"
@@ -99,11 +95,11 @@ Validación de Pagos{% endblock %} {% block head_extra %}
     <div class="ui-modal__body">
       <!-- Filtros -->
       <div class="filters-panel__section">
-        <h3 class="filters-panel__title">🔍 Filtros avanzados</h3>
+        <h3 class="filters-panel__title">Filtros avanzados</h3>
 
         <div class="filters-panel__row">
           <div class="field">
-            <label class="field__label">🔎 Búsqueda</label>
+            <label class="field__label">Búsqueda</label>
             <input
               type="text"
               id="reporte-busqueda-pagos"
@@ -118,43 +114,43 @@ Validación de Pagos{% endblock %} {% block head_extra %}
           </div>
 
           <div class="field">
-            <label class="field__label">📌 Estado</label>
+            <label class="field__label">Estado</label>
             <select id="reporte-estado-pagos" class="field__input">
               <option value="">Todos</option>
-              <option value="pendiente">⏳ Pendiente</option>
-              <option value="aprobado">✅ Aprobado</option>
-              <option value="rechazado">❌ Rechazado</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
             </select>
           </div>
         </div>
 
         <div class="filters-panel__row">
           <div class="field">
-            <label class="field__label">💳 Método de pago</label>
+            <label class="field__label">Método de pago</label>
             <select id="reporte-metodo-pagos" class="field__input">
               <option value="">Todos</option>
-              <option value="pago_movil">📱 Pago Móvil</option>
-              <option value="zelle">🏦 Zelle</option>
-              <option value="binance">₿ Binance</option>
-              <option value="efectivo_usd">💵 Efectivo USD</option>
-              <option value="efectivo_bs">💵 Efectivo Bs</option>
+              <option value="pago_movil">Pago Móvil</option>
+              <option value="zelle">Zelle</option>
+              <option value="binance">Binance</option>
+              <option value="efectivo_usd">Efectivo USD</option>
+              <option value="efectivo_bs">Efectivo Bs</option>
             </select>
           </div>
 
           <div class="field">
-            <label class="field__label">💰 Moneda</label>
+            <label class="field__label">Moneda</label>
             <select id="reporte-moneda-pagos" class="field__input">
               <option value="">Todas</option>
-              <option value="USD">💵 USD</option>
-              <option value="VES">🇻🇪 VES</option>
-              <option value="USDT">₿ USDT</option>
+              <option value="USD">USD</option>
+              <option value="VES">VES</option>
+              <option value="USDT">USDT</option>
             </select>
           </div>
         </div>
 
         <div class="filters-panel__row">
           <div class="field">
-            <label class="field__label">📅 Fecha desde</label>
+            <label class="field__label">Fecha desde</label>
             <input
               type="date"
               id="reporte-fecha-desde-pagos"
@@ -163,7 +159,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
           </div>
 
           <div class="field">
-            <label class="field__label">📅 Fecha hasta</label>
+            <label class="field__label">Fecha hasta</label>
             <input
               type="date"
               id="reporte-fecha-hasta-pagos"
@@ -174,7 +170,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
 
         <div class="filters-panel__row">
           <div class="field">
-            <label class="field__label">💰 Monto mínimo</label>
+            <label class="field__label">Monto mínimo</label>
             <input
               type="number"
               id="reporte-monto-min-pagos"
@@ -186,7 +182,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
           </div>
 
           <div class="field">
-            <label class="field__label">💰 Monto máximo</label>
+            <label class="field__label">Monto máximo</label>
             <input
               type="number"
               id="reporte-monto-max-pagos"
@@ -209,12 +205,8 @@ Validación de Pagos{% endblock %} {% block head_extra %}
             flex-wrap: wrap;
           "
         >
-          <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">
-            📊 Generar reporte
-          </button>
-          <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">
-            🗑 Limpiar filtros
-          </button>
+          <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">Generar reporte</button>
+          <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
         </div>
       </div>
 
@@ -224,7 +216,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
         class="filters-panel__section"
         style="display: none"
       >
-        <h3 class="filters-panel__title">📈 Resumen</h3>
+        <h3 class="filters-panel__title">Resumen</h3>
         <div
           class="stats-grid"
           style="
@@ -233,130 +225,25 @@ Validación de Pagos{% endblock %} {% block head_extra %}
             gap: 0.75rem;
           "
         >
-          <div
-            class="stat-card"
-            style="
-              background: #e8f5e9;
-              padding: 0.75rem;
-              border-radius: 12px;
-              text-align: center;
-            "
-          >
-            <div
-              style="
-                font-size: 0.7rem;
-                color: #2e7d32;
-                text-transform: uppercase;
-              "
-            >
-              Total transacciones
-            </div>
-            <div
-              id="reporte-total-pagos"
-              style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
-            >
-              0
-            </div>
+          <div class="stat-card stat-card--total">
+            <div class="stat-card__label">Total transacciones</div>
+            <div id="reporte-total-pagos" class="stat-card__value">0</div>
           </div>
-          <div
-            class="stat-card"
-            style="
-              background: #fff3e0;
-              padding: 0.75rem;
-              border-radius: 12px;
-              text-align: center;
-            "
-          >
-            <div
-              style="
-                font-size: 0.7rem;
-                color: #f5a623;
-                text-transform: uppercase;
-              "
-            >
-              Monto total
-            </div>
-            <div
-              id="reporte-total-monto-pagos"
-              style="font-size: 1.5rem; font-weight: bold; color: #f5a623"
-            >
-              $0
-            </div>
+          <div class="stat-card stat-card--monto">
+            <div class="stat-card__label">Monto total</div>
+            <div id="reporte-total-monto-pagos" class="stat-card__value">$0</div>
           </div>
-          <div
-            class="stat-card"
-            style="
-              background: #e3f2fd;
-              padding: 0.75rem;
-              border-radius: 12px;
-              text-align: center;
-            "
-          >
-            <div
-              style="
-                font-size: 0.7rem;
-                color: #1976d2;
-                text-transform: uppercase;
-              "
-            >
-              Pendientes
-            </div>
-            <div
-              id="reporte-pendientes-pagos"
-              style="font-size: 1.5rem; font-weight: bold; color: #1976d2"
-            >
-              0
-            </div>
+          <div class="stat-card stat-card--pendiente">
+            <div class="stat-card__label">Pendientes</div>
+            <div id="reporte-pendientes-pagos" class="stat-card__value">0</div>
           </div>
-          <div
-            class="stat-card"
-            style="
-              background: #e8f5e9;
-              padding: 0.75rem;
-              border-radius: 12px;
-              text-align: center;
-            "
-          >
-            <div
-              style="
-                font-size: 0.7rem;
-                color: #2e7d32;
-                text-transform: uppercase;
-              "
-            >
-              Aprobados
-            </div>
-            <div
-              id="reporte-aprobados-pagos"
-              style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
-            >
-              0
-            </div>
+          <div class="stat-card stat-card--aprobado">
+            <div class="stat-card__label">Aprobados</div>
+            <div id="reporte-aprobados-pagos" class="stat-card__value">0</div>
           </div>
-          <div
-            class="stat-card"
-            style="
-              background: #ffebee;
-              padding: 0.75rem;
-              border-radius: 12px;
-              text-align: center;
-            "
-          >
-            <div
-              style="
-                font-size: 0.7rem;
-                color: #c62828;
-                text-transform: uppercase;
-              "
-            >
-              Rechazados
-            </div>
-            <div
-              id="reporte-rechazados-pagos"
-              style="font-size: 1.5rem; font-weight: bold; color: #c62828"
-            >
-              0
-            </div>
+          <div class="stat-card stat-card--rechazado">
+            <div class="stat-card__label">Rechazados</div>
+            <div id="reporte-rechazados-pagos" class="stat-card__value">0</div>
           </div>
         </div>
       </div>
@@ -367,7 +254,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
         class="filters-panel__section"
         style="display: none"
       >
-        <h3 class="filters-panel__title">📋 Previsualización</h3>
+        <h3 class="filters-panel__title">Previsualización</h3>
         <div class="table-wrap" style="max-height: 400px; overflow-y: auto">
           <table class="table">
             <thead>
@@ -396,23 +283,9 @@ Validación de Pagos{% endblock %} {% block head_extra %}
 
       <!-- Botones de exportación -->
       <div class="ui-form__actions">
-        <button
-          id="btn-exportar-excel-pagos"
-          class="ui-btn ui-btn--primary"
-          disabled
-        >
-          📊 Exportar Excel
-        </button>
-        <button
-          id="btn-exportar-pdf-pagos"
-          class="ui-btn ui-btn--primary"
-          disabled
-        >
-          📄 Exportar PDF
-        </button>
-        <button id="btn-imprimir-pagos" class="ui-btn ui-btn--ghost" disabled>
-          🖨 Imprimir
-        </button>
+        <button id="btn-exportar-excel-pagos" class="ui-btn ui-btn--primary" disabled>Exportar Excel</button>
+        <button id="btn-exportar-pdf-pagos" class="ui-btn ui-btn--primary" disabled>Exportar PDF</button>
+        <button id="btn-imprimir-pagos" class="ui-btn ui-btn--ghost" disabled>Imprimir</button>
       </div>
     </div>
   </div>

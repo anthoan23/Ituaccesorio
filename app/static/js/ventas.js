@@ -359,7 +359,7 @@ async function cargarCarrito() {
 
     try {
         const data = await fetchJson("/api/carrito");
-        console.log("📦 Datos del carrito desde backend:", data);
+        console.log("Datos del carrito desde backend:", data);
         
         // Los items pueden venir en diferentes formatos
         let items = [];
@@ -372,11 +372,11 @@ async function cargarCarrito() {
             items = data;
         }
         
-        console.log("📋 Items encontrados:", items);
+        console.log("Items encontrados:", items);
         
         if (items.length > 0) {
             carritoItems = items.map(item => {
-                console.log("🔍 Item raw:", item);
+                console.log("Item raw:", item);
                 
                 // Intentar obtener el ID desde diferentes claves
                 const id = item.ID_inventario || item.producto_id || item.id || item.inventario_id;
@@ -421,20 +421,20 @@ async function cargarCarrito() {
                     Existencia: stock
                 };
                 
-                console.log("✅ Item normalizado:", itemNormalizado);
+                console.log("Item normalizado:", itemNormalizado);
                 return itemNormalizado;
             });
         } else {
             carritoItems = [];
         }
         
-        console.log("📊 Carrito final:", carritoItems);
+        console.log("Carrito final:", carritoItems);
         
         actualizarBadgeCarrito();
         renderCarritoModal();
         return data;
     } catch (err) {
-        console.error("❌ Error cargando carrito:", err);
+        console.error("Error cargando carrito:", err);
         if (container) {
             const carritoMsg =
                 err.message === "Autenticación requerida."
@@ -451,7 +451,7 @@ async function cargarCarrito() {
 
 async function agregarCarrito(inventarioId, cantidad) {
     try {
-        console.log("🛒 Agregando al carrito:", { inventarioId, cantidad });
+        console.log("Agregando al carrito:", { inventarioId, cantidad });
         
         const response = await fetchJson("/api/carrito", {
             method: "POST",
@@ -461,7 +461,7 @@ async function agregarCarrito(inventarioId, cantidad) {
             }),
         });
         
-        console.log("✅ Respuesta:", response);
+        console.log("Respuesta:", response);
         
         if (response.success) {
             await cargarCarrito();
@@ -470,7 +470,7 @@ async function agregarCarrito(inventarioId, cantidad) {
             mostrarToast(response.error || "Error al agregar al carrito", "error");
         }
     } catch (err) {
-        console.error("❌ Error:", err);
+        console.error("Error:", err);
         mostrarToast(err.message, "error");
     }
 }
@@ -557,7 +557,7 @@ function renderCarritoModal() {
 
     if (!container) return;
 
-    console.log("🔄 Renderizando carrito, items:", carritoItems);
+    console.log("Renderizando carrito, items:", carritoItems);
 
     if (!carritoItems || carritoItems.length === 0) {
         container.innerHTML =

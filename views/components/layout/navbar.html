@@ -18,6 +18,8 @@
         <nav class="drawer__nav" id="drawerNav" data-nav-container>
             {# Verificar si es admin #}
             {% set es_admin = g.user and (g.user.rol_id == 1 or g.user.rol_nombre == 'admin') %}
+            {# Verificar si es cliente (rol 'cliente' o rol_id 7) #}
+            {% set es_cliente = g.user and ((g.user.rol_nombre is defined and g.user.rol_nombre|lower == 'cliente') or (g.user.rol_id is defined and g.user.rol_id == 7)) %}
             
             {% if es_admin %}
                 {# ==================== ADMIN: VER TODO ==================== #}
@@ -622,6 +624,7 @@
             </div>
 
             <!-- ===== CARRITO DE COMPRAS ===== -->
+            {% if es_cliente %}
             <div class="cart-widget" data-cart-root>
                 <button class="icon-btn" type="button" aria-label="Carrito de compras" data-cart-toggle>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -661,6 +664,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Mensajes -->
             <button class="icon-btn" aria-label="Mensajes">

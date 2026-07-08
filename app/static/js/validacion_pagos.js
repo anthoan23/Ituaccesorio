@@ -119,6 +119,11 @@
     }
   }
 
+  function getEstadoFromPago(p) {
+    const raw = p && (p.estado || p.Estado || p.status || p.estado_pago || "");
+    return String(raw || "").toLowerCase();
+  }
+
   function formatDateShort(dateString) {
     if (!dateString) return "N/A";
     try {
@@ -183,17 +188,13 @@
         detalleContainer.innerHTML = html;
       } else {
         detalleContainer.innerHTML = `
-          <div class="empty-detalle">
-            📦 No hay productos registrados en esta venta
-          </div>
+          <div class="empty-detalle">No hay productos registrados en esta venta</div>
         `;
       }
     } catch (err) {
       console.error("Error en cargarDetalleFactura:", err);
       detalleContainer.innerHTML = `
-        <div class="error-detalle">
-          ❌ Error: ${escapeHtml(err.message)}
-        </div>
+        <div class="error-detalle">Error: ${escapeHtml(err.message)}</div>
       `;
       mostrarToast(err.message, "error");
     }
@@ -205,17 +206,17 @@
     if (detallesAbiertos.has(facturaId)) {
       detalleContainer.style.display = "none";
       detallesAbiertos.delete(facturaId);
-      btnElement.innerHTML = "📋 Ver productos";
+      btnElement.innerHTML = "Ver productos";
       btnElement.classList.remove("active");
     } else {
       detalleContainer.style.display = "block";
       detallesAbiertos.add(facturaId);
-      btnElement.innerHTML = "⏳ Cargando...";
+      btnElement.innerHTML = "Cargando...";
       btnElement.classList.add("active");
 
-      detalleContainer.innerHTML = '<div class="loading-productos">🔄 Cargando productos...</div>';
+      detalleContainer.innerHTML = '<div class="loading-productos">Cargando productos...</div>';
       await cargarDetalleFactura(facturaId, detalleContainer);
-      btnElement.innerHTML = "📋 Ocultar productos";
+      btnElement.innerHTML = "Ocultar productos";
     }
   }
 
@@ -303,30 +304,30 @@
     const container = document.getElementById(`${tipo}-list`);
     if (!container) return;
 
+    container.innerHTML = ""; // limpiar siempre antes de renderizar
+
     if (!pagos || !pagos.length) {
-      container.innerHTML = '<div class="empty-state">📭 No hay pagos en esta lista</div>';
+      container.innerHTML = '<div class="empty-state">No hay pagos en esta lista</div>';
       return;
     }
 
     let html = "";
 
     for (const p of pagos) {
-      let metodoIcono = "💳";
-      if (p.metodo_pago === "pago_movil") metodoIcono = "📱";
-      else if (p.metodo_pago === "zelle") metodoIcono = "🏦";
-      else if (p.metodo_pago === "binance") metodoIcono = "₿";
-      else if (p.metodo_pago === "efectivo_bs") metodoIcono = "💵";
-      else if (p.metodo_pago === "efectivo_usd") metodoIcono = "💵";
+      // normalizar campo estado desde distintos posibles nombres devueltos por la API
+      const estadoRaw = p.estado || p.Estado || p.status || p.estado_pago || "";
+      const estadoNorm = String(estadoRaw).toLowerCase();
+      let metodoIcono = "";
 
       const captureImageHtml =
         p.capture_image && p.capture_image !== "NULL" && p.capture_image !== ""
-          ? `
+            ? `
           <div class="capture-image">
             <img src="${escapeHtml(p.capture_image)}" alt="Comprobante de pago" onclick="window.open('${escapeHtml(p.capture_image)}', '_blank')" loading="lazy">
-            <div style="font-size: 0.7rem; color: #888; margin-top: 0.5rem;">🖱️ Haz clic para ampliar</div>
+            <div class="capture-hint">Haz clic para ampliar</div>
           </div>
         `
-          : '<div style="color: #999; font-size: 0.8rem; margin: 0.5rem 0; padding: 0.5rem; background: #f8f9fa; border-radius: 8px;">📷 Sin comprobante adjunto</div>';
+            : '<div class="no-capture">Sin comprobante adjunto</div>';
 
       let montoFormateado = "N/A";
       if (p.Monto && p.Monto !== "NULL") {
@@ -346,81 +347,76 @@
         tipo === "pendientes"
           ? `
           <div class="pago-actions">
-            <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">✅ Aprobar</button>
-            <button class="btn btn--ghost btn-rechazar" data-factura="${p.factura_id}">❌ Rechazar</button>
+            <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">Aprobar</button>
+            <button class="btn btn--ghost btn-rechazar" data-factura="${p.factura_id}">Rechazar</button>
           </div>
         `
           : "";
 
+      // usar el estado real si está presente, si no, usar el 'tipo' de la pestaña
       let estadoTexto = "";
       let estadoClase = "";
-      if (tipo === "pendientes") {
-        estadoTexto = "⏳ Pendiente";
+      const estadoFinal = estadoNorm || tipo;
+      if (estadoFinal === "pendiente") {
+        estadoTexto = "Pendiente";
         estadoClase = "pendiente";
-      } else if (tipo === "aprobados") {
-        estadoTexto = "✅ Aprobado";
+      } else if (estadoFinal === "aprobado" || estadoFinal === "aprobados") {
+        estadoTexto = "Aprobado";
         estadoClase = "aprobado";
-      } else {
-        estadoTexto = "❌ Rechazado";
+      } else if (estadoFinal === "rechazado" || estadoFinal === "rechazados") {
+        estadoTexto = "Rechazado";
         estadoClase = "rechazado";
+      } else {
+        estadoTexto = estadoFinal || "Pendiente";
+        estadoClase = "pendiente";
       }
 
       const estaAbierto = detallesAbiertos.has(p.factura_id);
 
       html += `
-        <div class="pago-card" data-factura="${p.factura_id}">
+        <div class="pago-card pago-card--enter" data-factura="${p.factura_id}">
           <div class="pago-header">
-            <span class="pago-factura">🧾 Factura: ${escapeHtml(p.factura_id)}</span>
-            <span class="pago-estado ${estadoClase}">${estadoTexto}</span>
+            <div class="pago-factura">Factura: ${escapeHtml(p.factura_id)}</div>
+            <div class="pago-estado ${estadoClase}">${estadoTexto}</div>
           </div>
-          
-          <div class="pago-info-grid">
-            <div class="info-row">
-              <strong>📅 Fecha de venta</strong>
-              <span>${formatDate(p.fecha_venta)}</span>
+
+          <div class="pago-main" style="display:grid; grid-template-columns: 220px 1fr; gap:1rem; align-items:start;">
+            <div class="pago-capture">
+              ${captureImageHtml}
             </div>
-            <div class="info-row">
-              <strong>👤 Cliente</strong>
-              <span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || "")}</span>
-            </div>
-            <div class="info-row">
-              <strong>📞 Teléfono</strong>
-              <span>${escapeHtml(p.cliente_celular || "N/A")}</span>
-            </div>
-            <div class="info-row">
-              <strong>💰 Moneda</strong>
-              <span>${escapeHtml(p.Moneda || "N/A")}</span>
-            </div>
-            <div class="info-row">
-              <strong>${metodoIcono} Método de pago</strong>
-              <span class="metodo-pago">${escapeHtml(p.metodo_pago || "N/A")}</span>
-            </div>
-            <div class="info-row">
-              <strong>🔢 Referencia</strong>
-              <span>${escapeHtml(p.Referencia || "N/A")}</span>
-            </div>
-            <div class="info-row">
-              <strong>💰 Monto Pagado</strong>
-              <span>${montoFormateado}</span>
+            <div class="pago-summary">
+              <div class="detail-info-grid">
+                <div class="detail-info-item"><strong>Cliente</strong><span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || "")}</span></div>
+                <div class="detail-info-item"><strong>Teléfono</strong><span>${escapeHtml(p.cliente_celular || "N/A")}</span></div>
+                <div class="detail-info-item"><strong>Correo</strong><span>${escapeHtml(p.Correo_cliente || 'N/A')}</span></div>
+                <div class="detail-info-item"><strong>Fecha</strong><span>${formatDate(p.fecha_venta)}</span></div>
+                <div class="detail-info-item"><strong>Método</strong><span>${escapeHtml(p.metodo_pago || "N/A")}</span></div>
+                <div class="detail-info-item"><strong>Referencia</strong><span>${escapeHtml(p.Referencia || "N/A")}</span></div>
+                <div class="detail-info-item"><strong>Monto Pagado</strong><span>${montoFormateado}</span></div>
+              </div>
             </div>
           </div>
-          
-          ${captureImageHtml}
-          
-          <button class="btn-ver-detalle ${estaAbierto ? "active" : ""}" data-factura="${p.factura_id}">
-            📋 ${estaAbierto ? "Ocultar productos" : "Ver productos"}
-          </button>
-          
+
+          <div style="margin-top:0.75rem">
+            <button class="btn-ver-detalle ${estaAbierto ? "active" : ""}" data-factura="${p.factura_id}">${estaAbierto ? "Ocultar productos" : "Ver productos"}</button>
+          </div>
+
           <div id="detalle-${p.factura_id}" class="productos-list" style="display: ${estaAbierto ? "block" : "none"};">
-            ${estaAbierto ? '<div class="loading-productos">🔄 Cargando productos...</div>' : ""}
+            ${estaAbierto ? '<div class="loading-productos">Cargando productos...</div>' : ""}
           </div>
-          
+
           ${accionButtons}
         </div>
       `;
     }
 
     container.innerHTML = html;
+
+    // animar entrada: remover la clase después de la animación para permitir reanimar
+    const entering = container.querySelectorAll('.pago-card--enter');
+    for (const el of entering) {
+      el.addEventListener('animationend', () => el.classList.remove('pago-card--enter'));
+    }
 
     const verDetalleBtns = container.querySelectorAll(".btn-ver-detalle");
     for (const btn of verDetalleBtns) {
@@ -430,30 +426,38 @@
         toggleDetalle(facturaId, btn);
       });
     }
+    // listeners para acciones (si existen en la lista)
+    const aprobarBtns = container.querySelectorAll(".btn-aprobar");
+    for (const btn of aprobarBtns) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        aprobarPago(btn.dataset.factura);
+      });
+    }
 
-    if (tipo === "pendientes") {
-      const aprobarBtns = container.querySelectorAll(".btn-aprobar");
-      for (const btn of aprobarBtns) {
-        btn.addEventListener("click", () => aprobarPago(btn.dataset.factura));
-      }
-
-      const rechazarBtns = container.querySelectorAll(".btn-rechazar");
-      for (const btn of rechazarBtns) {
-        btn.addEventListener("click", () => mostrarModalRechazo(btn.dataset.factura));
-      }
+    const rechazarBtns = container.querySelectorAll(".btn-rechazar");
+    for (const btn of rechazarBtns) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        mostrarModalRechazo(btn.dataset.factura);
+      });
     }
   }
 
   async function cargarPagosPendientes() {
     try {
       const data = await fetchJson("/api/validacion-pagos/pendientes");
-      renderPagosList(data.pagos, "pendientes");
+      const pagos = (data.pagos || []).filter(p => {
+        const estado = getEstadoFromPago(p);
+        return !estado || estado === 'pendiente';
+      });
+      renderPagosList(pagos, "pendientes");
     } catch (err) {
       console.error("Error cargando pagos pendientes:", err);
       mostrarToast(err.message, "error");
       const container = document.getElementById("pendientes-list");
       if (container) {
-        container.innerHTML = '<div class="empty-state">❌ Error al cargar pagos pendientes</div>';
+        container.innerHTML = '<div class="empty-state">Error al cargar pagos pendientes</div>';
       }
     }
   }
@@ -461,12 +465,22 @@
   async function cargarPagosAprobados() {
     try {
       const data = await fetchJson("/api/validacion-pagos/aprobados");
-      renderPagosList(data.pagos, "aprobados");
+      console.debug('[validacion] /aprobados -> total recibidos', (data.pagos || []).length);
+      const estados = (data.pagos || []).map(p => ({factura: p.factura_id, estado_raw: p.estado, estado_norm: getEstadoFromPago(p)})).slice(0,20);
+      console.debug('[validacion] muestras estados aprobados', estados);
+      const pagos = (data.pagos || []).filter(p => {
+        const estado = getEstadoFromPago(p);
+        // fallback: si la API no trae estado correcto, usar campos de aprobación
+        const hasAprobacion = Boolean(p.Fecha_aprobacion || p.Aprobado_por);
+        return estado === 'aprobado' || hasAprobacion;
+      });
+      console.debug('[validacion] aprobados filtrados ->', pagos.length);
+      renderPagosList(pagos, "aprobados");
     } catch (err) {
       console.error("Error cargando pagos aprobados:", err);
       const container = document.getElementById("aprobados-list");
       if (container) {
-        container.innerHTML = '<div class="empty-state">❌ Error al cargar pagos aprobados</div>';
+        container.innerHTML = '<div class="empty-state">Error al cargar pagos aprobados</div>';
       }
     }
   }
@@ -474,12 +488,21 @@
   async function cargarPagosRechazados() {
     try {
       const data = await fetchJson("/api/validacion-pagos/rechazados");
-      renderPagosList(data.pagos, "rechazados");
+      console.debug('[validacion] /rechazados -> total recibidos', (data.pagos || []).length);
+      const estadosR = (data.pagos || []).map(p => ({factura: p.factura_id, estado_raw: p.estado, estado_norm: getEstadoFromPago(p)})).slice(0,20);
+      console.debug('[validacion] muestras estados rechazados', estadosR);
+      const pagos = (data.pagos || []).filter(p => {
+        const estado = getEstadoFromPago(p);
+        const hasRechazo = Boolean(p.Fecha_rechazo || p.Rechazado_por || p.Motivo_rechazo);
+        return estado === 'rechazado' || hasRechazo;
+      });
+      console.debug('[validacion] rechazados filtrados ->', pagos.length);
+      renderPagosList(pagos, "rechazados");
     } catch (err) {
       console.error("Error cargando pagos rechazados:", err);
       const container = document.getElementById("rechazados-list");
       if (container) {
-        container.innerHTML = '<div class="empty-state">❌ Error al cargar pagos rechazados</div>';
+        container.innerHTML = '<div class="empty-state">Error al cargar pagos rechazados</div>';
       }
     }
   }
@@ -489,23 +512,32 @@
     if (!confirmar) return;
 
     const btn = document.querySelector(`.btn-aprobar[data-factura="${facturaId}"]`);
+    const btnRechazar = document.querySelector(`.btn-rechazar[data-factura="${facturaId}"]`);
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "⏳ Procesando...";
+      btn.textContent = "Procesando...";
     }
+    if (btnRechazar) btnRechazar.disabled = true;
 
     try {
       await fetchJson(`/api/validacion-pagos/aprobar/${facturaId}`, { method: "POST" });
-      mostrarToast(`✅ Pago ${facturaId} aprobado correctamente`, "success");
+      mostrarToast(`Pago ${facturaId} aprobado correctamente`, "success");
       detallesAbiertos.clear();
       await Promise.all([cargarPagosPendientes(), cargarPagosAprobados()]);
+      // animar tarjeta afectada si está en DOM
+      const card = document.querySelector(`.pago-card[data-factura="${facturaId}"]`);
+      if (card) {
+        card.classList.add('status-updated');
+        setTimeout(() => card.classList.remove('status-updated'), 1200);
+      }
     } catch (err) {
       mostrarToast(err.message, "error");
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "✅ Aprobar";
+        btn.textContent = "Aprobar";
       }
+      if (btnRechazar) btnRechazar.disabled = false;
     }
   }
 
@@ -531,18 +563,38 @@
       return;
     }
 
+    const confirmarBtn = document.getElementById("confirmar-rechazo");
+    const cancelarBtn = document.getElementById("cancelar-rechazo");
     try {
+      if (confirmarBtn) {
+        confirmarBtn.disabled = true;
+        confirmarBtn.textContent = "Procesando...";
+      }
+      if (cancelarBtn) cancelarBtn.disabled = true;
+
       await fetchJson(`/api/validacion-pagos/rechazar/${facturaRechazoActual}`, {
         method: "POST",
         body: JSON.stringify({ motivo }),
       });
-      mostrarToast(`❌ Pago ${facturaRechazoActual} rechazado`, "success");
+
+      mostrarToast(`Pago ${facturaRechazoActual} rechazado`, "success");
+      // animar tarjeta afectada
+      const cardR = document.querySelector(`.pago-card[data-factura="${facturaRechazoActual}"]`);
+      if (cardR) {
+        cardR.classList.add('status-updated');
+        setTimeout(() => cardR.classList.remove('status-updated'), 1200);
+      }
       cerrarModalRechazo();
       detallesAbiertos.clear();
-      cargarPagosPendientes();
-      cargarPagosRechazados();
+      await Promise.all([cargarPagosPendientes(), cargarPagosRechazados()]);
     } catch (err) {
-      mostrarToast(err.message, "error");
+      mostrarToast(err.message || "Error al rechazar el pago", "error");
+    } finally {
+      if (confirmarBtn) {
+        confirmarBtn.disabled = false;
+        confirmarBtn.textContent = "Confirmar rechazo";
+      }
+      if (cancelarBtn) cancelarBtn.disabled = false;
     }
   }
 
@@ -556,6 +608,7 @@
     const tabBtns = document.querySelectorAll(".tab-btn");
     for (const btn of tabBtns) {
       btn.addEventListener("click", () => {
+        console.debug('[validacion] tab click ->', btn.dataset.tab);
         for (const b of tabBtns) {
           b.classList.remove("active");
         }
@@ -573,9 +626,16 @@
 
         detallesAbiertos.clear();
 
-        if (tab === "pendientes") cargarPagosPendientes();
-        else if (tab === "aprobados") cargarPagosAprobados();
-        else if (tab === "rechazados") cargarPagosRechazados();
+        if (tab === "pendientes") {
+          console.debug('[validacion] cargarPagosPendientes llamado');
+          cargarPagosPendientes();
+        } else if (tab === "aprobados") {
+          console.debug('[validacion] cargarPagosAprobados llamado');
+          cargarPagosAprobados();
+        } else if (tab === "rechazados") {
+          console.debug('[validacion] cargarPagosRechazados llamado');
+          cargarPagosRechazados();
+        }
       });
     }
   }
@@ -623,11 +683,11 @@
 
   function getEstadoBadge(estado) {
     if (estado === "pendiente") {
-      return '<span class="pago-estado pendiente">⏳ Pendiente</span>';
+      return '<span class="pago-estado pendiente">Pendiente</span>';
     } else if (estado === "aprobado") {
-      return '<span class="pago-estado aprobados">✅ Aprobado</span>';
+      return '<span class="pago-estado aprobados">Aprobado</span>';
     } else {
-      return '<span class="pago-estado rechazados">❌ Rechazado</span>';
+      return '<span class="pago-estado rechazados">Rechazado</span>';
     }
   }
 
@@ -693,7 +753,7 @@
               <td>${getEstadoBadge(p.estado)}</td>
               <td style="text-align: center;">${p.total_productos || 0}</td>
               <td style="text-align: center;">
-                <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">📋 Ver detalle</button>
+                <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver detalle</button>
               </td>
             </tr>
           `).join("");
@@ -710,7 +770,7 @@
       if (btnExportarPdfPagos) btnExportarPdfPagos.disabled = false;
       if (btnImprimirPagos) btnImprimirPagos.disabled = false;
       
-      mostrarToast(`✅ Reporte generado: ${reporteDatosActualesPagos.length} transacciones`, "success");
+      mostrarToast(`Reporte generado: ${reporteDatosActualesPagos.length} transacciones`, "success");
       
     } catch (err) {
       mostrarToast(err.message || "Error al generar el reporte", "error");

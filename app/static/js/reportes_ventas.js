@@ -128,11 +128,11 @@
 
   function getEstadoBadge(estado) {
     if (estado === "pendiente") {
-      return '<span class="pago-estado pendiente">⏳ Pendiente</span>';
+      return '<span class="pago-estado pendiente">Pendiente</span>';
     } else if (estado === "aprobado") {
-      return '<span class="pago-estado aprobado">✅ Aprobado</span>';
+      return '<span class="pago-estado aprobado">Aprobado</span>';
     } else {
-      return '<span class="pago-estado rechazado">❌ Rechazado</span>';
+      return '<span class="pago-estado rechazado">Rechazado</span>';
     }
   }
 
@@ -163,7 +163,7 @@
     
     const btn = document.getElementById("btn-generar-reporte");
     btn.disabled = true;
-    btn.textContent = "⏳ Cargando...";
+    btn.textContent = "Cargando...";
     
     try {
       const data = await fetchJson("/api/reportes-ventas/listar", {
@@ -197,7 +197,7 @@
             <td>${formatMoney(p.monto_pagado, p.venta_moneda)}</td>
             <td>${getEstadoBadge(p.estado)}</td>
             <td style="text-align: center;">
-              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">📋 Ver</button>
+              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver</button>
             </td>
           </tr>
         `).join("");
@@ -211,13 +211,13 @@
       document.getElementById("btn-exportar-pdf").disabled = false;
       document.getElementById("btn-imprimir").disabled = false;
       
-      mostrarToast(`✅ Reporte generado: ${reporteDatosActuales.length} transacciones`, "success");
+      mostrarToast(`Reporte generado: ${reporteDatosActuales.length} transacciones`, "success");
       
     } catch (err) {
       mostrarToast(err.message || "Error al generar el reporte", "error");
     } finally {
       btn.disabled = false;
-      btn.textContent = "📊 Generar reporte";
+      btn.textContent = "Generar reporte";
     }
   }
 
@@ -433,7 +433,7 @@
         }),
       });
 
-      mostrarToast(`✅ Venta registrada: ${data.factura_id}`, "success");
+      mostrarToast(`Venta registrada: ${data.factura_id}`, "success");
       itemsLocal = [];
       renderItemsLocal();
       document.getElementById("form-venta-local")?.reset();
@@ -482,7 +482,7 @@
             <td>${formatMoney(v.monto, v.Moneda)}</td>
             <td>${getEstadoBadge(v.estado)}</td>
             <td style="text-align: center;">
-              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(v.factura_id)}">📋 Ver</button>
+              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(v.factura_id)}">Ver</button>
             </td>
           </tr>
         `).join("");
@@ -492,7 +492,7 @@
         });
       }
     } catch (err) {
-      tabla.innerHTML = `<tr><td colspan="7" class="table__empty">❌ Error: ${escapeHtml(err.message)}</td></tr>`;
+      tabla.innerHTML = `<tr><td colspan="7" class="table__empty">Error: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
