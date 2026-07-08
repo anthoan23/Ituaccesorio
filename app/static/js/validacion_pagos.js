@@ -124,6 +124,30 @@
     return String(raw || "").toLowerCase();
   }
 
+  function showDebugPanel(tab, total, muestraEstados) {
+    try {
+      let panel = document.getElementById('validacion-debug-panel');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'validacion-debug-panel';
+        panel.style.position = 'fixed';
+        panel.style.right = '12px';
+        panel.style.bottom = '12px';
+        panel.style.zIndex = '9999';
+        panel.style.background = 'rgba(0,0,0,0.6)';
+        panel.style.color = '#fff';
+        panel.style.padding = '8px 12px';
+        panel.style.borderRadius = '10px';
+        panel.style.fontSize = '12px';
+        panel.style.fontFamily = 'Manrope, sans-serif';
+        document.body.appendChild(panel);
+      }
+      panel.innerHTML = `<strong>${tab}</strong>: ${total} registros<br/><small>${muestraEstados.slice(0,6).map(s=>s.factura+':'+(s.estado_norm||s.estado_raw)).join(' | ')}</small>`;
+    } catch (e) {
+      console.error('Error mostrando debug panel', e);
+    }
+  }
+
   function formatDateShort(dateString) {
     if (!dateString) return "N/A";
     try {
@@ -304,6 +328,18 @@
     const container = document.getElementById(`${tipo}-list`);
     if (!container) return;
 
+    // Limpia contenedores de otras pestañas para evitar duplicados residuales
+    try {
+      ['pendientes','aprobados','rechazados'].forEach(t => {
+        if (t !== tipo) {
+          const c = document.getElementById(`${t}-list`);
+          if (c) c.innerHTML = '';
+        }
+      });
+    } catch (e) {
+      console.error('Error limpiando otros contenedores', e);
+    }
+
     container.innerHTML = ""; // limpiar siempre antes de renderizar
 
     if (!pagos || !pagos.length) {
@@ -315,8 +351,23 @@
 
     for (const p of pagos) {
       // normalizar campo estado desde distintos posibles nombres devueltos por la API
-      const estadoRaw = p.estado || p.Estado || p.status || p.estado_pago || "";
-      const estadoNorm = String(estadoRaw).toLowerCase();
+      const estadoNorm = getEstadoFromPago(p);
+
+      // inferir estado desde campos de fecha/aprobacion/rechazo si no viene en el campo
+      let estadoInferido = estadoNorm;
+      if (!estadoInferido) {
+        if (p.Fecha_aprobacion || p.Aprobado_por) estadoInferido = 'aprobado';
+        else if (p.Fecha_rechazo || p.Rechazado_por || p.Motivo_rechazo) estadoInferido = 'rechazado';
+        else estadoInferido = 'pendiente';
+      }
+
+      // si se pasó un tipo (pestaña), filtrar aquí también para seguridad
+      if (tipo) {
+        const tipoNorm = tipo.replace(/s$/,'').toLowerCase(); // 'aprobados' -> 'aprobado'
+        if (tipoNorm !== estadoInferido) {
+          continue; // saltar este pago, no corresponde a la pestaña
+        }
+      }
       let metodoIcono = "";
 
       const captureImageHtml =
@@ -353,10 +404,10 @@
         `
           : "";
 
-      // usar el estado real si está presente, si no, usar el 'tipo' de la pestaña
+      // usar el estado inferido para mostrar texto/clase
       let estadoTexto = "";
       let estadoClase = "";
-      const estadoFinal = estadoNorm || tipo;
+      const estadoFinal = estadoInferido;
       if (estadoFinal === "pendiente") {
         estadoTexto = "Pendiente";
         estadoClase = "pendiente";
@@ -411,6 +462,7 @@
     }
 
     container.innerHTML = html;
+    console.log('[validacion] renderPagosList -> escrito en', `${tipo}-list`, 'elementos:', container.querySelectorAll('.pago-card').length);
 
     // animar entrada: remover la clase después de la animación para permitir reanimar
     const entering = container.querySelectorAll('.pago-card--enter');
@@ -465,16 +517,21 @@
   async function cargarPagosAprobados() {
     try {
       const data = await fetchJson("/api/validacion-pagos/aprobados");
-      console.debug('[validacion] /aprobados -> total recibidos', (data.pagos || []).length);
+      const totalRecibidos = (data.pagos || []).length;
       const estados = (data.pagos || []).map(p => ({factura: p.factura_id, estado_raw: p.estado, estado_norm: getEstadoFromPago(p)})).slice(0,20);
-      console.debug('[validacion] muestras estados aprobados', estados);
+      console.log('[validacion] /aprobados -> total recibidos', totalRecibidos);
+      console.log('[validacion] muestras estados aprobados', estados);
+      if ((data.pagos || []).length > 0) {
+        console.log('[validacion] muestra objeto[0]', data.pagos[0]);
+        console.log('[validacion] claves objeto[0]', Object.keys(data.pagos[0]));
+      }
       const pagos = (data.pagos || []).filter(p => {
         const estado = getEstadoFromPago(p);
-        // fallback: si la API no trae estado correcto, usar campos de aprobación
         const hasAprobacion = Boolean(p.Fecha_aprobacion || p.Aprobado_por);
         return estado === 'aprobado' || hasAprobacion;
       });
-      console.debug('[validacion] aprobados filtrados ->', pagos.length);
+      console.log('[validacion] aprobados filtrados ->', pagos.length);
+      showDebugPanel('aprobados', totalRecibidos, estados);
       renderPagosList(pagos, "aprobados");
     } catch (err) {
       console.error("Error cargando pagos aprobados:", err);
@@ -488,15 +545,21 @@
   async function cargarPagosRechazados() {
     try {
       const data = await fetchJson("/api/validacion-pagos/rechazados");
-      console.debug('[validacion] /rechazados -> total recibidos', (data.pagos || []).length);
+      const totalRecibidosR = (data.pagos || []).length;
       const estadosR = (data.pagos || []).map(p => ({factura: p.factura_id, estado_raw: p.estado, estado_norm: getEstadoFromPago(p)})).slice(0,20);
-      console.debug('[validacion] muestras estados rechazados', estadosR);
+      console.log('[validacion] /rechazados -> total recibidos', totalRecibidosR);
+      console.log('[validacion] muestras estados rechazados', estadosR);
+      if ((data.pagos || []).length > 0) {
+        console.log('[validacion] muestra objeto[0] rech', data.pagos[0]);
+        console.log('[validacion] claves objeto[0] rech', Object.keys(data.pagos[0]));
+      }
       const pagos = (data.pagos || []).filter(p => {
         const estado = getEstadoFromPago(p);
         const hasRechazo = Boolean(p.Fecha_rechazo || p.Rechazado_por || p.Motivo_rechazo);
         return estado === 'rechazado' || hasRechazo;
       });
-      console.debug('[validacion] rechazados filtrados ->', pagos.length);
+      console.log('[validacion] rechazados filtrados ->', pagos.length);
+      showDebugPanel('rechazados', totalRecibidosR, estadosR);
       renderPagosList(pagos, "rechazados");
     } catch (err) {
       console.error("Error cargando pagos rechazados:", err);

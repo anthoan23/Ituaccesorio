@@ -116,3 +116,6 @@ body{
     100%{box-shadow:var(--shadow-dash);border-color:var(--border-color);background:var(--bg-card)}
 }
 
+/* Debug panel (temporary) */
+#validacion-debug-panel{box-shadow:0 8px 20px rgba(0,0,0,0.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+

@@ -118,6 +118,7 @@ def api_pagos_pendientes():
     try:
         modelo = ValidacionPagosModel()
         pagos = modelo.obtener_pagos_pendientes()
+        print(f"[api] /pendientes -> registros devueltos: {len(pagos)}")
         return jsonify({"success": True, "pagos": pagos})
     except Exception as e:
         print(f"Error: {e}")
@@ -132,6 +133,7 @@ def api_pagos_aprobados():
     try:
         modelo = ValidacionPagosModel()
         pagos = modelo.obtener_pagos_aprobados()
+        print(f"[api] /aprobados -> registros devueltos: {len(pagos)}")
         return jsonify({"success": True, "pagos": pagos})
     except Exception as e:
         print(f"Error: {e}")
@@ -145,6 +147,7 @@ def api_pagos_rechazados():
     try:
         modelo = ValidacionPagosModel()
         pagos = modelo.obtener_pagos_rechazados()
+        print(f"[api] /rechazados -> registros devueltos: {len(pagos)}")
         return jsonify({"success": True, "pagos": pagos})
     except Exception as e:
         print(f"Error: {e}")

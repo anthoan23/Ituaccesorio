@@ -103,7 +103,7 @@ class ValidacionPagosModel:
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
-                WHERE mp.Estado_pago = 'pendiente'
+                WHERE LOWER(TRIM(mp.Estado_pago)) = 'pendiente'
                 ORDER BY v.Fecha_venta DESC
             """)
             
@@ -151,7 +151,7 @@ class ValidacionPagosModel:
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
-                WHERE mp.Estado_pago = 'aprobado'
+                WHERE LOWER(TRIM(mp.Estado_pago)) = 'aprobado'
                 ORDER BY mp.Fecha_aprobacion DESC
             """)
             
@@ -199,7 +199,7 @@ class ValidacionPagosModel:
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
-                WHERE mp.Estado_pago = 'rechazado'
+                WHERE LOWER(TRIM(mp.Estado_pago)) = 'rechazado'
                 ORDER BY mp.Fecha_rechazo DESC
             """)
             
