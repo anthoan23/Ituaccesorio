@@ -379,6 +379,8 @@ body::before {
 
 .password-toggle {
 	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
 	right: 0.45rem;
 	border: 0;
 	background: transparent;
@@ -389,6 +391,12 @@ body::before {
 	cursor: pointer;
 }
 
+/* En la vista de login colocamos el ojo en la esquina superior derecha del campo */
+.login-phone .password-field .password-toggle {
+	top: 6px;
+	right: 8px;
+}
+
 .password-toggle:focus-visible {
 	outline: 2px solid rgba(243, 197, 0, 0.45);
 	outline-offset: 2px;
@@ -397,6 +405,30 @@ body::before {
 
 .pfield__input::placeholder {
 	color: rgba(0, 0, 0, 0.38);
+}
+
+/* Override field-validator visuals ONLY for the login page
+	 This removes green/red borders and messages on login inputs without
+	 affecting other pages that rely on validation UI. */
+.login-phone .field-error,
+.login-phone .pfield.field-error,
+.login-phone .pfield__input.field-error,
+.login-phone .password-field.field-error {
+	border-color: rgba(255,255,255,0.28) !important;
+	box-shadow: none !important;
+}
+
+.login-phone .field-success,
+.login-phone .pfield.field-success,
+.login-phone .pfield__input.field-success,
+.login-phone .password-field.field-success {
+	border-color: rgba(255,255,255,0.28) !important;
+	box-shadow: none !important;
+}
+
+.login-phone .field-message,
+.login-phone .required-indicator {
+	display: none !important;
 }
 
 .pfield:focus-within {
