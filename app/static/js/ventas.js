@@ -198,9 +198,9 @@
 
   async function handleAgregarClick(e) {
     const btn = e.currentTarget;
-    const productoId = btn.dataset.id;
-    if (productoId) {
-      await agregarCarrito(productoId, 1);
+    const inventarioId = btn.dataset.id;
+    if (inventarioId) {
+      await agregarCarrito(inventarioId, 1);
     }
   }
 
@@ -350,162 +350,262 @@
 
   // ==================== CARRITO ====================
 
-  async function cargarCarrito() {
+async function cargarCarrito() {
     const container = document.getElementById("cart-items");
     if (container) {
-      container.innerHTML =
-        '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
+        container.innerHTML =
+            '<div class="catalog-empty"><p>Cargando carrito...</p></div>';
     }
 
     try {
-      const data = await fetchJson("/api/carrito");
-      carritoItems = data.items || [];
-      actualizarBadgeCarrito();
-      renderCarritoModal();
-      return data;
+        const data = await fetchJson("/api/carrito");
+        console.log("📦 Datos del carrito desde backend:", data);
+        
+        // Los items pueden venir en diferentes formatos
+        let items = [];
+        
+        if (data.items && Array.isArray(data.items)) {
+            items = data.items;
+        } else if (data.carrito && Array.isArray(data.carrito)) {
+            items = data.carrito;
+        } else if (Array.isArray(data)) {
+            items = data;
+        }
+        
+        console.log("📋 Items encontrados:", items);
+        
+        if (items.length > 0) {
+            carritoItems = items.map(item => {
+                console.log("🔍 Item raw:", item);
+                
+                // Intentar obtener el ID desde diferentes claves
+                const id = item.ID_inventario || item.producto_id || item.id || item.inventario_id;
+                
+                // Intentar obtener el precio desde diferentes claves
+                const precio = parseFloat(item.Costo_venta || item.precio_usd || item.precio || 0);
+                
+                // Intentar obtener la cantidad desde diferentes claves
+                const cantidad = parseInt(item.Cantidad_producto || item.cantidad || 0);
+                
+                // Intentar obtener el nombre desde diferentes claves
+                const nombre = item.Nombre_producto || item.nombre || item.N_modelo || "Producto";
+                
+                // Intentar obtener la marca desde diferentes claves
+                const marca = item.Nombre_marca || item.marca || "";
+                
+                // Intentar obtener la imagen desde diferentes claves
+                const imagen = item.Foto_inventario || item.imagen || "";
+                
+                // Intentar obtener el stock desde diferentes claves
+                const stock = parseInt(item.Existencia || item.stock_disponible || item.stock || 0);
+                
+                const itemNormalizado = {
+                    // Claves para ventas.js
+                    producto_id: id,
+                    precio_usd: precio,
+                    cantidad: cantidad,
+                    nombre: nombre,
+                    marca: marca,
+                    imagen: imagen,
+                    stock_disponible: stock,
+                    id: id,
+                    precio: precio,
+                    
+                    // Mantener claves originales para compatibilidad
+                    ID_inventario: id,
+                    Costo_venta: precio,
+                    Cantidad_producto: cantidad,
+                    Nombre_producto: nombre,
+                    Nombre_marca: marca,
+                    Foto_inventario: imagen,
+                    Existencia: stock
+                };
+                
+                console.log("✅ Item normalizado:", itemNormalizado);
+                return itemNormalizado;
+            });
+        } else {
+            carritoItems = [];
+        }
+        
+        console.log("📊 Carrito final:", carritoItems);
+        
+        actualizarBadgeCarrito();
+        renderCarritoModal();
+        return data;
     } catch (err) {
-      if (container) {
-        const carritoMsg =
-          err.message === "Autenticación requerida."
-            ? "Inicia sesión para guardar y consultar tu carrito."
-            : err.message;
-        container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
-      }
-      actualizarBadgeCarrito();
-      return null;
+        console.error("❌ Error cargando carrito:", err);
+        if (container) {
+            const carritoMsg =
+                err.message === "Autenticación requerida."
+                    ? "Inicia sesión para guardar y consultar tu carrito."
+                    : err.message;
+            container.innerHTML = `<div class="catalog-error-box"><p>No se pudo cargar el carrito.</p><p>${escapeHtml(carritoMsg)}</p></div>`;
+        }
+        carritoItems = [];
+        actualizarBadgeCarrito();
+        renderCarritoModal();
+        return null;
     }
-  }
+}
 
-  async function agregarCarrito(productoId, cantidad) {
+async function agregarCarrito(inventarioId, cantidad) {
     try {
-      await fetchJson("/api/carrito", {
-        method: "POST",
-        body: JSON.stringify({ producto_id: productoId, cantidad: cantidad }),
-      });
-      await cargarCarrito();
-      mostrarToast("Producto agregado al carrito", "success");
+        console.log("🛒 Agregando al carrito:", { inventarioId, cantidad });
+        
+        const response = await fetchJson("/api/carrito", {
+            method: "POST",
+            body: JSON.stringify({ 
+                producto_id: inventarioId,
+                cantidad: cantidad 
+            }),
+        });
+        
+        console.log("✅ Respuesta:", response);
+        
+        if (response.success) {
+            await cargarCarrito();
+            mostrarToast("Producto agregado al carrito", "success");
+        } else {
+            mostrarToast(response.error || "Error al agregar al carrito", "error");
+        }
     } catch (err) {
-      mostrarToast(err.message, "error");
+        console.error("❌ Error:", err);
+        mostrarToast(err.message, "error");
     }
-  }
+}
 
-  async function actualizarCantidadCarrito(productoId, cantidad) {
+async function actualizarCantidadCarrito(inventarioId, cantidad) {
     if (cantidad <= 0) {
-      await fetchJson(`/api/carrito/${productoId}`, { method: "DELETE" });
+        await fetchJson(`/api/carrito/${inventarioId}`, { method: "DELETE" });
     } else {
-      await fetchJson("/api/carrito", {
-        method: "PUT",
-        body: JSON.stringify({ producto_id: productoId, cantidad: cantidad }),
-      });
+        await fetchJson("/api/carrito", {
+            method: "PUT",
+            body: JSON.stringify({ 
+                producto_id: inventarioId,
+                cantidad: cantidad 
+            }),
+        });
     }
     await cargarCarrito();
-  }
+}
 
-  async function vaciarCarrito() {
+async function vaciarCarrito() {
     if (confirm("¿Vaciar todo el carrito?")) {
-      await fetchJson("/api/carrito/vaciar", { method: "DELETE" });
-      await cargarCarrito();
+        await fetchJson("/api/carrito/vaciar", { method: "DELETE" });
+        await cargarCarrito();
     }
-  }
+}
 
-  function actualizarBadgeCarrito() {
+function actualizarBadgeCarrito() {
     const badges = document.querySelectorAll("#cart-count, #cart-nav-count");
     const total = carritoItems.reduce(
-      (sum, item) => sum + (item.cantidad || 0),
-      0,
+        (sum, item) => sum + (item.cantidad || 0),
+        0,
     );
 
     badges.forEach((badge) => {
-      if (badge) {
-        badge.textContent = total;
-        badge.style.display = total > 0 ? "flex" : "none";
-      }
+        if (badge) {
+            badge.textContent = total;
+            badge.style.display = total > 0 ? "flex" : "none";
+        }
     });
-  }
+}
 
-  async function handleIncrement(e) {
+async function handleIncrement(e) {
     const btn = e.currentTarget;
-    const productoId = btn.dataset.id;
+    const inventarioId = btn.dataset.id;
     const item = carritoItems.find(
-      (i) => String(i.producto_id) === String(productoId),
+        (i) => String(i.producto_id || i.ID_inventario || i.id) === String(inventarioId),
     );
     if (item) {
-      const nuevaCantidad = (item.cantidad || 0) + 1;
-      await actualizarCantidadCarrito(productoId, nuevaCantidad);
+        const stockDisponible = item.stock_disponible || item.Existencia || 0;
+        const nuevaCantidad = (item.cantidad || item.Cantidad_producto || 0) + 1;
+        if (nuevaCantidad <= stockDisponible) {
+            await actualizarCantidadCarrito(inventarioId, nuevaCantidad);
+        } else {
+            mostrarToast(`Solo hay ${stockDisponible} unidades disponibles`, "error");
+        }
     }
-  }
+}
 
-  async function handleDecrement(e) {
+async function handleDecrement(e) {
     const btn = e.currentTarget;
-    const productoId = btn.dataset.id;
+    const inventarioId = btn.dataset.id;
     const item = carritoItems.find(
-      (i) => String(i.producto_id) === String(productoId),
+        (i) => String(i.producto_id || i.ID_inventario || i.id) === String(inventarioId),
     );
     if (item) {
-      const nuevaCantidad = (item.cantidad || 0) - 1;
-      if (nuevaCantidad >= 0) {
-        await actualizarCantidadCarrito(productoId, nuevaCantidad);
-      }
+        const nuevaCantidad = (item.cantidad || item.Cantidad_producto || 0) - 1;
+        if (nuevaCantidad >= 0) {
+            await actualizarCantidadCarrito(inventarioId, nuevaCantidad);
+        }
     }
-  }
+}
 
-  async function handleRemove(e) {
+
+async function handleRemove(e) {
     const btn = e.currentTarget;
-    const productoId = btn.dataset.id;
-    await actualizarCantidadCarrito(productoId, 0);
-  }
+    const inventarioId = btn.dataset.id;
+    await actualizarCantidadCarrito(inventarioId, 0);
+}
 
-  function renderCarritoModal() {
+function renderCarritoModal() {
     const container = document.getElementById("cart-items");
     const totalUsdSpan = document.getElementById("cart-total-usd");
     const totalBsSpan = document.getElementById("cart-total-bs");
 
     if (!container) return;
 
-    if (!carritoItems.length) {
-      container.innerHTML =
-        '<p class="carrito-vacio">Tu carrito está vacío</p>';
-      if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(0);
-      if (totalBsSpan) totalBsSpan.textContent = formatVES(0);
-      return;
+    console.log("🔄 Renderizando carrito, items:", carritoItems);
+
+    if (!carritoItems || carritoItems.length === 0) {
+        container.innerHTML =
+            '<p class="carrito-vacio">Tu carrito está vacío</p>';
+        if (totalUsdSpan) totalUsdSpan.textContent = formatUSD(0);
+        if (totalBsSpan) totalBsSpan.textContent = formatVES(0);
+        return;
     }
 
     const tasas = window.tasas || state.tasas;
     let totalUsd = 0;
 
     container.innerHTML = carritoItems
-      .map((item) => {
-        const precioUsd = Number(item.precio_usd || 0);
-        const cantidad = Number(item.cantidad || 0);
-        const subtotalUsd = precioUsd * cantidad;
+        .map((item) => {
+            const inventarioId = item.producto_id || item.ID_inventario || item.id;
+            const precioUsd = Number(item.precio_usd || item.Costo_venta || item.precio || 0);
+            const cantidad = Number(item.cantidad || item.Cantidad_producto || 0);
+            const nombre = item.nombre || item.Nombre_producto || "Producto";
+            const marca = item.marca || item.Nombre_marca || "";
+            const subtotalUsd = precioUsd * cantidad;
 
-        totalUsd += subtotalUsd;
+            totalUsd += subtotalUsd;
 
-        const imagenSrc =
-          item.imagen && item.imagen.trim()
-            ? item.imagen
-            : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+            const imagenSrc =
+                item.imagen || item.Foto_inventario
+                    ? item.imagen || item.Foto_inventario
+                    : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
 
-        return `
-                <div class="cart-item" data-producto-id="${item.producto_id}">
+            return `
+                <div class="cart-item" data-producto-id="${inventarioId}">
                     <div class="cart-item-imagen">
-                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(item.nombre)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(nombre)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'">
                     </div>
                     <div class="cart-item-info">
-                        <div class="cart-item-name">${escapeHtml(item.nombre)}</div>
-                        <div class="cart-item-marca">${escapeHtml(item.marca || "")}</div>
+                        <div class="cart-item-name">${escapeHtml(nombre)}</div>
+                        <div class="cart-item-marca">${escapeHtml(marca)}</div>
                         <div class="cart-item-price">${formatUSD(precioUsd)}</div>
                     </div>
                     <div class="cart-item-controls">
-                        <button class="icon-action cart-decrement" data-id="${item.producto_id}" title="Disminuir cantidad">-</button>
+                        <button class="icon-action cart-decrement" data-id="${inventarioId}" title="Disminuir cantidad">-</button>
                         <span class="cart-item-qty">${cantidad}</span>
-                        <button class="icon-action cart-increment" data-id="${item.producto_id}" title="Aumentar cantidad">+</button>
-                        <button class="icon-action icon-action--danger cart-remove" data-id="${item.producto_id}" title="Eliminar producto">🗑</button>
+                        <button class="icon-action cart-increment" data-id="${inventarioId}" title="Aumentar cantidad">+</button>
+                        <button class="icon-action icon-action--danger cart-remove" data-id="${inventarioId}" title="Eliminar producto">🗑</button>
                     </div>
                 </div>
             `;
-      })
-      .join("");
+        })
+        .join("");
 
     const totalBs = totalUsd * (tasas.paralelo || tasas.oficial);
 
@@ -513,22 +613,22 @@
     if (totalBsSpan) totalBsSpan.textContent = formatVES(totalBs);
 
     setTimeout(() => {
-      document.querySelectorAll(".cart-increment").forEach((btn) => {
-        btn.removeEventListener("click", handleIncrement);
-        btn.addEventListener("click", handleIncrement);
-      });
+        document.querySelectorAll(".cart-increment").forEach((btn) => {
+            btn.removeEventListener("click", handleIncrement);
+            btn.addEventListener("click", handleIncrement);
+        });
 
-      document.querySelectorAll(".cart-decrement").forEach((btn) => {
-        btn.removeEventListener("click", handleDecrement);
-        btn.addEventListener("click", handleDecrement);
-      });
+        document.querySelectorAll(".cart-decrement").forEach((btn) => {
+            btn.removeEventListener("click", handleDecrement);
+            btn.addEventListener("click", handleDecrement);
+        });
 
-      document.querySelectorAll(".cart-remove").forEach((btn) => {
-        btn.removeEventListener("click", handleRemove);
-        btn.addEventListener("click", handleRemove);
-      });
+        document.querySelectorAll(".cart-remove").forEach((btn) => {
+            btn.removeEventListener("click", handleRemove);
+            btn.addEventListener("click", handleRemove);
+        });
     }, 10);
-  }
+}
 
   function openCartModal() {
     const modal = document.getElementById("cart-modal");
@@ -592,7 +692,7 @@
     }
   }
 
-function getFormularioPagoHtml(metodo) {
+  function getFormularioPagoHtml(metodo) {
     const today = new Date().toISOString().split("T")[0];
 
     let formHtml = `
@@ -650,7 +750,7 @@ function getFormularioPagoHtml(metodo) {
     `;
 
     return formHtml;
-}
+  }
 
   function setupFormularioDinamico() {
     const select = document.getElementById("metodo-pago");

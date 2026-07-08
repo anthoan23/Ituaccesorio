@@ -115,6 +115,10 @@
     const u = String(url || "");
     if (!u.includes("/api/")) return false;
 
+    // El carrito ya muestra su propio estado en pantalla y no debe
+    // disparar modales automáticos que interrumpan la interacción.
+    if (u.includes("/api/carrito")) return false;
+
     // Evitar modales en auth/login
     if (u.includes("/api/login") || u.includes("/api/auth") || u.includes("/api/token")) return false;
     

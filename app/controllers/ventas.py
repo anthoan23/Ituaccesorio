@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, request, g, redirect
+from flask import Blueprint, jsonify, render_template, request, g, redirect, session
 from app.utils.decorators import jwt_required, solo_roles
 from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
@@ -107,7 +107,7 @@ def _validar_carrito_data(data):
     Returns:
         tuple: (error_mensaje, error_codigo) o (None, None) si es válido
     """
-    producto_id = data.get("producto_id")
+    producto_id = data.get("producto_id") or data.get("inventario_id")
     cantidad = data.get("cantidad", 1)
     
     if not producto_id:
@@ -128,63 +128,42 @@ def _validar_carrito_data(data):
 @ventas_blueprint.route("/api/carrito", methods=["GET"])
 @jwt_required
 def api_obtener_carrito():
-    """Obtener el carrito del cliente actual"""
+    """Obtiene el carrito del cliente actual"""
     try:
-        if not hasattr(g, 'user') or not g.user:
-            return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
         if isinstance(g.user, dict):
             cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
         else:
             cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+
+        if not cliente_id:
+            cliente_id = session.get('cliente_id') or request.headers.get('X-Client-ID')
         
         if not cliente_id:
-            return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
+            return jsonify({"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}), 200
         
-        cliente_id_str = str(cliente_id)
-        modelo_clientes = Clientes(ID_cliente=cliente_id_str)
+        carrito_model = CarritoModel(cliente_id=cliente_id)
+        resultado = carrito_model.obtener_carrito()
         
-        try:
-            if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
-                return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
-        except:
-            return jsonify({"success": True, "items": [], "total_usd": 0, "total_bs": 0})
-        
-        modelo_carrito = CarritoModel(cliente_id=cliente_id_str)
-        carrito = modelo_carrito.obtener_carrito()
-        
-        # Obtener tasas de dólar
-        try:
-            oficial_resp = requests.get("https://ve.dolarapi.com/v1/dolares/oficial", timeout=5)
-            paralelo_resp = requests.get("https://ve.dolarapi.com/v1/dolares/paralelo", timeout=5)
-            tasa_oficial = oficial_resp.json().get("promedio", 520.91) if oficial_resp.status_code == 200 else 520.91
-            tasa_paralelo = paralelo_resp.json().get("promedio", 710.12) if paralelo_resp.status_code == 200 else 710.12
-        except:
-            tasa_oficial = 520.91
-            tasa_paralelo = 710.12
-        
-        for p in carrito:
-            precio_usd = float(p.get("precio_usd", 0))
-            p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
-            p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
-        
-        total_usd = sum(float(p.get("precio_usd", 0)) * int(p.get("cantidad", 0)) for p in carrito)
-        total_bs_paralelo = sum(float(p.get("precio_bs_paralelo", 0)) for p in carrito)
-        total_bs_oficial = sum(float(p.get("precio_bs_oficial", 0)) for p in carrito)
-        
-        return jsonify({
-            "success": True,
-            "items": carrito,
-            "total_usd": round(total_usd, 2),
-            "total_bs_paralelo": round(total_bs_paralelo, 2),
-            "total_bs_oficial": round(total_bs_oficial, 2),
-            "tasas": {"oficial": tasa_oficial, "paralelo": tasa_paralelo}
-        })
+        # Si resultado es un diccionario, devolverlo directamente
+        if isinstance(resultado, dict):
+            return jsonify(resultado), 200
+        else:
+            return jsonify({
+                "items": [],
+                "total": 0,
+                "tasas": {"oficial": 0, "paralelo": 0}
+            }), 200
+            
     except Exception as e:
         print(f"Error en api_obtener_carrito: {e}")
+        import traceback
         traceback.print_exc()
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({
+            "items": [],
+            "total": 0,
+            "tasas": {"oficial": 0, "paralelo": 0},
+            "error": str(e)
+        }), 500
 
 
 @ventas_blueprint.route("/api/carrito", methods=["POST"])
@@ -220,7 +199,7 @@ def api_agregar_carrito():
         if error:
             return jsonify({"success": False, "error": error}), status
         
-        producto_id = datos.get("producto_id")
+        producto_id = datos.get("producto_id") or datos.get("inventario_id")
         cantidad = datos.get("cantidad", 1)
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
@@ -291,7 +270,7 @@ def api_actualizar_cantidad():
         if error:
             return jsonify({"success": False, "error": error}), status
         
-        producto_id = datos.get("producto_id")
+        producto_id = datos.get("producto_id") or datos.get("inventario_id")
         cantidad = datos.get("cantidad", 1)
         
         modelo_carrito = CarritoModel(
@@ -471,7 +450,9 @@ def api_procesar_pago():
         
         # Obtener carrito
         modelo_carrito = CarritoModel(cliente_id=cliente_id_str)
-        carrito = modelo_carrito.obtener_carrito()
+        resultado = modelo_carrito.obtener_carrito()
+        carrito = resultado.get("items", []) if isinstance(resultado, dict) else []
+        
         if not carrito:
             return jsonify({"success": False, "error": "Carrito vacío"}), 400
         

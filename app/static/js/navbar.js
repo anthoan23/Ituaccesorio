@@ -397,6 +397,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// ==================== CARRITO DE COMPRAS ====================
 
+	function getAuthToken() {
+		try {
+			return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+		} catch (e) {
+			return '';
+		}
+	}
+
+	function getCsrfToken() {
+		return document.querySelector("input[name='_csrf_token']")?.value || '';
+	}
+
+	async function fetchCarritoBackend(url, options = {}) {
+		const headers = {
+			Accept: 'application/json',
+			...(getCsrfToken() ? { 'X-CSRFToken': getCsrfToken() } : {}),
+			...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+		};
+
+		if (options.body && !(options.body instanceof FormData)) {
+			headers['Content-Type'] = 'application/json';
+		}
+
+		const response = await fetch(url, {
+			method: options.method || 'GET',
+			headers,
+			credentials: 'same-origin',
+			body: options.body,
+		});
+
+		const data = await response.json().catch(() => ({}));
+
+		if (!response.ok || data.success === false) {
+			throw new Error(data.error || `Error ${response.status}`);
+		}
+
+		return data;
+	}
+
 	const cartToggle = document.querySelector('[data-cart-toggle]');
 	const cartPanel = document.querySelector('[data-cart-panel]');
 	const cartBadge = document.querySelector('[data-cart-badge]');
@@ -408,27 +447,66 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Estado del carrito (simulado)
 	let cartItems = [];
 
-	// Cargar carrito desde localStorage
-	function loadCart() {
+	function normalizeCartItem(item) {
+		const id = item.producto_id || item.ID_inventario || item.id || item.inventario_id;
+		const quantity = Number(item.cantidad || item.Cantidad_producto || item.quantity || 0);
+		const price = Number(item.precio_usd || item.Costo_venta || item.price || item.precio || 0);
+		const name = item.nombre || item.Nombre_producto || item.name || 'Producto';
+		const image = item.imagen || item.Foto_inventario || item.image || null;
+
+		return {
+			id: String(id ?? ''),
+			name,
+			price,
+			quantity,
+			image,
+		};
+	}
+
+	// Cargar carrito desde el backend para reflejar el estado real del usuario
+	async function loadCart() {
 		try {
-			const saved = localStorage.getItem('cart_items');
-			if (saved) {
-				cartItems = JSON.parse(saved);
-			}
+			const data = await fetchCarritoBackend('/api/carrito');
+			const items = Array.isArray(data.items) ? data.items : [];
+			cartItems = items.map(normalizeCartItem).filter((item) => item.id);
 		} catch (e) {
-			cartItems = [];
+			try {
+				const saved = localStorage.getItem('cart_items');
+				cartItems = saved ? JSON.parse(saved) : [];
+			} catch (error) {
+				cartItems = [];
+			}
 		}
 		updateCartUI();
 	}
 
-	// Guardar carrito en localStorage
-	function saveCart() {
+	async function saveCart() {
 		try {
 			localStorage.setItem('cart_items', JSON.stringify(cartItems));
 		} catch (e) {
-			// Ignorar
+			// Ignorar almacenamiento local si no está disponible
 		}
+
 		updateCartUI();
+	}
+
+	async function syncCartItemToBackend(itemId, quantity) {
+		if (!itemId) return;
+
+		if (quantity <= 0) {
+			await fetchCarritoBackend(`/api/carrito/${itemId}`, {
+				method: 'DELETE',
+			});
+			return;
+		}
+
+		await fetchCarritoBackend('/api/carrito', {
+			method: 'PUT',
+			body: JSON.stringify({
+				producto_id: itemId,
+				cantidad: quantity,
+			}),
+		});
 	}
 
 	// Actualizar UI del carrito
@@ -544,7 +622,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	// Eventos de acciones del carrito (delegación)
-	cartList?.addEventListener('click', (e) => {
+	cartList?.addEventListener('click', async (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+
 		const btn = e.target.closest('[data-cart-action]');
 		if (!btn) return;
 
@@ -553,61 +634,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		if (isNaN(index) || index < 0 || index >= cartItems.length) return;
 
+		const itemId = cartItems[index]?.id;
+		let nextQuantity = cartItems[index].quantity;
+
 		if (action === 'increase') {
-			cartItems[index].quantity += 1;
+			nextQuantity += 1;
 		} else if (action === 'decrease') {
-			if (cartItems[index].quantity > 1) {
-				cartItems[index].quantity -= 1;
+			if (nextQuantity > 1) {
+				nextQuantity -= 1;
 			} else {
 				cartItems.splice(index, 1);
+				nextQuantity = 0;
 			}
 		} else if (action === 'remove') {
 			cartItems.splice(index, 1);
+			nextQuantity = 0;
 		}
 
-		saveCart();
+		try {
+			if (nextQuantity > 0 && cartItems[index]) {
+				cartItems[index].quantity = nextQuantity;
+			}
+			saveCart();
+			await syncCartItemToBackend(itemId, nextQuantity);
+			await loadCart();
+			cartPanel?.removeAttribute('hidden');
+		} catch (error) {
+			console.error('Error actualizando carrito:', error);
+			await loadCart();
+			cartPanel?.removeAttribute('hidden');
+		}
 	});
 
 	// Botón "Ir a pagar"
 	cartCheckout?.addEventListener('click', () => {
 		if (cartItems.length === 0) return;
-		// Redirigir al checkout o abrir modal
-		window.location.href = '/checkout';
+		window.location.href = '/pagar';
 	});
 
 	// Función para agregar producto al carrito (pública)
 	window.addToCart = function(product) {
-		const existing = cartItems.find(item => item.id === product.id);
+		const existing = cartItems.find(item => String(item.id) === String(product.id));
 		if (existing) {
 			existing.quantity += product.quantity || 1;
 		} else {
 			cartItems.push({
-				id: product.id,
+				id: String(product.id),
 				name: product.name,
-				price: product.price,
+				price: Number(product.price || 0),
 				quantity: product.quantity || 1,
 				image: product.image || null
 			});
 		}
 		saveCart();
-		
-		// Mostrar feedback
-		if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
-			window.FeedbackModal.show({
-				type: 'success',
-				title: 'Agregado al carrito',
-				message: `${product.name} ha sido agregado a tu carrito.`,
-				duration: 2500
-			});
-		}
-		
-		// Abrir panel del carrito
+
+		// Abrir panel del carrito sin cerrarlo automáticamente
 		cartPanel.removeAttribute('hidden');
-		
-		// Cerrar después de 3 segundos
-		setTimeout(() => {
-			cartPanel.setAttribute('hidden', '');
-		}, 3000);
 	};
 
 	// Función para obtener el total de items en el carrito

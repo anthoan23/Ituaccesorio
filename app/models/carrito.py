@@ -64,32 +64,68 @@ class CarritoModel:
             cursor.close()
             db.close()
     
-    def obtener_carrito(self) -> List[Dict[str, Any]]:
+    def _obtener_tasas(self) -> Dict[str, float]:
+        """Obtiene las tasas de cambio actuales"""
+        db = self.__conexion_bd.conexion1()
+        if not db:
+            return {"oficial": 520.91, "paralelo": 710.12}
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT Tasa_oficial, Tasa_paralelo 
+                FROM Tasas_cambio 
+                ORDER BY ID_tasa DESC 
+                LIMIT 1
+            """)
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "oficial": float(row.get("Tasa_oficial", 520.91)),
+                    "paralelo": float(row.get("Tasa_paralelo", 710.12))
+                }
+            return {"oficial": 520.91, "paralelo": 710.12}
+        except Exception as e:
+            print(f"Error obteniendo tasas: {e}")
+            return {"oficial": 520.91, "paralelo": 710.12}
+        finally:
+            cursor.close()
+            db.close()
+    
+    def obtener_carrito(self) -> Dict[str, Any]:
+        """
+        Obtiene el carrito del cliente con formato compatible con ventas.js
+        Retorna: {
+            "items": [...],
+            "total": 0,
+            "tasas": {"oficial": 0, "paralelo": 0}
+        }
+        """
         if not self.cliente_id:
-            return []
+            return {"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return []
+            return {"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}
         
         cursor = db.cursor(dictionary=True)
         try:
             cursor.execute("""
                 SELECT
                     lc.ID_lista_compra AS id,
-                    lc.ID_inventario AS producto_id,
-                    lc.Cantidad_producto AS cantidad,
-                    e.Costo_venta AS precio_usd,
-                    p.Nombre_producto AS nombre,
-                    COALESCE(ma.Nombre_marca, '') AS marca,
-                    e.Existencia AS stock_disponible,
+                    lc.ID_inventario AS ID_inventario,
+                    lc.Cantidad_producto AS Cantidad_producto,
+                    e.Costo_venta AS Costo_venta,
+                    p.Nombre_producto AS Nombre_producto,
+                    COALESCE(ma.Nombre_marca, '') AS Nombre_marca,
+                    e.Existencia AS Existencia,
                     COALESCE((
                         SELECT fi.Foto_inventario
                         FROM Fotos_inventario fi
                         WHERE fi.ID_inventario = e.ID_inventario
                         ORDER BY fi.ID_foto_inventario DESC
                         LIMIT 1
-                    ), '') AS imagen
+                    ), '') AS Foto_inventario
                 FROM Lista_compra lc
                 JOIN Existencias_productos e ON lc.ID_inventario = e.ID_inventario
                 JOIN Producto p ON e.ID_producto = p.ID_producto
@@ -99,10 +135,68 @@ class CarritoModel:
             """, (self.cliente_id, self._ESTADO_CARRITO))
             
             rows = cursor.fetchall()
-            for r in rows:
-                if isinstance(r.get("precio_usd"), Decimal):
-                    r["precio_usd"] = float(r["precio_usd"])
-            return rows
+            
+            # Convertir a formato compatible con ventas.js
+            items = []
+            total = 0
+            
+            for row in rows:
+                # Convertir Decimal a float
+                costo_venta = row.get("Costo_venta", 0)
+                if isinstance(costo_venta, Decimal):
+                    costo_venta = float(costo_venta)
+                else:
+                    try:
+                        costo_venta = float(costo_venta or 0)
+                    except (ValueError, TypeError):
+                        costo_venta = 0.0
+                
+                cantidad = row.get("Cantidad_producto", 0)
+                try:
+                    cantidad = int(cantidad or 0)
+                except (ValueError, TypeError):
+                    cantidad = 0
+                
+                subtotal = costo_venta * cantidad
+                total += subtotal
+                
+                item = {
+                    # Claves originales (para compatibilidad)
+                    "ID_lista_compra": row.get("id", ""),
+                    "ID_inventario": row.get("ID_inventario", ""),
+                    "Cantidad_producto": cantidad,
+                    "Costo_venta": costo_venta,
+                    "Nombre_producto": row.get("Nombre_producto", "Producto") or "Producto",
+                    "Nombre_marca": row.get("Nombre_marca", "") or "",
+                    "Existencia": int(row.get("Existencia", 0) or 0),
+                    "Foto_inventario": row.get("Foto_inventario", "") or "",
+                    
+                    # Claves para ventas.js (normalizadas)
+                    "producto_id": row.get("ID_inventario", ""),
+                    "precio_usd": costo_venta,
+                    "cantidad": cantidad,
+                    "nombre": row.get("Nombre_producto", "Producto") or "Producto",
+                    "marca": row.get("Nombre_marca", "") or "",
+                    "imagen": row.get("Foto_inventario", "") or "",
+                    "stock_disponible": int(row.get("Existencia", 0) or 0),
+                    "id": row.get("ID_inventario", ""),
+                    "precio": costo_venta
+                }
+                items.append(item)
+            
+            # Obtener tasas de cambio
+            tasas = self._obtener_tasas()
+            
+            return {
+                "items": items,
+                "total": total,
+                "tasas": tasas
+            }
+        except Exception as e:
+            print(f"Error en obtener_carrito: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}
         finally:
             cursor.close()
             db.close()
