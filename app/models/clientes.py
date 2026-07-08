@@ -231,41 +231,60 @@ class Clientes():
         
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute(
-                """
-                SELECT
-                    c.ID_cliente AS id,
-                    c.Direccion_cliente AS direccion,
-                    c.Celular_cliente AS celular,
-                    c.Correo_cliente AS correo,
-                    p.Nombre_cliente AS nombre,
-                    p.Apellido_cliente AS apellido,
-                    NULL AS razon_social,
-                    NULL AS rif,
-                    'natural' AS tipo
-                FROM Cliente c
-                INNER JOIN Persona_natural p ON c.ID_cliente = p.ID_cliente
-                WHERE c.ID_cliente = %s
-                
-                UNION ALL
-                
-                SELECT
-                    c.ID_cliente AS id,
-                    c.Direccion_cliente AS direccion,
-                    c.Celular_cliente AS celular,
-                    c.Correo_cliente AS correo,
-                    NULL AS nombre,
-                    NULL AS apellido,
-                    j.Razon_social AS razon_social,
-                    j.Rif_cliente AS rif,
-                    'juridico' AS tipo
-                FROM Cliente c
-                INNER JOIN Cliente_juridico j ON c.ID_cliente = j.ID_cliente
-                WHERE c.ID_cliente = %s
-                """,
-                (str(id_buscar), str(id_buscar))
-            )
-            return cursor.fetchone()
+            # Primero verificar si el cliente existe en la tabla Cliente
+            cursor.execute("SELECT * FROM Cliente WHERE ID_cliente = %s", (str(id_buscar),))
+            cliente_base = cursor.fetchone()
+            if not cliente_base:
+                return None
+            
+            # Si el cliente existe, intentar obtener datos de Persona_natural
+            cursor.execute("SELECT Nombre_cliente, Apellido_cliente FROM Persona_natural WHERE ID_cliente = %s", (str(id_buscar),))
+            persona = cursor.fetchone()
+            
+            if persona:
+                # Es una persona natural
+                return {
+                    "id": str(cliente_base["ID_cliente"]),
+                    "direccion": cliente_base.get("Direccion_cliente"),
+                    "celular": cliente_base.get("Celular_cliente"),
+                    "correo": cliente_base.get("Correo_cliente"),
+                    "nombre": persona.get("Nombre_cliente"),
+                    "apellido": persona.get("Apellido_cliente"),
+                    "razon_social": None,
+                    "rif": None,
+                    "tipo": "natural"
+                }
+            
+            # Si no es persona natural, intentar con Cliente_juridico
+            cursor.execute("SELECT Razon_social, Rif_cliente FROM Cliente_juridico WHERE ID_cliente = %s", (str(id_buscar),))
+            juridico = cursor.fetchone()
+            
+            if juridico:
+                # Es una persona jurídica
+                return {
+                    "id": str(cliente_base["ID_cliente"]),
+                    "direccion": cliente_base.get("Direccion_cliente"),
+                    "celular": cliente_base.get("Celular_cliente"),
+                    "correo": cliente_base.get("Correo_cliente"),
+                    "nombre": None,
+                    "apellido": None,
+                    "razon_social": juridico.get("Razon_social"),
+                    "rif": juridico.get("Rif_cliente"),
+                    "tipo": "juridico"
+                }
+            
+            # Si el cliente existe pero no tiene datos de tipo, retornar los datos básicos
+            return {
+                "id": str(cliente_base["ID_cliente"]),
+                "direccion": cliente_base.get("Direccion_cliente"),
+                "celular": cliente_base.get("Celular_cliente"),
+                "correo": cliente_base.get("Correo_cliente"),
+                "nombre": None,
+                "apellido": None,
+                "razon_social": None,
+                "rif": None,
+                "tipo": "desconocido"
+            }
         except Exception as e:
             print(f"Error al obtener datos completos del cliente: {e}")
             return None

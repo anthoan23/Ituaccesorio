@@ -62,7 +62,7 @@ class Equipo:
             return "El ID del producto es obligatorio."
         
         if len(str(self.ID_equipo)) > 16:
-            return "El ID del equipo no puede tener más de 16 caracteres."
+            return "El ID del equipo no puede tener más de 15 caracteres."
         
         db = self._conexion_bd()
         if not db:
@@ -81,8 +81,8 @@ class Equipo:
                 return "El color no puede tener más de 30 caracteres."
             
             capacidad = self.Capacidad if self.Capacidad else None
-            if capacidad and len(str(capacidad)) > 20:
-                return "La capacidad no puede tener más de 20 caracteres."
+            if capacidad and len(str(capacidad)) > 6:
+                return "La capacidad no puede tener más de 6 caracteres."
             
             # Clave: convertir a int solo si es un número válido
             clave = None
@@ -92,7 +92,10 @@ class Equipo:
                 except (ValueError, TypeError):
                     return "La clave debe ser un número entero válido."
             
+            # Patrón: se guarda como string (con guiones o sin ellos)
             patron = self.Patron if self.Patron else None
+            if patron and len(str(patron)) > 17:
+                return "El patrón no puede tener más de 17 caracteres."
             
             cursor.execute("""
                 INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron)
@@ -100,7 +103,7 @@ class Equipo:
             """, (self.ID_equipo, self.ID_producto, color, capacidad, clave, patron))
             
             db.commit()
-            return f"Equipo {self.ID_equipo} registrado correctamente."
+            return f"Equipo {self.ID_equipo} registrado exitosamente."
         except Exception as e:
             db.rollback()
             return f"Error al registrar el equipo: {e}"
@@ -158,6 +161,8 @@ class Equipo:
             
             if self.Patron is not None:
                 patron = self.Patron if self.Patron else None
+                if patron and len(str(patron)) > 60:
+                    return "El patrón no puede tener más de 60 caracteres."
                 updates.append("Patron = %s")
                 params.append(patron)
             

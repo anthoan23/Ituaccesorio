@@ -2,7 +2,6 @@ import os
 from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
-from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
@@ -42,13 +41,9 @@ def obtener_ordenes_taller():
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
     # Obtener ID del empleado desde g.user
-    usuario_id = g.user.get("cedula_personal") if isinstance(g.user, dict) else getattr(g.user, "cedula_personal", None)
-    try:
-        id_empleado = int(usuario_id) if usuario_id else 32014004
-    except (ValueError, TypeError):
-        id_empleado = 32014004
-    
-    ordenes = Orden_servicio(ID_empleado=id_empleado)
+    usuario_id = g.user.get("cedula")
+
+    ordenes = Orden_servicio(ID_empleado=usuario_id)
     resultado = ordenes.listar_ordenes_tecnico()
     return jsonify(resultado)
 
@@ -58,8 +53,6 @@ def obtener_reparaciones_asignadas():
 @tiene_permiso('Taller', 'consultar')
 def consultar_orden():
     id_orden = request.json.get("id_orden")
-    if not id_orden:
-        return jsonify({"error": "ID de orden no proporcionado"}), 400
 
     # Consultar la orden con todas sus fotos
     ordenes = Orden_servicio(ID_orden_servicio=id_orden)
@@ -90,8 +83,8 @@ def consultar_orden():
 def consultar_test():
     id_orden = request.json.get("id_orden")
     numero_test = request.json.get("numero_test")
-    if not id_orden or not numero_test:
-        return jsonify({"error": "ID de orden o número de test no proporcionado"}), 400
+
+
 
     tests = Tests(ID_orden=id_orden, Numero_test=numero_test)
     resultado_test = tests.consultar_test()
@@ -109,12 +102,11 @@ def consultar_test():
 @tiene_permiso('Taller', 'editar')
 def guardar_revision_tecnica():
     id_orden = request.json.get("id_orden")
-    id_empleado = 32014004
+    id_empleado = g.user.get("cedula")
     numero_test = request.json.get("numero_test")
     componentes = request.json.get("componentes_evaluados")
 
-    if not id_orden or not id_empleado or not numero_test or not componentes:
-        return jsonify({"error": "Faltan datos obligatorios para registrar la revisión técnica"}), 400
+  
 
     # Obtener usuario actual para bitácora
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
@@ -148,14 +140,9 @@ def guardar_revision_tecnica():
 @tiene_permiso('Taller', 'editar')
 def asignar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = 32014004
+    id_empleado = g.user.get("cedula")
 
-    if not id_orden or not id_empleado:
-        return jsonify({"error": "ID de orden o ID de empleado no proporcionado"}), 400
-
-    # Obtener usuario actual para bitácora
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-
+   
     ordenes = Orden_servicio(
         ID_orden_servicio=id_orden, 
         ID_empleado=id_empleado,
@@ -173,10 +160,7 @@ def asignar_orden_tecnico():
 @tiene_permiso('Taller', 'editar')
 def liberar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = 32014004
-
-    if not id_orden or not id_empleado:
-        return jsonify({"error": "ID de orden o ID de empleado no proporcionado"}), 400
+    id_empleado = g.user.get("cedula")
 
     ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
     resultado = ordenes.liberar_orden_empleado()
@@ -207,11 +191,8 @@ def registrar_reparacion():
         # Validar campos obligatorios
         id_orden = data.get("id_orden")
         descripcion = data.get("descripcion_reparacion")
+        id_empleado = g.user.get("cedula")
         
-        if not id_orden:
-            return jsonify({"error": "El ID de orden es obligatorio"}), 400
-        if not descripcion:
-            return jsonify({"error": "La descripción de reparación es obligatoria"}), 400
         
         # Procesar lista de repuestos (convertir a JSON si es necesario)
         repuestos = data.get("repuestos_utilizados")
@@ -219,12 +200,10 @@ def registrar_reparacion():
             import json
             repuestos = json.dumps(repuestos)
         
-        # Obtener usuario actual para bitácora
-        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         # Crear instancia de Orden_servicio
         ordenes = Orden_servicio(
-            ID_empleado=32014004,
+            ID_empleado=id_empleado,
             ID_orden_servicio=id_orden,
             Descripcion_reparacion=descripcion,
             lista_repuestos=repuestos,
@@ -261,8 +240,7 @@ def registrar_fotos():
         # Obtener datos del request (multipart/form-data)
         id_orden = request.form.get('id_orden')
         
-        if not id_orden:
-            return jsonify({"error": "ID de orden no proporcionado"}), 400
+
         
         # Verificar que la orden existe
         ordenes = Orden_servicio(ID_orden_servicio=id_orden)

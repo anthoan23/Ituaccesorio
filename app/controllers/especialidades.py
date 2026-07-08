@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.validators import validar_texto, validar_texto_numero
 from app.models.especialidades import Especialidad
 
 especialidades_blueprint = Blueprint("especialidades", __name__)
@@ -34,8 +35,13 @@ def api_agregar_especialidad():
     nueva_especialidad = data.get("nombre_especialidad", "").strip()
     descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
 
-    if not nueva_especialidad:
-        return jsonify({"success": False, "message": "El nombre de la especialidad es obligatorio."}), 400
+    validar_nombre = validar_texto(nueva_especialidad, 3, 30, "Nombre de la especialidad")
+    if validar_nombre:
+        return jsonify({"success": False, "message": validar_nombre}), 400
+
+    validar_descripcion = validar_texto_numero(descripcion_especialidad, 3, 250, "Descripción de la especialidad")
+    if validar_descripcion:
+        return jsonify({"success": False, "message": validar_descripcion}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -61,10 +67,17 @@ def api_actualizar_especialidad():
     nombre_especialidad = data.get("nombre_especialidad", "").strip()
     descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
 
-    if not especialidad_id:
-        return jsonify({"success": False, "message": "El ID de la especialidad es obligatorio."}), 400
-    if not nombre_especialidad:
-        return jsonify({"success": False, "message": "El nombre de la especialidad es obligatorio."}), 400
+    validar_id = validar_texto_numero(especialidad_id, 9, 10, "ID de la especialidad")
+    if validar_id:
+        return jsonify({"success": False, "message": validar_id}), 400
+
+    validar_nombre = validar_texto(nombre_especialidad, 3, 30, "Nombre de la especialidad")
+    if validar_nombre:
+        return jsonify({"success": False, "message": validar_nombre}), 400
+
+    validar_descripcion = validar_texto_numero(descripcion_especialidad, 3, 250, "Descripción de la especialidad")
+    if validar_descripcion:
+        return jsonify({"success": False, "message": validar_descripcion}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -89,8 +102,9 @@ def api_eliminar_especialidad():
     data = request.get_json(silent=True) or request.form
     especialidad_id = data.get("id_especialidad", "").strip()
 
-    if not especialidad_id:
-        return jsonify({"success": False, "message": "El ID de la especialidad es obligatorio."}), 400
+    validdar_id = validar_texto_numero(especialidad_id, 9, 10, "ID de la especialidad")
+    if validdar_id:
+        return jsonify({"success": False, "message": validdar_id}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 

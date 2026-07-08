@@ -1,5 +1,5 @@
 // ============================================
-// TALLER.JS - Versión Completa con FotosService
+// TALLER.JS - Versión Completa con Iconos SVG
 // ============================================
 
 // --------------------------------
@@ -56,6 +56,37 @@ const ICON_CHECK_GREEN = `
 const ICON_WRENCH = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1-.1-1.4z" fill="currentColor"/>
+    </svg>`;
+
+const ICON_CAMERA = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>`;
+
+const ICON_INVENTORY = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>`;
+
+const ICON_CLEAN = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+const ICON_SAVE = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="17 21 17 13 7 13 7 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="7 3 7 8 15 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+const ICON_CANCEL = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="6" y1="6" x2="18" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>`;
 
 // --------------------------------
@@ -311,11 +342,32 @@ const FotosService = {
     },
 
     configurarFileInput() {
+        const dropzone = document.getElementById('photo-dropzone');
         const fileInput = document.getElementById('fotos-input');
-        if (!fileInput) return;
         
+        if (!dropzone || !fileInput) return;
+        
+        // Eliminar listeners anteriores para evitar duplicados
+        dropzone.removeEventListener('click', this.handleDropzoneClick);
         fileInput.removeEventListener('change', this.handleFileChange);
-        fileInput.addEventListener('change', this.handleFileChange.bind(this));
+        
+        // Click en el dropzone abre el file input
+        this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
+        dropzone.addEventListener('click', this.handleDropzoneClick);
+        
+        // Cambio en el file input procesa los archivos
+        this.handleFileChange = this.handleFileChange.bind(this);
+        fileInput.addEventListener('change', this.handleFileChange);
+    },
+
+    handleDropzoneClick(e) {
+        // Prevenir que el click se propague si el target es el input
+        if (e.target.tagName === 'INPUT') return;
+        
+        const fileInput = document.getElementById('fotos-input');
+        if (fileInput) {
+            fileInput.click();
+        }
     },
 
     handleFileChange(e) {
@@ -323,7 +375,15 @@ const FotosService = {
         if (files && files.length > 0) {
             this.procesarArchivos(files);
         }
-        // Resetear el input para permitir seleccionar el mismo archivo nuevamente
+        // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
+        e.target.value = '';
+    },
+
+    handleFileChange(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            this.procesarArchivos(files);
+        }
         e.target.value = '';
     },
 
@@ -622,9 +682,9 @@ const OrdenesService = {
 
             if (modalBodyFotos) {
                 if (fotos && fotos.length > 0) {
-                    this.renderizarFotos(modalBodyFotos, fotos, false);
+                    this.renderizarFotosModal(modalBodyFotos, fotos);
                 } else {
-                    modalBodyFotos.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">📸 No hay fotos registradas</p>';
+                    modalBodyFotos.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">No hay fotos registradas</p>';
                 }
             }
 
@@ -652,6 +712,32 @@ const OrdenesService = {
             <div class="detail-group"><span class="detail-label">Modelo:</span><strong>${Utils.escapeHtml(orden.Modelo)}</strong></div>
             <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
             <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
+        `;
+    },
+
+    renderizarFotosModal(container, fotos) {
+        if (!fotos || !fotos.length) {
+            container.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <h3 class="card__subtitle">Fotos del dispositivo</h3>
+            <div class="fotos-grid">
+                ${fotos.map((foto, index) => {
+                    const fotoUrl = foto.Foto_orden_servicio || foto.Url_foto || foto.Ruta_foto || foto.url || '';
+                    return `
+                        <div class="foto-item" data-foto-index="${index}">
+                            <div class="foto-thumbnail">
+                                <img src="${Utils.escapeHtml(fotoUrl)}" 
+                                     alt="Foto ${index + 1}" 
+                                     loading="lazy"
+                                     onclick="OrdenesService.verFotoAmpliada('${Utils.escapeHtml(fotoUrl)}')">
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
         `;
     },
 
@@ -719,7 +805,7 @@ const OrdenesService = {
                 if (fotos && fotos.length > 0) {
                     this.renderizarFotos(fotosContainer, fotos, true);
                 } else {
-                    fotosContainer.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">📸 No hay fotos registradas para esta orden</p>';
+                    fotosContainer.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">No hay fotos registradas para esta orden</p>';
                 }
             }
 
@@ -732,6 +818,9 @@ const OrdenesService = {
             }
 
             this.actualizarTitulosVistas(idOrden, orden?.Modelo);
+            
+            // Asignar evento al botón de revisión que ya está en el HTML
+            this.asignarEventoBotonRevision();
             
             ViewManager.activate(TALLER_CONFIG.VISTAS.DETALLE);
         } catch (error) {
@@ -750,18 +839,27 @@ const OrdenesService = {
             <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
             <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
         `;
-        
-        this.agregarBotonRevision(container);
+    },
+
+    asignarEventoBotonRevision() {
+        const btn = document.getElementById('btn-realizar-revision');
+        if (btn) {
+            // Remover eventos anteriores para evitar duplicados
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', () => {
+                ViewManager.activate(TALLER_CONFIG.VISTAS.REVISION);
+            });
+        }
     },
 
     renderizarTests(container, tests, idOrden) {
         if (!tests || !tests.length) {
-            container.innerHTML = '<h3 class="card__subtitle">Tests Realizados</h3><p class="device-detail__empty">No hay tests registrados.</p>';
+            container.innerHTML = '<p class="device-detail__empty">No hay tests registrados.</p>';
             return;
         }
 
         container.innerHTML = `
-            <h3 class="card__subtitle">Tests Realizados</h3>
             <div class="table-wrap">
                 <table class="table">
                     <thead>
@@ -791,12 +889,11 @@ const OrdenesService = {
         if (!container) return;
         
         if (!fotos || !fotos.length) {
-            container.innerHTML = '<p class="device-detail__empty">📸 No hay fotos registradas para esta orden.</p>';
+            container.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden.</p>';
             return;
         }
 
         container.innerHTML = `
-            <h3 class="card__subtitle">📸 Fotos del dispositivo</h3>
             <div class="fotos-grid">
                 ${fotos.map((foto, index) => {
                     const fotoUrl = foto.Foto_orden_servicio || foto.Url_foto || foto.Ruta_foto || foto.url || '';
@@ -1129,23 +1226,6 @@ const OrdenesService = {
         document.body.appendChild(overlay);
     },
 
-    agregarBotonRevision(container) {
-        const btnExistente = document.getElementById('btn-realizar-revision');
-        if (btnExistente) btnExistente.remove();
-
-        const btn = document.createElement('button');
-        btn.id = 'btn-realizar-revision';
-        btn.type = 'button';
-        btn.className = 'ui-btn ui-btn--primary';
-        btn.style.cssText = 'margin-top: 1rem; width: 100%;';
-        btn.innerHTML = '🔧 Realizar revisión técnica';
-        btn.addEventListener('click', () => {
-            ViewManager.activate(TALLER_CONFIG.VISTAS.REVISION);
-        });
-        
-        container.appendChild(btn);
-    },
-
     actualizarTitulosVistas(idOrden, modelo) {
         const reparacionOrdenId = document.getElementById('reparacion-orden-id');
         const reparacionModelo = document.getElementById('reparacion-modelo');
@@ -1368,16 +1448,17 @@ const RevisionService = {
 };
 
 // --------------------------------
-// 8. SERVICIO DE REPUESTOS
+// 8. SERVICIO DE REPUESTOS (CORREGIDO)
 // --------------------------------
 const RepuestosService = {
     repuestosSeleccionados: [],
+    inventarioData: [],
 
     async cargarInventario() {
         const tbody = document.getElementById('tabla-inventario-body');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">🔄 Cargando inventario...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Cargando inventario...</td></tr>';
         
         const tablaContainer = document.getElementById('tabla-inventario-repuestos');
         if (tablaContainer) {
@@ -1388,43 +1469,17 @@ const RepuestosService = {
         try {
             const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_INVENTARIO, { method: 'GET' });
             const inventario = Array.isArray(data) ? data : data?.inventario || data?.data || [];
+            this.inventarioData = inventario;
             this.renderizarInventario(inventario, tbody);
         } catch (error) {
             console.error('Error cargando inventario:', error);
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #c62828;">❌ Error al cargar inventario: ${error.message}</td></tr>`;
-        }
-    },
-
-    handleInventarioClick(event) {
-        const row = event.target.closest('tr');
-        if (!row) return;
-        
-        const idInventario = row.getAttribute('data-id');
-        const nombreProducto = row.getAttribute('data-nombre');
-        const existencia = parseInt(row.getAttribute('data-existencia') || '0');
-        
-        if (!idInventario || !nombreProducto) return;
-        
-        if (event.target.hasAttribute('data-processing')) return;
-        event.target.setAttribute('data-processing', 'true');
-        
-        try {
-            if (existencia <= 0) {
-                Utils.showMessage(`❌ "${nombreProducto}" no tiene stock disponible`, true);
-                return;
-            }
-            
-            this.agregarRepuesto(idInventario, nombreProducto);
-        } finally {
-            setTimeout(() => {
-                event.target.removeAttribute('data-processing');
-            }, 300);
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #c62828;">Error al cargar inventario: ${error.message}</td></tr>`;
         }
     },
 
     renderizarInventario(inventario, tbody) {
-        if (!inventario.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">📦 No hay repuestos disponibles en inventario</td></tr>';
+        if (!inventario || !inventario.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay repuestos disponibles en inventario</td></tr>';
             return;
         }
 
@@ -1474,17 +1529,73 @@ const RepuestosService = {
         }
     },
 
+    obtenerStockDisponible(idInventario) {
+        const item = this.inventarioData.find(i => String(i.ID_inventario) === String(idInventario));
+        return item ? (item.Existencia || 0) : 0;
+    },
+
+    obtenerCantidadSeleccionada(idInventario) {
+        const encontrado = this.repuestosSeleccionados.find(r => String(r.id) === String(idInventario));
+        return encontrado ? encontrado.cantidad : 0;
+    },
+
+    obtenerStockRestante(idInventario) {
+        const stockTotal = this.obtenerStockDisponible(idInventario);
+        const cantidadSeleccionada = this.obtenerCantidadSeleccionada(idInventario);
+        return stockTotal - cantidadSeleccionada;
+    },
+
+    handleInventarioClick(event) {
+        const row = event.target.closest('tr');
+        if (!row) return;
+        
+        const idInventario = row.getAttribute('data-id');
+        const nombreProducto = row.getAttribute('data-nombre');
+        const existencia = parseInt(row.getAttribute('data-existencia') || '0');
+        
+        if (!idInventario || !nombreProducto) return;
+        
+        if (event.target.hasAttribute('data-processing')) return;
+        event.target.setAttribute('data-processing', 'true');
+        
+        try {
+            if (existencia <= 0) {
+                Utils.showMessage(`❌ "${nombreProducto}" no tiene stock disponible`, true);
+                return;
+            }
+            
+            const stockRestante = this.obtenerStockRestante(idInventario);
+            if (stockRestante <= 0) {
+                Utils.showMessage(`❌ No queda stock disponible de "${nombreProducto}" para seleccionar`, true);
+                return;
+            }
+            
+            this.agregarRepuesto(idInventario, nombreProducto);
+        } finally {
+            setTimeout(() => {
+                event.target.removeAttribute('data-processing');
+            }, 300);
+        }
+    },
+
     agregarRepuesto(idInventario, nombreProducto) {
-        const existente = this.repuestosSeleccionados.find(r => r.id === idInventario);
+        const stockDisponible = this.obtenerStockDisponible(idInventario);
+        const existente = this.repuestosSeleccionados.find(r => String(r.id) === String(idInventario));
         
         if (existente) {
-            existente.cantidad++;
-            Utils.showMessage(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
+            if (existente.cantidad < stockDisponible) {
+                existente.cantidad++;
+                Utils.showMessage(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
+            } else {
+                Utils.showMessage(`❌ No hay más stock disponible de "${nombreProducto}"`, true);
+                return;
+            }
         } else {
             this.repuestosSeleccionados.push({
                 id: idInventario,
                 nombre: nombreProducto,
-                cantidad: 1
+                cantidad: 1,
+                stockMaximo: stockDisponible
             });
             Utils.showMessage(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
         }
@@ -1500,7 +1611,7 @@ const RepuestosService = {
         if (this.repuestosSeleccionados.length === 0) {
             container.innerHTML = `
                 <div class="device-detail__empty" style="text-align: center; padding: 2rem;">
-                    📦 No hay repuestos agregados aún.<br>
+                    No hay repuestos agregados aún.<br>
                     <small>Haz clic en "Inventario de repuestos" y luego haz clic en cualquier producto de la lista.</small>
                 </div>
             `;
@@ -1512,30 +1623,39 @@ const RepuestosService = {
         const btnLimpiar = document.getElementById('btn-limpiar-repuestos');
         if (btnLimpiar) btnLimpiar.style.display = 'inline-flex';
 
-        container.innerHTML = this.repuestosSeleccionados.map((repuesto, index) => `
-            <div class="repuesto-item" data-repuesto-index="${index}">
-                <div class="repuesto-info">
-                    <div class="repuesto-nombre">🔧 ${Utils.escapeHtml(repuesto.nombre)}</div>
-                    <div class="repuesto-cantidad-control">
-                        <label>Cantidad:</label>
-                        <input type="number" 
-                               class="repuesto-cantidad-input" 
-                               data-index="${index}"
-                               value="${repuesto.cantidad}" 
-                               min="1" 
-                               max="99" 
-                               step="1">
+        container.innerHTML = this.repuestosSeleccionados.map((repuesto, index) => {
+            const stockMaximo = this.obtenerStockDisponible(repuesto.id);
+            return `
+                <div class="repuesto-item" data-repuesto-index="${index}">
+                    <div class="repuesto-info">
+                        <div class="repuesto-nombre">🔧 ${Utils.escapeHtml(repuesto.nombre)}</div>
+                        <div class="repuesto-cantidad-control">
+                            <label>Cantidad (máx ${stockMaximo}):</label>
+                            <input type="number" 
+                                   class="repuesto-cantidad-input" 
+                                   data-index="${index}"
+                                   data-stock-max="${stockMaximo}"
+                                   value="${repuesto.cantidad}" 
+                                   min="1" 
+                                   max="${stockMaximo}" 
+                                   step="1">
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">
+                                / ${stockMaximo}
+                            </span>
+                        </div>
                     </div>
+                    <button type="button" class="btn-eliminar-repuesto" data-eliminar-repuesto="${index}">
+                        ✖ Eliminar
+                    </button>
                 </div>
-                <button type="button" class="btn-eliminar-repuesto" data-eliminar-repuesto="${index}">
-                    ✖ Eliminar
-                </button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         container.querySelectorAll('.repuesto-cantidad-input').forEach(input => {
             input.removeEventListener('change', this.handleCantidadChange);
+            input.removeEventListener('input', this.handleCantidadInput);
             input.addEventListener('change', this.handleCantidadChange.bind(this));
+            input.addEventListener('input', this.handleCantidadInput.bind(this));
         });
 
         container.querySelectorAll('.btn-eliminar-repuesto').forEach(btn => {
@@ -1544,20 +1664,50 @@ const RepuestosService = {
         });
     },
 
+    handleCantidadInput(event) {
+        const input = event.target;
+        const stockMax = parseInt(input.getAttribute('data-stock-max') || '0');
+        let valor = parseInt(input.value);
+        
+        if (!isNaN(valor) && valor > stockMax) {
+            input.style.borderColor = '#dc2626';
+            input.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
+        } else {
+            input.style.borderColor = '';
+            input.style.backgroundColor = '';
+        }
+    },
+
     handleCantidadChange(event) {
         const input = event.target;
         const index = parseInt(input.getAttribute('data-index'));
+        const stockMax = parseInt(input.getAttribute('data-stock-max') || '0');
         let nuevaCantidad = parseInt(input.value);
         
-        if (!isNaN(nuevaCantidad) && nuevaCantidad > 0 && nuevaCantidad <= 99) {
+        if (!isNaN(nuevaCantidad) && nuevaCantidad > 0) {
+            if (nuevaCantidad > stockMax) {
+                Utils.showMessage(`❌ No puedes seleccionar más de ${stockMax} unidades de este repuesto`, true);
+                nuevaCantidad = stockMax;
+                input.value = stockMax;
+            }
+            
+            if (nuevaCantidad <= 0) {
+                nuevaCantidad = 1;
+                input.value = 1;
+            }
+            
             this.repuestosSeleccionados[index].cantidad = nuevaCantidad;
             this.renderizarRepuestosUsados();
             this.actualizarContadorTotal();
             Utils.showMessage(`Cantidad actualizada a ${nuevaCantidad}`);
         } else {
-            input.value = this.repuestosSeleccionados[index].cantidad;
-            Utils.showMessage('Cantidad inválida (debe ser entre 1 y 99)', true);
+            const cantidadActual = this.repuestosSeleccionados[index]?.cantidad || 1;
+            input.value = cantidadActual;
+            Utils.showMessage('Cantidad inválida', true);
         }
+        
+        input.style.borderColor = '';
+        input.style.backgroundColor = '';
     },
 
     handleEliminarClick(event) {
