@@ -608,6 +608,47 @@
                 </div>
             </div>
 
+            <!-- ===== CARRITO DE COMPRAS ===== -->
+            <div class="cart-widget" data-cart-root>
+                <button class="icon-btn" type="button" aria-label="Carrito de compras" data-cart-toggle>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/>
+                        <circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span class="cart-badge" data-cart-badge hidden>0</span>
+                </button>
+                
+                <!-- Panel desplegable del carrito -->
+                <div class="cart-panel" data-cart-panel hidden>
+                    <div class="cart-panel__header">
+                        <strong>Mi carrito</strong>
+                        <small data-cart-count>0 productos</small>
+                    </div>
+                    
+                    <div class="cart-panel__list" data-cart-list>
+                        <div class="cart-panel__empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="21" r="1"/>
+                                <circle cx="20" cy="21" r="1"/>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                            </svg>
+                            <p>Tu carrito está vacío</p>
+                        </div>
+                    </div>
+                    
+                    <div class="cart-panel__footer">
+                        <div class="cart-panel__total">
+                            <span>Total:</span>
+                            <strong data-cart-total>Bs. 0</strong>
+                        </div>
+                        <button class="cart-panel__checkout" data-cart-checkout disabled>
+                            Ir a pagar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Mensajes -->
             <button class="icon-btn" aria-label="Mensajes">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -394,4 +394,238 @@ document.addEventListener("DOMContentLoaded", () => {
 			alert("Error de conexión. Intenta nuevamente.");
 		}
 	});
+
+	// ==================== CARRITO DE COMPRAS ====================
+
+	const cartToggle = document.querySelector('[data-cart-toggle]');
+	const cartPanel = document.querySelector('[data-cart-panel]');
+	const cartBadge = document.querySelector('[data-cart-badge]');
+	const cartList = document.querySelector('[data-cart-list]');
+	const cartCount = document.querySelector('[data-cart-count]');
+	const cartTotal = document.querySelector('[data-cart-total]');
+	const cartCheckout = document.querySelector('[data-cart-checkout]');
+
+	// Estado del carrito (simulado)
+	let cartItems = [];
+
+	// Cargar carrito desde localStorage
+	function loadCart() {
+		try {
+			const saved = localStorage.getItem('cart_items');
+			if (saved) {
+				cartItems = JSON.parse(saved);
+			}
+		} catch (e) {
+			cartItems = [];
+		}
+		updateCartUI();
+	}
+
+	// Guardar carrito en localStorage
+	function saveCart() {
+		try {
+			localStorage.setItem('cart_items', JSON.stringify(cartItems));
+		} catch (e) {
+			// Ignorar
+		}
+		updateCartUI();
+	}
+
+	// Actualizar UI del carrito
+	function updateCartUI() {
+		const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+		const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+		// Badge
+		if (totalItems > 0) {
+			cartBadge.textContent = totalItems > 99 ? '99+' : totalItems;
+			cartBadge.removeAttribute('hidden');
+		} else {
+			cartBadge.setAttribute('hidden', '');
+		}
+
+		// Count
+		if (cartCount) {
+			cartCount.textContent = `${totalItems} producto${totalItems !== 1 ? 's' : ''}`;
+		}
+
+		// Total
+		if (cartTotal) {
+			cartTotal.textContent = `Bs. ${totalPrice.toLocaleString('es-VE')}`;
+		}
+
+		// Checkout button
+		if (cartCheckout) {
+			cartCheckout.disabled = totalItems === 0;
+		}
+
+		// Lista de productos
+		renderCartItems();
+	}
+
+	// Renderizar items del carrito
+	function renderCartItems() {
+		if (!cartList) return;
+
+		if (cartItems.length === 0) {
+			cartList.innerHTML = `
+				<div class="cart-panel__empty">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+						<circle cx="9" cy="21" r="1"/>
+						<circle cx="20" cy="21" r="1"/>
+						<path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+					</svg>
+					<p>Tu carrito está vacío</p>
+				</div>
+			`;
+			return;
+		}
+
+		cartList.innerHTML = cartItems.map((item, index) => `
+			<div class="cart-item" data-cart-index="${index}">
+				<div class="cart-item__image">
+					${item.image ? `<img src="${item.image}" alt="${item.name}">` : 
+					`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+						<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+						<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+					</svg>`}
+				</div>
+				<div class="cart-item__info">
+					<div class="cart-item__name">${escapeHtml(item.name)}</div>
+					<div class="cart-item__detail">
+						<span class="cart-item__quantity">
+							<button type="button" data-cart-action="decrease" data-index="${index}">-</button>
+							<span>${item.quantity}</span>
+							<button type="button" data-cart-action="increase" data-index="${index}">+</button>
+						</span>
+						<span>× Bs. ${item.price.toLocaleString('es-VE')}</span>
+					</div>
+				</div>
+				<div class="cart-item__price">Bs. ${(item.price * item.quantity).toLocaleString('es-VE')}</div>
+				<button class="cart-item__remove" type="button" data-cart-action="remove" data-index="${index}" aria-label="Eliminar producto">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" y1="6" x2="6" y2="18"/>
+						<line x1="6" y1="6" x2="18" y2="18"/>
+					</svg>
+				</button>
+			</div>
+		`).join('');
+	}
+
+	// Función auxiliar para escapar HTML
+	function escapeHtml(str) {
+		if (!str) return '';
+		return String(str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
+	// Toggle del panel del carrito
+	cartToggle?.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const isHidden = cartPanel.hasAttribute('hidden');
+		if (isHidden) {
+			cartPanel.removeAttribute('hidden');
+			loadCart(); // Recargar al abrir
+		} else {
+			cartPanel.setAttribute('hidden', '');
+		}
+	});
+
+	// Cerrar panel al hacer click fuera
+	document.addEventListener('click', (e) => {
+		const isClickInside = cartToggle?.contains(e.target) || cartPanel?.contains(e.target);
+		if (!isClickInside && cartPanel && !cartPanel.hasAttribute('hidden')) {
+			cartPanel.setAttribute('hidden', '');
+		}
+	});
+
+	// Eventos de acciones del carrito (delegación)
+	cartList?.addEventListener('click', (e) => {
+		const btn = e.target.closest('[data-cart-action]');
+		if (!btn) return;
+
+		const action = btn.dataset.cartAction;
+		const index = parseInt(btn.dataset.index);
+
+		if (isNaN(index) || index < 0 || index >= cartItems.length) return;
+
+		if (action === 'increase') {
+			cartItems[index].quantity += 1;
+		} else if (action === 'decrease') {
+			if (cartItems[index].quantity > 1) {
+				cartItems[index].quantity -= 1;
+			} else {
+				cartItems.splice(index, 1);
+			}
+		} else if (action === 'remove') {
+			cartItems.splice(index, 1);
+		}
+
+		saveCart();
+	});
+
+	// Botón "Ir a pagar"
+	cartCheckout?.addEventListener('click', () => {
+		if (cartItems.length === 0) return;
+		// Redirigir al checkout o abrir modal
+		window.location.href = '/checkout';
+	});
+
+	// Función para agregar producto al carrito (pública)
+	window.addToCart = function(product) {
+		const existing = cartItems.find(item => item.id === product.id);
+		if (existing) {
+			existing.quantity += product.quantity || 1;
+		} else {
+			cartItems.push({
+				id: product.id,
+				name: product.name,
+				price: product.price,
+				quantity: product.quantity || 1,
+				image: product.image || null
+			});
+		}
+		saveCart();
+		
+		// Mostrar feedback
+		if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+			window.FeedbackModal.show({
+				type: 'success',
+				title: 'Agregado al carrito',
+				message: `${product.name} ha sido agregado a tu carrito.`,
+				duration: 2500
+			});
+		}
+		
+		// Abrir panel del carrito
+		cartPanel.removeAttribute('hidden');
+		
+		// Cerrar después de 3 segundos
+		setTimeout(() => {
+			cartPanel.setAttribute('hidden', '');
+		}, 3000);
+	};
+
+	// Función para obtener el total de items en el carrito
+	window.getCartTotal = function() {
+		return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+	};
+
+	// Función para obtener el carrito completo
+	window.getCartItems = function() {
+		return [...cartItems];
+	};
+
+	// Función para vaciar el carrito
+	window.clearCart = function() {
+		cartItems = [];
+		saveCart();
+	};
+
+	// Inicializar carrito
+	loadCart();
 });
