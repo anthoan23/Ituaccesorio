@@ -264,7 +264,7 @@ def registrar_fotos():
         # ============================================
         # current_app.root_path apunta a 'Ituaccesorio/app'
         
-        static_dir = os.path.join(current_app.root_path, 'app', 'static')
+        static_dir = os.path.join(current_app.root_path, 'static')
         taller_dir = os.path.join(static_dir, 'img', 'evidencias', 'taller')
         
         # Crear la carpeta específica para el ID de la orden

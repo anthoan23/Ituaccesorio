@@ -22,7 +22,7 @@ def create_app():
     app = Flask(
         __name__,
         template_folder=os.path.join(base_dir, 'views'),  # <--- Apunta a views/ en la raíz
-        static_folder=os.path.join(base_dir, 'static'),  # app/static/
+        static_folder=os.path.join(base_dir, 'app', 'static'),  # app/static/
         static_url_path='/static'
     )
     
