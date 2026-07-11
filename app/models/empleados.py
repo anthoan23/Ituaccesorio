@@ -144,9 +144,6 @@ class Empleados():
     def consultar_empleado(self):
         """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
-        
-        if not cedula:
-            return None
             
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -181,9 +178,6 @@ class Empleados():
         """Obtiene las especialidades de un empleado (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
         
-        if not cedula:
-            return None
-            
         db = self.__conexion_bd.conexion1()
         if not db:
             return None
@@ -211,9 +205,6 @@ class Empleados():
     def verificar_empleado(self) -> bool:
         """Verifica si un empleado existe (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
-        
-        if not cedula:
-            return False
             
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -241,22 +232,6 @@ class Empleados():
         correo = self.correo_empleado.strip()
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
-
-        # Validaciones
-        if not cedula or not cargo_id or not nombre or not apellido:
-            return "La cédula, cargo, nombre y apellido son obligatorios."
-        
-        if len(cedula) > 8:
-            return "La cédula no puede exceder los 8 caracteres."
-        
-        if len(nombre) > 50:
-            return "El nombre no puede exceder los 50 caracteres."
-        
-        if len(apellido) > 50:
-            return "El apellido no puede exceder los 50 caracteres."
-        
-        if len(cedula) < 7:
-            return "La cédula debe tener al menos 7 caracteres."
 
         if self.verificar_empleado():
             return f"El empleado con cédula {cedula} ya existe."
@@ -317,10 +292,6 @@ class Empleados():
         correo = self.correo_empleado.strip()
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
-
-        # Validaciones
-        if not id_empleado:
-            return "El identificador del empleado es obligatorio."
 
         if not self.verificar_empleado():
             return f"El empleado con identificador {id_empleado} no existe."
@@ -387,11 +358,7 @@ class Empleados():
     def eliminar_empleado(self) -> str:
         """Elimina un empleado usando el atributo id_empleado"""
         id_empleado = self.id_empleado.strip()
-
-        if not id_empleado:
-            return "El identificador del empleado no puede estar vacío."
-
-        # Obtener nombre antes de eliminar
+ 
         empleado_info = self.consultar_empleado()
         nombre_completo = f"{empleado_info.get('nombre', '')} {empleado_info.get('apellido', '')}" if empleado_info else id_empleado
 

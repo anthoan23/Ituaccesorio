@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
 from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.validators import validar_numero, validar_texto, validar_texto_numero
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
 from app.models.inventario import Inventario
@@ -105,6 +106,10 @@ def guardar_revision_tecnica():
     id_empleado = g.user.get("cedula")
     numero_test = request.json.get("numero_test")
     componentes = request.json.get("componentes_evaluados")
+
+    validar_orden_id = validar_texto_numero(id_orden, 1, 10, "ID del Cargo")
+    if validar_orden_id:
+        return jsonify({"success": False, "error": validar_orden_id}), 400
 
   
 

@@ -37,6 +37,51 @@ def validar_texto_numero(valor, min_len, max_len, nombre_campo):
         
     return None
 
+def validar_email(valor):
+    valor_str = str(valor).strip() if valor is not None else ""
+    if not valor_str:
+        return "El campo correo no puede estar vacío."
+    if len(valor_str) < 3:
+        return "El campo correo debe tener al menos 3 caracteres."
+    if len(valor_str) > 60:
+        return "El campo correo no puede tener más de 60 caracteres."
+    
+    # Validación específica para @
+    if '@' not in valor_str:
+        return "El campo correo debe contener el símbolo @."
+    
+    # Validar que tenga exactamente un @
+    if valor_str.count('@') != 1:
+        return "El campo correo debe contener exactamente un símbolo @."
+    
+    # Validar que tenga un punto después del @
+    partes = valor_str.split('@')
+    usuario = partes[0]
+    dominio = partes[1]
+    
+    if not usuario:
+        return "El campo correo debe tener un usuario antes del @."
+    
+    if not dominio:
+        return "El campo correo debe tener un dominio después del @."
+    
+    if '.' not in dominio:
+        return "El campo correo debe tener un punto en el dominio (después del @)."
+    
+    # Verificar que el punto no esté al inicio del dominio
+    if dominio.startswith('.'):
+        return "El campo correo no puede tener un punto al inicio del dominio."
+    
+    # Verificar que el punto no esté al final del dominio
+    if dominio.endswith('.'):
+        return "El campo correo no puede tener un punto al final del dominio."
+    
+    # Validación completa con expresión regular
+    if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', valor_str):
+        return "El campo correo debe ser un correo electrónico válido."
+        
+    return None
+
 
 # ==================== NUEVAS FUNCIONES REUTILIZABLES ====================
 
