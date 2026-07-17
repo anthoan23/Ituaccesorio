@@ -1,71 +1,202 @@
+/* ============================================
+   FIELD-VALIDATOR.CSS - Validación de campos
+   ============================================ */
+
 /* Contenedor del campo */
 .field-validator-wrapper {
   position: relative;
   width: 100%;
+  display: block;
 }
 
-/* Mensajes de error */
+/* ===== CAMPOS CON ICONOS ===== */
+.field-validator-wrapper input,
+.field-validator-wrapper textarea,
+.field-validator-wrapper select {
+  padding-right: 42px !important;
+  transition: padding-right 0.3s ease, 
+              border-color 0.3s ease, 
+              box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ajuste para textarea */
+.field-validator-wrapper textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ===== ICONO DE VALIDACIÓN - CÍRCULO CON COLOR ===== */
+.validation-icon {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%) scale(0.6);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 5;
+  border-radius: 50%;
+  line-height: 1;
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Icono visible - SOLO cuando el campo tiene contenido */
+.validation-icon.visible {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+  animation: iconPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ===== TIPOS DE ICONOS - CÍRCULO CON COLOR ===== */
+
+/* Éxito - Círculo verde con check blanco */
+.validation-icon.success {
+  background: #22c55e;
+}
+
+.validation-icon.success::after {
+  content: none;
+}
+
+/* Error - Círculo rojo con X blanca */
+.validation-icon.error {
+  background: #ef4444;
+}
+
+.validation-icon.error::after {
+  content: none;
+}
+
+/* Advertencia - Círculo amarillo con ! blanco */
+.validation-icon.warning {
+  background: #f59e0b;
+}
+
+.validation-icon.warning::after {
+  content: none;
+}
+
+/* ===== POSICIONES ESPECÍFICAS ===== */
+
+/* Para textarea - icono alineado con la parte superior */
+.field-validator-wrapper textarea ~ .validation-icon {
+  top: 12px;
+  transform: translateY(0) scale(0.6);
+}
+
+.field-validator-wrapper textarea ~ .validation-icon.visible {
+  transform: translateY(0) scale(1);
+}
+
+/* Para select */
+.field-validator-wrapper select ~ .validation-icon {
+  top: 50%;
+  transform: translateY(-50%) scale(0.6);
+}
+
+.field-validator-wrapper select ~ .validation-icon.visible {
+  transform: translateY(-50%) scale(1);
+}
+
+/* ===== ESTILOS DE BORDE ===== */
+
+/* Campo válido */
+.field-validator-wrapper input.field-success,
+.field-validator-wrapper textarea.field-success,
+.field-validator-wrapper select.field-success {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12) !important;
+}
+
+.field-validator-wrapper input.field-success:focus,
+.field-validator-wrapper textarea.field-success:focus,
+.field-validator-wrapper select.field-success:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2) !important;
+}
+
+/* Campo con error */
+.field-validator-wrapper input.field-error,
+.field-validator-wrapper textarea.field-error,
+.field-validator-wrapper select.field-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.field-validator-wrapper input.field-error:focus,
+.field-validator-wrapper textarea.field-error:focus,
+.field-validator-wrapper select.field-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* ===== MENSAJES DE ERROR ===== */
 .field-message {
   font-size: 0.7rem;
   margin-top: 0.25rem;
-  color: #dc3545;
+  color: #ef4444;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  animation: slideDown 0.2s ease-out;
 }
 
-/* Estilos de validación */
-.field-error {
-  border-color: #dc3545 !important;
-}
-
-.field-error:focus {
-  border-color: #dc3545 !important;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
-}
-
-.field-success {
-  border-color: #28a745 !important;
-}
-
-.field-success:focus {
-  border-color: #28a745 !important;
-  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
-}
-
-/* Indicador de campo requerido */
-.required-indicator {
-  color: #dc3545;
-  margin-left: 0.25rem;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* Contador de caracteres (opcional, oculto por defecto) */
+/* ===== CONTADOR DE CARACTERES ===== */
 .field-counter {
   font-size: 0.7rem;
   margin-top: 0.25rem;
   color: #6c757d;
   text-align: right;
   font-family: monospace;
+  transition: color 0.3s ease;
+}
+
+.field-counter .counter-current {
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.field-counter .counter-max {
+  color: #6c757d;
 }
 
 .field-counter.counter-warning .counter-current {
-  color: #ffc107;
+  color: #f59e0b;
 }
 
 .field-counter.counter-danger .counter-current {
-  color: #dc3545;
+  color: #ef4444;
 }
 
-/* Advertencia */
+/* ===== ADVERTENCIA ===== */
 .field-warning {
   font-size: 0.7rem;
   margin-top: 0.25rem;
-  color: #ffc107;
+  color: #f59e0b;
+  animation: slideDown 0.2s ease-out;
 }
 
-/* Animación */
+/* ===== INDICADOR DE CAMPO REQUERIDO ===== */
+.required-indicator {
+  color: #ef4444;
+  margin-left: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+/* ===== ANIMACIONES ===== */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -77,6 +208,195 @@
   }
 }
 
-.field-message {
-  animation: slideDown 0.2s ease-out;
+@keyframes iconPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5);
+  }
+  60% {
+    transform: translateY(-50%) scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* Para textarea - animación sin translateY */
+.field-validator-wrapper textarea ~ .validation-icon {
+  animation: none;
+}
+
+.field-validator-wrapper textarea ~ .validation-icon.visible {
+  animation: iconPopInTextarea 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes iconPopInTextarea {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== VARIANTE CON SVG (alternativa a caracteres Unicode) ===== */
+
+/* Cuando se usan iconos SVG en lugar de Unicode */
+.validation-icon.has-svg {
+  font-size: 0;
+}
+
+.validation-icon.has-svg svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+  stroke: var(--bg-input, #16161a); /* Hueco transparente acorde al fondo del input */
+  stroke-width: 3.5; /* Trazo ligeramente más grueso para excelente contraste */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets y móviles pequeños */
+@media (max-width: 768px) {
+  .validation-icon {
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+  }
+  
+  .validation-icon.success::after {
+    font-size: 14px;
+  }
+  
+  .validation-icon.error::after {
+    font-size: 12px;
+  }
+  
+  .field-validator-wrapper input,
+  .field-validator-wrapper textarea,
+  .field-validator-wrapper select {
+    padding-right: 38px !important;
+  }
+  
+  .field-validator-wrapper textarea ~ .validation-icon {
+    top: 10px;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 480px) {
+  .validation-icon {
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+  
+  .validation-icon.success::after {
+    font-size: 12px;
+  }
+  
+  .validation-icon.error::after {
+    font-size: 10px;
+  }
+  
+  .field-validator-wrapper input,
+  .field-validator-wrapper textarea,
+  .field-validator-wrapper select {
+    padding-right: 34px !important;
+  }
+}
+
+/* ===== SOPORTE PARA TEMA OSCURO/CLARO ===== */
+
+/* Modo oscuro */
+[data-theme="dark"] .validation-icon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .field-message {
+  color: #f87171;
+}
+
+[data-theme="dark"] .field-counter {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .field-counter .counter-max {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .field-warning {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .required-indicator {
+  color: #f87171;
+}
+
+/* Modo claro */
+[data-theme="light"] .validation-icon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .field-message {
+  color: #dc2626;
+}
+
+[data-theme="light"] .field-counter {
+  color: #6b7280;
+}
+
+[data-theme="light"] .field-warning {
+  color: #d97706;
+}
+
+[data-theme="light"] .required-indicator {
+  color: #dc2626;
+}
+
+/* ===== ESTADOS DE CARGA ===== */
+.field-validator-wrapper.is-loading .validation-icon {
+  background: #6b7280;
+}
+
+.field-validator-wrapper.is-loading .validation-icon::after {
+  content: "⟳";
+  font-size: 16px;
+  color: #ffffff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== DESHABILITADO ===== */
+.field-validator-wrapper input:disabled ~ .validation-icon,
+.field-validator-wrapper textarea:disabled ~ .validation-icon,
+.field-validator-wrapper select:disabled ~ .validation-icon {
+  opacity: 0.3;
+  pointer-events: none;
+  background: #6b7280;
+}
+
+/* ===== GRUPO DE CAMPOS ===== */
+.field-group .field-validator-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.field-group .field-validator-wrapper:last-child {
+  margin-bottom: 0;
 }

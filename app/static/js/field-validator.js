@@ -49,73 +49,69 @@
     showErrorsInline: true,
     errorClass: 'field-error',
     successClass: 'field-success',
+    validationIcons: {
+      enabled: true,
+      showSuccess: true,
+      showError: true,
+      showWarning: false,
+      position: 'top-right',
+    },
   };
 
   const fieldStates = new WeakMap();
 
   // Reglas predefinidas para bloquear entrada en tiempo real
   const INPUT_FILTER_RULES = {
-    // Solo letras (incluye acentos y ñ)
     soloLetras: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/.test(value),
       message: 'Solo se permiten letras, espacios, acentos y ñ'
     },
-    // Solo números
     soloNumeros: {
       filter: (value) => value.replace(/[^\d]/g, ''),
       validate: (value) => /^\d*$/.test(value),
       message: 'Solo se permiten números'
     },
-    // Solo letras y números
     soloLetrasNumeros: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'Solo se permiten letras, números y espacios'
     },
-    // Solo letras (sin espacios)
     soloLetrasSinEspacios: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ]*$/.test(value),
       message: 'Solo se permiten letras (sin espacios)'
     },
-    // Sin números
     sinNumeros: {
       filter: (value) => value.replace(/[\d]/g, ''),
       validate: (value) => !/[\d]/.test(value),
       message: 'No se permiten números'
     },
-    // Sin símbolos (solo letras, números y espacios)
     sinSimbolos: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'No se permiten símbolos especiales'
     },
-    // Email (filtra caracteres no válidos para email)
     email: {
       filter: (value) => value.replace(/[^a-zA-Z0-9@._\-]/g, ''),
       validate: (value) => /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(value),
       message: 'Ingrese un correo electrónico válido'
     },
-    // Teléfono (solo números, espacios, guiones y paréntesis) - 11 dígitos
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),
       validate: (value) => /^\d{11}$/.test(value.replace(/[\s\-+()]/g, '')),
       message: 'Ingrese un número de teléfono válido (11 dígitos)'
     },
-    // Cédula/Venezuela (solo números)
     cedula: {
       filter: (value) => value.replace(/[^\d]/g, ''),
       validate: (value) => /^\d{6,8}$/.test(value),
       message: 'Ingrese una cédula válida (solo números, 6-8 dígitos)'
     },
-    // Sin espacios
     sinEspacios: {
       filter: (value) => value.replace(/\s/g, ''),
       validate: (value) => !/\s/.test(value),
       message: 'No se permiten espacios'
     },
-    // Mayúsculas iniciales automáticas
     capitalizar: {
       filter: (value) => {
         return value.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
@@ -123,23 +119,18 @@
       validate: () => true,
       message: ''
     },
-    // Sin caracteres especiales
     sinCaracteresEspeciales: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'No se permiten caracteres especiales'
     },
-    // Números decimales (hasta 2 decimales)
     decimal: {
       filter: (value) => {
-        // Permitir solo números y un punto decimal
         let filtered = value.replace(/[^\d.]/g, '');
-        // Prevenir múltiples puntos decimales
         const parts = filtered.split('.');
         if (parts.length > 2) {
           filtered = parts[0] + '.' + parts.slice(1).join('');
         }
-        // Limitar a 2 decimales
         if (parts.length === 2 && parts[1].length > 2) {
           filtered = parts[0] + '.' + parts[1].slice(0, 2);
         }
@@ -171,9 +162,12 @@
       this.counterElement = null;
       this.errorElement = null;
       this.warningElement = null;
+      this.validationIcon = null;
+      this.iconVisible = false; // NUEVO: Controla si el icono ya está visible
       this.initialized = false;
       this.customValidators = [];
       this.inputFilters = [];
+      this.touched = false;
       
       this.init();
     }
@@ -194,6 +188,7 @@
         showErrorsInline: config.showErrorsInline ?? DEFAULT_CONFIG.showErrorsInline,
         errorClass: config.errorClass || DEFAULT_CONFIG.errorClass,
         successClass: config.successClass || DEFAULT_CONFIG.successClass,
+        validationIcons: { ...DEFAULT_CONFIG.validationIcons, ...(config.validationIcons || {}) },
         customRules: customRules,
         onValidate: config.onValidate || null,
         onLimitReached: config.onLimitReached || null,
@@ -215,7 +210,6 @@
       this.minValue = this.field.getAttribute('min') ? parseFloat(this.field.getAttribute('min')) : null;
       this.maxValue = this.field.getAttribute('max') ? parseFloat(this.field.getAttribute('max')) : null;
       
-      // Cargar reglas de filtro desde data-validation-rules
       this.loadValidationRules();
       
       if (this.config.maxLength.enabled && this.maxLength && !this.field.hasAttribute('maxlength')) {
@@ -237,7 +231,6 @@
       const rulesAttr = this.field.dataset.validationRules;
       if (rulesAttr) {
         try {
-          // Puede ser JSON o string separado por comas
           let rules = [];
           if (rulesAttr.startsWith('{')) {
             const parsed = JSON.parse(rulesAttr);
@@ -258,7 +251,6 @@
         }
       }
       
-      // También soportar data-validation-filter para compatibilidad
       const filterAttr = this.field.dataset.validationFilter;
       if (filterAttr && INPUT_FILTER_RULES[filterAttr]) {
         this.inputFilters.push(INPUT_FILTER_RULES[filterAttr]);
@@ -281,19 +273,32 @@
     createUI() {
       const wrapper = this.createWrapper();
       
+      if (this.config.validationIcons?.enabled !== false) {
+        this.validationIcon = this.createValidationIcon();
+        if (!this.validationIcon.parentNode) {
+          wrapper.appendChild(this.validationIcon);
+        }
+      }
+      
       if (this.config.maxLength.enabled && this.maxLength && this.config.maxLength.showCounter) {
         this.counterElement = this.createCounter();
-        wrapper.appendChild(this.counterElement);
+        if (!this.counterElement.parentNode) {
+          wrapper.parentNode.insertBefore(this.counterElement, wrapper.nextSibling);
+        }
       }
       
       if (this.config.showErrorsInline) {
         this.errorElement = this.createErrorElement();
-        wrapper.appendChild(this.errorElement);
+        if (!this.errorElement.parentNode) {
+          wrapper.parentNode.insertBefore(this.errorElement, wrapper.nextSibling);
+        }
       }
       
       if (this.config.maxLength.enabled && this.config.maxLength.showWarning) {
         this.warningElement = this.createWarningElement();
-        wrapper.appendChild(this.warningElement);
+        if (!this.warningElement.parentNode) {
+          wrapper.parentNode.insertBefore(this.warningElement, wrapper.nextSibling);
+        }
       }
       
       if (this.isRequired && this.config.required.enabled && this.config.required.showIndicator) {
@@ -314,24 +319,142 @@
       return wrapper;
     }
 
+    createValidationIcon() {
+      let icon = this.field.parentNode.querySelector('.validation-icon');
+      if (!icon) {
+        icon = document.createElement('span');
+        icon.className = 'validation-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.style.display = 'none';
+      }
+      return icon;
+    }
+
+    // NUEVO: Mostrar icono de validación con control de animación
+    showValidationIcon(type) {
+      if (!this.validationIcon) return;
+      if (this.config.validationIcons?.enabled === false) return;
+      
+      // Verificar si debe mostrar según configuración
+      if (type === 'success' && !this.config.validationIcons.showSuccess) {
+        this.hideValidationIcon();
+        return;
+      }
+      if (type === 'error' && !this.config.validationIcons.showError) {
+        this.hideValidationIcon();
+        return;
+      }
+      if (type === 'warning' && !this.config.validationIcons.showWarning) {
+        this.hideValidationIcon();
+        return;
+      }
+
+      // Detectar dinámicamente el color de fondo real del input
+      try {
+        const computedStyle = window.getComputedStyle(this.field);
+        let bg = computedStyle.backgroundColor;
+        let parent = this.field.parentNode;
+        while ((bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') && parent && parent !== document.body) {
+          bg = window.getComputedStyle(parent).backgroundColor;
+          parent = parent.parentNode;
+        }
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+          this.field.closest('.field-validator-wrapper')?.style.setProperty('--bg-input', bg);
+        }
+      } catch (e) {
+        console.warn('Error detectando fondo dinámico del input:', e);
+      }
+      
+      // Obtener el tipo actual del icono
+      const currentType = this.validationIcon.dataset.currentType || '';
+      
+      // Limpiar clases anteriores
+      this.validationIcon.className = 'validation-icon has-svg';
+      this.validationIcon.classList.add(type);
+      this.validationIcon.style.display = 'flex';
+      
+      // Insertar el SVG correspondiente
+      if (type === 'success') {
+        this.validationIcon.innerHTML = `
+          <svg viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        `;
+      } else if (type === 'error') {
+        this.validationIcon.innerHTML = `
+          <svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
+      } else if (type === 'warning') {
+        this.validationIcon.innerHTML = `
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        `;
+      }
+      
+      // CONDICIONAL DE ANIMACIÓN:
+      // Solo aplicar animación si el icono NO está visible actualmente
+      // O si el tipo del icono cambió (por ejemplo, de error a éxito)
+      const isSameType = currentType === type;
+      const wasVisible = this.iconVisible;
+      
+      // Guardar el tipo actual
+      this.validationIcon.dataset.currentType = type;
+      
+      if (!wasVisible || !isSameType) {
+        // El icono no estaba visible o cambió de tipo → aplicar animación
+        this.iconVisible = true;
+        requestAnimationFrame(() => {
+          this.validationIcon.classList.add('visible', 'animate');
+        });
+      } else {
+        // El icono ya está visible y es del mismo tipo → NO aplicar animación
+        this.validationIcon.classList.add('visible');
+        this.validationIcon.classList.remove('animate');
+      }
+    }
+
+    // NUEVO: Ocultar icono de validación
+    hideValidationIcon() {
+      if (!this.validationIcon) return;
+      this.iconVisible = false; // Resetear estado
+      this.validationIcon.classList.remove('visible', 'success', 'error', 'warning', 'has-svg', 'animate');
+      this.validationIcon.style.display = 'none';
+      this.validationIcon.innerHTML = '';
+      delete this.validationIcon.dataset.currentType;
+    }
+
     createCounter() {
-      const counter = document.createElement('div');
-      counter.className = 'field-counter';
-      counter.setAttribute('aria-live', 'polite');
+      let counter = this.field.parentNode.parentNode ? this.field.parentNode.parentNode.querySelector('.field-counter') : null;
+      if (!counter) {
+        counter = document.createElement('div');
+        counter.className = 'field-counter';
+        counter.setAttribute('aria-live', 'polite');
+      }
       return counter;
     }
 
     createErrorElement() {
-      const error = document.createElement('div');
-      error.className = `field-message ${this.config.errorClass}`;
-      error.style.display = 'none';
+      let error = this.field.parentNode.parentNode ? this.field.parentNode.parentNode.querySelector('.field-message') : null;
+      if (!error) {
+        error = document.createElement('div');
+        error.className = `field-message ${this.config.errorClass}`;
+        error.style.display = 'none';
+      }
       return error;
     }
 
     createWarningElement() {
-      const warning = document.createElement('div');
-      warning.className = 'field-warning';
-      warning.style.display = 'none';
+      let warning = this.field.parentNode.parentNode ? this.field.parentNode.parentNode.querySelector('.field-warning') : null;
+      if (!warning) {
+        warning = document.createElement('div');
+        warning.className = 'field-warning';
+        warning.style.display = 'none';
+      }
       return warning;
     }
 
@@ -367,14 +490,12 @@
       if (wasModified) {
         const cursorPos = this.field.selectionStart;
         this.field.value = newValue;
-        // Mantener la posición del cursor aproximadamente solo si el tipo lo soporta
         const newPos = Math.min(cursorPos, newValue.length);
         const supportedTypes = ['text', 'search', 'tel', 'url', 'password', 'textarea'];
         if (typeof this.field.setSelectionRange === 'function' && supportedTypes.includes(this.field.type)) {
           try {
             this.field.setSelectionRange(newPos, newPos);
           } catch (e) {
-            // Algunos navegadores pueden rechazar la selección en campos no compatibles
             console.warn('No se pudo ajustar la selección del cursor:', e);
           }
         }
@@ -404,7 +525,7 @@
     bindEvents() {
       if (this.config.liveValidation) {
         this.field.addEventListener('input', (e) => {
-          // Aplicar filtros de entrada primero
+          this.touched = true;
           this.applyInputFilters();
           
           if (this.config.maxLength.enabled && this.config.maxLength.blockInput && this.maxLength) {
@@ -421,25 +542,28 @@
       }
       
       this.field.addEventListener('blur', () => {
-        // Aplicar filtros nuevamente al salir
+        this.touched = true;
         this.applyInputFilters();
         this.validate(true);
       });
       
       this.field.addEventListener('change', () => {
+        this.touched = true;
         this.applyInputFilters();
         this.validate();
       });
     }
 
     validate(showAllErrors = false) {
+      if (showAllErrors) {
+        this.touched = true;
+      }
       this.isRequired = this.field.hasAttribute('required') || this.field.dataset.required === 'true';
       let isValid = true;
       const errors = [];
       const value = this.field.value;
       const trimmedValue = typeof value === 'string' ? value.trim() : value;
       
-      // Validar reglas de filtro
       const filterValidation = this.validateInputFilters();
       if (!filterValidation.valid) {
         isValid = false;
@@ -519,7 +643,7 @@
       }
       
       this.showErrors(errors, showAllErrors);
-      this.updateFieldStyles(isValid);
+      this.updateFieldStyles(isValid, showAllErrors);
       
       if (this.config.onValidate) {
         this.config.onValidate(this.field, isValid, errors);
@@ -566,25 +690,56 @@
     showErrors(errors, forceShow = false) {
       if (!this.errorElement) return;
       
-      if (errors.length > 0 && (forceShow || this.field.matches(':focus') || this.field.value)) {
+      const hasValue = this.field.value && this.field.value.trim() !== '';
+      const shouldShow = forceShow || this.touched || this.field.matches(':focus');
+      
+      if (errors.length > 0 && shouldShow && (forceShow || this.field.matches(':focus') || hasValue)) {
         this.errorElement.textContent = errors.join(' • ');
         this.errorElement.style.display = 'block';
         this.field.setAttribute('aria-invalid', 'true');
+        
+        if (hasValue) {
+          this.showValidationIcon('error');
+        } else if (this.field.matches(':focus')) {
+          if (this.isRequired && this.config.required.enabled) {
+            this.showValidationIcon('warning');
+          }
+        }
       } else {
         this.errorElement.style.display = 'none';
         this.field.removeAttribute('aria-invalid');
+        
+        if (shouldShow && hasValue && this.field.value.trim() !== '') {
+          this.showValidationIcon('success');
+        } else {
+          this.hideValidationIcon();
+        }
       }
     }
 
-    updateFieldStyles(isValid) {
-      if (isValid && this.field.value && this.field.value.trim()) {
-        this.field.classList.add(this.config.successClass);
-        this.field.classList.remove(this.config.errorClass);
-      } else if (!isValid && this.field.value && this.field.value.trim()) {
-        this.field.classList.add(this.config.errorClass);
-        this.field.classList.remove(this.config.successClass);
+    updateFieldStyles(isValid, forceShow = false) {
+      const hasValue = this.field.value && this.field.value.trim() !== '';
+      const shouldShow = forceShow || this.touched;
+      
+      this.field.classList.remove(this.config.errorClass, this.config.successClass);
+      
+      if (shouldShow) {
+        if (isValid && hasValue) {
+          this.field.classList.add(this.config.successClass);
+          this.showValidationIcon('success');
+        } else if (!isValid && hasValue) {
+          this.field.classList.add(this.config.errorClass);
+          this.showValidationIcon('error');
+        } else if (!isValid && this.isRequired && this.config.required.enabled) {
+          this.field.classList.add(this.config.errorClass);
+          this.showValidationIcon('error');
+        } else {
+          this.field.classList.remove(this.config.errorClass, this.config.successClass);
+          this.hideValidationIcon();
+        }
       } else {
         this.field.classList.remove(this.config.errorClass, this.config.successClass);
+        this.hideValidationIcon();
       }
     }
 
@@ -592,6 +747,7 @@
       if (this.counterElement) this.counterElement.remove();
       if (this.errorElement) this.errorElement.remove();
       if (this.warningElement) this.warningElement.remove();
+      if (this.validationIcon) this.validationIcon.remove();
       
       const wrapper = this.field.closest('.field-validator-wrapper');
       if (wrapper && wrapper.children.length === 1) {
@@ -609,7 +765,14 @@
 
   function initAllFields() {
     const selectors = [
-      'input:not([data-validator-disabled])',
+      'input[type="text"]:not([data-validator-disabled])',
+      'input[type="email"]:not([data-validator-disabled])',
+      'input[type="password"]:not([data-validator-disabled])',
+      'input[type="tel"]:not([data-validator-disabled])',
+      'input[type="number"]:not([data-validator-disabled])',
+      'input[type="url"]:not([data-validator-disabled])',
+      'input[type="search"]:not([data-validator-disabled])',
+      'input:not([type]):not([data-validator-disabled])',
       'textarea:not([data-validator-disabled])',
       'select:not([data-validator-disabled])',
     ];
@@ -645,6 +808,10 @@
     
     if (field.dataset.pattern) {
       config.patterns = { custom: field.dataset.pattern };
+    }
+    
+    if (field.dataset.validationIcons === 'false') {
+      config.validationIcons = { enabled: false };
     }
     
     if (field.dataset.validatorConfig) {
@@ -717,9 +884,17 @@
     fields.forEach((field) => {
       const validator = fieldStates.get(field);
       if (validator) {
+        validator.touched = false;
         field.classList.remove('field-success', 'field-error');
         if (validator.errorElement) {
           validator.errorElement.style.display = 'none';
+        }
+        if (validator.validationIcon) {
+          validator.iconVisible = false;
+          validator.validationIcon.className = 'validation-icon';
+          validator.validationIcon.style.display = 'none';
+          validator.validationIcon.innerHTML = '';
+          delete validator.validationIcon.dataset.currentType;
         }
         field.removeAttribute('aria-invalid');
       }
