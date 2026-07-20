@@ -13,10 +13,8 @@
 .field-validator-wrapper input,
 .field-validator-wrapper textarea,
 .field-validator-wrapper select {
-  padding-right: 42px !important;
-  transition: padding-right 0.3s ease, 
-              border-color 0.3s ease, 
-              box-shadow 0.3s ease;
+  padding-right: 38px !important;
+  transition: padding-right 0.3s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -27,103 +25,207 @@
   min-height: 60px;
 }
 
-/* ===== ICONO DE VALIDACIÓN - CÍRCULO CON COLOR ===== */
+/* ===== ICONO DE VALIDACIÓN - SOLO LA IMAGEN ===== */
 .validation-icon {
   position: absolute;
   top: 50%;
-  right: 10px;
-  transform: translateY(-50%) scale(0.6);
-  width: 24px;
-  height: 24px;
+  right: 8px;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 5;
-  border-radius: 50%;
-  line-height: 1;
-  font-weight: 700;
-  font-size: 14px;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Icono visible - SOLO cuando el campo tiene contenido */
+/* Icono visible - con animación de entrada */
 .validation-icon.visible {
   opacity: 1;
   transform: translateY(-50%) scale(1);
-  animation: iconPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* ===== TIPOS DE ICONOS - CÍRCULO CON COLOR ===== */
+/* ===== ANIMACIONES ===== */
 
-/* Éxito - Círculo verde con check blanco */
-.validation-icon.success {
-  background: #22c55e;
+/* Animación de aparición */
+.validation-icon.icon-appear {
+  animation: iconAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.validation-icon.success::after {
-  content: none;
+@keyframes iconAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(-10deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1.2) rotate(5deg);
+  }
+  70% {
+    transform: translateY(-50%) scale(0.95) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1) rotate(0deg);
+  }
 }
 
-/* Error - Círculo rojo con X blanca */
-.validation-icon.error {
-  background: #ef4444;
+/* Animación de cambio de tipo */
+.validation-icon.icon-change {
+  animation: iconChange 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.validation-icon.error::after {
-  content: none;
+@keyframes iconChange {
+  0% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1) rotate(0deg);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translateY(-50%) scale(0.8) rotate(-15deg);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1.2) rotate(10deg);
+  }
+  80% {
+    transform: translateY(-50%) scale(0.95) rotate(-3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1) rotate(0deg);
+  }
 }
 
-/* Advertencia - Círculo amarillo con ! blanco */
-.validation-icon.warning {
-  background: #f59e0b;
+/* Animación de ocultación */
+.validation-icon.icon-hide {
+  animation: iconHide 0.3s ease-in forwards;
 }
 
-.validation-icon.warning::after {
-  content: none;
+@keyframes iconHide {
+  0% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(10deg);
+  }
+}
+
+/* ===== IMÁGENES DE VALIDACIÓN ===== */
+.validation-icon-img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 /* ===== POSICIONES ESPECÍFICAS ===== */
 
-/* Para textarea - icono alineado con la parte superior */
+/* Para textarea */
 .field-validator-wrapper textarea ~ .validation-icon {
   top: 12px;
-  transform: translateY(0) scale(0.6);
+  transform: translateY(0);
 }
 
 .field-validator-wrapper textarea ~ .validation-icon.visible {
   transform: translateY(0) scale(1);
 }
 
+/* Para textarea - animaciones sin translateY */
+.field-validator-wrapper textarea ~ .validation-icon.icon-appear {
+  animation: iconAppearTextarea 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes iconAppearTextarea {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(5deg);
+  }
+  70% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.field-validator-wrapper textarea ~ .validation-icon.icon-change {
+  animation: iconChangeTextarea 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes iconChangeTextarea {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    opacity: 0.6;
+    transform: scale(0.8) rotate(-15deg);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(10deg);
+  }
+  80% {
+    transform: scale(0.95) rotate(-3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.field-validator-wrapper textarea ~ .validation-icon.icon-hide {
+  animation: iconHideTextarea 0.3s ease-in forwards;
+}
+
+@keyframes iconHideTextarea {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(10deg);
+  }
+}
+
 /* Para select */
 .field-validator-wrapper select ~ .validation-icon {
   top: 50%;
-  transform: translateY(-50%) scale(0.6);
+  transform: translateY(-50%);
 }
 
-.field-validator-wrapper select ~ .validation-icon.visible {
-  transform: translateY(-50%) scale(1);
-}
-
-/* ===== ESTILOS DE BORDE ===== */
+/* ===== ESTILOS DE BORDE - SOLO BORDE Y SOMBRA, SIN CAMBIAR FONDO ===== */
 
 /* Campo válido */
 .field-validator-wrapper input.field-success,
 .field-validator-wrapper textarea.field-success,
 .field-validator-wrapper select.field-success {
   border-color: #22c55e !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15) !important;
 }
 
 .field-validator-wrapper input.field-success:focus,
 .field-validator-wrapper textarea.field-success:focus,
 .field-validator-wrapper select.field-success:focus {
   border-color: #16a34a !important;
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2) !important;
 }
 
 /* Campo con error */
@@ -131,19 +233,19 @@
 .field-validator-wrapper textarea.field-error,
 .field-validator-wrapper select.field-error {
   border-color: #ef4444 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
 }
 
 .field-validator-wrapper input.field-error:focus,
 .field-validator-wrapper textarea.field-error:focus,
 .field-validator-wrapper select.field-error:focus {
   border-color: #dc2626 !important;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
 }
 
 /* ===== MENSAJES DE ERROR ===== */
 .field-message {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   margin-top: 0.25rem;
   color: #ef4444;
   display: flex;
@@ -196,7 +298,7 @@
   display: inline-block;
 }
 
-/* ===== ANIMACIONES ===== */
+/* ===== ANIMACIONES BASE ===== */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -208,123 +310,47 @@
   }
 }
 
-@keyframes iconPopIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.5);
-  }
-  60% {
-    transform: translateY(-50%) scale(1.15);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-}
-
-/* Para textarea - animación sin translateY */
-.field-validator-wrapper textarea ~ .validation-icon {
-  animation: none;
-}
-
-.field-validator-wrapper textarea ~ .validation-icon.visible {
-  animation: iconPopInTextarea 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes iconPopInTextarea {
-  0% {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  60% {
-    transform: scale(1.15);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ===== VARIANTE CON SVG (alternativa a caracteres Unicode) ===== */
-
-/* Cuando se usan iconos SVG en lugar de Unicode */
-.validation-icon.has-svg {
-  font-size: 0;
-}
-
-.validation-icon.has-svg svg {
-  width: 12px;
-  height: 12px;
-  display: block;
-  stroke: var(--bg-input, #16161a); /* Hueco transparente acorde al fondo del input */
-  stroke-width: 3.5; /* Trazo ligeramente más grueso para excelente contraste */
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  fill: none;
-}
-
-
 /* ===== RESPONSIVE ===== */
 
 /* Tablets y móviles pequeños */
 @media (max-width: 768px) {
   .validation-icon {
-    right: 8px;
-    width: 22px;
-    height: 22px;
-    font-size: 13px;
+    right: 6px;
   }
   
-  .validation-icon.success::after {
-    font-size: 14px;
-  }
-  
-  .validation-icon.error::after {
-    font-size: 12px;
+  .validation-icon-img {
+    width: 20px;
+    height: 20px;
   }
   
   .field-validator-wrapper input,
   .field-validator-wrapper textarea,
   .field-validator-wrapper select {
-    padding-right: 38px !important;
-  }
-  
-  .field-validator-wrapper textarea ~ .validation-icon {
-    top: 10px;
+    padding-right: 32px !important;
   }
 }
 
 /* Móviles muy pequeños */
 @media (max-width: 480px) {
   .validation-icon {
-    right: 6px;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
+    right: 4px;
   }
   
-  .validation-icon.success::after {
-    font-size: 12px;
-  }
-  
-  .validation-icon.error::after {
-    font-size: 10px;
+  .validation-icon-img {
+    width: 18px;
+    height: 18px;
   }
   
   .field-validator-wrapper input,
   .field-validator-wrapper textarea,
   .field-validator-wrapper select {
-    padding-right: 34px !important;
+    padding-right: 28px !important;
   }
 }
 
 /* ===== SOPORTE PARA TEMA OSCURO/CLARO ===== */
 
 /* Modo oscuro */
-[data-theme="dark"] .validation-icon {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
 [data-theme="dark"] .field-message {
   color: #f87171;
 }
@@ -346,10 +372,6 @@
 }
 
 /* Modo claro */
-[data-theme="light"] .validation-icon {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
 [data-theme="light"] .field-message {
   color: #dc2626;
 }
@@ -364,32 +386,6 @@
 
 [data-theme="light"] .required-indicator {
   color: #dc2626;
-}
-
-/* ===== ESTADOS DE CARGA ===== */
-.field-validator-wrapper.is-loading .validation-icon {
-  background: #6b7280;
-}
-
-.field-validator-wrapper.is-loading .validation-icon::after {
-  content: "⟳";
-  font-size: 16px;
-  color: #ffffff;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* ===== DESHABILITADO ===== */
-.field-validator-wrapper input:disabled ~ .validation-icon,
-.field-validator-wrapper textarea:disabled ~ .validation-icon,
-.field-validator-wrapper select:disabled ~ .validation-icon {
-  opacity: 0.3;
-  pointer-events: none;
-  background: #6b7280;
 }
 
 /* ===== GRUPO DE CAMPOS ===== */

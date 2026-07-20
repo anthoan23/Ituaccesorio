@@ -54,7 +54,6 @@
       showSuccess: true,
       showError: true,
       showWarning: false,
-      position: 'top-right',
     },
   };
 
@@ -63,11 +62,10 @@
   // Reglas predefinidas para bloquear entrada en tiempo real
   const INPUT_FILTER_RULES = {
   noDuplicadoTabla: {
-      filter: (value) => value, // No altera el texto al escribir[cite: 1]
+      filter: (value) => value,
       validate: (value, field) => {
         if (!value || !value.trim()) return true;
 
-        // Leemos los parámetros directamente desde el HTML
         const selectorTabla = field.dataset.validarTabla;
         const columnaIndex = parseInt(field.dataset.validarColumna, 10);
         const idInputExclusion = field.dataset.validarExcluirId;
@@ -80,7 +78,6 @@
         const filas = tbody.querySelectorAll('tr');
         const valorNuevo = value.trim().toLowerCase();
 
-        // Si estamos editando, obtenemos el ID actual para no auto-bloquearnos
         let idActual = '';
         if (idInputExclusion) {
           const inputId = document.getElementById(idInputExclusion);
@@ -90,7 +87,6 @@
         let duplicado = false;
 
         filas.forEach(fila => {
-          // Ignoramos estados de carga o vacíos de la tabla
           if (fila.querySelector('.table__empty') || fila.querySelector('.table__loading') || fila.querySelector('.table__error')) return;
 
           const celdaId = fila.querySelector('td:nth-child(1)');
@@ -101,7 +97,7 @@
             const textoId = celdaId ? celdaId.textContent.trim().toLowerCase() : '';
 
             if (textoNombre === valorNuevo) {
-              if (idActual && textoId === idActual) return; // Es el mismo registro editado[cite: 2]
+              if (idActual && textoId === idActual) return;
               duplicado = true;
             }
           }
@@ -213,7 +209,7 @@
       this.errorElement = null;
       this.warningElement = null;
       this.validationIcon = null;
-      this.iconVisible = false; // NUEVO: Controla si el icono ya está visible
+      this.iconVisible = false;
       this.initialized = false;
       this.customValidators = [];
       this.inputFilters = [];
@@ -380,12 +376,10 @@
       return icon;
     }
 
-    // NUEVO: Mostrar icono de validación con control de animación
     showValidationIcon(type) {
       if (!this.validationIcon) return;
       if (this.config.validationIcons?.enabled === false) return;
       
-      // Verificar si debe mostrar según configuración
       if (type === 'success' && !this.config.validationIcons.showSuccess) {
         this.hideValidationIcon();
         return;
@@ -399,83 +393,95 @@
         return;
       }
 
-      // Detectar dinámicamente el color de fondo real del input
-      try {
-        const computedStyle = window.getComputedStyle(this.field);
-        let bg = computedStyle.backgroundColor;
-        let parent = this.field.parentNode;
-        while ((bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') && parent && parent !== document.body) {
-          bg = window.getComputedStyle(parent).backgroundColor;
-          parent = parent.parentNode;
-        }
-        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
-          this.field.closest('.field-validator-wrapper')?.style.setProperty('--bg-input', bg);
-        }
-      } catch (e) {
-        console.warn('Error detectando fondo dinámico del input:', e);
-      }
-      
-      // Obtener el tipo actual del icono
       const currentType = this.validationIcon.dataset.currentType || '';
       
-      // Limpiar clases anteriores
-      this.validationIcon.className = 'validation-icon has-svg';
-      this.validationIcon.classList.add(type);
+      // Limpiar clases y estilos
+      this.validationIcon.className = 'validation-icon';
       this.validationIcon.style.display = 'flex';
+      this.validationIcon.style.background = 'transparent';
+      this.validationIcon.style.boxShadow = 'none';
+      this.validationIcon.style.borderRadius = '0';
+      this.validationIcon.style.padding = '0';
+      this.validationIcon.style.width = 'auto';
+      this.validationIcon.style.height = 'auto';
       
-      // Insertar el SVG correspondiente
+      const basePath = '/static/img/icons/';
+      let imgSrc = '';
+      let altText = '';
+      
       if (type === 'success') {
-        this.validationIcon.innerHTML = `
-          <svg viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        `;
+        imgSrc = `${basePath}v.png`;
+        altText = '✓';
+        this.validationIcon.classList.add('success');
       } else if (type === 'error') {
-        this.validationIcon.innerHTML = `
-          <svg viewBox="0 0 24 24">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        `;
+        imgSrc = `${basePath}x.png`;
+        altText = '✗';
+        this.validationIcon.classList.add('error');
       } else if (type === 'warning') {
+        imgSrc = `${basePath}warning.png`;
+        altText = '!';
+        this.validationIcon.classList.add('warning');
+      }
+      
+      if (imgSrc) {
         this.validationIcon.innerHTML = `
-          <svg viewBox="0 0 24 24">
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
+          <img src="${imgSrc}" alt="${altText}" class="validation-icon-img" style="display:block;width:24px;height:24px;object-fit:contain;">
         `;
       }
       
-      // CONDICIONAL DE ANIMACIÓN:
-      // Solo aplicar animación si el icono NO está visible actualmente
-      // O si el tipo del icono cambió (por ejemplo, de error a éxito)
       const isSameType = currentType === type;
       const wasVisible = this.iconVisible;
       
-      // Guardar el tipo actual
       this.validationIcon.dataset.currentType = type;
       
-      if (!wasVisible || !isSameType) {
-        // El icono no estaba visible o cambió de tipo → aplicar animación
+      // Aplicar animación según el estado
+      if (!wasVisible) {
+        // El icono no estaba visible - aparece con animación de entrada
         this.iconVisible = true;
         requestAnimationFrame(() => {
-          this.validationIcon.classList.add('visible', 'animate');
+          this.validationIcon.classList.add('visible', 'icon-appear');
+          // Remover la clase después de la animación
+          setTimeout(() => {
+            this.validationIcon.classList.remove('icon-appear');
+          }, 400);
         });
+      } else if (!isSameType) {
+        // El icono cambió de tipo - animación de cambio
+        this.validationIcon.classList.remove('visible');
+        // Pequeño delay para la animación de salida
+        setTimeout(() => {
+          this.iconVisible = true;
+          this.validationIcon.classList.add('visible', 'icon-change');
+          setTimeout(() => {
+            this.validationIcon.classList.remove('icon-change');
+          }, 500);
+        }, 150);
       } else {
-        // El icono ya está visible y es del mismo tipo → NO aplicar animación
+        // Mismo tipo y ya visible - solo asegurar que esté visible
         this.validationIcon.classList.add('visible');
-        this.validationIcon.classList.remove('animate');
       }
     }
 
-    // NUEVO: Ocultar icono de validación
     hideValidationIcon() {
       if (!this.validationIcon) return;
-      this.iconVisible = false; // Resetear estado
-      this.validationIcon.classList.remove('visible', 'success', 'error', 'warning', 'has-svg', 'animate');
-      this.validationIcon.style.display = 'none';
-      this.validationIcon.innerHTML = '';
-      delete this.validationIcon.dataset.currentType;
+      
+      // Animación de salida
+      if (this.iconVisible) {
+        this.validationIcon.classList.add('icon-hide');
+        setTimeout(() => {
+          this.iconVisible = false;
+          this.validationIcon.classList.remove('visible', 'success', 'error', 'warning', 'icon-hide', 'icon-appear', 'icon-change');
+          this.validationIcon.style.display = 'none';
+          this.validationIcon.innerHTML = '';
+          delete this.validationIcon.dataset.currentType;
+        }, 300);
+      } else {
+        this.iconVisible = false;
+        this.validationIcon.classList.remove('visible', 'success', 'error', 'warning');
+        this.validationIcon.style.display = 'none';
+        this.validationIcon.innerHTML = '';
+        delete this.validationIcon.dataset.currentType;
+      }
     }
 
     createCounter() {
@@ -559,7 +565,6 @@
       
       this.inputFilters.forEach(filter => {
         if (filter.validate && typeof filter.validate === 'function') {
-          // CAMBIO AQUÍ: Agregamos "this.field" como segundo parámetro
           if (!filter.validate(this.field.value, this.field)) {
             isValid = false;
             if (filter.message) {
