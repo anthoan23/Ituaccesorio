@@ -210,6 +210,8 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .btn-icon-action--success:hover {
@@ -782,9 +784,12 @@ body {
   grid-column: 1 / -1;
 }
 
+/* ============================================ */
+/* INPUTS Y SELECT - ALINEADOS VERTICALMENTE */
+/* ============================================ */
 .empleado-form__field input,
-.empleado-form__field select,
-.empleado-form__field textarea {
+.empleado-form__field textarea,
+.empleado-form__field .select-wrapper select {
   width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(243, 197, 0, 0.35);
@@ -797,31 +802,16 @@ body {
 }
 
 .empleado-form__field input::placeholder,
-.empleado-form__field select::placeholder,
 .empleado-form__field textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
 
 .empleado-form__field input:focus,
-.empleado-form__field select:focus,
-.empleado-form__field textarea:focus {
+.empleado-form__field textarea:focus,
+.empleado-form__field .select-wrapper select:focus {
   border-color: rgba(243, 197, 0, 0.8);
   box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
   background: rgba(18, 18, 18, 0.8);
-}
-
-.empleado-form__field select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f3c500' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding-right: 2.5rem;
-}
-
-.empleado-form__field select option {
-  background: #1e1e1e;
-  color: #ffffff;
 }
 
 .empleado-form__field textarea {
@@ -842,6 +832,86 @@ body {
   color: rgba(255, 255, 255, 0.5);
   margin-top: 0.25rem;
   display: block;
+}
+
+/* ============================================ */
+/* SELECT PERSONALIZADO CON ICONO DINÁMICO */
+/* ============================================ */
+.select-wrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.select-wrapper select {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(243, 197, 0, 0.35);
+  background: rgba(18, 18, 18, 0.6);
+  color: #ffffff;
+  font: inherit;
+  padding: 0.85rem 2.5rem 0.85rem 0.95rem; /* MANTENEMOS EL PADDING PARA EL ICONO */
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.select-wrapper select:focus {
+  border-color: rgba(243, 197, 0, 0.8);
+  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
+  background: rgba(18, 18, 18, 0.8);
+}
+
+.select-wrapper select option {
+  background: #1e1e1e;
+  color: #ffffff;
+  padding: 0.5rem;
+}
+
+/* Quitar el icono por defecto en Firefox */
+.select-wrapper select::-moz-focus-inner {
+  border: 0;
+}
+
+/* Quitar el icono por defecto en IE */
+.select-wrapper select::-ms-expand {
+  display: none;
+}
+
+/* ============================================ */
+/* ICONO DEL SELECT - Flecha hacia abajo (cerrado) */
+/* ============================================ */
+.select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f3c500' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center;
+  background-size: contain;
+  transition: transform 0.25s ease;
+}
+
+/* ============================================ */
+/* ICONO DEL SELECT - Flecha a la izquierda (<) cuando está abierto */
+/* ============================================ */
+.select-wrapper:focus-within::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.select-wrapper.is-open::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.select-wrapper.is-open select {
+  border-color: rgba(243, 197, 0, 0.8);
+  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
 }
 
 /* ============================================ */
@@ -895,30 +965,6 @@ body {
 
 .ui-select {
   width: 100%;
-  border-radius: 12px;
-  border: 1px solid rgba(243, 197, 0, 0.35);
-  background: rgba(18, 18, 18, 0.6);
-  color: #ffffff;
-  font: inherit;
-  padding: 0.85rem 0.95rem;
-  outline: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f3c500' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding-right: 2.5rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.ui-select:focus {
-  border-color: rgba(243, 197, 0, 0.8);
-  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.25);
-}
-
-.ui-select option {
-  background: #1e1e1e;
-  color: #ffffff;
 }
 
 .especialidades-list {
@@ -1329,6 +1375,15 @@ body {
     padding: 0.75rem 1rem;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .select-wrapper select {
+    padding: 0.65rem 2.2rem 0.65rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .select-wrapper select option {
+    font-size: 0.9rem;
   }
 }
 

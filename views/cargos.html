@@ -76,7 +76,9 @@
                     minlength="3"
                     maxlength="30"
                     required
-                    data-validation-rules="soloLetras,capitalizar"
+                    data-validation-rules="soloLetras,capitalizar,noDuplicadoTabla"
+                    data-validar-tabla="#tabla-cargos"
+                    data-validar-columna="2"
                     title="Solo letras, espacios, acentos y ñ">
               <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (mínimo 3 caracteres)</small>
             </label>

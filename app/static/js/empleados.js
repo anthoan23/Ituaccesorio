@@ -187,6 +187,51 @@ const Utils = {
 };
 
 // ============================================
+// 2.5. MANEJO DE SELECT CON ICONO DINÁMICO
+// ============================================
+function initSelectIcons() {
+  const selects = document.querySelectorAll('.select-wrapper select');
+  
+  selects.forEach(select => {
+    // Remover event listeners previos para evitar duplicados
+    select.removeEventListener('focus', handleSelectFocus);
+    select.removeEventListener('blur', handleSelectBlur);
+    
+    // Agregar event listeners
+    select.addEventListener('focus', handleSelectFocus);
+    select.addEventListener('blur', handleSelectBlur);
+    
+    // Si el select ya tiene valor seleccionado, mantener el estado visual
+    if (select.value && select.value !== '') {
+      select.parentElement.classList.add('has-value');
+    }
+    
+    // Detectar cambios para mantener estado visual
+    select.removeEventListener('change', handleSelectChange);
+    select.addEventListener('change', handleSelectChange);
+  });
+}
+
+function handleSelectFocus(e) {
+  const wrapper = e.currentTarget.parentElement;
+  wrapper.classList.add('is-open');
+}
+
+function handleSelectBlur(e) {
+  const wrapper = e.currentTarget.parentElement;
+  wrapper.classList.remove('is-open');
+}
+
+function handleSelectChange(e) {
+  const wrapper = e.currentTarget.parentElement;
+  if (e.currentTarget.value && e.currentTarget.value !== '') {
+    wrapper.classList.add('has-value');
+  } else {
+    wrapper.classList.remove('has-value');
+  }
+}
+
+// ============================================
 // 3. MANEJADORES DE MODALES
 // ============================================
 function openModal(id, mode = 'register', empleadoData = null, especialidadesData = null) {
@@ -238,6 +283,9 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
         checking: false
       };
       
+      // Resetear selects
+      resetSelects();
+      
     } else if (mode === 'edit') {
       if (modalTitle) modalTitle.textContent = 'Modificar empleado';
       if (submitBtn) {
@@ -273,6 +321,9 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
     modal.removeAttribute("hidden");
     modal.setAttribute("aria-hidden", "false");
     
+    // Re-inicializar iconos de selects después de abrir el modal
+    setTimeout(initSelectIcons, 50);
+    
   } else if (id === 'modal-ver-empleado') {
     if (empleadoData) {
       mostrarDetalleEmpleado(empleadoData, especialidadesData);
@@ -284,6 +335,14 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
     modal.removeAttribute("hidden");
     modal.setAttribute("aria-hidden", "false");
   }
+}
+
+function resetSelects() {
+  const selects = document.querySelectorAll('.select-wrapper select');
+  selects.forEach(select => {
+    const wrapper = select.parentElement;
+    wrapper.classList.remove('is-open', 'has-value');
+  });
 }
 
 function closeModal(id) {
@@ -341,6 +400,9 @@ function closeModal(id) {
       
       // Limpiar validación de cédula
       limpiarValidacionCedula();
+      
+      // Resetear selects
+      resetSelects();
     }
   }
 }
@@ -577,7 +639,12 @@ function cargarDatosEnFormulario(empleado, especialidades = null) {
   if (cargoSelect && empleadoData.cargo) {
     const cargoNombre = empleadoData.cargo;
     const option = Array.from(cargoSelect.options).find(opt => opt.text === cargoNombre);
-    if (option) cargoSelect.value = option.value;
+    if (option) {
+      cargoSelect.value = option.value;
+      // Marcar como con valor
+      const wrapper = cargoSelect.parentElement;
+      if (wrapper) wrapper.classList.add('has-value');
+    }
   }
   
   if (especialidadesData && especialidadesData.length > 0) {
@@ -633,6 +700,7 @@ async function editarEmpleado(cedula) {
       openModal('modal-registrar-empleado', 'edit', response);
       setTimeout(() => {
         toggleEspecialidades();
+        initSelectIcons();
       }, 100);
     } else {
       Utils.showMessage('No se encontró el empleado', true);
@@ -880,6 +948,9 @@ function llenarSelectCargos() {
     option.textContent = cargo.Nombre_cargo;
     cargoSelect.appendChild(option);
   });
+  
+  // Inicializar icono del select
+  setTimeout(initSelectIcons, 50);
 }
 
 function llenarSelectEspecialidades() {
@@ -896,6 +967,9 @@ function llenarSelectEspecialidades() {
   
   selectEspecialidad.removeEventListener('change', autoAgregarEspecialidad);
   selectEspecialidad.addEventListener('change', autoAgregarEspecialidad);
+  
+  // Inicializar icono del select
+  setTimeout(initSelectIcons, 50);
 }
 
 function autoAgregarEspecialidad(event) {
@@ -1127,6 +1201,7 @@ async function registrarEmpleado(event) {
     if (response.success) {
       form.reset();
       limpiarEspecialidades();
+      resetSelects();
       closeModal('modal-registrar-empleado');
       await cargarEmpleados();
       await cargarGraficos();
@@ -1185,6 +1260,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await cargarCargosYEspecialidades();
   await cargarEmpleados();
   await cargarGraficos();
+  
+  // Inicializar iconos de selects
+  initSelectIcons();
   
   const formEmpleado = document.getElementById('form-registrar-empleado');
   if (formEmpleado) {
@@ -1328,6 +1406,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+  
+  // Re-inicializar iconos de selects después de un tiempo
+  setTimeout(initSelectIcons, 200);
 });
 
 window.empleadosApp = {
@@ -1337,5 +1418,6 @@ window.empleadosApp = {
   cargarGraficos,
   verEmpleado,
   editarEmpleado,
-  eliminarEmpleado
+  eliminarEmpleado,
+  initSelectIcons
 };

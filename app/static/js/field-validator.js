@@ -62,6 +62,56 @@
 
   // Reglas predefinidas para bloquear entrada en tiempo real
   const INPUT_FILTER_RULES = {
+  noDuplicadoTabla: {
+      filter: (value) => value, // No altera el texto al escribir[cite: 1]
+      validate: (value, field) => {
+        if (!value || !value.trim()) return true;
+
+        // Leemos los parámetros directamente desde el HTML
+        const selectorTabla = field.dataset.validarTabla;
+        const columnaIndex = parseInt(field.dataset.validarColumna, 10);
+        const idInputExclusion = field.dataset.validarExcluirId;
+
+        if (!selectorTabla || !columnaIndex) return true;
+
+        const tbody = document.querySelector(selectorTabla);
+        if (!tbody) return true;
+
+        const filas = tbody.querySelectorAll('tr');
+        const valorNuevo = value.trim().toLowerCase();
+
+        // Si estamos editando, obtenemos el ID actual para no auto-bloquearnos
+        let idActual = '';
+        if (idInputExclusion) {
+          const inputId = document.getElementById(idInputExclusion);
+          if (inputId) idActual = inputId.value.trim().toLowerCase();
+        }
+
+        let duplicado = false;
+
+        filas.forEach(fila => {
+          // Ignoramos estados de carga o vacíos de la tabla
+          if (fila.querySelector('.table__empty') || fila.querySelector('.table__loading') || fila.querySelector('.table__error')) return;
+
+          const celdaId = fila.querySelector('td:nth-child(1)');
+          const celdaNombre = fila.querySelector(`td:nth-child(${columnaIndex})`);
+
+          if (celdaNombre) {
+            const textoNombre = celdaNombre.textContent.trim().toLowerCase();
+            const textoId = celdaId ? celdaId.textContent.trim().toLowerCase() : '';
+
+            if (textoNombre === valorNuevo) {
+              if (idActual && textoId === idActual) return; // Es el mismo registro editado[cite: 2]
+              duplicado = true;
+            }
+          }
+        });
+
+        return !duplicado;
+      },
+      message: 'Este registro ya existe en la tabla actual.'
+    },
+    
     soloLetras: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/.test(value),
@@ -501,7 +551,6 @@
         }
       }
     }
-
     validateInputFilters() {
       if (this.inputFilters.length === 0) return { valid: true, errors: [] };
       
@@ -510,7 +559,8 @@
       
       this.inputFilters.forEach(filter => {
         if (filter.validate && typeof filter.validate === 'function') {
-          if (!filter.validate(this.field.value)) {
+          // CAMBIO AQUÍ: Agregamos "this.field" como segundo parámetro
+          if (!filter.validate(this.field.value, this.field)) {
             isValid = false;
             if (filter.message) {
               errors.push(filter.message);

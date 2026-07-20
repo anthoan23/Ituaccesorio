@@ -141,8 +141,12 @@
 
           <label class="empleado-form__field">
             <span>Cargo *</span>
-            <select name="id_cargo" id="reg-cargo-empleado" required>
-            </select>
+            <div class="select-wrapper">
+              <select name="id_cargo" id="reg-cargo-empleado" required>
+                <option value="">Seleccione un cargo</option>
+              </select>
+            </div>
+            <small class="field-hint">Seleccionar uno es obligatorio</small>
           </label>
 
           <label class="empleado-form__field">
@@ -189,8 +193,11 @@
             
             <div class="ui-form__field">
               <label class="ui-label">Seleccionar especialidad</label>
-              <select id="select-especialidad" class="ui-select">
-              </select>
+              <div class="select-wrapper">
+                <select id="select-especialidad" class="ui-select">
+                  <option value="">Seleccione una especialidad</option>
+                </select>
+              </div>
             </div>
 
             <div id="lista-especialidades" class="especialidades-list">
