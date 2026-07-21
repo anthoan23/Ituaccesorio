@@ -1253,6 +1253,24 @@ body {
 }
 
 /* ============================================
+   MODAL DE EMPLEADOS - SIN SCROLL
+   ============================================ */
+#modal-registrar-empleado .ui-modal__dialog {
+    max-height: none;
+    overflow: visible;
+}
+
+#modal-registrar-empleado .ui-modal__body {
+    overflow: visible;
+    max-height: none;
+    padding: 1.5rem;
+}
+
+#modal-registrar-empleado .ui-form {
+    overflow: visible;
+}
+
+/* ============================================
    14. NOTIFICACIONES
    ============================================ */
 .notification-container {

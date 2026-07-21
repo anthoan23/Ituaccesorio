@@ -109,8 +109,11 @@
                   id="reg-cedula-empleado" 
                   required 
                   placeholder="Ej: 12345678"
-                  maxlength="8"
-                  data-validation-rules="soloNumeros"
+                  minlength="6"
+                  maxlength="9"
+                  data-validation-rules="soloNumeros,noDuplicadoTabla"
+                  data-validar-tabla="#tabla-empleados"
+                  data-validar-columna="1"
                   title="Solo números, 8 dígitos">
             <small class="field-hint" id="cedula-hint">Solo números (máximo 8 dígitos)</small>
           </label>
@@ -121,6 +124,7 @@
                   name="nombre_empleado" 
                   id="reg-nombre-empleado" 
                   required
+                  minlength="3"
                   maxlength="30"
                   data-validation-rules="soloLetras,capitalizar"
                   title="Solo letras, espacios, acentos y ñ">
@@ -133,6 +137,7 @@
                   name="apellido_empleado" 
                   id="reg-apellido-empleado" 
                   required
+                  minlength="3"
                   maxlength="30"
                   data-validation-rules="soloLetras,capitalizar"
                   title="Solo letras, espacios, acentos y ñ">
@@ -155,7 +160,8 @@
                   name="celular_empleado" 
                   id="reg-celular-empleado" 
                   placeholder="Ej: 04141234567"
-                  maxlength="11"
+                  minlength="9"
+                  maxlength="15"
                   data-validation-rules="telefono"
                   title="Formato: 04141234567 (11 dígitos)">
             <small class="field-hint">11 dígitos (ej: 04141234567)</small>
@@ -167,6 +173,7 @@
                   name="correo_empleado" 
                   id="reg-correo-empleado" 
                   placeholder="ejemplo@empresa.com"
+                  minlength="10"
                   maxlength="120"
                   data-validation-rules="email"
                   title="Correo electrónico válido">
@@ -179,7 +186,8 @@
                   name="direccion_empleado" 
                   id="reg-direccion-empleado" 
                   placeholder="Calle, número, colonia"
-                  maxlength="40"
+                  minlength="2"
+                  maxlength="60"
                   data-validation-rules="sinCaracteresEspeciales"
                   title="Sin caracteres especiales">
             <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>

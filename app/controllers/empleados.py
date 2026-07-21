@@ -102,7 +102,7 @@ def api_agregar_empleado():
     if validar_apellido:
         return jsonify({"success": False, "error": validar_apellido}), 400
     
-    validar_celular = validar_numero(celular, 10, 10, "Celular")
+    validar_celular = validar_numero(celular, 9, 15, "Celular")
     if validar_celular:
         return jsonify({"success": False, "error": validar_celular}), 400
 
