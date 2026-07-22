@@ -55,6 +55,10 @@ def obtener_reparaciones_asignadas():
 def consultar_orden():
     id_orden = request.json.get("id_orden")
 
+    validar_id_orden = validar_texto_numero(id_orden, 1, 10, "ID dela orden")
+    if validar_id_orden:
+        return jsonify({"success": False, "error": validar_id_orden}), 400
+
     # Consultar la orden con todas sus fotos
     ordenes = Orden_servicio(ID_orden_servicio=id_orden)
     resultado_orden = ordenes.consultar_orden()
@@ -85,7 +89,13 @@ def consultar_test():
     id_orden = request.json.get("id_orden")
     numero_test = request.json.get("numero_test")
 
-
+    validar_id_orden = validar_texto_numero(id_orden, 1, 10, "ID dela orden")
+    if validar_id_orden:
+        return jsonify({"success": False, "error": validar_id_orden}), 400
+    
+    validar_numero_test = validar_numero(numero_test, 1, 3, "Numero de test")
+    if validar_numero_test:
+        return jsonify({"success": False, "error": validar_numero_test}), 400
 
     tests = Tests(ID_orden=id_orden, Numero_test=numero_test)
     resultado_test = tests.consultar_test()
@@ -110,7 +120,10 @@ def guardar_revision_tecnica():
     validar_orden_id = validar_texto_numero(id_orden, 1, 10, "ID del Cargo")
     if validar_orden_id:
         return jsonify({"success": False, "error": validar_orden_id}), 400
-
+    
+    validar_id_empleado = validar_numero(id_empleado, 6, 9, "Cédula")
+    if validar_id_empleado:
+        return jsonify({"success": False, "error": validar_id_empleado}), 400
   
 
     # Obtener usuario actual para bitácora
@@ -197,6 +210,12 @@ def registrar_reparacion():
         id_orden = data.get("id_orden")
         descripcion = data.get("descripcion_reparacion")
         id_empleado = g.user.get("cedula")
+
+        validar_descripcion = validar_texto_numero(descripcion, 0, 300, "Desdescripcion ")
+        if validar_descripcion:
+            return jsonify({"success": False, "error": validar_descripcion}), 400
+    
+
         
         
         # Procesar lista de repuestos (convertir a JSON si es necesario)

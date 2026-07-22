@@ -103,18 +103,6 @@ class Tests():
         id_orden = self.ID_orden
         id_empleado = self.ID_empleado
 
-        # Validaciones previas básicas
-        if not id_orden or len(id_orden) > 10:
-            return "El ID de la orden de servicio es inválido o excede los 10 caracteres."
-        
-        if not id_empleado:
-            return "El ID del empleado es obligatorio."
-        
-        if not self.lista_tests or not isinstance(self.lista_tests, list):
-            return "Debe proporcionar una lista válida con los componentes revisados."
-
-        # 2. Convertir la lista/arreglo de Python a una cadena de texto en formato JSON estructurado
-        # Esto asegura que vaya con las llaves que espera tu ciclo WHILE del procedure: $[i].nombre y $[i].resultado
         try:
             json_tests_string = json.dumps(self.lista_tests, ensure_ascii=False)
         except Exception as e:
