@@ -2,8 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.validacion_pagos import ValidacionPagosModel
 from app.utils.validators import (
-    validar_sin_caracteres_especiales,
-    validar_campo_comun
+    validar_sin_caracteres_especiales
 )
 from datetime import datetime
 import traceback
@@ -20,7 +19,7 @@ validacion_pagos_blueprint = Blueprint("validacion_pagos", __name__)
 def pagina_validar_pagos():
     """Panel de validación de pagos para empleados"""
     return render_template(
-        "validacion_pagos.html",
+        "ventas/validacion.html",
         show_navbar=True,
         show_notifications=True,
         active_page="validar_pagos"
