@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ==================== ICONOS SVG ====================
     const Iconos = {
-        lapiz: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
-        basura: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
-        ojo: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+        lapiz: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+        basura: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>`,
+        ojo: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 6c0 2.5-2.5 5-8 5s-8-2.5-8-5 2.5-5 8-5 8 2.5 8 5zm-8-7c-6 0-10 4.5-10 7s4 7 10 7 10-4.5 10-7-4-7-10-7z" fill="currentColor"/></svg>`
     };
 
     // Elementos DOM
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirmarEntrega = document.getElementById('btn-confirmar-entrega');
     const btnGuardarEditar = document.getElementById('btn-guardar-editar-entrega');
     const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-entrega');
+    const btnActualizar = document.getElementById('btn-actualizar');
     const entregaRecibidoPor = document.getElementById('entrega-recibido-por');
     const entregaFecha = document.getElementById('entrega-fecha');
 
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return data;
     }
 
-    // Función mostrarMensaje
+    // Función mostrarMensaje (usando FeedbackModal o fallback)
     function mostrarMensaje(mensaje, esError = false) {
         if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
             window.FeedbackModal.show({
@@ -125,21 +126,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cambiar vista
     function cambiarVista(vista) {
         if (vista === 'pendientes') {
-            if (vistaPendientes) vistaPendientes.classList.remove('hidden');
-            if (vistaEntregadas) vistaEntregadas.classList.add('hidden');
+            if (vistaPendientes) vistaPendientes.classList.remove('is-hidden');
+            if (vistaEntregadas) vistaEntregadas.classList.add('is-hidden');
             if (btnPendientes) btnPendientes.classList.add('is-active');
             if (btnEntregadas) btnEntregadas.classList.remove('is-active');
             cargarPendientes();
         } else {
-            if (vistaPendientes) vistaPendientes.classList.add('hidden');
-            if (vistaEntregadas) vistaEntregadas.classList.remove('hidden');
+            if (vistaPendientes) vistaPendientes.classList.add('is-hidden');
+            if (vistaEntregadas) vistaEntregadas.classList.remove('is-hidden');
             if (btnPendientes) btnPendientes.classList.remove('is-active');
             if (btnEntregadas) btnEntregadas.classList.add('is-active');
             cargarHistorial();
         }
     }
 
-    // ==================== CARGAR PENDIENTES CON ICONOS ====================
+    // ==================== CARGAR PENDIENTES ====================
     async function cargarPendientes() {
         if (!tablaPendientes) return;
         
@@ -149,15 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Array.isArray(data) && data.length > 0) {
                 tablaPendientes.innerHTML = data.map(orden => `
                     <tr>
-                        <td>${escapeHtml(orden.ID_orden_c)}</td>
+                        <td><span class="chip">${escapeHtml(orden.ID_orden_c)}</span></td>
                         <td><strong>${escapeHtml(orden.N_proveedor || 'Sin proveedor')}</strong></td>
                         <td>${escapeHtml(formatDate(orden.Fecha_o))}</td>
                         <td><span class="status-badge status-pendiente">${escapeHtml(orden.Estado || 'Pendiente')}</span></td>
-                        <td>Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
+                        <td class="order-total">Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
                         <td class="table__actions">
-                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(orden.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
-                            <button class="btn btn--small btn-editar" data-id="${escapeHtml(orden.ID_orden_c)}" title="Editar orden">${Iconos.lapiz}</button>
-                            <button class="btn btn--small btn-entrega" data-id="${escapeHtml(orden.ID_orden_c)}" title="Registrar entrega">Registrar</button>
+                            <div class="row-actions">
+                                <button class="icon-action icon-action--view" data-action="ver" data-id="${escapeHtml(orden.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
+                                <button class="icon-action icon-action--edit" data-action="editar" data-id="${escapeHtml(orden.ID_orden_c)}" title="Editar orden">${Iconos.lapiz}</button>
+                                <button class="btn-entrega" data-action="registrar-entrega" data-id="${escapeHtml(orden.ID_orden_c)}">Registrar</button>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
@@ -170,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ==================== CARGAR HISTORIAL CON ICONOS ====================
+    // ==================== CARGAR HISTORIAL ====================
     async function cargarHistorial() {
         if (!tablaHistorial) return;
         
@@ -180,15 +183,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Array.isArray(data) && data.length > 0) {
                 tablaHistorial.innerHTML = data.map(entrega => `
                     <tr>
-                        <td>${escapeHtml(entrega.ID_entrega)}</td>
+                        <td><span class="chip">${escapeHtml(entrega.ID_entrega)}</span></td>
                         <td>${escapeHtml(entrega.ID_orden_c)}</td>
                         <td>${escapeHtml(entrega.Proveedor || 'Sin proveedor')}</td>
                         <td>${escapeHtml(formatDate(entrega.Fecha_entrega))}</td>
                         <td>${escapeHtml(entrega.Recibido_por || '-')}</td>
                         <td class="table__actions">
-                            <button class="btn btn--small btn-ver" data-id="${escapeHtml(entrega.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
-                            <button class="btn btn--small btn-editar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Modificar entrega">${Iconos.lapiz}</button>
-                            <button class="btn btn--small btn-eliminar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Eliminar entrega">${Iconos.basura}</button>
+                            <div class="row-actions">
+                                <button class="icon-action icon-action--view" data-action="ver-historial" data-id="${escapeHtml(entrega.ID_orden_c)}" title="Ver detalles">${Iconos.ojo}</button>
+                                <button class="icon-action icon-action--edit" data-action="editar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Modificar entrega">${Iconos.lapiz}</button>
+                                <button class="icon-action icon-action--danger" data-action="eliminar-entrega" data-id="${escapeHtml(entrega.ID_entrega)}" title="Eliminar entrega">${Iconos.basura}</button>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
@@ -216,27 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (infoContainer) {
                     infoContainer.innerHTML = `
-                        <div class="device-detail__grid">
-                            <div class="detail-item">
-                                <span class="device-detail__label">ID Orden</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Proveedor</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Fecha</span>
-                                <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Estado</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Realizado por</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
-                            </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">ID Orden</span>
+                            <span class="device-detail__value">#${escapeHtml(detalle.ID_orden_c)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Proveedor</span>
+                            <span class="device-detail__value"><strong>${escapeHtml(detalle.nombre)}</strong></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Fecha</span>
+                            <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Estado</span>
+                            <span class="device-detail__value"><span class="status-badge ${detalle.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completada'}">${escapeHtml(detalle.Estado)}</span></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Realizado por</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
                         </div>
                     `;
                 }
@@ -258,7 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
-                openModal(modalDetalle);
+                if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                    window.UiModal.openById('modal-detalle-orden');
+                }
             } else {
                 mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
             }
@@ -345,7 +350,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                openModal(modalEditar);
+                if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                    window.UiModal.openById('modal-editar-entrega');
+                    setTimeout(() => {
+                        if (window.FieldValidator) window.FieldValidator.init();
+                    }, 100);
+                }
             } else {
                 mostrarMensaje('No se pudo cargar la entrega para editar.', true);
             }
@@ -362,8 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (textoEl) {
             textoEl.textContent = `¿Seguro que deseas eliminar la entrega "${idEntrega}"? Se revertirá el stock de los productos. Esta acción no se puede deshacer.`;
         }
-        if (modalEliminar) {
-            openModal(modalEliminar);
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById('modal-confirmar-eliminar-entrega');
         }
     }
 
@@ -376,7 +386,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.success) {
                 mostrarMensaje('Entrega eliminada exitosamente. Stock revertido.');
-                if (modalEliminar) closeModal(modalEliminar);
+                if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                    window.UiModal.closeById('modal-confirmar-eliminar-entrega');
+                }
                 entregaParaEliminar = null;
                 cargarHistorial();
                 cargarPendientes();
@@ -389,29 +401,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ==================== ABRIR EDITAR ORDEN (desde pendientes) ====================
-    async function abrirEditarOrden(idOrden) {
-        // Redirigir a la página de órdenes de compra con el modal de edición
-        // O abrir un modal similar al de órdenes de compra
+    // ==================== ABRIR EDITAR ORDEN ====================
+    function abrirEditarOrden(idOrden) {
         mostrarMensaje('Para editar la orden ve a la sección de Órdenes de Compra', false);
-        // Alternativa: redirigir
-        // window.location.href = `/ordenes_compra?editar=${idOrden}`;
     }
 
-    // Abrir modal
-    function openModal(modal) {
-        if (modal) modal.removeAttribute('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal(modal) {
-        if (modal) modal.setAttribute('hidden', '');
-        document.body.style.overflow = '';
-    }
-
-    // Event Listeners
+    // ==================== EVENT LISTENERS ====================
+    
+    // Switcher de vistas
     if (btnPendientes) btnPendientes.addEventListener('click', () => cambiarVista('pendientes'));
     if (btnEntregadas) btnEntregadas.addEventListener('click', () => cambiarVista('entregadas'));
+
+    // Botón actualizar
+    if (btnActualizar) {
+        btnActualizar.addEventListener('click', () => {
+            const vistaActiva = btnPendientes?.classList.contains('is-active') ? 'pendientes' : 'entregadas';
+            if (vistaActiva === 'pendientes') cargarPendientes();
+            else cargarHistorial();
+            mostrarMensaje('Datos actualizados correctamente');
+        });
+    }
 
     // ==================== ACCIONES EN TABLA DE PENDIENTES ====================
     if (tablaPendientes) {
@@ -421,19 +430,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = btn.dataset.id;
             if (!id) return;
 
-            if (btn.classList.contains('btn-ver')) {
+            const action = btn.dataset.action;
+
+            if (action === 'ver') {
                 await verDetalle(id);
-            } else if (btn.classList.contains('btn-editar')) {
-                // Editar orden - redirigir a órdenes de compra
-                mostrarMensaje('Para editar la orden ve a la sección de Órdenes de Compra', false);
-            } else if (btn.classList.contains('btn-entrega')) {
+            } else if (action === 'editar') {
+                abrirEditarOrden(id);
+            } else if (action === 'registrar-entrega') {
                 ordenParaEntrega = id;
+                document.getElementById('entrega-orden-id').value = id;
                 if (entregaRecibidoPor) entregaRecibidoPor.value = '';
                 if (entregaFecha) entregaFecha.value = new Date().toISOString().slice(0, 10);
                 
                 await cargarProductosOrdenParaEntrega(id);
                 
-                if (modalEntrega) openModal(modalEntrega);
+                if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                    window.UiModal.openById('modal-registrar-entrega');
+                    setTimeout(() => {
+                        if (window.FieldValidator) window.FieldValidator.init();
+                    }, 100);
+                }
             }
         });
     }
@@ -444,26 +460,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = e.target.closest('button');
             if (!btn) return;
             
-            if (btn.classList.contains('btn-ver')) {
-                const id = btn.dataset.id;
-                if (id) await verDetalle(id);
-            } else if (btn.classList.contains('btn-editar-entrega')) {
-                const id = btn.dataset.id;
-                if (id) await abrirEditarEntrega(id);
-            } else if (btn.classList.contains('btn-eliminar-entrega')) {
-                const id = btn.dataset.id;
-                if (id) abrirEliminarEntrega(id);
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (!id) return;
+
+            if (action === 'ver-historial') {
+                await verDetalle(id);
+            } else if (action === 'editar-entrega') {
+                await abrirEditarEntrega(id);
+            } else if (action === 'eliminar-entrega') {
+                abrirEliminarEntrega(id);
             }
         });
     }
 
     // Confirmar entrega
     if (btnConfirmarEntrega) {
-        btnConfirmarEntrega.addEventListener('click', async () => {
+        btnConfirmarEntrega.addEventListener('click', async (e) => {
+            e.preventDefault();
             if (!ordenParaEntrega) return;
             
             const recibidoPor = entregaRecibidoPor?.value.trim();
             const fechaEntrega = entregaFecha?.value;
+            
+            // Validar con FieldValidator
+            const form = document.getElementById('form-registrar-entrega');
+            if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+                const isValid = window.FieldValidator.validateForm(form);
+                if (!isValid) {
+                    mostrarMensaje('Por favor, corrige los errores en el formulario.', true);
+                    return;
+                }
+            }
             
             if (!recibidoPor) {
                 mostrarMensaje('Debe especificar quién recibe la orden.', true);
@@ -485,7 +513,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (response.success) {
                     mostrarMensaje('Entrega registrada exitosamente. Stock actualizado.');
-                    closeModal(modalEntrega);
+                    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                        window.UiModal.closeById('modal-registrar-entrega');
+                    }
                     ordenParaEntrega = null;
                     cargarPendientes();
                     cargarHistorial();
@@ -504,11 +534,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Guardar edición de entrega
     if (btnGuardarEditar) {
-        btnGuardarEditar.addEventListener('click', async () => {
+        btnGuardarEditar.addEventListener('click', async (e) => {
+            e.preventDefault();
             if (!entregaParaEditar) return;
             
             const recibidoPor = document.getElementById('editar-recibido-por')?.value.trim();
             const fechaEntrega = document.getElementById('editar-fecha-entrega')?.value;
+            
+            // Validar con FieldValidator
+            const form = document.getElementById('form-editar-entrega');
+            if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+                const isValid = window.FieldValidator.validateForm(form);
+                if (!isValid) {
+                    mostrarMensaje('Por favor, corrige los errores en el formulario.', true);
+                    return;
+                }
+            }
             
             if (!recibidoPor) {
                 mostrarMensaje('Debe especificar quién recibió la orden.', true);
@@ -530,7 +571,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (response.success) {
                     mostrarMensaje('Entrega actualizada exitosamente.');
-                    closeModal(modalEditar);
+                    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                        window.UiModal.closeById('modal-editar-entrega');
+                    }
                     entregaParaEditar = null;
                     cargarHistorial();
                 } else {
@@ -553,13 +596,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar modales
-    document.querySelectorAll('[data-close-modal]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const modal = btn.closest('[data-modal]');
-            if (modal) closeModal(modal);
-        });
-    });
+    // Inicializar FieldValidator
+    if (window.FieldValidator) {
+        setTimeout(() => window.FieldValidator.init(), 100);
+    }
 
     // Cargar datos iniciales
     cargarPendientes();

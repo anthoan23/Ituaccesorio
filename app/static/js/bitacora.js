@@ -7,7 +7,7 @@
     return document.getElementById(id);
   }
 
-  function openModal(id) {
+  function abrirModal(id) {
     if (window.UiModal && typeof window.UiModal.openById === 'function') {
       window.UiModal.openById(id);
       return;
@@ -19,7 +19,7 @@
     }
   }
 
-  function closeModal(id) {
+  function cerrarModal(id) {
     if (window.UiModal && typeof window.UiModal.closeById === 'function') {
       window.UiModal.closeById(id);
       return;
@@ -37,19 +37,12 @@
     try {
       let fecha;
       
-      // Si es un string en formato MySQL/Timestamp (YYYY-MM-DD HH:MM:SS)
       if (typeof fechaHora === 'string') {
-        // Reemplazar espacio por T para hacerlo ISO compatible
         let fechaStr = fechaHora.replace(' ', 'T');
-        
-        // Si no tiene zona horaria, agregar la zona local
         if (!fechaStr.includes('Z') && !fechaStr.includes('+')) {
           fechaStr = fechaStr + 'T00:00:00';
         }
-        
         fecha = new Date(fechaStr);
-        
-        // Si falla, intentar con el string original
         if (isNaN(fecha.getTime())) {
           fecha = new Date(fechaHora);
         }
@@ -57,10 +50,9 @@
         fecha = new Date(fechaHora);
       }
       
-      // Verificar si la fecha es válida
       if (isNaN(fecha.getTime())) {
         console.warn('Fecha inválida:', fechaHora);
-        return fechaHora; // Devolver el string original si no se puede formatear
+        return fechaHora;
       }
       
       return fecha.toLocaleString('es-VE', {
@@ -78,6 +70,17 @@
     }
   }
 
+  function getBadgeClass(accion) {
+    const accionLower = String(accion || '').toLowerCase().trim();
+    if (accionLower === 'crear' || accionLower.includes('creación')) return 'crear';
+    if (accionLower === 'actualizar' || accionLower.includes('edición') || accionLower.includes('modificar')) return 'actualizar';
+    if (accionLower === 'eliminar' || accionLower.includes('borrar')) return 'eliminar';
+    if (accionLower === 'login' || accionLower.includes('inicio sesión')) return 'login';
+    if (accionLower === 'logout' || accionLower.includes('cierre sesión')) return 'logout';
+    if (accionLower === 'error' || accionLower.includes('fallo')) return 'error';
+    return 'default';
+  }
+
   function mostrarDetalleEvento(evento) {
     $id('d-id').textContent = evento.id || '';
     $id('d-usuario').textContent = evento.usuario || '';
@@ -85,7 +88,7 @@
     $id('d-descripcion').textContent = evento.descripcion || '';
     $id('d-fecha').textContent = formatFecha(evento.fecha);
     
-    openModal('modal-detalle');
+    abrirModal('modal-detalle');
   }
 
   function refrescarPagina() {
@@ -96,7 +99,6 @@
     const btnRefrescar = $id('btn-refrescar');
     btnRefrescar?.addEventListener('click', refrescarPagina);
 
-    // Agregar evento de click para ver detalle
     document.querySelectorAll('.evento-row').forEach(row => {
       row.addEventListener('click', () => {
         const id = row.getAttribute('data-id');
@@ -133,18 +135,23 @@
   }
 
   function renderizarUsuarioConFoto(usuarioId, usuarioNombre, usuarioFoto) {
+    const inicial = (usuarioNombre || usuarioId || 'U').charAt(0).toUpperCase();
+    
     if (usuarioFoto) {
-        return `<div class="user-cell" style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${usuarioFoto}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                    <span>${usuarioNombre || usuarioId}</span>
-                </div>`;
+      return `
+        <div class="user-cell">
+          <img src="${usuarioFoto}" alt="${usuarioNombre || usuarioId}" class="user-avatar">
+          <span>${usuarioNombre || usuarioId}</span>
+        </div>
+      `;
     }
-    return `<div class="user-cell" style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 32px; height: 32px; border-radius: 50%; background: #f3c500; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                    ${(usuarioNombre || usuarioId || 'U').charAt(0).toUpperCase()}
-                </div>
-                <span>${usuarioNombre || usuarioId}</span>
-            </div>`;
-}
-})();
+    return `
+      <div class="user-cell">
+        <div class="user-avatar">${inicial}</div>
+        <span>${usuarioNombre || usuarioId}</span>
+      </div>
+    `;
+  }
 
+  window.renderizarUsuarioConFoto = renderizarUsuarioConFoto;
+})();

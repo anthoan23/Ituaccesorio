@@ -1,639 +1,367 @@
-:root {
-  --bg: #101114;
-  --card: #ffffff;
-  --ink: #121212;
-  --muted: #666b74;
-  --line: rgba(18, 18, 18, 0.12);
-  --shadow: 0 22px 55px rgba(0, 0, 0, 0.28);
-  --yellow: #f3c500;
-  --yellow-soft: #f8dd69;
-  --radius: 20px;
+/* ============================================
+   TRADEIN.CSS - UNIFICADO CON THEME.CSS
+   Hereda todas las variables de theme.css
+   ============================================ */
+
+@import url("./theme.css");
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
+
+.tradein-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(320px, 0.94fr);
+    gap: 1rem;
+    align-items: start;
+    width: 100%;
 }
 
-* {
-  box-sizing: border-box;
+/* ============================================
+   HERO - ACCIONES Y CHIPS
+   ============================================ */
+.hero__actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    align-items: center;
 }
 
-html,
-body {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: "Manrope", sans-serif;
-  color: #ffffff;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(243, 197, 0, 0.16) 0%, transparent 34%),
-    radial-gradient(circle at 82% 82%, rgba(255, 255, 255, 0.06) 0%, transparent 32%),
-    linear-gradient(135deg, #1a1b1f 0%, #23252b 48%, #111215 100%);
-}
-
-.page {
-  width: min(1380px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 1.4rem 0 2.4rem;
-}
-
-/* Tradein Hero - GLASSMORPHIC AMARILLO */
-.tradein-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.1rem;
-  margin-bottom: 1.1rem;
-  background: rgba(243, 197, 0, 0.10);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(243, 197, 0, 0.35);
-  border-radius: var(--radius);
-  padding: 1.4rem 1.5rem;
-  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
-  transition: all 0.3s ease;
-}
-
-.tradein-hero__copy {
-  min-width: 0;
-}
-
-.tradein-hero__eyebrow {
-  margin: 0 0 0.4rem;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-weight: 800;
-}
-
-.tradein-hero__title {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
-  color: #ffffff;
-}
-
-.tradein-hero__subtitle {
-  margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-weight: 600;
-  max-width: 66ch;
-}
-
-.tradein-hero__actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  justify-content: flex-end;
-}
-
+/* ============================================
+   TRADEIN CHIPS (estado)
+   ============================================ */
 .tradein-chip {
-  min-width: 172px;
-  padding: 0.85rem 1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
+    min-width: 172px;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--border-light);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .tradein-chip--soft {
-  background: rgba(243, 197, 0, 0.12);
-  border-color: rgba(243, 197, 0, 0.18);
+    background: rgba(243, 197, 0, 0.12);
+    border-color: rgba(243, 197, 0, 0.18);
 }
 
 .tradein-chip__label {
-  display: block;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 800;
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
 }
 
 .tradein-chip strong {
-  display: block;
-  margin-top: 0.3rem;
-  font-size: 0.98rem;
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.98rem;
+    color: var(--text-strong);
 }
 
-.tradein-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.06fr) minmax(320px, 0.94fr);
-  gap: 1.1rem;
-  align-items: start;
+/* ============================================
+   CARDS - TRADEIN
+   ============================================ */
+.card--tradein {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    color: var(--text-strong);
 }
 
-.card {
-  background: rgba(255, 255, 255, 0.97);
-  color: var(--ink);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  padding: 1.1rem 1.15rem;
-  backdrop-filter: blur(10px);
+.card--tradein .card__title {
+    color: var(--text-strong);
 }
 
-.card--tradein,
-.card--result {
-  min-width: 0;
+.card--tradein .card__subtitle {
+    color: var(--text-muted);
 }
 
-.card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.85rem;
-  margin-bottom: 0.85rem;
-}
-
-.card__title {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.16rem;
-  line-height: 1.1;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.card__subtitle {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.45;
-}
-
+/* ============================================
+   FORMULARIO TRADEIN
+   ============================================ */
 .tradein-form {
-  display: grid;
-  gap: 1rem;
-}
-
-.tradein-field,
-.tradein-fieldset {
-  display: block;
-}
-
-.tradein-field__label {
-  display: inline-block;
-  margin-bottom: 0.55rem;
-  color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 800;
-}
-
-.tradein-field__input {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 0.9rem;
-  border-radius: 14px;
-  border: 1px solid rgba(18, 18, 18, 0.12);
-  background: #ffffff;
-  color: var(--ink);
-  outline: none;
-  font: inherit;
-  font-weight: 700;
-}
-
-.tradein-field__input:focus {
-  border-color: rgba(243, 197, 0, 0.7);
-  box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.18);
+    display: grid;
+    gap: 1rem;
 }
 
 .tradein-fieldset {
-  padding: 0;
-  border: 0;
-}
-
-.tradein-choice-group,
-.tradein-fallas {
-  display: grid;
-  gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    margin: 0;
 }
 
 .tradein-choice-group {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.25rem;
 }
 
 .tradein-choice,
 .tradein-check {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.9rem 1rem;
-  border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid rgba(18, 18, 18, 0.12);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-strong);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .tradein-choice:hover,
 .tradein-check:hover {
-  transform: translateY(-1px);
-  border-color: rgba(243, 197, 0, 0.68);
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+    border-color: rgba(243, 197, 0, 0.68);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.05);
 }
 
 .tradein-choice input,
 .tradein-check input {
-  accent-color: var(--yellow);
+    accent-color: var(--yellow);
+    flex-shrink: 0;
 }
 
-.tradein-alert {
-  margin: 0.75rem 0 0;
-  padding: 0.8rem 0.9rem;
-  border-radius: 12px;
-  background: rgba(191, 38, 0, 0.08);
-  border: 1px solid rgba(255, 72, 72, 0.22);
-  color: #b42318;
-  font-weight: 700;
+.tradein-choice span,
+.tradein-check span {
+    font-weight: 600;
+    color: var(--text-strong);
 }
 
 .tradein-fallas {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.25rem;
 }
 
+/* ============================================
+   ALERTA DE LIBERACIÓN
+   ============================================ */
+.tradein-alert {
+    margin: 0.75rem 0 0;
+    padding: 0.8rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* ============================================
+   BOTÓN DE ENVÍO
+   ============================================ */
 .tradein-submit {
-  width: 100%;
-  min-height: 52px;
-  margin-top: 0.15rem;
-  border: 0;
-  border-radius: 16px;
-  background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
-  color: #111111;
-  font-weight: 900;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 12px 24px rgba(243, 197, 0, 0.2);
-  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    width: 100%;
+    min-height: 52px;
+    margin-top: 0.15rem;
+    border-radius: var(--radius-md);
+    background: var(--yellow);
+    color: var(--ink);
+    font-weight: 900;
+    font-size: 1rem;
+    box-shadow: 0 8px 24px rgba(243, 197, 0, 0.2);
+    transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .tradein-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
+    transform: translateY(-2px);
+    filter: brightness(1.03);
+    box-shadow: 0 12px 32px rgba(243, 197, 0, 0.3);
 }
 
 .tradein-submit:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-  box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.58;
+    box-shadow: none;
+    transform: none;
 }
 
+/* ============================================
+   RESULTADOS
+   ============================================ */
 .tradein-result {
-  display: grid;
-  gap: 1rem;
+    display: grid;
+    gap: 1rem;
 }
 
 .tradein-result__price-wrap {
-  padding: 1.05rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(243, 197, 0, 0.16), rgba(243, 197, 0, 0.04));
-  border: 1px solid rgba(243, 197, 0, 0.2);
+    padding: 1.05rem;
+    border-radius: var(--radius-md);
+    background: rgba(243, 197, 0, 0.12);
+    border: 1px solid rgba(243, 197, 0, 0.2);
+    text-align: center;
 }
 
 .tradein-result__label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 800;
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
 }
 
 .tradein-result__price {
-  display: block;
-  color: var(--ink);
-  font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  line-height: 1;
+    display: block;
+    color: var(--text-strong);
+    font-family: var(--font-family-heading);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1;
 }
 
 .tradein-result__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
 }
 
 .tradein-result__grid > div,
 .tradein-result__section {
-  padding: 0.95rem 1rem;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(18, 18, 18, 0.1);
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--input-bg);
+    border: 1px solid var(--border-light);
 }
 
 .tradein-result__grid span {
-  display: block;
-  color: var(--muted);
-  font-size: 0.82rem;
-  margin-bottom: 0.45rem;
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    margin-bottom: 0.45rem;
+    font-weight: 600;
 }
 
 .tradein-result__grid strong {
-  font-size: 1.05rem;
-  color: var(--ink);
+    font-size: 1.05rem;
+    color: var(--text-strong);
 }
 
 .tradein-result__section-title {
-  display: block;
-  margin-bottom: 0.6rem;
-  color: var(--ink);
-  font-size: 0.82rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .tradein-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.65rem;
 }
 
 .tradein-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  border-radius: 12px;
-  background: rgba(18, 18, 18, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--glass-bg);
+    color: var(--text-strong);
 }
 
-.tradein-result__messages {
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-.tradein-result__messages p {
-  margin: 0 0 0.45rem;
-}
-
-.tradein-result__messages--error {
-  color: #b42318;
-  font-weight: 800;
-}
-
-@media (max-width: 1200px) {
-  .tradein-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 780px) {
-  .page {
-    width: min(100%, calc(100% - 1rem));
-    padding-top: 1rem;
-  }
-
-  .tradein-hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .tradein-hero__actions {
-    justify-content: flex-start;
-  }
-
-  .tradein-choice-group,
-  .tradein-fallas,
-  .tradein-result__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card {
-    padding: 1rem;
-  }
-}
-
-/* Agregar al final del archivo tradein.css */
-.tradein-result__messages .error {
-  color: #dc3545;
-  background: rgba(220, 53, 69, 0.1);
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.tradein-result__messages .warning {
-  color: #ffc107;
-  background: rgba(255, 193, 7, 0.1);
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.tradein-result__messages .success {
-  color: #28a745;
-  background: rgba(40, 167, 69, 0.1);
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-/* Agregar al final del archivo tradein.css */
-
-/* Estadísticas */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 16px;
-    padding: 1rem;
-    text-align: center;
-    box-shadow: var(--shadow);
-}
-
-.stat-card .value {
-    font-size: 1.8rem;
-    font-weight: 900;
+.tradein-list li strong {
     color: var(--yellow);
 }
 
-.stat-card .label {
-    font-size: 0.8rem;
-    color: var(--muted);
+.tradein-result__messages {
+    color: var(--text-muted);
+    line-height: 1.55;
 }
 
-/* Pestañas */
-.gestion-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.5rem;
+.tradein-result__messages p {
+    margin: 0 0 0.45rem;
 }
 
-.gestion-tab {
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    font-weight: 600;
-    transition: all 0.2s ease;
+.tradein-result__messages .error {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
 }
 
-.gestion-tab:hover {
-    background: rgba(243, 197, 0, 0.1);
+.tradein-result__messages .warning {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
 }
 
-.gestion-tab.active {
-    background: var(--yellow);
-    color: #111;
+.tradein-result__messages .success {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
 }
 
-/* Modal más ancho para el formulario */
-#modal-tradein .modal__dialog {
-    width: min(800px, 95vw);
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1100px) {
+    .tradein-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-/* Cotización manual */
-.cotizacion-manual {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 1rem;
-    margin-top: 1rem;
+@media (max-width: 920px) {
+    .hero__actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+    
+    .hero__actions .ui-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
 }
 
-.cotizacion-manual h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
+@media (max-width: 780px) {
+    .tradein-choice-group,
+    .tradein-fallas,
+    .tradein-result__grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tradein-chip {
+        min-width: 120px;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .card--tradein {
+        padding: 1rem;
+    }
 }
 
-/* ============================================ */
-/* MODO CLARO - TRADEIN HERO GLASSMORPHIC */
-/* ============================================ */
-[data-theme="light"] .tradein-hero {
-    background: rgba(243, 197, 0, 0.18);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(243, 197, 0, 0.50);
-    box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .tradein-hero .tradein-hero__eyebrow {
-    color: rgba(26, 26, 30, 0.7);
-}
-
-[data-theme="light"] .tradein-hero .tradein-hero__title {
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-hero .tradein-hero__subtitle {
-    color: rgba(26, 26, 30, 0.7);
-}
-
-[data-theme="light"] .card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .card__title {
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .card__subtitle {
-    color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .tradein-field__label {
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-field__input {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-field__input:focus {
-    border-color: var(--yellow);
-    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.15);
-}
-
-[data-theme="light"] .tradein-choice,
-[data-theme="light"] .tradein-check {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .tradein-choice:hover,
-[data-theme="light"] .tradein-check:hover {
-    border-color: var(--yellow);
-}
-
-[data-theme="light"] .tradein-result__price-wrap {
-    background: rgba(243, 197, 0, 0.12);
-    border: 1px solid rgba(243, 197, 0, 0.25);
-}
-
-[data-theme="light"] .tradein-result__price {
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-result__grid > div,
-[data-theme="light"] .tradein-result__section {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-result__grid span {
-    color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .tradein-result__grid strong {
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .tradein-list li {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-[data-theme="light"] .tradein-result__messages {
-    color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .stat-card {
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .stat-card .label {
-    color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .gestion-tabs {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .gestion-tab {
-    color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .gestion-tab:hover {
-    background: rgba(243, 197, 0, 0.08);
-}
-
-[data-theme="light"] .gestion-tab.active {
-    background: var(--yellow);
-    color: #1A1A1E;
-}
-
-[data-theme="light"] .cotizacion-manual {
-    background: rgba(243, 197, 0, 0.08);
-}
-
-[data-theme="light"] .tradein-alert {
-    background: rgba(220, 53, 69, 0.08);
-    color: #DC2626;
+@media (max-width: 480px) {
+    .tradein-chip strong {
+        font-size: 0.85rem;
+    }
+    
+    .tradein-result__price {
+        font-size: 1.8rem;
+    }
 }

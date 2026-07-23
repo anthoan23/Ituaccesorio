@@ -102,6 +102,19 @@ const Iconos = {
             .replace(/'/g, "&#39;");
     }
 
+    // ==================== ABRIR/CERRAR MODALES (con UiModal) ====================
+    function abrirModal(id) {
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById(id);
+        }
+    }
+
+    function cerrarModal(id) {
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById(id);
+        }
+    }
+
     // ==================== ESTADÍSTICAS ====================
     async function cargarEstadisticas() {
         try {
@@ -128,7 +141,7 @@ const Iconos = {
             const tradeins = data.tradeins || [];
             
             if (tradeins.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="table__empty">📭 No hay trade-ins registrados</td>' + '</tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="table__empty">📭 No hay trade-ins registrados</td></tr>';
                 return;
             }
             
@@ -138,11 +151,11 @@ const Iconos = {
                     <td>${formatDate(trade.fecha)}</td>
                     <td>
                         <strong>${escapeHtml(trade.cliente_nombre)} ${escapeHtml(trade.cliente_apellido || "")}</strong>
-                        ${trade.cliente_celular ? `<br><small style="color: #6d7480;">${escapeHtml(trade.cliente_celular)}</small>` : ''}
+                        ${trade.cliente_celular ? `<br><small style="color: var(--text-muted);">${escapeHtml(trade.cliente_celular)}</small>` : ''}
                     </td>
                     <td><strong>${escapeHtml(trade.producto_nombre || "N/A")}</strong></td>
                     <td>${escapeHtml(trade.marca || "N/A")}</td>
-                    <td><strong style="color: #121418;">${formatCurrency(trade.valor_pagado || 0)}</strong></td>
+                    <td><strong style="color: var(--yellow);">${formatCurrency(trade.valor_pagado || 0)}</strong></td>
                     <td>
                         ${trade.tests && trade.tests.length > 0 ? 
                             `<span class="badge badge--success">✅ ${trade.tests.length} pruebas</span>` : 
@@ -182,7 +195,7 @@ const Iconos = {
             
         } catch (err) {
             console.error("Error cargando trade-ins:", err);
-            tbody.innerHTML = '<tr><td colspan="8" class="table__empty">❌ Error al cargar los datos</td>' + '</tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="table__empty">❌ Error al cargar los datos</td></tr>';
         }
     }
 
@@ -321,6 +334,15 @@ const Iconos = {
     if (formRegistrar) {
         formRegistrar.addEventListener("submit", async (e) => {
             e.preventDefault();
+            
+            // Validar con FieldValidator
+            if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+                const isValid = window.FieldValidator.validateForm(formRegistrar);
+                if (!isValid) {
+                    mostrarToast("Por favor, corrige los errores en el formulario.", "error");
+                    return;
+                }
+            }
             
             const clienteId = document.getElementById("cliente-id")?.value;
             if (!clienteId) {
@@ -466,6 +488,11 @@ const Iconos = {
             
             abrirModal("modal-tests");
             
+            // Inicializar FieldValidator
+            if (window.FieldValidator) {
+                setTimeout(() => window.FieldValidator.init(), 100);
+            }
+            
         } catch (err) {
             mostrarToast(err.message || "Error al cargar datos del trade-in", "error");
         }
@@ -575,7 +602,7 @@ const Iconos = {
                         </div>
                         <div class="detalle-item">
                             <strong>Valor pagado</strong>
-                            <span style="font-size:1.2rem; font-weight:900; color:#f3c500;">${formatCurrency(detalle.valor_pagado || 0)}</span>
+                            <span style="font-size:1.2rem; font-weight:900; color:var(--yellow);">${formatCurrency(detalle.valor_pagado || 0)}</span>
                         </div>
                     </div>
                 </div>
@@ -682,47 +709,13 @@ const Iconos = {
         }
     }
 
-    // ==================== MODALES ====================
-    function abrirModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.remove("is-hidden");
-            document.body.classList.add("modal-open");
-        }
-    }
-
-    function cerrarModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.add("is-hidden");
-            document.body.classList.remove("modal-open");
-        }
-    }
-
-    function initModales() {
-        document.querySelectorAll("[data-close-modal], .modal__close, .modal__backdrop").forEach(el => {
-            el.addEventListener("click", (e) => {
-                const modal = el.closest(".modal");
-                if (modal) {
-                    modal.classList.add("is-hidden");
-                    document.body.classList.remove("modal-open");
-                }
-            });
-        });
-        
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                document.querySelectorAll(".modal:not(.is-hidden)").forEach(modal => {
-                    modal.classList.add("is-hidden");
-                    document.body.classList.remove("modal-open");
-                });
-            }
-        });
-    }
-
     // ==================== INICIALIZACIÓN ====================
     async function init() {
-        initModales();
+        // Inicializar FieldValidator
+        if (window.FieldValidator) {
+            setTimeout(() => window.FieldValidator.init(), 100);
+        }
+        
         await cargarCatalogoTests();
         await cargarProductos();
         await cargarEstadisticas();
@@ -746,6 +739,20 @@ const Iconos = {
         const btnGuardarTests = document.getElementById("btn-guardar-tests");
         if (btnGuardarTests) {
             btnGuardarTests.addEventListener("click", guardarTests);
+        }
+        
+        // Búsqueda en tabla
+        const searchInput = document.getElementById("search-tradein");
+        if (searchInput) {
+            searchInput.addEventListener("input", () => {
+                const query = searchInput.value.toLowerCase().trim();
+                const rows = document.querySelectorAll("#tradein-list tr");
+                rows.forEach(row => {
+                    if (row.querySelector(".table__empty")) return;
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(query) ? "" : "none";
+                });
+            });
         }
     }
     

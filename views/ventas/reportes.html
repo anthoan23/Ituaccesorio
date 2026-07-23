@@ -3,11 +3,13 @@
 {% block title %}Ituaccesorio - Reportes de Ventas{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/reportes_ventas.css') }}?v=20260613">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reportes_ventas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
 <main class="page">
+  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -17,92 +19,105 @@
     </ol>
   </nav>
 
-  <header class="page-header">
-    <div class="page-header__copy">
-      <h1 class="page-header__title">Reportes de Ventas</h1>
-      <p class="page-header__subtitle">
-        Consulta el historial de ventas y registra nuevas ventas locales
-      </p>
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Encabezado de reportes de ventas">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Reportes y ventas</p>
+      <h1 class="hero__title">Reportes de Ventas</h1>
+      <p class="hero__description">Consulta el historial de ventas y registra nuevas ventas locales</p>
     </div>
-    <div class="page-header__actions">
-      <button id="btn-venta-local" class="btn btn--yellow" type="button">Nueva Venta Local</button>
+    <div class="hero__actions">
+      <button id="btn-venta-local" class="ui-btn ui-btn--primary" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Nueva Venta Local
+      </button>
     </div>
   </header>
 
   <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="reportes">Reportes</button>
-    <button class="tab-btn" data-tab="ventas-local">Ventas Locales</button>
+  <div class="tabs" role="tablist" aria-label="Pestañas de reportes">
+    <button class="tab-btn is-active" data-tab="reportes" role="tab" aria-selected="true">Reportes</button>
+    <button class="tab-btn" data-tab="ventas-local" role="tab" aria-selected="false">Ventas Locales</button>
   </div>
 
   <!-- ==================== TAB REPORTES ==================== -->
   <div id="reportes-tab" class="tab-content">
-    <div class="reportes-container card">
+    <div class="card card--filters">
       <!-- Filtros -->
-      <div class="filters-panel__section">
-        <h3 class="filters-panel__title">Filtros de búsqueda</h3>
+      <div class="filters-section">
+        <h4 class="filters-title">Filtros de búsqueda</h4>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Búsqueda</label>
+            <span class="field__label">Búsqueda</span>
             <input
               type="text"
               id="reporte-busqueda"
               class="field__input"
               placeholder="Factura, cliente..."
+              data-validation-rules="sinCaracteresEspeciales"
+              title="Sin caracteres especiales"
             />
           </div>
 
           <div class="field">
-            <label class="field__label">Estado</label>
-            <select id="reporte-estado" class="field__input">
-              <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
-            </select>
+            <span class="field__label">Estado</span>
+            <div class="select-wrapper">
+              <select id="reporte-estado" class="field__input">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Método de pago</label>
-            <select id="reporte-metodo" class="field__input">
-              <option value="">Todos</option>
-              <option value="pago_movil">Pago Móvil</option>
-              <option value="zelle">Zelle</option>
-              <option value="binance">Binance</option>
-              <option value="efectivo_usd">Efectivo USD</option>
-              <option value="efectivo_bs">Efectivo Bs</option>
-            </select>
+            <span class="field__label">Método de pago</span>
+            <div class="select-wrapper">
+              <select id="reporte-metodo" class="field__input">
+                <option value="">Todos</option>
+                <option value="pago_movil">Pago Móvil</option>
+                <option value="zelle">Zelle</option>
+                <option value="binance">Binance</option>
+                <option value="efectivo_usd">Efectivo USD</option>
+                <option value="efectivo_bs">Efectivo Bs</option>
+              </select>
+            </div>
           </div>
 
           <div class="field">
-            <label class="field__label">Moneda</label>
-            <select id="reporte-moneda" class="field__input">
-              <option value="">Todas</option>
-              <option value="USD">USD</option>
-              <option value="VES">VES</option>
-              <option value="USDT">USDT</option>
-            </select>
+            <span class="field__label">Moneda</span>
+            <div class="select-wrapper">
+              <select id="reporte-moneda" class="field__input">
+                <option value="">Todas</option>
+                <option value="USD">USD</option>
+                <option value="VES">VES</option>
+                <option value="USDT">USDT</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Fecha desde</label>
+            <span class="field__label">Fecha desde</span>
             <input type="date" id="reporte-fecha-desde" class="field__input" />
           </div>
 
           <div class="field">
-            <label class="field__label">Fecha hasta</label>
+            <span class="field__label">Fecha hasta</span>
             <input type="date" id="reporte-fecha-hasta" class="field__input" />
           </div>
         </div>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Monto mínimo</label>
+            <span class="field__label">Monto mínimo</span>
             <input
               type="number"
               id="reporte-monto-min"
@@ -114,7 +129,7 @@
           </div>
 
           <div class="field">
-            <label class="field__label">Monto máximo</label>
+            <span class="field__label">Monto máximo</span>
             <input
               type="number"
               id="reporte-monto-max"
@@ -126,43 +141,43 @@
           </div>
         </div>
 
-        <div class="filters-panel__actions">
-          <button id="btn-generar-reporte" class="btn btn--yellow">Generar reporte</button>
-          <button id="btn-limpiar-filtros" class="btn btn--ghost">Limpiar filtros</button>
+        <div class="filters-actions">
+          <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
+          <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
         </div>
       </div>
 
       <!-- Resumen -->
-      <div id="reporte-resumen" class="filters-panel__section" style="display: none;">
-        <h3 class="filters-panel__title">Resumen</h3>
-        <div class="stats-grid">
-          <div class="stat-card stat-card--total">
-            <div class="stat-card__label">Total transacciones</div>
-            <div class="stat-card__value" id="reporte-total">0</div>
+      <div id="reporte-resumen" class="reporte-resumen is-hidden">
+        <h4 class="filters-title">Resumen</h4>
+        <div class="stats-summary">
+          <div class="stat-summary stat-summary--total">
+            <span class="stat-summary__label">Total transacciones</span>
+            <span class="stat-summary__value" id="reporte-total">0</span>
           </div>
-          <div class="stat-card stat-card--monto">
-            <div class="stat-card__label">Monto total</div>
-            <div class="stat-card__value" id="reporte-total-monto">$0.00</div>
+          <div class="stat-summary stat-summary--monto">
+            <span class="stat-summary__label">Monto total</span>
+            <span class="stat-summary__value" id="reporte-total-monto">$0.00</span>
           </div>
-          <div class="stat-card stat-card--pendiente">
-            <div class="stat-card__label">Pendientes</div>
-            <div class="stat-card__value" id="reporte-pendientes">0</div>
+          <div class="stat-summary stat-summary--pendiente">
+            <span class="stat-summary__label">Pendientes</span>
+            <span class="stat-summary__value" id="reporte-pendientes">0</span>
           </div>
-          <div class="stat-card stat-card--aprobado">
-            <div class="stat-card__label">Aprobados</div>
-            <div class="stat-card__value" id="reporte-aprobados">0</div>
+          <div class="stat-summary stat-summary--aprobado">
+            <span class="stat-summary__label">Aprobados</span>
+            <span class="stat-summary__value" id="reporte-aprobados">0</span>
           </div>
-          <div class="stat-card stat-card--rechazado">
-            <div class="stat-card__label">Rechazados</div>
-            <div class="stat-card__value" id="reporte-rechazados">0</div>
+          <div class="stat-summary stat-summary--rechazado">
+            <span class="stat-summary__label">Rechazados</span>
+            <span class="stat-summary__value" id="reporte-rechazados">0</span>
           </div>
         </div>
       </div>
 
       <!-- Tabla -->
-      <div id="reporte-preview" class="filters-panel__section" style="display: none;">
-        <h3 class="filters-panel__title">Resultados</h3>
-        <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+      <div id="reporte-preview" class="reporte-preview is-hidden">
+        <h4 class="filters-title">Resultados</h4>
+        <div class="table-wrap table-wrap--scroll">
           <table class="table">
             <thead>
               <tr>
@@ -178,9 +193,7 @@
             </thead>
             <tbody id="reporte-tabla">
               <tr>
-                <td colspan="8" class="table__empty">
-                  Selecciona filtros y genera un reporte
-                </td>
+                <td colspan="8" class="table__empty">Selecciona filtros y genera un reporte</td>
               </tr>
             </tbody>
           </table>
@@ -188,11 +201,11 @@
       </div>
 
       <!-- Exportar -->
-      <div class="filters-panel__section" id="reporte-export" style="display: none;">
-        <div class="filters-panel__actions">
-          <button id="btn-exportar-excel" class="btn btn--yellow">Exportar Excel</button>
-          <button id="btn-exportar-pdf" class="btn btn--yellow">Exportar PDF</button>
-          <button id="btn-imprimir" class="btn btn--ghost">Imprimir</button>
+      <div id="reporte-export" class="reporte-export is-hidden">
+        <div class="export-actions">
+          <button id="btn-exportar-excel" class="ui-btn ui-btn--success" disabled>Exportar Excel</button>
+          <button id="btn-exportar-pdf" class="ui-btn ui-btn--danger" disabled>Exportar PDF</button>
+          <button id="btn-imprimir" class="ui-btn ui-btn--ghost" disabled>Imprimir</button>
         </div>
       </div>
     </div>
@@ -200,35 +213,39 @@
 
   <!-- ==================== TAB VENTAS LOCALES ==================== -->
   <div id="ventas-local-tab" class="tab-content is-hidden">
-    <div class="card">
-      <h3 class="card__title">Ventas Locales Registradas</h3>
-      <p style="color: #666; margin-bottom: 1rem;">
-        Historial de ventas realizadas directamente en tienda física.
-      </p>
+    <div class="card card--table">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Ventas Locales Registradas</h2>
+          <p class="card__subtitle">Historial de ventas realizadas directamente en tienda física.</p>
+        </div>
+      </div>
 
-      <div class="filters-panel__section">
-        <div class="filters-panel__row">
+      <div class="filters-section">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Buscar</label>
+            <span class="field__label">Buscar</span>
             <input
               type="text"
               id="venta-local-busqueda"
               class="field__input"
               placeholder="Factura o cliente..."
+              data-validation-rules="sinCaracteresEspeciales"
+              title="Sin caracteres especiales"
             />
           </div>
           <div class="field">
-            <label class="field__label">Fecha</label>
+            <span class="field__label">Fecha</span>
             <input type="date" id="venta-local-fecha" class="field__input" />
           </div>
         </div>
-        <div class="filters-panel__actions">
-          <button id="btn-buscar-ventas-locales" class="btn btn--yellow">Buscar</button>
-          <button id="btn-limpiar-filtros-locales" class="btn btn--ghost">Limpiar</button>
+        <div class="filters-actions">
+          <button id="btn-buscar-ventas-locales" class="ui-btn ui-btn--primary">Buscar</button>
+          <button id="btn-limpiar-filtros-locales" class="ui-btn ui-btn--ghost">Limpiar</button>
         </div>
       </div>
 
-      <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+      <div class="table-wrap table-wrap--scroll">
         <table class="table">
           <thead>
             <tr>
@@ -243,7 +260,7 @@
           </thead>
           <tbody id="ventas-locales-tabla">
             <tr>
-              <td colspan="7" class="table__empty">Cargando ventas locales...</td>
+              <td colspan="7" class="table__loading">Cargando ventas locales...</td>
             </tr>
           </tbody>
         </table>
@@ -253,71 +270,79 @@
 </main>
 
 <!-- ==================== MODAL NUEVA VENTA LOCAL ==================== -->
-<div id="venta-local-modal" class="modal is-hidden">
-  <div class="modal__backdrop" data-modal-close="true"></div>
-  <div class="modal__panel card venta-local-panel">
-    <div class="cart-header">
-      <h3 class="card__title">Nueva Venta Local</h3>
-      <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
+<div id="venta-local-modal" class="ui-modal" data-modal hidden aria-hidden="true">
+  <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="venta-local-title">
+    <div class="ui-modal__header">
+      <h3 id="venta-local-title" class="ui-modal__title">Nueva Venta Local</h3>
+      <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
     </div>
+    <div class="ui-modal__body">
+      <form id="form-venta-local" class="ui-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
-    <form id="form-venta-local">
-      <div class="filters-panel__row">
-        <div class="field">
-          <label class="field__label">Cliente</label>
-          <input
-            type="text"
-            id="cliente-id"
-            class="field__input"
-            list="clientes-list"
-            placeholder="ID o nombre del cliente"
-            autocomplete="off"
-          />
-          <datalist id="clientes-list"></datalist>
-          <small class="field-hint">Escribe el ID o nombre del cliente</small>
+        <div class="ui-form__grid ui-form__grid--two">
+          <div class="field">
+            <span class="field__label">Cliente</span>
+            <input
+              type="text"
+              id="cliente-id"
+              class="field__input"
+              list="clientes-list"
+              placeholder="ID o nombre del cliente"
+              autocomplete="off"
+              data-validation-rules="soloLetrasNumeros"
+              title="Solo letras, números, espacios"
+            />
+            <datalist id="clientes-list"></datalist>
+            <small class="field-hint">Escribe el ID o nombre del cliente</small>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Método de pago</span>
+            <div class="select-wrapper">
+              <select id="metodo-local" class="field__input">
+                <option value="">-- Selecciona --</option>
+                <option value="pago_movil">Pago Móvil (Bs)</option>
+                <option value="zelle">Zelle (USD)</option>
+                <option value="binance">Binance (USDT)</option>
+                <option value="efectivo_bs">Efectivo (Bs)</option>
+                <option value="efectivo_usd">Efectivo (USD)</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div class="field">
-          <label class="field__label">Método de pago</label>
-          <select id="metodo-local" class="field__input">
-            <option value="">-- Selecciona --</option>
-            <option value="pago_movil">Pago Móvil (Bs)</option>
-            <option value="zelle">Zelle (USD)</option>
-            <option value="binance">Binance (USDT)</option>
-            <option value="efectivo_bs">Efectivo (Bs)</option>
-            <option value="efectivo_usd">Efectivo (USD)</option>
-          </select>
-        </div>
-      </div>
+        <div class="ui-form__grid ui-form__grid--two">
+          <div class="field">
+            <span class="field__label">Producto</span>
+            <div class="select-wrapper">
+              <select id="producto-select" class="field__input">
+                <option value="">-- Selecciona --</option>
+              </select>
+            </div>
+          </div>
 
-      <div class="filters-panel__row">
-        <div class="field">
-          <label class="field__label">Producto</label>
-          <select id="producto-select" class="field__input">
-            <option value="">-- Selecciona --</option>
-          </select>
+          <div class="field">
+            <span class="field__label">Cantidad</span>
+            <input type="number" id="cantidad-local" class="field__input" value="1" min="1" />
+          </div>
         </div>
 
-        <div class="field">
-          <label class="field__label">Cantidad</label>
-          <input type="number" id="cantidad-local" class="field__input" value="1" min="1" />
+        <div class="ui-form__actions" style="justify-content: flex-start;">
+          <button type="button" id="agregar-producto-local" class="ui-btn ui-btn--ghost">Agregar producto</button>
         </div>
-      </div>
 
-      <div class="filters-panel__actions">
-        <button type="button" id="agregar-producto-local" class="btn btn--yellow">Agregar producto</button>
-      </div>
+        <div class="field field--full">
+          <span>Productos agregados</span>
+          <div id="items-local-list" class="items-local"></div>
+        </div>
 
-      <div class="filters-panel__section">
-        <h4>Productos agregados</h4>
-        <div id="items-local-list" class="items-local"></div>
-      </div>
-
-      <div class="filters-panel__actions">
-        <button type="button" class="btn btn--ghost" data-modal-close="true">Cancelar</button>
-        <button type="submit" class="btn btn--yellow">Registrar Venta</button>
-      </div>
-    </form>
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Registrar Venta</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -329,9 +354,9 @@
       <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
     </div>
     <div class="ui-modal__body">
-      <div id="detalle-venta-info" class="detail-info" style="margin-bottom: 1rem;"></div>
-      <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
-        <table class="table" style="min-width: 600px;">
+      <div id="detalle-venta-info" class="detail-info"></div>
+      <div class="table-wrap table-wrap--scroll">
+        <table class="table">
           <thead>
             <tr>
               <th>Producto</th>
@@ -345,8 +370,8 @@
           <tbody id="detalle-venta-productos"></tbody>
           <tfoot>
             <tr id="detalle-venta-total">
-              <td colspan="5" style="text-align: right; font-weight: bold;">Total:</td>
-              <td id="detalle-venta-total-amount" style="font-weight: bold;"></td>
+              <td colspan="5" class="detalle-total-label">Total:</td>
+              <td id="detalle-venta-total-amount" class="detalle-total-amount"></td>
             </tr>
           </tfoot>
         </table>
@@ -354,6 +379,15 @@
     </div>
   </div>
 </div>
+
+<style>
+  .is-hidden { display: none !important; }
+  .items-local { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 0; }
+  .items-local .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--border-light); }
+  .items-local .cart-total { padding: 0.5rem; text-align: right; font-weight: 700; border-top: 2px solid var(--border-light); }
+  .items-local .sin-resultados { padding: 1rem; text-align: center; color: var(--text-muted); }
+  .cart-item .icon-action { width: 30px; height: 30px; }
+</style>
 
 {% endblock %}
 

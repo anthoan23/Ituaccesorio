@@ -10,14 +10,21 @@
 
   const tabla = document.getElementById("tabla-productos");
   const btnNuevo = document.getElementById("btn-registrar-producto");
-  const modal = document.getElementById("modal-registro-producto");
-  const btnCancelar = document.getElementById("btn-cancelar-producto");
+  const btnNuevoHeader = document.getElementById("btn-registrar-producto-header");
+  const modal = document.getElementById("modal-producto");
   const formProducto = document.getElementById("form-producto");
   const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
+  // Filtros principales
   const fClase = document.getElementById("f-clase");
   const fMarca = document.getElementById("f-marca");
+  const fClaseSidebar = document.getElementById("f-clase-sidebar");
+  const fMarcaSidebar = document.getElementById("f-marca-sidebar");
+  const btnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
+  const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
+  const inputBuscar = document.getElementById("input-buscar-productos");
 
+  // Formulario
   const pClase = document.getElementById("p-clase");
   const pClaseNuevaWrap = document.getElementById("p-clase-nueva-wrap");
   const pClaseNueva = document.getElementById("p-clase-nueva");
@@ -31,10 +38,13 @@
   const btnNuevaMarca = document.getElementById("btn-nueva-marca");
   const btnGuardarClase = document.getElementById("btn-guardar-clase");
   const btnGuardarMarca = document.getElementById("btn-guardar-marca");
+  const btnCancelarClase = document.getElementById("btn-cancelar-clase");
+  const btnCancelarMarca = document.getElementById("btn-cancelar-marca");
 
   let isCreatingNewClass = false;
   let isCreatingNewBrand = false;
   let isSubmitting = false;
+  let searchQuery = "";
 
   const MAX = {
     clase: 30,
@@ -107,17 +117,17 @@
     modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
-        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
-          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:#121212;">${titulo}</h3>
-          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#666;">×</button>
+      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:var(--bg);border-radius:20px;box-shadow:var(--shadow-card);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
+        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border-light);">
+          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:var(--text-strong);">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">×</button>
         </header>
         <div class="ui-modal__body" style="padding:1.5rem 1.5rem 0.5rem 1.5rem;">
           <div style="text-align:center;font-size:3rem;margin-bottom:0.5rem;">${icono}</div>
-          <p id="confirmacion-modal-mensaje" style="margin:0 0 1rem 0;font-size:1rem;color:#121212;text-align:center;white-space:pre-wrap;line-height:1.5;">${mensaje}</p>
+          <p id="confirmacion-modal-mensaje" style="margin:0 0 1rem 0;font-size:1rem;color:var(--text-strong);text-align:center;white-space:pre-wrap;line-height:1.5;">${mensaje}</p>
         </div>
-        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem 1.5rem 1.5rem;border-top:1px solid #e5e7eb;">
-          ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem 1.5rem 1.5rem;border-top:1px solid var(--border-light);">
+          ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion">Cancelar</button>' : ''}
           <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1.5rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;min-width:100px;">${btnTexto}</button>
         </div>
       </div>
@@ -286,36 +296,22 @@
   }
 
   function emptyRow(colspan, text) {
-    return `<tr><td colspan="${colspan}">${escapeHtml(text)}</td></tr>`;
-  }
-
-  function setBodyScrollLocked() {
-    const anyModalOpen = document.querySelector(".modal:not(.is-hidden)");
-    document.body.style.overflow = anyModalOpen ? "hidden" : "";
+    return `<tr><td colspan="${colspan}" class="table__empty">${escapeHtml(text)}</td></tr>`;
   }
 
   function openModal() {
-    if (!modal) return;
-    modal.classList.remove("is-hidden");
-    modal.setAttribute("aria-hidden", "false");
-    if (btnNuevo) btnNuevo.setAttribute("aria-expanded", "true");
-    setBodyScrollLocked();
-
-    const firstInput = modal.querySelector("input, select");
-    if (firstInput) firstInput.focus({ preventScroll: true });
-    
-    if (window.FieldValidator) {
-      setTimeout(() => window.FieldValidator.init(), 100);
+    if (window.UiModal && typeof window.UiModal.openById === "function") {
+      window.UiModal.openById("modal-producto");
+      if (window.FieldValidator) {
+        setTimeout(() => window.FieldValidator.init(), 100);
+      }
     }
   }
 
   function closeModal() {
-    if (!modal) return;
-    modal.classList.add("is-hidden");
-    modal.setAttribute("aria-hidden", "true");
-    if (btnNuevo) btnNuevo.setAttribute("aria-expanded", "false");
-    setBodyScrollLocked();
-    
+    if (window.UiModal && typeof window.UiModal.closeById === "function") {
+      window.UiModal.closeById("modal-producto");
+    }
     if (formProducto && window.FieldValidator) {
       window.FieldValidator.resetForm(formProducto);
     }
@@ -326,12 +322,10 @@
     formProducto.reset();
     const idInput = formProducto.querySelector("input[name='id_modelo']");
     if (idInput) idInput.value = "";
-    const title = document.getElementById("producto-modal-title");
+    const title = document.querySelector("#modal-producto .ui-modal__title");
     if (title) title.textContent = "Registrar producto";
     setNewClassMode(false);
     setNewBrandMode(false);
-    if (btnGuardarClase) btnGuardarClase.disabled = false;
-    if (btnGuardarMarca) btnGuardarMarca.disabled = false;
     
     if (window.FieldValidator) {
       window.FieldValidator.resetForm(formProducto);
@@ -378,7 +372,7 @@
     }
   }
 
-  function renderSelect(select, items, { includeAll = false, allLabel = "Todos", placeholder = "Selecciona" } = {}) {
+  function renderSelect(select, items, { includeAll = false, allLabel = "Todas", placeholder = "Selecciona" } = {}) {
     if (!select) return;
     select.innerHTML = "";
 
@@ -448,10 +442,21 @@
     });
   }
 
+  // Función para sincronizar selects de filtros
+  function syncFilterSelects() {
+    if (fClase && fClaseSidebar) {
+      fClaseSidebar.value = fClase.value;
+    }
+    if (fMarca && fMarcaSidebar) {
+      fMarcaSidebar.value = fMarca.value;
+    }
+  }
+
   async function cargarClases() {
     const data = await fetchJson("/api/productos/clases", { method: "GET" });
     state.clases = Array.isArray(data.clases) ? data.clases : [];
     renderSelect(fClase, state.clases, { includeAll: true, allLabel: "Todas" });
+    renderSelect(fClaseSidebar, state.clases, { includeAll: true, allLabel: "Todas" });
     renderClaseFormSelect();
   }
 
@@ -460,6 +465,7 @@
     const marcas = Array.isArray(data.marcas) ? data.marcas : [];
     state.marcas = marcas;
     renderSelect(fMarca, marcas, { includeAll: true, allLabel: "Todas" });
+    renderSelect(fMarcaSidebar, marcas, { includeAll: true, allLabel: "Todas" });
     renderMarcaFormSelect(marcas);
   }
 
@@ -473,6 +479,7 @@
     const params = new URLSearchParams();
     if (claseId) params.set("clase_id", String(claseId));
     if (marcaId) params.set("marca_id", String(marcaId));
+    if (searchQuery) params.set("q", searchQuery);
     const url = `/api/productos/modelos${params.toString() ? `?${params}` : ""}`;
 
     const data = await fetchJson(url, { method: "GET" });
@@ -497,15 +504,15 @@
                 <span class="product-sku">Código: PRO${escapeHtml(m.id ?? "")}</span>
               </div>
             </td>
-            <td>${escapeHtml(m.marca_nombre || "")}</td>
-            <td><span class="chip">${escapeHtml(m.clase_nombre || "")}</span></td>
+            <td><span class="badge-marca">${escapeHtml(m.marca_nombre || "")}</span></td>
+            <td><span class="badge-clase">${escapeHtml(m.clase_nombre || "")}</span></td>
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones del producto">
-                <button class="icon-action" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                <button class="icon-action icon-action--edit" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
                 </button>
-                <button class="icon-action" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
                 </button>
               </div>
             </td>
@@ -526,16 +533,21 @@
     if (marcaId) {
       modelos = modelos.filter((m) => String(m.id_marca || "") === String(marcaId));
     }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      modelos = modelos.filter((m) => 
+        (m.nombre || "").toLowerCase().includes(q) ||
+        (m.marca_nombre || "").toLowerCase().includes(q) ||
+        String(m.id || "").includes(q)
+      );
+    }
     renderTabla(modelos);
-  }
-
-  async function onFiltroClaseChange() {
-    await recargarModelosSegunFiltros();
   }
 
   async function recargarModelosSegunFiltros() {
     const claseId = fClase ? String(fClase.value || "") : "";
     const marcaId = fMarca ? String(fMarca.value || "") : "";
+    syncFilterSelects();
     await cargarModelos({ claseId, marcaId });
     aplicarFiltrosYRender();
   }
@@ -559,7 +571,7 @@
     }
 
     resetFormToCreate();
-    const title = document.getElementById("producto-modal-title");
+    const title = document.querySelector("#modal-producto .ui-modal__title");
     if (title) title.textContent = "Editar producto";
 
     const idInput = formProducto.querySelector("input[name='id_modelo']");
@@ -831,7 +843,7 @@
   const reporteStockMin = document.getElementById("reporte-stock-min");
   const reporteStockMax = document.getElementById("reporte-stock-max");
   const btnGenerarReporte = document.getElementById("btn-generar-reporte");
-  const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
+  const btnLimpiarFiltrosReporte = document.getElementById("btn-limpiar-filtros-reporte");
   const btnExportarExcel = document.getElementById("btn-exportar-excel");
   const btnExportarPdf = document.getElementById("btn-exportar-pdf");
   const btnImprimir = document.getElementById("btn-imprimir");
@@ -840,18 +852,14 @@
   const reporteTabla = document.getElementById("reporte-tabla");
 
   function abrirModalReportes() {
-    if (!modalReportes) return;
-    modalReportes.classList.remove("is-hidden");
-    modalReportes.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
+    if (window.UiModal && typeof window.UiModal.openById === "function") {
+      window.UiModal.openById("modal-reportes");
+    }
   }
 
   function cerrarModalReportes() {
-    if (!modalReportes) return;
-    modalReportes.classList.add("is-hidden");
-    modalReportes.setAttribute("aria-hidden", "true");
-    if (!document.querySelector(".modal:not(.is-hidden)")) {
-      document.body.style.overflow = "";
+    if (window.UiModal && typeof window.UiModal.closeById === "function") {
+      window.UiModal.closeById("modal-reportes");
     }
   }
 
@@ -911,15 +919,21 @@
         if (reporteDatosActuales.length === 0) {
           reporteTabla.innerHTML = '<tr><td colspan="5" class="table__empty">No hay productos con esos filtros</td></tr>';
         } else {
-          reporteTabla.innerHTML = reporteDatosActuales.map(p => `
-            <tr>
-              <td>${escapeHtml(p.id || '')}</td>
-              <td>${escapeHtml(p.nombre || '')}</td>
-              <td>${escapeHtml(p.marca_nombre || '-')}</td>
-              <td>${escapeHtml(p.clase_nombre || '-')}</td>
-              <td>${p.stock === 0 ? '<span style="color:#f44336;">Sin stock</span>' : (p.stock <= 5 ? '<span style="color:#ff9800;">' + p.stock + ' uds</span>' : p.stock)}</td>
-            </tr>
-          `).join("");
+          reporteTabla.innerHTML = reporteDatosActuales.map(p => {
+            let stockClass = '';
+            if (p.stock === 0) stockClass = 'stock-out';
+            else if (p.stock <= 5) stockClass = 'stock-low';
+            else stockClass = 'stock-good';
+            return `
+              <tr>
+                <td>${escapeHtml(p.id || '')}</td>
+                <td><strong>${escapeHtml(p.nombre || '')}</strong></td>
+                <td>${escapeHtml(p.marca_nombre || '-')}</td>
+                <td>${escapeHtml(p.clase_nombre || '-')}</td>
+                <td class="${stockClass}">${p.stock || 0} uds</td>
+              </tr>
+            `;
+          }).join("");
         }
       }
       
@@ -1143,7 +1157,8 @@
     ventana.document.close();
   }
 
-  // Eventos de reportes
+  // ==================== EVENTOS DE REPORTES ====================
+  
   if (btnReportes) {
     btnReportes.addEventListener("click", () => {
       cargarClasesMarcasReporte();
@@ -1156,42 +1171,63 @@
     });
   }
 
-  if (modalReportes) {
-    modalReportes.addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      if (target.dataset.modalClose === "true") {
-        cerrarModalReportes();
-        return;
-      }
-      if (target === modalReportes) {
-        cerrarModalReportes();
-      }
-    });
-  }
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    if (modalReportes && !modalReportes.classList.contains("is-hidden")) {
-      cerrarModalReportes();
-    }
-  });
-
   if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
-  if (btnLimpiarFiltros) btnLimpiarFiltros.addEventListener("click", limpiarFiltrosReporte);
+  if (btnLimpiarFiltrosReporte) btnLimpiarFiltrosReporte.addEventListener("click", limpiarFiltrosReporte);
   if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarAExcel);
   if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarAPdf);
   if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporte);
 
+  // ==================== EVENTOS DE FILTROS ====================
+  
+  if (btnAplicarFiltros) {
+    btnAplicarFiltros.addEventListener("click", () => {
+      if (fClaseSidebar) fClase.value = fClaseSidebar.value;
+      if (fMarcaSidebar) fMarca.value = fMarcaSidebar.value;
+      recargarModelosSegunFiltros();
+    });
+  }
+
+  if (btnLimpiarFiltros) {
+    btnLimpiarFiltros.addEventListener("click", () => {
+      if (fClase) fClase.value = "";
+      if (fMarca) fMarca.value = "";
+      if (fClaseSidebar) fClaseSidebar.value = "";
+      if (fMarcaSidebar) fMarcaSidebar.value = "";
+      if (inputBuscar) inputBuscar.value = "";
+      searchQuery = "";
+      recargarModelosSegunFiltros();
+    });
+  }
+
+  if (inputBuscar) {
+    let timeoutId;
+    inputBuscar.addEventListener("input", (e) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        searchQuery = e.target.value.trim();
+        recargarModelosSegunFiltros();
+      }, 300);
+    });
+  }
+
   // ==================== INICIALIZACIÓN ====================
 
   async function init() {
-    closeModal();
-
     if (btnNuevo) {
       btnNuevo.addEventListener("click", async () => {
         resetFormToCreate();
-        // Asegurar que los inputs de nueva clase/marca estén ocultos al abrir el modal
+        setNewClassMode(false);
+        setNewBrandMode(false);
+        if (!state.clases.length) await cargarClases();
+        if (!state.marcas.length) await cargarMarcas();
+        await cargarCategorias();
+        openModal();
+      });
+    }
+
+    if (btnNuevoHeader) {
+      btnNuevoHeader.addEventListener("click", async () => {
+        resetFormToCreate();
         setNewClassMode(false);
         setNewBrandMode(false);
         if (!state.clases.length) await cargarClases();
@@ -1205,7 +1241,6 @@
       btnNuevaClase.addEventListener("click", async (e) => {
         e.preventDefault();
         if (isCreatingNewClass) {
-          // Si ya estaba abierto, cancelar
           setNewClassMode(false);
           if (pClase) pClase.focus();
         } else {
@@ -1221,7 +1256,6 @@
       btnNuevaMarca.addEventListener("click", async (e) => {
         e.preventDefault();
         if (isCreatingNewBrand) {
-          // Si ya estaba abierto, cancelar
           setNewBrandMode(false);
           if (pMarca) pMarca.focus();
         } else {
@@ -1233,25 +1267,17 @@
       });
     }
 
-    if (btnCancelar) {
-      btnCancelar.addEventListener("click", closeModal);
-    }
-
-    if (modal) {
-      modal.addEventListener("click", (event) => {
-        const target = event.target;
-        if (target && target instanceof HTMLElement && target.dataset.modalClose === "true") {
-          closeModal();
-        }
+    if (btnCancelarClase) {
+      btnCancelarClase.addEventListener("click", () => {
+        setNewClassMode(false);
       });
     }
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") return;
-      if (modal && !modal.classList.contains("is-hidden")) {
-        closeModal();
-      }
-    });
+    if (btnCancelarMarca) {
+      btnCancelarMarca.addEventListener("click", () => {
+        setNewBrandMode(false);
+      });
+    }
 
     if (formProducto) {
       formProducto.addEventListener("submit", onSubmitProducto);
@@ -1269,8 +1295,14 @@
       tabla.addEventListener("click", onTablaClick);
     }
 
-    if (fClase) fClase.addEventListener("change", onFiltroClaseChange);
+    if (fClase) fClase.addEventListener("change", recargarModelosSegunFiltros);
     if (fMarca) fMarca.addEventListener("change", recargarModelosSegunFiltros);
+    if (fClaseSidebar) fClaseSidebar.addEventListener("change", () => {
+      if (fClase) fClase.value = fClaseSidebar.value;
+    });
+    if (fMarcaSidebar) fMarcaSidebar.addEventListener("change", () => {
+      if (fMarca) fMarca.value = fMarcaSidebar.value;
+    });
 
     try {
       await cargarClases();

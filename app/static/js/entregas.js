@@ -74,7 +74,8 @@ const Utils = {
         toast.textContent = message;
         toast.classList.toggle("toast--error", isError);
         toast.classList.add("is-visible");
-        setTimeout(() => {
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => {
             toast.classList.remove("is-visible");
         }, 3000);
     },
@@ -101,12 +102,6 @@ const Utils = {
 // ============================================
 let activeTabKey = "entregas";
 
-const modals = {
-    entrega: document.getElementById("modal-entrega"),
-    personal: document.getElementById("modal-personal"),
-    eliminar: document.getElementById("modal-eliminar"),
-};
-
 const tabButtons = Array.from(document.querySelectorAll("[data-table-tab]"));
 const tabPanels = Array.from(document.querySelectorAll("[data-table-panel]"));
 
@@ -124,29 +119,6 @@ function setActiveTab(key) {
     });
 }
 
-function openModal(modalId) {
-    const modal = modals[modalId];
-    if (modal) {
-        modal.hidden = false;
-        document.body.classList.add("modal-open");
-    }
-}
-
-function closeModal(modalId) {
-    const modal = modals[modalId];
-    if (modal) {
-        modal.hidden = true;
-        document.body.classList.remove("modal-open");
-    }
-}
-
-function closeAllModals() {
-    Object.keys(modals).forEach(key => {
-        if (modals[key]) modals[key].hidden = true;
-    });
-    document.body.classList.remove("modal-open");
-}
-
 // ============================================
 // 4. MANEJADORES DE TABLA
 // ============================================
@@ -161,7 +133,7 @@ function renderizarTablaEntregas(entregas) {
     if (stats) stats.textContent = entregas.length;
 
     if (!entregas.length) {
-        tbody.innerHTML = `<tr><td colspan="7">No hay entregas registradas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="table__empty">No hay entregas registradas</td></tr>`;
         return;
     }
 
@@ -175,11 +147,14 @@ function renderizarTablaEntregas(entregas) {
             <td>${Utils.formatDate(e.fecha_entrega)}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" data-action="editar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
+                    <button class="icon-action icon-action--edit" data-action="editar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
                         data-factura="${Utils.escapeHtml(e.factura_id)}" data-cedula="${Utils.escapeHtml(e.cedula_delivery)}"
-                        data-direccion="${Utils.escapeHtml(e.direccion || '')}" data-estado="${e.estado}" title="Editar">✎</button>
-                    <button class="icon-action icon-action--danger" data-action="eliminar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
-                        title="Eliminar">🗑</button>
+                        data-direccion="${Utils.escapeHtml(e.direccion || '')}" data-estado="${e.estado}" title="Editar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                    </button>
+                    <button class="icon-action icon-action--danger" data-action="eliminar-entrega" data-id="${Utils.escapeHtml(e.id)}" title="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -194,7 +169,7 @@ function renderizarTablaPersonal(personal) {
     if (stats) stats.textContent = personal.length;
 
     if (!personal.length) {
-        tbody.innerHTML = `<tr><td colspan="3">No hay personal de delivery registrado</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="table__empty">No hay personal de delivery registrado</td></tr>`;
         return;
     }
 
@@ -204,10 +179,14 @@ function renderizarTablaPersonal(personal) {
             <td>${Utils.escapeHtml(p.nombre_completo)}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" data-action="editar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
-                        data-nombre="${Utils.escapeHtml(p.nombre)}" data-apellido="${Utils.escapeHtml(p.apellido)}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--edit" data-action="editar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
+                        data-nombre="${Utils.escapeHtml(p.nombre)}" data-apellido="${Utils.escapeHtml(p.apellido)}" title="Editar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                    </button>
                     <button class="icon-action icon-action--danger" data-action="eliminar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
-                        data-nombre="${Utils.escapeHtml(p.nombre_completo)}" title="Eliminar">🗑</button>
+                        data-nombre="${Utils.escapeHtml(p.nombre_completo)}" title="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -267,6 +246,16 @@ async function cargarPersonalSelect() {
 async function registrarEntrega(event) {
     event.preventDefault();
     const form = document.getElementById("form-entrega");
+    
+    // Validar con FieldValidator si está disponible
+    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(form);
+        if (!isValid) {
+            Utils.mostrarToast("Por favor, corrige los errores en el formulario.", true);
+            return;
+        }
+    }
+    
     const id = form.querySelector("input[name='id']").value;
     
     const payload = {
@@ -296,7 +285,9 @@ async function registrarEntrega(event) {
             Utils.mostrarToast("Entrega registrada exitosamente");
         }
         form.reset();
-        closeModal("entrega");
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById('modal-entrega');
+        }
         await Promise.all([cargarEntregas(), cargarFacturasPendientes()]);
     } catch (error) {
         Utils.mostrarToast(error.message, true);
@@ -311,7 +302,7 @@ function abrirModalEditarEntrega(button) {
     const estado = button.dataset.estado;
     
     const form = document.getElementById("form-entrega");
-    const title = document.getElementById("modal-entrega-title");
+    const title = document.querySelector("#modal-entrega .ui-modal__title");
     
     form.querySelector("input[name='id']").value = id;
     form.factura_id.value = factura;
@@ -320,7 +311,28 @@ function abrirModalEditarEntrega(button) {
     form.estado.value = estado;
     
     if (title) title.textContent = "Editar entrega";
-    openModal("entrega");
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-entrega');
+        setTimeout(() => {
+            if (window.FieldValidator) window.FieldValidator.init();
+        }, 100);
+    }
+}
+
+function abrirModalNuevaEntrega() {
+    const form = document.getElementById("form-entrega");
+    const title = document.querySelector("#modal-entrega .ui-modal__title");
+    
+    form.reset();
+    form.querySelector("input[name='id']").value = "";
+    if (title) title.textContent = "Registrar entrega";
+    
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-entrega');
+        setTimeout(() => {
+            if (window.FieldValidator) window.FieldValidator.init();
+        }, 100);
+    }
 }
 
 async function eliminarEntrega() {
@@ -329,7 +341,9 @@ async function eliminarEntrega() {
     try {
         await Utils.fetchJson(`${CONFIG.API.ENTREGAS}/${entregaPendienteEliminar}`, { method: "DELETE" });
         Utils.mostrarToast("Entrega eliminada exitosamente");
-        closeModal("eliminar");
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById('modal-eliminar');
+        }
         entregaPendienteEliminar = null;
         await cargarEntregas();
     } catch (error) {
@@ -355,7 +369,7 @@ function abrirModalEditarPersonal(button) {
     const apellido = button.dataset.apellido;
     
     const form = document.getElementById("form-personal");
-    const title = document.getElementById("modal-personal-title");
+    const title = document.querySelector("#modal-personal .ui-modal__title");
     
     form.querySelector("input[name='cedula_original']").value = cedula;
     form.cedula.value = cedula;
@@ -364,22 +378,39 @@ function abrirModalEditarPersonal(button) {
     form.cedula.disabled = true;
     
     if (title) title.textContent = "Editar delivery";
-    openModal("personal");
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-personal');
+        setTimeout(() => {
+            if (window.FieldValidator) window.FieldValidator.init();
+        }, 100);
+    }
 }
 
 function resetFormPersonal() {
     const form = document.getElementById("form-personal");
-    const title = document.getElementById("modal-personal-title");
+    const title = document.querySelector("#modal-personal .ui-modal__title");
     
     form.reset();
     form.cedula.disabled = false;
     form.querySelector("input[name='cedula_original']").value = "";
     if (title) title.textContent = "Registrar delivery";
+    if (window.FieldValidator) {
+        window.FieldValidator.resetForm(form);
+    }
 }
 
 async function registrarPersonal(event) {
     event.preventDefault();
     const form = document.getElementById("form-personal");
+    
+    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(form);
+        if (!isValid) {
+            Utils.mostrarToast("Por favor, corrige los errores en el formulario.", true);
+            return;
+        }
+    }
+    
     const cedulaOriginal = form.querySelector("input[name='cedula_original']").value;
     
     const payload = {
@@ -413,7 +444,9 @@ async function registrarPersonal(event) {
             Utils.mostrarToast("Delivery registrado exitosamente");
         }
         resetFormPersonal();
-        closeModal("personal");
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById('modal-personal');
+        }
         await Promise.all([cargarPersonal(), cargarPersonalSelect()]);
     } catch (error) {
         Utils.mostrarToast(error.message, true);
@@ -426,7 +459,9 @@ async function eliminarPersonal() {
     try {
         await Utils.fetchJson(`${CONFIG.API.PERSONAL}/${personalPendienteEliminar}`, { method: "DELETE" });
         Utils.mostrarToast("Delivery eliminado exitosamente");
-        closeModal("eliminar");
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById('modal-eliminar');
+        }
         personalPendienteEliminar = null;
         await Promise.all([cargarPersonal(), cargarPersonalSelect()]);
     } catch (error) {
@@ -497,21 +532,19 @@ function setupEventos() {
     
     // Botón nueva entrega
     document.getElementById("btn-nueva-entrega")?.addEventListener("click", async () => {
-        const form = document.getElementById("form-entrega");
-        const title = document.getElementById("modal-entrega-title");
-        
-        form.reset();
-        form.querySelector("input[name='id']").value = "";
-        if (title) title.textContent = "Registrar entrega";
-        
         await Promise.all([cargarFacturasPendientes(), cargarPersonalSelect()]);
-        openModal("entrega");
+        abrirModalNuevaEntrega();
     });
     
     // Botón nuevo personal
     document.getElementById("btn-nuevo-personal")?.addEventListener("click", () => {
         resetFormPersonal();
-        openModal("personal");
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById('modal-personal');
+            setTimeout(() => {
+                if (window.FieldValidator) window.FieldValidator.init();
+            }, 100);
+        }
     });
     
     // Eventos de la tabla de entregas
@@ -526,7 +559,9 @@ function setupEventos() {
             entregaPendienteEliminar = btn.dataset.id;
             const confirmMessage = document.getElementById("confirmar-mensaje");
             if (confirmMessage) confirmMessage.textContent = "¿Estás seguro de que quieres eliminar esta entrega?";
-            openModal("eliminar");
+            if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                window.UiModal.openById('modal-eliminar');
+            }
         }
     });
     
@@ -542,7 +577,9 @@ function setupEventos() {
             personalPendienteEliminar = btn.dataset.cedula;
             const confirmMessage = document.getElementById("confirmar-mensaje");
             if (confirmMessage) confirmMessage.textContent = `¿Estás seguro de que quieres eliminar a ${btn.dataset.nombre}?`;
-            openModal("eliminar");
+            if (window.UiModal && typeof window.UiModal.openById === 'function') {
+                window.UiModal.openById('modal-eliminar');
+            }
         }
     });
     
@@ -562,30 +599,20 @@ function setupEventos() {
             const target = btn.dataset.resetForm;
             if (target === "entrega") {
                 document.getElementById("form-entrega")?.reset();
+                if (window.FieldValidator) {
+                    window.FieldValidator.resetForm(document.getElementById("form-entrega"));
+                }
             } else if (target === "personal") {
                 resetFormPersonal();
             }
         });
     });
     
-    // Cerrar modales con backdrop
-    document.querySelectorAll("[data-modal-close]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.dataset.modalClose;
-            if (target && modals[target]) {
-                closeModal(target);
-            } else {
-                closeAllModals();
-            }
-        });
-    });
-    
-    // Cerrar modales con ESC
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            closeAllModals();
-        }
-    });
+    // Cerrar modales con ESC (manejado por UiModal)
+    // Inicializar FieldValidator
+    if (window.FieldValidator) {
+        setTimeout(() => window.FieldValidator.init(), 100);
+    }
 }
 
 async function init() {

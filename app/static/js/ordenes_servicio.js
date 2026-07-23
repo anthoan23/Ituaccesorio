@@ -11,8 +11,8 @@ const CONFIG = {
 };
 
 const Iconos = {
-    ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`,
-    asignar: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>`
+    ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`,
+    asignar: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>`
 };
 
 // ============================================
@@ -146,7 +146,7 @@ const Utils = {
 };
 
 // ============================================
-// 3. MANEJADORES DE MODALES
+// 3. MANEJADORES DE MODALES (usando UiModal)
 // ============================================
 function openModal(id) {
     if (window.UiModal && typeof window.UiModal.openById === "function") {
@@ -238,7 +238,7 @@ function renderTablaOrdenes(ordenesData) {
 
     const ordenesFiltradas = ordenesData.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
     if (!ordenesFiltradas.length) {
-        tablaOrdenes.innerHTML = '<tr><td colspan="8">No hay órdenes registradas.</td></tr>';
+        tablaOrdenes.innerHTML = '<tr><td colspan="8" class="table__empty">No hay órdenes registradas.</td></tr>';
         return;
     }
 
@@ -247,7 +247,7 @@ function renderTablaOrdenes(ordenesData) {
         const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
         return `
             <tr>
-                <td>${Utils.escapeHtml(orden.ID_orden)}</td>
+                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
                 <td><span class="badge ${badgeClass}">${Utils.escapeHtml(orden.Estado)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.Equipo ?? "")}</td>
@@ -268,7 +268,7 @@ function renderTablaOrdenes(ordenesData) {
 function renderTablaEstado(tablaDestino, lista) {
     if (!tablaDestino) return;
     if (!lista.length) {
-        tablaDestino.innerHTML = '<tr><td colspan="5">Sin órdenes.</td></tr>';
+        tablaDestino.innerHTML = '<tr><td colspan="5" class="table__empty">Sin órdenes.</td></tr>';
         return;
     }
 
@@ -280,18 +280,18 @@ function renderTablaEstado(tablaDestino, lista) {
         const badgeClass = Utils.getEstadoBadgeClass(estado);
 
         let acciones = `
-            <button type="button" class="btn btn--ghost" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
+            <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
         `;
 
         if (esPendiente) {
             acciones += `
-                <button type="button" class="btn btn--yellow" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}">Asignar</button>
+                <button type="button" class="ui-btn ui-btn--primary ui-btn--sm" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}">Asignar</button>
             `;
         }
 
         return `
             <tr>
-                <td>${Utils.escapeHtml(orden.ID_orden)}</td>
+                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
                 <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
@@ -318,7 +318,7 @@ function renderModalOrdenesEstado(label, ordenesEstado) {
     if (!ordenesFiltradas.length) {
         tablaOrdenesEstadoBody.innerHTML = `
             <tr>
-                <td colspan="8" style="text-align:center; padding:2rem; color: #6d7480;">
+                <td colspan="8" class="table__empty">
                     No hay órdenes en estado <strong>${label.toLowerCase()}</strong>
                 </td>
             </tr>`;
@@ -344,7 +344,7 @@ function renderModalOrdenesEstado(label, ordenesEstado) {
 
         return `
             <tr>
-                <td>${Utils.escapeHtml(orden.ID_orden)}</td>
+                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
                 <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.Equipo ?? "")}</td>
@@ -406,7 +406,7 @@ function renderTablaTrabajosTecnico(lista) {
     if (!tablaTrabajosTecnico) return;
 
     if (!lista.length) {
-        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5">Sin trabajos asignados.</td></tr>';
+        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5" class="table__empty">Sin trabajos asignados.</td></tr>';
         return;
     }
 
@@ -414,12 +414,12 @@ function renderTablaTrabajosTecnico(lista) {
         const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
         return `
             <tr>
-                <td>${Utils.escapeHtml(orden.ID_orden)}</td>
+                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
                 <td>${Utils.escapeHtml(clienteNombre)}</td>
                 <td>${Utils.escapeHtml(orden.modelo ?? "")}</td>
-                <td>${Utils.escapeHtml(orden.Estado ?? "")}</td>
+                <td><span class="badge ${Utils.getEstadoBadgeClass(orden.Estado)}">${Utils.escapeHtml(orden.Estado ?? "")}</span></td>
                 <td class="table__actions">
-                    <button type="button" class="btn btn--ghost" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
+                    <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
                 </td>
             </tr>
         `;
@@ -456,7 +456,7 @@ async function cargarOrdenesEstado(estado, tablaDestino) {
         const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`);
         renderTablaEstado(tablaDestino, data.ordenes || []);
     } catch (error) {
-        tablaDestino.innerHTML = '<tr><td colspan="5">No se pudieron cargar las órdenes.</td></tr>';
+        tablaDestino.innerHTML = '<tr><td colspan="5" class="table__empty">No se pudieron cargar las órdenes.</td></tr>';
     }
 }
 
@@ -502,7 +502,7 @@ async function cargarTrabajosTecnico() {
         const data = await Utils.fetchJson(`${CONFIG.API.TECNICOS}/${encodeURIComponent(idTecnico)}/ordenes`);
         renderTablaTrabajosTecnico(data.ordenes || []);
     } catch (error) {
-        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5">No se pudieron cargar los trabajos.</td></tr>';
+        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5" class="table__empty">No se pudieron cargar los trabajos.</td></tr>';
     }
 }
 
@@ -532,14 +532,24 @@ function setClienteStatus(message, isError = false) {
     const { clienteStatus } = getDomElements();
     if (!clienteStatus) return;
     clienteStatus.textContent = message;
-    clienteStatus.classList.toggle("is-error", isError);
+    clienteStatus.classList.remove("is-error", "is-success");
+    if (isError) {
+        clienteStatus.classList.add("is-error");
+    } else if (message && !message.toLowerCase().includes("no encontrado")) {
+        clienteStatus.classList.add("is-success");
+    }
 }
 
 function setEquipoStatus(message, isError = false) {
     const { equipoStatus } = getDomElements();
     if (!equipoStatus) return;
     equipoStatus.textContent = message;
-    equipoStatus.classList.toggle("is-error", isError);
+    equipoStatus.classList.remove("is-error", "is-success");
+    if (isError) {
+        equipoStatus.classList.add("is-error");
+    } else if (message && !message.toLowerCase().includes("no encontrado")) {
+        equipoStatus.classList.add("is-success");
+    }
 }
 
 function limpiarClienteForm() {
@@ -716,6 +726,20 @@ async function onSubmitOrden(event) {
     event.preventDefault();
     const { formOrden, inputFecha, selectModelo, btnCrearCliente } = getDomElements();
     if (!formOrden) return;
+
+    // Validar usando FieldValidator si está disponible
+    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(formOrden);
+        if (!isValid) {
+            Utils.showMessage("Por favor, corrige los errores en el formulario.", true);
+            const primerError = formOrden.querySelector('.field-error');
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                primerError.focus();
+            }
+            return;
+        }
+    }
 
     const idEquipo = getFieldValue("orden-id-equipo");
     if (!idEquipo) {
@@ -909,7 +933,6 @@ async function abrirDetalleOrden(idOrden) {
 
         const detalle = data.detalle_orden || {};
 
-        // Renderizar información en el modal
         renderDetalleOrdenModal(detalle);
         renderFotosOrdenModal(data.fotos_orden || []);
         renderTestsOrdenModal(data.test_orden || []);
@@ -1107,6 +1130,15 @@ async function guardarRevision(event) {
         return;
     }
 
+    // Validar usando FieldValidator si está disponible
+    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(formRevision);
+        if (!isValid) {
+            Utils.showMessage("Por favor, corrige los errores en el formulario.", true);
+            return;
+        }
+    }
+
     const payload = {};
     const campos = [
         "Btn_power", "Btn_vol", "Cornetas", "Mica", "LCD", "Tactil",
@@ -1117,7 +1149,10 @@ async function guardarRevision(event) {
 
     campos.forEach((campo) => {
         const el = formRevision?.querySelector(`[name="${campo}"]`);
-        payload[campo] = (el && el.type === "checkbox" && el.checked) ? 1 : 0;
+        payload[campo] = (el && el.type === "radio" && el.checked && el.value === "1") ? 1 : 0;
+        if (el && el.type === "radio" && el.checked && el.value === "0") {
+            payload[campo] = 0;
+        }
     });
 
     payload.Num_test = obtenerSiguienteNumeroTest();
@@ -1294,10 +1329,17 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.min = fechaActual;
         inputFecha.max = fechaActual;
         inputFecha.readOnly = true;
-        inputFecha.style.backgroundColor = '#f5f5f5';
+        inputFecha.style.backgroundColor = 'var(--input-bg)';
         inputFecha.style.cursor = 'not-allowed';
+        inputFecha.style.opacity = '0.7';
     }
 
+    // Evento para inicializar FieldValidator
+    if (window.FieldValidator) {
+        setTimeout(() => window.FieldValidator.init(), 100);
+    }
+
+    // Validación de IMEI
     const inputImei = document.getElementById("orden-id-equipo");
     if (inputImei) {
         inputImei.addEventListener("input", (e) => {
@@ -1305,6 +1347,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de cédula
     const inputCedula = document.getElementById("cliente-cedula");
     if (inputCedula) {
         inputCedula.addEventListener("input", (e) => {
@@ -1312,6 +1355,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de patrón
     const inputPatron = document.getElementById("orden-patron");
     if (inputPatron) {
         inputPatron.addEventListener("input", (e) => {
@@ -1330,6 +1374,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de celular
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
         inputCelular.addEventListener("input", (e) => {
@@ -1340,7 +1385,7 @@ document.addEventListener("DOMContentLoaded", () => {
         inputCelular.addEventListener("blur", (e) => {
             const value = e.target.value;
             if (value && !Utils.validarCelular(value)) {
-                e.target.style.borderColor = '#ff4444';
+                e.target.style.borderColor = '#dc2626';
                 e.target.title = 'Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos';
             } else {
                 e.target.style.borderColor = '';
@@ -1349,6 +1394,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de clave (sin espacios)
     const inputClave = document.getElementById("orden-clave");
     if (inputClave) {
         inputClave.addEventListener("input", (e) => {
@@ -1356,6 +1402,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de color (solo letras)
     const inputColor = document.getElementById("orden-color");
     if (inputColor) {
         inputColor.addEventListener("input", (e) => {
@@ -1367,6 +1414,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de nombre (solo letras, capitalizar)
     const inputNombre = document.getElementById("cliente-nombre");
     if (inputNombre) {
         inputNombre.addEventListener("input", (e) => {
@@ -1380,6 +1428,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de apellido (solo letras, capitalizar)
     const inputApellido = document.getElementById("cliente-apellido");
     if (inputApellido) {
         inputApellido.addEventListener("input", (e) => {
@@ -1393,6 +1442,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de dirección
     const inputDireccion = document.getElementById("cliente-direccion");
     if (inputDireccion) {
         inputDireccion.addEventListener("input", (e) => {
@@ -1402,6 +1452,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validación de modelo custom
     const inputModeloCustom = document.getElementById("orden-modelo-custom");
     if (inputModeloCustom) {
         inputModeloCustom.addEventListener("input", (e) => {
@@ -1453,6 +1504,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (inputFecha) {
             inputFecha.value = Utils.getFechaActual();
         }
+        // Resetear estado de cliente
+        clienteActualId = null;
+        setClienteStatus("");
+        const { btnCrearCliente } = getDomElements();
+        if (btnCrearCliente) btnCrearCliente.hidden = true;
     });
 
     Promise.all([

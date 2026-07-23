@@ -8,15 +8,26 @@
 {% endblock %}
 
 {% block content %}
-<main class="page">
-  <header class="tradein-hero" aria-label="Encabezado de trade in">
-    <div class="tradein-hero__copy">
-      <p class="tradein-hero__eyebrow">Trade-in</p>
-      <h1 class="tradein-hero__title">Cotización de equipo usado</h1>
-      <p class="tradein-hero__subtitle">Selecciona el modelo, valida si está liberado y marca las fallas para obtener una estimación inmediata.</p>
+<main class="page tradein-page">
+  <!-- Breadcrumb unificado -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Trade-in</span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Encabezado de trade-in">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Trade-in</p>
+      <h1 class="hero__title">Cotización de equipo usado</h1>
+      <p class="hero__description">Selecciona el modelo, valida si está liberado y marca las fallas para obtener una estimación inmediata.</p>
     </div>
 
-    <div class="tradein-hero__actions" aria-label="Estado de la cotización">
+    <div class="hero__actions" aria-label="Estado de la cotización">
       <div class="tradein-chip">
         <span class="tradein-chip__label">Flujo</span>
         <strong>Consulta pública</strong>
@@ -29,9 +40,10 @@
   </header>
 
   <section class="tradein-grid" aria-label="Cotización de trade-in">
+    <!-- Card del formulario -->
     <article class="card card--tradein" aria-label="Formulario de cotización">
-      <div class="card__head">
-        <div>
+      <div class="card__header">
+        <div class="card__header-left">
           <h2 class="card__title">Datos del equipo</h2>
           <p class="card__subtitle">La cotización se calcula en tiempo real y se expresa en dólares.</p>
         </div>
@@ -40,20 +52,22 @@
       <form class="tradein-form" id="tradein-form">
         <input type="hidden" id="tradein-csrf-token" value="{{ csrf_token() }}">
 
-        <label class="tradein-field">
-          <span class="tradein-field__label">Equipo *</span>
-          <select class="tradein-field__input" id="tradein-equipo" name="id_producto" required>
-            <option value="">Selecciona un equipo</option>
-            {% for equipo in equipos %}
-              <option value="{{ equipo.ID_producto }}">
-                {{ equipo.N_modelo }}{% if equipo.Costo_venta is not none %} - Base ${{ equipo.Costo_venta }}{% endif %}
-              </option>
-            {% endfor %}
-          </select>
+        <label class="field">
+          <span class="field__label">Equipo <span class="required-indicator">*</span></span>
+          <div class="select-wrapper">
+            <select class="field__input" id="tradein-equipo" name="id_producto" required>
+              <option value="">Selecciona un equipo</option>
+              {% for equipo in equipos %}
+                <option value="{{ equipo.ID_producto }}">
+                  {{ equipo.N_modelo }}{% if equipo.Costo_venta is not none %} - Base ${{ equipo.Costo_venta }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
         </label>
 
         <fieldset class="tradein-fieldset">
-          <legend class="tradein-field__label">Liberación del equipo *</legend>
+          <legend class="field__label">Liberación del equipo <span class="required-indicator">*</span></legend>
           <div class="tradein-choice-group">
             <label class="tradein-choice">
               <input type="radio" name="liberado" value="si" checked required>
@@ -64,13 +78,13 @@
               <span>No, está bloqueado</span>
             </label>
           </div>
-          <p class="tradein-alert" id="tradein-liberacion-alerta" role="alert" hidden>
+          <div class="tradein-alert" id="tradein-liberacion-alerta" role="alert" hidden>
             Lo sentimos, el equipo debe estar liberado para calificar.
-          </p>
+          </div>
         </fieldset>
 
         <fieldset class="tradein-fieldset">
-          <legend class="tradein-field__label">Por favor marca en las casillas las cosas que no funcionan en tu teléfono</legend>
+          <legend class="field__label">Por favor marca en las casillas las cosas que no funcionan en tu teléfono</legend>
           <div class="tradein-fallas">
             {% for falla in fallas %}
               <label class="tradein-check">
@@ -81,13 +95,20 @@
           </div>
         </fieldset>
 
-        <button class="tradein-submit" id="tradein-submit" type="submit">Cotizar</button>
+        <button class="ui-btn ui-btn--primary tradein-submit" id="tradein-submit" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          Cotizar
+        </button>
       </form>
     </article>
 
+    <!-- Card del resultado -->
     <article class="card card--tradein card--result" aria-label="Resultado de la cotización">
-      <div class="card__head">
-        <div>
+      <div class="card__header">
+        <div class="card__header-left">
           <h2 class="card__title">Resultado estimado</h2>
           <p class="card__subtitle">Se actualiza al enviar el formulario.</p>
         </div>

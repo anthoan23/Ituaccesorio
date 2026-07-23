@@ -189,16 +189,16 @@
     modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10001;display:flex;align-items:center;justify-content:center;';
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:white;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);max-width:500px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
-        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;">
-          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;">${titulo}</h3>
-          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">×</button>
+      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:var(--bg);border-radius:20px;box-shadow:var(--shadow-card);max-width:500px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
+        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border-light);">
+          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:var(--text-strong);">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">×</button>
         </header>
         <div class="ui-modal__body" style="padding:1.5rem;">
-          <div style="white-space:pre-wrap;margin:0;font-size:1rem;color:#121212;line-height:1.5;">${escapeHtml(mensajeCompleto)}</div>
+          <div style="white-space:pre-wrap;margin:0;font-size:1rem;color:var(--text-strong);line-height:1.5;">${escapeHtml(mensajeCompleto)}</div>
         </div>
-        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #e5e7eb;">
-          ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#f3f4f6;color:#121212;font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
+        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid var(--border-light);">
+          ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:var(--ghost-bg);color:var(--ghost-text);font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
           <button type="button" class="ui-btn" id="btn-confirmar-accion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
         </div>
       </div>
@@ -241,21 +241,21 @@
 
   function iconEye() {
     return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
         <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.7a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" fill="currentColor"/>
       </svg>`;
   }
 
   function iconPencil() {
     return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08ZM20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="currentColor"/>
       </svg>`;
   }
 
   function iconTrash() {
     return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
         <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" fill="currentColor"/>
       </svg>`;
   }
@@ -343,8 +343,8 @@
             <td>${direccion}</td>
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones">
-                <button class="icon-action" type="button" data-action="ver" data-id="${id}" aria-label="Ver">${iconEye()}</button>
-                <button class="icon-action" type="button" data-action="editar" data-id="${id}" aria-label="Modificar">${iconPencil()}</button>
+                <button class="icon-action icon-action--view" type="button" data-action="ver" data-id="${id}" aria-label="Ver">${iconEye()}</button>
+                <button class="icon-action icon-action--edit" type="button" data-action="editar" data-id="${id}" aria-label="Modificar">${iconPencil()}</button>
                 <button class="icon-action icon-action--danger" type="button" data-action="eliminar" data-id="${id}" aria-label="Eliminar">${iconTrash()}</button>
               </div>
             </td>
@@ -512,97 +512,43 @@
     }
   }
 
-function renderProductosEditar(items) {
+  function renderProductosEditar(items) {
     const tbody = $id('tabla-proveedor-productos');
     if (!tbody) return;
 
     if (!items.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="table__empty">Este proveedor no tiene productos asignados.</td>
-            </tr>`;
-        return;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="table__empty">Este proveedor no tiene productos asignados.</td>
+        </tr>`;
+      return;
     }
 
     tbody.innerHTML = items
-        .map((it) => {
-            const idModelo = escapeHtml(it?.ID_modelo ?? it?.id_modelo ?? it?.id ?? '');
-            const modelo = escapeHtml(it?.modelo_nombre ?? it?.N_modelo ?? it?.modelo ?? '');
-            const marca = escapeHtml(it?.marca_nombre ?? it?.N_marca ?? it?.marca ?? '');
-            const clase = escapeHtml(it?.clase_nombre ?? it?.N_clase ?? it?.clase ?? '');
-            const costo = it?.costo ?? it?.Costo ?? '';
+      .map((it) => {
+        const idModelo = escapeHtml(it?.ID_modelo ?? it?.id_modelo ?? it?.id ?? '');
+        const modelo = escapeHtml(it?.modelo_nombre ?? it?.N_modelo ?? it?.modelo ?? '');
+        const marca = escapeHtml(it?.marca_nombre ?? it?.N_marca ?? it?.marca ?? '');
+        const clase = escapeHtml(it?.clase_nombre ?? it?.N_clase ?? it?.clase ?? '');
+        const costo = it?.costo ?? it?.Costo ?? '';
 
-            return `
-                <tr>
-                    <td>${modelo}</td>
-                    <td>${marca}</td>
-                    <td>${clase}</td>
-                    <td class="col-cost">
-                        <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
-                    </td>
-                    <td class="table__actions">
-                        <div class="row-actions" aria-label="Acciones" style="display:flex;justify-content:center;align-items:center;">
-                            <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${iconTrash()}</button>
-                        </div>
-                    </td>
-                </tr>`;
-        })
-        .join('');
-
-    // ✅ AGREGAR CONSOLE.LOG PARA DEPURAR
-    tbody.querySelectorAll('input[data-action="guardar-costo"]').forEach(input => {
-        console.log('🔍 Input de costo encontrado:', input);
-        console.log('🔍 ID del modelo:', input.dataset.idModelo);
-        console.log('🔍 Valor actual:', input.value);
-
-        // Log cuando el input recibe focus
-        input.addEventListener('focus', () => {
-            console.log('🎯 Input enfocado - ID modelo:', input.dataset.idModelo);
-        });
-
-        // Log cuando el input pierde focus (blur)
-        input.addEventListener('blur', () => {
-            console.log('👋 Input perdió foco - ID modelo:', input.dataset.idModelo);
-            console.log('👋 Valor actual:', input.value);
-        });
-
-        // Log cuando el input cambia (change)
-        input.addEventListener('change', (e) => {
-            console.log('🔄 Evento CHANGE disparado - ID modelo:', input.dataset.idModelo);
-            console.log('🔄 Valor anterior:', input.defaultValue);
-            console.log('🔄 Valor nuevo:', input.value);
-            console.log('🔄 Evento:', e);
-        });
-
-        // Log cuando se presiona una tecla (keydown)
-        input.addEventListener('keydown', (e) => {
-            console.log('⌨️ Tecla presionada:', e.key);
-            console.log('⌨️ ID modelo:', input.dataset.idModelo);
-            if (e.key === 'Enter') {
-                console.log('⚠️ ENTER presionado!');
-            }
-        });
-
-        // Log cuando se hace clic en las flechas del input number
-        input.addEventListener('input', (e) => {
-            console.log('📝 Evento INPUT (cambio en tiempo real) - ID modelo:', input.dataset.idModelo);
-            console.log('📝 Valor actual:', input.value);
-        });
-
-        // Prevenir que el Enter en el input de costo envíe el formulario
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                console.log('🚫 ENTER capturado - previniendo submit del formulario');
-                e.preventDefault();
-                e.stopPropagation();
-                // Disparar el cambio manualmente
-                const event = new Event('change', { bubbles: true });
-                input.dispatchEvent(event);
-                input.blur();
-            }
-        });
-    });
-}
+        return `
+          <tr>
+            <td>${modelo}</td>
+            <td>${marca}</td>
+            <td>${clase}</td>
+            <td class="col-cost">
+              <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
+            </td>
+            <td class="table__actions">
+              <div class="row-actions" aria-label="Acciones" style="display:flex;justify-content:center;align-items:center;">
+                <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${iconTrash()}</button>
+              </div>
+            </td>
+          </tr>`;
+      })
+      .join('');
+  }
 
   function renderProductosCrear() {
     const tbody = $id('tabla-proveedor-productos-crear');
@@ -691,7 +637,6 @@ function renderProductosEditar(items) {
   }
 
   async function crearProveedorFromForm() {
-    // Validar que el RIF no sea solo números
     const rif = getFormValue('c-id').trim();
     if (rif && /^\d+$/.test(rif)) {
       throw new Error('El RIF no puede ser solo números. Use el formato J-12345678-9');
@@ -808,29 +753,29 @@ function renderProductosEditar(items) {
     renderProductosCrear();
   }
 
- async function guardarCostoProductoProveedor(idModelo, costo) {
+  async function guardarCostoProductoProveedor(idModelo, costo) {
     const idProveedor = state.currentProveedorId;
     if (!idProveedor) return;
 
     if (costo !== '' && Number(costo) < 0) {
-        showFeedback('error', 'El costo no puede ser negativo.');
-        return;
+      showFeedback('error', 'El costo no puede ser negativo.');
+      return;
     }
 
     const payload = {
-        id_modelo: Number(idModelo),
-        costo: costo === '' ? null : Number(costo),
+      id_modelo: Number(idModelo),
+      costo: costo === '' ? null : Number(costo),
     };
 
     try {
-        await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos`, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        });
+      await fetchJson(`/api/proveedores/${encodeURIComponent(idProveedor)}/productos`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
     } catch (error) {
-        showFeedback('error', error.message || 'No se pudo actualizar el costo.');
+      showFeedback('error', error.message || 'No se pudo actualizar el costo.');
     }
-}
+  }
 
   function bindEvents() {
     const btnAplicar = $id('btn-aplicar');
@@ -890,6 +835,21 @@ function renderProductosEditar(items) {
     const formCrear = $id('form-proveedor-crear');
     formCrear?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
+      
+      // Validar con FieldValidator
+      if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(formCrear);
+        if (!isValid) {
+          showFeedback('error', 'Por favor, corrige los errores en el formulario.');
+          const primerError = formCrear.querySelector('.field-error');
+          if (primerError) {
+            primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            primerError.focus();
+          }
+          return;
+        }
+      }
+      
       try {
         await crearProveedorFromForm();
         closeModal('modal-proveedor-crear');
@@ -933,6 +893,20 @@ function renderProductosEditar(items) {
     const formEditar = $id('form-proveedor-editar');
     formEditar?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
+      
+      if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+        const isValid = window.FieldValidator.validateForm(formEditar);
+        if (!isValid) {
+          showFeedback('error', 'Por favor, corrige los errores en el formulario.');
+          const primerError = formEditar.querySelector('.field-error');
+          if (primerError) {
+            primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            primerError.focus();
+          }
+          return;
+        }
+      }
+      
       try {
         await editarProveedorFromForm();
         closeModal('modal-proveedor-editar');
@@ -961,53 +935,31 @@ function renderProductosEditar(items) {
       }
     });
 
-const tbodyProductosEditar = $id('tabla-proveedor-productos');
+    const tbodyProductosEditar = $id('tabla-proveedor-productos');
     tbodyProductosEditar?.addEventListener('change', async (ev) => {
-        console.log('🔔 EVENTO CHANGE CAPTURADO en tbodyProductosEditar');
-        console.log('🔔 Target:', ev.target);
-        console.log('🔔 Target tagName:', ev.target?.tagName);
-        
-        const input = ev.target?.closest?.('input[data-action="guardar-costo"][data-id-modelo]');
-        console.log('🔔 Input encontrado:', input);
-        
-        if (!input) {
-            console.log('❌ No es un input de costo, ignorando...');
-            return;
-        }
+      const input = ev.target?.closest?.('input[data-action="guardar-costo"][data-id-modelo]');
+      if (!input) return;
 
-        // ✅ Prevenir que el evento se propague al formulario
-        ev.stopPropagation();
-        console.log('✅ Evento stopPropagation ejecutado');
+      ev.stopPropagation();
 
-        const idModelo = input.getAttribute('data-id-modelo');
-        const costo = input.value;
-        console.log('📊 ID modelo:', idModelo);
-        console.log('📊 Costo:', costo);
-        console.log('📊 Costo como número:', Number(costo));
+      const idModelo = input.getAttribute('data-id-modelo');
+      const costo = input.value;
 
-        if (!idModelo) {
-            console.log('❌ No hay ID de modelo');
-            return;
-        }
+      if (!idModelo) return;
 
-        if (costo !== '' && Number(costo) < 0) {
-            console.log('❌ Costo negativo detectado');
-            showFeedback('error', 'El costo no puede ser negativo.');
-            input.value = 0;
-            return;
-        }
+      if (costo !== '' && Number(costo) < 0) {
+        showFeedback('error', 'El costo no puede ser negativo.');
+        input.value = 0;
+        return;
+      }
 
-        console.log('✅ Guardando costo...');
-        try {
-            await guardarCostoProductoProveedor(idModelo, costo);
-            console.log('✅ Costo guardado exitosamente (SIN MODAL)');
-        } catch (e) {
-            console.log('❌ Error al guardar costo:', e);
-            showFeedback('error', e.message || 'No se pudo actualizar el costo.');
-        }
+      try {
+        await guardarCostoProductoProveedor(idModelo, costo);
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudo actualizar el costo.');
+      }
     });
 
-    // Eliminar producto del proveedor en edición
     tbodyProductosEditar?.addEventListener('click', async (ev) => {
       const btn = ev.target?.closest?.('button[data-action="eliminar-producto-editar"][data-id-modelo]');
       if (!btn) return;
@@ -1045,6 +997,12 @@ const tbodyProductosEditar = $id('tabla-proveedor-productos');
   async function init() {
     bindEvents();
     renderProductosCrear();
+    
+    // Inicializar FieldValidator
+    if (window.FieldValidator) {
+      setTimeout(() => window.FieldValidator.init(), 100);
+    }
+    
     try {
       await cargarProveedores('');
     } catch (e) {

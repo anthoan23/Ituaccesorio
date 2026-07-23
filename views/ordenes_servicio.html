@@ -9,87 +9,100 @@
 
 {% block content %}
 <main class="page ordenes-page">
-    <section class="hero" aria-label="Resumen de órdenes de servicio">
-        <div class="hero__copy">
-            <h1>Órdenes de Servicio</h1>
-            <p class="hero__text">Gestiona las órdenes de reparación y mantenimiento del taller. Registra, asigna y realiza seguimiento de cada orden desde su creación hasta la entrega final.</p>
+  <!-- Breadcrumb unificado -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <ol class="breadcrumb__list">
+      <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+      <li aria-current="page">
+        <span class="breadcrumb__current">Órdenes de servicio</span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Resumen de órdenes de servicio">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Gestión del taller</p>
+      <h1 class="hero__title">Órdenes de servicio</h1>
+      <p class="hero__description">Gestiona las órdenes de reparación y mantenimiento del taller. Registra, asigna y realiza seguimiento de cada orden desde su creación hasta la entrega final.</p>
+    </div>
+
+    <div class="stats stats--grid" aria-label="Indicadores de órdenes">
+      <article class="stat-card stat-card--clickable" data-estado-card="pendiente" role="button" tabindex="0">
+        <span class="stat-card__label">Pendientes</span>
+        <strong class="stat-card__value" id="stat-pendientes" data-count="0">0</strong>
+        <small class="stat-card__meta">Órdenes sin asignar</small>
+      </article>
+      <article class="stat-card stat-card--clickable" data-estado-card="asignada" role="button" tabindex="0">
+        <span class="stat-card__label">Asignadas</span>
+        <strong class="stat-card__value" id="stat-asignadas" data-count="0">0</strong>
+        <small class="stat-card__meta">Órdenes en proceso</small>
+      </article>
+      <article class="stat-card stat-card--clickable" data-estado-card="revisada" role="button" tabindex="0">
+        <span class="stat-card__label">Revisadas</span>
+        <strong class="stat-card__value" id="stat-revisadas" data-count="0">0</strong>
+        <small class="stat-card__meta">Órdenes en revisión</small>
+      </article>
+      <article class="stat-card stat-card--accent stat-card--clickable" data-estado-card="reparada" role="button" tabindex="0">
+        <span class="stat-card__label">Reparadas</span>
+        <strong class="stat-card__value" id="stat-reparadas" data-count="0">0</strong>
+        <small class="stat-card__meta">Órdenes completadas</small>
+      </article>
+    </div>
+  </header>
+
+  <!-- Contenido principal con cards unificadas -->
+  <section class="content ordenes-grid" aria-label="Gestión de órdenes">
+    <article class="card card--table ordenes-table-card" aria-label="Órdenes registradas">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Órdenes registradas</h2>
+          <p class="card__subtitle">Tabla principal de órdenes de servicio.</p>
         </div>
-
-        <div class="hero__stats" aria-label="Indicadores de órdenes">
-            <article class="stat-card" data-estado-card="pendiente" role="button" tabindex="0">
-                <span class="stat-card__label">Pendientes</span>
-                <strong class="stat-card__value" id="stat-pendientes">—</strong>
-            </article>
-            <article class="stat-card" data-estado-card="asignada" role="button" tabindex="0">
-                <span class="stat-card__label">Asignadas</span>
-                <strong class="stat-card__value" id="stat-asignadas">—</strong>
-            </article>
-            <article class="stat-card" data-estado-card="revisada" role="button" tabindex="0">
-                <span class="stat-card__label">Revisadas</span>
-                <strong class="stat-card__value" id="stat-revisadas">—</strong>
-            </article>
-            <article class="stat-card stat-card--accent" data-estado-card="reparada" role="button" tabindex="0">
-                <span class="stat-card__label">Reparadas</span>
-                <strong class="stat-card__value" id="stat-reparadas">—</strong>
-            </article>
+        <div class="card__actions">
+          <button id="btn-asignar-tecnico" class="ui-btn ui-btn--primary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Asignar
+          </button>
+          <button id="btn-nueva-orden" class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-nueva-orden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Nueva orden
+          </button>
         </div>
-    </section>
+      </div>
 
-    <section class="board">
-        <article class="panel panel--full">
-            <div class="panel__header">
-                <div>
-                    <h2 class="panel__title">Órdenes registradas</h2>
-                </div>
-                <div class="panel__actions">
-                    <button id="btn-asignar-tecnico" class="btn btn--yellow" type="button">Asignar a técnico</button>
-                    <button id="btn-nueva-orden" class="btn btn--yellow" type="button" data-open-modal="modal-nueva-orden">Nueva orden</button>
-                </div>
-            </div>
-            <div class="ordenes-toolbar">
-                <label class="form__field ordenes-toolbar__field">
-                    <span>Buscar órdenes</span>
-                    <input id="input-buscar-ordenes" type="search" placeholder="Buscar por ID, cliente o equipo">
-                </label>
-                <label class="form__field ordenes-toolbar__field">
-                    <span>Filtrar por estado</span>
-                    <select id="filtro-estado-orden">
-                        <option value="">Todos</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="asignada">Asignada</option>
-                        <option value="revisada">Revisada</option>
-                        <option value="reparada">Reparada</option>
-                    </select>
-                </label>
-            </div>
+      <!-- Barra de herramientas -->
+      <div class="ordenes-toolbar">
+        <label class="field ordenes-toolbar__field">
+          <span>Buscar órdenes</span>
+          <input id="input-buscar-ordenes" type="search" placeholder="Buscar por ID, cliente o equipo">
+        </label>
+        <label class="field ordenes-toolbar__field">
+          <span>Filtrar por estado</span>
+          <div class="select-wrapper">
+            <select id="filtro-estado-orden">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="asignada">Asignada</option>
+              <option value="revisada">Revisada</option>
+              <option value="reparada">Reparada</option>
+            </select>
+          </div>
+        </label>
+      </div>
 
-            <div class="table-wrap" role="region" aria-label="Tabla de órdenes">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="col-id">ID orden</th>
-                            <th>Estado</th>
-                            <th>Cliente</th>
-                            <th>Equipo</th>
-                            <th>Modelo</th>
-                            <th>Descripción</th>
-                            <th>Fecha ingreso</th>
-                            <th class="table__actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-ordenes"></tbody>
-                </table>
-            </div>
-        </article>
-    </section>
-
-    {% call modal('modal-ordenes-estado', 'Órdenes por estado', 'lg') %}
-      <p id="modal-ordenes-estado-subtitle" class="ordenes-estado-modal__subtitle">Selecciona una categoría para ver las órdenes.</p>
-      <div class="table-wrap">
+      <div class="table-wrap" role="region" aria-label="Tabla de órdenes">
         <table class="table">
           <thead>
             <tr>
-              <th>ID orden</th>
+              <th class="col-id">ID orden</th>
               <th>Estado</th>
               <th>Cliente</th>
               <th>Equipo</th>
@@ -99,73 +112,132 @@
               <th class="table__actions">Acciones</th>
             </tr>
           </thead>
-          <tbody id="modal-ordenes-estado-body"></tbody>
+          <tbody id="tabla-ordenes"></tbody>
         </table>
       </div>
-    {% endcall %}
+    </article>
+  </section>
 
-    {% call modal('modal-asignar-tecnico', 'Asignar orden a técnico', 'md') %}
-      <form class="ui-form" autocomplete="off" id="form-asignar-tecnico">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Orden pendiente</span>
+  <!-- Modal de órdenes por estado -->
+  {% call modal('modal-ordenes-estado', 'Órdenes por estado', 'lg') %}
+    <p id="modal-ordenes-estado-subtitle" class="modal-subtitle">Selecciona una categoría para ver las órdenes.</p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-id">ID orden</th>
+            <th>Estado</th>
+            <th>Cliente</th>
+            <th>Equipo</th>
+            <th>Modelo</th>
+            <th>Descripción</th>
+            <th>Fecha ingreso</th>
+            <th class="table__actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="modal-ordenes-estado-body"></tbody>
+      </table>
+    </div>
+  {% endcall %}
+
+  <!-- Modal de asignación -->
+  {% call modal('modal-asignar-tecnico', 'Asignar orden a técnico', 'md') %}
+    <form class="ui-form" autocomplete="off" id="form-asignar-tecnico">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Orden pendiente</span>
+          <div class="select-wrapper">
             <select id="select-orden-asignar" required>
               <option value="">Seleccione una orden</option>
             </select>
-          </label>
+          </div>
+        </label>
 
-          <label class="form__field">
-            <span>Técnico</span>
+        <label class="field">
+          <span>Técnico</span>
+          <div class="select-wrapper">
             <select id="modal-tecnico-select" required>
               <option value="">Seleccione un técnico</option>
             </select>
-          </label>
-        </div>
+          </div>
+        </label>
+      </div>
 
-        <div class="modal__footer modal__footer--right">
-          <button type="button" class="btn btn--ghost" data-close-modal="modal-asignar-tecnico">Cancelar</button>
-          <button id="btn-asignar-orden" type="button" class="btn btn--yellow">Asignar</button>
-        </div>
-      </form>
-    {% endcall %}
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button id="btn-asignar-orden" type="button" class="ui-btn ui-btn--primary">Asignar</button>
+      </div>
+    </form>
+  {% endcall %}
 
-    {% call modal('modal-nueva-orden', 'Nueva orden de servicio', 'lg') %}
-      <form class="ui-form" autocomplete="off" id="form-orden-servicio">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  <!-- Modal Nueva Orden -->
+  {% call modal('modal-nueva-orden', 'Nueva orden de servicio', 'lg') %}
+    <form class="ui-form" autocomplete="off" id="form-orden-servicio">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>IMEI</span>
-            <input id="orden-id-equipo" name="id_equipo" type="text" placeholder="Ej: 123456789012345" required maxlength="15" pattern="[0-9]{15}" inputmode="numeric">
-          </label>
-          <label class="form__field" style="display:flex; flex-direction:column; gap:.5rem;">
-            <span>&nbsp;</span>
-            <button id="btn-verificar-equipo" type="button" class="btn btn--secondary">Verificar equipo</button>
-            <span id="equipo-status" class="form__help-text"></span>
-          </label>
-        </div>
+      <!-- IMEI -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>IMEI <span class="required-indicator">*</span></span>
+          <input id="orden-id-equipo" 
+                 name="id_equipo" 
+                 type="text" 
+                 placeholder="Ej: 123456789012345" 
+                 required 
+                 maxlength="15" 
+                 pattern="[0-9]{15}" 
+                 inputmode="numeric"
+                 data-validation-rules="soloNumeros"
+                 title="15 dígitos numéricos">
+          <small class="field-hint">15 dígitos numéricos</small>
+        </label>
+        <label class="field" style="display:flex; flex-direction:column; gap:.5rem;">
+          <span>&nbsp;</span>
+          <button id="btn-verificar-equipo" type="button" class="ui-btn ui-btn--ghost">Verificar equipo</button>
+          <span id="equipo-status" class="field-help" style="font-size:0.7rem;color:var(--text-muted);"></span>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Modelo</span>
+      <!-- Modelo -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Modelo</span>
+          <div class="select-wrapper">
             <select id="orden-modelo" name="id_modelo">
               <option value="">Seleccione modelo</option>
             </select>
-          </label>
-          <label class="form__field">
-            <span>Modelo personalizado</span>
-            <input id="orden-modelo-custom" name="modelo_custom" type="text" placeholder="Si el modelo no existe, escriba aquí" maxlength="30" pattern="[a-zA-Z0-9\s\-]+" title="Solo letras, números, espacios y guiones">
-          </label>
-        </div>
+          </div>
+        </label>
+        <label class="field">
+          <span>Modelo personalizado</span>
+          <input id="orden-modelo-custom" 
+                 name="modelo_custom" 
+                 type="text" 
+                 placeholder="Si el modelo no existe, escriba aquí" 
+                 maxlength="30" 
+                 data-validation-rules="soloLetrasNumeros"
+                 title="Solo letras, números, espacios y guiones">
+          <small class="field-hint">Solo letras, números, espacios y guiones</small>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Color</span>
-            <input id="orden-color" name="color" type="text" placeholder="Color del equipo" maxlength="15" pattern="[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+" title="Solo letras, máximo 15 caracteres">
-          </label>
-          <label class="form__field">
-            <span>Capacidad</span>
+      <!-- Color y Capacidad -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Color</span>
+          <input id="orden-color" 
+                 name="color" 
+                 type="text" 
+                 placeholder="Color del equipo" 
+                 maxlength="15" 
+                 data-validation-rules="soloLetras"
+                 title="Solo letras, máximo 15 caracteres">
+          <small class="field-hint">Solo letras, máximo 15 caracteres</small>
+        </label>
+        <label class="field">
+          <span>Capacidad</span>
+          <div class="select-wrapper">
             <select id="orden-capacidad" name="capacidad">
               <option value="">Seleccione capacidad</option>
               <option value="16GB">16GB</option>
@@ -176,145 +248,278 @@
               <option value="512GB">512GB</option>
               <option value="1TB">1TB</option>
             </select>
-          </label>
-        </div>
+          </div>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Fecha de ingreso</span>
-            <input id="orden-fecha" name="fecha_ingreso" type="date" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
-          </label>
-          <label class="form__field">
-            <span>Patrón (1-9, sin repetir)</span>
-            <input id="orden-patron" name="patron" type="text" placeholder="Ej: 1-8-5-2-9" maxlength="17" pattern="[1-9\-]+" title="Solo números del 1 al 9 y guiones">
-          </label>
-        </div>
+      <!-- Fecha y Patrón -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Fecha de ingreso</span>
+          <input id="orden-fecha" name="fecha_ingreso" type="date" readonly style="background:var(--input-bg); cursor: not-allowed; opacity:0.7;">
+        </label>
+        <label class="field">
+          <span>Patrón (1-9, sin repetir)</span>
+          <input id="orden-patron" 
+                 name="patron" 
+                 type="text" 
+                 placeholder="Ej: 1-8-5-2-9" 
+                 maxlength="17" 
+                 pattern="[1-9\-]+" 
+                 title="Solo números del 1 al 9 y guiones">
+          <small class="field-hint">Números del 1 al 9 separados por guiones</small>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Clave</span>
-            <input id="orden-clave" name="clave" type="text" placeholder="Clave del equipo" maxlength="30" pattern="[^\s]+" title="No se permiten espacios">
-          </label>
-        </div>
+      <!-- Clave -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Clave</span>
+          <input id="orden-clave" 
+                 name="clave" 
+                 type="text" 
+                 placeholder="Clave del equipo" 
+                 maxlength="30" 
+                 data-validation-rules="sinEspacios"
+                 title="No se permiten espacios">
+          <small class="field-hint">Sin espacios, máximo 30 caracteres</small>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Cédula cliente</span>
-            <input id="cliente-cedula" name="cedula" type="text" placeholder="Ej: 12345678" required maxlength="8" inputmode="numeric">
-          </label>
-          <label class="form__field" style="display:flex; flex-direction:column; gap:.5rem;">
-            <span>&nbsp;</span>
-            <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-              <button id="btn-verificar-cliente" type="button" class="btn btn--secondary">Verificar cliente</button>
-              <button id="btn-crear-cliente" type="button" class="btn btn--ghost" hidden>Registrar cliente</button>
-            </div>
-            <span id="cliente-status" class="form__help-text"></span>
-          </label>
-        </div>
+      <!-- Cliente -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Cédula cliente <span class="required-indicator">*</span></span>
+          <input id="cliente-cedula" 
+                 name="cedula" 
+                 type="text" 
+                 placeholder="Ej: 12345678" 
+                 required 
+                 maxlength="8" 
+                 inputmode="numeric"
+                 data-validation-rules="soloNumeros"
+                 title="8 dígitos numéricos">
+          <small class="field-hint">8 dígitos numéricos</small>
+        </label>
+        <label class="field" style="display:flex; flex-direction:column; gap:.5rem;">
+          <span>&nbsp;</span>
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+            <button id="btn-verificar-cliente" type="button" class="ui-btn ui-btn--ghost">Verificar cliente</button>
+            <button id="btn-crear-cliente" type="button" class="ui-btn ui-btn--primary" hidden>Registrar cliente</button>
+          </div>
+          <span id="cliente-status" class="field-help" style="font-size:0.7rem;color:var(--text-muted);"></span>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Nombre</span>
-            <input id="cliente-nombre" name="nombre" type="text" placeholder="Nombre del cliente" maxlength="20" pattern="[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+" title="Solo letras, máximo 20 caracteres">
-          </label>
-          <label class="form__field">
-            <span>Apellido</span>
-            <input id="cliente-apellido" name="apellido" type="text" placeholder="Apellido del cliente" maxlength="20" pattern="[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+" title="Solo letras, máximo 20 caracteres">
-          </label>
-        </div>
+      <!-- Nombre y Apellido -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Nombre</span>
+          <input id="cliente-nombre" 
+                 name="nombre" 
+                 type="text" 
+                 placeholder="Nombre del cliente" 
+                 maxlength="20" 
+                 data-validation-rules="soloLetras,capitalizar"
+                 title="Solo letras, máximo 20 caracteres">
+          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
+        </label>
+        <label class="field">
+          <span>Apellido</span>
+          <input id="cliente-apellido" 
+                 name="apellido" 
+                 type="text" 
+                 placeholder="Apellido del cliente" 
+                 maxlength="20" 
+                 data-validation-rules="soloLetras,capitalizar"
+                 title="Solo letras, máximo 20 caracteres">
+          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Celular</span>
-            <input id="cliente-celular" name="celular" type="text" placeholder="04121234567" maxlength="11" required pattern="(0412|0414|0416|0422|0424|0426)[0-9]{7}" title="Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos">
-          </label>
-          <label class="form__field">
-            <span>Correo</span>
-            <input id="cliente-correo" name="correo" type="email" placeholder="ejemplo@correo.com">
-          </label>
-        </div>
+      <!-- Celular y Correo -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Celular <span class="required-indicator">*</span></span>
+          <input id="cliente-celular" 
+                 name="celular" 
+                 type="text" 
+                 placeholder="04121234567" 
+                 maxlength="11" 
+                 required 
+                 data-validation-rules="telefono"
+                 title="11 dígitos, comienza con 0412, 0414, 0416, 0422, 0424 o 0426">
+          <small class="field-hint">11 dígitos (ej: 04121234567)</small>
+        </label>
+        <label class="field">
+          <span>Correo</span>
+          <input id="cliente-correo" 
+                 name="correo" 
+                 type="email" 
+                 placeholder="ejemplo@correo.com"
+                 data-validation-rules="email"
+                 title="Correo electrónico válido">
+          <small class="field-hint">ejemplo@dominio.com</small>
+        </label>
+      </div>
 
-        <div class="ui-form__grid ui-form__grid--two">
-          <label class="form__field">
-            <span>Dirección</span>
-            <input id="cliente-direccion" name="direccion" type="text" placeholder="Dirección del cliente" maxlength="50">
-          </label>
-          <label class="form__field">
-            <span>Tipo de cliente</span>
+      <!-- Dirección y Tipo -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Dirección</span>
+          <input id="cliente-direccion" 
+                 name="direccion" 
+                 type="text" 
+                 placeholder="Dirección del cliente" 
+                 maxlength="50"
+                 data-validation-rules="sinCaracteresEspeciales"
+                 title="Sin caracteres especiales">
+          <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
+        </label>
+        <label class="field">
+          <span>Tipo de cliente</span>
+          <div class="select-wrapper">
             <select id="cliente-tipo" name="tipo">
               <option value="natural">Natural</option>
               <option value="juridico">Jurídico</option>
             </select>
-          </label>
-        </div>
-
-        <label class="form__field">
-          <span>Descripción del problema</span>
-          <textarea id="orden-descripcion" name="descripcion" rows="4" required placeholder="Describe la falla o servicio solicitado" maxlength="100"></textarea>
+          </div>
         </label>
+      </div>
 
-        <label class="form__field">
-          <span>Notas adicionales</span>
-          <textarea id="orden-nota" name="nota" rows="3" placeholder="Notas extras para el técnico o entrega" maxlength="50"></textarea>
-        </label>
+      <!-- Descripción -->
+      <label class="field field--full">
+        <span>Descripción del problema <span class="required-indicator">*</span></span>
+        <textarea id="orden-descripcion" 
+                  name="descripcion" 
+                  rows="4" 
+                  required 
+                  placeholder="Describe la falla o servicio solicitado" 
+                  maxlength="100"
+                  data-validation-rules="sinCaracteresEspeciales"
+                  title="Sin caracteres especiales"></textarea>
+        <small class="field-hint">Sin caracteres especiales, máximo 100 caracteres</small>
+      </label>
 
-        <div class="modal__footer modal__footer--right">
-          <button type="button" class="btn btn--ghost" data-close-modal="modal-nueva-orden">Cancelar</button>
-          <button type="submit" class="btn btn--yellow">Guardar orden</button>
-        </div>
-      </form>
-    {% endcall %}
+      <!-- Notas -->
+      <label class="field field--full">
+        <span>Notas adicionales</span>
+        <textarea id="orden-nota" 
+                  name="nota" 
+                  rows="3" 
+                  placeholder="Notas extras para el técnico o entrega" 
+                  maxlength="50"
+                  data-validation-rules="sinCaracteresEspeciales"
+                  title="Sin caracteres especiales"></textarea>
+        <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
+      </label>
 
-    {# Modal para detalle de orden - Estilo igual a taller #}
-    {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
-      <input type="hidden" id="detalle-orden-id" value="">
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="ui-btn ui-btn--primary">Guardar orden</button>
+      </div>
+    </form>
+  {% endcall %}
+
+  <!-- Modal Detalle de Orden -->
+  {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
+    <input type="hidden" id="detalle-orden-id" value="">
+    
+    <div id="modal-preview-body">
+      <div id="modal-order-info" class="device-detail__grid">
+        <p class="device-detail__empty">Cargando información...</p>
+      </div>
+      <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
+      <div id="modal-order-tests" class="device-tests"></div>
+    </div>
+
+    <div class="ui-form__actions">
+      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
+    </div>
+  {% endcall %}
+
+  <!-- Modal Revisión -->
+  {% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
+    <form id="form-revision-orden" class="ui-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="revision-orden-id" value="">
       
-      <div id="modal-preview-body">
-        <div id="modal-order-info" class="device-detail__grid">
-          <p class="device-detail__empty">Cargando información...</p>
+      <!-- Componentes de revisión - grid 3 columnas -->
+      <div class="test-options-grid" style="grid-template-columns: repeat(3, 1fr);">
+        {% set componentes = [
+          ('Btn_power', 'Botón Power'),
+          ('Btn_vol', 'Botón Volumen'),
+          ('Cornetas', 'Cornetas'),
+          ('Mica', 'Mica'),
+          ('LCD', 'LCD'),
+          ('Tactil', 'Táctil'),
+          ('Wifi', 'WiFi'),
+          ('Puerto_carga', 'Puerto Carga'),
+          ('Cam_pos', 'Cámara Posterior'),
+          ('Cam_del', 'Cámara Delantera'),
+          ('Microfono', 'Micrófono'),
+          ('Flash', 'Flash'),
+          ('Btn_sil', 'Botón Silencio'),
+          ('Auricular', 'Auricular'),
+          ('Senal', 'Señal'),
+          ('Sensor_proximidad', 'Sensor Proximidad'),
+          ('Face_id', 'Face ID'),
+          ('Bluetooth', 'Bluetooth')
+        ] %}
+        
+        {% for name, label in componentes %}
+        <div class="test-row-item">
+          <span class="test-component-name">{{ label }}</span>
+          <div class="radio-group">
+            <label class="radio-label radio-label--success">
+              <input type="radio" name="{{ name }}" value="1"> OK
+            </label>
+            <label class="radio-label radio-label--danger">
+              <input type="radio" name="{{ name }}" value="0" checked> ✗
+            </label>
+          </div>
         </div>
-        <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
-        <div id="modal-order-tests" class="device-tests"></div>
+        {% endfor %}
       </div>
 
-      <div class="modal__footer modal__footer--right">
-        <button type="button" class="btn btn--ghost" data-close-modal="modal-detalle-orden">Cerrar</button>
+      <label class="field field--full" style="margin-top: 0.75rem;">
+        <span>Observaciones</span>
+        <textarea name="Observaciones" rows="3" placeholder="Observaciones de la revisión..." maxlength="250"></textarea>
+        <small class="field-hint">Máximo 250 caracteres</small>
+      </label>
+
+      <div class="ui-form__actions" style="margin-top: 0.75rem;">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="ui-btn ui-btn--primary">Guardar revisión</button>
       </div>
-    {% endcall %}
+    </form>
+  {% endcall %}
 
-    {# Modal para revisión - se asume que existe en otro archivo o se agrega aquí #}
-    {% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
-      <form id="form-revision-orden">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" id="revision-orden-id" value="">
-        <!-- Campos de revisión aquí -->
-        <div class="modal__footer modal__footer--right">
-          <button type="button" class="btn btn--ghost" data-close-modal="modal-revision-orden">Cancelar</button>
-          <button type="submit" class="btn btn--yellow">Guardar revisión</button>
-        </div>
-      </form>
-    {% endcall %}
+  <!-- Modal Fotos -->
+  {% call modal('modal-fotos-orden', 'Agregar fotos', 'md') %}
+    <form id="form-fotos-orden" class="ui-form" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="fotos-orden-id" value="">
+      
+      <label class="field field--full">
+        <span>Fotos del dispositivo</span>
+        <input id="input-fotos-orden" type="file" name="fotos" multiple accept="image/*">
+        <small class="field-hint">Formatos: JPG, PNG, GIF (máximo 5MB por foto)</small>
+      </label>
+      
+      <div id="preview-fotos" class="fotos-grid" style="margin-top: 0.5rem;"></div>
 
-    {# Modal para fotos - se asume que existe en otro archivo o se agrega aquí #}
-    {% call modal('modal-fotos-orden', 'Agregar fotos', 'lg') %}
-      <form id="form-fotos-orden" enctype="multipart/form-data">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" id="fotos-orden-id" value="">
-        <label class="form__field">
-          <span>Fotos</span>
-          <input id="input-fotos-orden" type="file" name="fotos" multiple accept="image/*">
-        </label>
-        <div id="preview-fotos"></div>
-        <div class="modal__footer modal__footer--right">
-          <button type="button" class="btn btn--ghost" data-close-modal="modal-fotos-orden">Cancelar</button>
-          <button type="submit" class="btn btn--yellow">Subir fotos</button>
-        </div>
-      </form>
-    {% endcall %}
+      <div class="ui-form__actions" style="margin-top: 0.75rem;">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="ui-btn ui-btn--primary">Subir fotos</button>
+      </div>
+    </form>
+  {% endcall %}
 
 </main>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ordenes_servicio.js') }}" defer></script>
 {% endblock %}

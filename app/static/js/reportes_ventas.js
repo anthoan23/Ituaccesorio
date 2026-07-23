@@ -51,21 +51,6 @@
     const toast = document.createElement("div");
     toast.className = `custom-toast custom-toast--${tipo}`;
     toast.textContent = mensaje;
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: ${tipo === "error" ? "#ef4444" : "#22c55e"};
-      color: white;
-      padding: 12px 24px;
-      border-radius: 40px;
-      z-index: 10000;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Space Grotesk', sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      animation: slideInRight 0.3s ease;
-    `;
 
     document.body.appendChild(toast);
 
@@ -126,7 +111,7 @@
     return formatted;
   }
 
-  function getEstadoBadge(estado) {
+  function getEstadoBadgeHtml(estado) {
     if (estado === "pendiente") {
       return '<span class="pago-estado pendiente">Pendiente</span>';
     } else if (estado === "aprobado") {
@@ -135,6 +120,21 @@
       return '<span class="pago-estado rechazado">Rechazado</span>';
     }
   }
+
+  // ==================== ABRIR/CERRAR MODALES (con UiModal) ====================
+  function abrirModal(id) {
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+      window.UiModal.openById(id);
+    }
+  }
+
+  function cerrarModal(id) {
+    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+      window.UiModal.closeById(id);
+    }
+  }
+
+  // ==================== REPORTES ====================
 
   function limpiarFiltros() {
     document.getElementById("reporte-busqueda").value = "";
@@ -173,9 +173,9 @@
       
       reporteDatosActuales = data.ventas || [];
       
-      document.getElementById("reporte-resumen").style.display = "block";
-      document.getElementById("reporte-preview").style.display = "block";
-      document.getElementById("reporte-export").style.display = "flex";
+      document.getElementById("reporte-resumen").classList.remove("is-hidden");
+      document.getElementById("reporte-preview").classList.remove("is-hidden");
+      document.getElementById("reporte-export").classList.remove("is-hidden");
       
       document.getElementById("reporte-total").textContent = data.total || 0;
       document.getElementById("reporte-total-monto").textContent = formatMoney(data.total_monto || 0);
@@ -195,9 +195,9 @@
             <td><span class="metodo-pago">${escapeHtml(p.metodo_pago || '-')}</span></td>
             <td>${escapeHtml(p.Referencia || '-')}</td>
             <td>${formatMoney(p.monto_pagado, p.venta_moneda)}</td>
-            <td>${getEstadoBadge(p.estado)}</td>
+            <td>${getEstadoBadgeHtml(p.estado)}</td>
             <td style="text-align: center;">
-              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver</button>
+              <button class="ui-btn ui-btn--ghost ui-btn--sm btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver</button>
             </td>
           </tr>
         `).join("");
@@ -289,8 +289,7 @@
       document.getElementById("detalle-venta-productos").innerHTML = productosHtml;
       document.getElementById("detalle-venta-total-amount").innerHTML = formatMoney(totalVenta, venta.Moneda);
 
-      document.getElementById("modal-detalle-venta").hidden = false;
-      document.getElementById("modal-detalle-venta").setAttribute("aria-hidden", "false");
+      abrirModal("modal-detalle-venta");
 
     } catch (err) {
       mostrarToast(err.message, "error");
@@ -363,24 +362,24 @@
     if (!container) return;
 
     if (!itemsLocal.length) {
-      container.innerHTML = '<p class="sin-resultados">No hay productos agregados</p>';
+      container.innerHTML = '<div class="sin-resultados">No hay productos agregados</div>';
       return;
     }
 
     const totalUsd = itemsLocal.reduce((sum, i) => sum + Number(i.precio_usd) * i.cantidad, 0);
 
     container.innerHTML = `
-      <div class="items-local">
-        ${itemsLocal.map((item, idx) => `
-          <div class="cart-item">
-            <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
-            <span>$${(Number(item.precio_usd) * item.cantidad).toFixed(2)}</span>
-            <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">🗑</button>
-          </div>
-        `).join("")}
-        <div class="cart-total">
-          <strong>Total: $${totalUsd.toFixed(2)}</strong>
+      ${itemsLocal.map((item, idx) => `
+        <div class="cart-item">
+          <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
+          <span>$${(Number(item.precio_usd) * item.cantidad).toFixed(2)}</span>
+          <button class="icon-action icon-action--danger" data-remove="${idx}" aria-label="Eliminar producto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+          </button>
         </div>
+      `).join("")}
+      <div class="cart-total">
+        <strong>Total: $${totalUsd.toFixed(2)}</strong>
       </div>
     `;
 
@@ -423,6 +422,16 @@
       return;
     }
 
+    // Validar con FieldValidator si está disponible
+    const form = document.getElementById("form-venta-local");
+    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+      const isValid = window.FieldValidator.validateForm(form);
+      if (!isValid) {
+        mostrarToast("Por favor, corrige los errores en el formulario.", "error");
+        return;
+      }
+    }
+
     try {
       const data = await fetchJson("/api/reportes-ventas/venta-local", {
         method: "POST",
@@ -436,26 +445,20 @@
       mostrarToast(`Venta registrada: ${data.factura_id}`, "success");
       itemsLocal = [];
       renderItemsLocal();
-      document.getElementById("form-venta-local")?.reset();
-      cerrarModalVentaLocal();
+      form?.reset();
+      cerrarModal("venta-local-modal");
       cargarVentasLocales();
     } catch (err) {
       mostrarToast(err.message, "error");
     }
   }
 
-  function cerrarModalVentaLocal() {
-    const modal = document.getElementById("venta-local-modal");
-    if (modal) modal.classList.add("is-hidden");
-    document.body.style.overflow = "";
-  }
-
   function abrirModalVentaLocal() {
-    const modal = document.getElementById("venta-local-modal");
-    if (modal) {
-      modal.classList.remove("is-hidden");
-      document.body.style.overflow = "hidden";
-    }
+    const form = document.getElementById("form-venta-local");
+    if (form) form.reset();
+    itemsLocal = [];
+    renderItemsLocal();
+    abrirModal("venta-local-modal");
   }
 
   async function cargarVentasLocales() {
@@ -480,9 +483,9 @@
             <td>${formatDateShort(v.fecha_venta)}</td>
             <td>${escapeHtml(v.metodo_pago)}</td>
             <td>${formatMoney(v.monto, v.Moneda)}</td>
-            <td>${getEstadoBadge(v.estado)}</td>
+            <td>${getEstadoBadgeHtml(v.estado)}</td>
             <td style="text-align: center;">
-              <button class="btn-ver-detalle-reporte" data-factura="${escapeHtml(v.factura_id)}">Ver</button>
+              <button class="ui-btn ui-btn--ghost ui-btn--sm btn-ver-detalle-reporte" data-factura="${escapeHtml(v.factura_id)}">Ver</button>
             </td>
           </tr>
         `).join("");
@@ -557,18 +560,47 @@
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
 
+    const colors = {
+      dark: [18, 18, 18],
+      primary: [243, 197, 0],
+      white: [255, 255, 255],
+      grayLight: [248, 249, 250],
+      grayText: [102, 102, 106]
+    };
+
+    const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
+    try {
+      doc.addImage(logoUrl, 'PNG', (pageWidth - 45) / 2, 8, 45, 14);
+    } catch(e) {}
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("REPORTE DE VENTAS", pageWidth / 2, 25, { align: 'center' });
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.text("REPORTE DE VENTAS", pageWidth / 2, 30, { align: 'center' });
 
-    doc.setDrawColor(243, 197, 0);
+    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
     doc.setLineWidth(0.8);
-    doc.line(pageWidth / 2 - 35, 29, pageWidth / 2 + 35, 29);
+    doc.line(pageWidth / 2 - 35, 34, pageWidth / 2 + 35, 34);
 
     const now = new Date();
+    const fechaStr = now.toLocaleDateString('es-ES');
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(`Generado: ${now.toLocaleDateString('es-ES')} • Total: ${reporteDatosActuales.length} ventas`, pageWidth / 2, 37, { align: 'center' });
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    doc.text(`Generado: ${fechaStr} • Total ventas: ${reporteDatosActuales.length}`, pageWidth / 2, 44, { align: 'center' });
+
+    const filtrosTexto = [];
+    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+    if (reporteFiltrosActuales.estado) filtrosTexto.push(`Estado: ${reporteFiltrosActuales.estado}`);
+    if (reporteFiltrosActuales.metodo_pago) filtrosTexto.push(`Método: ${reporteFiltrosActuales.metodo_pago}`);
+
+    const filterY = 52;
+    doc.setFillColor(colors.grayLight[0], colors.grayLight[1], colors.grayLight[2]);
+    doc.rect(15, filterY, pageWidth - 30, 10, 'F');
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+    doc.text(filtrosTexto.length ? `Filtros: ${filtrosTexto.join(" • ")}` : "Filtros: Todas las ventas", 18, filterY + 7);
 
     const columns = ["FACTURA", "CLIENTE", "FECHA", "MÉTODO", "REFERENCIA", "MONTO", "ESTADO"];
     const rows = reporteDatosActuales.map(p => [
@@ -584,15 +616,22 @@
     doc.autoTable({
       head: [columns],
       body: rows,
-      startY: 42,
+      startY: filterY + 14,
       theme: 'grid',
-      headStyles: { fillColor: [18, 18, 18], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+      headStyles: {
+        fillColor: colors.dark,
+        textColor: colors.white,
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center'
+      },
       bodyStyles: { fontSize: 8.5, cellPadding: 4 },
-      alternateRowStyles: { fillColor: [248, 249, 250] },
+      alternateRowStyles: { fillColor: colors.grayLight },
       margin: { left: 15, right: 15 },
       didDrawPage: (data) => {
         doc.setFontSize(7);
-        doc.text("ItuAccesorio System", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+        doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
+        doc.text("ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
         doc.text(`Página ${data.pageNumber}`, pageWidth - 15, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
       }
     });
@@ -609,6 +648,12 @@
 
     const ventana = window.open("", "_blank");
     const fecha = new Date().toLocaleString();
+    const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
+
+    const filtrosTexto = [];
+    if (reporteFiltrosActuales.q) filtrosTexto.push(`Búsqueda: ${reporteFiltrosActuales.q}`);
+    if (reporteFiltrosActuales.estado) filtrosTexto.push(`Estado: ${reporteFiltrosActuales.estado}`);
+    if (reporteFiltrosActuales.metodo_pago) filtrosTexto.push(`Método: ${reporteFiltrosActuales.metodo_pago}`);
 
     ventana.document.write(`
       <!DOCTYPE html>
@@ -617,10 +662,14 @@
         <meta charset="UTF-8">
         <title>Reporte de Ventas</title>
         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
           @media print { body { margin: 0; padding: 20px; } .no-print { display: none; } }
           body { font-family: 'Manrope', sans-serif; margin: 20px; padding: 20px; background: white; }
           h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; text-align: center; border-bottom: 3px solid #f3c500; padding-bottom: 10px; }
+          .logo { text-align: center; margin-bottom: 20px; }
+          .logo img { height: 50px; }
           .info { text-align: center; margin-bottom: 20px; color: #666; font-size: 12px; }
+          .filters { background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-left: 4px solid #f3c500; font-size: 12px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
           th { background: #121212; color: white; font-weight: bold; }
@@ -635,8 +684,10 @@
       </head>
       <body>
         <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
+        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
         <h1>REPORTE DE VENTAS</h1>
         <div class="info">Generado: ${fecha} • Total ventas: ${reporteDatosActuales.length}</div>
+        ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
         <table>
           <thead>
             <tr><th>Factura</th><th>Cliente</th><th>Fecha</th><th>Método</th><th>Referencia</th><th>Monto</th><th>Estado</th></tr>
@@ -655,21 +706,24 @@
             `).join('')}
           </tbody>
         </table>
-        <div class="footer">ItuAccesorio System</div>
+        <div class="footer">ItuAccesorio System · Reporte Generado Exclusivamente Para ituaccesorio</div>
       </body>
       </html>
     `);
     ventana.document.close();
   }
 
-  // ==================== INICIALIZACIÓN ====================
-
+  // ==================== TABS ====================
   function initTabs() {
     const tabBtns = document.querySelectorAll(".tab-btn");
     for (const btn of tabBtns) {
       btn.addEventListener("click", () => {
-        for (const b of tabBtns) b.classList.remove("active");
-        btn.classList.add("active");
+        for (const b of tabBtns) {
+          b.classList.remove("is-active");
+          b.setAttribute("aria-selected", "false");
+        }
+        btn.classList.add("is-active");
+        btn.setAttribute("aria-selected", "true");
 
         const tab = btn.dataset.tab;
         for (const content of document.querySelectorAll(".tab-content")) {
@@ -684,6 +738,7 @@
     }
   }
 
+  // ==================== INICIALIZACIÓN ====================
   function init() {
     initTabs();
 
@@ -705,26 +760,13 @@
     document.getElementById("agregar-producto-local").addEventListener("click", agregarItemLocal);
     document.getElementById("form-venta-local").addEventListener("submit", registrarVentaLocal);
 
-    // Modal
-    document.querySelector("[data-modal-close]")?.addEventListener("click", cerrarModalVentaLocal);
-    document.getElementById("venta-local-modal")?.addEventListener("click", (e) => {
-      if (e.target === e.currentTarget) cerrarModalVentaLocal();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") cerrarModalVentaLocal();
-    });
+    // Cerrar modales con UiModal (data-close-modal ya maneja el cierre)
+    // El cierre de modales se maneja automáticamente con UiModal
 
-    // Modal detalle
-    document.querySelector("[data-close-modal]")?.addEventListener("click", () => {
-      document.getElementById("modal-detalle-venta").hidden = true;
-      document.getElementById("modal-detalle-venta").setAttribute("aria-hidden", "true");
-    });
-    document.getElementById("modal-detalle-venta")?.addEventListener("click", (e) => {
-      if (e.target === e.currentTarget) {
-        document.getElementById("modal-detalle-venta").hidden = true;
-        document.getElementById("modal-detalle-venta").setAttribute("aria-hidden", "true");
-      }
-    });
+    // Inicializar FieldValidator
+    if (window.FieldValidator) {
+      setTimeout(() => window.FieldValidator.init(), 100);
+    }
 
     // Cargar datos iniciales
     cargarProductosParaSelect();

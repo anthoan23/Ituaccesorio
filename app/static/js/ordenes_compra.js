@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalProductos = document.getElementById('modal-seleccionar-productos');
     const modalDetalle = document.getElementById('modal-detalle-orden');
     const modalEliminar = document.getElementById('modal-confirmar-eliminar-orden');
-    const modalMensaje = document.getElementById('modal-mensaje');
     const modalEditar = document.getElementById('modal-editar-orden');
     const btnBuscarProveedor = document.getElementById('btn-desplegar-proveedores');
     const btnBuscarProductos = document.getElementById('btn-desplegar-productos');
@@ -24,14 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const entradaIdProveedor = document.getElementById('entrada-id-proveedor');
     const entradaNombreProveedor = document.getElementById('entrada-nombre-proveedor');
     const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-orden');
-    const mensajeTexto = document.getElementById('mensaje-texto');
-    const btnCerrarMensaje = document.getElementById('btn-cerrar-mensaje');
 
     // ==================== ICONOS SVG CON ESTILOS ====================
+
     const Iconos = {
-        lapiz: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
-        basura: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>`,
-        ojo: `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 6c0 2.5-2.5 5-8 5s-8-2.5-8-5 2.5-5 8-5 8 2.5 8 5zm-8-7c-6 0-10 4.5-10 7s4 7 10 7 10-4.5 10-7-4-7-10-7z" fill="currentColor"/></svg>`
+        lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
+        basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`,
+        ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`
     };
 
     // Estado
@@ -129,45 +127,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-// Cargar órdenes pendientes
-async function cargarOrdenesPendientes() {
-    if (!tablaPendientes) return;
-    
-    try {
-        const data = await fetchJson('/api/ordenes_compra');
+    // Cargar órdenes pendientes
+    async function cargarOrdenesPendientes() {
+        if (!tablaPendientes) return;
         
-        if (Array.isArray(data) && data.length > 0) {
-            tablaPendientes.innerHTML = data.map(orden => {
-                const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
-                const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
-                const estado = orden.Estado || 'Pendiente';
-                const estadoClass = estado === 'Pendiente' ? 'status--pending' : 'status--approved';
-                
-                return `
-                    <tr data-id="${escapeHtml(orden.ID_orden_c)}">
-                        <td><span class="order-id">${escapeHtml(orden.ID_orden_c)}</span></td>
-                        <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
-                        <td>${escapeHtml(fecha)}</td>
-                        <td><span class="status ${estadoClass}"><span class="status__dot"></span>${escapeHtml(estado)}</span></td>
-                        <td class="order-total">Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
-                        <td class="table__actions">
-                            <div class="row-actions" aria-label="Acciones de la orden">
-                                <button class="icon-action" type="button" aria-label="Ver detalles" data-action="ver" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.ojo}</button>
-                                <button class="icon-action" type="button" aria-label="Editar" data-action="editar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.lapiz}</button>
-                                <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="eliminar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.basura}</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        } else {
-            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
+        try {
+            const data = await fetchJson('/api/ordenes_compra');
+            
+            if (Array.isArray(data) && data.length > 0) {
+                tablaPendientes.innerHTML = data.map(orden => {
+                    const nombreProveedor = orden.N_proveedor || orden.nombre || 'Sin proveedor';
+                    const fecha = orden.Fecha_o ? formatDate(orden.Fecha_o) : 'Fecha no disponible';
+                    const estado = orden.Estado || 'Pendiente';
+                    const estadoClass = estado === 'Pendiente' ? 'status--pending' : 'status--approved';
+                    
+                    return `
+                        <tr data-id="${escapeHtml(orden.ID_orden_c)}">
+                            <td><span class="chip">${escapeHtml(orden.ID_orden_c)}</span></td>
+                            <td><strong>${escapeHtml(nombreProveedor)}</strong></td>
+                            <td>${escapeHtml(fecha)}</td>
+                            <td><span class="status ${estadoClass}"><span class="status__dot"></span>${escapeHtml(estado)}</span></td>
+                            <td class="order-total">Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
+                            <td class="table__actions">
+                                <div class="row-actions" aria-label="Acciones de la orden">
+                                    <button class="icon-action icon-action--view" type="button" aria-label="Ver detalles" data-action="ver" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.ojo}</button>
+                                    <button class="icon-action icon-action--edit" type="button" aria-label="Editar" data-action="editar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.lapiz}</button>
+                                    <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="eliminar" data-id="${escapeHtml(orden.ID_orden_c)}">${Iconos.basura}</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes de compra pendientes.</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error cargando órdenes:', error);
+            tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
         }
-    } catch (error) {
-        console.error('Error cargando órdenes:', error);
-        tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">Error al cargar las órdenes.</td></tr>';
     }
-}
 
     // ==================== CARGAR EMPLEADOS ====================
     
@@ -205,7 +203,7 @@ async function cargarOrdenesPendientes() {
             if (proveedores.length > 0) {
                 listaProveedores.innerHTML = proveedores.map(p => `
                     <tr data-proveedor-id="${escapeHtml(p.id)}" class="row-selectable">
-                        <td>${escapeHtml(p.id)}</td>
+                        <td><span class="chip">${escapeHtml(p.id)}</span></td>
                         <td>${escapeHtml(p.nombre)}</td>
                         <td>${escapeHtml(p.celular || '-')}</td>
                         <td>${escapeHtml(p.correo || '-')}</td>
@@ -269,7 +267,7 @@ async function cargarOrdenesPendientes() {
                 </td>
                 <td>Bs. ${formatMoney(p.costo)}</td>
                 <td class="table__actions">
-                    <button class="btn btn--small btn-eliminar" data-index="${idx}">Eliminar</button>
+                    <button class="btn-eliminar" data-index="${idx}">Eliminar</button>
                 </td>
             </tr>
         `).join('');
@@ -279,8 +277,6 @@ async function cargarOrdenesPendientes() {
     // Renderizar productos seleccionados (editar)
     function renderizarSeleccionadosEditar() {
         if (!tablaSeleccionadosEditar) return;
-        
-        console.log('📋 Productos seleccionados editar:', productosSeleccionadosEditar);
         
         if (!productosSeleccionadosEditar || productosSeleccionadosEditar.length === 0) {
             tablaSeleccionadosEditar.innerHTML = '<tr><td colspan="5" class="table__empty">Aún no hay productos seleccionados.</td></tr>';
@@ -301,7 +297,7 @@ async function cargarOrdenesPendientes() {
                 </td>
                 <td>Bs. ${formatMoney(p.costo || 0)}</td>
                 <td class="table__actions">
-                    <button class="btn btn--small btn-eliminar-editar" data-index="${idx}">Eliminar</button>
+                    <button class="btn-eliminar" data-index="${idx}">Eliminar</button>
                 </td>
             </tr>
         `).join('');
@@ -345,16 +341,18 @@ async function cargarOrdenesPendientes() {
         renderizarSeleccionadosEditar();
     }
 
-    // Abrir modal
-    function openModal(modal) {
-        if (modal) modal.removeAttribute('hidden');
-        document.body.style.overflow = 'hidden';
+    // Abrir modal (usando UiModal)
+    function openModal(id) {
+        if (window.UiModal && typeof window.UiModal.openById === 'function') {
+            window.UiModal.openById(id);
+        }
     }
 
-    // Cerrar modal
-    function closeModal(modal) {
-        if (modal) modal.setAttribute('hidden', '');
-        document.body.style.overflow = '';
+    // Cerrar modal (usando UiModal)
+    function closeModal(id) {
+        if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+            window.UiModal.closeById(id);
+        }
     }
 
     // Ver detalle de orden
@@ -372,27 +370,25 @@ async function cargarOrdenesPendientes() {
                 
                 if (infoContainer) {
                     infoContainer.innerHTML = `
-                        <div class="device-detail__grid">
-                            <div class="detail-item">
-                                <span class="device-detail__label">ID Orden</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.ID_orden_c)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Proveedor</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.nombre)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Fecha</span>
-                                <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Estado</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Estado)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="device-detail__label">Realizado por</span>
-                                <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
-                            </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">ID Orden</span>
+                            <span class="device-detail__value">#${escapeHtml(detalle.ID_orden_c)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Proveedor</span>
+                            <span class="device-detail__value"><strong>${escapeHtml(detalle.nombre)}</strong></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Fecha</span>
+                            <span class="device-detail__value">${escapeHtml(formatDate(detalle.Fecha_o))}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Estado</span>
+                            <span class="device-detail__value"><span class="status ${detalle.Estado === 'Pendiente' ? 'status--pending' : 'status--approved'}"><span class="status__dot"></span>${escapeHtml(detalle.Estado)}</span></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="device-detail__label">Realizado por</span>
+                            <span class="device-detail__value">${escapeHtml(detalle.Realizado_por || '-')}</span>
                         </div>
                     `;
                 }
@@ -414,7 +410,7 @@ async function cargarOrdenesPendientes() {
                 }
 
                 if (totalSpan) totalSpan.textContent = formatMoney(detalle.Costo_venta || 0);
-                openModal(modalDetalle);
+                openModal('modal-detalle-orden');
             } else {
                 mostrarMensaje(`No se pudo encontrar la orden ${id}`, true);
             }
@@ -446,8 +442,6 @@ async function cargarOrdenesPendientes() {
             const data = await fetchJson(`/api/detalles_orden/${id}`, { method: 'GET' });
             const detalle = data.datos_orden;
             const productos = data.productos_orden || [];
-            
-            console.log('📋 Productos de la orden:', productos);
             
             if (detalle) {
                 document.getElementById('editar-id-orden').value = detalle.ID_orden_c;
@@ -485,13 +479,11 @@ async function cargarOrdenesPendientes() {
                     cantidad: Number(p.Cantidad_p || p.cantidad || 1)
                 }));
                 
-                console.log('📋 Productos seleccionados para editar:', productosSeleccionadosEditar);
-                
                 // Filtrar productos con id_modelo vacío
                 productosSeleccionadosEditar = productosSeleccionadosEditar.filter(p => p.id_modelo && p.id_modelo !== '');
                 
                 renderizarSeleccionadosEditar();
-                openModal(modalEditar);
+                openModal('modal-editar-orden');
             }
         } catch (error) {
             console.error('Error cargando orden para editar:', error);
@@ -508,8 +500,6 @@ async function cargarOrdenesPendientes() {
             const data = await fetchJson(`/api/productos_proveedor/${idProveedor}`, { method: 'POST' });
             const productos = data.productos || [];
             productosDisponibles = productos;
-            
-            console.log('📦 Productos disponibles para editar:', productos);
             
             if (productos.length > 0) {
                 lista.innerHTML = productos.map(p => `
@@ -538,7 +528,7 @@ async function cargarOrdenesPendientes() {
             textoEl.textContent = `¿Seguro que deseas eliminar (anular) la orden "${id}"? Esta acción no se puede deshacer.`;
         }
         if (modalEliminar) {
-            openModal(modalEliminar);
+            openModal('modal-confirmar-eliminar-orden');
         }
     }
 
@@ -552,7 +542,7 @@ async function cargarOrdenesPendientes() {
             });
             if (response.success) {
                 mostrarMensaje('Orden eliminada exitosamente.');
-                if (modalEliminar) closeModal(modalEliminar);
+                closeModal('modal-confirmar-eliminar-orden');
                 ordenParaEliminar = null;
                 cargarOrdenesPendientes();
             } else {
@@ -569,14 +559,14 @@ async function cargarOrdenesPendientes() {
         btnRegistrar.addEventListener('click', () => {
             limpiarFormulario();
             cargarEmpleados('entrada-id-empleado');
-            openModal(modalRegistro);
+            openModal('modal-registrar-entrada');
         });
     }
 
     if (btnBuscarProveedor) {
         btnBuscarProveedor.addEventListener('click', async () => {
             await cargarProveedores();
-            openModal(modalProveedores);
+            openModal('modal-seleccionar-proveedor');
         });
     }
 
@@ -596,7 +586,7 @@ async function cargarOrdenesPendientes() {
                 if (entradaIdProveedor) entradaIdProveedor.value = proveedorSeleccionado.id;
                 if (entradaNombreProveedor) entradaNombreProveedor.value = proveedorSeleccionado.nombre;
                 if (btnBuscarProductos) btnBuscarProductos.disabled = false;
-                closeModal(modalProveedores);
+                closeModal('modal-seleccionar-proveedor');
                 await cargarProductosProveedor(id);
             }
         });
@@ -619,7 +609,7 @@ async function cargarOrdenesPendientes() {
                 document.getElementById('editar-id-proveedor').value = proveedorSeleccionadoEditar.id;
                 document.getElementById('editar-nombre-proveedor').value = proveedorSeleccionadoEditar.nombre;
                 document.getElementById('btn-desplegar-productos-editar').disabled = false;
-                closeModal(document.getElementById('modal-seleccionar-proveedor-editar'));
+                closeModal('modal-seleccionar-proveedor-editar');
                 await cargarProductosProveedorEditar(id);
             }
         });
@@ -629,7 +619,7 @@ async function cargarOrdenesPendientes() {
     if (btnBuscarProductos) {
         btnBuscarProductos.addEventListener('click', () => {
             if (proveedorSeleccionado) {
-                openModal(modalProductos);
+                openModal('modal-seleccionar-productos');
             } else {
                 mostrarMensaje('Primero debe seleccionar un proveedor.', true);
             }
@@ -641,7 +631,7 @@ async function cargarOrdenesPendientes() {
     if (btnBuscarProductosEditar) {
         btnBuscarProductosEditar.addEventListener('click', () => {
             if (proveedorSeleccionadoEditar) {
-                openModal(document.getElementById('modal-seleccionar-productos-editar'));
+                openModal('modal-seleccionar-productos-editar');
             } else {
                 mostrarMensaje('Primero debe seleccionar un proveedor.', true);
             }
@@ -685,7 +675,7 @@ async function cargarOrdenesPendientes() {
                 });
             }
             renderizarSeleccionados();
-            closeModal(modalProductos);
+            closeModal('modal-seleccionar-productos');
         });
     }
 
@@ -727,7 +717,7 @@ async function cargarOrdenesPendientes() {
                 });
             }
             renderizarSeleccionadosEditar();
-            closeModal(document.getElementById('modal-seleccionar-productos-editar'));
+            closeModal('modal-seleccionar-productos-editar');
         });
     }
 
@@ -772,7 +762,7 @@ async function cargarOrdenesPendientes() {
                 return;
             }
 
-            const btnEliminar = e.target.closest('.btn-eliminar-editar');
+            const btnEliminar = e.target.closest('.btn-eliminar');
             if (btnEliminar) {
                 const idx = parseInt(btnEliminar.dataset.index);
                 if (!isNaN(idx)) {
@@ -820,7 +810,7 @@ async function cargarOrdenesPendientes() {
                 if (response.success) {
                     mostrarMensaje('Orden de compra registrada exitosamente.');
                     limpiarFormulario();
-                    closeModal(modalRegistro);
+                    closeModal('modal-registrar-entrada');
                     cargarOrdenesPendientes();
                 } else {
                     mostrarMensaje(response.error || 'Error al registrar la orden.', true);
@@ -836,9 +826,6 @@ async function cargarOrdenesPendientes() {
     if (formEditar) {
         formEditar.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            console.log('📝 Enviando formulario de edición...');
-            console.log('📋 Productos seleccionados:', productosSeleccionadosEditar);
             
             if (!proveedorSeleccionadoEditar) {
                 mostrarMensaje('Debe seleccionar un proveedor.', true);
@@ -873,8 +860,6 @@ async function cargarOrdenesPendientes() {
                 productos: productosSeleccionadosEditar.map(p => [String(p.id_modelo), p.cantidad])
             };
 
-            console.log('📤 Payload enviado:', payload);
-
             try {
                 const response = await fetchJson('/api/ordenes_compra/actualizar', {
                     method: 'PUT',
@@ -883,7 +868,7 @@ async function cargarOrdenesPendientes() {
                 if (response.success) {
                     mostrarMensaje('Orden de compra actualizada exitosamente.');
                     limpiarFormularioEditar();
-                    closeModal(modalEditar);
+                    closeModal('modal-editar-orden');
                     cargarOrdenesPendientes();
                 } else {
                     mostrarMensaje(response.error || 'Error al actualizar la orden.', true);
@@ -895,26 +880,25 @@ async function cargarOrdenesPendientes() {
         });
     }
 
-// Acciones en tabla de pendientes
-if (tablaPendientes) {
-    tablaPendientes.addEventListener('click', async (e) => {
-        // Buscar el botón más cercano con data-action
-        const btn = e.target.closest('.icon-action');
-        if (!btn) return;
-        
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        if (!action || !id) return;
+    // Acciones en tabla de pendientes
+    if (tablaPendientes) {
+        tablaPendientes.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.icon-action');
+            if (!btn) return;
+            
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (!action || !id) return;
 
-        if (action === 'ver') {
-            await verDetalle(id);
-        } else if (action === 'editar') {
-            await abrirEditarOrden(id);
-        } else if (action === 'eliminar') {
-            abrirEliminarOrden(id);
-        }
-    });
-}
+            if (action === 'ver') {
+                await verDetalle(id);
+            } else if (action === 'editar') {
+                await abrirEditarOrden(id);
+            } else if (action === 'eliminar') {
+                abrirEliminarOrden(id);
+            }
+        });
+    }
 
     // Confirmar eliminación
     if (btnConfirmarEliminar) {
@@ -923,20 +907,17 @@ if (tablaPendientes) {
         });
     }
 
-    // Cerrar modales
+    // Cerrar modales (usando UiModal)
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
         btn.addEventListener('click', () => {
             const modal = btn.closest('[data-modal]');
-            if (modal) closeModal(modal);
+            if (modal && modal.id) {
+                if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                    window.UiModal.closeById(modal.id);
+                }
+            }
         });
     });
-
-    // Cerrar mensaje automático
-    if (btnCerrarMensaje) {
-        btnCerrarMensaje.addEventListener('click', () => {
-            if (modalMensaje) modalMensaje.setAttribute('hidden', '');
-        });
-    }
 
     // Cargar datos iniciales
     cargarOrdenesPendientes();

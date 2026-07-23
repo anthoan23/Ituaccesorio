@@ -1,11 +1,15 @@
-{% extends 'components/layout/base.html' %} {% block title %}Ituaccesorio -
-Validación de Pagos{% endblock %} {% block head_extra %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/validacion_pagos.css') }}"
-/>
-{% endblock %} {% block content %}
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Validación de Pagos{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/validacion_pagos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
+{% endblock %}
+
+{% block content %}
 <main class="page">
+  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -15,24 +19,33 @@ Validación de Pagos{% endblock %} {% block head_extra %}
     </ol>
   </nav>
 
-  <header class="validacion-header">
-    <div class="validacion-header__copy">
-      <h1 class="validacion-header__title">Validación de Pagos</h1>
-      <p class="validacion-header__subtitle">
-        Revisa los comprobantes de pago y aprueba o rechaza las transacciones
-      </p>
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Encabezado de validación de pagos">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Gestión de pagos</p>
+      <h1 class="hero__title">Validación de Pagos</h1>
+      <p class="hero__description">Revisa los comprobantes de pago y aprueba o rechaza las transacciones</p>
     </div>
-    <div class="validacion-header__actions">
-      <button id="btn-reportes-pagos" class="btn btn--ghost" type="button">Reportes</button>
+    <div class="hero__actions">
+      <button id="btn-reportes-pagos" class="ui-btn ui-btn--ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Reportes
+      </button>
     </div>
   </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="pendientes">Pendientes</button>
-    <button class="tab-btn" data-tab="aprobados">Aprobados</button>
-    <button class="tab-btn" data-tab="rechazados">Rechazados</button>
+  <!-- Tabs -->
+  <div class="tabs" role="tablist" aria-label="Pestañas de validación">
+    <button class="tab-btn is-active" data-tab="pendientes" role="tab" aria-selected="true">Pendientes</button>
+    <button class="tab-btn" data-tab="aprobados" role="tab" aria-selected="false">Aprobados</button>
+    <button class="tab-btn" data-tab="rechazados" role="tab" aria-selected="false">Rechazados</button>
   </div>
 
+  <!-- Contenido de pestañas -->
   <div id="pendientes-tab" class="tab-content">
     <div id="pendientes-list" class="pagos-grid"></div>
   </div>
@@ -45,10 +58,10 @@ Validación de Pagos{% endblock %} {% block head_extra %}
 </main>
 
 <!-- Modal de rechazo -->
-<div id="rechazo-modal" class="modal-rechazo is-hidden">
+<div id="rechazo-modal" class="modal-rechazo is-hidden" role="dialog" aria-modal="true" aria-label="Rechazar pago">
   <div class="modal-panel">
-  <h3>Rechazar pago</h3>
-  <p class="modal-note">Motivo del rechazo:</p>
+    <h3 class="modal-title">Rechazar pago</h3>
+    <p class="modal-note">Motivo del rechazo:</p>
     <textarea
       id="motivo-rechazo"
       class="motivo-rechazo"
@@ -59,47 +72,27 @@ Validación de Pagos{% endblock %} {% block head_extra %}
       title="Sin caracteres especiales"
     ></textarea>
     <div class="rechazo-actions">
-      <button id="cancelar-rechazo" class="btn btn--ghost">Cancelar</button>
-      <button id="confirmar-rechazo" class="btn btn--yellow">
-        Confirmar rechazo
-      </button>
+      <button id="cancelar-rechazo" class="ui-btn ui-btn--ghost">Cancelar</button>
+      <button id="confirmar-rechazo" class="ui-btn ui-btn--primary">Confirmar rechazo</button>
     </div>
   </div>
 </div>
 
-<!-- ==================== MODAL DE REPORTES ==================== -->
-<div
-  id="modal-reportes-pagos"
-  class="ui-modal"
-  data-modal
-  hidden
-  aria-hidden="true"
->
-  <div
-    class="ui-modal__dialog ui-modal__dialog--lg"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="reportes-pagos-title"
-  >
+<!-- Modal de Reportes -->
+<div id="modal-reportes-pagos" class="ui-modal" data-modal hidden aria-hidden="true">
+  <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-pagos-title">
     <div class="ui-modal__header">
       <h3 id="reportes-pagos-title" class="ui-modal__title">Reporte de Pagos</h3>
-      <button
-        class="ui-modal__close"
-        type="button"
-        data-close-modal
-        aria-label="Cerrar"
-      >
-        ×
-      </button>
+      <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
     </div>
     <div class="ui-modal__body">
       <!-- Filtros -->
-      <div class="filters-panel__section">
-        <h3 class="filters-panel__title">Filtros avanzados</h3>
+      <div class="filters-section">
+        <h4 class="filters-title">Filtros avanzados</h4>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Búsqueda</label>
+            <span class="field__label">Búsqueda</span>
             <input
               type="text"
               id="reporte-busqueda-pagos"
@@ -108,154 +101,112 @@ Validación de Pagos{% endblock %} {% block head_extra %}
               data-validation-rules="sinCaracteresEspeciales"
               title="Sin caracteres especiales"
             />
-            <small class="field-hint"
-              >Buscar por ID de factura o nombre del cliente</small
-            >
+            <small class="field-hint">Buscar por ID de factura o nombre del cliente</small>
           </div>
 
           <div class="field">
-            <label class="field__label">Estado</label>
-            <select id="reporte-estado-pagos" class="field__input">
-              <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="filters-panel__row">
-          <div class="field">
-            <label class="field__label">Método de pago</label>
-            <select id="reporte-metodo-pagos" class="field__input">
-              <option value="">Todos</option>
-              <option value="pago_movil">Pago Móvil</option>
-              <option value="zelle">Zelle</option>
-              <option value="binance">Binance</option>
-              <option value="efectivo_usd">Efectivo USD</option>
-              <option value="efectivo_bs">Efectivo Bs</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="field__label">Moneda</label>
-            <select id="reporte-moneda-pagos" class="field__input">
-              <option value="">Todas</option>
-              <option value="USD">USD</option>
-              <option value="VES">VES</option>
-              <option value="USDT">USDT</option>
-            </select>
+            <span class="field__label">Estado</span>
+            <div class="select-wrapper">
+              <select id="reporte-estado-pagos" class="field__input">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Fecha desde</label>
-            <input
-              type="date"
-              id="reporte-fecha-desde-pagos"
-              class="field__input"
-            />
+            <span class="field__label">Método de pago</span>
+            <div class="select-wrapper">
+              <select id="reporte-metodo-pagos" class="field__input">
+                <option value="">Todos</option>
+                <option value="pago_movil">Pago Móvil</option>
+                <option value="zelle">Zelle</option>
+                <option value="binance">Binance</option>
+                <option value="efectivo_usd">Efectivo USD</option>
+                <option value="efectivo_bs">Efectivo Bs</option>
+              </select>
+            </div>
           </div>
 
           <div class="field">
-            <label class="field__label">Fecha hasta</label>
-            <input
-              type="date"
-              id="reporte-fecha-hasta-pagos"
-              class="field__input"
-            />
+            <span class="field__label">Moneda</span>
+            <div class="select-wrapper">
+              <select id="reporte-moneda-pagos" class="field__input">
+                <option value="">Todas</option>
+                <option value="USD">USD</option>
+                <option value="VES">VES</option>
+                <option value="USDT">USDT</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="filters-panel__row">
+        <div class="filters-row">
           <div class="field">
-            <label class="field__label">Monto mínimo</label>
-            <input
-              type="number"
-              id="reporte-monto-min-pagos"
-              step="0.01"
-              min="0"
-              class="field__input"
-              placeholder="0.00"
-            />
+            <span class="field__label">Fecha desde</span>
+            <input type="date" id="reporte-fecha-desde-pagos" class="field__input" />
           </div>
 
           <div class="field">
-            <label class="field__label">Monto máximo</label>
-            <input
-              type="number"
-              id="reporte-monto-max-pagos"
-              step="0.01"
-              min="0"
-              class="field__input"
-              placeholder="0.00"
-            />
+            <span class="field__label">Fecha hasta</span>
+            <input type="date" id="reporte-fecha-hasta-pagos" class="field__input" />
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <div class="field">
+            <span class="field__label">Monto mínimo</span>
+            <input type="number" id="reporte-monto-min-pagos" step="0.01" min="0" class="field__input" placeholder="0.00" />
+          </div>
+
+          <div class="field">
+            <span class="field__label">Monto máximo</span>
+            <input type="number" id="reporte-monto-max-pagos" step="0.01" min="0" class="field__input" placeholder="0.00" />
           </div>
         </div>
       </div>
 
       <!-- Botones de acción -->
-      <div class="filters-panel__section">
-        <div
-          style="
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-          "
-        >
-          <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">Generar reporte</button>
-          <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
-        </div>
+      <div class="filters-actions">
+        <button id="btn-generar-reporte-pagos" class="ui-btn ui-btn--primary">Generar reporte</button>
+        <button id="btn-limpiar-filtros-pagos" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
       </div>
 
       <!-- Resumen estadístico -->
-      <div
-        id="reporte-resumen-pagos"
-        class="filters-panel__section"
-        style="display: none"
-      >
-        <h3 class="filters-panel__title">Resumen</h3>
-        <div
-          class="stats-grid"
-          style="
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.75rem;
-          "
-        >
-          <div class="stat-card stat-card--total">
-            <div class="stat-card__label">Total transacciones</div>
-            <div id="reporte-total-pagos" class="stat-card__value">0</div>
+      <div id="reporte-resumen-pagos" class="reporte-resumen is-hidden">
+        <h4 class="filters-title">Resumen</h4>
+        <div class="stats-summary">
+          <div class="stat-summary stat-summary--total">
+            <span class="stat-summary__label">Total transacciones</span>
+            <span id="reporte-total-pagos" class="stat-summary__value">0</span>
           </div>
-          <div class="stat-card stat-card--monto">
-            <div class="stat-card__label">Monto total</div>
-            <div id="reporte-total-monto-pagos" class="stat-card__value">$0</div>
+          <div class="stat-summary stat-summary--monto">
+            <span class="stat-summary__label">Monto total</span>
+            <span id="reporte-total-monto-pagos" class="stat-summary__value">$0</span>
           </div>
-          <div class="stat-card stat-card--pendiente">
-            <div class="stat-card__label">Pendientes</div>
-            <div id="reporte-pendientes-pagos" class="stat-card__value">0</div>
+          <div class="stat-summary stat-summary--pendiente">
+            <span class="stat-summary__label">Pendientes</span>
+            <span id="reporte-pendientes-pagos" class="stat-summary__value">0</span>
           </div>
-          <div class="stat-card stat-card--aprobado">
-            <div class="stat-card__label">Aprobados</div>
-            <div id="reporte-aprobados-pagos" class="stat-card__value">0</div>
+          <div class="stat-summary stat-summary--aprobado">
+            <span class="stat-summary__label">Aprobados</span>
+            <span id="reporte-aprobados-pagos" class="stat-summary__value">0</span>
           </div>
-          <div class="stat-card stat-card--rechazado">
-            <div class="stat-card__label">Rechazados</div>
-            <div id="reporte-rechazados-pagos" class="stat-card__value">0</div>
+          <div class="stat-summary stat-summary--rechazado">
+            <span class="stat-summary__label">Rechazados</span>
+            <span id="reporte-rechazados-pagos" class="stat-summary__value">0</span>
           </div>
         </div>
       </div>
 
       <!-- Previsualización -->
-      <div
-        id="reporte-preview-pagos"
-        class="filters-panel__section"
-        style="display: none"
-      >
-        <h3 class="filters-panel__title">Previsualización</h3>
-        <div class="table-wrap" style="max-height: 400px; overflow-y: auto">
+      <div id="reporte-preview-pagos" class="reporte-preview is-hidden">
+        <h4 class="filters-title">Previsualización</h4>
+        <div class="table-wrap table-wrap--scroll">
           <table class="table">
             <thead>
               <tr>
@@ -272,9 +223,7 @@ Validación de Pagos{% endblock %} {% block head_extra %}
             </thead>
             <tbody id="reporte-tabla-pagos">
               <tr>
-                <td colspan="9" class="table__empty">
-                  Selecciona filtros y genera un reporte
-                </td>
+                <td colspan="9" class="table__empty">Selecciona filtros y genera un reporte</td>
               </tr>
             </tbody>
           </table>
@@ -292,38 +241,16 @@ Validación de Pagos{% endblock %} {% block head_extra %}
 </div>
 
 <!-- Modal de detalle de venta -->
-<div
-  id="modal-detalle-venta"
-  class="ui-modal"
-  data-modal
-  hidden
-  aria-hidden="true"
->
-  <div
-    class="ui-modal__dialog ui-modal__dialog--lg"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="detalle-venta-title"
-  >
+<div id="modal-detalle-venta" class="ui-modal" data-modal hidden aria-hidden="true">
+  <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="detalle-venta-title">
     <div class="ui-modal__header">
       <h3 id="detalle-venta-title" class="ui-modal__title">Detalle de Venta</h3>
-      <button
-        class="ui-modal__close"
-        type="button"
-        data-close-modal
-        aria-label="Cerrar"
-      >
-        ×
-      </button>
+      <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
     </div>
     <div class="ui-modal__body">
-      <div
-        id="detalle-venta-info"
-        class="detail-info"
-        style="margin-bottom: 1rem"
-      ></div>
-      <div class="table-wrap" style="max-height: 400px; overflow-y: auto">
-        <table class="table" style="min-width: 600px">
+      <div id="detalle-venta-info" class="detail-info"></div>
+      <div class="table-wrap table-wrap--scroll">
+        <table class="table">
           <thead>
             <tr>
               <th>Producto</th>
@@ -337,13 +264,8 @@ Validación de Pagos{% endblock %} {% block head_extra %}
           <tbody id="detalle-venta-productos"></tbody>
           <tfoot>
             <tr id="detalle-venta-total">
-              <td colspan="5" style="text-align: right; font-weight: bold">
-                Total:
-              </td>
-              <td
-                id="detalle-venta-total-amount"
-                style="font-weight: bold"
-              ></td>
+              <td colspan="5" class="detalle-total-label">Total:</td>
+              <td id="detalle-venta-total-amount" class="detalle-total-amount"></td>
             </tr>
           </tfoot>
         </table>
@@ -352,9 +274,9 @@ Validación de Pagos{% endblock %} {% block head_extra %}
   </div>
 </div>
 
-{% endblock %} {% block scripts %}
-<script
-  defer
-  src="{{ url_for('static', filename='js/validacion_pagos.js') }}"
-></script>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/validacion_pagos.js') }}"></script>
 {% endblock %}

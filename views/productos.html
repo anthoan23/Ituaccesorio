@@ -1,14 +1,15 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Productos{% endblock %}
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/productos.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
-<main class="page">
+<main class="page productos-page">
+  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -17,22 +18,76 @@
       </li>
     </ol>
   </nav>
-  <header class="products-hero" aria-label="Encabezado de productos">
-    <div class="products-hero__copy">
-      <h1 class="products-hero__title">Productos</h1>
+
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Gestión de productos</p>
+      <h1 class="hero__title">Catálogo de productos</h1>
+      <p class="hero__description">Vista completa para consultar, registrar y administrar productos.</p>
     </div>
 
-    <div class="products-hero__actions" aria-label="Acciones">
-      <button id="btn-registrar-producto" class="btn btn--yellow" type="button" aria-expanded="false" aria-controls="modal-registro-producto">
-        <span class="btn__icon" aria-hidden="true">+</span>
+    <div class="hero__actions" aria-label="Acciones">
+      <button id="btn-registrar-producto" class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-producto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
         Registrar producto
       </button>
-      <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
+      <button id="btn-reportes" class="ui-btn ui-btn--ghost" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Reportes
+      </button>
     </div>
   </header>
 
-  <section class="products-grid" aria-label="Catálogo de productos">
-    <article class="card card--table" aria-label="Listado de productos">
+  <!-- Contenido principal con cards unificadas -->
+  <section class="content productos-grid" aria-label="Catálogo de productos">
+    <!-- Card de tabla -->
+    <article class="card card--table productos-table-card" aria-label="Productos registrados">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Catálogo de productos</h2>
+          <p class="card__subtitle">Tabla principal de productos registrados.</p>
+        </div>
+        <div class="card__actions">
+          <button id="btn-registrar-producto-header" class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-producto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Nuevo producto
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de herramientas -->
+      <div class="productos-toolbar">
+        <label class="field productos-toolbar__field">
+          <span>Buscar productos</span>
+          <input id="input-buscar-productos" type="search" placeholder="Buscar por nombre, código o marca">
+        </label>
+        <label class="field productos-toolbar__field">
+          <span>Clase</span>
+          <div class="select-wrapper">
+            <select id="f-clase" aria-label="Clase">
+              <option value="">Todas</option>
+            </select>
+          </div>
+        </label>
+        <label class="field productos-toolbar__field">
+          <span>Marca</span>
+          <div class="select-wrapper">
+            <select id="f-marca" aria-label="Marca">
+              <option value="">Todas</option>
+            </select>
+          </div>
+        </label>
+      </div>
+
       <div class="table-wrap" role="region" aria-label="Tabla de productos">
         <table class="table products-table">
           <thead>
@@ -48,241 +103,253 @@
         </table>
       </div>
 
-      <div class="table__header" style="margin-top: 0.9rem;">
-        <span></span>
-        <nav class="pager" id="productos-pager" aria-label="Paginación de productos">
-          <button id="pager-anterior" class="pager__btn" type="button" aria-label="Página anterior">‹</button>
-          <span class="pager__pages" id="pager-info">Página 1 de 1</span>
-          <button id="pager-siguiente" class="pager__btn" type="button" aria-label="Página siguiente">›</button>
-        </nav>
+      <!-- Paginador -->
+      <div class="table-controls" id="productos-pager">
+        <div class="table-controls__meta">
+          <span class="table-controls__info" id="pager-info">Página 1 de 1</span>
+        </div>
+        <div class="table-controls__pager">
+          <button id="pager-anterior" class="table-controls__btn" type="button" aria-label="Página anterior" disabled>‹ Anterior</button>
+          <button id="pager-siguiente" class="table-controls__btn" type="button" aria-label="Página siguiente">Siguiente ›</button>
+        </div>
       </div>
     </article>
 
-    <aside class="card filters-panel" aria-label="Filtros de catálogo">
-      <h2 class="card__title">Filtros</h2>
+    <!-- Filtros panel (sidebar) -->
+    <aside class="card card--filters" aria-label="Filtros de catálogo">
+      <div class="card__header">
+        <div class="card__header-left">
+          <h2 class="card__title">Filtros</h2>
+          <p class="card__subtitle">Refina tu búsqueda</p>
+        </div>
+      </div>
 
-      <div class="filters-panel__section" aria-label="Clase y marca">
-        <h3 class="filters-panel__title">Clase y marca</h3>
+      <div class="filters-section">
         <label class="field">
-          <span class="field__label">Clase</span>
-          <select id="f-clase" aria-label="Clase"></select>
+          <span>Clase</span>
+          <div class="select-wrapper">
+            <select id="f-clase-sidebar" aria-label="Clase">
+              <option value="">Todas</option>
+            </select>
+          </div>
         </label>
 
         <label class="field">
-          <span class="field__label">Marca</span>
-          <select id="f-marca" aria-label="Marca"></select>
+          <span>Marca</span>
+          <div class="select-wrapper">
+            <select id="f-marca-sidebar" aria-label="Marca">
+              <option value="">Todas</option>
+            </select>
+          </div>
         </label>
+
+        <div class="filters__actions">
+          <button id="btn-aplicar-filtros" class="ui-btn ui-btn--primary" type="button">Aplicar filtros</button>
+          <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost" type="button">Limpiar</button>
+        </div>
       </div>
     </aside>
   </section>
 
-  <!-- Modal Registrar Producto -->
-  <div id="modal-registro-producto" class="modal is-hidden" aria-hidden="true">
-    <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-    <div class="modal__panel card" role="dialog" aria-modal="true" aria-label="Registrar producto" style="padding: 1.5rem;">
-      <h2 id="producto-modal-title" class="card__title" style="margin-bottom: 1rem;">Registrar producto</h2>
+  <!-- Modal Registrar/Editar Producto usando sistema unificado -->
+  {% call modal('modal-producto', 'Registrar producto') %}
+  <form id="form-producto" class="ui-form" autocomplete="off" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="id_modelo" value="">
 
-      <div class="filters-panel__section" aria-label="Datos del producto" style="margin-top: 0; padding-top: 0; border-top: none;">
-        <form id="form-producto" action="#" method="post" autocomplete="off" enctype="multipart/form-data">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="id_modelo" value="">
+    <div class="ui-form__grid ui-form__grid--two">
+      <label class="field">
+        <span>Clase <span class="required-indicator">*</span></span>
+        <div class="select-wrapper">
+          <select id="p-clase" name="id_clase" aria-label="Clase" required>
+            <option value="">Selecciona una clase</option>
+          </select>
+        </div>
+      </label>
+      <div class="field">
+        <span>&nbsp;</span>
+        <button id="btn-nueva-clase" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Nueva clase</button>
+      </div>
+    </div>
 
-          <div class="filters-panel__row">
-            <label class="field">
-              <span class="field__label">Clase <span class="required-indicator">*</span></span>
-              <select id="p-clase" name="id_clase" aria-label="Clase" required>
-                <option value="">Selecciona una clase</option>
-              </select>
-            </label>
-            <div class="field" aria-label="Acciones de clase">
-              <span class="field__label">&nbsp;</span>
-              <button id="btn-nueva-clase" class="btn btn--yellow" type="button">Nueva clase</button>
-            </div>
-          </div>
+    <!-- Campo oculto para nueva clase -->
+    <div id="p-clase-nueva-wrap" class="field is-hidden" style="margin-top: 0.5rem;">
+      <span>Nombre de la clase <span class="required-indicator">*</span></span>
+      <input id="p-clase-nueva" 
+             type="text" 
+             name="clase_nueva" 
+             placeholder="Ej: Pantallas" 
+             aria-label="Nombre de la clase"
+             maxlength="30"
+             data-validation-rules="soloLetras,capitalizar"
+             title="Solo letras, espacios, acentos y ñ">
+      <small class="field-hint">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
+      <div class="ui-form__actions" style="margin-top: 0.5rem; justify-content: flex-start;">
+        <button id="btn-guardar-clase" class="ui-btn ui-btn--primary ui-btn--sm" type="button">Guardar clase</button>
+        <button id="btn-cancelar-clase" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Cancelar</button>
+      </div>
+    </div>
 
-          <!-- Campo oculto para nueva clase (se muestra al hacer clic en "Nueva clase") -->
-          <div id="p-clase-nueva-wrap" class="field is-hidden" style="margin-top: 0.75rem;">
-            <span class="field__label">Nombre de la clase <span class="required-indicator">*</span></span>
-            <input id="p-clase-nueva" 
-                   type="text" 
-                   name="clase_nueva" 
-                   placeholder="Ej: Pantallas" 
-                   aria-label="Nombre de la clase"
-                   maxlength="30"
-                   data-validation-rules="soloLetras,capitalizar"
-                   title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
-            <div class="filters-panel__actions" aria-label="Acciones de clase" style="margin-top: 0.5rem;">
-              <button id="btn-guardar-clase" class="btn btn--yellow" type="button">Guardar clase</button>
-            </div>
-          </div>
+    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+      <label class="field">
+        <span>Marca <span class="required-indicator">*</span></span>
+        <div class="select-wrapper">
+          <select id="p-marca" name="id_marca" aria-label="Marca" required>
+            <option value="">Selecciona una marca</option>
+          </select>
+        </div>
+      </label>
+      <div class="field">
+        <span>&nbsp;</span>
+        <button id="btn-nueva-marca" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Nueva marca</button>
+      </div>
+    </div>
 
-          <div class="filters-panel__row" style="margin-top: 0.75rem;">
-            <label class="field">
-              <span class="field__label">Marca <span class="required-indicator">*</span></span>
-              <select id="p-marca" name="id_marca" aria-label="Marca" required>
-                <option value="">Selecciona una marca</option>
-              </select>
-            </label>
-            <div class="field" aria-label="Acciones de marca">
-              <span class="field__label">&nbsp;</span>
-              <button id="btn-nueva-marca" class="btn btn--yellow" type="button">Nueva marca</button>
-            </div>
-          </div>
+    <!-- Campo oculto para nueva marca -->
+    <div id="p-marca-nueva-wrap" class="field is-hidden" style="margin-top: 0.5rem;">
+      <span>Nombre de la marca <span class="required-indicator">*</span></span>
+      <input id="p-marca-nueva" 
+             type="text" 
+             name="marca_nueva" 
+             placeholder="Ej: Samsung" 
+             aria-label="Nombre de la marca"
+             maxlength="30"
+             data-validation-rules="soloLetrasNumeros,capitalizar"
+             title="Solo letras, números, espacios, acentos y ñ">
+      <small class="field-hint">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
+      <div class="ui-form__actions" style="margin-top: 0.5rem; justify-content: flex-start;">
+        <button id="btn-guardar-marca" class="ui-btn ui-btn--primary ui-btn--sm" type="button">Guardar marca</button>
+        <button id="btn-cancelar-marca" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Cancelar</button>
+      </div>
+    </div>
 
-          <!-- Campo oculto para nueva marca (se muestra al hacer clic en "Nueva marca") -->
-          <div id="p-marca-nueva-wrap" class="field is-hidden" style="margin-top: 0.75rem;">
-            <span class="field__label">Nombre de la marca <span class="required-indicator">*</span></span>
-            <input id="p-marca-nueva" 
-                   type="text" 
-                   name="marca_nueva" 
-                   placeholder="Ej: Samsung" 
-                   aria-label="Nombre de la marca"
-                   maxlength="30"
-                   data-validation-rules="soloLetrasNumeros,capitalizar"
-                   title="Solo letras, números, espacios, acentos y ñ">
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
-            <div class="filters-panel__actions" aria-label="Acciones de marca" style="margin-top: 0.5rem;">
-              <button id="btn-guardar-marca" class="btn btn--yellow" type="button">Guardar marca</button>
-            </div>
-          </div>
+    <label class="field" style="margin-top: 0.5rem;">
+      <span>Categoría</span>
+      <div class="select-wrapper">
+        <select id="p-categoria" name="id_categoria" aria-label="Categoría">
+          <option value="0">Sin categoría</option>
+        </select>
+      </div>
+      <small class="field-hint">Clasificación adicional del producto</small>
+    </label>
 
-          <label class="field" style="margin-top: 0.75rem;">
-            <span class="field__label">Categoría</span>
-            <select id="p-categoria" name="id_categoria" aria-label="Categoría">
-              <option value="0">Sin categoría</option>
-            </select>
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Clasificación adicional del producto</small>
-          </label>
+    <label class="field" style="margin-top: 0.5rem;">
+      <span>Producto <span class="required-indicator">*</span></span>
+      <input id="p-modelo" 
+             type="text" 
+             name="modelo" 
+             placeholder="Ej: Galaxy A52 (SM-A525F)" 
+             aria-label="Producto" 
+             required
+             maxlength="50"
+             data-validation-rules="soloLetrasNumeros,capitalizar,sinCaracteresEspeciales"
+             title="Solo letras, números, espacios, guiones y paréntesis">
+      <small class="field-hint">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
+    </label>
 
-          <label class="field" style="margin-top: 0.75rem;">
-            <span class="field__label">Producto <span class="required-indicator">*</span></span>
-            <input id="p-modelo" 
-                   type="text" 
-                   name="modelo" 
-                   placeholder="Ej: Galaxy A52 (SM-A525F)" 
-                   aria-label="Producto" 
-                   required
-                   maxlength="50"
-                   data-validation-rules="soloLetrasNumeros,capitalizar,sinCaracteresEspeciales"
-                   title="Solo letras, números, espacios, guiones y paréntesis">
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
-          </label>
+    <label class="field" style="margin-top: 0.5rem;">
+      <span>Descripción</span>
+      <textarea id="p-descripcion" 
+                name="descripcion" 
+                rows="3" 
+                placeholder="Descripción del producto" 
+                aria-label="Descripción"
+                maxlength="300"
+                data-validation-rules="sinCaracteresEspeciales"
+                title="Sin caracteres especiales"></textarea>
+      <small class="field-hint">Sin caracteres especiales (máximo 300 caracteres)</small>
+    </label>
 
-          <label class="field" style="margin-top: 0.75rem;">
-            <span class="field__label">Descripción</span>
-            <textarea id="p-descripcion" 
-                      name="descripcion" 
-                      rows="3" 
-                      placeholder="Descripción del producto" 
-                      aria-label="Descripción"
-                      maxlength="300"
-                      data-validation-rules="sinCaracteresEspeciales"
-                      title="Sin caracteres especiales"></textarea>
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Sin caracteres especiales (máximo 300 caracteres)</small>
-          </label>
+    <label class="field" style="margin-top: 0.5rem;">
+      <span>Foto del producto</span>
+      <input id="p-foto" name="foto_inventario" type="file" accept="image/*">
+      <small class="field-hint">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
+    </label>
 
-          <label class="field" style="margin-top: 0.75rem;">
-            <span class="field__label">Foto del producto</span>
-            <input id="p-foto" name="foto_inventario" type="file" accept="image/*">
-            <small class="field-hint" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
-          </label>
+    <div class="ui-form__actions" style="margin-top: 1.5rem;">
+      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      <button type="submit" class="ui-btn ui-btn--primary">Guardar producto</button>
+    </div>
+  </form>
+  {% endcall %}
 
-          <div class="filters-panel__actions" aria-label="Acciones del formulario" style="margin-top: 1.5rem;">
-            <button class="btn btn--yellow" type="submit">Guardar</button>
-            <button id="btn-cancelar-producto" class="btn btn--ghost" type="button">Cancelar</button>
-            <button class="btn btn--ghost" type="reset">Limpiar</button>
-          </div>
-        </form>
+  <!-- Modal de Reportes usando sistema unificado -->
+  {% call modal('modal-reportes', 'Reporte de productos', 'lg') %}
+  <div class="reportes-content">
+    <div class="ui-form__grid ui-form__grid--two">
+      <label class="field">
+        <span>Clase</span>
+        <div class="select-wrapper">
+          <select id="reporte-clase">
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </label>
+      
+      <label class="field">
+        <span>Marca</span>
+        <div class="select-wrapper">
+          <select id="reporte-marca">
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </label>
+    </div>
+
+    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+      <label class="field field--full">
+        <span>Búsqueda por nombre</span>
+        <input type="text" id="reporte-busqueda" placeholder="Nombre del producto...">
+      </label>
+    </div>
+
+    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+      <label class="field">
+        <span>Stock mínimo</span>
+        <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0">
+      </label>
+      
+      <label class="field">
+        <span>Stock máximo</span>
+        <input type="number" id="reporte-stock-max" min="0" placeholder="Ej: 100">
+      </label>
+    </div>
+
+    <div class="ui-form__actions" style="margin-top: 1rem;">
+      <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
+      <button id="btn-limpiar-filtros-reporte" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
+    </div>
+
+    <div id="reporte-preview" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <strong id="reporte-total">Total de productos: 0</strong>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="btn-exportar-excel" class="ui-btn ui-btn--success ui-btn--sm" disabled>Excel</button>
+          <button id="btn-exportar-pdf" class="ui-btn ui-btn--danger ui-btn--sm" disabled>PDF</button>
+          <button id="btn-imprimir" class="ui-btn ui-btn--ghost ui-btn--sm" disabled>Imprimir</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+        <table class="table" style="min-width: 500px;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Marca</th>
+              <th>Clase</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+          <tbody id="reporte-tabla"></tbody>
+        </table>
       </div>
     </div>
   </div>
-
-  <!-- Modal de Reportes -->
-  <div id="modal-reportes" class="modal is-hidden" aria-hidden="true">
-    <div class="modal__backdrop" data-modal-close="true" aria-hidden="true"></div>
-    <div class="modal__panel card" style="max-width: 800px; width: 90%; padding: 1.5rem;" role="dialog" aria-modal="true" aria-label="Reportes de productos">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 class="card__title">Reporte de Productos</h2>
-        <button class="icon-action" data-modal-close="true" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div class="filters-panel__section" style="margin-top: 0; padding-top: 0; border-top: none;">
-        <h3 class="filters-panel__title">Filtros avanzados</h3>
-        
-        <div class="filters-panel__row">
-          <label class="field">
-            <span class="field__label">Clase</span>
-            <select id="reporte-clase">
-              <option value="">Todas</option>
-            </select>
-          </label>
-          
-          <label class="field">
-            <span class="field__label">Marca</span>
-            <select id="reporte-marca">
-              <option value="">Todas</option>
-            </select>
-          </label>
-        </div>
-        
-        <div class="filters-panel__row">
-          <label class="field">
-            <span class="field__label">Búsqueda por nombre</span>
-            <input type="text" id="reporte-busqueda" placeholder="Nombre del producto...">
-          </label>
-        </div>
-        
-        <div class="filters-panel__row">
-          <label class="field">
-            <span class="field__label">Stock mínimo</span>
-            <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0">
-          </label>
-          
-          <label class="field">
-            <span class="field__label">Stock máximo</span>
-            <input type="number" id="reporte-stock-max" min="0" placeholder="Ej: 100">
-          </label>
-        </div>
-      </div>
-
-      <div class="filters-panel__section">
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1rem;">
-          <button id="btn-generar-reporte" class="btn btn--yellow">Generar reporte</button>
-          <button id="btn-limpiar-filtros" class="btn btn--ghost">🗑 Limpiar filtros</button>
-        </div>
-      </div>
-
-      <div id="reporte-preview" class="filters-panel__section" style="display: none;">
-        <h3 class="filters-panel__title">Previsualización</h3>
-        <div id="reporte-total" style="margin-bottom: 0.75rem; font-weight: bold;"></div>
-        <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-          <table class="table" style="min-width: 500px;">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Marca</th>
-                <th>Clase</th>
-                <th>Stock</th>
-              </tr>
-            </thead>
-            <tbody id="reporte-tabla"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="filters-panel__actions" style="margin-top: 1rem; justify-content: flex-end;">
-        <button id="btn-exportar-excel" class="btn btn--yellow" disabled>Exportar Excel</button>
-        <button id="btn-exportar-pdf" class="btn btn--yellow" disabled>Exportar PDF</button>
-        <button id="btn-imprimir" class="btn btn--ghost" disabled>Imprimir</button>
-      </div>
-    </div>
-  </div>
+  {% endcall %}
 </main>
 {% endblock %}
 
 {% block scripts %}
   <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
-  <script defer src="{{ url_for('static', filename='js/productos.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/productos.js') }}"></script>
 {% endblock %}

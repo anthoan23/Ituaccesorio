@@ -1,475 +1,238 @@
-:root {
-  --bg: #1e1e1e;
-  --card: #ffffff;
-  --ink: #121212;
-  --muted: rgba(18, 18, 18, 0.68);
-  --line: rgba(0, 0, 0, 0.12);
-  --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-  --radius: 22px;
-  --yellow: #f3c500;
-  --yellow-soft: #f8dd69;
+/* ============================================
+   BITACORA.CSS - UNIFICADO CON THEME.CSS
+   Hereda todas las variables de theme.css
+   ============================================ */
+
+@import url("./theme.css");
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   ============================================ */
+
+.bitacora-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: start;
+    width: 100%;
 }
 
-* {
-  box-sizing: border-box;
+/* ============================================
+   HERO - ACCIONES
+   ============================================ */
+.hero__actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    align-items: center;
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: "Manrope", sans-serif;
-  color: #ffffff;
-  background: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%),
-    radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
-    linear-gradient(135deg, #1e1e1e, #2a2a2a);
-}
-
-.page {
-  width: min(1240px, 100%);
-  margin: 0 auto;
-  padding: 1.4rem 1.1rem 2.2rem;
-}
-
-/* Hero - GLASSMORPHIC AMARILLO */
-.bitacora-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.1rem;
-  margin-bottom: 1.1rem;
-  background: rgba(243, 197, 0, 0.10);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(243, 197, 0, 0.35);
-  border-radius: var(--radius);
-  padding: 1.4rem 1.5rem;
-  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.10), var(--shadow);
-  transition: all 0.3s ease;
-}
-
-.bitacora-hero__title {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
-  color: #ffffff;
-}
-
-.bitacora-hero__subtitle {
-  margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-weight: 600;
-}
-
-.bitacora-hero__actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  justify-content: flex-end;
-}
-
-.btn {
-  appearance: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 0.72rem 1rem;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 900;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  transition: transform 0.15s ease, filter 0.2s ease;
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-}
-
-.btn__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
-  font-weight: 900;
-}
-
-.btn--yellow {
-  color: #111111;
-  background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
-}
-
-.btn--ghost {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
-}
-
-.card {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 1.2rem 1.25rem;
-  color: var(--ink);
-}
-
-.card__title {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 900;
-  font-size: 1.1rem;
-}
-
-.table__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.9rem;
-  flex-wrap: wrap;
-}
-
-.table-wrap {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 700px;
-}
-
-.table th,
-.table td {
-  padding: 0.85rem 0.75rem;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.1);
-  text-align: left;
-  vertical-align: middle;
-}
-
-.table th {
-  color: rgba(18, 18, 18, 0.62);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 900;
-  white-space: normal;
-}
-
-.table td {
-  font-weight: 700;
-  color: var(--ink);
-  overflow-wrap: break-word;
-  word-break: normal;
-}
-
-/* Columnas de ancho fijo */
+/* ============================================
+   COLUMNAS DE TABLA
+   ============================================ */
 .col-id {
-  width: 70px;
+    width: 70px;
 }
 
 .col-usuario {
-  width: 120px;
+    width: 180px;
 }
 
 .col-accion {
-  width: 150px;
+    width: 140px;
 }
 
 .col-fecha {
-  width: 180px;
+    width: 180px;
 }
 
-/* Hover en filas para indicar que se puede hacer clic */
+/* ============================================
+   USUARIO CELL
+   ============================================ */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--yellow);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.user-cell span {
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+/* ============================================
+   BADGES DE ACCIÓN
+   ============================================ */
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge--crear {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.badge--actualizar {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.badge--eliminar {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge--login {
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.badge--logout {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.25);
+}
+
+.badge--error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge--default {
+    background: var(--glass-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+}
+
+/* ============================================
+   EVENTO ROW (clickeable)
+   ============================================ */
 .evento-row {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
 .evento-row:hover {
-  background: rgba(17, 24, 39, 0.04);
+    background: var(--ghost-hover-bg) !important;
 }
 
-.table__empty {
-  text-align: center;
-  color: rgba(18, 18, 18, 0.65);
-  font-weight: 800;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.06);
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  font-weight: 900;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
+/* ============================================
+   DETALLE GRID
+   ============================================ */
 .detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-  margin-bottom: 0.8rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
 }
 
 .detail-item {
-  display: grid;
-  gap: 0.25rem;
-  padding: 0.85rem;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 14px;
-  background: rgba(17, 24, 39, 0.03);
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
 }
 
 .detail-item--full {
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
 }
 
 .detail-label {
-  font-size: 0.78rem;
-  color: rgba(18, 18, 18, 0.6);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    color: var(--text-muted);
 }
 
 .detail-value {
-  font-weight: 900;
-  color: rgba(18, 18, 18, 0.86);
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-strong);
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
-.ui-btn {
-  appearance: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 0.65rem 1.25rem;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, filter 0.2s ease;
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1100px) {
+    .bitacora-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-.ui-btn--primary {
-  background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
-  color: #111111;
+@media (max-width: 920px) {
+    .hero__actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+    
+    .hero__actions .ui-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
 }
 
-.ui-btn--ghost {
-  background: #eef0f4;
-  color: var(--ink);
-  border: 1px solid rgba(20, 22, 26, 0.14);
+@media (max-width: 780px) {
+    .col-id,
+    .col-usuario,
+    .col-accion,
+    .col-fecha {
+        width: auto;
+    }
+    
+    .table {
+        min-width: 600px;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
 }
 
-.ui-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-/* Modal */
-.ui-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-
-.ui-modal[hidden] {
-  display: none;
-}
-
-.ui-modal__dialog {
-  background: white;
-  border-radius: 24px;
-  max-width: 90vw;
-  max-height: 85vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.ui-modal__dialog--md {
-  width: 650px;
-}
-
-.ui-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.1);
-}
-
-.ui-modal__title {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 900;
-  font-size: 1.25rem;
-  color: var(--ink);
-}
-
-.ui-modal__close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(17, 24, 39, 0.08);
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: rgba(18, 18, 18, 0.7);
-  transition: background 0.2s ease;
-}
-
-.ui-modal__close:hover {
-  background: rgba(17, 24, 39, 0.15);
-}
-
-.ui-modal__body {
-  padding: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
-
-@media (max-width: 720px) {
-  .bitacora-hero {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .bitacora-hero__actions {
-    justify-content: flex-start;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.65rem 0.5rem;
-    font-size: 0.85rem;
-  }
-}
-
-/* ============================================ */
-/* MODO CLARO - BITACORA HERO GLASSMORPHIC */
-/* ============================================ */
-[data-theme="light"] .bitacora-hero {
-  background: rgba(243, 197, 0, 0.18);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(243, 197, 0, 0.50);
-  box-shadow: 0 8px 32px rgba(243, 197, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .bitacora-hero .bitacora-hero__title {
-  color: #1A1A1E;
-}
-
-[data-theme="light"] .bitacora-hero .bitacora-hero__subtitle {
-  color: rgba(26, 26, 30, 0.7);
-}
-
-[data-theme="light"] .card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  color: #1A1A1E;
-}
-
-[data-theme="light"] .card__title {
-  color: #1A1A1E;
-}
-
-[data-theme="light"] .table th {
-  color: rgba(26, 26, 30, 0.6);
-  background: rgba(243, 197, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .table td {
-  color: #1A1A1E;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .evento-row:hover {
-  background: rgba(243, 197, 0, 0.08);
-}
-
-[data-theme="light"] .chip {
-  background: rgba(243, 197, 0, 0.12);
-  color: #1A1A1E;
-  border-color: rgba(243, 197, 0, 0.2);
-}
-
-[data-theme="light"] .detail-item {
-  background: rgba(243, 197, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .detail-label {
-  color: rgba(26, 26, 30, 0.6);
-}
-
-[data-theme="light"] .detail-value {
-  color: #1A1A1E;
-}
-
-[data-theme="light"] .ui-btn--ghost {
-  background: rgba(255, 255, 255, 0.8);
-  color: #1A1A1E;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .ui-btn--ghost:hover {
-  background: rgba(243, 197, 0, 0.12);
-  border-color: rgba(243, 197, 0, 0.3);
-}
-
-[data-theme="light"] .ui-modal__dialog {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .ui-modal__title {
-  color: #1A1A1E;
-}
-
-[data-theme="light"] .ui-modal__close {
-  background: rgba(0, 0, 0, 0.05);
-  color: rgba(26, 26, 30, 0.5);
-}
-
-[data-theme="light"] .ui-modal__close:hover {
-  background: rgba(0, 0, 0, 0.1);
+@media (max-width: 480px) {
+    .table {
+        min-width: 500px;
+    }
+    
+    .user-cell span {
+        font-size: 0.8rem;
+    }
 }

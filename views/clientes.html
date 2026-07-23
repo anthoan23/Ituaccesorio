@@ -9,49 +9,78 @@
 
 {% block content %}
 <main class="page clientes-page">
-    <section class="hero">
+    <!-- Breadcrumb unificado -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+            <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
+            <li aria-current="page">
+                <span class="breadcrumb__current">Clientes</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Hero unificado con glassmorphism -->
+    <header class="hero">
         <div class="hero__copy">
-            <p class="eyebrow">Gestión de clientes</p>
-            <h1>Administración de clientes</h1>
+            <p class="hero__eyebrow">Gestión de clientes</p>
+            <h1 class="hero__title">Administración de clientes</h1>
+            <p class="hero__description">Vista completa para consultar, registrar y administrar clientes.</p>
         </div>
 
         <div class="stats" aria-label="Resumen de clientes">
             <article class="stat-card">
                 <span class="stat-card__label">Clientes registrados</span>
                 <strong id="stat-clientes" class="stat-card__value">0</strong>
+                <small class="stat-card__meta">Total de clientes</small>
             </article>
             <article class="stat-card">
                 <span class="stat-card__label">Persona Natural</span>
                 <strong id="stat-natural" class="stat-card__value">0</strong>
+                <small class="stat-card__meta">Clientes naturales</small>
             </article>
             <article class="stat-card">
                 <span class="stat-card__label">Persona Jurídica</span>
                 <strong id="stat-juridico" class="stat-card__value">0</strong>
+                <small class="stat-card__meta">Clientes jurídicos</small>
             </article>
         </div>
-    </section>
+    </header>
 
-    <section class="board">
-        <article class="panel panel--full">
-            <div class="panel__header">
-                <div>
-                    <h2 class="panel__title">Clientes existentes</h2>
+    <!-- Contenido principal con cards unificadas -->
+    <section class="content clientes-grid" aria-label="Gestión de clientes">
+        <!-- Card de tabla -->
+        <article class="card card--table clientes-table-card" aria-label="Clientes registrados">
+            <div class="card__header">
+                <div class="card__header-left">
+                    <h2 class="card__title">Catálogo de clientes</h2>
+                    <p class="card__subtitle">Tabla principal de clientes registrados.</p>
                 </div>
-                <button id="btn-nuevo-cliente" class="btn btn--yellow" type="button"
-                    data-open-modal="modal-cliente">Nuevo cliente</button>
+                <div class="card__actions">
+                    <button id="btn-nuevo-cliente" class="ui-btn ui-btn--primary" type="button"
+                        data-open-modal="modal-cliente">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Nuevo cliente
+                    </button>
+                </div>
             </div>
+
+            <!-- Barra de herramientas -->
             <div class="clientes-toolbar">
-                <label class="form__field clientes-toolbar__field">
+                <label class="field clientes-toolbar__field">
                     <span>Buscar clientes</span>
                     <input id="input-buscar-clientes" type="search" placeholder="Buscar por cédula, nombre, RIF o correo">
                 </label>
-                <label class="form__field clientes-toolbar__field">
+                <label class="field clientes-toolbar__field">
                     <span>Filtrar por tipo</span>
-                    <select id="filtro-tipo-cliente">
-                        <option value="">Todos</option>
-                        <option value="natural">Persona Natural</option>
-                        <option value="juridico">Persona Jurídica</option>
-                    </select>
+                    <div class="select-wrapper">
+                        <select id="filtro-tipo-cliente">
+                            <option value="">Todos</option>
+                            <option value="natural">Persona Natural</option>
+                            <option value="juridico">Persona Jurídica</option>
+                        </select>
+                    </div>
                 </label>
             </div>
 
@@ -75,26 +104,29 @@
         </article>
     </section>
 
+    <!-- Modal de cliente usando el sistema unificado -->
     {% call modal('modal-cliente', 'Registrar cliente') %}
-    <form id="form-cliente" class="form" autocomplete="off">
+    <form id="form-cliente" class="ui-form" autocomplete="off">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="">
         
-        <div class="form__grid">
+        <div class="ui-form__grid">
             <!-- Tipo de cliente -->
-            <label class="form__field form__field--full">
+            <label class="field field--full">
                 <span>Tipo de cliente *</span>
-                <select name="tipo_cliente" id="tipo-cliente" required>
-                    <option value="">Seleccione tipo de cliente</option>
-                    <option value="natural">Persona Natural</option>
-                    <option value="juridico">Persona Jurídica</option>
-                </select>
+                <div class="select-wrapper">
+                    <select name="tipo_cliente" id="tipo-cliente" required>
+                        <option value="">Seleccione tipo de cliente</option>
+                        <option value="natural">Persona Natural</option>
+                        <option value="juridico">Persona Jurídica</option>
+                    </select>
+                </div>
             </label>
         </div>
 
         <!-- Campos para Persona Natural -->
-        <div id="campos-natural" class="form__grid campos-condicionales">
-            <label class="form__field">
+        <div id="campos-natural" class="ui-form__grid ui-form__grid--two campos-condicionales">
+            <label class="field">
                 <span>Cédula *</span>
                 <input name="cedula" 
                        type="text" 
@@ -104,10 +136,10 @@
                        maxlength="8"
                        data-validation-rules="soloNumeros"
                        title="Solo números, 8 dígitos">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo números (8 dígitos)</small>
+                <small class="field-hint">Solo números (8 dígitos)</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Nombre *</span>
                 <input name="nombre" 
                        type="text" 
@@ -116,10 +148,10 @@
                        maxlength="15"
                        data-validation-rules="soloLetras,capitalizar"
                        title="Solo letras, espacios, acentos y ñ">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
+                <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Apellido *</span>
                 <input name="apellido" 
                        type="text" 
@@ -128,10 +160,10 @@
                        maxlength="15"
                        data-validation-rules="soloLetras,capitalizar"
                        title="Solo letras, espacios, acentos y ñ">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
+                <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Celular *</span>
                 <input name="celular" 
                        type="tel" 
@@ -140,10 +172,10 @@
                        maxlength="11"
                        data-validation-rules="telefono"
                        title="Formato: 04141234567 (11 dígitos)">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
+                <small class="field-hint">11 dígitos (ej: 04141234567)</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Correo</span>
                 <input name="correo" 
                        type="email" 
@@ -151,10 +183,10 @@
                        maxlength="120"
                        data-validation-rules="email"
                        title="Correo electrónico válido">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
+                <small class="field-hint">ejemplo@dominio.com</small>
             </label>
             
-            <label class="form__field form__field--full">
+            <label class="field field--full">
                 <span>Dirección</span>
                 <input name="direccion" 
                        type="text" 
@@ -162,13 +194,13 @@
                        maxlength="40"
                        data-validation-rules="sinCaracteresEspeciales"
                        title="Sin caracteres especiales">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
+                <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
             </label>
         </div>
 
         <!-- Campos para Persona Jurídica -->
-        <div id="campos-juridico" class="form__grid campos-condicionales" style="display: none;">
-            <label class="form__field">
+        <div id="campos-juridico" class="ui-form__grid ui-form__grid--two campos-condicionales" style="display: none;">
+            <label class="field">
                 <span>RIF *</span>
                 <input name="rif" 
                        type="text" 
@@ -176,10 +208,10 @@
                        maxlength="9"
                        data-validation-rules="sinEspacios"
                        title="Formato: J-12345678-9">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Formato: J-12345678-9</small>
+                <small class="field-hint">Formato: J-12345678-9</small>
             </label>
             
-            <label class="form__field form__field--full">
+            <label class="field field--full">
                 <span>Razón Social *</span>
                 <input name="razon_social" 
                        type="text" 
@@ -187,10 +219,10 @@
                        maxlength="60"
                        data-validation-rules="sinNumeros,sinSimbolos,capitalizar"
                        title="Solo letras, espacios y caracteres normales">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios (sin números ni símbolos)</small>
+                <small class="field-hint">Solo letras, espacios (sin números ni símbolos)</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Teléfono *</span>
                 <input name="telefono" 
                        type="tel" 
@@ -198,10 +230,10 @@
                        maxlength="11"
                        data-validation-rules="telefono"
                        title="Formato: 02121234567 (11 dígitos)">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 02121234567)</small>
+                <small class="field-hint">11 dígitos (ej: 02121234567)</small>
             </label>
             
-            <label class="form__field">
+            <label class="field">
                 <span>Correo</span>
                 <input name="correo_juridico" 
                        type="email" 
@@ -209,10 +241,10 @@
                        maxlength="120"
                        data-validation-rules="email"
                        title="Correo electrónico válido">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
+                <small class="field-hint">ejemplo@dominio.com</small>
             </label>
             
-            <label class="form__field form__field--full">
+            <label class="field field--full">
                 <span>Dirección</span>
                 <input name="direccion_juridico" 
                        type="text" 
@@ -220,17 +252,18 @@
                        maxlength="40"
                        data-validation-rules="sinCaracteresEspeciales"
                        title="Sin caracteres especiales">
-                <small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
+                <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
             </label>
         </div>
         
-        <div class="form__actions">
-            <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-            <button type="submit" class="btn btn--yellow">Guardar cliente</button>
+        <div class="ui-form__actions">
+            <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+            <button type="submit" class="ui-btn ui-btn--primary">Guardar cliente</button>
         </div>
     </form>
     {% endcall %}
 
+    <!-- Toast (se mantiene igual, pero se puede estilizar con theme.css) -->
     <div id="toast-mensaje" class="toast" aria-live="polite"></div>
 </main>
 {% endblock %}

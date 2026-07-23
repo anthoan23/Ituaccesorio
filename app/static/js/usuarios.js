@@ -83,19 +83,30 @@ function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     return true;
 }
 
+// ==================== ABRIR/CERRAR MODALES (con UiModal) ====================
+function abrirModal(id) {
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById(id);
+    }
+}
+
+function cerrarModal(id) {
+    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+        window.UiModal.closeById(id);
+    }
+}
+
 // ==================== CARGAR OPCIONES DE CÉDULA POR ROL ====================
 
 async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
     if (!selectUsuarioCedula) return;
     
-    // Si no hay rol seleccionado, mostrar opción por defecto
     if (!rolId) {
         selectUsuarioCedula.innerHTML = '<option value="">Primero seleccione un rol</option>';
         selectUsuarioCedula.disabled = true;
         return;
     }
     
-    // Buscar el rol seleccionado para saber si es Cliente
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolCliente = rolSeleccionado && (String(rolSeleccionado.nombre || "").toLowerCase() === "cliente");
     
@@ -214,7 +225,6 @@ async function cargarPermisosPorRol(rolId) {
             if (btnGuardar) btnGuardar.style.display = "none";
         } else {
             grid.innerHTML = permisos.map(permiso => {
-                // Calcular consultar basado en los permisos existentes
                 const consultarChecked = permiso.consultar || false;
                 const registrarChecked = permiso.registrar || false;
                 const modificarChecked = permiso.modificar || false;
@@ -245,7 +255,6 @@ async function cargarPermisosPorRol(rolId) {
                 `;
             }).join("");
             
-            // Agregar event listeners para actualizar automáticamente el checkbox de consultar
             document.querySelectorAll(".permiso-item").forEach(item => {
                 const checkboxes = item.querySelectorAll('input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]');
                 
@@ -256,7 +265,6 @@ async function cargarPermisosPorRol(rolId) {
                     cb.addEventListener('change', handleChange);
                 });
                 
-                // Inicializar estado
                 actualizarConsultarAutomatico(item);
             });
             
@@ -298,7 +306,6 @@ async function guardarPermisosRol(rolId) {
                 registrar: registrar,
                 modificar: modificar,
                 eliminar: eliminar
-                // No enviamos consultar porque se calcula en el backend
             });
         }
     });
@@ -322,8 +329,6 @@ async function guardarPermisosRol(rolId) {
         }
         
         mostrarToast("Permisos actualizados correctamente");
-        
-        // Recargar los permisos para actualizar la vista de consultar
         await cargarPermisosPorRol(rolId);
     } catch (error) {
         console.error("Error guardando permisos:", error);
@@ -340,12 +345,9 @@ function setupRolChangeListener() {
         window._rolChangeHandler = async (e) => {
             const rolId = e.target.value;
             const container = document.getElementById("permisos-rol-container");
-            
-            // Guardar el valor de cédula actual para restaurarlo después
             const currentCedula = selectUsuarioCedula?.value;
             
             if (rolId) {
-                // Cargar opciones de cédula sin selección previa (el formulario está en modo creación)
                 await cargarOpcionesCedula(rolId, null);
                 await cargarPermisosPorRol(rolId);
             } else {
@@ -431,11 +433,11 @@ function syncAdminButtonsWithTab() {
         const isActive = key === activeTableTabKey;
         btn.setAttribute("aria-pressed", isActive ? "true" : "false");
         if (isActive) {
-            btn.classList.remove("btn--ghost");
-            btn.classList.add("btn--yellow");
+            btn.classList.remove("ui-btn--ghost");
+            btn.classList.add("ui-btn--primary");
         } else {
-            btn.classList.remove("btn--yellow");
-            btn.classList.add("btn--ghost");
+            btn.classList.remove("ui-btn--primary");
+            btn.classList.add("ui-btn--ghost");
         }
     });
 }
@@ -463,7 +465,7 @@ function setupAdminToggles() {
         });
     });
 
-    document.querySelectorAll("[data-modal-close]").forEach(el => {
+    document.querySelectorAll("[data-close-modal]").forEach(el => {
         el.addEventListener("click", () => {
             const key = String(el.dataset.modalClose || "");
             if (!key) return;
@@ -494,7 +496,7 @@ function openAdminModal(key) {
         btn.setAttribute("aria-expanded", "true");
     }
 
-    const dialog = modal?.querySelector(".modal__dialog");
+    const dialog = modal?.querySelector(".ui-modal__dialog");
     if (dialog && typeof dialog.focus === "function") {
         dialog.focus();
     }
@@ -525,14 +527,7 @@ function abrirConfirmacion(mensaje, onConfirm) {
     if (confirmMessage) {
         confirmMessage.textContent = mensaje;
     }
-    if (window.UiModal && typeof window.UiModal.openById === "function") {
-        window.UiModal.openById(confirmModalId);
-        return;
-    }
-    const aceptado = confirm(mensaje);
-    if (aceptado) {
-        onConfirm();
-    }
+    abrirModal(confirmModalId);
 }
 
 async function onConfirmAction() {
@@ -547,9 +542,7 @@ async function onConfirmAction() {
         mostrarToast(error.message || "No se pudo completar la accion.", true);
     } finally {
         if (confirmActionBtn) confirmActionBtn.disabled = false;
-        if (window.UiModal && typeof window.UiModal.closeById === "function") {
-            window.UiModal.closeById(confirmModalId);
-        }
+        cerrarModal(confirmModalId);
     }
 }
 
@@ -589,7 +582,7 @@ function renderUsuarios() {
             <td class="col-rol">${escapeHtml(usuario.rol_nombre || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--edit" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Editar">✎</button>
                     <button class="icon-action icon-action--danger" type="button" data-action="delete-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Eliminar">🗑</button>
                 </div>
             </td>
@@ -617,7 +610,7 @@ function renderRoles() {
                 <td>${escapeHtml(rol.descripcion || "")}</td>
                 <td class="table__actions">
                     <div class="row-actions">
-                        <button class="icon-action" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}" title="Editar">✎</button>
+                        <button class="icon-action icon-action--edit" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}" title="Editar">✎</button>
                         ${!esProtegido ? `<button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" title="Eliminar">🗑</button>` : ''}
                     </div>
                 </td>
@@ -642,7 +635,7 @@ function renderModulos() {
             <td>${escapeHtml(modulo.descripcion || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Editar">✎</button>
+                    <button class="icon-action icon-action--edit" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Editar">✎</button>
                     <button class="icon-action icon-action--danger" type="button" data-action="delete-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Eliminar">🗑</button>
                 </div>
             </td>
@@ -761,12 +754,10 @@ async function llenarFormularioUsuario(usuario) {
         selectUsuarioRol.setAttribute("data-current-value", usuario.rol_id);
     }
     
-    // Primero cargar los permisos
     if (usuario.rol_id) {
         await cargarPermisosPorRol(usuario.rol_id);
     }
     
-    // Luego cargar las opciones de cédula con el valor seleccionado
     if (usuario.rol_id && usuario.cedula_personal) {
         await cargarOpcionesCedula(usuario.rol_id, usuario.cedula_personal);
     } else if (usuario.rol_id) {
@@ -1095,6 +1086,10 @@ function iniciar() {
         });
         observer.observe(modal, { attributes: true, attributeFilter: ['hidden'] });
     });
+
+    if (window.FieldValidator) {
+        setTimeout(() => window.FieldValidator.init(), 100);
+    }
 
     cargarTodo();
 }

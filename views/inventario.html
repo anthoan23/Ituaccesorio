@@ -10,6 +10,7 @@
 
 {% block content %}
 <main class="page inventario-page">
+  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -18,9 +19,13 @@
       </li>
     </ol>
   </nav>
-  <section class="hero" aria-label="Resumen del inventario">
+
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Resumen del inventario">
     <div class="hero__copy">
-      <h1>Inventario</h1>
+      <p class="hero__eyebrow">Gestión de inventario</p>
+      <h1 class="hero__title">Inventario</h1>
+      <p class="hero__description">Vista completa para consultar y gestionar el inventario de productos.</p>
 
       <div class="hero__chips" aria-label="Filtros rápidos">
         <span class="chip chip--active" role="button" tabindex="0" aria-pressed="true" data-filter="all">Todos</span>
@@ -31,39 +36,50 @@
       </div>
     </div>
 
-    <div class="hero__stats" aria-label="Indicadores del inventario">
+    <div class="stats stats--grid" aria-label="Indicadores del inventario">
       <article class="stat-card">
         <span class="stat-card__label">Clases</span>
         <strong class="stat-card__value" id="inv-stat-clases">—</strong>
+        <small class="stat-card__meta">Tipos de productos</small>
       </article>
 
       <article class="stat-card">
         <span class="stat-card__label">Marcas</span>
         <strong class="stat-card__value" id="inv-stat-marcas">—</strong>
+        <small class="stat-card__meta">Marcas registradas</small>
       </article>
 
       <article class="stat-card">
         <span class="stat-card__label">Productos</span>
         <strong class="stat-card__value" id="inv-stat-modelos">—</strong>
+        <small class="stat-card__meta">Modelos disponibles</small>
       </article>
 
       <article class="stat-card stat-card--accent">
         <span class="stat-card__label">Piezas en stock</span>
         <strong class="stat-card__value" id="inv-stat-piezas">—</strong>
+        <small class="stat-card__meta">Total de unidades</small>
       </article>
     </div>
-  </section>
+  </header>
 
-  <section class="layout" aria-label="Panel de inventario">
-    <article class="panel panel--table" aria-label="Existencias por producto">
-      <div class="panel__header">
-        <div>
-          <p class="panel__eyebrow">Stock operativo</p>
-          <h2 class="panel__title">Existencias por producto</h2>
+  <!-- Contenido principal -->
+  <section class="content inventario-grid" aria-label="Panel de inventario">
+    <article class="card card--table" aria-label="Existencias por producto">
+      <div class="card__header">
+        <div class="card__header-left">
+          <p class="card__subtitle">Stock operativo</p>
+          <h2 class="card__title">Existencias por producto</h2>
         </div>
-
-        <div class="panel__tools" aria-label="Acciones de la vista">
-          <button id="btn-reportes" class="btn btn--ghost" type="button">Reportes</button>
+        <div class="card__actions">
+          <button id="btn-reportes" class="ui-btn ui-btn--ghost" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Reportes
+          </button>
         </div>
       </div>
 
@@ -71,7 +87,7 @@
         <table class="table inventory-table">
           <thead>
             <tr>
-              <th>Imagen</th>
+              <th class="col-image">Imagen</th>
               <th>Clase</th>
               <th>Marca</th>
               <th>Producto</th>
@@ -82,7 +98,7 @@
           </thead>
           <tbody id="inventario-tbody">
             <tr>
-              <td colspan="7">Cargando inventario…</td>
+              <td colspan="7" class="table__loading">Cargando inventario…</td>
             </tr>
           </tbody>
         </table>
@@ -90,162 +106,83 @@
 
       <p class="table-note" id="inventario-note">La tabla une inventario, producto, marca, clase y atributos.</p>
     </article>
+  </section>
 
-    <!-- <section class="inventory-extras" aria-label="Detalles del inventario">
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Piezas consumidas en reparaciones</h2>
-        <div class="repuestos">
-          <div class="repuesto">
-            <div>
-              <strong>Mica</strong>
-              <span>Orden #1 · ID producto 1</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
+  <!-- Modal de Reportes (usando el sistema unificado) -->
+  {% call modal('modal-reportes', 'Reporte de inventario', 'lg') %}
+    <div class="reportes-content">
+      <div class="ui-form__grid ui-form__grid--two">
+        <label class="field">
+          <span>Búsqueda</span>
+          <input type="text" id="reporte-busqueda" placeholder="Nombre, marca o clase..." class="field__input">
+        </label>
+        
+        <label class="field">
+          <span>Clase</span>
+          <div class="select-wrapper">
+            <select id="reporte-clase" class="field__input">
+              <option value="">Todas</option>
+            </select>
           </div>
-          <div class="repuesto">
-            <div>
-              <strong>Puerto de carga</strong>
-              <span>Orden #4 · ID producto 2</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
-          </div>
-          <div class="repuesto">
-            <div>
-              <strong>Altavoz</strong>
-              <span>Orden #5 · ID producto 7</span>
-            </div>
-            <strong class="repuesto__qty">1</strong>
-            <div class="progress"><span class="progress__accent" style="width: 22%"></span></div>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel panel--stacked panel--soft">
-        <h2 class="panel__title">Resumen visual del inventario</h2>
-        <div class="progress-list" aria-label="Indicadores rápidos">
-          <div class="progress-row">
-            <span>Stock saludable</span>
-            <span>78%</span>
-          </div>
-          <div class="progress"><span style="width: 78%"></span></div>
-
-          <div class="progress-row">
-            <span>Productos críticos</span>
-            <span>22%</span>
-          </div>
-          <div class="progress"><span class="progress__accent" style="width: 22%"></span></div>
-        </div>
-      </article>
-
-      <article class="panel panel--stacked">
-        <h2 class="panel__title">Jerarquía de clase, marca y producto</h2>
-
-        <div class="hierarchy">
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Clase</span>
-            <strong>Telefonos</strong>
-            <span class="hierarchy__meta">ID_clase: 1</span>
-          </div>
-          <div class="hierarchy__arrow">↓</div>
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Marca</span>
-            <strong>Samsung</strong>
-            <span class="hierarchy__meta">ID_marca: 1</span>
-          </div>
-          <div class="hierarchy__arrow">↓</div>
-          <div class="hierarchy__group">
-            <span class="hierarchy__label">Producto</span>
-            <strong>Galaxy S23 Ultra</strong>
-            <span class="hierarchy__meta">ID_producto: 1</span>
-          </div>
-        </div>
-      </article>
-    </section>
-  </section> -->
-
-  <!-- Modal de Reportes -->
-  <div id="modal-reportes" class="ui-modal" data-modal hidden aria-hidden="true">
-    <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="reportes-title">
-      <div class="ui-modal__header">
-        <h3 id="reportes-title" class="ui-modal__title">Reporte de Inventario</h3>
-        <button class="ui-modal__close" type="button" data-close-modal aria-label="Cerrar">×</button>
+        </label>
       </div>
-      <div class="ui-modal__body">
-        <div class="filters-panel__section">
-          <h3 class="filters-panel__title">Filtros avanzados</h3>
-          
-          <div class="filters-panel__row">
-            <label class="field">
-              <span class="field__label">Búsqueda</span>
-              <input type="text" id="reporte-busqueda" placeholder="Nombre, marca o clase..." class="field__input">
-            </label>
-            
-            <label class="field">
-              <span class="field__label">Clase</span>
-              <select id="reporte-clase" class="field__input">
-                <option value="">Todas</option>
-              </select>
-            </label>
+      
+      <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+        <label class="field">
+          <span>Marca</span>
+          <div class="select-wrapper">
+            <select id="reporte-marca" class="field__input">
+              <option value="">Todas</option>
+            </select>
           </div>
-          
-          <div class="filters-panel__row">
-            <label class="field">
-              <span class="field__label">Marca</span>
-              <select id="reporte-marca" class="field__input">
-                <option value="">Todas</option>
-              </select>
-            </label>
-            
-            <label class="field">
-              <span class="field__label">Stock mínimo</span>
-              <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0" class="field__input">
-            </label>
-          </div>
-          
-          <div class="filters-panel__row">
-            <label class="field">
-              <span class="field__label">Stock máximo</span>
-              <input type="number" id="reporte-stock-max" min="0" placeholder="Ej: 100" class="field__input">
-            </label>
+        </label>
+        
+        <label class="field">
+          <span>Stock mínimo</span>
+          <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0" class="field__input">
+        </label>
+      </div>
+      
+      <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+        <label class="field">
+          <span>Stock máximo</span>
+          <input type="number" id="reporte-stock-max" min="0" placeholder="Ej: 100" class="field__input">
+        </label>
+      </div>
+
+      <div class="ui-form__actions" style="margin-top: 1rem;">
+        <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
+        <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
+      </div>
+
+      <div id="reporte-preview" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <strong id="reporte-total">Total de productos: 0</strong>
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-exportar-excel" class="ui-btn ui-btn--success ui-btn--sm" disabled>Excel</button>
+            <button id="btn-exportar-pdf" class="ui-btn ui-btn--danger ui-btn--sm" disabled>PDF</button>
+            <button id="btn-imprimir" class="ui-btn ui-btn--ghost ui-btn--sm" disabled>Imprimir</button>
           </div>
         </div>
-
-        <div class="filters-panel__section">
-          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 1rem;">
-            <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
-            <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
-          </div>
-        </div>
-
-        <div id="reporte-preview" class="filters-panel__section" style="display: none;">
-          <h3 class="filters-panel__title">Previsualización</h3>
-          <div id="reporte-total" style="margin-bottom: 0.75rem; font-weight: bold;"></div>
-          <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-            <table class="table" style="min-width: 700px;">
-              <thead>
-                <tr>
-                  <th>Imagen</th>
-                  <th>Producto</th>
-                  <th>Marca</th>
-                  <th>Clase</th>
-                  <th>Stock</th>
-                  <th>Costo</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody id="reporte-tabla"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="ui-form__actions" style="margin-top: 1rem; justify-content: flex-end;">
-          <button id="btn-exportar-excel" class="ui-btn ui-btn--primary" disabled>Exportar Excel</button>
-          <button id="btn-exportar-pdf" class="ui-btn ui-btn--primary" disabled>Exportar PDF</button>
-          <button id="btn-imprimir" class="ui-btn ui-btn--ghost" disabled>Imprimir</button>
+        <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+          <table class="table" style="min-width: 700px;">
+            <thead>
+              <tr>
+                <th class="col-image">Imagen</th>
+                <th>Producto</th>
+                <th>Marca</th>
+                <th>Clase</th>
+                <th>Stock</th>
+                <th>Costo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="reporte-tabla"></tbody>
+          </table>
         </div>
       </div>
     </div>
-  </div>
+  {% endcall %}
 
 </main>
 {% endblock %}

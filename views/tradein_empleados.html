@@ -1,12 +1,15 @@
-{% extends 'components/layout/base.html' %} {% block title %}Ituaccesorio -
-Gestión de Trade-In{% endblock %} {% block head_extra %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/tradein_empleados.css') }}"
-/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
-{% endblock %} {% block content %}
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Ituaccesorio - Gestión de Trade-In{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tradein_empleados.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
+{% endblock %}
+
+{% block content %}
 <main class="page">
+  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -16,22 +19,25 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
     </ol>
   </nav>
 
-  <header class="tradein-header">
-    <div class="tradein-header__copy">
-      <h1 class="tradein-header__title">Gestión de Trade-In</h1>
-      <p class="tradein-header__subtitle">
-        Registro de equipos recibidos en la tienda
-      </p>
+  <!-- Hero unificado con glassmorphism -->
+  <header class="hero" aria-label="Encabezado de trade-in empleados">
+    <div class="hero__copy">
+      <p class="hero__eyebrow">Gestión de Trade-In</p>
+      <h1 class="hero__title">Registro de equipos recibidos</h1>
+      <p class="hero__description">Administra los equipos trade-in recibidos en la tienda.</p>
     </div>
-    <div class="tradein-header__actions">
-      <button id="btn-nuevo-tradein" class="btn btn--yellow">
-        + Nuevo Trade-In
+    <div class="hero__actions">
+      <button id="btn-nuevo-tradein" class="ui-btn ui-btn--primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Nuevo Trade-In
       </button>
     </div>
   </header>
 
   <!-- Tarjetas de estadísticas -->
-  <div class="stats-grid">
+  <div class="stats stats--grid">
     <div class="stat-card">
       <div class="stat-card__icon">📱</div>
       <div class="stat-card__info">
@@ -39,7 +45,7 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
         <span class="stat-card__label">Total Trade-Ins</span>
       </div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card stat-card--accent">
       <div class="stat-card__icon">💰</div>
       <div class="stat-card__info">
         <span class="stat-card__value" id="stat-valor-total">$0</span>
@@ -56,13 +62,11 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
   </div>
 
   <!-- Tabla de trade-ins -->
-  <div class="card">
+  <article class="card card--table" aria-label="Equipos recibidos">
     <div class="card__header">
       <div class="card__header-left">
         <h2 class="card__title">Equipos recibidos</h2>
-        <p class="card__subtitle">
-          Historial de todos los equipos trade-in registrados
-        </p>
+        <p class="card__subtitle">Historial de todos los equipos trade-in registrados</p>
       </div>
       <div class="card__actions">
         <div class="search-box">
@@ -70,7 +74,7 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
             type="text"
             id="search-tradein"
             placeholder="Buscar por cliente o equipo..."
-            class="form-input"
+            class="field__input"
           />
         </div>
       </div>
@@ -96,182 +100,170 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
         </tbody>
       </table>
     </div>
-  </div>
+  </article>
 </main>
 
 <!-- Modal para REGISTRAR nuevo trade-in -->
-<div id="modal-registrar" class="modal is-hidden">
-  <div class="modal__backdrop" data-close-modal></div>
-  <div class="modal__dialog modal__dialog--lg">
-    <div class="modal__header">
-      <h3 class="modal__title">Registrar nuevo Trade-In</h3>
-      <button class="modal__close" data-close-modal>&times;</button>
+<div id="modal-registrar" class="ui-modal" data-modal hidden>
+  <div class="ui-modal__dialog ui-modal__dialog--lg">
+    <div class="ui-modal__header">
+      <h3 class="ui-modal__title">Registrar nuevo Trade-In</h3>
+      <button class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
     </div>
-    <div class="modal__body">
-      <form id="form-registrar-tradein" enctype="multipart/form-data">
+    <div class="ui-modal__body">
+      <form id="form-registrar-tradein" class="ui-form" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
-        <div class="form__grid">
+        <div class="ui-form__grid">
           <!-- Buscar cliente -->
-          <div class="form__field form__field--full">
-            <label class="form__label">Cliente *</label>
+          <label class="field field--full">
+            <span>Cliente <span class="required-indicator">*</span></span>
             <div class="cliente-search">
               <input
                 type="text"
                 id="cliente-search-input"
-                class="form-input"
+                class="field__input"
                 placeholder="Buscar por cédula, nombre o apellido..."
               />
               <input type="hidden" id="cliente-id" name="cliente_id" />
             </div>
             <div id="cliente-results" class="search-results is-hidden"></div>
-          </div>
+          </label>
 
           <!-- Datos del equipo -->
-          <div class="form__field">
-            <label class="form__label">Producto/Modelo *</label>
-            <select
-              id="producto-id"
-              name="id_producto"
-              class="form-input"
-              required
-            >
-              <option value="">Seleccionar producto...</option>
-            </select>
-          </div>
+          <label class="field">
+            <span>Producto/Modelo <span class="required-indicator">*</span></span>
+            <div class="select-wrapper">
+              <select id="producto-id" name="id_producto" class="field__input" required>
+                <option value="">Seleccionar producto...</option>
+              </select>
+            </div>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">IMEI / ID del equipo *</label>
+          <label class="field">
+            <span>IMEI / ID del equipo <span class="required-indicator">*</span></span>
             <input
               type="text"
               id="id_equipo"
               name="id_equipo"
-              class="form-input"
+              class="field__input"
               placeholder="Número IMEI o ID único del equipo"
               required
               maxlength="15"
               data-validation-rules="soloNumeros,sinEspacios"
               title="Solo números, sin espacios"
             />
-            <small class="form-hint"
-              >Ingrese el IMEI del equipo solo números, sin espacios.</small
-            >
-          </div>
+            <small class="field-hint">Ingrese el IMEI del equipo solo números, sin espacios.</small>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">Color</label>
+          <label class="field">
+            <span>Color</span>
             <input
               type="text"
               id="color"
               name="color"
-              class="form-input"
+              class="field__input"
               placeholder="Ej: Negro, Azul..."
               maxlength="30"
               data-validation-rules="soloLetras,capitalizar"
               title="Solo letras, espacios, acentos y ñ"
             />
-            <small class="form-hint">Solo letras, espacios, acentos y ñ</small>
-          </div>
+            <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">Capacidad</label>
+          <label class="field">
+            <span>Capacidad</span>
             <input
               type="text"
               id="capacidad"
               name="capacidad"
-              class="form-input"
+              class="field__input"
               placeholder="Ej: 128GB, 256GB..."
               maxlength="20"
               data-validation-rules="soloLetrasNumeros"
               title="Solo letras y números"
             />
-            <small class="form-hint">Solo letras y números (ej: 128GB)</small>
-          </div>
+            <small class="field-hint">Solo letras y números (ej: 128GB)</small>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">Clave numérica</label>
+          <label class="field">
+            <span>Clave numérica</span>
             <input
               type="text"
               id="clave"
               name="clave"
-              class="form-input"
+              class="field__input"
               placeholder="Código de desbloqueo"
               maxlength="10"
               data-validation-rules="soloNumeros"
               title="Solo números"
             />
-            <small class="form-hint">Solo números</small>
-          </div>
+            <small class="field-hint">Solo números</small>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">Patrón</label>
+          <label class="field">
+            <span>Patrón</span>
             <input
               type="text"
               id="patron"
               name="patron"
-              class="form-input"
+              class="field__input"
               placeholder="Patrón de desbloqueo"
               maxlength="20"
               data-validation-rules="soloNumeros"
               title="Solo números"
             />
-            <small class="form-hint">Solo números</small>
-          </div>
+            <small class="field-hint">Solo números</small>
+          </label>
 
-          <div class="form__field">
-            <label class="form__label">Valor pagado ($) *</label>
+          <label class="field">
+            <span>Valor pagado ($) <span class="required-indicator">*</span></span>
             <input
               type="text"
               id="valor-pagado"
               name="valor_pagado"
-              class="form-input"
+              class="field__input"
               placeholder="0.00"
               required
               data-validation-rules="decimal"
               title="Solo números, puede incluir hasta 2 decimales"
             />
-            <small class="form-hint">Solo números (ej: 100, 150.50, 99.99)</small>
-          </div>
+            <small class="field-hint">Solo números (ej: 100, 150.50, 99.99)</small>
+          </label>
 
-          <div class="form__field form__field--full">
-            <label class="form__label">Observaciones</label>
+          <label class="field field--full">
+            <span>Observaciones</span>
             <textarea
               id="observaciones"
               name="observaciones"
-              class="form-textarea"
+              class="field__input"
               rows="3"
               placeholder="Notas adicionales sobre el equipo..."
               maxlength="500"
               data-validation-rules="sinCaracteresEspeciales"
               title="Sin caracteres especiales"
             ></textarea>
-            <small class="form-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
-          </div>
+            <small class="field-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
+          </label>
 
-          <div class="form__field form__field--full">
-            <label class="form__label">Fotos del equipo</label>
+          <label class="field field--full">
+            <span>Fotos del equipo</span>
             <div id="fotos-preview" class="fotos-preview"></div>
             <input
               type="file"
               id="fotos"
               name="fotos"
-              class="form-input"
+              class="field__input"
               accept="image/*"
               multiple
             />
-            <small class="form-hint"
-              >📸 Puede seleccionar múltiples fotos (JPG, PNG)</small
-            >
-          </div>
+            <small class="field-hint">📸 Puede seleccionar múltiples fotos (JPG, PNG)</small>
+          </label>
         </div>
 
-        <div class="form__actions">
-          <button type="button" class="btn btn--ghost" data-close-modal>
-            Cancelar
-          </button>
-          <button type="submit" class="btn btn--yellow">
-            Registrar Trade-In
-          </button>
+        <div class="ui-form__actions">
+          <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="ui-btn ui-btn--primary">Registrar Trade-In</button>
         </div>
       </form>
     </div>
@@ -279,47 +271,40 @@ Gestión de Trade-In{% endblock %} {% block head_extra %}
 </div>
 
 <!-- Modal para REGISTRAR TESTS -->
-<div id="modal-tests" class="modal is-hidden">
-  <div class="modal__backdrop" data-close-modal></div>
-  <div class="modal__dialog modal__dialog--lg">
-    <div class="modal__header">
-      <h3 class="modal__title">Realizar pruebas al equipo</h3>
-      <button class="modal__close" data-close-modal>&times;</button>
+<div id="modal-tests" class="ui-modal" data-modal hidden>
+  <div class="ui-modal__dialog ui-modal__dialog--lg">
+    <div class="ui-modal__header">
+      <h3 class="ui-modal__title">Realizar pruebas al equipo</h3>
+      <button class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
     </div>
-    <div class="modal__body">
+    <div class="ui-modal__body">
       <div id="tests-equipo-info" class="equipo-info"></div>
 
       <div class="tests-categorias">
         <div id="tests-container" class="tests-grid"></div>
       </div>
 
-      <div class="form__actions">
-        <button type="button" class="btn btn--ghost" data-close-modal>
-          Cancelar
-        </button>
-        <button type="button" id="btn-guardar-tests" class="btn btn--yellow">
-          Guardar pruebas
-        </button>
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="button" id="btn-guardar-tests" class="ui-btn ui-btn--primary">Guardar pruebas</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal de DETALLE -->
-<div id="modal-detalle" class="modal is-hidden">
-  <div class="modal__backdrop" data-close-modal></div>
-  <div class="modal__dialog modal__dialog--lg">
-    <div class="modal__header">
-      <h3 class="modal__title">Detalle del Trade-In</h3>
-      <button class="modal__close" data-close-modal>&times;</button>
+<div id="modal-detalle" class="ui-modal" data-modal hidden>
+  <div class="ui-modal__dialog ui-modal__dialog--lg">
+    <div class="ui-modal__header">
+      <h3 class="ui-modal__title">Detalle del Trade-In</h3>
+      <button class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
     </div>
-    <div class="modal__body" id="detalle-contenido"></div>
+    <div class="ui-modal__body" id="detalle-contenido"></div>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
-<script
-  defer
-  src="{{ url_for('static', filename='js/tradein_empleados.js') }}"
-></script>
+<script defer src="{{ url_for('static', filename='js/tradein_empleados.js') }}"></script>
 {% endblock %}
