@@ -1,32 +1,11 @@
-:root {
-	--card: #ffffff;
-	--ink: #121212;
-	--muted: #5d5d5d;
-	--line: rgba(17, 24, 39, 0.14);
-	--yellow: #f3c500;
-	--yellow-soft: #f8dd69;
-	--shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-	--radius: 20px;
-}
+/* ============================================
+   404.CSS - Estilos específicos para páginas de error
+   Basado en el theme.css unificado
+   ============================================ */
 
-* {
-	box-sizing: border-box;
-}
-
-html, body {
-	min-height: 100%;
-}
-
-body {
-	margin: 0;
-	font-family: "Manrope", sans-serif;
-	color: var(--ink);
-	background:
-		radial-gradient(circle at 18% 18%, rgba(243, 197, 0, 0.18) 0%, transparent 36%),
-		radial-gradient(circle at 82% 82%, rgba(255, 255, 255, 0.06) 0%, transparent 34%),
-		linear-gradient(135deg, #1e1e1e, #2a2a2a);
-}
-
+/* ============================================
+   1. AUTH SHELL - Fondo y contenedor principal
+   ============================================ */
 .auth-shell {
 	min-height: 100vh;
 	display: grid;
@@ -34,24 +13,30 @@ body {
 	padding: 1.5rem;
 }
 
+/* ============================================
+   2. AUTH CARD - Tarjeta de error con fondo sólido
+   ============================================ */
 .auth-card {
 	width: min(100%, 520px);
 	padding: 2rem;
-	border-radius: var(--radius);
-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 247, 0.96));
-	box-shadow: var(--shadow);
-	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: var(--radius-2xl);
+	background: var(--bg-secondary);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--shadow-card);
 	position: relative;
 	overflow: hidden;
 	text-align: center;
+	animation: fadeIn 0.4s ease-out;
 }
 
+/* Banda superior amarilla */
 .auth-card::before {
 	content: "";
 	position: absolute;
 	inset: 0 0 auto 0;
 	height: 7px;
 	background: linear-gradient(90deg, var(--yellow), var(--yellow-soft));
+	border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 }
 
 .auth-card__brand {
@@ -73,24 +58,27 @@ body {
 	letter-spacing: 0.18em;
 	font-size: 0.75rem;
 	font-weight: 800;
-	color: #3d3d3d;
+	color: var(--text-muted);
 }
 
 .auth-card__title {
 	margin: 0;
-	font-family: "Space Grotesk", sans-serif;
+	font-family: var(--font-family-heading);
 	font-size: clamp(1.7rem, 3vw, 2.35rem);
 	line-height: 1;
-	color: #0b0b0b;
+	color: var(--text-strong);
 }
 
 .auth-card__subtitle {
 	margin: 0.7rem 0 0;
-	color: var(--muted);
+	color: var(--text-muted);
 	font-size: 0.98rem;
 	line-height: 1.55;
 }
 
+/* ============================================
+   3. ACTIONS - Contenedor de botones
+   ============================================ */
 .actions {
 	margin-top: 1.6rem;
 	display: flex;
@@ -99,33 +87,14 @@ body {
 	gap: 0.7rem;
 }
 
-.actions a {
-	text-decoration: none;
-	border-radius: 999px;
-	padding: 0.82rem 1.16rem;
-	font-family: "Space Grotesk", sans-serif;
-	font-weight: 800;
-	font-size: 0.95rem;
-	transition: transform 0.16s ease, filter 0.2s ease;
+/* Los botones usan .ui-btn del theme.css, solo ajustamos ancho */
+.actions .ui-btn {
+	min-width: 160px;
 }
 
-.actions a:hover {
-	transform: translateY(-1px);
-	filter: brightness(1.03);
-}
-
-.primary {
-	background: linear-gradient(180deg, var(--yellow), var(--yellow-soft));
-	color: #0b0b0b;
-	box-shadow: 0 16px 30px rgba(243, 197, 0, 0.25);
-}
-
-.secondary {
-	background: transparent;
-	border: 1px solid var(--line);
-	color: var(--ink);
-}
-
+/* ============================================
+   4. RESPONSIVE
+   ============================================ */
 @media (max-width: 560px) {
 	.auth-shell {
 		padding: 0.95rem;
@@ -133,7 +102,11 @@ body {
 
 	.auth-card {
 		padding: 1.5rem;
-		border-radius: 18px;
+		border-radius: var(--radius-xl);
+	}
+
+	.auth-card::before {
+		border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 	}
 
 	.auth-card__logo {
@@ -142,9 +115,12 @@ body {
 
 	.actions {
 		flex-direction: column;
+		align-items: stretch;
 	}
 
-	.actions a {
+	.actions .ui-btn {
 		width: 100%;
+		min-width: unset;
+		justify-content: center;
 	}
 }

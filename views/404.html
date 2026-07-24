@@ -3,6 +3,7 @@
 {% block title %}Página no encontrada | Ituaccesorio{% endblock %}
 
 {% block head_extra %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/404.css') }}">
 {% endblock %}
 
@@ -12,7 +13,7 @@
 	<main class="auth-shell">
 		<section class="auth-card error-card" aria-label="Página no encontrada">
 			<div class="auth-card__brand">
-				<img class="auth-card__logo" src="{{ url_for('static', filename='img/LOGO TRAZO.png') }}" alt="Ituaccesorio">
+				<img class="auth-card__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
 				<p class="auth-card__eyebrow">Error 404</p>
 			</div>
 
@@ -20,8 +21,7 @@
 			<p class="auth-card__subtitle">La dirección que escribiste no existe en este sistema. Revisa la URL o vuelve al inicio para continuar navegando.</p>
 
 			<div class="actions">
-				<a class="primary" href="/">Ir al inicio</a>
-				
+				<a class="ui-btn ui-btn--ghost" href="/">Ir al inicio</a>
 			</div>
 		</section>
 	</main>
