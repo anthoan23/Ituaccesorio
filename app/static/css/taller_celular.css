@@ -1,0 +1,436 @@
+/* ============================================
+   TALLER_CELULAR.CSS - Estilos simplificados
+   ============================================ */
+
+/* ============================================
+   1. SHELL - Contenedor principal
+   ============================================ */
+.mobile-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem 2rem;
+    background: var(--bg-gradient);
+    align-items: center;
+}
+
+/* ============================================
+   2. HEADER - Logo superior
+   ============================================ */
+.mobile-header {
+    text-align: center;
+    padding: 0.5rem 0 2rem;
+    flex-shrink: 0;
+}
+
+.mobile-header__logo {
+    height: 50px;
+    width: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* ============================================
+   3. PHOTOS SECTION - Área de previsualización
+   ============================================ */
+.photos-section {
+    width: 100%;
+    max-width: 480px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    box-shadow: var(--glass-shadow);
+    min-height: 320px;
+}
+
+/* ============================================
+   4. PHOTOS HEADER - Cabecera con contador y botón agregar
+   ============================================ */
+.photos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+    gap: 0.75rem;
+}
+
+.photos-counter {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+}
+
+.photos-counter #fotos-count {
+    color: var(--yellow);
+    font-size: 1.1rem;
+}
+
+.add-photos-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 50px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-family: var(--font-family-base);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.add-photos-btn:hover {
+    transform: scale(1.05);
+    background: var(--yellow-soft);
+}
+
+.add-photos-btn:active {
+    transform: scale(0.95);
+}
+
+.add-photos-btn svg {
+    flex-shrink: 0;
+    stroke: currentColor;
+}
+
+/* ============================================
+   5. PHOTOS GRID
+   ============================================ */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    flex: 1;
+    align-content: start;
+    min-height: 200px;
+    padding-top: 0.75rem;
+}
+
+.photos-grid__empty {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    text-align: center;
+    background: var(--ghost-bg);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--glass-border);
+    min-height: 160px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.photos-grid__empty:hover {
+    border-color: rgba(243, 197, 0, 0.5);
+    background: rgba(243, 197, 0, 0.05);
+}
+
+.photos-grid__empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+}
+
+.photos-grid__empty p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.photos-grid__empty small {
+    font-size: 0.8rem;
+    color: var(--text-muted-soft);
+    margin-top: 0.25rem;
+}
+
+/* Foto item en previsualización */
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--ghost-bg);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: var(--transition);
+    animation: fadeIn 0.25s ease;
+}
+
+.photo-item:hover {
+    transform: scale(1.03);
+    border-color: rgba(243, 197, 0, 0.5);
+    box-shadow: 0 4px 16px rgba(243, 197, 0, 0.15);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-item__remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(220, 38, 38, 0.92);
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 2;
+    padding: 0;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.photo-item__remove:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+.photo-item__remove:active {
+    transform: scale(0.9);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================
+   6. BARRA DE PROGRESO
+   ============================================ */
+.upload-progress {
+    margin-top: 0.75rem;
+    background: var(--ghost-bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+    height: 28px;
+    border: 1px solid var(--glass-border);
+    flex-shrink: 0;
+}
+
+.upload-progress__bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--yellow), var(--yellow-soft));
+    transition: width 0.3s ease;
+    border-radius: var(--radius-md);
+    width: 0%;
+}
+
+.upload-progress__text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   7. BOTÓN CENTRAL DE SUBIDA
+   ============================================ */
+.upload-button-container {
+    width: 100%;
+    max-width: 480px;
+    padding-top: 1.5rem;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.9rem 2.5rem;
+    border: none;
+    border-radius: 50px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-family: var(--font-family-base);
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 24px rgba(243, 197, 0, 0.35);
+    width: 100%;
+    max-width: 300px;
+}
+
+.upload-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 32px rgba(243, 197, 0, 0.5);
+    background: var(--yellow-soft);
+}
+
+.upload-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.upload-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none;
+}
+
+.upload-btn svg {
+    flex-shrink: 0;
+    stroke: currentColor;
+}
+
+.upload-btn span {
+    line-height: 1;
+}
+
+/* ============================================
+   8. MODAL DE VISTA PREVIA
+   ============================================ */
+#modal-photo-preview .ui-modal__body {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+#modal-photo-preview .ui-modal__body img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+/* ============================================
+   9. FILE INPUT - Oculto
+   ============================================ */
+#file-input {
+    display: none;
+}
+
+/* ============================================
+   10. RESPONSIVE
+   ============================================ */
+@media (max-width: 560px) {
+    .mobile-shell {
+        padding: 1rem 0.75rem 1.5rem;
+    }
+
+    .mobile-header__logo {
+        height: 40px;
+    }
+
+    .photos-section {
+        padding: 0.75rem;
+        min-height: 280px;
+        border-radius: var(--radius-md);
+    }
+
+    .photos-header {
+        padding-bottom: 0.5rem;
+    }
+
+    .photos-counter {
+        font-size: 0.75rem;
+    }
+
+    .photos-counter #fotos-count {
+        font-size: 1rem;
+    }
+
+    .add-photos-btn {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.7rem;
+    }
+
+    .add-photos-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .photos-grid {
+        gap: 8px;
+        min-height: 160px;
+        padding-top: 0.5rem;
+    }
+
+    .photos-grid__empty {
+        padding: 1.5rem 0.5rem;
+        min-height: 130px;
+    }
+
+    .photos-grid__empty-icon {
+        font-size: 2.5rem;
+    }
+
+    .photos-grid__empty p {
+        font-size: 0.9rem;
+    }
+
+    .photo-item__remove {
+        width: 24px;
+        height: 24px;
+        font-size: 13px;
+        top: 3px;
+        right: 3px;
+    }
+
+    .upload-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+        max-width: 260px;
+    }
+
+    .upload-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    #modal-photo-preview .ui-modal__body img {
+        max-height: 60vh;
+    }
+}
+
+@media (max-width: 380px) {
+    .photos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .upload-btn {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.9rem;
+        max-width: 220px;
+    }
+
+    .upload-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}

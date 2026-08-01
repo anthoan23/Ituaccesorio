@@ -1,5 +1,5 @@
 // ============================================
-// TALLER.JS - Versión Completa con Iconos SVG
+// TALLER.JS - Versión Completa con Iconos SVG y QR
 // ============================================
 
 // --------------------------------
@@ -85,6 +85,24 @@ const ICON_SAVE = `
 
 const ICON_CANCEL = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="6" y1="6" x2="18" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+
+const ICON_PHONE = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="18" x2="12" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+
+const ICON_COPY = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>`;
+
+const ICON_CLOSE = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14">
         <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="6" y1="6" x2="18" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>`;
@@ -285,7 +303,6 @@ const ViewManager = {
 const FotosService = {
     fotosSeleccionadas: [],
     ordenIdActual: null,
-    fotoAEliminar: null,
 
     iniciarModal(ordenId) {
         this.ordenIdActual = ordenId;
@@ -347,36 +364,22 @@ const FotosService = {
         
         if (!dropzone || !fileInput) return;
         
-        // Eliminar listeners anteriores para evitar duplicados
         dropzone.removeEventListener('click', this.handleDropzoneClick);
         fileInput.removeEventListener('change', this.handleFileChange);
         
-        // Click en el dropzone abre el file input
         this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
         dropzone.addEventListener('click', this.handleDropzoneClick);
         
-        // Cambio en el file input procesa los archivos
         this.handleFileChange = this.handleFileChange.bind(this);
         fileInput.addEventListener('change', this.handleFileChange);
     },
 
     handleDropzoneClick(e) {
-        // Prevenir que el click se propague si el target es el input
         if (e.target.tagName === 'INPUT') return;
-        
         const fileInput = document.getElementById('fotos-input');
         if (fileInput) {
             fileInput.click();
         }
-    },
-
-    handleFileChange(e) {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            this.procesarArchivos(files);
-        }
-        // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
-        e.target.value = '';
     },
 
     handleFileChange(e) {
@@ -544,65 +547,12 @@ const FotosService = {
                 btnSubir.textContent = originalText;
             }
         }
-    },
-
-    confirmarEliminar(fotoId, ordenId) {
-        this.fotoAEliminar = { id: fotoId, orden: ordenId };
-        
-        const modalConfirm = document.getElementById('modal-confirm-eliminar');
-        if (modalConfirm) {
-            if (window.UiModal && typeof window.UiModal.openById === 'function') {
-                window.UiModal.openById('modal-confirm-eliminar');
-            } else {
-                modalConfirm.hidden = false;
-            }
-        }
-    },
-
-    cerrarModalConfirmacion() {
-        const modalConfirm = document.getElementById('modal-confirm-eliminar');
-        if (modalConfirm) {
-            if (window.UiModal && typeof window.UiModal.close === 'function') {
-                window.UiModal.close();
-            } else {
-                modalConfirm.hidden = true;
-            }
-        }
-        this.fotoAEliminar = null;
-    },
-
-    async eliminarFotoConfirmada() {
-        if (!this.fotoAEliminar) return;
-        
-        const { id, orden } = this.fotoAEliminar;
-        
-        try {
-            const response = await Utils.fetchJson(TALLER_CONFIG.API.ELIMINAR_FOTO, {
-                method: 'DELETE',
-                body: JSON.stringify({ id_foto: id })
-            });
-            
-            Utils.showMessage('✅ Foto eliminada exitosamente');
-            
-            this.cerrarModalConfirmacion();
-            
-            if (orden) {
-                OrdenesService.verDetalle(orden);
-            }
-            
-        } catch (error) {
-            console.error('Error al eliminar foto:', error);
-            Utils.showMessage(`❌ Error: ${error.message}`, true);
-            this.cerrarModalConfirmacion();
-        } finally {
-            this.fotoAEliminar = null;
-        }
     }
 };
 
-// --------------------------------
+// ============================================
 // 6. SERVICIO DE ÓRDENES
-// --------------------------------
+// ============================================
 const OrdenesService = {
     ordenActualId: null,
 
@@ -819,7 +769,6 @@ const OrdenesService = {
 
             this.actualizarTitulosVistas(idOrden, orden?.Modelo);
             
-            // Asignar evento al botón de revisión que ya está en el HTML
             this.asignarEventoBotonRevision();
             
             ViewManager.activate(TALLER_CONFIG.VISTAS.DETALLE);
@@ -844,7 +793,6 @@ const OrdenesService = {
     asignarEventoBotonRevision() {
         const btn = document.getElementById('btn-realizar-revision');
         if (btn) {
-            // Remover eventos anteriores para evitar duplicados
             const newBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(newBtn, btn);
             newBtn.addEventListener('click', () => {
@@ -927,7 +875,7 @@ const OrdenesService = {
                     const fotoId = btn.getAttribute('data-id-foto');
                     const ordenId = OrdenesService.obtenerOrdenActual();
                     if (fotoId && ordenId) {
-                        FotosService.confirmarEliminar(fotoId, ordenId);
+                        confirmarEliminarFoto(fotoId, ordenId);
                     }
                 });
             });
@@ -1448,7 +1396,7 @@ const RevisionService = {
 };
 
 // --------------------------------
-// 8. SERVICIO DE REPUESTOS (CORREGIDO)
+// 8. SERVICIO DE REPUESTOS
 // --------------------------------
 const RepuestosService = {
     repuestosSeleccionados: [],
@@ -1894,9 +1842,177 @@ const ReparacionesService = {
     }
 };
 
-// --------------------------------
-// 10. INICIALIZACIÓN Y EVENTOS
-// --------------------------------
+// ============================================
+// 10. FUNCIONALIDAD QR - MODAL
+// ============================================
+
+// Referencias para el QR en modal
+let modalQrCodeInstance = null;
+
+/**
+ * Genera la URL para el QR basada en el ID de la orden actual
+ */
+function getQrUrl() {
+    const ordenId = OrdenesService.obtenerOrdenActual();
+    if (!ordenId) return null;
+    return `http://192.168.10.9:5000/taller_celular/${ordenId}`;
+}
+
+/**
+ * Abre el modal con el código QR
+ */
+function abrirModalQr() {
+    const ordenId = OrdenesService.obtenerOrdenActual();
+    if (!ordenId) {
+        Utils.showMessage('Primero selecciona una orden en la vista de detalle', true);
+        return;
+    }
+    
+    const url = getQrUrl();
+    if (!url) return;
+    
+    // Limpiar QR anterior en el modal
+    const qrContainer = document.getElementById('modal-qr-code');
+    if (!qrContainer) return;
+    qrContainer.innerHTML = '';
+    
+    // Actualizar URL en el texto
+    const urlText = document.getElementById('modal-qr-url');
+    if (urlText) urlText.textContent = url;
+    
+    // Abrir el modal
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-qr-celular');
+    }
+    
+    // Generar QR después de que el modal esté visible
+    setTimeout(() => {
+        try {
+            if (modalQrCodeInstance) {
+                try { modalQrCodeInstance.clear(); } catch(e) {}
+                modalQrCodeInstance = null;
+            }
+            
+            modalQrCodeInstance = new QRCode(qrContainer, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch (error) {
+            console.error('Error al generar QR:', error);
+            qrContainer.innerHTML = '<p style="color: var(--danger);">Error al generar el código QR</p>';
+        }
+    }, 200);
+}
+
+/**
+ * Copia la URL del QR desde el modal
+ */
+async function copiarUrlModal() {
+    const urlText = document.getElementById('modal-qr-url');
+    if (!urlText) return;
+    const url = urlText.textContent;
+    
+    if (!url || url === '-') {
+        Utils.showMessage('No hay URL para copiar', true);
+        return;
+    }
+    
+    try {
+        await navigator.clipboard.writeText(url);
+        Utils.showMessage('✅ URL copiada al portapapeles');
+        const btn = document.getElementById('modal-btn-copiar-url');
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ ¡Copiado!';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        }
+    } catch (error) {
+        console.error('Error al copiar:', error);
+        try {
+            const range = document.createRange();
+            range.selectNode(urlText);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            Utils.showMessage('✅ URL copiada (método alternativo)');
+        } catch (fallbackError) {
+            Utils.showMessage('❌ No se pudo copiar la URL', true);
+        }
+    }
+}
+
+// ============================================
+// 10b. FUNCIONALIDAD QR INLINE (CONSERVADA)
+// ============================================
+
+// Referencias al contenedor inline
+const btnUsarCelular = document.getElementById('btn-usar-celular');
+const qrContainer = document.getElementById('qr-container');
+const qrCodeElement = document.getElementById('qr-code');
+const qrUrlText = document.getElementById('qr-url-text');
+const btnCerrarQr = document.getElementById('btn-cerrar-qr');
+const btnCopiarUrl = document.getElementById('btn-copiar-url');
+let qrCodeInstance = null;
+
+// ============================================
+// 11. MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO
+// ============================================
+
+let fotoAEliminar = null;
+
+function confirmarEliminarFoto(fotoId, ordenId) {
+    fotoAEliminar = { id: fotoId, orden: ordenId };
+    
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-confirm-eliminar');
+    } else {
+        console.error('UiModal no disponible');
+    }
+}
+
+function cerrarModalConfirmacion() {
+    if (window.UiModal && typeof window.UiModal.close === 'function') {
+        window.UiModal.close();
+    }
+    fotoAEliminar = null;
+}
+
+async function eliminarFotoConfirmada() {
+    if (!fotoAEliminar) return;
+    
+    const { id, orden } = fotoAEliminar;
+    
+    try {
+        await Utils.fetchJson(TALLER_CONFIG.API.ELIMINAR_FOTO, {
+            method: 'DELETE',
+            body: JSON.stringify({ id_foto: id })
+        });
+        
+        Utils.showMessage('✅ Foto eliminada exitosamente');
+        
+        cerrarModalConfirmacion();
+        
+        if (orden) {
+            OrdenesService.verDetalle(orden);
+        }
+        
+    } catch (error) {
+        console.error('Error al eliminar foto:', error);
+        Utils.showMessage(`❌ Error: ${error.message}`, true);
+        cerrarModalConfirmacion();
+    } finally {
+        fotoAEliminar = null;
+    }
+}
+
+// ============================================
+// 12. INICIALIZACIÓN Y EVENTOS
+// ============================================
 document.addEventListener("DOMContentLoaded", () => {
     console.log('DOM cargado - Inicializando taller.js');
     
@@ -2011,7 +2127,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // EVENTOS PARA FOTOS
     // ============================================
 
-    // Abrir modal de fotos
     document.querySelectorAll('[data-open-modal="modal-fotos-registrar"]').forEach(btn => {
         btn.addEventListener('click', () => {
             const ordenId = OrdenesService.obtenerOrdenActual();
@@ -2028,7 +2143,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Subir fotos
     const btnSubirFotos = document.getElementById('btn-subir-fotos');
     if (btnSubirFotos) {
         btnSubirFotos.addEventListener('click', () => {
@@ -2037,32 +2151,89 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ============================================
-    // CIERRE DEL MODAL DE CONFIRMACIÓN
+    // EVENTOS PARA QR - USAR CELULAR (MODAL)
     // ============================================
-    
-    // Función para cerrar el modal de confirmación
-    const cerrarModalConfirmacion = () => {
-        FotosService.cerrarModalConfirmacion();
-    };
 
-    // Botón Cancelar del modal de confirmación
+    if (btnUsarCelular) {
+        btnUsarCelular.addEventListener('click', (e) => {
+            e.preventDefault();
+            abrirModalQr();
+        });
+    }
+
+    const modalBtnCopiar = document.getElementById('modal-btn-copiar-url');
+    if (modalBtnCopiar) {
+        modalBtnCopiar.addEventListener('click', copiarUrlModal);
+    }
+
+    // Cerrar QR inline
+    if (btnCerrarQr) {
+        btnCerrarQr.addEventListener('click', () => {
+            qrContainer.style.display = 'none';
+            if (qrCodeInstance) {
+                try { qrCodeInstance.clear(); } catch(e) {}
+                qrCodeInstance = null;
+            }
+            qrCodeElement.innerHTML = '';
+        });
+    }
+
+    // Copiar URL inline
+    if (btnCopiarUrl) {
+        btnCopiarUrl.addEventListener('click', async () => {
+            const url = getQrUrl();
+            if (!url) {
+                Utils.showMessage('No hay URL para copiar', true);
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(url);
+                Utils.showMessage('✅ URL copiada al portapapeles');
+                const originalText = btnCopiarUrl.innerHTML;
+                btnCopiarUrl.innerHTML = '✅ ¡Copiado!';
+                setTimeout(() => { btnCopiarUrl.innerHTML = originalText; }, 2000);
+            } catch (error) {
+                Utils.showMessage('❌ No se pudo copiar la URL', true);
+            }
+        });
+    }
+
+    // ============================================
+    // MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO
+    // ============================================
+
     const btnCancelarConfirm = document.getElementById('confirm-cancelar-btn');
     if (btnCancelarConfirm) {
         btnCancelarConfirm.addEventListener('click', cerrarModalConfirmacion);
     }
 
-    // Botón Cerrar (X) del modal de confirmación
     document.querySelectorAll('#modal-confirm-eliminar [data-close-modal]').forEach(btn => {
         btn.addEventListener('click', cerrarModalConfirmacion);
     });
 
-    // Click en el overlay del modal de confirmación
-    const overlayConfirm = document.querySelector('#modal-confirm-eliminar .ui-modal__overlay');
-    if (overlayConfirm) {
-        overlayConfirm.addEventListener('click', cerrarModalConfirmacion);
+    const btnConfirmEliminar = document.getElementById('confirm-eliminar-foto-btn');
+    if (btnConfirmEliminar) {
+        btnConfirmEliminar.addEventListener('click', async () => {
+            await eliminarFotoConfirmada();
+        });
     }
 
-    // Tecla Escape para cerrar el modal de confirmación
+    // Limpiar QR al cambiar de vista
+    document.querySelectorAll('[data-view-target]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (qrContainer) qrContainer.style.display = 'none';
+            if (qrCodeInstance) {
+                try { qrCodeInstance.clear(); } catch(e) {}
+                qrCodeInstance = null;
+            }
+            if (qrCodeElement) qrCodeElement.innerHTML = '';
+            if (window.UiModal && typeof window.UiModal.close === 'function') {
+                window.UiModal.close();
+            }
+        });
+    });
+
+    // Manejar escape para cerrar modal de confirmación
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const modalConfirm = document.getElementById('modal-confirm-eliminar');
@@ -2071,12 +2242,4 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
-
-    // Confirmar eliminación
-    const btnConfirmEliminar = document.getElementById('confirm-eliminar-foto-btn');
-    if (btnConfirmEliminar) {
-        btnConfirmEliminar.addEventListener('click', async () => {
-            await FotosService.eliminarFotoConfirmada();
-        });
-    }
 });

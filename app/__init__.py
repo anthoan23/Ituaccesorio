@@ -87,6 +87,7 @@ def create_app():
     from app.controllers.usuarios import usuarios_blueprint
     from app.controllers.validacion_pagos import validacion_pagos_blueprint
     from app.controllers.ventas import ventas_blueprint
+    from app.controllers.taller_celular import taller_celular_blueprint
     
     # Registrar cada blueprint con su prefijo de URL
     app.register_blueprint(home_blueprint, url_prefix='/')
@@ -113,6 +114,7 @@ def create_app():
     app.register_blueprint(ventas_blueprint, url_prefix='/')
     app.register_blueprint(notificaciones_blueprint, url_prefix='/')
     app.register_blueprint(james_blueprint, url_prefix='/')
+    app.register_blueprint(taller_celular_blueprint, url_prefix='/')
     
     # --- HOOKS DE REQUEST ---
     @app.before_request

@@ -1,0 +1,93 @@
+{% extends 'components/layout/base.html' %}
+
+{% block title %}Subir Fotos | Ituaccesorio{% endblock %}
+
+{% block head_extra %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/taller_celular.css') }}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<main class="mobile-shell">
+	<!-- CSRF Token -->
+	<input type="hidden" id="csrf-token" name="_csrf_token" value="{{ csrf_token() }}" />
+	
+	<!-- ID de la orden pasado desde el backend -->
+	<input type="hidden" id="orden-id" value="{{ id_orden }}" />
+
+	<!-- Logo superior -->
+	<div class="mobile-header">
+		<img class="mobile-header__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="Ituaccesorio">
+		<span class="orden-badge">Orden #{{ id_orden }}</span>
+	</div>
+
+	<!-- Área de previsualización de fotos -->
+	<section class="photos-section">
+		<!-- Cabecera: contador + selector de archivos -->
+		<div class="photos-header">
+			<div class="photos-counter" id="fotos-counter">
+				<span id="fotos-count">0</span> fotos seleccionadas
+			</div>
+			<button type="button" id="btn-add-fotos" class="add-photos-btn" aria-label="Agregar fotos">
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="20" height="20">
+					<rect x="2" y="2" width="20" height="20" rx="2.18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+					<line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				</svg>
+				<span>Agregar</span>
+			</button>
+		</div>
+
+		<!-- Grid de fotos -->
+		<div class="photos-grid" id="fotos-preview-grid">
+			<!-- Mensaje cuando no hay fotos -->
+			<div class="photos-grid__empty" id="empty-message">
+				<span class="photos-grid__empty-icon">📷</span>
+				<p>Toca para seleccionar fotos</p>
+				<small>Desde tu galería o cámara</small>
+			</div>
+		</div>
+
+		<!-- Barra de progreso (oculta inicialmente) -->
+		<div class="upload-progress" id="upload-progress" hidden>
+			<div class="upload-progress__bar" id="progress-bar"></div>
+			<span class="upload-progress__text" id="progress-text">Subiendo...</span>
+		</div>
+	</section>
+
+	<!-- Botón central para subir fotos -->
+	<div class="upload-button-container">
+		<button type="button" id="btn-subir-fotos" class="upload-btn" disabled>
+			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="28" height="28">
+				<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+				<polyline points="17 8 12 3 7 8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+				<line x1="12" y1="3" x2="12" y2="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+			</svg>
+			<span>Subir Fotos</span>
+		</button>
+	</div>
+
+	<!-- Input oculto para seleccionar archivos (galería + cámara) -->
+	<input type="file" id="file-input" accept="image/*" multiple>
+</main>
+
+<!-- Modal de vista previa de foto -->
+<div class="ui-modal" id="modal-photo-preview" hidden role="dialog" aria-modal="true" aria-label="Vista previa de foto">
+	<div class="ui-modal__overlay" data-close-modal></div>
+	<div class="ui-modal__dialog ui-modal__dialog--lg">
+		<div class="ui-modal__header">
+			<h3 class="ui-modal__title">Vista previa</h3>
+			<button class="ui-modal__close" data-close-modal aria-label="Cerrar">✕</button>
+		</div>
+		<div class="ui-modal__body">
+			<img id="modal-preview-img" src="" alt="Vista previa">
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/taller_celular.js') }}"></script>
+{% endblock %}
