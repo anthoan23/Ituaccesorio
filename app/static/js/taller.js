@@ -634,7 +634,7 @@ const OrdenesService = {
                 if (fotos && fotos.length > 0) {
                     this.renderizarFotosModal(modalBodyFotos, fotos);
                 } else {
-                    modalBodyFotos.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">No hay fotos registradas</p>';
+                    modalBodyFotos.innerHTML = '<p class="device-detail__empty">No hay fotos registradas</p>';
                 }
             }
 
@@ -653,15 +653,13 @@ const OrdenesService = {
     },
 
     renderizarDetalleModal(container, orden) {
-        const estiloCaja = 'background: #f8f9fa; padding: 0.85rem; border-radius: 6px; border: 1px solid #dee2e6;';
-        
         container.innerHTML = `
             <div class="detail-group"><span class="detail-label">ID de la Orden:</span><strong>#${Utils.escapeHtml(orden.ID_orden_servicio)}</strong></div>
             <div class="detail-group"><span class="detail-label">Estado:</span><span class="estado-badge ${Utils.getEstadoClase(orden.Estado_orden_servicio)}">${Utils.escapeHtml(orden.Estado_orden_servicio)}</span></div>
             <div class="detail-group"><span class="detail-label">Cliente:</span><strong>${Utils.escapeHtml(orden.nombre_cliente)}</strong></div>
             <div class="detail-group"><span class="detail-label">Modelo:</span><strong>${Utils.escapeHtml(orden.Modelo)}</strong></div>
-            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
-            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
+            <div class="detail-group field--full"><span class="detail-label">Descripción:</span><div class="detail-value">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
+            <div class="detail-group field--full"><span class="detail-label">Nota:</span><div class="detail-value">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
         `;
     },
 
@@ -694,8 +692,8 @@ const OrdenesService = {
     renderizarTestsModal(container, tests, idOrden) {
         container.innerHTML = `
             <h3 class="card__subtitle">Tests Realizados</h3>
-            <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-                <table class="table" style="min-width: 100%;">
+            <div class="table-wrap">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>N° Test</th>
@@ -755,7 +753,7 @@ const OrdenesService = {
                 if (fotos && fotos.length > 0) {
                     this.renderizarFotos(fotosContainer, fotos, true);
                 } else {
-                    fotosContainer.innerHTML = '<p class="device-detail__empty" style="padding: 0.5rem;">No hay fotos registradas para esta orden</p>';
+                    fotosContainer.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden</p>';
                 }
             }
 
@@ -777,16 +775,60 @@ const OrdenesService = {
         }
     },
 
-    renderizarDetalle(container, orden) {
-        const estiloCaja = 'background: #f8f9fa; padding: 0.85rem; border-radius: 6px; border: 1px solid #dee2e6;';
+    async actualizarFotos() {
+        const idOrden = this.obtenerOrdenActual();
+        if (!idOrden) {
+            Utils.showMessage('No hay una orden seleccionada', true);
+            return;
+        }
         
+        const fotosContainer = document.getElementById('order-photos');
+        if (!fotosContainer) return;
+        
+        fotosContainer.innerHTML = `
+            <div class="spinner-loading-wrapper">
+                <span class="spinner-loading"></span>
+                <span>Actualizando fotos...</span>
+            </div>
+        `;
+        
+        const btnActualizar = document.getElementById('btn-actualizar-fotos');
+        if (btnActualizar) btnActualizar.classList.add('loading');
+        
+        try {
+            const data = await Utils.fetchJson(TALLER_CONFIG.API.CONSULTAR_ORDEN, {
+                method: 'POST',
+                body: JSON.stringify({ id_orden: idOrden })
+            });
+            
+            const fotos = data.fotos || [];
+            
+            if (fotos.length > 0) {
+                this.renderizarFotos(fotosContainer, fotos, true);
+                Utils.showMessage(`✅ ${fotos.length} fotos cargadas`);
+            } else {
+                fotosContainer.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden</p>';
+                Utils.showMessage('📸 No hay fotos registradas');
+            }
+        } catch (error) {
+            console.error('Error al actualizar fotos:', error);
+            fotosContainer.innerHTML = `
+                <p class="device-detail__empty error">Error al cargar fotos: ${Utils.escapeHtml(error.message)}</p>
+            `;
+            Utils.showMessage(`❌ Error: ${error.message}`, true);
+        } finally {
+            if (btnActualizar) btnActualizar.classList.remove('loading');
+        }
+    },
+
+    renderizarDetalle(container, orden) {
         container.innerHTML = `
             <div class="detail-group"><span class="detail-label">ID de la Orden:</span><strong>#${Utils.escapeHtml(orden.ID_orden_servicio)}</strong></div>
             <div class="detail-group"><span class="detail-label">Estado:</span><span class="estado-badge ${Utils.getEstadoClase(orden.Estado_orden_servicio)}">${Utils.escapeHtml(orden.Estado_orden_servicio)}</span></div>
             <div class="detail-group"><span class="detail-label">Cliente:</span><strong>${Utils.escapeHtml(orden.nombre_cliente)}</strong></div>
             <div class="detail-group"><span class="detail-label">Modelo:</span><strong>${Utils.escapeHtml(orden.Modelo)}</strong></div>
-            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Descripción:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
-            <div class="detail-group field--full" style="grid-column: span 2;"><span class="detail-label">Nota:</span><div style="${estiloCaja}">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
+            <div class="detail-group field--full"><span class="detail-label">Descripción:</span><div class="detail-value">${Utils.escapeHtml(orden.Descripcion_reparacion || 'Sin descripción')}</div></div>
+            <div class="detail-group field--full"><span class="detail-label">Nota:</span><div class="detail-value">${Utils.escapeHtml(orden.Nota_orden_servicio || 'Ninguna nota')}</div></div>
         `;
     },
 
@@ -879,281 +921,6 @@ const OrdenesService = {
                     }
                 });
             });
-        }
-
-        if (!document.getElementById('fotos-grid-styles')) {
-            const style = document.createElement('style');
-            style.id = 'fotos-grid-styles';
-            style.textContent = `
-                .fotos-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 12px;
-                    margin-top: 0.5rem;
-                }
-                .foto-item {
-                    position: relative;
-                    aspect-ratio: 1;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(243, 197, 0, 0.2);
-                    transition: all 0.2s ease;
-                }
-                .foto-item:hover {
-                    transform: scale(1.02);
-                    border-color: rgba(243, 197, 0, 0.5);
-                    box-shadow: 0 4px 16px rgba(243, 197, 0, 0.15);
-                }
-                .foto-thumbnail {
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    cursor: pointer;
-                }
-                .foto-thumbnail img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                }
-                .foto-delete-btn {
-                    position: absolute;
-                    top: 6px;
-                    right: 6px;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50%;
-                    border: none;
-                    background: rgba(220, 38, 38, 0.92);
-                    color: white;
-                    font-size: 16px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s ease;
-                    z-index: 2;
-                    padding: 0;
-                    line-height: 1;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                }
-                .foto-delete-btn:hover {
-                    background: #dc2626;
-                    transform: scale(1.1);
-                }
-                .foto-modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.92);
-                    z-index: 9999;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    padding: 2rem;
-                    animation: fadeIn 0.2s ease;
-                }
-                .foto-modal-overlay img {
-                    max-width: 90vw;
-                    max-height: 90vh;
-                    object-fit: contain;
-                    border-radius: 8px;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-                    animation: zoomIn 0.25s ease;
-                }
-                .foto-modal-overlay .close-btn {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: rgba(255, 255, 255, 0.15);
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    color: white;
-                    font-size: 28px;
-                    cursor: pointer;
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s ease;
-                    z-index: 10000;
-                }
-                .foto-modal-overlay .close-btn:hover {
-                    background: rgba(255, 255, 255, 0.3);
-                    transform: scale(1.05);
-                }
-                .photo-preview-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 12px;
-                    margin-top: 1rem;
-                    padding: 0.5rem;
-                    max-height: 400px;
-                    overflow-y: auto;
-                }
-                .photo-preview-item {
-                    position: relative;
-                    aspect-ratio: 1;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(243, 197, 0, 0.2);
-                    transition: all 0.2s ease;
-                    animation: fadeIn 0.2s ease;
-                }
-                .photo-preview-item:hover {
-                    transform: scale(1.02);
-                    border-color: rgba(243, 197, 0, 0.5);
-                    box-shadow: 0 4px 16px rgba(243, 197, 0, 0.15);
-                }
-                .photo-preview-item img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                }
-                .photo-preview-item .preview-remove-btn {
-                    position: absolute;
-                    top: 6px;
-                    right: 6px;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50%;
-                    border: none;
-                    background: rgba(220, 38, 38, 0.92);
-                    color: white;
-                    font-size: 16px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s ease;
-                    z-index: 2;
-                    padding: 0;
-                    line-height: 1;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                }
-                .photo-preview-item .preview-remove-btn:hover {
-                    background: #dc2626;
-                    transform: scale(1.1);
-                }
-                .photo-preview-item .preview-file-name {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    padding: 0.35rem 0.5rem;
-                    background: rgba(0, 0, 0, 0.7);
-                    color: rgba(255, 255, 255, 0.8);
-                    font-size: 0.6rem;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    white-space: nowrap;
-                    backdrop-filter: blur(4px);
-                }
-                .photo-dropzone {
-                    border: 2px dashed rgba(243, 197, 0, 0.35);
-                    border-radius: 16px;
-                    padding: 2.5rem 1.5rem;
-                    text-align: center;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    background: rgba(255, 255, 255, 0.03);
-                    position: relative;
-                    margin-bottom: 1rem;
-                }
-                .photo-dropzone:hover,
-                .photo-dropzone.dragover {
-                    border-color: rgba(243, 197, 0, 0.7);
-                    background: rgba(243, 197, 0, 0.06);
-                    box-shadow: 0 0 30px rgba(243, 197, 0, 0.05);
-                }
-                .photo-dropzone__title {
-                    display: block;
-                    font-size: 1.2rem;
-                    font-weight: 700;
-                    color: rgba(255, 255, 255, 0.8);
-                    margin-bottom: 0.35rem;
-                }
-                .photo-dropzone__subtitle {
-                    display: block;
-                    font-size: 0.85rem;
-                    color: rgba(255, 255, 255, 0.5);
-                }
-                .photo-dropzone input[type="file"] {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    opacity: 0;
-                    cursor: pointer;
-                    z-index: 10;
-                }
-                .confirm-modal-content {
-                    text-align: center;
-                    padding: 1rem 0.5rem;
-                }
-                .confirm-modal-content .confirm-icon {
-                    font-size: 3rem;
-                    margin-bottom: 0.5rem;
-                }
-                .confirm-modal-content .confirm-message {
-                    font-size: 1.1rem;
-                    color: rgba(255, 255, 255, 0.85);
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                }
-                .confirm-modal-content .confirm-submessage {
-                    font-size: 0.9rem;
-                    color: rgba(255, 255, 255, 0.5);
-                }
-                .confirm-modal-actions {
-                    display: flex;
-                    justify-content: center;
-                    gap: 0.75rem;
-                    margin-top: 1.5rem;
-                }
-                .confirm-modal-actions .ui-btn--danger {
-                    background: rgba(220, 38, 38, 0.2);
-                    color: #ef4444;
-                    border: 1px solid rgba(220, 38, 38, 0.3);
-                }
-                .confirm-modal-actions .ui-btn--danger:hover {
-                    background: rgba(220, 38, 38, 0.3);
-                    border-color: #dc2626;
-                }
-                @keyframes zoomIn {
-                    from { transform: scale(0.8); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                @media (max-width: 780px) {
-                    .fotos-grid, .photo-preview-grid {
-                        grid-template-columns: repeat(2, 1fr);
-                    }
-                    .photo-preview-grid { max-height: 300px; }
-                }
-                @media (max-width: 480px) {
-                    .fotos-grid, .photo-preview-grid {
-                        grid-template-columns: 1fr;
-                    }
-                    .foto-modal-overlay .close-btn {
-                        top: 10px;
-                        right: 10px;
-                        width: 40px;
-                        height: 40px;
-                        font-size: 22px;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
         }
     },
 
@@ -1406,7 +1173,7 @@ const RepuestosService = {
         const tbody = document.getElementById('tabla-inventario-body');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Cargando inventario...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5">Cargando inventario...</td></tr>';
         
         const tablaContainer = document.getElementById('tabla-inventario-repuestos');
         if (tablaContainer) {
@@ -1421,13 +1188,13 @@ const RepuestosService = {
             this.renderizarInventario(inventario, tbody);
         } catch (error) {
             console.error('Error cargando inventario:', error);
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #c62828;">Error al cargar inventario: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger);">Error al cargar inventario: ${error.message}</td></tr>`;
         }
     },
 
     renderizarInventario(inventario, tbody) {
         if (!inventario || !inventario.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay repuestos disponibles en inventario</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5">No hay repuestos disponibles en inventario</td></tr>';
             return;
         }
 
@@ -1446,7 +1213,7 @@ const RepuestosService = {
                     data-id="${Utils.escapeHtml(idInventario)}"
                     data-nombre="${Utils.escapeHtml(nombreProducto)}"
                     data-existencia="${existencia}"
-                    style="cursor: ${cursorStyle}; transition: background-color 0.2s ease;">
+                    style="cursor: ${cursorStyle};">
                     <td data-label="ID">${Utils.escapeHtml(idInventario)}</td>
                     <td data-label="Producto"><strong>${Utils.escapeHtml(nombreProducto)}</strong></td>
                     <td data-label="Marca">${Utils.escapeHtml(nombreMarca)}</td>
@@ -1459,22 +1226,6 @@ const RepuestosService = {
                 </tr>
             `;
         }).join('');
-        
-        if (!document.querySelector('#inventario-row-styles')) {
-            const style = document.createElement('style');
-            style.id = 'inventario-row-styles';
-            style.textContent = `
-                .inventario-row-clickable:hover {
-                    background-color: rgba(34, 197, 94, 0.15) !important;
-                    cursor: pointer;
-                }
-                .inventario-row-sinstock:hover {
-                    background-color: rgba(220, 53, 69, 0.1) !important;
-                    cursor: not-allowed;
-                }
-            `;
-            document.head.appendChild(style);
-        }
     },
 
     obtenerStockDisponible(idInventario) {
@@ -1558,9 +1309,9 @@ const RepuestosService = {
 
         if (this.repuestosSeleccionados.length === 0) {
             container.innerHTML = `
-                <div class="device-detail__empty" style="text-align: center; padding: 2rem;">
-                    No hay repuestos agregados aún.<br>
-                    <small>Haz clic en "Inventario de repuestos" y luego haz clic en cualquier producto de la lista.</small>
+                <div class="device-detail__empty">
+                    No hay repuestos agregados aún.<br />
+                    <small>Haz clic en "Inventario de repuestos" para agregar productos.</small>
                 </div>
             `;
             const btnLimpiar = document.getElementById('btn-limpiar-repuestos');
@@ -1587,9 +1338,7 @@ const RepuestosService = {
                                    min="1" 
                                    max="${stockMaximo}" 
                                    step="1">
-                            <span style="font-size: 0.7rem; color: var(--text-muted);">
-                                / ${stockMaximo}
-                            </span>
+                            <span class="repuesto-stock-max">/ ${stockMaximo}</span>
                         </div>
                     </div>
                     <button type="button" class="btn-eliminar-repuesto" data-eliminar-repuesto="${index}">
@@ -1618,11 +1367,9 @@ const RepuestosService = {
         let valor = parseInt(input.value);
         
         if (!isNaN(valor) && valor > stockMax) {
-            input.style.borderColor = '#dc2626';
-            input.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
+            input.classList.add('error');
         } else {
-            input.style.borderColor = '';
-            input.style.backgroundColor = '';
+            input.classList.remove('error');
         }
     },
 
@@ -1654,8 +1401,7 @@ const RepuestosService = {
             Utils.showMessage('Cantidad inválida', true);
         }
         
-        input.style.borderColor = '';
-        input.style.backgroundColor = '';
+        input.classList.remove('error');
     },
 
     handleEliminarClick(event) {
@@ -1676,7 +1422,7 @@ const RepuestosService = {
         const totalCountSpan = document.getElementById('repuestos-total-count');
         if (totalCountSpan) {
             totalCountSpan.textContent = `${totalUnidades} unidad${totalUnidades !== 1 ? 'es' : ''}`;
-            totalCountSpan.style.background = totalUnidades > 0 ? '#2e7d32' : '#6c757d';
+            totalCountSpan.className = `estado-badge ${totalUnidades > 0 ? 'estado-completado' : 'estado-default'}`;
         }
     },
 
@@ -1716,7 +1462,7 @@ const ReparacionesService = {
 
     renderizarAsignadas(reparaciones, tbody) {
         if (!reparaciones.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Sin reparaciones asignadas por ahora.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4">Sin reparaciones asignadas por ahora.</td></tr>';
             return;
         }
 
@@ -1846,21 +1592,14 @@ const ReparacionesService = {
 // 10. FUNCIONALIDAD QR - MODAL
 // ============================================
 
-// Referencias para el QR en modal
 let modalQrCodeInstance = null;
 
-/**
- * Genera la URL para el QR basada en el ID de la orden actual
- */
 function getQrUrl() {
     const ordenId = OrdenesService.obtenerOrdenActual();
     if (!ordenId) return null;
     return `http://192.168.10.9:5000/taller_celular/${ordenId}`;
 }
 
-/**
- * Abre el modal con el código QR
- */
 function abrirModalQr() {
     const ordenId = OrdenesService.obtenerOrdenActual();
     if (!ordenId) {
@@ -1871,21 +1610,17 @@ function abrirModalQr() {
     const url = getQrUrl();
     if (!url) return;
     
-    // Limpiar QR anterior en el modal
     const qrContainer = document.getElementById('modal-qr-code');
     if (!qrContainer) return;
     qrContainer.innerHTML = '';
     
-    // Actualizar URL en el texto
     const urlText = document.getElementById('modal-qr-url');
     if (urlText) urlText.textContent = url;
     
-    // Abrir el modal
     if (window.UiModal && typeof window.UiModal.openById === 'function') {
         window.UiModal.openById('modal-qr-celular');
     }
     
-    // Generar QR después de que el modal esté visible
     setTimeout(() => {
         try {
             if (modalQrCodeInstance) {
@@ -1908,9 +1643,6 @@ function abrirModalQr() {
     }, 200);
 }
 
-/**
- * Copia la URL del QR desde el modal
- */
 async function copiarUrlModal() {
     const urlText = document.getElementById('modal-qr-url');
     if (!urlText) return;
@@ -1947,10 +1679,9 @@ async function copiarUrlModal() {
 }
 
 // ============================================
-// 10b. FUNCIONALIDAD QR INLINE (CONSERVADA)
+// 10b. FUNCIONALIDAD QR INLINE
 // ============================================
 
-// Referencias al contenedor inline
 const btnUsarCelular = document.getElementById('btn-usar-celular');
 const qrContainer = document.getElementById('qr-container');
 const qrCodeElement = document.getElementById('qr-code');
@@ -2034,7 +1765,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Eventos de tablas
     const tablaOrdenes = document.getElementById("tabla-ordenes-servicio");
     if (tablaOrdenes) {
         tablaOrdenes.addEventListener("click", async (event) => {
@@ -2123,10 +1853,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ============================================
-    // EVENTOS PARA FOTOS
-    // ============================================
-
     document.querySelectorAll('[data-open-modal="modal-fotos-registrar"]').forEach(btn => {
         btn.addEventListener('click', () => {
             const ordenId = OrdenesService.obtenerOrdenActual();
@@ -2150,9 +1876,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ============================================
-    // EVENTOS PARA QR - USAR CELULAR (MODAL)
-    // ============================================
+    const btnActualizarFotos = document.getElementById('btn-actualizar-fotos');
+    if (btnActualizarFotos) {
+        btnActualizarFotos.addEventListener('click', () => {
+            OrdenesService.actualizarFotos();
+        });
+    }
 
     if (btnUsarCelular) {
         btnUsarCelular.addEventListener('click', (e) => {
@@ -2166,7 +1895,6 @@ document.addEventListener("DOMContentLoaded", () => {
         modalBtnCopiar.addEventListener('click', copiarUrlModal);
     }
 
-    // Cerrar QR inline
     if (btnCerrarQr) {
         btnCerrarQr.addEventListener('click', () => {
             qrContainer.style.display = 'none';
@@ -2178,7 +1906,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Copiar URL inline
     if (btnCopiarUrl) {
         btnCopiarUrl.addEventListener('click', async () => {
             const url = getQrUrl();
@@ -2198,15 +1925,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ============================================
-    // MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO
-    // ============================================
-
-    const btnCancelarConfirm = document.getElementById('confirm-cancelar-btn');
-    if (btnCancelarConfirm) {
-        btnCancelarConfirm.addEventListener('click', cerrarModalConfirmacion);
-    }
-
     document.querySelectorAll('#modal-confirm-eliminar [data-close-modal]').forEach(btn => {
         btn.addEventListener('click', cerrarModalConfirmacion);
     });
@@ -2218,7 +1936,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Limpiar QR al cambiar de vista
     document.querySelectorAll('[data-view-target]').forEach(btn => {
         btn.addEventListener('click', () => {
             if (qrContainer) qrContainer.style.display = 'none';
@@ -2233,7 +1950,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Manejar escape para cerrar modal de confirmación
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const modalConfirm = document.getElementById('modal-confirm-eliminar');

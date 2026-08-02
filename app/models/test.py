@@ -53,15 +53,17 @@ class Tests():
         
         cursor = db.cursor(dictionary=True)
         try:
-            sql = """SELECT 
+            sql = """
+                    SELECT 
                         t.Numero_test,
                         COUNT(*) as cantidad
                     FROM Interaccion i 
                     JOIN Test_realizados_interaccion ti ON i.ID_interaccion = ti.ID_interaccion
                     JOIN Test t ON ti.ID_test = t.ID_test
-                    WHERE i.Accion = 'Revisión' 
-                    AND i.ID_orden_servicio = %s
-                    GROUP BY t.Numero_test"""
+                    WHERE i.ID_orden_servicio = %s
+                    GROUP BY t.Numero_test
+                    ORDER BY t.Numero_test ASC
+                """
             cursor.execute(sql, (ID_orden,))
             tests = cursor.fetchall()
         

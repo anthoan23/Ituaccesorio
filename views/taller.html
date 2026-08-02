@@ -120,18 +120,23 @@
               </svg>
               Usar celular
             </button>
-            <div id="qr-container" style="display: none; margin-top: 0.5rem; width: 100%;">
-              <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: var(--glass-bg); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-                <div id="qr-code" style="flex-shrink: 0;"></div>
+            <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="btn-actualizar-fotos" title="Actualizar fotos">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
+                <path d="M23 4v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Actualizar fotos
+            </button>
+            <div id="qr-container" hidden>
+              <div>
+                <div id="qr-code"></div>
                 <div>
-                  <p style="margin: 0; font-weight: 700; color: var(--text-strong);">Escanea con tu celular</p>
-                  <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--text-muted);">
-                    Abre la cámara de tu celular y apunta al código QR para tomar fotos del dispositivo.
-                  </p>
-                  <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--text-muted-soft); word-break: break-all;">
-                    URL: <span id="qr-url-text">-</span>
-                  </p>
-                  <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="btn-copiar-url" style="margin-top: 0.5rem;">
+                  <p>Escanea con tu celular</p>
+                  <p>Abre la cámara de tu celular y apunta al código QR para tomar fotos del dispositivo.</p>
+                  <p>URL: <span id="qr-url-text">-</span></p>
+                  <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="btn-copiar-url">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14">
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -139,7 +144,7 @@
                     Copiar URL
                   </button>
                 </div>
-                <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="btn-cerrar-qr" style="margin-left: auto;">
+                <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="btn-cerrar-qr">
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14">
                     <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     <line x1="6" y1="6" x2="18" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -378,7 +383,7 @@
   <div id="modal-order-info" class="device-detail__grid">
     <p class="device-detail__empty">Cargando información...</p>
   </div>
-  <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
+  <div id="modal-order-photos" class="device-photos-wrap"></div>
   <div id="modal-order-tests" class="device-tests"></div>
   <div class="service-form__actions">
     <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>
@@ -414,7 +419,7 @@
       </thead>
       <tbody id="tabla-inventario-body">
         <tr>
-          <td colspan="5" style="text-align: center;">Cargando inventario...</td>
+          <td colspan="5" >Cargando inventario...</td>
         </tr>
       </tbody>
     </table>
@@ -470,9 +475,7 @@
 </div>
 {% endcall %}
 
-<!-- ============================================ -->
-<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO (CORREGIDO) -->
-<!-- ============================================ -->
+<!-- Modal de confirmación para eliminar foto -->
 {% call modal('modal-confirm-eliminar', 'Confirmar eliminación', 'sm') %}
 <div class="confirm-modal-content">
   <div class="confirm-icon">
@@ -503,15 +506,13 @@
 <!-- Modal: QR para celular -->
 {% call modal('modal-qr-celular', 'Escanea con tu celular', 'md') %}
 <div id="modal-qr-body">
-  <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 0.5rem 0;">
-    <div id="modal-qr-code" style="background: white; padding: 1rem; border-radius: 16px; display: inline-block;"></div>
-    <div style="text-align: center;">
-      <p style="margin: 0; font-weight: 600; color: var(--text-strong);">Abre la cámara de tu celular</p>
-      <p style="margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--text-muted);">
-        Apunta al código QR para tomar fotos del dispositivo.
-      </p>
-      <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; flex-wrap: wrap;">
-        <code id="modal-qr-url" style="background: var(--input-bg); padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); word-break: break-all; max-width: 300px;"></code>
+  <div>
+    <div id="modal-qr-code"></div>
+    <div>
+      <p>Abre la cámara de tu celular</p>
+      <p>Apunta al código QR para tomar fotos del dispositivo.</p>
+      <div>
+        <code id="modal-qr-url"></code>
         <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" id="modal-btn-copiar-url">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -522,7 +523,7 @@
       </div>
     </div>
   </div>
-  <div class="service-form__actions" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+  <div class="service-form__actions">
     <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
         <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -536,13 +537,12 @@
 
 <!-- Modal: Vista previa de foto -->
 {% call modal('modal-photo-view', 'Vista previa', 'lg') %}
-<div style="text-align: center;">
-  <img id="modal-photo-view-img" src="" alt="Vista previa" style="max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain;" />
+<div>
+  <img id="modal-photo-view-img" src="" alt="Vista previa" />
 </div>
 {% endcall %}
 
 <!-- Librería QRCode.js para generar códigos QR -->
-
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
