@@ -1,7 +1,7 @@
 import os
 from functools import wraps
 from flask import request, jsonify, g, make_response, render_template, redirect, url_for
-from app.utils.jwt_utils import decode_token, set_auth_cookies
+from app.utils.jwt_utils import decode_token, set_auth_cookies, verificar_firma_fotos
 
 IS_TEST_MODE = os.getenv('ENTORNO_PRUEBA', 'false').lower() in ('1', 'true', 'yes', 'on')
 
@@ -136,3 +136,41 @@ def solo_roles(roles_permitidos):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+def token_fotos_required(func):
+    """
+    Valida la firma corta de subida de fotos (taller_celular).
+
+    La firma viaja en el query param 't' de la URL del QR (?t=...) o en el
+    form 't', es HMAC(SECRET, "id_orden|expira") truncada y se verifica sin
+    estado. El id_orden se toma del argumento de la ruta (URL) o del form.
+    El payload se adjunta a g.token_payload (contiene 'id_orden').
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        if IS_TEST_MODE:
+            return func(*args, **kwargs)
+
+        firma = request.args.get('t') or request.form.get('t')
+
+        # Flask entrega los parámetros de la URL como kwargs (ej. id_orden)
+        id_orden = kwargs.get('id_orden')
+        if not id_orden and args:
+            id_orden = args[0]
+        if not id_orden:
+            id_orden = request.form.get('id_orden') or request.args.get('id_orden') or ''
+
+        if not firma or not verificar_firma_fotos(id_orden, firma):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    "success": False,
+                    "error": "Firma de subida de fotos inválida o expirada."
+                }), 401
+            return render_template('403.html'), 403
+
+        g.token_payload = {"id_orden": str(id_orden)}
+        return func(*args, **kwargs)
+
+    return wrapper
