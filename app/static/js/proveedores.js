@@ -32,7 +32,7 @@
       return false;
     }
     const idStr = String(id).trim();
-    return /^[a-zA-Z0-9\-]+$/.test(idStr) && idStr.length > 0;
+    return /^\d+$/.test(idStr) && parseInt(idStr) > 0;
   }
 
   function mostrarErrorSeguridadProveedor(mensaje) {
@@ -168,7 +168,10 @@
     const esError = soloInformacion && (mensaje.includes('No se puede') || mensaje.includes('productos'));
     const titulo = soloInformacion ? (esError ? "No se puede eliminar" : "Información") : "Confirmar acción";
     const btnTexto = soloInformacion ? "Aceptar" : "Eliminar";
-    const btnColor = soloInformacion ? (esError ? "#dc2626" : "#16a34a") : "#dc2626";
+    const btnClass = soloInformacion ? (esError ? 'ui-btn--danger' : 'ui-btn--primary') : 'ui-btn--danger';
+    const messageClass = productosRelacionados && productosRelacionados.length > 0
+      ? 'confirm-modal__message confirm-modal__message--left'
+      : 'confirm-modal__message confirm-modal__message--center';
     
     let mensajeCompleto = mensaje;
     
@@ -183,23 +186,20 @@
     
     const modalDiv = document.createElement('div');
     modalDiv.id = 'confirmacion-modal-proveedores';
-    modalDiv.className = 'ui-modal';
-    modalDiv.setAttribute('data-modal', '');
-    modalDiv.setAttribute('hidden', '');
-    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10001;display:flex;align-items:center;justify-content:center;';
+    modalDiv.className = `ui-modal ui-modal--confirm ${esError || !soloInformacion ? 'ui-modal--confirm-danger' : 'ui-modal--confirm-info'}`;
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:var(--bg);border-radius:20px;box-shadow:var(--shadow-card);max-width:500px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
-        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border-light);">
-          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:var(--text-strong);">${titulo}</h3>
-          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">×</button>
+      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true">
+        <header class="ui-modal__header">
+          <h3 class="ui-modal__title">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
         </header>
-        <div class="ui-modal__body" style="padding:1.5rem;">
-          <div style="white-space:pre-wrap;margin:0;font-size:1rem;color:var(--text-strong);line-height:1.5;">${escapeHtml(mensajeCompleto)}</div>
+        <div class="ui-modal__body">
+          <div class="${messageClass}">${escapeHtml(mensajeCompleto)}</div>
         </div>
-        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid var(--border-light);">
-          ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:var(--ghost-bg);color:var(--ghost-text);font-weight:500;cursor:pointer;">Cancelar</button>' : ''}
-          <button type="button" class="ui-btn" id="btn-confirmar-accion-proveedores" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;">${btnTexto}</button>
+        <div class="ui-modal__footer ui-modal__footer--end">
+          ${!soloInformacion ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion-proveedores">Cancelar</button>' : ''}
+          <button type="button" class="ui-btn ${btnClass}" id="btn-confirmar-accion-proveedores">${btnTexto}</button>
         </div>
       </div>
     `;
@@ -304,6 +304,7 @@
   function normalizeProveedor(p) {
     return {
       id: p?.ID_proveedor ?? p?.id ?? '',
+      rif: p?.Rif_proveedor ?? p?.rif ?? '',
       nombre: p?.N_proveedor ?? p?.nombre ?? '',
       tipo: p?.Tipo ?? p?.tipo ?? '',
       celular: p?.celular ?? p?.Celular ?? '',
@@ -320,7 +321,7 @@
     if (!proveedores.length) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="table__empty">No hay proveedores para mostrar.</td>
+          <td colspan="7" class="table__empty">No hay proveedores para mostrar.</td>
         </tr>`;
       return;
     }
@@ -329,6 +330,7 @@
       .map((raw) => {
         const p = normalizeProveedor(raw);
         const id = escapeHtml(p.id);
+        const rif = escapeHtml(p.rif || '-');
         const nombre = escapeHtml(p.nombre);
         const tipo = escapeHtml(p.tipo);
         const celular = escapeHtml(p.celular);
@@ -336,7 +338,8 @@
 
         return `
           <tr>
-            <td><span class="chip">${id}</span></td>
+            <td><span class="chip">${rif}</span></td>
+            <td><span class="chip chip--secondary">${id}</span></td>
             <td>${nombre}</td>
             <td>${tipo}</td>
             <td>${celular}</td>
@@ -412,6 +415,7 @@
       const p = normalizeProveedor(data?.proveedor ?? data);
 
       setText('v-id', p.id);
+      setText('v-rif', p.rif || '-');
       setText('v-nombre', p.nombre);
       setText('v-tipo', p.tipo);
       setText('v-celular', p.celular);
@@ -443,6 +447,7 @@
 
       setValue('e-id-hidden', p.id);
       setValue('e-id', p.id);
+      setValue('e-rif', p.rif || '');
       setValue('e-nombre', p.nombre);
       setValue('e-tipo', p.tipo);
       setValue('e-celular', p.celular);
@@ -541,7 +546,7 @@
               <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
             </td>
             <td class="table__actions">
-              <div class="row-actions" aria-label="Acciones" style="display:flex;justify-content:center;align-items:center;">
+              <div class="row-actions row-actions--center" aria-label="Acciones">
                 <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${iconTrash()}</button>
               </div>
             </td>
@@ -576,8 +581,8 @@
             <td>${marca}</td>
             <td>${clase}</td>
             <td class="col-cost">${formatMoney(costo)} $</td>
-            <td class="table__actions" style="display:flex;justify-content:center;align-items:center;">
-              <div class="row-actions" aria-label="Acciones">
+            <td class="table__actions">
+              <div class="row-actions row-actions--center" aria-label="Acciones">
                 <button class="icon-action icon-action--danger" type="button" data-action="quitar-producto-crear" data-id-modelo="${idModelo}" aria-label="Quitar">${iconTrash()}</button>
               </div>
             </td>
@@ -638,9 +643,6 @@
 
   async function crearProveedorFromForm() {
     const rif = getFormValue('c-id').trim();
-    if (rif && /^\d+$/.test(rif)) {
-      throw new Error('El RIF no puede ser solo números. Use el formato J-12345678-9');
-    }
     
     const productos = state.productosCrear.map((it) => ({
       id_modelo: Number(it.id_modelo),
@@ -648,7 +650,7 @@
     }));
 
     const payload = {
-      id: rif || null,
+      rif: rif || null,
       nombre: getFormValue('c-nombre').trim(),
       tipo: getFormValue('c-tipo') || null,
       celular: getFormValue('c-celular') || null,
@@ -666,8 +668,11 @@
 
   async function editarProveedorFromForm() {
     const id = getFormValue('e-id-hidden');
+    const rif = getFormValue('e-rif').trim();
+    
     const payload = {
       id: id ? Number(id) : null,
+      rif: rif || null,
       nombre: getFormValue('e-nombre').trim(),
       tipo: getFormValue('e-tipo') || null,
       celular: getFormValue('e-celular') || null,
@@ -1135,11 +1140,12 @@ async function generarReporteProveedores() {
     
     if (reporteTabla) {
       if (reporteDatosActuales.length === 0) {
-        reporteTabla.innerHTML = '<tr><td colspan="6" class="table__empty">No hay proveedores con esos filtros</td></tr>';
+        reporteTabla.innerHTML = '<tr><td colspan="7" class="table__empty">No hay proveedores con esos filtros</td></tr>';
       } else {
         reporteTabla.innerHTML = reporteDatosActuales.map(p => `
           <tr>
             <td>${escapeHtmlReportes(p.id || '')}</td>
+            <td>${escapeHtmlReportes(p.rif || '-')}</td>
             <td><strong>${escapeHtmlReportes(p.nombre || '')}</strong></td>
             <td>${escapeHtmlReportes(p.tipo || '-')}</td>
             <td>${escapeHtmlReportes(p.celular || '-')}</td>
@@ -1172,6 +1178,7 @@ function exportarProveedoresExcel() {
   
   const datos = reporteDatosActuales.map(p => ({
     "ID": p.id || "",
+    "RIF": p.rif || "",
     "Proveedor": p.nombre || "",
     "Tipo": p.tipo || "",
     "Teléfono": p.celular || "",
@@ -1195,7 +1202,7 @@ function exportarProveedoresExcel() {
   XLSX.utils.book_append_sheet(wb, ws, "Proveedores");
   
   ws['!cols'] = [
-    {wch: 8}, {wch: 35}, {wch: 12}, {wch: 15}, {wch: 30}, {wch: 35}, {wch: 15}, {wch: 10}
+    {wch: 8}, {wch: 15}, {wch: 35}, {wch: 12}, {wch: 15}, {wch: 30}, {wch: 35}, {wch: 15}, {wch: 10}
   ];
   
   XLSX.writeFile(wb, `proveedores_${new Date().toISOString().slice(0,19)}.xlsx`);
@@ -1271,9 +1278,10 @@ function exportarProveedoresPdf() {
   doc.setTextColor(colors.grayText[0], colors.grayText[1], colors.grayText[2]);
   doc.text(filtrosTexto.length ? `Filtros: ${filtrosTexto.join(" • ")}` : "Filtros: Todos los proveedores", 18, filterY + 7);
   
-  const columns = ["ID", "PROVEEDOR", "TIPO", "TELÉFONO", "PRODUCTOS", "CRÉDITO"];
+  const columns = ["ID", "RIF", "PROVEEDOR", "TIPO", "TELÉFONO", "PRODUCTOS", "CRÉDITO"];
   const rows = reporteDatosActuales.map(p => [
     p.id || "",
+    p.rif || "-",
     p.nombre || "",
     p.tipo || "-",
     p.celular || "-",
@@ -1354,11 +1362,12 @@ function imprimirReporteProveedores() {
       <div class="info">Generado: ${fecha} • Total proveedores: ${reporteDatosActuales.length}</div>
       ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
       <table>
-        <thead><tr><th>ID</th><th>Proveedor</th><th>Tipo</th><th>Teléfono</th><th>Productos</th><th>Límite Crédito</th></tr></thead>
+        <thead><tr><th>ID</th><th>RIF</th><th>Proveedor</th><th>Tipo</th><th>Teléfono</th><th>Productos</th><th>Límite Crédito</th></tr></thead>
         <tbody>
           ${reporteDatosActuales.map(p => `
             <tr>
               <td>${escapeHtmlReportes(p.id || '')}</td>
+              <td>${escapeHtmlReportes(p.rif || '-')}</td>
               <td><strong>${escapeHtmlReportes(p.nombre || '')}</strong></td>
               <td>${escapeHtmlReportes(p.tipo || '-')}</td>
               <td>${escapeHtmlReportes(p.celular || '-')}</td>

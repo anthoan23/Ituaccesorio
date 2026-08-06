@@ -3,6 +3,7 @@ from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.proveedores import Proveedores
 from app.models.productos import Producto
 from app.models.bitacora import Bitacora
+import re
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
 
@@ -35,7 +36,7 @@ def api_listar_proveedores():
 def api_crear_proveedor():
     datos = request.get_json(silent=True) or {}
     
-    id_proveedor = datos.get("id")
+    rif = str(datos.get("rif", "")).strip() or None
     nombre = str(datos.get("nombre", "")).strip()
     tipo = str(datos.get("tipo", "")).strip() or None
     celular = str(datos.get("celular", "")).strip() or None
@@ -47,14 +48,10 @@ def api_crear_proveedor():
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
 
-    # Validar ID del proveedor
-    if id_proveedor in (None, ""):
-        id_val = 0
-    else:
-        try:
-            id_val = int(str(id_proveedor).strip())
-        except (ValueError, TypeError):
-            return jsonify({"success": False, "error": "El ID del proveedor debe ser un número válido."}), 400
+    # Validar formato de RIF si se proporciona
+    if rif:
+        if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', rif):
+            return jsonify({"success": False, "error": "Formato de RIF inválido. Use: J-12345678-9"}), 400
 
     # Validar límite de crédito
     try:
@@ -104,7 +101,8 @@ def api_crear_proveedor():
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
         
         modelo = Proveedores(
-            id_proveedor=id_val,
+            id_proveedor=0,
+            rif=rif,
             nombre=nombre,
             tipo=tipo,
             celular=celular,
@@ -144,6 +142,7 @@ def api_obtener_proveedor(id_proveedor: int):
 def api_actualizar_proveedor(id_proveedor: int):
     datos = request.get_json(silent=True) or {}
     
+    rif = str(datos.get("rif", "")).strip() or None
     nombre = str(datos.get("nombre", "")).strip()
     tipo = str(datos.get("tipo", "")).strip() or None
     celular = str(datos.get("celular", "")).strip() or None
@@ -153,6 +152,11 @@ def api_actualizar_proveedor(id_proveedor: int):
 
     if not nombre:
         return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
+
+    # Validar formato de RIF si se proporciona
+    if rif:
+        if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', rif):
+            return jsonify({"success": False, "error": "Formato de RIF inválido. Use: J-12345678-9"}), 400
 
     try:
         if limite_credito in (None, ""):
@@ -164,7 +168,7 @@ def api_actualizar_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
 
-    # ✅ NUEVA VALIDACIÓN: El nuevo límite no puede ser menor que el costo del producto más caro
+    # Validación: El nuevo límite no puede ser menor que el costo del producto más caro
     if limite_val is not None:
         modelo_temp = Proveedores(id_proveedor=id_proveedor)
         productos = modelo_temp.listar_productos_por_proveedor() or []
@@ -182,6 +186,7 @@ def api_actualizar_proveedor(id_proveedor: int):
         
         modelo = Proveedores(
             id_proveedor=id_proveedor,
+            rif=rif,
             nombre=nombre,
             tipo=tipo,
             celular=celular,
@@ -292,7 +297,7 @@ def api_upsert_producto_proveedor(id_proveedor: int):
     except Exception:
         return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
 
-    # ✅ NUEVA VALIDACIÓN: El costo no puede superar el límite de crédito del proveedor
+    # Validación: El costo no puede superar el límite de crédito del proveedor
     if costo_val is not None:
         proveedor_modelo = Proveedores(id_proveedor=id_proveedor)
         proveedor = proveedor_modelo.obtener_proveedor()
