@@ -2,7 +2,8 @@ import os
 from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
-from app.utils.decorators import jwt_required, tiene_permiso
+from app.utils.decorators import jwt_required, tiene_permiso, token_fotos_required
+from app.utils.jwt_utils import crear_firma_fotos
 from app.utils.validators import validar_numero, validar_texto, validar_texto_numero
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
@@ -13,13 +14,31 @@ taller_celular_blueprint = Blueprint("taller_celular", __name__)
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
+@taller_celular_blueprint.route("/api/taller_celular/crear-token/<id_orden>", methods=["POST"])
+@jwt_required
+@tiene_permiso('Taller', 'registrar')
+def crear_token_fotos(id_orden):
+    """Genera la firma corta de un solo propósito: subir fotos de la orden.
 
-
+    Es stateless (HMAC con el SECRET_KEY): no se guarda nada en el servidor y
+    la URL del QR queda corta y fácil de escanear.
+    """
+    try:
+        firma = crear_firma_fotos(id_orden)
+        return jsonify({"success": True, "firma": firma}), 200
+    except Exception as e:
+        print(f"❌ Error al crear firma de fotos: {e}")
+        return jsonify({"error": "No se pudo generar la firma de fotos."}), 500
 
 
 @taller_celular_blueprint.route("/taller_celular/<id_orden>", methods=["GET"])
+@token_fotos_required
 def pagina_taller_celular(id_orden):
     """Página para tomar fotos desde el celular para una orden específica"""
+    token_payload = getattr(g, 'token_payload', None)
+    if token_payload and str(token_payload.get('id_orden')) != str(id_orden):
+        return render_template('403.html'), 403
+
     return render_template(
         "taller_celular.html",
         active_page="taller_celular",
@@ -29,12 +48,18 @@ def pagina_taller_celular(id_orden):
     )
 
 @taller_celular_blueprint.route("/api/taller_celular/registrar-fotos", methods=["POST"])
+@token_fotos_required
 def registrar_fotos():
     try:
         # Obtener datos del request (multipart/form-data)
         id_orden = request.form.get('id_orden')
         if not id_orden:
             return jsonify({"error": "No se proporcionó el ID de la orden"}), 400
+
+        # La firma solo es válida para la orden para la que fue emitida
+        token_payload = getattr(g, 'token_payload', None)
+        if token_payload and str(token_payload.get('id_orden')) != str(id_orden):
+            return jsonify({"error": "La firma no corresponde a esta orden."}), 403
 
         # Obtener los archivos
         files = request.files.getlist('fotos')
