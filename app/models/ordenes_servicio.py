@@ -434,6 +434,16 @@ class Orden_servicio():
 
 
 
+#============================================
+# ESTO ES DEL ORDENES DE SERVICIO SIN ESTO NO FUNCIONA UN CONO NO LO BORRES MMGVO
+# NO TOCAR, DE MANUEL ENRIQUE RODRIGUEZ MENDOZA 
+#============================================
+
+
+
+
+
+
     # ============================================
     # MÉTODO PARA CREAR ORDEN DE SERVICIO
     # ============================================
