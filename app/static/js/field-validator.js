@@ -160,7 +160,7 @@
     },
     capitalizar: {
       filter: (value) => {
-        return value.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+        return value.toLowerCase().replace(/[\p{L}\p{M}\p{N}]+/gu, palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1));
       },
       validate: () => true,
       message: ''

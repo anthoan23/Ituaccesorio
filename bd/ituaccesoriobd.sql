@@ -1,24 +1,20 @@
--- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
---
--- Host: 127.0.0.1    Database: ituaccesoriobd
--- ------------------------------------------------------
--- Server version	8.0.46
+-- ============================================
+-- Backup de: ituaccesoriobd
+-- Fecha: 2026-06-30 20:08:35
+-- Tipo: ituaccesorio
+-- ============================================
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+SET FOREIGN_KEY_CHECKS=0;
+SET AUTOCOMMIT=0;
+SET SQL_QUOTE_SHOW_CREATE=1;
 
---
--- Table structure for table `Abastece`
---
+-- ============================================
+-- TABLAS
+-- ============================================
 
+-- ----------------------------------------------------
+-- Table structure for `Abastece`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Abastece`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -59,22 +55,25 @@ CREATE TABLE `Capacitacion` (
   CONSTRAINT `Capacitacion_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
   CONSTRAINT `Capacitacion_ibfk_2` FOREIGN KEY (`ID_especialidad`) REFERENCES `Especialidad` (`ID_especialidad`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Capacitacion`
---
+-- ----------------------------------------------------
+-- Dumping data for `Capacitacion`
+-- ----------------------------------------------------
+INSERT INTO `Capacitacion` (`ID_empleado`, `ID_especialidad`, `Nivel_Capacitacion`) VALUES
+(12345543, 'ESP0000004', 'Intermedio'),
+(20123456, 'ESP0000004', 'Avanzado'),
+(20234567, 'ESP0000005', 'Intermedio'),
+(20345678, 'ESP0000006', 'Básico'),
+(20456789, 'ESP0000007', 'Avanzado'),
+(20567890, 'ESP0000008', 'Avanzado'),
+(30124556, 'ESP0000005', 'Básico'),
+(1111111111, 'ESP0000001', NULL),
+(1111111111, 'ESP0000002', NULL),
+(1111111111, 'ESP0000003', NULL);
 
-LOCK TABLES `Capacitacion` WRITE;
-/*!40000 ALTER TABLE `Capacitacion` DISABLE KEYS */;
-INSERT INTO `Capacitacion` VALUES (12345543,'ESP0000004','Intermedio'),(20123456,'ESP0000004','Avanzado'),(20234567,'ESP0000005','Intermedio'),(20345678,'ESP0000006','BÃ¡sico'),(20456789,'ESP0000007','Avanzado'),(20567890,'ESP0000008','Avanzado'),(30124556,'ESP0000005','BÃ¡sico'),(1111111111,'ESP0000001',NULL),(1111111111,'ESP0000002',NULL),(1111111111,'ESP0000003',NULL);
-/*!40000 ALTER TABLE `Capacitacion` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Cargo`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Cargo`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cargo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -84,22 +83,26 @@ CREATE TABLE `Cargo` (
   `Descripcion_cargo` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`ID_cargo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Cargo`
---
+-- ----------------------------------------------------
+-- Dumping data for `Cargo`
+-- ----------------------------------------------------
+INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) VALUES
+('CRG0000001', 'Prueba-1', 'Esta es la descripción detallada para la prueba'),
+('CRG0000002', 'Prueba-2', 'Esta es la descripción detallada para la prueba 2'),
+('CRG0000003', 'Prueba-3', 'Esta es la descripción detallada para la prueba 3'),
+('CRG0000004', 'Prueba-4', 'Esta es la descripción detallada para la prueba 4'),
+('CRG0000005', 'Prueba-5', 'Esta es la descripción detallada para la prueba 5'),
+('CRG0000006', 'Técnico', 'Encargado de las revisiones y reparaciones'),
+('CRG0000007', 'Vendedor', 'Encargado de ventas y atención al cliente'),
+('CRG0000008', 'Almacenista', 'Encargado del control de inventario'),
+('CRG0000009', 'Delivery', 'Encargado de entregas a domicilio'),
+('CRG0000010', 'Administrador', 'Administrador del sistema'),
+('CRG0000011', 'Soporte Técnico', 'Soporte técnico especializado');
 
-LOCK TABLES `Cargo` WRITE;
-/*!40000 ALTER TABLE `Cargo` DISABLE KEYS */;
-INSERT INTO `Cargo` VALUES ('CRG0000001','Prueba-1','Esta es la descripciÃ³n detallada para la prueba'),('CRG0000002','Prueba-2','Esta es la descripciÃ³n detallada para la prueba 2'),('CRG0000003','Prueba-3','Esta es la descripciÃ³n detallada para la prueba 3'),('CRG0000004','Prueba-4','Esta es la descripciÃ³n detallada para la prueba 4'),('CRG0000005','Prueba-5','Esta es la descripciÃ³n detallada para la prueba 5'),('CRG0000006','TÃ©cnico','Encargado de las revisiones y reparaciones'),('CRG0000007','Vendedor','Encargado de ventas y atenciÃ³n al cliente'),('CRG0000008','Almacenista','Encargado del control de inventario'),('CRG0000009','Delivery','Encargado de entregas a domicilio'),('CRG0000010','Administrador','Administrador del sistema'),('CRG0000011','Soporte TÃ©cnico','Soporte tÃ©cnico especializado');
-/*!40000 ALTER TABLE `Cargo` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Categoria`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Categoria`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Categoria`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -132,22 +135,22 @@ CREATE TABLE `Clase_producto` (
   `Nombre_Clase` varchar(30) NOT NULL,
   PRIMARY KEY (`ID_Clase`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Clase_producto`
---
+-- ----------------------------------------------------
+-- Dumping data for `Clase_producto`
+-- ----------------------------------------------------
+INSERT INTO `Clase_producto` (`ID_Clase`, `Nombre_Clase`) VALUES
+('1', 'Telefono'),
+('2', 'Pantalla'),
+('3', 'Tablet'),
+('4', 'Cargador'),
+('5', 'Funda'),
+('6', 'Audífonos'),
+('7', 'Repuesto');
 
-LOCK TABLES `Clase_producto` WRITE;
-/*!40000 ALTER TABLE `Clase_producto` DISABLE KEYS */;
-INSERT INTO `Clase_producto` VALUES ('1','Telefono'),('2','Pantalla'),('3','Tablet'),('4','Cargador'),('5','Funda'),('6','AudÃ­fonos'),('7','Repuesto');
-/*!40000 ALTER TABLE `Clase_producto` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Cliente`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Cliente`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -158,22 +161,24 @@ CREATE TABLE `Cliente` (
   `Correo_cliente` varchar(120) DEFAULT NULL,
   PRIMARY KEY (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Cliente`
---
+-- ----------------------------------------------------
+-- Dumping data for `Cliente`
+-- ----------------------------------------------------
+INSERT INTO `Cliente` (`ID_cliente`, `Direccion_cliente`, `Celular_cliente`, `Correo_cliente`) VALUES
+('1', 'Barquisimeto', '04145675567', 'ejemplo@gmail.com'),
+('22345678', 'Caracas', '04121234567', 'cliente1@gmail.com'),
+('30548845', 'Barquisimeto', '04142342121', 'ejemplotest@gmail.com'),
+('31143265', 'Rio claro', '04246667263', 'prueba@gmail.com'),
+('33456789', 'Maracaibo', '04241234567', 'cliente2@gmail.com'),
+('44567890', 'Valencia', '04161234567', 'cliente3@gmail.com'),
+('55678901', 'San Cristóbal', '04181234567', 'cliente4@gmail.com'),
+('66789012', 'Puerto La Cruz', '04261234567', 'cliente5@gmail.com'),
+('91754623', 'Barquisimeto', '04243124554', 'ejemplo@gmail.com');
 
-LOCK TABLES `Cliente` WRITE;
-/*!40000 ALTER TABLE `Cliente` DISABLE KEYS */;
-INSERT INTO `Cliente` VALUES ('1','Barquisimeto','04145675567','ejemplo@gmail.com'),('22345678','Caracas','04121234567','cliente1@gmail.com'),('30548845','Barquisimeto','04142342121','ejemplotest@gmail.com'),('31143265','Rio claro','04246667263','prueba@gmail.com'),('33456789','Maracaibo','04241234567','cliente2@gmail.com'),('44567890','Valencia','04161234567','cliente3@gmail.com'),('55678901','San CristÃ³bal','04181234567','cliente4@gmail.com'),('66789012','Puerto La Cruz','04261234567','cliente5@gmail.com'),('91754623','Barquisimeto','04243124554','ejemplo@gmail.com');
-/*!40000 ALTER TABLE `Cliente` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Cliente_juridico`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Cliente_juridico`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente_juridico`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -268,22 +273,32 @@ CREATE TABLE `Detalle_venta` (
   CONSTRAINT `Detalle_venta_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Detalle_venta_ibfk_2` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Detalle_venta`
---
+-- ----------------------------------------------------
+-- Dumping data for `Detalle_venta`
+-- ----------------------------------------------------
+INSERT INTO `Detalle_venta` (`ID_inventario`, `ID_factura`, `Cantidad_articulo`) VALUES
+('1', 'FAC-202606-080A3A', 1),
+('1', 'FAC-202606-111111', 1),
+('1', 'FAC-202606-6993F3', 1),
+('1', 'FAC-202606-8D8B04', 1),
+('1', 'FAC-202606-B1475D', 1),
+('1', 'FAC-202606-DA0967', 4),
+('1', 'FAC-202606-EB6A95', 2),
+('1', 'FAC-202606-FDD009', 2),
+('10', 'FAC-202606-333333', 2),
+('2', 'FAC-202606-222222', 2),
+('3', 'FAC-202606-111111', 1),
+('4', 'FAC-202606-333333', 1),
+('5', 'FAC-202606-444444', 1),
+('6', 'FAC-202606-555555', 1),
+('7', 'FAC-202606-666666', 3),
+('8', 'FAC-202606-777777', 2),
+('9', 'FAC-202606-222222', 1);
 
-LOCK TABLES `Detalle_venta` WRITE;
-/*!40000 ALTER TABLE `Detalle_venta` DISABLE KEYS */;
-INSERT INTO `Detalle_venta` VALUES ('1','FAC-202606-080A3A',1),('1','FAC-202606-111111',1),('1','FAC-202606-6993F3',1),('1','FAC-202606-8D8B04',1),('1','FAC-202606-B1475D',1),('1','FAC-202606-DA0967',4),('1','FAC-202606-EB6A95',2),('1','FAC-202606-FDD009',2),('10','FAC-202606-333333',2),('2','FAC-202606-222222',2),('3','FAC-202606-111111',1),('4','FAC-202606-333333',1),('5','FAC-202606-444444',1),('6','FAC-202606-555555',1),('7','FAC-202606-666666',3),('8','FAC-202606-777777',2),('8','FAC-202608-C6C617',1),('9','FAC-202606-222222',1);
-/*!40000 ALTER TABLE `Detalle_venta` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Empleado`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Empleado`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Empleado`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -299,22 +314,28 @@ CREATE TABLE `Empleado` (
   KEY `ID_cargo` (`ID_cargo`),
   CONSTRAINT `Empleado_ibfk_1` FOREIGN KEY (`ID_cargo`) REFERENCES `Cargo` (`ID_cargo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Empleado`
---
+-- ----------------------------------------------------
+-- Dumping data for `Empleado`
+-- ----------------------------------------------------
+INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_empleado`, `Celular_empleado`, `Correo_empleado`, `Direccion_empleado`) VALUES
+(12345543, 'CRG0000001', 'Anthonio', 'Alvarez', '0415458632', 'Anthonio@gmail.com', 'mucho mas lejos'),
+(12345678, 'CRG0000004', 'empleado', 'gonzalez', '1234567899', 'ejemplo@gmail.com', 'Barquisimeto'),
+(20123456, 'CRG0000007', 'Laura', 'Sánchez', '04121234568', 'laura.sanchez@itu.com', 'Caracas'),
+(20234567, 'CRG0000008', 'Carlos', 'Mendoza', '04161234569', 'carlos.mendoza@itu.com', 'Barquisimeto'),
+(20345678, 'CRG0000009', 'Roberto', 'García', '04141234570', 'roberto.garcia@itu.com', 'Cabudare'),
+(20456789, 'CRG0000010', 'Daniela', 'Rojas', '04241234571', 'daniela.rojas@itu.com', 'Lara'),
+(20567890, 'CRG0000011', 'Fernando', 'López', '04121234572', 'fernando.lopez@itu.com', 'Barquisimeto'),
+(30124556, 'CRG0000005', 'Maria', 'Gonzalez', '04125684514', 'Maria@gmail.com', 'Lejos'),
+(30548845, 'CRG0000005', 'Manuel', 'Prado', '041563555555', 'Manuel@gmail.com', 'ssssssssssssss'),
+(31111554, 'CRG0000004', 'Pedro', 'Perez', '0412564782', 'Jose2@gmail.com', 'Al infinito y mas alla ss'),
+(31111555, 'CRG0000005', 'Jose', 'Gomez', '0412564789', 'Jose@gmail.com', 'Al infinito y mas alla '),
+(32014004, 'CRG0000006', 'Eduin', 'Meneses', '04141233212', 'Prueba@gmail.com', 'Barquisimeto'),
+(1111111111, 'CRG0000006', 'Tomas', 'Colina', '0415478998', 'Tomas@gmail.com', 'mas lejos');
 
-LOCK TABLES `Empleado` WRITE;
-/*!40000 ALTER TABLE `Empleado` DISABLE KEYS */;
-INSERT INTO `Empleado` VALUES (12345543,'CRG0000001','Anthonio','Alvarez','0415458632','Anthonio@gmail.com','mucho mas lejos'),(12345678,'CRG0000004','empleado','gonzalez','1234567899','ejemplo@gmail.com','Barquisimeto'),(20123456,'CRG0000007','Laura','SÃ¡nchez','04121234568','laura.sanchez@itu.com','Caracas'),(20234567,'CRG0000008','Carlos','Mendoza','04161234569','carlos.mendoza@itu.com','Barquisimeto'),(20345678,'CRG0000009','Roberto','GarcÃ­a','04141234570','roberto.garcia@itu.com','Cabudare'),(20456789,'CRG0000010','Daniela','Rojas','04241234571','daniela.rojas@itu.com','Lara'),(20567890,'CRG0000011','Fernando','LÃ³pez','04121234572','fernando.lopez@itu.com','Barquisimeto'),(30124556,'CRG0000005','Maria','Gonzalez','04125684514','Maria@gmail.com','Lejos'),(30548845,'CRG0000005','Manuel','Prado','041563555555','Manuel@gmail.com','ssssssssssssss'),(31111554,'CRG0000004','Pedro','Perez','0412564782','Jose2@gmail.com','Al infinito y mas alla ss'),(31111555,'CRG0000005','Jose','Gomez','0412564789','Jose@gmail.com','Al infinito y mas alla '),(32014004,'CRG0000006','Eduin','Meneses','04141233212','Prueba@gmail.com','Barquisimeto'),(1111111111,'CRG0000006','Tomas','Colina','0415478998','Tomas@gmail.com','mas lejos');
-/*!40000 ALTER TABLE `Empleado` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Entrega`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Entrega`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Entrega`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -331,22 +352,20 @@ CREATE TABLE `Entrega` (
   CONSTRAINT `Entrega_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`),
   CONSTRAINT `Entrega_ibfk_2` FOREIGN KEY (`Cedula_delivery`) REFERENCES `Personal_delivery` (`Cedula_delivery`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Entrega`
---
+-- ----------------------------------------------------
+-- Dumping data for `Entrega`
+-- ----------------------------------------------------
+INSERT INTO `Entrega` (`ID_entrega`, `ID_factura`, `Cedula_delivery`, `Estado_entrega`, `Direccion_entrega`, `Fecha_entrega`) VALUES
+('ENT000001', 'FAC-202606-111111', '25000001', 1, 'Caracas - Av. Principal', '2026-06-03 14:00:00'),
+('ENT000002', 'FAC-202606-222222', '25000002', 1, 'Maracaibo - Calle 5', '2026-06-03 11:30:00'),
+('ENT000003', 'FAC-202606-333333', '25000003', 0, 'Valencia - Urb. Las Acacias', NULL),
+('ENT000004', 'FAC-202606-444444', '25000001', 1, 'San Cristóbal - Centro', '2026-06-06 16:00:00'),
+('ENT000005', 'FAC-202606-555555', '25000004', 0, 'Puerto La Cruz - Paseo Colón', NULL);
 
-LOCK TABLES `Entrega` WRITE;
-/*!40000 ALTER TABLE `Entrega` DISABLE KEYS */;
-INSERT INTO `Entrega` VALUES ('ENT000001','FAC-202606-111111','25000001',1,'Caracas - Av. Principal','2026-06-03 14:00:00'),('ENT000002','FAC-202606-222222','25000002',1,'Maracaibo - Calle 5','2026-06-03 11:30:00'),('ENT000003','FAC-202606-333333','25000003',0,'Valencia - Urb. Las Acacias',NULL),('ENT000004','FAC-202606-444444','25000001',1,'San CristÃ³bal - Centro','2026-06-06 16:00:00'),('ENT000005','FAC-202606-555555','25000004',0,'Puerto La Cruz - Paseo ColÃ³n',NULL);
-/*!40000 ALTER TABLE `Entrega` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Entrega_inventario`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Entrega_inventario`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Entrega_inventario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -416,22 +435,25 @@ CREATE TABLE `Especialidad` (
   `Descripcion_especialidad` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`ID_especialidad`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Especialidad`
---
+-- ----------------------------------------------------
+-- Dumping data for `Especialidad`
+-- ----------------------------------------------------
+INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) VALUES
+('ESP0000001', 'Prueba-1', 'Esta es la descripción detallada para la prueba 1'),
+('ESP0000002', 'Prueba-2', 'Esta es la descripción detallada para la prueba  2'),
+('ESP0000003', 'Prueba-3', 'Esta es la descripción detallada para la prueba 3'),
+('ESP0000004', 'Reparación iOS', 'Especialista en reparación de dispositivos Apple'),
+('ESP0000005', 'Reparación Android', 'Especialista en reparación de dispositivos Android'),
+('ESP0000006', 'Cambio de Pantalla', 'Especialista en cambio de pantallas'),
+('ESP0000007', 'Reparación Placa', 'Especialista en reparación de placas madre'),
+('ESP0000008', 'Software', 'Especialista en problemas de software'),
+('ESP0000009', 'Prueba Uno', 'dddddd'),
+('ESP0000010', 'Rdfdf', 'DFDFD');
 
-LOCK TABLES `Especialidad` WRITE;
-/*!40000 ALTER TABLE `Especialidad` DISABLE KEYS */;
-INSERT INTO `Especialidad` VALUES ('ESP0000001','Prueba-1','Esta es la descripciÃ³n detallada para la prueba 1'),('ESP0000002','Prueba-2','Esta es la descripciÃ³n detallada para la prueba  2'),('ESP0000003','Prueba-3','Esta es la descripciÃ³n detallada para la prueba 3'),('ESP0000004','ReparaciÃ³n iOS','Especialista en reparaciÃ³n de dispositivos Apple'),('ESP0000005','ReparaciÃ³n Android','Especialista en reparaciÃ³n de dispositivos Android'),('ESP0000006','Cambio de Pantalla','Especialista en cambio de pantallas'),('ESP0000007','ReparaciÃ³n Placa','Especialista en reparaciÃ³n de placas madre'),('ESP0000008','Software','Especialista en problemas de software'),('ESP0000009','Prueba Uno','dddddd'),('ESP0000010','Rdfdf','DFDFD');
-/*!40000 ALTER TABLE `Especialidad` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Existencias_productos`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Existencias_productos`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Existencias_productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -447,22 +469,25 @@ CREATE TABLE `Existencias_productos` (
   CONSTRAINT `Existencias_productos_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`),
   CONSTRAINT `fk_existencias_categoria` FOREIGN KEY (`ID_categoria`) REFERENCES `Categoria` (`ID_categoria`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Existencias_productos`
---
+-- ----------------------------------------------------
+-- Dumping data for `Existencias_productos`
+-- ----------------------------------------------------
+INSERT INTO `Existencias_productos` (`ID_inventario`, `ID_producto`, `Existencia`, `Costo_venta`, `ID_categoria`) VALUES
+('1', '1', 10, '800.00', 2),
+('10', '10', 14, '80.00', 2),
+('2', '2', 0, '350.00', 2),
+('3', '3', 8, '950.00', NULL),
+('4', '4', 12, '850.00', NULL),
+('5', '5', 17, '400.00', NULL),
+('6', '6', 5, '450.00', NULL),
+('7', '7', 30, '25.00', NULL),
+('8', '8', 25, '15.00', NULL),
+('9', '9', 10, '120.00', NULL);
 
-LOCK TABLES `Existencias_productos` WRITE;
-/*!40000 ALTER TABLE `Existencias_productos` DISABLE KEYS */;
-INSERT INTO `Existencias_productos` VALUES ('1','1',10,800.00,2),('10','10',14,80.00,2),('2','2',0,350.00,2),('3','3',8,950.00,NULL),('4','4',12,850.00,NULL),('5','5',17,400.00,NULL),('6','6',5,450.00,NULL),('7','7',30,25.00,NULL),('8','8',24,15.00,NULL),('9','9',10,120.00,NULL);
-/*!40000 ALTER TABLE `Existencias_productos` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Fotos_inventario`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Fotos_inventario`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Fotos_inventario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -558,22 +583,74 @@ CREATE TABLE `Interaccion` (
   CONSTRAINT `Interaccion_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
   CONSTRAINT `Interaccion_ibfk_2` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Interaccion`
---
+-- ----------------------------------------------------
+-- Dumping data for `Interaccion`
+-- ----------------------------------------------------
+INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`, `Accion`) VALUES
+('INT000001', 'OS0000001', 32014004, 'Revisión'),
+('INT000002', 'OS0000001', 32014004, 'En proceso'),
+('INT000003', 'OS0000002', 32014004, 'En proceso'),
+('INT000004', 'OS0000003', 20567890, 'Pendiente de repuesto'),
+('INT000005', 'OS0000004', 20567890, 'Limpieza realizada'),
+('INT0000050', 'OS0000020', 32014004, 'Pendiente'),
+('INT0000051', 'OS0000021', 32014004, 'Pendiente'),
+('INT0000052', 'OS0000022', 32014004, 'Pendiente'),
+('INT0000053', 'OS0000023', 32014004, 'Pendiente'),
+('INT0000054', 'OS0000024', 32014004, 'Pendiente'),
+('INT0000055', 'OS0000025', 32014004, 'Pendiente'),
+('INT0000056', 'OS0000026', 32014004, 'Pendiente'),
+('INT0000057', 'OS0000027', 32014004, 'Pendiente'),
+('INT0000058', 'OS0000027', 32014004, 'En proceso'),
+('INT0000059', 'OS0000028', 32014004, 'Pendiente'),
+('INT0000060', 'OS0000028', 32014004, 'En proceso'),
+('INT0000061', 'OS0000029', 32014004, 'Pendiente'),
+('INT0000062', 'OS0000029', 32014004, 'En proceso'),
+('INT0000063', 'OS0000030', 32014004, 'Pendiente'),
+('INT0000064', 'OS0000030', 32014004, 'En proceso'),
+('INT0000065', 'OS0000031', 32014004, 'Pendiente'),
+('INT0000066', 'OS0000031', 32014004, 'En proceso'),
+('INT0000067', 'OS0000032', 32014004, 'Pendiente'),
+('INT0000068', 'OS0000032', 32014004, 'En proceso'),
+('INT0000069', 'OS0000033', 32014004, 'Pendiente'),
+('INT0000070', 'OS0000033', 32014004, 'En proceso'),
+('INT0000071', 'OS0000034', 32014004, 'Pendiente'),
+('INT0000072', 'OS0000034', 32014004, 'En proceso'),
+('INT000008', 'OS0000001', 32014004, 'Revisión'),
+('INT000009', 'OS0000001', 32014004, 'Revisión'),
+('INT000010', 'OS0000005', 32014004, 'Revisión'),
+('INT000011', 'OS0000001', 32014004, 'Revisión'),
+('INT000012', 'OS0000001', 32014004, 'Revisión'),
+('INT000013', 'OS0000004', 32014004, 'En proceso'),
+('INT000014', 'OS0000006', 32014004, 'En proceso'),
+('INT000015', 'OS0000005', 32014004, 'En proceso'),
+('INT000016', 'OS0000006', 32014004, 'En proceso'),
+('INT000017', 'OS0000002', 32014004, 'En proceso'),
+('INT000018', 'OS0000002', 32014004, 'Reparada'),
+('INT000019', 'OS0000001', 32014004, 'En proceso'),
+('INT000020', 'OS0000006', 32014004, 'En proceso'),
+('INT000021', 'OS0000001', 32014004, 'En proceso'),
+('INT000022', 'OS0000005', 32014004, 'Reparada'),
+('INT000023', 'OS0000002', 32014004, 'Revisión'),
+('INT000024', 'OS0000002', 32014004, 'Revisión'),
+('INT000025', 'OS0000002', 32014004, 'Revisión'),
+('INT000026', 'OS0000001', 32014004, 'En proceso'),
+('INT000027', 'OS0000001', 32014004, 'Reparada'),
+('INT000028', 'OS0000001', 32014004, 'Revisión'),
+('INT000029', 'OS0000004', 32014004, 'Reparada'),
+('INT000030', 'OS0000004', 32014004, 'Revisión'),
+('INT000031', 'OS0000034', 32014004, 'Reparada'),
+('INT000032', 'OS0000025', 32014004, 'Reparada'),
+('INT000033', 'OS0000023', 32014004, 'Asignada'),
+('INT000034', 'OS0000033', 32014004, 'En proceso'),
+('INT000035', 'OS0000027', 32014004, 'En proceso'),
+('INT000036', 'OS0000026', 32014004, 'En proceso'),
+('INT000037', 'OS0000025', 32014004, 'Revisión'),
+('INT000038', 'OS0000033', 32014004, 'Asignada');
 
-LOCK TABLES `Interaccion` WRITE;
-/*!40000 ALTER TABLE `Interaccion` DISABLE KEYS */;
-INSERT INTO `Interaccion` VALUES ('INT000001','OS0000001',32014004,'RevisiÃ³n'),('INT000002','OS0000001',32014004,'En proceso'),('INT000003','OS0000002',32014004,'En proceso'),('INT000004','OS0000003',20567890,'Pendiente de repuesto'),('INT000005','OS0000004',20567890,'Limpieza realizada'),('INT0000050','OS0000020',32014004,'Pendiente'),('INT0000051','OS0000021',32014004,'Pendiente'),('INT0000052','OS0000022',32014004,'Pendiente'),('INT0000053','OS0000023',32014004,'Pendiente'),('INT0000054','OS0000024',32014004,'Pendiente'),('INT0000055','OS0000025',32014004,'Pendiente'),('INT0000056','OS0000026',32014004,'Pendiente'),('INT0000057','OS0000027',32014004,'Pendiente'),('INT0000058','OS0000027',32014004,'En proceso'),('INT0000059','OS0000028',32014004,'Pendiente'),('INT0000060','OS0000028',32014004,'En proceso'),('INT0000061','OS0000029',32014004,'Pendiente'),('INT0000062','OS0000029',32014004,'En proceso'),('INT0000063','OS0000030',32014004,'Pendiente'),('INT0000064','OS0000030',32014004,'En proceso'),('INT0000065','OS0000031',32014004,'Pendiente'),('INT0000066','OS0000031',32014004,'En proceso'),('INT0000067','OS0000032',32014004,'Pendiente'),('INT0000068','OS0000032',32014004,'En proceso'),('INT0000069','OS0000033',32014004,'Pendiente'),('INT0000070','OS0000033',32014004,'En proceso'),('INT0000071','OS0000034',32014004,'Pendiente'),('INT0000072','OS0000034',32014004,'En proceso'),('INT000008','OS0000001',32014004,'RevisiÃ³n'),('INT000009','OS0000001',32014004,'RevisiÃ³n'),('INT000010','OS0000005',32014004,'RevisiÃ³n'),('INT000011','OS0000001',32014004,'RevisiÃ³n'),('INT000012','OS0000001',32014004,'RevisiÃ³n'),('INT000013','OS0000004',32014004,'En proceso'),('INT000014','OS0000006',32014004,'En proceso'),('INT000015','OS0000005',32014004,'En proceso'),('INT000016','OS0000006',32014004,'En proceso'),('INT000017','OS0000002',32014004,'En proceso'),('INT000018','OS0000002',32014004,'Reparada'),('INT000019','OS0000001',32014004,'En proceso'),('INT000020','OS0000006',32014004,'En proceso'),('INT000021','OS0000001',32014004,'En proceso'),('INT000022','OS0000005',32014004,'Reparada'),('INT000023','OS0000002',32014004,'RevisiÃ³n'),('INT000024','OS0000002',32014004,'RevisiÃ³n'),('INT000025','OS0000002',32014004,'RevisiÃ³n'),('INT000026','OS0000001',32014004,'En proceso'),('INT000027','OS0000001',32014004,'Reparada'),('INT000028','OS0000001',32014004,'RevisiÃ³n'),('INT000029','OS0000004',32014004,'Reparada'),('INT000030','OS0000004',32014004,'RevisiÃ³n'),('INT000031','OS0000034',32014004,'Reparada'),('INT000032','OS0000025',32014004,'Reparada'),('INT000033','OS0000023',32014004,'Asignada'),('INT000034','OS0000033',32014004,'En proceso'),('INT000035','OS0000027',32014004,'En proceso'),('INT000036','OS0000026',32014004,'En proceso'),('INT000037','OS0000025',32014004,'RevisiÃ³n'),('INT000038','OS0000033',32014004,'Asignada');
-/*!40000 ALTER TABLE `Interaccion` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Lista_compra`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Lista_compra`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Lista_compra`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -613,22 +690,22 @@ CREATE TABLE `Marca_producto` (
   `Nombre_marca` varchar(30) NOT NULL,
   PRIMARY KEY (`ID_marca`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Marca_producto`
---
+-- ----------------------------------------------------
+-- Dumping data for `Marca_producto`
+-- ----------------------------------------------------
+INSERT INTO `Marca_producto` (`ID_marca`, `Nombre_marca`) VALUES
+('1', 'Iphone'),
+('2', 'Iphone'),
+('3', 'Samsung'),
+('4', 'Xiaomi'),
+('5', 'Motorola'),
+('6', 'Huawei'),
+('7', 'LG');
 
-LOCK TABLES `Marca_producto` WRITE;
-/*!40000 ALTER TABLE `Marca_producto` DISABLE KEYS */;
-INSERT INTO `Marca_producto` VALUES ('1','Apple'),('2','Apple'),('3','Samsung'),('4','Xiaomi'),('5','Motorola'),('6','Huawei'),('7','LG');
-/*!40000 ALTER TABLE `Marca_producto` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Metodo_pago`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Metodo_pago`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Metodo_pago`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -651,22 +728,23 @@ CREATE TABLE `Metodo_pago` (
   KEY `idx_factura` (`ID_factura`),
   CONSTRAINT `Metodo_pago_ibfk_1` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Metodo_pago`
---
+-- ----------------------------------------------------
+-- Dumping data for `Metodo_pago`
+-- ----------------------------------------------------
+INSERT INTO `Metodo_pago` (`ID_factura`, `Moneda`, `Fecha_pago`, `Capture`, `Estado_pago`, `Metodo`, `Referencia`, `Monto`, `Aprobado_por`, `Fecha_aprobacion`, `Motivo_rechazo`, `Fecha_rechazo`, `Rechazado_por`) VALUES
+('FAC-202606-080A3A', 'USDT', '2026-06-07 22:32:41', '/static/img/capturas/capture_37ea939d175d47c39ebbd80720b44bc8.png', 'aprobado', 'binance', '123321', '607010.00', '32014004', '2026-06-07 22:32:42', NULL, NULL, NULL),
+('FAC-202606-111111', 'VES', '2026-06-01 11:00:00', '/static/img/capturas/capture_001.png', 'aprobado', 'pago_movil', 'REF001', '950.00', '32014004', '2026-06-01 11:05:00', NULL, NULL, NULL),
+('FAC-202606-222222', 'USD', '2026-06-02 12:00:00', '/static/img/capturas/capture_002.png', 'aprobado', 'binance', 'REF002', '120.00', '32014004', '2026-06-02 12:10:00', NULL, NULL, NULL),
+('FAC-202606-333333', 'USDT', '2026-06-03 10:00:00', '/static/img/capturas/capture_003.png', 'aprobado', 'binance', 'REF003', '1050.00', '32014004', '2026-06-03 10:15:00', NULL, NULL, NULL),
+('FAC-202606-444444', 'VES', '2026-06-04 15:00:00', '/static/img/capturas/capture_004.png', 'pendiente', 'pago_movil', 'REF004', '400.00', NULL, NULL, NULL, NULL, NULL),
+('FAC-202606-555555', 'USD', '2026-06-05 17:00:00', '/static/img/capturas/capture_005.png', 'aprobado', 'zelle', 'REF005', '450.00', '32014004', '2026-06-05 17:30:00', NULL, NULL, NULL),
+('FAC-202606-666666', 'VES', '2026-06-06 13:00:00', '/static/img/capturas/capture_006.png', 'rechazado', 'pago_movil', 'REF006', '75.00', NULL, NULL, 'Monto incorrecto', '2026-06-06 14:00:00', '32014004'),
+('FAC-202606-777777', 'USDT', '2026-06-07 16:00:00', '/static/img/capturas/capture_007.png', 'aprobado', 'binance', 'REF007', '30.00', '32014004', '2026-06-07 16:30:00', NULL, NULL, NULL);
 
-LOCK TABLES `Metodo_pago` WRITE;
-/*!40000 ALTER TABLE `Metodo_pago` DISABLE KEYS */;
-INSERT INTO `Metodo_pago` VALUES ('FAC-202606-080A3A','USDT','2026-06-07 22:32:41','/static/img/capturas/capture_37ea939d175d47c39ebbd80720b44bc8.png','aprobado','binance','123321',607010.00,'32014004','2026-06-07 22:32:42',NULL,NULL,NULL),('FAC-202606-111111','VES','2026-06-01 11:00:00','/static/img/capturas/capture_001.png','aprobado','pago_movil','REF001',950.00,'32014004','2026-06-01 11:05:00',NULL,NULL,NULL),('FAC-202606-222222','USD','2026-06-02 12:00:00','/static/img/capturas/capture_002.png','aprobado','binance','REF002',120.00,'32014004','2026-06-02 12:10:00',NULL,NULL,NULL),('FAC-202606-333333','USDT','2026-06-03 10:00:00','/static/img/capturas/capture_003.png','aprobado','binance','REF003',1050.00,'32014004','2026-06-03 10:15:00',NULL,NULL,NULL),('FAC-202606-444444','VES','2026-06-04 15:00:00','/static/img/capturas/capture_004.png','pendiente','pago_movil','REF004',400.00,NULL,NULL,NULL,NULL,NULL),('FAC-202606-555555','USD','2026-06-05 17:00:00','/static/img/capturas/capture_005.png','aprobado','zelle','REF005',450.00,'32014004','2026-06-05 17:30:00',NULL,NULL,NULL),('FAC-202606-666666','VES','2026-06-06 13:00:00','/static/img/capturas/capture_006.png','rechazado','pago_movil','REF006',75.00,NULL,NULL,'Monto incorrecto','2026-06-06 14:00:00','32014004'),('FAC-202606-777777','USDT','2026-06-07 16:00:00','/static/img/capturas/capture_007.png','aprobado','binance','REF007',30.00,'32014004','2026-06-07 16:30:00',NULL,NULL,NULL),('FAC-202608-C6C617','VES','2026-08-10 14:33:04',NULL,'aprobado','pago_movil','LOCAL-C6C617',15.00,'32014004','2026-08-10 14:33:04',NULL,NULL,NULL);
-/*!40000 ALTER TABLE `Metodo_pago` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Orden_compra`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Orden_compra`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Orden_compra`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -718,22 +796,36 @@ CREATE TABLE `Orden_servicio` (
   CONSTRAINT `Orden_servicio_ibfk_1` FOREIGN KEY (`ID_equipo`) REFERENCES `Equipo` (`ID_equipo`),
   CONSTRAINT `Orden_servicio_ibfk_2` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Orden_servicio`
---
+-- ----------------------------------------------------
+-- Dumping data for `Orden_servicio`
+-- ----------------------------------------------------
+INSERT INTO `Orden_servicio` (`ID_orden_servicio`, `ID_equipo`, `ID_cliente`, `Estado_orden_servicio`, `Descripcion_reparacion`, `Costo_reparacion`, `Nota_orden_servicio`, `Fecha_entrada`, `Fecha_salida`) VALUES
+('OS0000001', 'EQ0000001', '22345678', 'Reparada', 'Mandigo', '250.00', 'Entrega programada', '2026-06-01 09:00:00', '2026-06-11 20:23:26'),
+('OS0000002', 'EQ0000002', '22345678', 'Reparada', 'holaaaaaaaa', '80.00', NULL, '2026-06-02 10:30:00', '2026-06-11 18:36:07'),
+('OS0000003', 'EQ0000003', '44567890', 'Asignada', 'Problema de carga', '45.00', NULL, '2026-06-03 14:00:00', NULL),
+('OS0000004', 'EQ0000004', '55678901', 'Reparada', 'hhhhhhhhhh', '35.00', 'Entrega realizada', '2026-06-04 08:00:00', '2026-06-24 12:00:37'),
+('OS0000005', 'EQ0000005', '66789012', 'Reparada', 'mandigo', '60.00', 'Dejo el cargador', '2026-06-06 11:00:00', '2026-06-11 20:25:24'),
+('OS0000006', 'EQ0000005', '30548845', 'En proceso', 'Diagnóstico', '0.00', 'Equipo sin evaluar', '2026-06-07 09:30:00', NULL),
+('OS0000020', 'EQ0000001', '22345678', 'Pendiente', NULL, '0.00', 'Pendiente revisión de pantalla', '2026-06-24 11:45:27', NULL),
+('OS0000021', 'EQ0000002', '22345678', 'Pendiente', NULL, '0.00', 'Revisar puerto de carga', '2026-06-24 11:45:27', NULL),
+('OS0000022', 'EQ0000003', '44567890', 'Pendiente', NULL, '0.00', 'Falla crítica de encendido', '2026-06-24 11:45:27', NULL),
+('OS0000023', 'EQ0000004', '55678901', 'Asignada', NULL, '0.00', 'Batería inflada', '2026-06-24 11:45:27', NULL),
+('OS0000024', 'EQ0000005', '66789012', 'Pendiente', NULL, '0.00', 'Mantenimiento preventivo completo', '2026-06-24 11:45:27', NULL),
+('OS0000025', 'EQ0000001', '44567890', 'Reparada', 'ssssssssssssss', '0.00', 'Falla de software / bucle de inicio', '2026-06-24 11:45:27', '2026-06-24 17:30:25'),
+('OS0000026', 'EQ0000002', '55678901', 'En proceso', NULL, '0.00', 'Cambiar cristal trasero roto', '2026-06-24 11:45:27', NULL),
+('OS0000027', 'EQ0000001', '22345678', 'En proceso', 'Evaluando circuitos en tarjeta principal', '50.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000028', 'EQ0000002', '22345678', 'En proceso', 'Desensamblando módulo de pantalla dañado', '85.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000029', 'EQ0000003', '44567890', 'En proceso', 'Soldando nuevo pin de carga tipo C', '30.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000030', 'EQ0000004', '55678901', 'En proceso', 'Limpieza por ultrasonido debido a humedad', '40.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000031', 'EQ0000005', '66789012', 'En proceso', 'Reinstalando sistema operativo y firmware', '25.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000032', 'EQ0000001', '33456789', 'En proceso', 'Removiendo corto circuito en etapa de potencia', '60.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000033', 'EQ0000002', '44567890', 'Asignada', 'Removiendo pegamento viejo para cambio de batería', '45.00', NULL, '2026-06-24 11:45:27', NULL),
+('OS0000034', 'EQ0000003', '55678901', 'Reparada', 'lklklklkllklkljj', '20.00', NULL, '2026-06-24 11:45:27', '2026-06-24 12:02:10');
 
-LOCK TABLES `Orden_servicio` WRITE;
-/*!40000 ALTER TABLE `Orden_servicio` DISABLE KEYS */;
-INSERT INTO `Orden_servicio` VALUES ('OS0000001','EQ0000001','22345678','Reparada','Mandigo',250.00,'Entrega programada','2026-06-01 09:00:00','2026-06-11 20:23:26'),('OS0000002','EQ0000002','22345678','Reparada','holaaaaaaaa',80.00,NULL,'2026-06-02 10:30:00','2026-06-11 18:36:07'),('OS0000003','EQ0000003','44567890','Asignada','Problema de carga',45.00,NULL,'2026-06-03 14:00:00',NULL),('OS0000004','EQ0000004','55678901','Reparada','hhhhhhhhhh',35.00,'Entrega realizada','2026-06-04 08:00:00','2026-06-24 12:00:37'),('OS0000005','EQ0000005','66789012','Reparada','mandigo',60.00,'Dejo el cargador','2026-06-06 11:00:00','2026-06-11 20:25:24'),('OS0000006','EQ0000005','30548845','En proceso','DiagnÃ³stico',0.00,'Equipo sin evaluar','2026-06-07 09:30:00',NULL),('OS0000020','EQ0000001','22345678','Pendiente',NULL,0.00,'Pendiente revisiÃ³n de pantalla','2026-06-24 11:45:27',NULL),('OS0000021','EQ0000002','22345678','Pendiente',NULL,0.00,'Revisar puerto de carga','2026-06-24 11:45:27',NULL),('OS0000022','EQ0000003','44567890','Pendiente',NULL,0.00,'Falla crÃ­tica de encendido','2026-06-24 11:45:27',NULL),('OS0000023','EQ0000004','55678901','Asignada',NULL,0.00,'BaterÃ­a inflada','2026-06-24 11:45:27',NULL),('OS0000024','EQ0000005','66789012','Pendiente',NULL,0.00,'Mantenimiento preventivo completo','2026-06-24 11:45:27',NULL),('OS0000025','EQ0000001','44567890','Reparada','ssssssssssssss',0.00,'Falla de software / bucle de inicio','2026-06-24 11:45:27','2026-06-24 17:30:25'),('OS0000026','EQ0000002','55678901','En proceso',NULL,0.00,'Cambiar cristal trasero roto','2026-06-24 11:45:27',NULL),('OS0000027','EQ0000001','22345678','En proceso','Evaluando circuitos en tarjeta principal',50.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000028','EQ0000002','22345678','En proceso','Desensamblando mÃ³dulo de pantalla daÃ±ado',85.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000029','EQ0000003','44567890','En proceso','Soldando nuevo pin de carga tipo C',30.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000030','EQ0000004','55678901','En proceso','Limpieza por ultrasonido debido a humedad',40.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000031','EQ0000005','66789012','En proceso','Reinstalando sistema operativo y firmware',25.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000032','EQ0000001','33456789','En proceso','Removiendo corto circuito en etapa de potencia',60.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000033','EQ0000002','44567890','Asignada','Removiendo pegamento viejo para cambio de baterÃ­a',45.00,NULL,'2026-06-24 11:45:27',NULL),('OS0000034','EQ0000003','55678901','Reparada','lklklklkllklkljj',20.00,NULL,'2026-06-24 11:45:27','2026-06-24 12:02:10');
-/*!40000 ALTER TABLE `Orden_servicio` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Pago_servicio`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Pago_servicio`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Pago_servicio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -771,22 +863,24 @@ CREATE TABLE `Persona_natural` (
   PRIMARY KEY (`ID_cliente`),
   CONSTRAINT `Persona_natural_ibfk_1` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Persona_natural`
---
+-- ----------------------------------------------------
+-- Dumping data for `Persona_natural`
+-- ----------------------------------------------------
+INSERT INTO `Persona_natural` (`ID_cliente`, `Apellido_cliente`, `Nombre_cliente`) VALUES
+('1', 'Sinforoza', 'Petra'),
+('22345678', 'González', 'Carlos'),
+('30548845', 'Test', 'Cliente'),
+('31143265', 'Rodriguez', 'Manuel'),
+('33456789', 'Rodríguez', 'Ana'),
+('44567890', 'Pérez', 'Luis'),
+('55678901', 'Díaz', 'María'),
+('66789012', 'Fernández', 'José'),
+('91754623', 'Test', 'Prueba');
 
-LOCK TABLES `Persona_natural` WRITE;
-/*!40000 ALTER TABLE `Persona_natural` DISABLE KEYS */;
-INSERT INTO `Persona_natural` VALUES ('1','Sinforoza','Petra'),('22345678','GonzÃ¡lez','Carlos'),('30548845','Test','Cliente'),('31143265','Rodriguez','Manuel'),('33456789','RodrÃ­guez','Ana'),('44567890','PÃ©rez','Luis'),('55678901','DÃ­az','MarÃ­a'),('66789012','FernÃ¡ndez','JosÃ©'),('91754623','Test','Prueba');
-/*!40000 ALTER TABLE `Persona_natural` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Personal_delivery`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Personal_delivery`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Personal_delivery`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -796,22 +890,20 @@ CREATE TABLE `Personal_delivery` (
   `Apellido_delivery` varchar(40) NOT NULL,
   PRIMARY KEY (`Cedula_delivery`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Personal_delivery`
---
+-- ----------------------------------------------------
+-- Dumping data for `Personal_delivery`
+-- ----------------------------------------------------
+INSERT INTO `Personal_delivery` (`Cedula_delivery`, `Nombre_delivery`, `Apellido_delivery`) VALUES
+('25000001', 'Pedro', 'Ramírez'),
+('25000002', 'María', 'Torres'),
+('25000003', 'Juan', 'Castillo'),
+('25000004', 'Luisa', 'Morales'),
+('25000005', 'Andrés', 'Vargas');
 
-LOCK TABLES `Personal_delivery` WRITE;
-/*!40000 ALTER TABLE `Personal_delivery` DISABLE KEYS */;
-INSERT INTO `Personal_delivery` VALUES ('25000001','Pedro','RamÃ­rez'),('25000002','MarÃ­a','Torres'),('25000003','Juan','Castillo'),('25000004','Luisa','Morales'),('25000005','AndrÃ©s','Vargas');
-/*!40000 ALTER TABLE `Personal_delivery` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Producto`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Producto`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Producto`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -827,22 +919,25 @@ CREATE TABLE `Producto` (
   CONSTRAINT `Producto_ibfk_1` FOREIGN KEY (`ID_Clase`) REFERENCES `Clase_producto` (`ID_Clase`),
   CONSTRAINT `Producto_ibfk_2` FOREIGN KEY (`ID_marca`) REFERENCES `Marca_producto` (`ID_marca`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Producto`
---
+-- ----------------------------------------------------
+-- Dumping data for `Producto`
+-- ----------------------------------------------------
+INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`, `Descripcion`) VALUES
+('1', '1', '1', 'Iphone 15', 'Iphone 15'),
+('10', '7', '4', 'Batería Xiaomi', 'Batería original Xiaomi'),
+('2', '2', '2', 'Pantalla Generica Iphone 15', 'Pantalla generica para iphone 15'),
+('3', '1', '3', 'Samsung S24', 'Smartphone Samsung S24 256GB'),
+('4', '1', '4', 'Xiaomi 13 Pro', 'Xiaomi 13 Pro 512GB'),
+('5', '2', '3', 'Pantalla S24', 'Pantalla original Samsung S24'),
+('6', '3', '5', 'Moto Tab', 'Tablet Motorola 10 pulgadas'),
+('7', '4', '2', 'Cargador 20W', 'Cargador rápido 20W USB-C'),
+('8', '5', '1', 'Funda iPhone', 'Funda protectora para iPhone'),
+('9', '6', '6', 'FreeBuds Pro', 'Audífonos Huawei FreeBuds Pro');
 
-LOCK TABLES `Producto` WRITE;
-/*!40000 ALTER TABLE `Producto` DISABLE KEYS */;
-INSERT INTO `Producto` VALUES ('1','1','1','Iphone 15','Iphone 15'),('10','7','4','BaterÃ­a Xiaomi','BaterÃ­a original Xiaomi'),('2','2','2','Pantalla Generica Iphone 15','Pantalla generica para iphone 15'),('3','1','3','Samsung S24','Smartphone Samsung S24 256GB'),('4','1','4','Xiaomi 13 Pro','Xiaomi 13 Pro 512GB'),('5','2','3','Pantalla S24','Pantalla original Samsung S24'),('6','3','5','Moto Tab','Tablet Motorola 10 pulgadas'),('7','4','2','Cargador 20W','Cargador rÃ¡pido 20W USB-C'),('8','5','1','Funda iPhone','Funda protectora para iPhone'),('9','6','6','FreeBuds Pro','AudÃ­fonos Huawei FreeBuds Pro');
-/*!40000 ALTER TABLE `Producto` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Proveedor`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Proveedor`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Proveedor`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -854,24 +949,24 @@ CREATE TABLE `Proveedor` (
   `Correo_proveedor` varchar(120) DEFAULT NULL,
   `Direccion_proveedor` varchar(60) DEFAULT NULL,
   `Limite_credito` decimal(10,2) DEFAULT NULL,
-  PRIMARY KEY (`ID_proveedor`)
+  `Rif_proveedor` varchar(15) DEFAULT NULL COMMENT 'RIF del proveedor (ej: J-12345678-9)',
+  PRIMARY KEY (`ID_proveedor`),
+  UNIQUE KEY `Rif_proveedor` (`Rif_proveedor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Proveedor`
---
+-- ----------------------------------------------------
+-- Dumping data for `Proveedor`
+-- ----------------------------------------------------
+INSERT INTO `Proveedor` (`ID_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
+(1, 'Distribuidora Tech S.A.', 'Mayorista', '04121234500', 'ventas@distritech.com', 'Caracas', '50000.00'),
+(2, 'Importaciones Digitales C.A.', 'Importador', '04141234501', 'contacto@importdigital.com', 'Maracaibo', '75000.00'),
+(3, 'Repuestos Express', 'Minorista', '04241234502', 'info@repuestosexpress.com', 'Valencia', '25000.00'),
+(4, 'Global Parts', 'Mayorista', '04161234503', 'sales@globalparts.com', 'Barquisimeto', '100000.00'),
+(5, 'Suministros Móviles', 'Distribuidor', '04181234504', 'ventas@suministrosmoviles.com', 'San Cristóbal', '30000.00');
 
-LOCK TABLES `Proveedor` WRITE;
-/*!40000 ALTER TABLE `Proveedor` DISABLE KEYS */;
-INSERT INTO `Proveedor` VALUES (1,'Distribuidora Tech S.A.','Mayorista','04121234500','ventas@distritech.com','Caracas',50000.00),(2,'Importaciones Digitales C.A.','Importador','04141234501','contacto@importdigital.com','Maracaibo',75000.00),(3,'Repuestos Express','Minorista','04241234502','info@repuestosexpress.com','Valencia',25000.00),(4,'Global Parts','Mayorista','04161234503','sales@globalparts.com','Barquisimeto',100000.00),(5,'Suministros MÃ³viles','Distribuidor','04181234504','ventas@suministrosmoviles.com','San CristÃ³bal',30000.00);
-/*!40000 ALTER TABLE `Proveedor` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Repuestos_usados`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Repuestos_usados`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Repuestos_usados`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -912,22 +1007,25 @@ CREATE TABLE `Suministra` (
   CONSTRAINT `Suministra_ibfk_1` FOREIGN KEY (`ID_proveedor`) REFERENCES `Proveedor` (`ID_proveedor`),
   CONSTRAINT `Suministra_ibfk_2` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Suministra`
---
+-- ----------------------------------------------------
+-- Dumping data for `Suministra`
+-- ----------------------------------------------------
+INSERT INTO `Suministra` (`ID_proveedor`, `ID_producto`, `Costo_producto`) VALUES
+(1, '1', '650.00'),
+(1, '3', '800.00'),
+(2, '2', '280.00'),
+(2, '4', '700.00'),
+(3, '5', '320.00'),
+(3, '7', '18.00'),
+(4, '6', '380.00'),
+(4, '9', '95.00'),
+(5, '10', '65.00'),
+(5, '8', '10.00');
 
-LOCK TABLES `Suministra` WRITE;
-/*!40000 ALTER TABLE `Suministra` DISABLE KEYS */;
-INSERT INTO `Suministra` VALUES (1,'1',650.00),(1,'3',800.00),(2,'2',280.00),(2,'4',700.00),(3,'5',320.00),(3,'7',18.00),(4,'6',380.00),(4,'9',95.00),(5,'10',65.00),(5,'8',10.00);
-/*!40000 ALTER TABLE `Suministra` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Test`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Test`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Test`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -938,22 +1036,148 @@ CREATE TABLE `Test` (
   `Resultado_test` varchar(300) DEFAULT NULL,
   PRIMARY KEY (`ID_test`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Test`
---
+-- ----------------------------------------------------
+-- Dumping data for `Test`
+-- ----------------------------------------------------
+INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`) VALUES
+('TST000001', 1, 'Prueba de Batería', 'Funciona'),
+('TST000002', 1, 'Prueba de Pantalla', 'No funciona'),
+('TST000003', 1, 'Prueba de Cámara', 'SIn revisar'),
+('TST000004', 4, 'Prueba de Botones', 'Todos los botones funcionales'),
+('TST000005', 5, 'Prueba de Audio', 'Audio y micrófono operativos'),
+('TST000006', 1, 'Descripsion', 'la pantalla se mojo por dentro '),
+('TST000007', 1, 'Descripsion2', 'pruebaaaaaassssssssssssssssssssssssssssssss'),
+('TST000008', 1, 'Botón power', 'Funciona'),
+('TST000009', 1, 'Pantalla', 'No funciona'),
+('TST000010', 2, 'Botón de power', 'Funciona'),
+('TST000011', 2, 'LCD', 'Funciona'),
+('TST000012', 2, 'Botones inferiores', 'Funciona'),
+('TST000013', 3, 'Botón de power', 'Funciona'),
+('TST000014', 3, 'Cornetas', 'Funciona'),
+('TST000015', 3, 'Mica', 'Funciona'),
+('TST000016', 3, 'LCD', 'Funciona'),
+('TST000017', 3, 'Táctil', 'Funciona'),
+('TST000018', 3, 'Botones laterales', 'Funciona'),
+('TST000019', 3, 'Botones inferiores', 'Funciona'),
+('TST000020', 3, 'Puerto de carga', 'Funciona'),
+('TST000021', 3, 'WiFi', 'Funciona'),
+('TST000022', 3, 'Cámara trasera', 'Funciona'),
+('TST000023', 3, 'Cámara delantera', 'Funciona'),
+('TST000024', 3, 'Flash', 'Funciona'),
+('TST000025', 3, 'Señal auricular', 'Funciona'),
+('TST000026', 3, 'Micrófono', 'Funciona'),
+('TST000027', 3, 'Sensor de proximidad', 'Funciona'),
+('TST000028', 3, 'Face ID', 'Funciona'),
+('TST000029', 3, 'Bluetooth', 'Funciona'),
+('TST000030', 3, 'Caja', 'Funciona'),
+('TST000031', 3, 'Cargador', 'Funciona'),
+('TST000032', 3, 'Cable', 'Funciona'),
+('TST000033', 3, 'Audífonos', 'Funciona'),
+('TST000034', 3, 'Manuales', 'Funciona'),
+('TST000035', 1, 'Manuales', 'Funciona'),
+('TST000036', 4, 'Observaciones', 'ddddddddddddddddddddddddddddd'),
+('TST000037', 5, 'Observaciones', 'ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),
+('TST000038', 1, 'Btn power', 'Funciona'),
+('TST000039', 1, 'Cornetas', 'Funciona'),
+('TST000040', 1, 'Mica', 'Funciona'),
+('TST000041', 1, 'LCD', 'Funciona'),
+('TST000042', 1, 'Tactil', 'Funciona'),
+('TST000043', 1, 'Btn vol', 'Funciona'),
+('TST000044', 1, 'Btn sil', 'Funciona'),
+('TST000045', 1, 'Puerto carga', 'Funciona'),
+('TST000046', 1, 'Wifi', 'Funciona'),
+('TST000047', 1, 'Cam pos', 'Funciona'),
+('TST000048', 1, 'Flash', 'Funciona'),
+('TST000049', 1, 'Senal', 'Funciona'),
+('TST000050', 1, 'Sensor proximidad', 'Funciona'),
+('TST000051', 1, 'Face id', 'Funciona'),
+('TST000052', 1, 'Bluetooth', 'Funciona'),
+('TST000053', 1, 'Caja', 'Funciona'),
+('TST000054', 1, 'Cargador', 'Funciona'),
+('TST000055', 1, 'Cable', 'Funciona'),
+('TST000056', 1, 'Auricular', 'Funciona'),
+('TST000057', 1, 'Manuales', 'Funciona'),
+('TST000058', 1, 'Observaciones', 'ssssssssssssssssssssssssssssssssss'),
+('TST000059', 2, 'Btn power', 'No funciona'),
+('TST000060', 2, 'Cornetas', 'No funciona'),
+('TST000061', 2, 'Mica', 'No funciona'),
+('TST000062', 2, 'LCD', 'No funciona'),
+('TST000063', 2, 'Tactil', 'No funciona'),
+('TST000064', 2, 'Btn vol', 'No funciona'),
+('TST000065', 2, 'Btn sil', 'No funciona'),
+('TST000066', 2, 'Puerto carga', 'No funciona'),
+('TST000067', 2, 'Wifi', 'No funciona'),
+('TST000068', 2, 'Cam pos', 'No funciona'),
+('TST000069', 2, 'Cam del', 'No funciona'),
+('TST000070', 2, 'Flash', 'No funciona'),
+('TST000071', 2, 'Senal', 'No funciona'),
+('TST000072', 2, 'Microfono', 'No funciona'),
+('TST000073', 2, 'Sensor proximidad', 'No funciona'),
+('TST000074', 2, 'Face id', 'No funciona'),
+('TST000075', 2, 'Bluetooth', 'No funciona'),
+('TST000076', 2, 'Caja', 'No funciona'),
+('TST000077', 2, 'Cargador', 'No funciona'),
+('TST000078', 2, 'Cable', 'No funciona'),
+('TST000079', 2, 'Auricular', 'No funciona'),
+('TST000080', 2, 'Manuales', 'No funciona'),
+('TST000081', 2, 'Observaciones', 'ssssssssssssssssssssss'),
+('TST000082', 3, 'Tactil', 'Funciona'),
+('TST000083', 3, 'Btn sil', 'Funciona'),
+('TST000084', 6, 'Btn power', 'Funciona'),
+('TST000085', 6, 'Cornetas', 'Funciona'),
+('TST000086', 6, 'Mica', 'Funciona'),
+('TST000087', 6, 'LCD', 'Funciona'),
+('TST000088', 6, 'Tactil', 'Funciona'),
+('TST000089', 6, 'Btn vol', 'Funciona'),
+('TST000090', 6, 'Btn sil', 'Funciona'),
+('TST000091', 6, 'Puerto carga', 'Funciona'),
+('TST000092', 6, 'Wifi', 'Funciona'),
+('TST000093', 6, 'Cam pos', 'Funciona'),
+('TST000094', 6, 'Cam del', 'Funciona'),
+('TST000095', 6, 'Flash', 'Funciona'),
+('TST000096', 6, 'Senal', 'Funciona'),
+('TST000097', 6, 'Microfono', 'Funciona'),
+('TST000098', 6, 'Sensor proximidad', 'Funciona'),
+('TST000099', 6, 'Face id', 'Funciona'),
+('TST000100', 6, 'Bluetooth', 'Funciona');
 
-LOCK TABLES `Test` WRITE;
-/*!40000 ALTER TABLE `Test` DISABLE KEYS */;
-INSERT INTO `Test` VALUES ('TST000001',1,'Prueba de BaterÃ­a','Funciona'),('TST000002',1,'Prueba de Pantalla','No funciona'),('TST000003',1,'Prueba de CÃ¡mara','SIn revisar'),('TST000004',4,'Prueba de Botones','Todos los botones funcionales'),('TST000005',5,'Prueba de Audio','Audio y micrÃ³fono operativos'),('TST000006',1,'Descripsion','la pantalla se mojo por dentro '),('TST000007',1,'Descripsion2','pruebaaaaaassssssssssssssssssssssssssssssss'),('TST000008',1,'BotÃ³n power','Funciona'),('TST000009',1,'Pantalla','No funciona'),('TST000010',2,'BotÃ³n de power','Funciona'),('TST000011',2,'LCD','Funciona'),('TST000012',2,'Botones inferiores','Funciona'),('TST000013',3,'BotÃ³n de power','Funciona'),('TST000014',3,'Cornetas','Funciona'),('TST000015',3,'Mica','Funciona'),('TST000016',3,'LCD','Funciona'),('TST000017',3,'TÃ¡ctil','Funciona'),('TST000018',3,'Botones laterales','Funciona'),('TST000019',3,'Botones inferiores','Funciona'),('TST000020',3,'Puerto de carga','Funciona'),('TST000021',3,'WiFi','Funciona'),('TST000022',3,'CÃ¡mara trasera','Funciona'),('TST000023',3,'CÃ¡mara delantera','Funciona'),('TST000024',3,'Flash','Funciona'),('TST000025',3,'SeÃ±al auricular','Funciona'),('TST000026',3,'MicrÃ³fono','Funciona'),('TST000027',3,'Sensor de proximidad','Funciona'),('TST000028',3,'Face ID','Funciona'),('TST000029',3,'Bluetooth','Funciona'),('TST000030',3,'Caja','Funciona'),('TST000031',3,'Cargador','Funciona'),('TST000032',3,'Cable','Funciona'),('TST000033',3,'AudÃ­fonos','Funciona'),('TST000034',3,'Manuales','Funciona'),('TST000035',1,'Manuales','Funciona'),('TST000036',4,'Observaciones','ddddddddddddddddddddddddddddd'),('TST000037',5,'Observaciones','ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss'),('TST000038',1,'Btn power','Funciona'),('TST000039',1,'Cornetas','Funciona'),('TST000040',1,'Mica','Funciona'),('TST000041',1,'LCD','Funciona'),('TST000042',1,'Tactil','Funciona'),('TST000043',1,'Btn vol','Funciona'),('TST000044',1,'Btn sil','Funciona'),('TST000045',1,'Puerto carga','Funciona'),('TST000046',1,'Wifi','Funciona'),('TST000047',1,'Cam pos','Funciona'),('TST000048',1,'Flash','Funciona'),('TST000049',1,'Senal','Funciona'),('TST000050',1,'Sensor proximidad','Funciona'),('TST000051',1,'Face id','Funciona'),('TST000052',1,'Bluetooth','Funciona'),('TST000053',1,'Caja','Funciona'),('TST000054',1,'Cargador','Funciona'),('TST000055',1,'Cable','Funciona'),('TST000056',1,'Auricular','Funciona'),('TST000057',1,'Manuales','Funciona'),('TST000058',1,'Observaciones','ssssssssssssssssssssssssssssssssss'),('TST000059',2,'Btn power','No funciona'),('TST000060',2,'Cornetas','No funciona'),('TST000061',2,'Mica','No funciona'),('TST000062',2,'LCD','No funciona'),('TST000063',2,'Tactil','No funciona'),('TST000064',2,'Btn vol','No funciona'),('TST000065',2,'Btn sil','No funciona'),('TST000066',2,'Puerto carga','No funciona'),('TST000067',2,'Wifi','No funciona'),('TST000068',2,'Cam pos','No funciona'),('TST000069',2,'Cam del','No funciona'),('TST000070',2,'Flash','No funciona'),('TST000071',2,'Senal','No funciona'),('TST000072',2,'Microfono','No funciona'),('TST000073',2,'Sensor proximidad','No funciona'),('TST000074',2,'Face id','No funciona'),('TST000075',2,'Bluetooth','No funciona'),('TST000076',2,'Caja','No funciona'),('TST000077',2,'Cargador','No funciona'),('TST000078',2,'Cable','No funciona'),('TST000079',2,'Auricular','No funciona'),('TST000080',2,'Manuales','No funciona'),('TST000081',2,'Observaciones','ssssssssssssssssssssss'),('TST000082',3,'Tactil','Funciona'),('TST000083',3,'Btn sil','Funciona'),('TST000084',6,'Btn power','Funciona'),('TST000085',6,'Cornetas','Funciona'),('TST000086',6,'Mica','Funciona'),('TST000087',6,'LCD','Funciona'),('TST000088',6,'Tactil','Funciona'),('TST000089',6,'Btn vol','Funciona'),('TST000090',6,'Btn sil','Funciona'),('TST000091',6,'Puerto carga','Funciona'),('TST000092',6,'Wifi','Funciona'),('TST000093',6,'Cam pos','Funciona'),('TST000094',6,'Cam del','Funciona'),('TST000095',6,'Flash','Funciona'),('TST000096',6,'Senal','Funciona'),('TST000097',6,'Microfono','Funciona'),('TST000098',6,'Sensor proximidad','Funciona'),('TST000099',6,'Face id','Funciona'),('TST000100',6,'Bluetooth','Funciona'),('TST000101',6,'Caja','Funciona'),('TST000102',6,'Cargador','Funciona'),('TST000103',6,'Cable','Funciona'),('TST000104',6,'Auricular','Funciona'),('TST000105',6,'Manuales','Funciona'),('TST000106',6,'Observaciones','dsdsdsdsdsdsdsdsd'),('TST000107',1,'Btn power','Funciona'),('TST000108',1,'Observaciones','dddddddddddd'),('TST000109',1,'Btn power','Funciona'),('TST000110',1,'Cornetas','Funciona'),('TST000111',1,'Mica','Funciona'),('TST000112',1,'LCD','Funciona'),('TST000113',1,'Tactil','Funciona'),('TST000114',1,'Btn vol','Funciona'),('TST000115',1,'Btn sil','Funciona'),('TST000116',1,'Puerto carga','Funciona'),('TST000117',1,'Wifi','Funciona'),('TST000118',1,'Cam pos','Funciona'),('TST000119',1,'Cam del','Funciona'),('TST000120',1,'Flash','Funciona'),('TST000121',1,'Senal','Funciona'),('TST000122',1,'Microfono','Funciona'),('TST000123',1,'Sensor proximidad','Funciona'),('TST000124',1,'Face id','Funciona'),('TST000125',1,'Bluetooth','Funciona'),('TST000126',1,'Caja','Funciona'),('TST000127',1,'Cargador','Funciona'),('TST000128',1,'Cable','Funciona'),('TST000129',1,'Auricular','Funciona'),('TST000130',1,'Manuales','Funciona'),('TST000131',1,'Observaciones','sssssssssssssssssssssssss');
-/*!40000 ALTER TABLE `Test` ENABLE KEYS */;
-UNLOCK TABLES;
+INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`) VALUES
+('TST000101', 6, 'Caja', 'Funciona'),
+('TST000102', 6, 'Cargador', 'Funciona'),
+('TST000103', 6, 'Cable', 'Funciona'),
+('TST000104', 6, 'Auricular', 'Funciona'),
+('TST000105', 6, 'Manuales', 'Funciona'),
+('TST000106', 6, 'Observaciones', 'dsdsdsdsdsdsdsdsd'),
+('TST000107', 1, 'Btn power', 'Funciona'),
+('TST000108', 1, 'Observaciones', 'dddddddddddd'),
+('TST000109', 1, 'Btn power', 'Funciona'),
+('TST000110', 1, 'Cornetas', 'Funciona'),
+('TST000111', 1, 'Mica', 'Funciona'),
+('TST000112', 1, 'LCD', 'Funciona'),
+('TST000113', 1, 'Tactil', 'Funciona'),
+('TST000114', 1, 'Btn vol', 'Funciona'),
+('TST000115', 1, 'Btn sil', 'Funciona'),
+('TST000116', 1, 'Puerto carga', 'Funciona'),
+('TST000117', 1, 'Wifi', 'Funciona'),
+('TST000118', 1, 'Cam pos', 'Funciona'),
+('TST000119', 1, 'Cam del', 'Funciona'),
+('TST000120', 1, 'Flash', 'Funciona'),
+('TST000121', 1, 'Senal', 'Funciona'),
+('TST000122', 1, 'Microfono', 'Funciona'),
+('TST000123', 1, 'Sensor proximidad', 'Funciona'),
+('TST000124', 1, 'Face id', 'Funciona'),
+('TST000125', 1, 'Bluetooth', 'Funciona'),
+('TST000126', 1, 'Caja', 'Funciona'),
+('TST000127', 1, 'Cargador', 'Funciona'),
+('TST000128', 1, 'Cable', 'Funciona'),
+('TST000129', 1, 'Auricular', 'Funciona'),
+('TST000130', 1, 'Manuales', 'Funciona'),
+('TST000131', 1, 'Observaciones', 'sssssssssssssssssssssssss');
 
---
--- Table structure for table `Test_realizados_interaccion`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Test_realizados_interaccion`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Test_realizados_interaccion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1061,51 +1285,40 @@ CREATE TABLE `Venta` (
   CONSTRAINT `Venta_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
   CONSTRAINT `Venta_ibfk_2` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Venta`
---
+-- ----------------------------------------------------
+-- Dumping data for `Venta`
+-- ----------------------------------------------------
+INSERT INTO `Venta` (`ID_factura`, `ID_empleado`, `ID_cliente`, `Moneda`, `Fecha_venta`) VALUES
+('FAC-202606-080A3A', NULL, '30548845', 'USDT', '2026-06-07 22:25:27'),
+('FAC-202606-111111', 20123456, '22345678', 'VES', '2026-06-01 10:30:00'),
+('FAC-202606-222222', 20123456, '33456789', 'USD', '2026-06-02 11:45:00'),
+('FAC-202606-333333', 20345678, '44567890', 'USDT', '2026-06-03 09:20:00'),
+('FAC-202606-444444', 20345678, '55678901', 'VES', '2026-06-04 14:15:00'),
+('FAC-202606-555555', 20123456, '66789012', 'USD', '2026-06-05 16:30:00'),
+('FAC-202606-666666', 20345678, '30548845', 'VES', '2026-06-06 12:00:00'),
+('FAC-202606-6993F3', NULL, '30548845', 'VES', '2026-06-07 21:30:03'),
+('FAC-202606-777777', 20123456, '31143265', 'USDT', '2026-06-07 15:45:00'),
+('FAC-202606-8D8B04', NULL, '30548845', 'VES', '2026-06-07 22:17:23'),
+('FAC-202606-B1475D', NULL, '30548845', 'USD', '2026-06-07 21:35:57'),
+('FAC-202606-DA0967', NULL, '30548845', 'VES', '2026-06-07 20:12:28'),
+('FAC-202606-EB6A95', NULL, '30548845', 'VES', '2026-06-07 20:50:37'),
+('FAC-202606-FDD009', NULL, '30548845', 'USD', '2026-06-07 22:09:06');
 
-LOCK TABLES `Venta` WRITE;
-/*!40000 ALTER TABLE `Venta` DISABLE KEYS */;
-INSERT INTO `Venta` VALUES ('FAC-202606-080A3A',NULL,'30548845','USDT','2026-06-07 22:25:27'),('FAC-202606-111111',20123456,'22345678','VES','2026-06-01 10:30:00'),('FAC-202606-222222',20123456,'33456789','USD','2026-06-02 11:45:00'),('FAC-202606-333333',20345678,'44567890','USDT','2026-06-03 09:20:00'),('FAC-202606-444444',20345678,'55678901','VES','2026-06-04 14:15:00'),('FAC-202606-555555',20123456,'66789012','USD','2026-06-05 16:30:00'),('FAC-202606-666666',20345678,'30548845','VES','2026-06-06 12:00:00'),('FAC-202606-6993F3',NULL,'30548845','VES','2026-06-07 21:30:03'),('FAC-202606-777777',20123456,'31143265','USDT','2026-06-07 15:45:00'),('FAC-202606-8D8B04',NULL,'30548845','VES','2026-06-07 22:17:23'),('FAC-202606-B1475D',NULL,'30548845','USD','2026-06-07 21:35:57'),('FAC-202606-DA0967',NULL,'30548845','VES','2026-06-07 20:12:28'),('FAC-202606-EB6A95',NULL,'30548845','VES','2026-06-07 20:50:37'),('FAC-202606-FDD009',NULL,'30548845','USD','2026-06-07 22:09:06'),('FAC-202608-C6C617',32014004,'31143265','VES','2026-08-10 14:33:04');
-/*!40000 ALTER TABLE `Venta` ENABLE KEYS */;
-UNLOCK TABLES;
 
---
--- Temporary view structure for view `view_tradein_equipos`
---
+-- ============================================
+-- VISTAS
+-- ============================================
 
-DROP TABLE IF EXISTS `view_tradein_equipos`;
-/*!50001 DROP VIEW IF EXISTS `view_tradein_equipos`*/;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `view_tradein_equipos` AS SELECT 
- 1 AS `ID_producto`,
- 1 AS `Costo_venta`,
- 1 AS `N_modelo`,
- 1 AS `Existencia`,
- 1 AS `Marca`,
- 1 AS `Clase`*/;
-SET character_set_client = @saved_cs_client;
 
---
--- Dumping events for database 'ituaccesoriobd'
---
+-- ============================================
+-- PROCEDIMIENTOS ALMACENADOS
+-- ============================================
 
---
--- Dumping routines for database 'ituaccesoriobd'
---
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_cargo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+-- ----------------------------------------------------
+-- Procedure structure for `Crear_cargo`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `Crear_cargo`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_cargo`(
 IN p_Nombre_cargo VARCHAR(30),
@@ -1139,19 +1352,11 @@ VALUES (nuevo_id, p_Nombre_cargo, p_Descripcion_cargo);
 SELECT * FROM `Cargo` WHERE `ID_cargo` = nuevo_id;
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Crear_especialidad` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `Crear_especialidad`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `Crear_especialidad`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Crear_especialidad`(
 IN p_Nombre_especialidad VARCHAR(30),
@@ -1184,19 +1389,11 @@ VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
 SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Listar_ordenes_servicio_con_equipo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `Listar_ordenes_servicio_con_equipo`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `Listar_ordenes_servicio_con_equipo`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `Listar_ordenes_servicio_con_equipo`(
 -- Parámetros opcionales para filtrar
@@ -1260,19 +1457,11 @@ ORDER BY os.Fecha_entrada DESC;
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_asignar_orden_servicio` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_asignar_orden_servicio`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_asignar_orden_servicio`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_asignar_orden_servicio`(
 IN p_ID_orden_servicio VARCHAR(10),
@@ -1355,19 +1544,11 @@ v_nuevo_id_interaccion AS ID_interaccion,
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_liberar_orden_servicio` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_liberar_orden_servicio`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_liberar_orden_servicio`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_liberar_orden_servicio`(
 IN p_ID_orden_servicio VARCHAR(10),
@@ -1437,19 +1618,11 @@ p_ID_orden_servicio AS ID_orden_servicio,
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_fotos_orden` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_registrar_fotos_orden`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_fotos_orden`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_fotos_orden`(
 IN p_ID_orden_servicio VARCHAR(10),
@@ -1527,19 +1700,11 @@ v_items_count AS Total_fotos_registradas,
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_reparacion` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_registrar_reparacion`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_reparacion`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_reparacion`(
 IN p_ID_orden_servicio VARCHAR(10),
@@ -1675,19 +1840,11 @@ IFNULL(v_items_count, 0) AS Total_repuestos_usados,
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_revision_test` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_registrar_revision_test`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_revision_test`;
 DELIMITER ;;
 CREATE DEFINER=`user_flask`@`%` PROCEDURE `sp_registrar_revision_test`(
 IN p_ID_orden_servicio VARCHAR(10),
@@ -1782,176 +1939,25 @@ SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests
 
 END ;;
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_registrar_trade_in_con_tests` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`%` PROCEDURE `sp_registrar_trade_in_con_tests`(
-    IN p_ID_empleado INT,
-    IN p_ID_cliente VARCHAR(10),
-    IN p_ID_producto VARCHAR(10),
-    IN p_ID_equipo VARCHAR(16),
-    IN p_Color VARCHAR(20),
-    IN p_Capacidad VARCHAR(20),
-    IN p_Clave INT,
-    IN p_Patron VARCHAR(60),
-    IN p_Valor_pagado DECIMAL(10,2),
-    IN p_Observaciones VARCHAR(300),
-    IN p_Json_Fotos JSON,
-    IN p_Json_Tests JSON
-)
-BEGIN
-    DECLARE v_trade_in_id VARCHAR(10);
-    DECLARE v_ultimo_id VARCHAR(10);
-    DECLARE v_siguiente_num INT;
-    DECLARE v_items_count INT DEFAULT 0;
-    DECLARE i INT DEFAULT 0;
-    DECLARE v_foto_url VARCHAR(255);
-    DECLARE v_nombre_test VARCHAR(30);
-    DECLARE v_resultado_test VARCHAR(300);
-    DECLARE v_ultimo_id_test VARCHAR(10);
-    DECLARE v_siguiente_num_test INT;
-    DECLARE v_nuevo_id_test VARCHAR(10);
-    DECLARE v_foto_id VARCHAR(10);
-    DECLARE v_ultimo_id_foto VARCHAR(10);
-    DECLARE v_siguiente_num_foto INT;
 
-    -- Manejo de errores
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
 
-    START TRANSACTION;
+-- ============================================
+-- FUNCIONES
+-- ============================================
 
-    -- 1. Verificar si el equipo ya existe
-    IF EXISTS (SELECT 1 FROM Equipo WHERE ID_equipo = p_ID_equipo) THEN
-        -- Actualizar equipo existente
-        UPDATE Equipo 
-        SET ID_producto = p_ID_producto,
-            Color = COALESCE(p_Color, Color),
-            Capacidad = COALESCE(p_Capacidad, Capacidad),
-            Clave = COALESCE(p_Clave, Clave),
-            Patron = COALESCE(p_Patron, Patron)
-        WHERE ID_equipo = p_ID_equipo;
-    ELSE
-        -- Crear nuevo equipo
-        INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron)
-        VALUES (p_ID_equipo, p_ID_producto, p_Color, p_Capacidad, p_Clave, p_Patron);
-    END IF;
 
-    -- 2. Generar ID para Trade_in
-    SELECT MAX(ID_Trade_in) INTO v_ultimo_id FROM Trade_in;
-    IF v_ultimo_id IS NULL THEN
-        SET v_siguiente_num = 1;
-    ELSE
-        SET v_siguiente_num = CAST(SUBSTRING(v_ultimo_id, 4) AS UNSIGNED) + 1;
-    END IF;
-    SET v_trade_in_id = CONCAT('TRD', LPAD(v_siguiente_num, 6, '0'));
+-- ============================================
+-- TRIGGERS
+-- ============================================
 
-    -- 3. Insertar Trade_in
-    INSERT INTO Trade_in (ID_Trade_in, ID_empleado, ID_cliente, ID_equipo, Numero_utilizado, Fecha_realizado, cotizacion)
-    VALUES (v_trade_in_id, p_ID_empleado, p_ID_cliente, p_ID_equipo, 0, NOW(), p_Valor_pagado);
 
-    -- 4. Guardar fotos
-    IF p_Json_Fotos IS NOT NULL AND JSON_LENGTH(p_Json_Fotos) > 0 THEN
-        SET v_items_count = JSON_LENGTH(p_Json_Fotos);
-        SET i = 0;
-        
-        WHILE i < v_items_count DO
-            SET v_foto_url = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Fotos, CONCAT('$[', i, ']')));
-            
-            -- Generar ID para foto
-            SELECT MAX(ID_foto_trade_in) INTO v_ultimo_id_foto FROM Fotos_trade_in;
-            IF v_ultimo_id_foto IS NULL THEN
-                SET v_siguiente_num_foto = 1;
-            ELSE
-                SET v_siguiente_num_foto = CAST(SUBSTRING(v_ultimo_id_foto, 4) AS UNSIGNED) + 1;
-            END IF;
-            SET v_foto_id = CONCAT('FTI', LPAD(v_siguiente_num_foto, 7, '0'));
-            
-            INSERT INTO Fotos_trade_in (ID_foto_trade_in, ID_Trade_in, Foto_trade_in)
-            VALUES (v_foto_id, v_trade_in_id, v_foto_url);
-            
-            SET i = i + 1;
-        END WHILE;
-    END IF;
+-- ============================================
+-- EVENTOS
+-- ============================================
 
-    -- 5. Guardar tests
-    IF p_Json_Tests IS NOT NULL AND JSON_LENGTH(p_Json_Tests) > 0 THEN
-        SET v_items_count = JSON_LENGTH(p_Json_Tests);
-        SET i = 0;
-        
-        WHILE i < v_items_count DO
-            SET v_nombre_test = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
-            SET v_resultado_test = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
-            
-            -- Generar ID para test
-            SELECT MAX(ID_test) INTO v_ultimo_id_test FROM Test;
-            IF v_ultimo_id_test IS NULL THEN
-                SET v_siguiente_num_test = 1;
-            ELSE
-                SET v_siguiente_num_test = CAST(SUBSTRING(v_ultimo_id_test, 4) AS UNSIGNED) + 1;
-            END IF;
-            SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_test, 6, '0'));
-            
-            INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
-            VALUES (v_nuevo_id_test, 1, v_nombre_test, v_resultado_test);
-            
-            INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
-            VALUES (v_trade_in_id, v_nuevo_id_test);
-            
-            SET i = i + 1;
-        END WHILE;
-    END IF;
 
-    COMMIT;
-
-    -- Devolver resultado
-    SELECT v_trade_in_id AS trade_in_id, 'Trade-in registrado exitosamente' AS mensaje;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-
---
--- Final view structure for view `view_tradein_equipos`
---
-
-/*!50001 DROP VIEW IF EXISTS `view_tradein_equipos`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`%` SQL SECURITY DEFINER */
-/*!50001 VIEW `view_tradein_equipos` AS select `e`.`ID_inventario` AS `ID_producto`,`e`.`Costo_venta` AS `Costo_venta`,`p`.`Nombre_producto` AS `N_modelo`,`e`.`Existencia` AS `Existencia`,`m`.`Nombre_marca` AS `Marca`,`c`.`Nombre_Clase` AS `Clase` from (((`Existencias_productos` `e` join `Producto` `p` on((`p`.`ID_producto` = `e`.`ID_producto`))) join `Marca_producto` `m` on((`m`.`ID_marca` = `p`.`ID_marca`))) join `Clase_producto` `c` on((`c`.`ID_Clase` = `p`.`ID_Clase`))) where ((`e`.`Existencia` > 0) and (`m`.`Nombre_marca` = 'Apple') and (`c`.`Nombre_Clase` = 'Telefono')) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2026-08-10 11:19:01
+-- ============================================
+-- FIN DEL BACKUP
+-- ============================================
+SET FOREIGN_KEY_CHECKS=1;
+COMMIT;

@@ -17,7 +17,8 @@ const TALLER_CONFIG = {
         GUARDAR_REPARACION: '/api/taller/guardar-reparacion',
         CONSULTAR_INVENTARIO: '/api/taller/consultar-inventario',
         REGISTRAR_FOTOS: '/api/taller/registrar-fotos',
-        ELIMINAR_FOTO: '/api/taller/eliminar-fotos'
+        ELIMINAR_FOTO: '/api/taller/eliminar-fotos',
+        CREAR_TOKEN_FOTOS: '/api/taller_celular/crear-token/{id}'
     },
     VISTAS: {
         ORDENES: 'vista-1',
@@ -1594,20 +1595,46 @@ const ReparacionesService = {
 
 let modalQrCodeInstance = null;
 
-function getQrUrl() {
+function getQrBaseUrl() {
     const ordenId = OrdenesService.obtenerOrdenActual();
     if (!ordenId) return null;
-    return `http://192.168.10.9:5000/taller_celular/${ordenId}`;
+    return `${window.location.origin}/taller_celular/${ordenId}`;
 }
 
-function abrirModalQr() {
+async function getQrUrl() {
+    const baseUrl = getQrBaseUrl();
+    if (!baseUrl) return null;
+
+    const response = await Utils.fetchJson(
+        TALLER_CONFIG.API.CREAR_TOKEN_FOTOS.replace('{id}', OrdenesService.obtenerOrdenActual()),
+        { method: 'POST' }
+    );
+
+    if (!response || !response.firma) {
+        throw new Error('El servidor no devolvió una firma válida. Vuelve a iniciar sesión e intenta de nuevo.');
+    }
+
+    return `${baseUrl}?t=${encodeURIComponent(response.firma)}`;
+}
+
+async function abrirModalQr() {
     const ordenId = OrdenesService.obtenerOrdenActual();
     if (!ordenId) {
         Utils.showMessage('Primero selecciona una orden en la vista de detalle', true);
         return;
     }
     
-    const url = getQrUrl();
+    let url;
+    try {
+        url = await getQrUrl();
+    } catch (error) {
+        if (window.FeedbackModal && typeof window.FeedbackModal.showError === 'function') {
+            window.FeedbackModal.showError(error.message || 'No se pudo generar el QR', 'QR no disponible');
+        } else {
+            Utils.showMessage('❌ No se pudo generar el QR: ' + (error.message || error), true);
+        }
+        return;
+    }
     if (!url) return;
     
     const qrContainer = document.getElementById('modal-qr-code');
@@ -1678,17 +1705,7 @@ async function copiarUrlModal() {
     }
 }
 
-// ============================================
-// 10b. FUNCIONALIDAD QR INLINE
-// ============================================
-
 const btnUsarCelular = document.getElementById('btn-usar-celular');
-const qrContainer = document.getElementById('qr-container');
-const qrCodeElement = document.getElementById('qr-code');
-const qrUrlText = document.getElementById('qr-url-text');
-const btnCerrarQr = document.getElementById('btn-cerrar-qr');
-const btnCopiarUrl = document.getElementById('btn-copiar-url');
-let qrCodeInstance = null;
 
 // ============================================
 // 11. MODAL DE CONFIRMACIÓN PARA ELIMINAR FOTO
@@ -1895,36 +1912,6 @@ document.addEventListener("DOMContentLoaded", () => {
         modalBtnCopiar.addEventListener('click', copiarUrlModal);
     }
 
-    if (btnCerrarQr) {
-        btnCerrarQr.addEventListener('click', () => {
-            qrContainer.style.display = 'none';
-            if (qrCodeInstance) {
-                try { qrCodeInstance.clear(); } catch(e) {}
-                qrCodeInstance = null;
-            }
-            qrCodeElement.innerHTML = '';
-        });
-    }
-
-    if (btnCopiarUrl) {
-        btnCopiarUrl.addEventListener('click', async () => {
-            const url = getQrUrl();
-            if (!url) {
-                Utils.showMessage('No hay URL para copiar', true);
-                return;
-            }
-            try {
-                await navigator.clipboard.writeText(url);
-                Utils.showMessage('✅ URL copiada al portapapeles');
-                const originalText = btnCopiarUrl.innerHTML;
-                btnCopiarUrl.innerHTML = '✅ ¡Copiado!';
-                setTimeout(() => { btnCopiarUrl.innerHTML = originalText; }, 2000);
-            } catch (error) {
-                Utils.showMessage('❌ No se pudo copiar la URL', true);
-            }
-        });
-    }
-
     document.querySelectorAll('#modal-confirm-eliminar [data-close-modal]').forEach(btn => {
         btn.addEventListener('click', cerrarModalConfirmacion);
     });
@@ -1938,12 +1925,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll('[data-view-target]').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (qrContainer) qrContainer.style.display = 'none';
-            if (qrCodeInstance) {
-                try { qrCodeInstance.clear(); } catch(e) {}
-                qrCodeInstance = null;
-            }
-            if (qrCodeElement) qrCodeElement.innerHTML = '';
             if (window.UiModal && typeof window.UiModal.close === 'function') {
                 window.UiModal.close();
             }

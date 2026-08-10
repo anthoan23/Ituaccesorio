@@ -23,12 +23,10 @@ const Utils = {
         return input?.value || "";
     },
 
-    getAccessToken() {
-        return localStorage.getItem("access_token") || 
-               localStorage.getItem("token") || 
-               sessionStorage.getItem("access_token") || 
-               sessionStorage.getItem("token") || 
-               "";
+    getFirma() {
+        // Firma corta de la URL del QR (?t=...) que el servidor verifica sin estado
+        const params = new URLSearchParams(window.location.search);
+        return params.get("t") || "";
     },
 
     getIdOrden() {
@@ -286,6 +284,7 @@ const FotoService = {
         try {
             const formData = new FormData();
             formData.append('id_orden', idOrden);
+            formData.append('t', Utils.getFirma());
             
             for (const foto of this.fotosSeleccionadas) {
                 formData.append('fotos', foto.file);
@@ -342,11 +341,6 @@ const FotoService = {
             
             xhr.setRequestHeader('X-CSRFToken', Utils.getCsrfToken());
             xhr.setRequestHeader('X-CSRF-Token', Utils.getCsrfToken());
-            
-            const token = Utils.getAccessToken();
-            if (token) {
-                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-            }
             
             xhr.send(formData);
         });

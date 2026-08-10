@@ -1,6 +1,6 @@
 from __future__ import annotations
 from app.models.database import conectar
-
+from datetime import datetime
 
 
 class Orden_servicio():
@@ -430,3 +430,474 @@ class Orden_servicio():
             db.close()
 
 
+
+
+
+
+#============================================
+# ESTO ES DEL ORDENES DE SERVICIO SIN ESTO NO FUNCIONA UN CONO NO LO BORRES MMGVO
+# NO TOCAR, DE MANUEL ENRIQUE RODRIGUEZ MENDOZA 
+#============================================
+
+
+
+
+
+
+    # ============================================
+    # MÉTODO PARA CREAR ORDEN DE SERVICIO
+    # ============================================
+    def crear_orden(self, id_cliente: str, id_equipo: str, id_modelo: str,
+                    descripcion: str, nota: str = None, modelo_custom: str = None,
+                    color: str = None, capacidad: str = None) -> str:
+        """
+        Crea una nueva orden de servicio.
+        
+        Args:
+            id_cliente: ID del cliente
+            id_equipo: IMEI del equipo
+            id_modelo: ID del producto/modelo
+            descripcion: Descripción del problema
+            nota: Notas adicionales (opcional)
+            modelo_custom: Modelo personalizado (si no se selecciona uno existente)
+            color: Color del equipo (opcional)
+            capacidad: Capacidad del equipo (opcional)
+        
+        Returns:
+            str: ID de la orden creada (ej: OS0000001)
+        
+        Raises:
+            Exception: Si ocurre algún error en el proceso
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            raise Exception("Error al conectar con la base de datos.")
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            # 1. Verificar que el cliente existe
+            cursor.execute(
+                "SELECT ID_cliente FROM Cliente WHERE ID_cliente = %s",
+                (id_cliente,)
+            )
+            cliente = cursor.fetchone()
+            if not cliente:
+                raise Exception(f"El cliente con ID {id_cliente} no existe en la base de datos.")
+            
+            # 2. Verificar que el equipo existe
+            cursor.execute(
+                "SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s",
+                (id_equipo,)
+            )
+            equipo = cursor.fetchone()
+            if not equipo:
+                raise Exception(f"El equipo con IMEI {id_equipo} no existe en la base de datos.")
+            
+            # 3. Verificar que el modelo existe
+            if id_modelo:
+                cursor.execute(
+                    "SELECT ID_producto FROM Producto WHERE ID_producto = %s",
+                    (id_modelo,)
+                )
+                modelo = cursor.fetchone()
+                if not modelo:
+                    raise Exception(f"El modelo con ID {id_modelo} no existe en la base de datos.")
+            
+            # 4. Generar nuevo ID para la orden
+            cursor.execute("SELECT MAX(ID_orden_servicio) as max_id FROM Orden_servicio")
+            result = cursor.fetchone()
+            ultimo_id = result['max_id'] if result else None
+            
+            if ultimo_id is None:
+                siguiente_numero = 1
+            else:
+                # Extraer el número de la parte después de 'OS'
+                siguiente_numero = int(ultimo_id[2:]) + 1
+            
+            nuevo_id = f"OS{str(siguiente_numero).zfill(7)}"
+            
+            # 5. Insertar la orden de servicio
+            fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            sql = """
+                INSERT INTO Orden_servicio 
+                (ID_orden_servicio, ID_equipo, ID_cliente, Estado_orden_servicio, 
+                 Descripcion_reparacion, Nota_orden_servicio, Fecha_entrada)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                nuevo_id,
+                id_equipo,
+                id_cliente,
+                'Pendiente',  # Estado inicial
+                descripcion,
+                nota,
+                fecha_actual
+            ))
+            
+            # 6. Registrar la interacción inicial
+            cursor.execute("SELECT MAX(ID_interaccion) as max_id FROM Interaccion")
+            result = cursor.fetchone()
+            ultimo_id_int = result['max_id'] if result else None
+            
+            if ultimo_id_int is None:
+                siguiente_num_int = 1
+            else:
+                siguiente_num_int = int(ultimo_id_int[3:]) + 1
+            
+            nuevo_id_int = f"INT{str(siguiente_num_int).zfill(6)}"
+            
+            cursor.execute(
+                "INSERT INTO Interaccion (ID_interaccion, ID_orden_servicio, ID_empleado, Accion) VALUES (%s, %s, %s, %s)",
+                (nuevo_id_int, nuevo_id, self.ID_empleado, 'Pendiente')
+            )
+            
+            # 7. Confirmar la transacción
+            db.commit()
+            
+            print(f"[MODEL] Orden creada exitosamente: {nuevo_id}")
+            return nuevo_id
+            
+        except Exception as e:
+            db.rollback()
+            print(f"[MODEL] Error al crear orden: {e}")
+            raise e
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA LISTAR ÓRDENES CON FILTRO
+    # ============================================
+    def listado_ordenes_servicio(self, estados=None):
+        """
+        Lista todas las órdenes de servicio con información de cliente y equipo.
+        
+        Args:
+            estados: Lista de estados para filtrar (opcional)
+        
+        Returns:
+            list: Lista de órdenes con datos del cliente y equipo
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            print("Error al conectar con la base de datos.")
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT 
+                    os.ID_orden_servicio AS ID_orden,
+                    os.Estado_orden_servicio AS Estado,
+                    os.Descripcion_reparacion AS Des_cliente,
+                    os.Costo_reparacion AS Costo,
+                    os.Nota_orden_servicio AS Nota,
+                    os.Fecha_entrada AS Fecha_e,
+                    os.Fecha_salida AS Fecha_s,
+                    os.ID_cliente AS ID_cliente,
+                    -- Datos del cliente
+                    c.Direccion_cliente AS Direccion_cliente,
+                    c.Celular_cliente AS Celular_cliente,
+                    c.Correo_cliente AS Correo_cliente,
+                    pn.Nombre_cliente AS Nombre_cliente,
+                    pn.Apellido_cliente AS Apellido_cliente,
+                    -- Datos del equipo
+                    e.ID_equipo AS Equipo,
+                    e.Color AS Color,
+                    e.Capacidad AS Capacidad,
+                    -- Datos del producto/modelo
+                    prod.Nombre_producto AS Modelo,
+                    mp.Nombre_marca AS Marca,
+                    cp.Nombre_Clase AS Clase
+                FROM Orden_servicio os
+                INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
+                LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
+                INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+                INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
+                INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
+                INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
+            """
+            
+            params = []
+            if estados:
+                placeholders = ','.join(['%s'] * len(estados))
+                sql += f" WHERE os.Estado_orden_servicio IN ({placeholders})"
+                params.extend(estados)
+            
+            sql += " ORDER BY os.ID_orden_servicio DESC"
+            
+            cursor.execute(sql, params)
+            return cursor.fetchall()
+            
+        except Exception as e:
+            print(f"Error al listar órdenes de servicio: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA OBTENER DETALLES DE UNA ORDEN
+    # ============================================
+    def detalles_orden(self, id_orden: str) -> dict:
+        """
+        Obtiene los detalles completos de una orden específica.
+        
+        Args:
+            id_orden: ID de la orden a consultar
+        
+        Returns:
+            dict: Datos de la orden o None si no existe
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return None
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT 
+                    os.ID_orden_servicio AS ID_orden,
+                    os.Estado_orden_servicio AS Estado,
+                    os.Descripcion_reparacion AS Des_cliente,
+                    os.Costo_reparacion AS Costo_reparacion,
+                    os.Nota_orden_servicio AS Nota,
+                    os.Fecha_entrada AS Fecha_e,
+                    os.Fecha_salida AS Fecha_s,
+                    os.ID_cliente AS ID_cliente,
+                    -- Datos del cliente
+                    c.Direccion_cliente AS Direccion_cliente,
+                    c.Celular_cliente AS Celular_cliente,
+                    c.Correo_cliente AS Correo_cliente,
+                    pn.Nombre_cliente AS Nombre_cliente,
+                    pn.Apellido_cliente AS Apellido_cliente,
+                    -- Datos del equipo
+                    e.ID_equipo AS Equipo,
+                    e.Color AS Color,
+                    e.Capacidad AS Capacidad,
+                    e.Clave AS Clave,
+                    e.Patron AS Patron,
+                    -- Datos del producto/modelo
+                    prod.ID_producto AS ID_producto,
+                    prod.Nombre_producto AS Modelo,
+                    prod.Descripcion AS Descripcion_producto,
+                    mp.Nombre_marca AS Marca,
+                    cp.Nombre_Clase AS Clase
+                FROM Orden_servicio os
+                INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
+                LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
+                INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+                INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
+                INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
+                INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
+                WHERE os.ID_orden_servicio = %s
+            """
+            cursor.execute(sql, (id_orden,))
+            return cursor.fetchone()
+            
+        except Exception as e:
+            print(f"Error al obtener detalles de la orden: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA OBTENER FOTOS DE UNA ORDEN
+    # ============================================
+    def fotos_orden(self, id_orden: str) -> list:
+        """
+        Obtiene las fotos asociadas a una orden.
+        
+        Args:
+            id_orden: ID de la orden
+        
+        Returns:
+            list: Lista de fotos
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT ID_foto_orden_servicio AS id, Foto_orden_servicio AS foto FROM Fotos_orden_servicio WHERE ID_orden_servicio = %s",
+                (id_orden,)
+            )
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al obtener fotos de la orden: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA ACTUALIZAR ESTADO DE UNA ORDEN
+    # ============================================
+    def actualizar_estado(self, id_orden: str, nuevo_estado: str) -> bool:
+        """
+        Actualiza el estado de una orden de servicio.
+        
+        Args:
+            id_orden: ID de la orden
+            nuevo_estado: Nuevo estado (Pendiente, Asignada, En proceso, Revisada, Reparada)
+        
+        Returns:
+            bool: True si se actualizó correctamente
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "UPDATE Orden_servicio SET Estado_orden_servicio = %s WHERE ID_orden_servicio = %s",
+                (nuevo_estado, id_orden)
+            )
+            db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            db.rollback()
+            print(f"Error al actualizar estado: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA ELIMINAR UNA ORDEN
+    # ============================================
+    def eliminar_orden(self, id_orden: str) -> bool:
+        """
+        Elimina una orden de servicio (solo si está en estado Pendiente).
+        
+        Args:
+            id_orden: ID de la orden a eliminar
+        
+        Returns:
+            bool: True si se eliminó correctamente
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return False
+        
+        cursor = db.cursor()
+        try:
+            # Verificar que la orden existe y está en estado Pendiente
+            cursor.execute(
+                "SELECT Estado_orden_servicio FROM Orden_servicio WHERE ID_orden_servicio = %s",
+                (id_orden,)
+            )
+            result = cursor.fetchone()
+            if not result:
+                return False
+            
+            estado = result[0] if isinstance(result, tuple) else result.get('Estado_orden_servicio')
+            if estado.lower() != 'pendiente':
+                print(f"No se puede eliminar la orden {id_orden} porque está en estado '{estado}'")
+                return False
+            
+            # Eliminar registros relacionados
+            cursor.execute("DELETE FROM Fotos_orden_servicio WHERE ID_orden_servicio = %s", (id_orden,))
+            cursor.execute("DELETE FROM Interaccion WHERE ID_orden_servicio = %s", (id_orden,))
+            cursor.execute("DELETE FROM Orden_servicio WHERE ID_orden_servicio = %s", (id_orden,))
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error al eliminar la orden: {e}")
+            return False
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA AGREGAR FOTO A UNA ORDEN
+    # ============================================
+    def agregar_foto_orden_servicio(self) -> str:
+        """
+        Agrega una foto a una orden de servicio.
+        
+        Returns:
+            str: Mensaje de resultado
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return "Error al conectar con la base de datos."
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO Fotos_orden_servicio (ID_foto_orden_servicio, ID_orden_servicio, Foto_orden_servicio) VALUES (%s, %s, %s)",
+                (self.ID_foto_orden_servicio, self.ID_orden_servicio, self.Foto_orden_servicio)
+            )
+            db.commit()
+            return f"Foto registrada exitosamente con ID {self.ID_foto_orden_servicio}"
+        except Exception as e:
+            db.rollback()
+            print(f"Error al agregar foto: {e}")
+            return f"Error al registrar la foto: {str(e)}"
+        finally:
+            cursor.close()
+            db.close()
+
+
+    # ============================================
+    # MÉTODO PARA ORDENES ASIGNADAS A UN TÉCNICO
+    # ============================================
+    def ordenes_asignadas_tecnico(self) -> list:
+        """
+        Obtiene las órdenes asignadas al técnico actual.
+        
+        Returns:
+            list: Lista de órdenes asignadas al técnico
+        """
+        empleado_id = self.ID_empleado
+        db = self._conexion.conexion1()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT 
+                    os.ID_orden_servicio AS ID_orden,
+                    os.Estado_orden_servicio AS Estado,
+                    os.Descripcion_reparacion AS Descripcion,
+                    os.Fecha_entrada AS Fecha_e,
+                    pn.Nombre_cliente AS Nombre_cliente,
+                    pn.Apellido_cliente AS Apellido_cliente,
+                    prod.Nombre_producto AS modelo,
+                    i.Accion AS Accion
+                FROM Orden_servicio os
+                INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
+                LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
+                INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
+                INNER JOIN Interaccion i ON os.ID_orden_servicio = i.ID_orden_servicio
+                WHERE os.Estado_orden_servicio IN ('Asignada', 'En proceso') 
+                AND i.Accion = 'Asignada' 
+                AND i.ID_empleado = %s
+                ORDER BY os.Fecha_entrada DESC
+            """
+            cursor.execute(sql, (empleado_id,))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al listar órdenes del técnico: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()

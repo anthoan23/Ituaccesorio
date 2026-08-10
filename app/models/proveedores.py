@@ -6,10 +6,11 @@ from app.models.bitacora import Bitacora
 class Proveedores:
     """Modelo para la tabla Proveedor"""
     
-    def __init__(self, id_proveedor: int = 0, nombre: str = "", 
+    def __init__(self, id_proveedor: int = 0, rif: str = "", nombre: str = "", 
                  tipo: str = "", celular: str = "", correo: str = "", 
                  direccion: str = "", limite_credito: int = 0, usuario_id: str = None):
         self.id_proveedor = id_proveedor
+        self.rif = rif
         self.nombre = nombre
         self.tipo = tipo
         self.celular = celular
@@ -49,12 +50,13 @@ class Proveedores:
             where_sql = ""
             params = []
             if q:
-                where_sql = "WHERE (Nombre_proveedor LIKE %s OR CAST(ID_proveedor AS CHAR) LIKE %s)"
-                params = [f"%{q}%", f"%{q}%"]
+                where_sql = "WHERE (Nombre_proveedor LIKE %s OR Rif_proveedor LIKE %s OR CAST(ID_proveedor AS CHAR) LIKE %s)"
+                params = [f"%{q}%", f"%{q}%", f"%{q}%"]
             
             cursor.execute(f"""
                 SELECT
                     ID_proveedor AS id,
+                    Rif_proveedor AS rif,
                     Nombre_proveedor AS nombre,
                     Tipo_proveedor AS tipo,
                     Celular_proveedor AS celular,
@@ -99,6 +101,7 @@ class Proveedores:
             cursor.execute("""
                 SELECT
                     ID_proveedor AS id,
+                    Rif_proveedor AS rif,
                     Nombre_proveedor AS nombre,
                     Tipo_proveedor AS tipo,
                     Celular_proveedor AS celular,
@@ -119,7 +122,6 @@ class Proveedores:
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
         
-        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
         if self.limite_credito is not None and self.limite_credito < 0:
             raise ValueError("El límite de crédito no puede ser negativo.")
         
@@ -137,11 +139,11 @@ class Proveedores:
             
             cursor.execute("""
                 INSERT INTO Proveedor
-                    (ID_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
+                    (ID_proveedor, Rif_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
                      Correo_proveedor, Direccion_proveedor, Limite_credito)
                 VALUES
-                    (%s, %s, %s, %s, %s, %s, %s)
-            """, (self.id_proveedor, self.nombre, self.tipo or None, 
+                    (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None, 
                   self.celular or None, self.correo or None, 
                   self.direccion or None, self.limite_credito or None))
             
@@ -151,7 +153,7 @@ class Proveedores:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear proveedor",
-                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0}",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - RIF: {self.rif or 'N/A'} - Límite crédito: {self.limite_credito or 0}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
@@ -175,7 +177,6 @@ class Proveedores:
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
         
-        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
         if self.limite_credito is not None and self.limite_credito < 0:
             raise ValueError("El límite de crédito no puede ser negativo.")
         
@@ -189,6 +190,7 @@ class Proveedores:
             cursor.execute("""
                 UPDATE Proveedor
                 SET
+                    Rif_proveedor = %s,
                     Nombre_proveedor = %s,
                     Tipo_proveedor = %s,
                     Celular_proveedor = %s,
@@ -196,7 +198,7 @@ class Proveedores:
                     Direccion_proveedor = %s,
                     Limite_credito = %s
                 WHERE ID_proveedor = %s
-            """, (self.nombre, self.tipo or None, self.celular or None,
+            """, (self.rif or None, self.nombre, self.tipo or None, self.celular or None,
                   self.correo or None, self.direccion or None, 
                   self.limite_credito or None, self.id_proveedor))
             db.commit()
@@ -206,7 +208,7 @@ class Proveedores:
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar proveedor",
-                    descripcion=f"Se actualizó el proveedor ID: {self.id_proveedor} - Nuevo nombre: {self.nombre}",
+                    descripcion=f"Se actualizó el proveedor ID: {self.id_proveedor} - Nuevo nombre: {self.nombre} - RIF: {self.rif or 'N/A'}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
@@ -380,7 +382,6 @@ class Proveedores:
         if not id_modelo:
             raise ValueError("ID del modelo es requerido")
         
-        # ✅ VALIDACIÓN: No permitir costo negativo
         if costo is not None and costo < 0:
             raise ValueError("El costo del producto no puede ser negativo.")
         
@@ -467,7 +468,6 @@ class Proveedores:
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
         
-        # ✅ VALIDACIÓN: No permitir límite de crédito negativo
         if self.limite_credito is not None and self.limite_credito < 0:
             raise ValueError("El límite de crédito no puede ser negativo.")
         
@@ -486,11 +486,11 @@ class Proveedores:
             # Insertar proveedor
             cursor.execute("""
                 INSERT INTO Proveedor
-                    (ID_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
+                    (ID_proveedor, Rif_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
                      Correo_proveedor, Direccion_proveedor, Limite_credito)
                 VALUES
-                    (%s, %s, %s, %s, %s, %s, %s)
-            """, (self.id_proveedor, self.nombre, self.tipo or None, 
+                    (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None, 
                   self.celular or None, self.correo or None, 
                   self.direccion or None, self.limite_credito or None))
             
@@ -499,7 +499,6 @@ class Proveedores:
             for item in (productos or []):
                 id_modelo = item.get("id_modelo")
                 costo = item.get("costo")
-                # ✅ VALIDACIÓN: No permitir costo negativo
                 if costo is not None and costo < 0:
                     raise ValueError(f"El costo del producto '{id_modelo}' no puede ser negativo.")
                 rows.append((self.id_proveedor, str(id_modelo), 
@@ -518,7 +517,7 @@ class Proveedores:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear proveedor",
-                    descripcion=f"Se creó el proveedor: {self.nombre} - Tipo: {self.tipo or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos)}",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - RIF: {self.rif or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos)}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )

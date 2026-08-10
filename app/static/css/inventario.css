@@ -17,6 +17,32 @@
     width: 100%;
 }
 
+.inventario-page .hero {
+    align-items: stretch;
+}
+
+.inventario-page .stats--grid {
+    align-self: stretch;
+    height: 100%;
+    grid-auto-rows: minmax(0, 1fr);
+}
+
+.inventario-page .stats--grid .stat-card {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem 1.1rem;
+}
+
+.inventario-page .stats--grid .stat-card__value {
+    margin-top: 0.25rem;
+}
+
+.inventario-page .stats--grid .stat-card__meta {
+    margin-top: 0.25rem;
+}
+
 /* ============================================
    HERO - CHIPS Y STATS
    ============================================ */
@@ -33,7 +59,7 @@
    ============================================ */
 .stats--grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.85rem;
 }
 
@@ -283,12 +309,12 @@
    RESPONSIVE
    ============================================ */
 @media (max-width: 1100px) {
-    .stats--grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
     .inventario-grid {
         grid-template-columns: 1fr;
+    }
+
+    .inventario-page .stats--grid {
+        height: auto;
     }
 }
 
@@ -306,10 +332,6 @@
 }
 
 @media (max-width: 780px) {
-    .stats--grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
     .col-image {
         width: auto;
     }
@@ -322,6 +344,10 @@
 @media (max-width: 480px) {
     .stats--grid {
         grid-template-columns: 1fr;
+    }
+
+    .inventario-page .stats--grid {
+        height: auto;
     }
     
     .hero__chips {

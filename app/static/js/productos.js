@@ -105,30 +105,41 @@
     } else {
       titulo = "Confirmar eliminación";
       btnTexto = "Eliminar";
-      btnColor = "#dc2626";
       icono = "⚠️";
     }
+
+    const modalClass = esError
+      ? 'ui-modal--confirm-danger'
+      : esExito
+        ? 'ui-modal--confirm-success'
+        : soloInformacion
+          ? 'ui-modal--confirm-info'
+          : 'ui-modal--confirm-danger';
+    const btnClass = esError
+      ? 'ui-btn--danger'
+      : esExito
+        ? 'ui-btn--success'
+        : soloInformacion
+          ? 'ui-btn--primary'
+          : 'ui-btn--danger';
     
     const modalDiv = document.createElement('div');
     modalDiv.id = 'confirmacion-modal';
-    modalDiv.className = 'ui-modal';
-    modalDiv.setAttribute('data-modal', '');
-    modalDiv.setAttribute('hidden', '');
-    modalDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+    modalDiv.className = `ui-modal ui-modal--confirm ${modalClass}`;
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true" style="animation:modalFadeIn 0.2s ease-out;margin:1rem;background:var(--bg);border-radius:20px;box-shadow:var(--shadow-card);max-width:450px;width:100%;${esError ? 'border-top:4px solid #dc2626' : 'border-top:4px solid #f3c500'}">
-        <header class="ui-modal__header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border-light);">
-          <h3 class="ui-modal__title" style="margin:0;font-size:1.25rem;font-weight:600;color:var(--text-strong);">${titulo}</h3>
-          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">×</button>
+      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true">
+        <header class="ui-modal__header">
+          <h3 class="ui-modal__title">${titulo}</h3>
+          <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
         </header>
-        <div class="ui-modal__body" style="padding:1.5rem 1.5rem 0.5rem 1.5rem;">
-          <div style="text-align:center;font-size:3rem;margin-bottom:0.5rem;">${icono}</div>
-          <p id="confirmacion-modal-mensaje" style="margin:0 0 1rem 0;font-size:1rem;color:var(--text-strong);text-align:center;white-space:pre-wrap;line-height:1.5;">${mensaje}</p>
+        <div class="ui-modal__body">
+          <div class="confirm-modal__icon">${icono}</div>
+          <p id="confirmacion-modal-mensaje" class="confirm-modal__message confirm-modal__message--center">${mensaje}</p>
         </div>
-        <div class="ui-modal__footer" style="display:flex;gap:0.75rem;justify-content:center;padding:1rem 1.5rem 1.5rem 1.5rem;border-top:1px solid var(--border-light);">
+        <div class="ui-modal__footer ui-modal__footer--center">
           ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion">Cancelar</button>' : ''}
-          <button type="button" class="ui-btn" id="btn-confirmar-accion" style="padding:0.5rem 1.5rem;border:none;border-radius:8px;background:${btnColor};color:white;font-weight:500;cursor:pointer;min-width:100px;">${btnTexto}</button>
+          <button type="button" class="ui-btn ${btnClass}" id="btn-confirmar-accion">${btnTexto}</button>
         </div>
       </div>
     `;
