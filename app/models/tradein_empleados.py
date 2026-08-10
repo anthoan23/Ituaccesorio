@@ -4,6 +4,7 @@ from app.models.bitacora import Bitacora
 from app.models.equipo import Equipo
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import json
 
 
 class TradeInEmpleados:
@@ -91,11 +92,41 @@ class TradeInEmpleados:
         finally:
             cursor.close()
             db.close()
+
+    def _generar_id_test(self) -> str:
+        """Genera ID para Test (formato TST000001)"""
+        db = self._conexion()
+        if not db:
+            return "TST000001"
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT MAX(ID_test) FROM Test")
+            row = cursor.fetchone()
+            ultimo_id = row[0] if row and row[0] else None
+            
+            if ultimo_id:
+                try:
+                    num_str = ultimo_id[3:]
+                    num = int(num_str)
+                    siguiente = num + 1
+                except (ValueError, IndexError):
+                    siguiente = 1
+            else:
+                siguiente = 1
+            
+            return f"TST{str(siguiente).zfill(6)}"
+        except Exception as e:
+            print(f"Error generando ID test: {e}")
+            return f"TST{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        finally:
+            cursor.close()
+            db.close()
     
     # ==================== REGISTRAR NUEVO TRADE-IN ====================
     
-    def registrar_trade_in(self, fotos: List[str] = None) -> Dict[str, Any]:
-        """Registra un nuevo equipo recibido en trade-in"""
+    def registrar_trade_in(self, fotos: List[str] = None, tests: List[Dict[str, str]] = None) -> Dict[str, Any]:
+        """Registra un nuevo equipo recibido en trade-in con sus tests"""
         if not self.cliente_id:
             return {"success": False, "error": "Debe seleccionar un cliente"}
         if not self.id_producto:
@@ -104,6 +135,10 @@ class TradeInEmpleados:
             return {"success": False, "error": "Debe ingresar el IMEI/ID del equipo"}
         if not self.valor_pagado:
             return {"success": False, "error": "Debe ingresar el valor pagado"}
+        
+        # Validar que el IMEI no tenga espacios
+        if ' ' in self.id_equipo:
+            return {"success": False, "error": "El IMEI no debe contener espacios"}
         
         db = self._conexion()
         if not db:
@@ -120,7 +155,6 @@ class TradeInEmpleados:
                 equipo_id = self.id_equipo
                 equipo_producto_id = equipo_existente[1] if len(equipo_existente) > 1 else None
                 
-                # Si el equipo existe pero tiene un producto diferente, actualizarlo
                 if equipo_producto_id != self.id_producto:
                     equipo = Equipo(
                         ID_equipo=self.id_equipo,
@@ -134,11 +168,10 @@ class TradeInEmpleados:
                     if "Error" in resultado and "no se encontró" not in resultado:
                         print(f"Advertencia al actualizar equipo: {resultado}")
                 else:
-                    # Solo actualizar campos opcionales si se proporcionaron
                     if self.color or self.capacidad or self.clave or self.patron:
                         equipo = Equipo(
                             ID_equipo=self.id_equipo,
-                            ID_producto=None,  # No actualizar producto
+                            ID_producto=None,
                             Color=self.color,
                             Capacidad=self.capacidad,
                             Clave=self.clave,
@@ -161,7 +194,7 @@ class TradeInEmpleados:
                 if "Error" in resultado:
                     return {"success": False, "error": resultado}
             
-            # 3. Crear registro de trade-in usando ID_equipo
+            # 3. Generar ID y registrar trade-in
             self.trade_in_id = self._generar_id_trade_in()
             fecha_actual = datetime.now()
             
@@ -178,7 +211,7 @@ class TradeInEmpleados:
                 self.valor_pagado
             ))
             
-            # 4. Guardar fotos si las hay
+            # 4. Guardar fotos
             if fotos:
                 for foto_url in fotos:
                     id_foto = self._generar_id_foto_trade_in()
@@ -187,13 +220,31 @@ class TradeInEmpleados:
                         VALUES (%s, %s, %s)
                     """, (id_foto, self.trade_in_id, foto_url))
             
+            # 5. Guardar tests
+            if tests:
+                for test in tests:
+                    nombre = test.get("nombre", "")
+                    resultado = test.get("resultado", "")
+                    
+                    if nombre:
+                        test_id = self._generar_id_test()
+                        cursor.execute("""
+                            INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
+                            VALUES (%s, %s, %s, %s)
+                        """, (test_id, 1, nombre, resultado))
+                        
+                        cursor.execute("""
+                            INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
+                            VALUES (%s, %s)
+                        """, (self.trade_in_id, test_id))
+            
             db.commit()
             
             # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar Trade-in",
-                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo: {self.id_equipo} - Producto: {self.id_producto} - Valor: {self.valor_pagado}",
+                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo: {self.id_equipo} - Producto: {self.id_producto} - Valor: {self.valor_pagado} - Tests: {len(tests) if tests else 0}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Trade-in"
                 )
@@ -203,7 +254,8 @@ class TradeInEmpleados:
                 "success": True,
                 "message": "Trade-in registrado correctamente",
                 "trade_in_id": self.trade_in_id,
-                "equipo_id": self.id_equipo
+                "equipo_id": self.id_equipo,
+                "tests_registrados": len(tests) if tests else 0
             }
             
         except Exception as e:
@@ -214,10 +266,132 @@ class TradeInEmpleados:
             cursor.close()
             db.close()
     
-    # ==================== REGISTRAR TESTS DEL EQUIPO ====================
+    # ==================== ACTUALIZAR TRADE-IN ====================
     
-    def registrar_tests_trade_in(self, tests: List[Dict[str, str]]) -> Dict[str, Any]:
-        """Registra los tests realizados al equipo trade-in"""
+    def actualizar_trade_in(self, fotos: List[str] = None, tests: List[Dict[str, str]] = None) -> Dict[str, Any]:
+        """Actualiza un trade-in existente"""
+        if not self.trade_in_id:
+            return {"success": False, "error": "ID de trade-in no especificado"}
+        
+        if ' ' in self.id_equipo:
+            return {"success": False, "error": "El IMEI no debe contener espacios"}
+        
+        db = self._conexion()
+        if not db:
+            return {"success": False, "error": "Error de conexión a la base de datos"}
+        
+        cursor = db.cursor()
+        try:
+            # 1. Verificar si el equipo existe y actualizar
+            cursor.execute("SELECT ID_equipo FROM Equipo WHERE ID_equipo = %s", (self.id_equipo,))
+            equipo_existente = cursor.fetchone()
+            
+            if equipo_existente:
+                equipo = Equipo(
+                    ID_equipo=self.id_equipo,
+                    ID_producto=self.id_producto,
+                    Color=self.color,
+                    Capacidad=self.capacidad,
+                    Clave=self.clave,
+                    Patron=self.patron
+                )
+                resultado = equipo.actualizar_equipo()
+                if "Error" in resultado and "no se encontró" not in resultado:
+                    print(f"Advertencia al actualizar equipo: {resultado}")
+            else:
+                equipo = Equipo(
+                    ID_equipo=self.id_equipo,
+                    ID_producto=self.id_producto,
+                    Color=self.color,
+                    Capacidad=self.capacidad,
+                    Clave=self.clave,
+                    Patron=self.patron
+                )
+                resultado = equipo.registrar_equipo()
+                if "Error" in resultado:
+                    return {"success": False, "error": resultado}
+            
+            # 2. Actualizar el trade-in
+            cursor.execute("""
+                UPDATE Trade_in 
+                SET ID_empleado = %s, 
+                    ID_cliente = %s, 
+                    ID_equipo = %s, 
+                    cotizacion = %s
+                WHERE ID_Trade_in = %s
+            """, (
+                self.empleado_id, 
+                self.cliente_id, 
+                self.id_equipo,
+                self.valor_pagado,
+                self.trade_in_id
+            ))
+            
+            # 3. Actualizar fotos
+            cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
+            if fotos:
+                for foto_url in fotos:
+                    id_foto = self._generar_id_foto_trade_in()
+                    cursor.execute("""
+                        INSERT INTO Fotos_trade_in (ID_foto_trade_in, ID_Trade_in, Foto_trade_in)
+                        VALUES (%s, %s, %s)
+                    """, (id_foto, self.trade_in_id, foto_url))
+            
+            # 4. Actualizar tests
+            if tests is not None:
+                # Eliminar tests existentes
+                cursor.execute("""
+                    DELETE tr FROM Test_realizados_trade_in tr
+                    INNER JOIN Test t ON tr.ID_test = t.ID_test
+                    WHERE tr.ID_Trade_in = %s
+                """, (self.trade_in_id,))
+                
+                # Registrar nuevos tests
+                for test in tests:
+                    nombre = test.get("nombre", "")
+                    resultado = test.get("resultado", "")
+                    
+                    if nombre:
+                        test_id = self._generar_id_test()
+                        cursor.execute("""
+                            INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
+                            VALUES (%s, %s, %s, %s)
+                        """, (test_id, 1, nombre, resultado))
+                        
+                        cursor.execute("""
+                            INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
+                            VALUES (%s, %s)
+                        """, (self.trade_in_id, test_id))
+            
+            db.commit()
+            
+            if self.usuario_id:
+                bitacora = Bitacora(
+                    accion="Modificar Trade-in",
+                    descripcion=f"Se modificó el trade-in ID: {self.trade_in_id}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Trade-in"
+                )
+                bitacora.registrar()
+            
+            return {
+                "success": True,
+                "message": "Trade-in actualizado correctamente",
+                "trade_in_id": self.trade_in_id
+            }
+            
+        except Exception as e:
+            db.rollback()
+            print(f"Error en actualizar_trade_in: {e}")
+            return {"success": False, "error": str(e)}
+        finally:
+            cursor.close()
+            db.close()
+    
+    # ==================== ELIMINAR TRADE-IN ====================
+    
+    def eliminar_trade_in(self) -> Dict[str, Any]:
+        """Elimina un trade-in y sus relaciones"""
         if not self.trade_in_id:
             return {"success": False, "error": "ID de trade-in no especificado"}
         
@@ -227,55 +401,34 @@ class TradeInEmpleados:
         
         cursor = db.cursor()
         try:
+            # Eliminar fotos asociadas
+            cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
+            
+            # Eliminar tests asociados
             cursor.execute("""
-                SELECT COALESCE(MAX(t.Numero_test), 0)
-                FROM Test_realizados_trade_in tr
-                JOIN Test t ON tr.ID_test = t.ID_test
+                DELETE tr FROM Test_realizados_trade_in tr
+                INNER JOIN Test t ON tr.ID_test = t.ID_test
                 WHERE tr.ID_Trade_in = %s
             """, (self.trade_in_id,))
-            row = cursor.fetchone()
-            next_num = (row[0] or 0) + 1
             
-            tests_registrados = 0
-            for test in tests:
-                nombre = test.get("nombre", "")
-                resultado = test.get("resultado", "")
-                
-                if not nombre:
-                    continue
-                
-                cursor.execute("SELECT MAX(ID_test) FROM Test")
-                last_id = cursor.fetchone()
-                last_num = int(last_id[0][3:]) if last_id and last_id[0] else 0
-                test_id = f"TST{str(last_num + 1).zfill(6)}"
-                
-                cursor.execute("""
-                    INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
-                    VALUES (%s, %s, %s, %s)
-                """, (test_id, next_num, nombre, resultado))
-                
-                cursor.execute("""
-                    INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
-                    VALUES (%s, %s)
-                """, (self.trade_in_id, test_id))
-                tests_registrados += 1
+            # Eliminar el trade-in
+            cursor.execute("DELETE FROM Trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
             
             db.commit()
             
             if self.usuario_id:
                 bitacora = Bitacora(
-                    accion="Registrar tests Trade-in",
-                    descripcion=f"Se registraron {tests_registrados} tests para trade-in ID: {self.trade_in_id}",
+                    accion="Eliminar Trade-in",
+                    descripcion=f"Se eliminó el trade-in ID: {self.trade_in_id}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Trade-in"
                 )
                 bitacora.registrar()
             
-            return {"success": True, "message": f"{tests_registrados} tests registrados correctamente", "tests": tests_registrados}
-            
+            return {"success": True, "message": "Trade-in eliminado correctamente"}
         except Exception as e:
             db.rollback()
-            print(f"Error en registrar_tests_trade_in: {e}")
+            print(f"Error en eliminar_trade_in: {e}")
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -305,7 +458,7 @@ class TradeInEmpleados:
                     e.Capacidad,
                     e.Clave,
                     e.Patron,
-                    -- Datos del producto (linkeado desde Equipo)
+                    -- Datos del producto
                     p.ID_producto AS producto_id,
                     p.Nombre_producto AS producto_nombre,
                     p.Descripcion AS producto_descripcion,
@@ -319,7 +472,10 @@ class TradeInEmpleados:
                     COALESCE(pn.Apellido_cliente, '') AS cliente_apellido,
                     c.Celular_cliente AS cliente_celular,
                     c.Correo_cliente AS cliente_correo,
-                    c.Direccion_cliente AS cliente_direccion
+                    c.Direccion_cliente AS cliente_direccion,
+                    -- Datos del empleado
+                    emp.Nombre_empleado AS empleado_nombre,
+                    emp.Apellido_empleado AS empleado_apellido
                 FROM Trade_in t
                 LEFT JOIN Equipo e ON t.ID_equipo = e.ID_equipo
                 LEFT JOIN Producto p ON e.ID_producto = p.ID_producto
@@ -327,6 +483,7 @@ class TradeInEmpleados:
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 LEFT JOIN Marca_producto m ON p.ID_marca = m.ID_marca
+                LEFT JOIN Empleado emp ON t.ID_empleado = emp.ID_empleado
                 ORDER BY t.Fecha_realizado DESC
             """)
             resultados = cursor.fetchall()
@@ -552,7 +709,7 @@ class TradeInEmpleados:
                 INNER JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 INNER JOIN Marca_producto m ON p.ID_marca = m.ID_marca
                 WHERE cl.ID_Clase = '1' 
-                  AND (m.ID_marca = '1' OR m.Nombre_marca = 'Iphone' OR m.Nombre_marca = 'Apple')
+                  AND (m.ID_marca = '1' OR m.Nombre_marca LIKE '%Iphone%' OR m.Nombre_marca LIKE '%Apple%')
                 ORDER BY p.Nombre_producto
             """)
             return cursor.fetchall()
@@ -633,48 +790,6 @@ class TradeInEmpleados:
         except Exception as e:
             print(f"Error en verificar_equipo_existente: {e}")
             return None
-        finally:
-            cursor.close()
-            db.close()
-    
-    # ==================== ELIMINAR ====================
-    
-    def eliminar_trade_in(self) -> Dict[str, Any]:
-        """Elimina un trade-in y sus relaciones"""
-        if not self.trade_in_id:
-            return {"success": False, "error": "ID de trade-in no especificado"}
-        
-        db = self._conexion()
-        if not db:
-            return {"success": False, "error": "Error de conexión"}
-        
-        cursor = db.cursor()
-        try:
-            # Eliminar fotos asociadas
-            cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
-            
-            # Eliminar tests asociados
-            cursor.execute("DELETE FROM Test_realizados_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
-            
-            # Eliminar el trade-in
-            cursor.execute("DELETE FROM Trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
-            
-            db.commit()
-            
-            if self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Eliminar Trade-in",
-                    descripcion=f"Se eliminó el trade-in ID: {self.trade_in_id}",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Trade-in"
-                )
-                bitacora.registrar()
-            
-            return {"success": True, "message": "Trade-in eliminado correctamente"}
-        except Exception as e:
-            db.rollback()
-            print(f"Error en eliminar_trade_in: {e}")
-            return {"success": False, "error": str(e)}
         finally:
             cursor.close()
             db.close()

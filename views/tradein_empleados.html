@@ -103,7 +103,7 @@
   </article>
 </main>
 
-<!-- Modal para REGISTRAR nuevo trade-in -->
+<!-- Modal para REGISTRAR/EDITAR trade-in -->
 <div id="modal-registrar" class="ui-modal" data-modal hidden>
   <div class="ui-modal__dialog ui-modal__dialog--lg">
     <div class="ui-modal__header">
@@ -246,6 +246,12 @@
             <small class="field-hint">Sin caracteres especiales (máximo 500 caracteres)</small>
           </label>
 
+          <!-- SECCIÓN DE TESTS - AHORA DENTRO DEL FORMULARIO DE REGISTRO -->
+          <div class="tests-section-container" style="grid-column: 1 / -1;">
+            <hr style="border: none; border-top: 1px solid var(--border-light); margin: 1rem 0;">
+            <div id="tests-container-registro"></div>
+          </div>
+
           <label class="field field--full">
             <span>Fotos del equipo</span>
             <div id="fotos-preview" class="fotos-preview"></div>
@@ -270,7 +276,7 @@
   </div>
 </div>
 
-<!-- Modal para REGISTRAR TESTS -->
+<!-- Modal para REGISTRAR TESTS (mantenido para compatibilidad) -->
 <div id="modal-tests" class="ui-modal" data-modal hidden>
   <div class="ui-modal__dialog ui-modal__dialog--lg">
     <div class="ui-modal__header">

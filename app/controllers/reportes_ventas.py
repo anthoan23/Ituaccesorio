@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.reportes_ventas import ReportesVentasModel
 from app.utils.validators import (
+    validar_texto,
+    validar_numero,
+    validar_decimal,
     validar_sin_caracteres_especiales
 )
 from datetime import datetime
@@ -25,114 +28,6 @@ def pagina_reportes_ventas():
     )
 
 
-# ==================== VALIDACIONES ====================
-
-def _validar_filtros_reportes(data):
-    """
-    Valida los filtros de reportes de ventas.
-    
-    Args:
-        data (dict): Filtros del reporte
-    
-    Returns:
-        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
-    """
-    # Validar búsqueda (sin caracteres especiales)
-    q = data.get("q", "").strip()
-    if q:
-        error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
-        if error:
-            return error, 400
-    
-    # Validar fechas
-    fecha_desde = data.get("fecha_desde")
-    fecha_hasta = data.get("fecha_hasta")
-    
-    if fecha_desde and fecha_hasta:
-        try:
-            desde = datetime.strptime(fecha_desde, "%Y-%m-%d")
-            hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d")
-            if desde > hasta:
-                return "La fecha 'desde' no puede ser mayor que la fecha 'hasta'.", 400
-        except ValueError:
-            return "Formato de fecha inválido. Use YYYY-MM-DD.", 400
-    
-    # Validar montos
-    monto_min = data.get("monto_min")
-    monto_max = data.get("monto_max")
-    
-    if monto_min is not None:
-        try:
-            monto_min = float(monto_min)
-            if monto_min < 0:
-                return "El monto mínimo no puede ser negativo.", 400
-        except (ValueError, TypeError):
-            return "El monto mínimo debe ser un número válido.", 400
-    
-    if monto_max is not None:
-        try:
-            monto_max = float(monto_max)
-            if monto_max < 0:
-                return "El monto máximo no puede ser negativo.", 400
-        except (ValueError, TypeError):
-            return "El monto máximo debe ser un número válido.", 400
-    
-    if monto_min is not None and monto_max is not None:
-        if monto_min > monto_max:
-            return "El monto mínimo no puede ser mayor que el monto máximo.", 400
-    
-    return None, 200
-
-
-def _validar_venta_local_data(data):
-    """
-    Valida los datos de una venta local.
-    
-    Args:
-        data (dict): Datos de la venta local
-    
-    Returns:
-        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
-    """
-    # Validar cliente
-    cliente_id = data.get("cliente_id")
-    if not cliente_id:
-        return "El campo Cliente es obligatorio.", 400
-    
-    # Validar items
-    items = data.get("items", [])
-    if not items:
-        return "Agrega al menos un producto.", 400
-    
-    for i, item in enumerate(items):
-        producto_id = item.get("producto_id")
-        cantidad = item.get("cantidad", 0)
-        
-        if not producto_id:
-            return f"El producto #{i+1} no tiene ID válido.", 400
-        
-        if cantidad is None:
-            return f"La cantidad del producto #{i+1} es obligatoria.", 400
-        
-        try:
-            cantidad = int(cantidad)
-            if cantidad < 1:
-                return f"La cantidad del producto #{i+1} debe ser al menos 1.", 400
-        except (ValueError, TypeError):
-            return f"La cantidad del producto #{i+1} debe ser un número válido.", 400
-    
-    # Validar método de pago
-    metodo_pago = data.get("metodo_pago")
-    if not metodo_pago:
-        return "El campo Método de pago es obligatorio.", 400
-    
-    metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_bs", "efectivo_usd"]
-    if metodo_pago not in metodos_validos:
-        return f"Método de pago '{metodo_pago}' no válido. Opciones: {', '.join(metodos_validos)}", 400
-    
-    return None, 200
-
-
 # ==================== REPORTES DE VENTAS ====================
 
 @reportes_ventas_blueprint.route("/api/reportes-ventas/listar", methods=["POST"])
@@ -142,20 +37,56 @@ def api_listar_reportes_ventas():
     """Obtiene ventas para reportes con filtros avanzados"""
     datos = request.get_json(silent=True) or {}
     
-    # Validar filtros
-    error, status = _validar_filtros_reportes(datos)
-    if error:
-        return jsonify({"success": False, "error": error}), status
+    # Validar búsqueda
+    q = datos.get("q", "").strip()
+    if q:
+        error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+    
+    # Validar fechas
+    fecha_desde = datos.get("fecha_desde")
+    fecha_hasta = datos.get("fecha_hasta")
+    
+    if fecha_desde and fecha_hasta:
+        try:
+            desde = datetime.strptime(fecha_desde, "%Y-%m-%d")
+            hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d")
+            if desde > hasta:
+                return jsonify({"success": False, "error": "La fecha 'desde' no puede ser mayor que la fecha 'hasta'."}), 400
+        except ValueError:
+            return jsonify({"success": False, "error": "Formato de fecha inválido. Use YYYY-MM-DD."}), 400
+    
+    # Validar montos
+    monto_min = datos.get("monto_min")
+    monto_max = datos.get("monto_max")
+    
+    if monto_min is not None:
+        error = validar_decimal(monto_min, "Monto mínimo", max_decimales=2, min_valor=0)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+    
+    if monto_max is not None:
+        error = validar_decimal(monto_max, "Monto máximo", max_decimales=2, min_valor=0)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+    
+    if monto_min is not None and monto_max is not None:
+        try:
+            if float(monto_min) > float(monto_max):
+                return jsonify({"success": False, "error": "El monto mínimo no puede ser mayor que el monto máximo."}), 400
+        except ValueError:
+            pass
     
     filtros = {
-        "q": datos.get("q", "").strip(),
+        "q": q,
         "estado": datos.get("estado"),
         "metodo_pago": datos.get("metodo_pago"),
         "moneda": datos.get("moneda"),
-        "fecha_desde": datos.get("fecha_desde"),
-        "fecha_hasta": datos.get("fecha_hasta"),
-        "monto_min": datos.get("monto_min"),
-        "monto_max": datos.get("monto_max"),
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "monto_min": monto_min,
+        "monto_max": monto_max,
     }
     
     filtros = {k: v for k, v in filtros.items() if v not in (None, "", 0)}
@@ -176,6 +107,10 @@ def api_listar_reportes_ventas():
 @tiene_permiso('Reportes Ventas', 'consultar')
 def api_detalle_venta_reporte(factura_id):
     """Obtiene el detalle completo de una venta"""
+    error = validar_texto_numero(factura_id, 1, 50, "Factura")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     modelo = ReportesVentasModel(factura_id=factura_id)
     resultado = modelo.obtener_detalle_venta_completo()
     
@@ -226,14 +161,42 @@ def api_registrar_venta_local():
     try:
         datos = request.get_json(silent=True) or {}
         
-        # Validar datos
-        error, status = _validar_venta_local_data(datos)
-        if error:
-            return jsonify({"success": False, "error": error}), status
-        
+        # Validar cliente
         cliente_id = datos.get("cliente_id")
+        if not cliente_id:
+            return jsonify({"success": False, "error": "El campo Cliente es obligatorio."}), 400
+        
+        error = validar_numero(cliente_id, 6, 9, "Cliente")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        # Validar items
         items = datos.get("items", [])
+        if not items:
+            return jsonify({"success": False, "error": "Agrega al menos un producto."}), 400
+        
+        for i, item in enumerate(items):
+            producto_id = item.get("producto_id")
+            cantidad = item.get("cantidad", 0)
+            
+            if not producto_id:
+                return jsonify({"success": False, "error": f"El producto #{i+1} no tiene ID válido."}), 400
+            
+            if cantidad is None:
+                return jsonify({"success": False, "error": f"La cantidad del producto #{i+1} es obligatoria."}), 400
+            
+            error = validar_numero(cantidad, 1, 10, f"Cantidad del producto #{i+1}")
+            if error:
+                return jsonify({"success": False, "error": error}), 400
+        
+        # Validar método de pago
         metodo_pago = datos.get("metodo_pago")
+        if not metodo_pago:
+            return jsonify({"success": False, "error": "El campo Método de pago es obligatorio."}), 400
+        
+        metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_bs", "efectivo_usd"]
+        if metodo_pago not in metodos_validos:
+            return jsonify({"success": False, "error": f"Método de pago '{metodo_pago}' no válido."}), 400
         
         # Obtener usuario
         if isinstance(g.user, dict):

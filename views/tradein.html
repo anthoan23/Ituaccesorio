@@ -9,7 +9,6 @@
 
 {% block content %}
 <main class="page tradein-page">
-  <!-- Breadcrumb unificado -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <ol class="breadcrumb__list">
       <li><a href="{{ url_for('home.home') }}">Inicio</a></li>
@@ -19,14 +18,12 @@
     </ol>
   </nav>
 
-  <!-- Hero unificado con glassmorphism -->
   <header class="hero" aria-label="Encabezado de trade-in">
     <div class="hero__copy">
       <p class="hero__eyebrow">Trade-in</p>
       <h1 class="hero__title">Cotización de equipo usado</h1>
       <p class="hero__description">Selecciona el modelo, valida si está liberado y marca las fallas para obtener una estimación inmediata.</p>
     </div>
-
     <div class="hero__actions" aria-label="Estado de la cotización">
       <div class="tradein-chip">
         <span class="tradein-chip__label">Flujo</span>
@@ -40,7 +37,6 @@
   </header>
 
   <section class="tradein-grid" aria-label="Cotización de trade-in">
-    <!-- Card del formulario -->
     <article class="card card--tradein" aria-label="Formulario de cotización">
       <div class="card__header">
         <div class="card__header-left">
@@ -85,11 +81,73 @@
 
         <fieldset class="tradein-fieldset">
           <legend class="field__label">Por favor marca en las casillas las cosas que no funcionan en tu teléfono</legend>
+          
+          <!-- Leyenda desplegable -->
+          <div class="tradein-legend">
+            <details class="tradein-legend__details">
+              <summary class="tradein-legend__summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                ¿Qué significa cada falla? (Haz clic para ver)
+              </summary>
+              <div class="tradein-legend__content">
+                <dl class="tradein-legend__list">
+                  <dt><strong>Botón de power</strong></dt>
+                  <dd>Botón lateral derecho para encender/apagar el equipo. Si falla, el equipo no se enciende o se apaga solo.</dd>
+                  <dt><strong>Cornetas</strong></dt>
+                  <dd>Altavoz superior del teléfono (auricular). Si falla, no escuchas durante las llamadas.</dd>
+                  <dt><strong>Mica</strong></dt>
+                  <dd>Vidrio protector de la pantalla. Rayones, grietas o rotura afectan la visibilidad y el valor.</dd>
+                  <dt><strong>LCD</strong></dt>
+                  <dd>La pantalla en sí. Líneas, manchas negras, colores extraños o pantalla completamente negra.</dd>
+                  <dt><strong>Táctil</strong></dt>
+                  <dd>El panel táctil no responde al tacto o lo hace de forma errática.</dd>
+                  <dt><strong>Botones laterales</strong></dt>
+                  <dd>Botones de volumen (+ y -) que no responden o están atascados.</dd>
+                  <dt><strong>Botones inferiores</strong></dt>
+                  <dd>Botones de navegación inferiores que no funcionan.</dd>
+                  <dt><strong>Puerto de carga</strong></dt>
+                  <dd>El puerto no reconoce el cable, carga lento o intermitente.</dd>
+                  <dt><strong>WiFi</strong></dt>
+                  <dd>No detecta redes WiFi, se desconecta constantemente o no se conecta.</dd>
+                  <dt><strong>Cámara trasera</strong></dt>
+                  <dd>La cámara principal no enfoca, toma fotos borrosas o con manchas.</dd>
+                  <dt><strong>Cámara delantera</strong></dt>
+                  <dd>La cámara frontal (selfie) no funciona o toma fotos de baja calidad.</dd>
+                  <dt><strong>Flash</strong></dt>
+                  <dd>El flash LED no funciona, no enciende o parpadea.</dd>
+                  <dt><strong>Señal auricular</strong></dt>
+                  <dd>El sonido del auricular es bajo, distorsionado o no se escucha.</dd>
+                  <dt><strong>Micrófono</strong></dt>
+                  <dd>No te escuchan durante las llamadas, o grabas audio con ruido.</dd>
+                  <dt><strong>Sensor de proximidad</strong></dt>
+                  <dd>La pantalla no se apaga cuando acercas el teléfono a tu oído durante llamadas.</dd>
+                  <dt><strong>Caja</strong></dt>
+                  <dd>La caja original del equipo está dañada, rota o no está incluida.</dd>
+                  <dt><strong>Cargador</strong></dt>
+                  <dd>El cargador no funciona o está dañado.</dd>
+                  <dt><strong>Cable</strong></dt>
+                  <dd>El cable USB/Lightning está dañado, roto o no funciona.</dd>
+                  <dt><strong>Audífonos</strong></dt>
+                  <dd>Los audífonos incluidos no funcionan o tienen mala calidad de sonido.</dd>
+                  <dt><strong>Manuales</strong></dt>
+                  <dd>La documentación, manuales o guías no están completos o faltan.</dd>
+                </dl>
+              </div>
+            </details>
+          </div>
+
           <div class="tradein-fallas">
             {% for falla in fallas %}
               <label class="tradein-check">
                 <input type="checkbox" name="fallas" value="{{ falla.clave }}">
                 <span>{{ falla.etiqueta }}</span>
+                {% if falla.clave in ['lcd', 'tactil', 'camara_trasera', 'camara_delantera'] %}
+                  <span class="tradein-check__badge">Costo alto</span>
+                {% endif %}
               </label>
             {% endfor %}
           </div>
@@ -105,7 +163,6 @@
       </form>
     </article>
 
-    <!-- Card del resultado -->
     <article class="card card--tradein card--result" aria-label="Resultado de la cotización">
       <div class="card__header">
         <div class="card__header-left">
@@ -128,6 +185,10 @@
           <div>
             <span>Deducción repuestos (USD)</span>
             <strong id="tradein-deduccion">$0.00</strong>
+          </div>
+          <div>
+            <span>Total fallas</span>
+            <strong id="tradein-total-fallas">0</strong>
           </div>
         </div>
 

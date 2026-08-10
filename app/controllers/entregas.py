@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.entrega import EntregaModel
 from app.models.personal_delivery import PersonalDeliveryModel
+from app.utils.validators import validar_numero, validar_texto, validar_texto_numero
 import traceback
 
 entregas_blueprint = Blueprint("entregas", __name__)
@@ -50,8 +51,18 @@ def api_crear_personal():
         nombre = data.get("nombre", "").strip()
         apellido = data.get("apellido", "").strip()
         
-        if not cedula or not nombre or not apellido:
-            return jsonify({"success": False, "error": "Cédula, nombre y apellido son obligatorios"}), 400
+        # Validaciones
+        error = validar_numero(cedula, 6, 9, "Cédula")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto(nombre, 1, 50, "Nombre")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto(apellido, 1, 50, "Apellido")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
@@ -82,8 +93,18 @@ def api_actualizar_personal(cedula):
         nombre = data.get("nombre", "").strip()
         apellido = data.get("apellido", "").strip()
         
-        if not nombre or not apellido:
-            return jsonify({"success": False, "error": "Nombre y apellido son obligatorios"}), 400
+        # Validaciones
+        error = validar_numero(cedula, 6, 9, "Cédula")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto(nombre, 1, 50, "Nombre")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto(apellido, 1, 50, "Apellido")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
@@ -110,6 +131,10 @@ def api_actualizar_personal(cedula):
 def api_eliminar_personal(cedula):
     """Eliminar delivery"""
     try:
+        error = validar_numero(cedula, 6, 9, "Cédula")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         modelo = PersonalDeliveryModel(
@@ -155,12 +180,18 @@ def api_registrar_entrega():
         direccion = data.get("direccion", "").strip()
         estado = int(data.get("estado", 0))
         
-        if not factura_id:
-            return jsonify({"success": False, "error": "La factura es obligatoria"}), 400
-        if not cedula_delivery:
-            return jsonify({"success": False, "error": "El delivery es obligatorio"}), 400
-        if not direccion:
-            return jsonify({"success": False, "error": "La dirección es obligatoria"}), 400
+        # Validaciones
+        error = validar_texto_numero(factura_id, 1, 50, "Factura")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_numero(cedula_delivery, 6, 9, "Cédula del delivery")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto_numero(direccion, 1, 255, "Dirección")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
@@ -191,8 +222,14 @@ def api_actualizar_entrega(entrega_id):
         direccion = data.get("direccion", "").strip()
         estado = int(data.get("estado", 0))
         
-        if not direccion:
-            return jsonify({"success": False, "error": "La dirección es obligatoria"}), 400
+        # Validaciones
+        error = validar_texto_numero(entrega_id, 1, 50, "ID de entrega")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
+        error = validar_texto_numero(direccion, 1, 255, "Dirección")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
@@ -219,6 +256,10 @@ def api_actualizar_entrega(entrega_id):
 def api_eliminar_entrega(entrega_id):
     """Eliminar entrega"""
     try:
+        error = validar_texto_numero(entrega_id, 1, 50, "ID de entrega")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+        
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
         
         modelo = EntregaModel(

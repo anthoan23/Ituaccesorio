@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const montoEstimado = document.getElementById("tradein-monto");
   const precioBase = document.getElementById("tradein-base");
   const deduccionTotal = document.getElementById("tradein-deduccion");
+  const totalFallas = document.getElementById("tradein-total-fallas");
   const detallesFallas = document.getElementById("tradein-detalles");
   const mensajes = document.getElementById("tradein-mensajes");
 
@@ -60,15 +61,29 @@ document.addEventListener("DOMContentLoaded", () => {
     montoEstimado.textContent = formatMoney(resultado.monto_estimado);
     precioBase.textContent = formatMoney(resultado.precio_base);
     deduccionTotal.textContent = formatMoney(resultado.costo_total_repuestos);
+    
+    if (totalFallas) {
+      totalFallas.textContent = resultado.total_fallas || 0;
+    }
 
     const detalles = Array.isArray(resultado.detalles_fallas) && resultado.detalles_fallas.length > 0
       ? resultado.detalles_fallas
       : [];
 
     if (detallesFallas) {
-      detallesFallas.innerHTML = detalles.length > 0
-        ? detalles.map((detalle) => `<li><span>${detalle.etiqueta}</span><strong>${formatMoney(detalle.costo)}</strong></li>`).join("")
-        : "<li>No hay fallas seleccionadas.</li>";
+      if (detalles.length > 0) {
+        detallesFallas.innerHTML = detalles.map((detalle) => `
+          <li>
+            <div>
+              <strong>${detalle.etiqueta}</strong>
+              <span class="tradein-detalle-descripcion">${detalle.descripcion || ''}</span>
+            </div>
+            <strong>${formatMoney(detalle.costo)}</strong>
+          </li>
+        `).join("");
+      } else {
+        detallesFallas.innerHTML = "<li>No hay fallas seleccionadas.</li>";
+      }
     }
 
     const advertencias = Array.isArray(resultado.advertencias) ? resultado.advertencias : [];
@@ -86,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     montoEstimado.textContent = "$0.00";
     precioBase.textContent = "$0.00";
     deduccionTotal.textContent = "$0.00";
+    if (totalFallas) totalFallas.textContent = "0";
     if (detallesFallas) {
       detallesFallas.innerHTML = "<li>No hay fallas seleccionadas.</li>";
     }

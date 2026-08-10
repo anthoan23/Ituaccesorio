@@ -11,10 +11,14 @@ from app.models.permisos import Permiso
 from app.models.roles import Rol
 from app.models.clientes import Clientes
 from app.utils.validators import (
-    validar_solo_letras, 
-    validar_contraseña, 
+    validar_texto,
+    validar_numero,
+    validar_solo_letras,
+    validar_solo_letras_numeros,
+    validar_contraseña,
     validar_cedula_venezolana,
     validar_sin_espacios,
+    validar_sin_caracteres_especiales,
     validar_campo_comun
 )
 
@@ -85,69 +89,44 @@ def api_listar_clientes():
     return jsonify({"success": True, "clientes": clientes_transformados})
 
 
-def _validar_usuario_data(data, es_nuevo=True):
-    """
-    Función auxiliar para validar los datos de usuario.
-    
-    Args:
-        data (dict): Datos del usuario
-        es_nuevo (bool): Si es un nuevo usuario (requiere contraseña)
-    
-    Returns:
-        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
-    """
-    # Validar nombre (solo letras, espacios, acentos y ñ)
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return error, 400
-    
-    # Validar cédula
-    cedula = data.get("cedula_personal") or data.get("cedula", "")
-    error = validar_cedula_venezolana(cedula, "Cédula")
-    if error:
-        return error, 400
-    
-    # Validar contraseña (solo si es nuevo o si se proporciona)
-    password = data.get("password", "").strip()
-    if es_nuevo:
-        error = validar_contraseña(password, 6, 50, "Contraseña")
-        if error:
-            return error, 400
-    elif password:  # Si se actualiza y se proporciona contraseña
-        error = validar_contraseña(password, 6, 50, "Contraseña")
-        if error:
-            return error, 400
-    
-    # Validar rol
-    rol_id = data.get("rol_id", "").strip()
-    if not rol_id:
-        return "El campo Rol es obligatorio.", 400
-    
-    # Verificar que el rol exista
-    from app.models.roles import Rol
-    rol_model = Rol(id=rol_id)
-    if not rol_model.verificar_rol_por_id():
-        return f"El rol con ID {rol_id} no existe.", 400
-    
-    return None, 200
-
-
 @usuarios_blueprint.route("/api/usuarios", methods=["POST"])
 @jwt_required
 @solo_roles(['admin'])
 def api_crear_usuario():
     data = request.get_json(silent=True) or request.form
     
-    # Validar datos
-    error, status = _validar_usuario_data(data, es_nuevo=True)
-    if error:
-        return jsonify({"success": False, "error": error}), status
-    
+    # Validar nombre
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Validar cédula
     cedula = data.get("cedula_personal") or data.get("cedula", "")
+    error = validar_cedula_venezolana(cedula, "Cédula")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Validar contraseña
     password = data.get("password", "").strip()
+    error = validar_contraseña(password, 6, 50, "Contraseña")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Validar rol
     rol_id = data.get("rol_id", "").strip()
+    if not rol_id:
+        return jsonify({"success": False, "error": "El campo Rol es obligatorio."}), 400
+    
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Verificar que el rol exista
+    from app.models.roles import Rol
+    rol_model = Rol(id=rol_id)
+    if not rol_model.verificar_rol_por_id():
+        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 400
     
     # Guardar foto de perfil
     foto_perfil = None
@@ -192,15 +171,44 @@ def api_crear_usuario():
 def api_actualizar_usuario(usuario_id):
     data = request.get_json(silent=True) or request.form
     
-    # Validar datos (es_nuevo=False porque puede no tener contraseña)
-    error, status = _validar_usuario_data(data, es_nuevo=False)
+    # Validar ID de usuario
+    error = validar_numero(usuario_id, 1, 10, "Usuario")
     if error:
-        return jsonify({"success": False, "error": error}), status
+        return jsonify({"success": False, "error": error}), 400
     
+    # Validar nombre
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Validar cédula
     cedula = data.get("cedula_personal") or data.get("cedula", "")
+    error = validar_cedula_venezolana(cedula, "Cédula")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Validar contraseña (opcional)
     password = data.get("password", "").strip()
+    if password:
+        error = validar_contraseña(password, 6, 50, "Contraseña")
+        if error:
+            return jsonify({"success": False, "error": error}), 400
+    
+    # Validar rol
     rol_id = data.get("rol_id", "").strip()
+    if not rol_id:
+        return jsonify({"success": False, "error": "El campo Rol es obligatorio."}), 400
+    
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    # Verificar que el rol exista
+    from app.models.roles import Rol
+    rol_model = Rol(id=rol_id)
+    if not rol_model.verificar_rol_por_id():
+        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 400
     
     # Guardar foto de perfil
     foto_perfil = None
@@ -244,6 +252,10 @@ def api_actualizar_usuario(usuario_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_usuario(usuario_id):
+    error = validar_numero(usuario_id, 1, 10, "Usuario")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     if usuario_actual_id == usuario_id:
@@ -301,7 +313,7 @@ def api_actualizar_mi_perfil():
     nombre = data.get("nombre", "").strip()
     password = data.get("password", "").strip()
     
-    # Validar nombre (solo letras, espacios, acentos y ñ)
+    # Validar nombre
     error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
     if error:
         return jsonify({"success": False, "error": error}), 400
@@ -311,6 +323,9 @@ def api_actualizar_mi_perfil():
         error = validar_contraseña(password, 6, 50, "Contraseña")
         if error:
             return jsonify({"success": False, "error": error}), 400
+    
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre es obligatorio."}), 400
     
     # Guardar foto de perfil
     foto_perfil = None
@@ -327,9 +342,6 @@ def api_actualizar_mi_perfil():
         ruta_fisica = os.path.join(carpeta_destino, nombre_final)
         archivo.save(ruta_fisica)
         foto_perfil = f"/static/img/perfil/{nombre_final}"
-
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre es obligatorio."}), 400
 
     usuario_model = Usuarios(usuario_id=usuario_id)
     usuario_actual_db = usuario_model.obtener_usuario_por_id(usuario_id)
@@ -367,44 +379,6 @@ def api_actualizar_mi_perfil():
 
 # ==================== MÓDULOS ====================
 
-def _validar_modulo_data(data):
-    """
-    Función auxiliar para validar los datos de módulo.
-    
-    Args:
-        data (dict): Datos del módulo
-    
-    Returns:
-        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
-    """
-    nombre = data.get("nombre", "").strip()
-    
-    # Validar nombre (solo letras y números, sin espacios)
-    error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
-    if error:
-        return error, 400
-    
-    # Validar descripción (sin caracteres especiales)
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_sin_espacios(descripcion, "Descripción")
-        if error:
-            # Para descripción, permitimos espacios pero no caracteres especiales
-            # Usamos validar_campo_comun con tipo 'sin_caracteres_especiales'
-            error = validar_campo_comun(
-                descripcion, 
-                'sin_caracteres_especiales', 
-                'Descripción',
-                min_len=1,
-                max_len=255,
-                permitir_espacios=True
-            )
-            if error:
-                return error, 400
-    
-    return None, 200
-
-
 @usuarios_blueprint.route("/api/modulos", methods=["GET"])
 @jwt_required
 @solo_roles(['admin'])
@@ -420,12 +394,16 @@ def api_listar_modulos():
 def api_crear_modulo():
     data = request.get_json(silent=True) or {}
     
-    error, status = _validar_modulo_data(data)
-    if error:
-        return jsonify({"success": False, "error": error}), status
-    
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     descripcion = data.get("descripcion", "").strip()
+    if descripcion:
+        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
 
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -449,12 +427,20 @@ def api_crear_modulo():
 def api_actualizar_modulo(modulo_id):
     data = request.get_json(silent=True) or {}
     
-    error, status = _validar_modulo_data(data)
+    error = validar_numero(modulo_id, 1, 10, "Módulo")
     if error:
-        return jsonify({"success": False, "error": error}), status
+        return jsonify({"success": False, "error": error}), 400
     
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     descripcion = data.get("descripcion", "").strip()
+    if descripcion:
+        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
 
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -477,6 +463,10 @@ def api_actualizar_modulo(modulo_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_modulo(modulo_id):
+    error = validar_numero(modulo_id, 1, 10, "Módulo")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     modulo_model = Modulo(id=modulo_id, usuario_id=usuario_actual_id)
@@ -494,6 +484,10 @@ def api_eliminar_modulo(modulo_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_obtener_permisos_por_rol(rol_id):
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     rol_model = Rol(id=rol_id)
     if not rol_model.verificar_rol_por_id():
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
@@ -512,6 +506,10 @@ def api_obtener_permisos_por_rol(rol_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_actualizar_permisos_rol(rol_id):
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     data = request.get_json(silent=True) or {}
     permisos = data.get("permisos", [])
 
@@ -594,6 +592,14 @@ def api_actualizar_permisos_rol(rol_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_obtener_permiso_especifico(rol_id, modulo_id):
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
+    error = validar_numero(modulo_id, 1, 10, "Módulo")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     rol_model = Rol(id=rol_id)
     if not rol_model.verificar_rol_por_id():
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
@@ -642,40 +648,6 @@ def api_obtener_mis_permisos():
 
 # ==================== ROLES ====================
 
-def _validar_rol_data(data):
-    """
-    Función auxiliar para validar los datos de rol.
-    
-    Args:
-        data (dict): Datos del rol
-    
-    Returns:
-        tuple: (error_mensaje, error_codigo) o (None, None) si es válido
-    """
-    nombre = data.get("nombre", "").strip()
-    
-    # Validar nombre (solo letras, espacios, acentos y ñ)
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return error, 400
-    
-    # Validar descripción (sin caracteres especiales)
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_campo_comun(
-            descripcion, 
-            'sin_caracteres_especiales', 
-            'Descripción',
-            min_len=1,
-            max_len=255,
-            permitir_espacios=True
-        )
-        if error:
-            return error, 400
-    
-    return None, 200
-
-
 @usuarios_blueprint.route("/api/roles", methods=["GET"])
 @jwt_required
 @solo_roles(['admin'])
@@ -691,12 +663,16 @@ def api_listar_roles():
 def api_crear_rol():
     data = request.get_json(silent=True) or {}
     
-    error, status = _validar_rol_data(data)
-    if error:
-        return jsonify({"success": False, "error": error}), status
-    
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     descripcion = data.get("descripcion", "").strip()
+    if descripcion:
+        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
 
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -720,12 +696,20 @@ def api_crear_rol():
 def api_actualizar_rol(rol_id):
     data = request.get_json(silent=True) or {}
     
-    error, status = _validar_rol_data(data)
+    error = validar_numero(rol_id, 1, 10, "Rol")
     if error:
-        return jsonify({"success": False, "error": error}), status
+        return jsonify({"success": False, "error": error}), 400
     
     nombre = data.get("nombre", "").strip()
+    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     descripcion = data.get("descripcion", "").strip()
+    if descripcion:
+        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+        if error:
+            return jsonify({"success": False, "error": error}), 400
 
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
@@ -756,6 +740,10 @@ def api_actualizar_rol(rol_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_rol(rol_id):
+    error = validar_numero(rol_id, 1, 10, "Rol")
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
     

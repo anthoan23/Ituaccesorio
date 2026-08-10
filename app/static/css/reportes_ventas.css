@@ -388,26 +388,335 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
+    padding: 0.5rem 0.75rem;
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.items-local .cart-item span {
+    color: var(--text-strong);
+}
+
+.items-local .cart-item .icon-action {
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.items-local .cart-item .icon-action:hover {
+    color: #ef4444;
 }
 
 .items-local .cart-total {
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     text-align: right;
     font-weight: 700;
-    border-top: 2px solid var(--border-light);
+    color: var(--text-strong);
+    border-top: 2px solid var(--yellow);
+    margin-top: 0.25rem;
 }
 
 .items-local .sin-resultados {
     padding: 1rem;
     text-align: center;
     color: var(--text-muted);
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-light);
 }
 
-.cart-item .icon-action {
-    width: 30px;
-    height: 30px;
+/* ============================================
+   CLIENTE BUSCADOR (estilo proveedores)
+   ============================================ */
+.cliente-busqueda-container {
+    position: relative;
+}
+
+.cliente-busqueda-input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-md);
+    background: var(--input-bg);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cliente-busqueda-input-wrapper:focus-within {
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.15);
+}
+
+.cliente-busqueda-input-wrapper .field__input {
+    border: none !important;
+    box-shadow: none !important;
+    flex: 1;
+    background: transparent !important;
+    color: var(--text-strong) !important;
+}
+
+.cliente-busqueda-input-wrapper .field__input::placeholder {
+    color: var(--input-placeholder);
+}
+
+.cliente-busqueda-input-wrapper .field__input:focus {
+    box-shadow: none !important;
+}
+
+.cliente-busqueda-input-wrapper .ui-btn--ghost {
+    color: var(--text-muted);
+    background: transparent !important;
+    border: none !important;
+}
+
+.cliente-busqueda-input-wrapper .ui-btn--ghost:hover {
+    color: var(--yellow);
+    background: transparent !important;
+}
+
+.cliente-resultados-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: var(--shadow-dash);
+}
+
+.cliente-resultados-dropdown .resultado-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s;
+    color: var(--text-strong);
+    background: var(--bg-secondary);
+}
+
+.cliente-resultados-dropdown .resultado-item:hover {
+    background: var(--ghost-hover-bg);
+}
+
+.cliente-resultados-dropdown .resultado-item:last-child {
+    border-bottom: none;
+}
+
+.cliente-resultados-dropdown .resultado-item .nombre {
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.cliente-resultados-dropdown .resultado-item .detalle {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.cliente-resultados-dropdown .sin-resultados {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+}
+
+.cliente-seleccionado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 8px 14px;
+    background: rgba(34, 197, 94, 0.08);
+    border-radius: var(--radius-md);
+    border-left: 4px solid #22c55e;
+}
+
+.cliente-seleccionado #cliente-seleccionado-info {
+    color: var(--text-strong);
+    font-weight: 500;
+}
+
+.cliente-seleccionado .icon-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cliente-seleccionado .icon-action:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.cliente-seleccionado .icon-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+/* ============================================
+   PRODUCTO AGREGAR ROW
+   ============================================ */
+.producto-agregar-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.producto-agregar-row .field {
+    margin-bottom: 0;
+}
+
+.producto-agregar-row .ui-btn--primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ============================================
+   MODAL - NUEVA VENTA LOCAL
+   ============================================ */
+#venta-local-modal .ui-modal__dialog {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+}
+
+#venta-local-modal .ui-modal__title {
+    color: var(--text-strong);
+}
+
+#venta-local-modal .ui-modal__close {
+    color: var(--text-muted);
+}
+
+#venta-local-modal .ui-modal__close:hover {
+    color: var(--text-strong);
+    background: var(--ghost-hover-bg);
+}
+
+#venta-local-modal .ui-form__grid {
+    background: transparent;
+}
+
+#venta-local-modal .field__label {
+    color: var(--text-muted);
+}
+
+#venta-local-modal .field__input {
+    background: var(--input-bg);
+    color: var(--text-strong);
+    border-color: var(--input-border);
+}
+
+#venta-local-modal .field__input:focus {
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px rgba(243, 197, 0, 0.15);
+}
+
+#venta-local-modal .field__input::placeholder {
+    color: var(--input-placeholder);
+}
+
+#venta-local-modal .field-hint {
+    color: var(--text-muted-soft);
+}
+
+#venta-local-modal .select-wrapper select {
+    background-color: var(--input-bg);
+    color: var(--text-strong);
+    border-color: var(--input-border);
+}
+
+#venta-local-modal .select-wrapper select option {
+    background: var(--bg-secondary);
+    color: var(--text-strong);
+}
+
+/* ============================================
+   MODAL - DETALLE VENTA
+   ============================================ */
+#modal-detalle-venta .ui-modal__dialog {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+}
+
+#modal-detalle-venta .ui-modal__title {
+    color: var(--text-strong);
+}
+
+#modal-detalle-venta .ui-modal__close {
+    color: var(--text-muted);
+}
+
+#modal-detalle-venta .ui-modal__close:hover {
+    color: var(--text-strong);
+    background: var(--ghost-hover-bg);
+}
+
+#modal-detalle-venta .detail-info {
+    background: var(--glass-bg);
+    border-color: var(--border-light);
+}
+
+#modal-detalle-venta .detail-info-item strong {
+    color: var(--text-muted);
+}
+
+#modal-detalle-venta .detail-info-item span {
+    color: var(--text-strong);
+}
+
+#modal-detalle-venta .table {
+    background: transparent;
+}
+
+#modal-detalle-venta .table th {
+    color: var(--text-muted);
+    background: var(--table-header);
+}
+
+#modal-detalle-venta .table td {
+    color: var(--text-strong);
+    border-bottom-color: var(--border-light);
+}
+
+#modal-detalle-venta .detalle-total-label {
+    color: var(--text-strong);
+}
+
+#modal-detalle-venta .detalle-total-amount {
+    color: var(--yellow);
+}
+
+/* ============================================
+   SCROLLBAR PARA DROPDOWN
+   ============================================ */
+.cliente-resultados-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cliente-resultados-dropdown::-webkit-scrollbar-track {
+    background: var(--glass-bg);
+    border-radius: 10px;
+}
+
+.cliente-resultados-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(243, 197, 0, 0.3);
+    border-radius: 10px;
+}
+
+.cliente-resultados-dropdown::-webkit-scrollbar-thumb:hover {
+    background: rgba(243, 197, 0, 0.5);
 }
 
 /* ============================================
@@ -451,6 +760,12 @@
     .ui-modal__dialog {
         padding: 1rem;
         width: 95%;
+        max-height: 95vh;
+    }
+    
+    .ui-modal__body {
+        max-height: calc(95vh - 120px);
+        overflow-y: auto;
     }
     
     .tabs {
@@ -467,6 +782,19 @@
     
     .detail-info-grid {
         grid-template-columns: 1fr 1fr;
+    }
+    
+    .producto-agregar-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .producto-agregar-row .field {
+        width: 100% !important;
+    }
+    
+    .cliente-resultados-dropdown {
+        max-height: 180px;
     }
 }
 
@@ -492,5 +820,14 @@
     .export-actions .ui-btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    .cliente-resultados-dropdown {
+        max-height: 150px;
+    }
+    
+    .cliente-resultados-dropdown .resultado-item {
+        padding: 8px 12px;
+        font-size: 0.9rem;
     }
 }

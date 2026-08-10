@@ -4,7 +4,7 @@
   let reporteDatosActuales = [];
   let reporteFiltrosActuales = {};
   let itemsLocal = [];
-  let clientesMap = {};
+  let clientesCache = [];
 
   function getAuthToken() {
     return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
@@ -121,7 +121,7 @@
     }
   }
 
-  // ==================== ABRIR/CERRAR MODALES (con UiModal) ====================
+  // ==================== MODALES ====================
   function abrirModal(id) {
     if (window.UiModal && typeof window.UiModal.openById === 'function') {
       window.UiModal.openById(id);
@@ -298,14 +298,135 @@
 
   // ==================== VENTAS LOCALES ====================
 
+  // --- Buscador de Clientes (estilo proveedores) ---
+  async function cargarClientes() {
+    try {
+      const data = await fetchJson("/api/clientes");
+      clientesCache = data.clientes || [];
+      return clientesCache;
+    } catch (err) {
+      console.warn("Error cargando clientes:", err);
+      return [];
+    }
+  }
+
+  function buscarClientes(query) {
+    if (!query || query.length < 1) return [];
+    const q = query.toLowerCase().trim();
+    return clientesCache.filter(c => {
+      const id = String(c.id || "");
+      const nombre = (c.nombre || "").toLowerCase();
+      const apellido = (c.apellido || "").toLowerCase();
+      const cedula = String(c.cedula || c.id || "").toLowerCase();
+      return id.includes(q) || nombre.includes(q) || apellido.includes(q) || cedula.includes(q);
+    }).slice(0, 10);
+  }
+
+  function renderClientesResultados(resultados) {
+    const container = document.getElementById("cliente-resultados");
+    if (!container) return;
+
+    if (resultados.length === 0) {
+      container.innerHTML = '<div class="sin-resultados">No se encontraron clientes</div>';
+      container.classList.remove("is-hidden");
+      return;
+    }
+
+    container.innerHTML = resultados.map(c => `
+      <div class="resultado-item" data-id="${escapeHtml(c.id)}" data-nombre="${escapeHtml(c.nombre)}" data-apellido="${escapeHtml(c.apellido || '')}" data-cedula="${escapeHtml(c.cedula || '')}">
+        <div class="nombre">${escapeHtml(c.nombre)} ${escapeHtml(c.apellido || '')}</div>
+        <div class="detalle">ID: ${escapeHtml(c.id)} ${c.cedula ? '• Cédula: ' + escapeHtml(c.cedula) : ''}</div>
+      </div>
+    `).join("");
+
+    container.querySelectorAll(".resultado-item").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = el.dataset.id;
+        const nombre = el.dataset.nombre;
+        const apellido = el.dataset.apellido;
+        const cedula = el.dataset.cedula;
+        seleccionarCliente(id, nombre, apellido, cedula);
+      });
+    });
+
+    container.classList.remove("is-hidden");
+  }
+
+  function seleccionarCliente(id, nombre, apellido, cedula) {
+    document.getElementById("cliente-id").value = id;
+    document.getElementById("cliente-busqueda-input").value = "";
+    document.getElementById("cliente-resultados").classList.add("is-hidden");
+    
+    const info = document.getElementById("cliente-seleccionado-info");
+    info.textContent = `${nombre} ${apellido || ''} (ID: ${id}${cedula ? ' • Cédula: ' + cedula : ''})`;
+    document.getElementById("cliente-seleccionado").classList.remove("is-hidden");
+  }
+
+  function limpiarCliente() {
+    document.getElementById("cliente-id").value = "";
+    document.getElementById("cliente-busqueda-input").value = "";
+    document.getElementById("cliente-resultados").classList.add("is-hidden");
+    document.getElementById("cliente-seleccionado").classList.add("is-hidden");
+  }
+
+  function initClienteBuscador() {
+    const input = document.getElementById("cliente-busqueda-input");
+    const btn = document.getElementById("cliente-buscar-btn");
+    const resultados = document.getElementById("cliente-resultados");
+
+    if (!input) return;
+
+    // Cargar clientes en cache
+    cargarClientes();
+
+    const handleSearch = () => {
+      const query = input.value;
+      if (!query || query.length < 1) {
+        resultados.classList.add("is-hidden");
+        return;
+      }
+      const results = buscarClientes(query);
+      renderClientesResultados(results);
+    };
+
+    input.addEventListener("input", handleSearch);
+    input.addEventListener("focus", () => {
+      if (input.value.length >= 1) handleSearch();
+    });
+
+    if (btn) {
+      btn.addEventListener("click", handleSearch);
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener("click", (e) => {
+      const container = document.querySelector(".cliente-busqueda-container");
+      if (container && !container.contains(e.target)) {
+        resultados.classList.add("is-hidden");
+      }
+    });
+
+    // Enter para seleccionar el primer resultado
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const firstItem = resultados?.querySelector(".resultado-item");
+        if (firstItem) firstItem.click();
+      }
+    });
+
+    document.getElementById("cliente-limpiar")?.addEventListener("click", limpiarCliente);
+  }
+
+  // --- Productos ---
   async function cargarProductosParaSelect() {
     try {
       const data = await fetchJson("/api/catalogo/productos");
       const select = document.getElementById("producto-select");
       if (select) {
-        select.innerHTML = '<option value="">-- Selecciona --</option>' +
+        select.innerHTML = '<option value="">-- Selecciona un producto --</option>' +
           (data.productos || [])
-            .map(p => `<option value="${p.id}" data-precio="${p.precio_usd}">${p.nombre} - $${p.precio_usd}</option>`)
+            .map(p => `<option value="${p.id}" data-precio="${p.precio_usd}">${escapeHtml(p.nombre)} - $${p.precio_usd}</option>`)
             .join("");
       }
     } catch (err) {
@@ -313,24 +434,7 @@
     }
   }
 
-  async function cargarClientesParaDatalist() {
-    try {
-      const data = await fetchJson("/api/clientes");
-      const list = document.getElementById("clientes-list");
-      if (!list) return;
-      clientesMap = {};
-      const clientes = data.clientes || [];
-      list.innerHTML = clientes.map(c => {
-        const text = `${c.id} - ${c.nombre} ${c.apellido || ""}`.trim();
-        clientesMap[String(c.id)] = c.id;
-        clientesMap[(c.nombre + " " + (c.apellido || "")).trim().toLowerCase()] = c.id;
-        return `<option value="${escapeHtml(text)}"></option>`;
-      }).join("");
-    } catch (err) {
-      console.warn("Error cargando clientes:", err);
-    }
-  }
-
+  // --- Items del carrito ---
   function agregarItemLocal() {
     const select = document.getElementById("producto-select");
     const cantidad = parseInt(document.getElementById("cantidad-local")?.value || 1);
@@ -342,7 +446,7 @@
     }
 
     const option = select.options[select.selectedIndex];
-    const nombre = option.text.split(" - ")[0];
+    const nombre = option.text.split(" - $")[0] || option.text;
     const precio = parseFloat(option.dataset.precio);
 
     const existente = itemsLocal.find(i => i.producto_id == productoId);
@@ -373,7 +477,7 @@
         <div class="cart-item">
           <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
           <span>$${(Number(item.precio_usd) * item.cantidad).toFixed(2)}</span>
-          <button class="icon-action icon-action--danger" data-remove="${idx}" aria-label="Eliminar producto">
+          <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
           </button>
         </div>
@@ -392,25 +496,15 @@
     });
   }
 
+  // --- Registrar Venta Local ---
   async function registrarVentaLocal(event) {
     event.preventDefault();
 
-    const clienteInput = document.getElementById("cliente-id")?.value || "";
-    let clienteId = null;
-    const v = String(clienteInput).trim();
-    if (/^\d+$/.test(v)) {
-      clienteId = parseInt(v);
-    } else if (v.includes(" - ")) {
-      const parts = v.split(" - ");
-      if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
-    } else {
-      const lookup = v.toLowerCase();
-      if (clientesMap[lookup]) clienteId = clientesMap[lookup];
-    }
+    const clienteId = document.getElementById("cliente-id")?.value;
     const metodoPago = document.getElementById("metodo-local")?.value;
 
     if (!clienteId) {
-      mostrarToast("Cliente no encontrado. Escribe ID o selecciona un cliente válido.", "error");
+      mostrarToast("Selecciona un cliente válido", "error");
       return;
     }
     if (!itemsLocal.length) {
@@ -432,6 +526,10 @@
       }
     }
 
+    const btn = document.getElementById("btn-registrar-venta-local");
+    btn.disabled = true;
+    btn.textContent = "Registrando...";
+
     try {
       const data = await fetchJson("/api/reportes-ventas/venta-local", {
         method: "POST",
@@ -443,13 +541,25 @@
       });
 
       mostrarToast(`Venta registrada: ${data.factura_id}`, "success");
+      
+      // Limpiar y cerrar
       itemsLocal = [];
       renderItemsLocal();
       form?.reset();
+      limpiarCliente();
       cerrarModal("venta-local-modal");
-      cargarVentasLocales();
+      
+      // ✅ ACTUALIZAR LA LISTA DE VENTAS LOCALES
+      await cargarVentasLocales();
+      
+      // ✅ ACTUALIZAR EL REPORTE GENERAL
+      await generarReporte();
+
     } catch (err) {
       mostrarToast(err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Registrar Venta";
     }
   }
 
@@ -458,9 +568,17 @@
     if (form) form.reset();
     itemsLocal = [];
     renderItemsLocal();
+    limpiarCliente();
+    // Cargar clientes en cache
+    cargarClientes();
     abrirModal("venta-local-modal");
+    // Enfocar el buscador de clientes
+    setTimeout(() => {
+      document.getElementById("cliente-busqueda-input")?.focus();
+    }, 300);
   }
 
+  // --- Cargar Ventas Locales ---
   async function cargarVentasLocales() {
     const tabla = document.getElementById("ventas-locales-tabla");
     const busqueda = document.getElementById("venta-local-busqueda")?.value || "";
@@ -760,8 +878,8 @@
     document.getElementById("agregar-producto-local").addEventListener("click", agregarItemLocal);
     document.getElementById("form-venta-local").addEventListener("submit", registrarVentaLocal);
 
-    // Cerrar modales con UiModal (data-close-modal ya maneja el cierre)
-    // El cierre de modales se maneja automáticamente con UiModal
+    // Inicializar buscador de clientes
+    initClienteBuscador();
 
     // Inicializar FieldValidator
     if (window.FieldValidator) {
@@ -770,7 +888,7 @@
 
     // Cargar datos iniciales
     cargarProductosParaSelect();
-    cargarClientesParaDatalist();
+    cargarClientes();
     cargarVentasLocales();
     generarReporte();
   }

@@ -5,7 +5,8 @@ const Iconos = {
   lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>`,
   basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`,
   ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`,
-  herramientas: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" fill="currentColor"/></svg>`
+  herramientas: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" fill="currentColor"/></svg>`,
+  recargar: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/></svg>`
 };
 
 (() => {
@@ -102,7 +103,7 @@ const Iconos = {
             .replace(/'/g, "&#39;");
     }
 
-    // ==================== ABRIR/CERRAR MODALES (con UiModal) ====================
+    // ==================== ABRIR/CERRAR MODALES ====================
     function abrirModal(id) {
         if (window.UiModal && typeof window.UiModal.openById === 'function') {
             window.UiModal.openById(id);
@@ -166,10 +167,9 @@ const Iconos = {
                             <button class="icon-action icon-action--view" type="button" data-action="ver" data-id="${trade.id}" title="Ver detalle">
                                 ${Iconos.ojo}
                             </button>
-                            ${(!trade.tests || trade.tests.length === 0) ? 
-                                `<button class="icon-action icon-action--tests" type="button" data-action="tests" data-id="${trade.id}" title="Realizar pruebas">
-                                    ${Iconos.herramientas}
-                                </button>` : ''}
+                            <button class="icon-action icon-action--edit" type="button" data-action="editar" data-id="${trade.id}" title="Editar">
+                                ${Iconos.lapiz}
+                            </button>
                             <button class="icon-action icon-action--danger" type="button" data-action="eliminar" data-id="${trade.id}" title="Eliminar">
                                 ${Iconos.basura}
                             </button>
@@ -178,14 +178,15 @@ const Iconos = {
                  </tr>
             `).join("");
             
+            // Event listeners
             document.querySelectorAll('.icon-action[data-action="ver"]').forEach(btn => {
                 btn.removeEventListener('click', handleVerClick);
                 btn.addEventListener('click', handleVerClick);
             });
             
-            document.querySelectorAll('.icon-action[data-action="tests"]').forEach(btn => {
-                btn.removeEventListener('click', handleTestsClick);
-                btn.addEventListener('click', handleTestsClick);
+            document.querySelectorAll('.icon-action[data-action="editar"]').forEach(btn => {
+                btn.removeEventListener('click', handleEditarClick);
+                btn.addEventListener('click', handleEditarClick);
             });
             
             document.querySelectorAll('.icon-action[data-action="eliminar"]').forEach(btn => {
@@ -205,10 +206,10 @@ const Iconos = {
         if (id) mostrarDetalle(id);
     }
 
-    function handleTestsClick(e) {
+    function handleEditarClick(e) {
         const btn = e.currentTarget;
         const id = btn.getAttribute('data-id');
-        if (id) abrirModalTests(id);
+        if (id) abrirModalEditar(id);
     }
 
     function handleEliminarClick(e) {
@@ -329,7 +330,119 @@ const Iconos = {
         });
     }
 
-    // Enviar formulario de registro
+    // ==================== CARGAR TESTS EN FORMULARIO ====================
+    function cargarTestsEnFormulario(testsExistentes = []) {
+        const container = document.getElementById("tests-container-registro");
+        if (!container) return;
+        
+        const testsPorCategoria = {};
+        catalogoTests.forEach(test => {
+            if (!testsPorCategoria[test.categoria]) {
+                testsPorCategoria[test.categoria] = [];
+            }
+            testsPorCategoria[test.categoria].push(test);
+        });
+        
+        let html = `
+            <div class="tests-section">
+                <h4>🔧 Pruebas del equipo</h4>
+                <p class="field-hint">Seleccione el resultado de cada prueba para el equipo</p>
+        `;
+        
+        for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
+            html += `
+                <div class="test-categoria">
+                    <h5>${escapeHtml(categoria)}</h5>
+                    <div class="test-items">
+                        ${tests.map(test => {
+                            const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
+                            const existing = testsExistentes.find(t => t.nombre === test.nombre);
+                            const resultado = existing ? existing.resultado : "";
+                            return `
+                            <div class="test-item">
+                                <span class="test-nombre">${escapeHtml(test.nombre)}</span>
+                                <div class="test-resultados">
+                                    <label><input type="radio" name="test_${safeName}" value="Funciona" ${resultado === "Funciona" ? "checked" : ""}> ✅ Funciona</label>
+                                    <label><input type="radio" name="test_${safeName}" value="No funciona" ${resultado === "No funciona" ? "checked" : ""}> ❌ No funciona</label>
+                                    <label><input type="radio" name="test_${safeName}" value="No aplica" ${resultado === "No aplica" ? "checked" : ""}> ⚪ No aplica</label>
+                                </div>
+                            </div>
+                        `}).join("")}
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ==================== ABRIR MODAL EDITAR ====================
+    async function abrirModalEditar(tradeinId) {
+        try {
+            const data = await fetchJson(`/api/tradein/${tradeinId}/detalle`);
+            const detalle = data.detalle || {};
+            const tests = data.tests || [];
+            const fotos = data.fotos || [];
+            
+            tradeinActual = tradeinId;
+            
+            // Llenar el formulario con los datos existentes
+            document.getElementById("cliente-id").value = detalle.cliente_id || "";
+            document.getElementById("cliente-search-input").value = 
+                `${detalle.cliente_nombre || ""} ${detalle.cliente_apellido || ""}`.trim();
+            document.getElementById("producto-id").value = detalle.producto_id || "";
+            document.getElementById("id_equipo").value = detalle.imei || "";
+            document.getElementById("color").value = detalle.Color || "";
+            document.getElementById("capacidad").value = detalle.Capacidad || "";
+            document.getElementById("clave").value = detalle.Clave || "";
+            document.getElementById("patron").value = detalle.Patron || "";
+            document.getElementById("valor-pagado").value = detalle.valor_pagado || "";
+            document.getElementById("observaciones").value = detalle.observaciones || "";
+            
+            // Mostrar fotos existentes
+            const preview = document.getElementById("fotos-preview");
+            if (preview) {
+                preview.innerHTML = fotos.map(foto => `
+                    <div class="foto-preview foto-existente">
+                        <img src="${escapeHtml(foto.url)}" alt="Foto del equipo">
+                        <button type="button" class="remove-foto" data-url="${escapeHtml(foto.url)}">×</button>
+                    </div>
+                `).join("");
+                
+                preview.querySelectorAll('.remove-foto[data-url]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const container = btn.closest('.foto-preview');
+                        if (container) {
+                            container.style.opacity = '0.5';
+                            container.style.textDecoration = 'line-through';
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = 'fotos_eliminar';
+                            hidden.value = btn.dataset.url;
+                            container.appendChild(hidden);
+                        }
+                    });
+                });
+            }
+            
+            // Cargar tests en el formulario
+            cargarTestsEnFormulario(tests);
+            
+            // Cambiar el título del modal y el botón de submit
+            document.querySelector('#modal-registrar .ui-modal__title').textContent = 'Editar Trade-In';
+            const submitBtn = document.querySelector('#form-registrar-tradein button[type="submit"]');
+            submitBtn.textContent = 'Actualizar Trade-In';
+            submitBtn.dataset.modo = 'editar';
+            submitBtn.dataset.id = tradeinId;
+            
+            abrirModal("modal-registrar");
+            
+        } catch (err) {
+            mostrarToast(err.message || "Error al cargar datos para editar", "error");
+        }
+    }
+
+    // ==================== ENVIAR FORMULARIO ====================
     const formRegistrar = document.getElementById("form-registrar-tradein");
     if (formRegistrar) {
         formRegistrar.addEventListener("submit", async (e) => {
@@ -362,6 +475,12 @@ const Iconos = {
                 return;
             }
             
+            // Validar que el IMEI no tenga espacios
+            if (idEquipo.includes(' ')) {
+                mostrarToast("El IMEI no debe contener espacios", "error");
+                return;
+            }
+            
             const valorPagado = document.getElementById("valor-pagado")?.value;
             if (!valorPagado || Number(valorPagado) <= 0) {
                 mostrarToast("Debe ingresar un valor pagado válido", "error");
@@ -383,16 +502,32 @@ const Iconos = {
                 console.log("Equipo nuevo o error:", err);
             }
             
+            // Recopilar tests
+            const tests = [];
+            document.querySelectorAll("#tests-container-registro .test-item").forEach(item => {
+                const nombre = item.querySelector(".test-nombre")?.textContent || "";
+                const seleccionado = item.querySelector('input[type="radio"]:checked');
+                const resultado = seleccionado ? seleccionado.value : "Pendiente";
+                tests.push({ nombre, resultado });
+            });
+            
             const formData = new FormData(formRegistrar);
+            if (tests.length > 0) {
+                formData.append('tests', JSON.stringify(tests));
+            }
             
             const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
             const textoOriginal = btnSubmit.textContent;
             btnSubmit.disabled = true;
-            btnSubmit.textContent = "Registrando...";
+            btnSubmit.textContent = "Guardando...";
             
             try {
-                const response = await fetch("/api/tradein", {
-                    method: "POST",
+                const modo = btnSubmit.dataset.modo || 'registrar';
+                const url = modo === 'editar' ? `/api/tradein/${btnSubmit.dataset.id}` : "/api/tradein";
+                const method = modo === 'editar' ? "PUT" : "POST";
+                
+                const response = await fetch(url, {
+                    method: method,
                     headers: {
                         "Authorization": `Bearer ${getAuthToken()}`
                     },
@@ -402,27 +537,36 @@ const Iconos = {
                 const data = await response.json();
                 
                 if (data.success) {
-                    mostrarToast(data.message || "Trade-in registrado correctamente");
+                    mostrarToast(data.message || (modo === 'editar' ? "Trade-in actualizado correctamente" : "Trade-in registrado correctamente"));
                     cerrarModal("modal-registrar");
                     formRegistrar.reset();
                     if (fotosPreview) fotosPreview.innerHTML = "";
                     if (clienteIdInput) clienteIdInput.value = "";
                     if (clienteSearch) clienteSearch.value = "";
+                    
+                    // Resetear estado del formulario
+                    delete btnSubmit.dataset.modo;
+                    delete btnSubmit.dataset.id;
+                    document.querySelector('#modal-registrar .ui-modal__title').textContent = 'Registrar nuevo Trade-In';
+                    btnSubmit.textContent = 'Registrar Trade-In';
+                    
                     await cargarEstadisticas();
                     await cargarTradeIns();
                 } else {
-                    mostrarToast(data.error || "Error al registrar", "error");
+                    mostrarToast(data.error || "Error al guardar", "error");
                 }
             } catch (err) {
                 mostrarToast(err.message || "Error de conexión", "error");
             } finally {
                 btnSubmit.disabled = false;
-                btnSubmit.textContent = textoOriginal;
+                if (btnSubmit.dataset.modo !== 'editar') {
+                    btnSubmit.textContent = textoOriginal;
+                }
             }
         });
     }
 
-    // ==================== TESTS ====================
+    // ==================== TESTS EN MODAL SEPARADO (PARA COMPATIBILIDAD) ====================
     async function cargarCatalogoTests() {
         try {
             const data = await fetchJson("/api/tradein/catalogo-tests");
@@ -455,7 +599,6 @@ const Iconos = {
             if (!container) return;
             
             const testsPorCategoria = {};
-            
             catalogoTests.forEach(test => {
                 if (!testsPorCategoria[test.categoria]) {
                     testsPorCategoria[test.categoria] = [];
@@ -477,6 +620,7 @@ const Iconos = {
                                     <div class="test-resultados">
                                         <label><input type="radio" name="test_${safeName}" value="Funciona"> ✅ Funciona</label>
                                         <label><input type="radio" name="test_${safeName}" value="No funciona"> ❌ No funciona</label>
+                                        <label><input type="radio" name="test_${safeName}" value="No aplica"> ⚪ No aplica</label>
                                     </div>
                                 </div>
                             `}).join("")}
@@ -488,7 +632,6 @@ const Iconos = {
             
             abrirModal("modal-tests");
             
-            // Inicializar FieldValidator
             if (window.FieldValidator) {
                 setTimeout(() => window.FieldValidator.init(), 100);
             }
@@ -505,7 +648,7 @@ const Iconos = {
         document.querySelectorAll("#tests-container .test-item").forEach(item => {
             const nombre = item.querySelector(".test-nombre")?.textContent || "";
             const seleccionado = item.querySelector('input[type="radio"]:checked');
-            const resultado = seleccionado ? seleccionado.value : "Dañado";
+            const resultado = seleccionado ? seleccionado.value : "Pendiente";
             tests.push({ nombre, resultado });
         });
         
@@ -646,12 +789,6 @@ const Iconos = {
                             <span>${escapeHtml(detalle.Patron)}</span>
                         </div>
                         ` : ""}
-                        ${detalle.observaciones ? `
-                        <div class="detalle-item">
-                            <strong>Observaciones</strong>
-                            <span>${escapeHtml(detalle.observaciones)}</span>
-                        </div>
-                        ` : ""}
                     </div>
                 </div>
                 
@@ -721,6 +858,9 @@ const Iconos = {
         await cargarEstadisticas();
         await cargarTradeIns();
         
+        // Cargar tests en el formulario de registro por defecto
+        cargarTestsEnFormulario();
+        
         const btnNuevo = document.getElementById("btn-nuevo-tradein");
         if (btnNuevo) {
             btnNuevo.addEventListener("click", () => {
@@ -732,6 +872,17 @@ const Iconos = {
                 if (clienteId) clienteId.value = "";
                 const clienteSearchInput = document.getElementById("cliente-search-input");
                 if (clienteSearchInput) clienteSearchInput.value = "";
+                
+                // Resetear tests
+                cargarTestsEnFormulario();
+                
+                // Resetear título y botón
+                document.querySelector('#modal-registrar .ui-modal__title').textContent = 'Registrar nuevo Trade-In';
+                const submitBtn = document.querySelector('#form-registrar-tradein button[type="submit"]');
+                submitBtn.textContent = 'Registrar Trade-In';
+                delete submitBtn.dataset.modo;
+                delete submitBtn.dataset.id;
+                
                 abrirModal("modal-registrar");
             });
         }
