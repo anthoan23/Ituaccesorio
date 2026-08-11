@@ -608,32 +608,23 @@ class Cliente_juridico(Clientes):
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
         
-        # NUEVA VALIDACIÓN DE RIF
+        # VALIDACIÓN DE RIF - Formato: J-12345678-9 o E-12345678-9
         patron_rif = r'^[JE]-\d{8}-\d$'
+        
+        # Verificar formato
         if not re.match(patron_rif, rif):
             return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
-
-        #Inicio de validaciones
         
+        # Validar que la razón social no esté vacía
         if not razon_social:
             return "La razón social del cliente no puede estar vacía."
         
         if len(razon_social) > 50:
             return "La razón social del cliente no puede exceder los 50 caracteres."
         
-        if not rif:
-            return "El RIF del cliente no puede estar vacío."
-        
-        # Eliminar guiones para verificar el RIF limpio
-        rif_limpio = rif.replace('-', '')
-        if not rif_limpio.isalnum():
-            return "El RIF del cliente debe contener solo letras y números."
-        
-        if not rif_limpio[0] in ['J', 'E']:
-            return "El RIF debe comenzar con J (Persona Jurídica) o E (Empresa)."
-        
-        if len(rif_limpio) != 9:  # 1 letra + 8 dígitos + 1 dígito verificador
-            return "El RIF debe tener 1 letra, 8 dígitos y 1 dígito verificador."
+        # Verificar longitud total del RIF (12 caracteres: 1 letra + 2 guiones + 9 dígitos)
+        if len(rif) != 12:
+            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
         
         # Final de validaciones
 
@@ -643,8 +634,8 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
-            # Usar el RIF limpio (sin guiones) para guardar en la base de datos
-            rif_guardar = rif_limpio
+            # Guardar el RIF con guiones tal cual como se ingresó
+            rif_guardar = rif
             
             cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif_guardar,))
             if cursor.fetchone():
@@ -682,8 +673,10 @@ class Cliente_juridico(Clientes):
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
         
-        # NUEVA VALIDACIÓN DE RIF
+        # VALIDACIÓN DE RIF - Formato: J-12345678-9 o E-12345678-9
         patron_rif = r'^[JE]-\d{8}-\d$'
+        
+        # Verificar formato
         if not re.match(patron_rif, rif):
             return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
 
@@ -701,12 +694,9 @@ class Cliente_juridico(Clientes):
             mensaje = "El RIF del cliente no puede estar vacío."
             return mensaje
         
-        rif_limpio = rif.replace('-', '')
-        if not rif_limpio.isalnum():
-            return "El RIF del cliente debe contener solo letras y números."
-        
-        if len(rif_limpio) != 9:
-            return "El RIF debe tener 1 letra, 8 dígitos y 1 dígito verificador."
+        # Verificar longitud total del RIF (12 caracteres)
+        if len(rif) != 12:
+            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
         
         #Final de validaciones
 
@@ -717,7 +707,8 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
-            rif_guardar = rif_limpio
+            # Guardar el RIF con guiones tal cual como se ingresó
+            rif_guardar = rif
             
             cursor.execute(
                 "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",

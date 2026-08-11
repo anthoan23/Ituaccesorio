@@ -22,73 +22,112 @@ const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || 
 
 // Función para formatear RIF automáticamente
 function formatearRIF(input) {
+    // Guardar posición del cursor
+    const cursorPos = input.selectionStart;
+    
     // Eliminar cualquier caracter que no sea letra o número
     let valor = input.value.replace(/[^a-zA-Z0-9]/g, '');
     
     // Convertir letra a mayúscula
     valor = valor.toUpperCase();
     
+    // Si está vacío, no hacer nada
+    if (valor.length === 0) {
+        input.value = '';
+        return;
+    }
+    
     // Validar que empiece con J o E
-    if (valor.length > 0 && !['J', 'E'].includes(valor.charAt(0))) {
+    if (!['J', 'E'].includes(valor.charAt(0))) {
         // Si no empieza con J o E, reemplazar con J
         valor = 'J' + valor.substring(1);
     }
     
-    // Aplicar formato: J-12345678-9
-    let resultado = '';
-    let numeros = '';
-    let letra = '';
+    // Extraer letra y números
+    const letra = valor.charAt(0);
+    let numeros = valor.substring(1);
     
-    if (valor.length > 0) {
-        letra = valor.charAt(0);
-        numeros = valor.substring(1);
-        
-        // Limitar a 9 dígitos (8 + 1 verificador)
-        numeros = numeros.substring(0, 9);
-        
-        // Construir el resultado
-        resultado = letra;
-        if (numeros.length > 0) {
-            resultado += '-';
-            if (numeros.length <= 8) {
-                resultado += numeros;
-            } else {
-                resultado += numeros.substring(0, 8) + '-' + numeros.substring(8);
-            }
+    // Limitar a 9 dígitos (8 + 1 verificador)
+    numeros = numeros.substring(0, 9);
+    
+    // Construir el resultado con el formato J-12345678-9
+    let resultado = letra;
+    
+    if (numeros.length > 0) {
+        resultado += '-';
+        if (numeros.length <= 8) {
+            resultado += numeros;
+        } else {
+            // Si hay más de 8 dígitos, agregar el segundo guion
+            resultado += numeros.substring(0, 8) + '-' + numeros.substring(8);
         }
     }
     
     input.value = resultado;
 }
 
-// Validación específica para RIF
+// Validación específica para RIF (formato completo)
 function validarRIF(valor) {
-    // Limpiar el valor para la validación
-    const limpio = valor.replace(/[^a-zA-Z0-9]/g, '');
+    // Validar formato exacto: J-12345678-9 o E-12345678-9
+    // 1 letra (J o E) + - + 8 dígitos + - + 1 dígito = 12 caracteres
+    const patronRIF = /^[JE]-\d{8}-\d$/;
     
-    // Verificar que tenga al menos 2 caracteres
-    if (limpio.length < 2) {
-        return { valido: false, mensaje: 'El RIF debe comenzar con J o E y tener al menos 8 dígitos.' };
+    if (!patronRIF.test(valor)) {
+        return { 
+            valido: false, 
+            mensaje: 'El RIF debe tener el formato: J-12345678-9 o E-12345678-9' 
+        };
     }
     
-    // Verificar que el primer caracter sea J o E
-    const primeraLetra = limpio.charAt(0);
-    if (!['J', 'E'].includes(primeraLetra)) {
-        return { valido: false, mensaje: 'El RIF debe comenzar con J (Persona Jurídica) o E (Empresa).' };
+    // Validar que la letra sea J o E
+    const letra = valor.charAt(0);
+    if (!['J', 'E'].includes(letra)) {
+        return { 
+            valido: false, 
+            mensaje: 'El RIF debe comenzar con J (Persona Jurídica) o E (Empresa)' 
+        };
     }
     
-    // Extraer los números
-    const numeros = limpio.substring(1);
-    const numerosValidos = numeros.replace(/[^0-9]/g, '');
-    
-    // Verificar que tenga exactamente 8 dígitos numéricos (sin contar el verificador)
-    if (numerosValidos.length < 8) {
-        return { valido: false, mensaje: `El RIF debe tener al menos 8 dígitos numéricos (actual: ${numerosValidos.length}).` };
+    // Validar longitud total (12 caracteres)
+    if (valor.length !== 12) {
+        return { 
+            valido: false, 
+            mensaje: 'El RIF debe tener 12 caracteres (ej: J-12345678-9)' 
+        };
     }
     
-    // Verificar que todos los caracteres después de la letra sean números
-    if (numeros.length !== numerosValidos.length) {
-        return { valido: false, mensaje: 'El RIF solo debe contener letra J/E seguida de 8 dígitos numéricos.' };
+    // Validar que los números sean correctos
+    const partes = valor.split('-');
+    if (partes.length !== 3) {
+        return { 
+            valido: false, 
+            mensaje: 'El RIF debe tener el formato: Letra-8dígitos-1dígito' 
+        };
+    }
+    
+    const letraParte = partes[0];
+    const numerosParte1 = partes[1];
+    const numerosParte2 = partes[2];
+    
+    if (!['J', 'E'].includes(letraParte)) {
+        return { 
+            valido: false, 
+            mensaje: 'La primera parte debe ser J o E' 
+        };
+    }
+    
+    if (numerosParte1.length !== 8 || !/^\d{8}$/.test(numerosParte1)) {
+        return { 
+            valido: false, 
+            mensaje: 'Debe tener 8 dígitos después del primer guion' 
+        };
+    }
+    
+    if (numerosParte2.length !== 1 || !/^\d$/.test(numerosParte2)) {
+        return { 
+            valido: false, 
+            mensaje: 'Debe tener 1 dígito después del segundo guion' 
+        };
     }
     
     return { valido: true };
@@ -102,17 +141,23 @@ function validarRIFEnTiempoReal(input) {
     const valor = input.value;
     if (!valor) {
         errorElement.textContent = '';
+        errorElement.style.color = '';
         input.classList.remove('field-error');
+        input.classList.remove('field-success');
         return;
     }
     
     const resultado = validarRIF(valor);
     if (!resultado.valido) {
         errorElement.textContent = resultado.mensaje;
+        errorElement.style.color = 'var(--color-error, #ef4444)';
         input.classList.add('field-error');
+        input.classList.remove('field-success');
     } else {
-        errorElement.textContent = '';
+        errorElement.textContent = '✓ Formato válido';
+        errorElement.style.color = 'var(--color-success, #22c55e)';
         input.classList.remove('field-error');
+        input.classList.add('field-success');
     }
 }
 
@@ -221,7 +266,6 @@ function initRIFAutocomplete() {
     rifInput.addEventListener('input', function(e) {
         // Guardar posición del cursor
         const start = this.selectionStart;
-        const end = this.selectionEnd;
         const oldLength = this.value.length;
         
         // Aplicar formato
@@ -250,27 +294,22 @@ function initRIFAutocomplete() {
     
     // Evento para validar al salir del campo
     rifInput.addEventListener('blur', function() {
-        // Si el RIF está incompleto, mostrar error
         if (this.value) {
-            validarRIFEnTiempoReal(this);
-            
-            // Intentar completar automáticamente si tiene todos los dígitos
+            // Si el RIF está incompleto, intentar completarlo
             const limpio = this.value.replace(/[^a-zA-Z0-9]/g, '');
-            if (limpio.length >= 2) {
-                const primeraLetra = limpio.charAt(0);
-                const numeros = limpio.substring(1).replace(/[^0-9]/g, '');
-                
-                // Si tiene 8 dígitos numéricos, formatear correctamente
+            if (limpio.length >= 9) {
+                const letra = limpio.charAt(0);
+                const numeros = limpio.substring(1);
                 if (numeros.length >= 8) {
                     const verificador = numeros.length > 8 ? numeros.charAt(8) : '';
-                    this.value = `${primeraLetra}-${numeros.substring(0, 8)}${verificador ? '-' + verificador : ''}`;
-                    validarRIFEnTiempoReal(this);
+                    this.value = `${letra}-${numeros.substring(0, 8)}${verificador ? '-' + verificador : ''}`;
                 }
             }
+            validarRIFEnTiempoReal(this);
         }
     });
     
-    // Evento para validar antes de enviar
+    // Evento para restringir teclas
     rifInput.addEventListener('keydown', function(e) {
         // Permitir teclas de navegación y borrado
         const teclasPermitidas = [
@@ -283,9 +322,16 @@ function initRIFAutocomplete() {
             return;
         }
         
-        // Verificar que sea solo letras y números
+        // Solo permitir letras y números
         if (!/^[a-zA-Z0-9]$/.test(e.key)) {
             e.preventDefault();
+        }
+    });
+    
+    // Evento para limitar longitud máxima (12 caracteres)
+    rifInput.addEventListener('keyup', function() {
+        if (this.value.length > 12) {
+            this.value = this.value.substring(0, 12);
         }
     });
 }
@@ -547,36 +593,50 @@ async function onSubmitCliente(event) {
         const direccion = getFieldValue("direccion_juridico");
 
         // VALIDAR RIF ANTES DE ENVIAR
-        const resultadoRIF = validarRIF(rif);
-        if (!resultadoRIF.valido) {
-            mostrarToast(resultadoRIF.mensaje, true);
+        if (!rif) {
+            mostrarToast("El RIF es obligatorio.", true);
+            if (rifInput) rifInput.focus();
+            return;
+        }
+
+        // Validar formato del RIF con expresión regular
+        // Formato: J-12345678-9 (12 caracteres: 1 letra + 2 guiones + 9 dígitos)
+        const patronRIF = /^[JE]-\d{8}-\d$/;
+        if (!patronRIF.test(rif)) {
+            mostrarToast("El RIF debe tener el formato: J-12345678-9 o E-12345678-9 (12 caracteres)", true);
             if (rifInput) {
                 rifInput.focus();
                 rifInput.classList.add('field-error');
                 const errorElement = document.getElementById('rif-error');
                 if (errorElement) {
-                    errorElement.textContent = resultadoRIF.mensaje;
+                    errorElement.textContent = "Formato inválido: Use J-12345678-9 o E-12345678-9";
+                    errorElement.style.color = 'var(--color-error, #ef4444)';
                 }
             }
             return;
         }
 
-        if (!rif || !razonSocial || !telefono) {
-            mostrarToast("RIF, razón social y teléfono son obligatorios.", true);
+        if (!razonSocial) {
+            mostrarToast("La razón social es obligatoria.", true);
             return;
         }
 
-        // Limpiar RIF para guardar (eliminar guiones)
-        const rifLimpio = limpiarRIF(rif);
+        if (!telefono) {
+            mostrarToast("El teléfono es obligatorio.", true);
+            return;
+        }
 
+        // Enviar el RIF con formato completo (con guiones)
         payload = {
-            Id_cliente: rifLimpio,
+            Id_cliente: rif,
             razon_social: razonSocial,
-            rif: rifLimpio,
+            rif: rif,
             direccion_cliente: direccion,
             telefono_cliente: telefono,
             correo_cliente: correo,
         };
+
+        console.log('Payload enviado:', payload);
 
         if (isEdit) {
             if (!clienteId) {
@@ -595,14 +655,15 @@ async function onSubmitCliente(event) {
     }
 
     try {
-        await fetchJson(url, { method, body: JSON.stringify(payload) });
-        mostrarToast(isEdit ? "Cliente actualizado." : "Cliente creado.");
+        const response = await fetchJson(url, { method, body: JSON.stringify(payload) });
+        mostrarToast(isEdit ? "Cliente actualizado exitosamente." : "Cliente creado exitosamente.");
         limpiarFormulario();
         if (window.UiModal && typeof window.UiModal.closeById === "function") {
             window.UiModal.closeById("modal-cliente");
         }
         cargarClientes();
     } catch (error) {
+        console.error('Error al guardar cliente:', error);
         mostrarToast(error.message || "No se pudo guardar el cliente.", true);
     }
 }
@@ -641,9 +702,15 @@ function limpiarFormulario() {
 
     // Limpiar error de RIF
     const rifError = document.getElementById('rif-error');
-    if (rifError) rifError.textContent = '';
+    if (rifError) {
+        rifError.textContent = '';
+        rifError.style.color = '';
+    }
     const rifInput = document.getElementById('rif-input');
-    if (rifInput) rifInput.classList.remove('field-error');
+    if (rifInput) {
+        rifInput.classList.remove('field-error');
+        rifInput.classList.remove('field-success');
+    }
 
     if (window.FieldValidator) {
         window.FieldValidator.resetForm(formCliente);
@@ -679,23 +746,34 @@ function setFieldValue(fieldName, value) {
 // ==================== FETCH ====================
 
 async function fetchJson(url, options = {}) {
-    const response = await fetch(url, {
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-        },
-        credentials: "same-origin",
-        ...options,
-    });
+    try {
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+            },
+            credentials: "same-origin",
+            ...options,
+        });
 
-    const data = await response.json().catch(() => ({}));
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = { success: false, message: 'Error al procesar la respuesta del servidor' };
+        }
 
-    if (!response.ok || data.success === false) {
-        throw new Error(data.error || data.message || "No se pudo completar la operación.");
+        if (!response.ok || data.success === false) {
+            const errorMsg = data.message || data.error || `Error ${response.status}: ${response.statusText}`;
+            throw new Error(errorMsg);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
     }
-
-    return data;
 }
 
 // ==================== UTILITIES ====================
