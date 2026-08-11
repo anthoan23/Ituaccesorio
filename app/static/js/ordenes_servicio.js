@@ -87,7 +87,6 @@ const Utils = {
     showMessage(message, isError = false) {
         if (!message) return;
         if (isError) {
-            alert(`❌ ${message}`);
         } else {
             console.info(`✅ ${message}`);
         }
@@ -658,6 +657,11 @@ async function verificarEquipo() {
             }
             if (equipo.patron) {
                 setFieldValue("orden-patron", equipo.patron);
+                // CORRECCIÓN: Forzar el evento 'input' para que la interfaz se actualice visualmente
+                const inputPatron = document.getElementById("orden-patron");
+                if (inputPatron) {
+                    inputPatron.dispatchEvent(new Event('input'));
+                }
             }
             if (equipo.clave) {
                 setFieldValue("orden-clave", equipo.clave);
@@ -893,6 +897,7 @@ async function onSubmitOrden(event) {
         direccion: direccion || "",
         tipo: getFieldValue("cliente-tipo") || "natural",
         fecha_ingreso: fechaActual,
+        patron: getFieldValue("orden-patron") || "", // CORRECCIÓN: Aseguramos enviar el patrón
     };
 
     try {

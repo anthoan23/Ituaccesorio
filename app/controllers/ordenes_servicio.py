@@ -32,18 +32,19 @@ def registrar_equipo():
     if not id_equipo or not color or not patron:
         return jsonify({"success": False, "message": "ID del equipo, color y patrón son obligatorios."}), 400
 
-    try:
-        id_equipo_val = int(id_equipo)
-        patron_val = int(patron)
-    except Exception:
-        return jsonify({"success": False, "message": "ID del equipo y patrón deben ser números enteros."}), 400
+    # CORRECCIÓN: No convertir id_equipo ni patron a int, se envían como strings al modelo
+    if not id_equipo.isdigit():
+        return jsonify({"success": False, "message": "El ID del equipo debe ser numérico."}), 400
+        
+    if len(id_equipo) != 15:
+        return jsonify({"success": False, "message": "El ID del equipo debe tener 15 dígitos."}), 400
 
     equipo_model = Equipo(
-        ID_equipo=id_equipo_val,
+        ID_equipo=id_equipo,
         Color=color,
         Capacidad=capacidad,
         Clave=clave,
-        Patron=patron_val
+        Patron=patron
     )
     mensaje = equipo_model.registrar_equipo()
 
@@ -203,6 +204,7 @@ def crear_orden_servicio():
     capacidad = (datos.get("capacidad") or "").strip()
     descripcion = (datos.get("descripcion") or "").strip()
     nota = (datos.get("nota") or "").strip() or None
+    patron = (datos.get("patron") or "").strip() # CORRECCIÓN: Obtenemos el patrón
     
     # Datos del cliente (por si hay que registrarlo)
     nombre_cliente = (datos.get("nombre") or "").strip()
@@ -348,11 +350,13 @@ def crear_orden_servicio():
         equipo_model.ID_producto = str(id_producto_final)
         equipo_model.Color = color
         equipo_model.Capacidad = capacidad
+        equipo_model.Patron = patron # CORRECCIÓN: Asignamos el patrón al modelo
         
         print(f"Registrando equipo con:")
         print(f"  ID_producto: {equipo_model.ID_producto}")
         print(f"  Color: {equipo_model.Color}")
         print(f"  Capacidad: {equipo_model.Capacidad}")
+        print(f"  Patron: {equipo_model.Patron}")
         
         resultado_equipo = equipo_model.registrar_equipo()
         print(f"Resultado registro equipo: {resultado_equipo}")
