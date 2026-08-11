@@ -1265,45 +1265,6 @@ function onModalEstadoClick(event) {
     }
 }
 
-function onEstadoCardClick(estado) {
-    const label = {
-        pendiente: "Pendientes",
-        asignada: "Asignadas",
-        revisada: "Revisadas",
-        reparada: "Reparadas",
-    }[estado] || "Órdenes";
-
-    const estadoParamMap = {
-        pendiente: "Pendiente",
-        asignada: "Asignada",
-        revisada: "Revisado,Revisada,En revisión,En revision",
-        reparada: "Reparado",
-    };
-
-    const estadoParam = estadoParamMap[estado] || estado;
-
-    console.log(`[DEBUG] Buscando órdenes ${label} con estado: ${estadoParam}`);
-
-    Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`)
-        .then((data) => {
-            console.log(`[DEBUG] Órdenes ${label} encontradas:`, data.ordenes);
-            if (data.ordenes && data.ordenes.length > 0) {
-                renderModalOrdenesEstado(label, data.ordenes);
-            } else {
-                renderModalOrdenesEstado(label, []);
-            }
-            openModal("modal-ordenes-estado");
-        })
-        .catch((error) => {
-            console.error(`Error cargando órdenes ${estado}:`, error);
-            const { modalOrdenesEstadoSubtitle } = getDomElements();
-            if (modalOrdenesEstadoSubtitle) {
-                modalOrdenesEstadoSubtitle.textContent = "No se pudo cargar la información.";
-            }
-            Utils.showMessage(`Error al cargar órdenes ${label}: ${error.message}`, true);
-        });
-}
-
 // ============================================
 // 12. INICIALIZACIÓN
 // ============================================
@@ -1319,7 +1280,6 @@ document.addEventListener("DOMContentLoaded", () => {
         formRevision,
         formFotos,
         inputFotos,
-        estadoCards,
         tablaOrdenes,
     } = getDomElements();
 
@@ -1488,17 +1448,10 @@ document.addEventListener("DOMContentLoaded", () => {
         openModal("modal-asignar-tecnico");
     });
 
-    estadoCards.forEach((card) => {
-        const estado = card.dataset.estadoCard;
-        if (!estado) return;
-        card.addEventListener("click", () => onEstadoCardClick(estado));
-        card.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onEstadoCardClick(estado);
-            }
-        });
-    });
+    // ============================================
+    // ESTA SECCIÓN HA SIDO ELIMINADA PARA QUE LAS CARDS NO SEAN CLICKEABLES
+    // Los event listeners de las cards han sido removidos.
+    // ============================================
 
     document.getElementById("btn-nueva-orden")?.addEventListener("click", () => {
         if (inputFecha) {
