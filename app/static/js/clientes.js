@@ -18,7 +18,110 @@ let searchQuery = "";
 let tipoFilter = "";
 const csrfToken = document.querySelector("input[name='_csrf_token']")?.value || "";
 
-// ==================== VALIDACIÓN ====================
+// ==================== VALIDACIÓN RIF ====================
+
+// Función para formatear RIF automáticamente
+function formatearRIF(input) {
+    // Eliminar cualquier caracter que no sea letra o número
+    let valor = input.value.replace(/[^a-zA-Z0-9]/g, '');
+    
+    // Convertir letra a mayúscula
+    valor = valor.toUpperCase();
+    
+    // Validar que empiece con J o E
+    if (valor.length > 0 && !['J', 'E'].includes(valor.charAt(0))) {
+        // Si no empieza con J o E, reemplazar con J
+        valor = 'J' + valor.substring(1);
+    }
+    
+    // Aplicar formato: J-12345678-9
+    let resultado = '';
+    let numeros = '';
+    let letra = '';
+    
+    if (valor.length > 0) {
+        letra = valor.charAt(0);
+        numeros = valor.substring(1);
+        
+        // Limitar a 9 dígitos (8 + 1 verificador)
+        numeros = numeros.substring(0, 9);
+        
+        // Construir el resultado
+        resultado = letra;
+        if (numeros.length > 0) {
+            resultado += '-';
+            if (numeros.length <= 8) {
+                resultado += numeros;
+            } else {
+                resultado += numeros.substring(0, 8) + '-' + numeros.substring(8);
+            }
+        }
+    }
+    
+    input.value = resultado;
+}
+
+// Validación específica para RIF
+function validarRIF(valor) {
+    // Limpiar el valor para la validación
+    const limpio = valor.replace(/[^a-zA-Z0-9]/g, '');
+    
+    // Verificar que tenga al menos 2 caracteres
+    if (limpio.length < 2) {
+        return { valido: false, mensaje: 'El RIF debe comenzar con J o E y tener al menos 8 dígitos.' };
+    }
+    
+    // Verificar que el primer caracter sea J o E
+    const primeraLetra = limpio.charAt(0);
+    if (!['J', 'E'].includes(primeraLetra)) {
+        return { valido: false, mensaje: 'El RIF debe comenzar con J (Persona Jurídica) o E (Empresa).' };
+    }
+    
+    // Extraer los números
+    const numeros = limpio.substring(1);
+    const numerosValidos = numeros.replace(/[^0-9]/g, '');
+    
+    // Verificar que tenga exactamente 8 dígitos numéricos (sin contar el verificador)
+    if (numerosValidos.length < 8) {
+        return { valido: false, mensaje: `El RIF debe tener al menos 8 dígitos numéricos (actual: ${numerosValidos.length}).` };
+    }
+    
+    // Verificar que todos los caracteres después de la letra sean números
+    if (numeros.length !== numerosValidos.length) {
+        return { valido: false, mensaje: 'El RIF solo debe contener letra J/E seguida de 8 dígitos numéricos.' };
+    }
+    
+    return { valido: true };
+}
+
+// Función para validar el RIF en tiempo real
+function validarRIFEnTiempoReal(input) {
+    const errorElement = document.getElementById('rif-error');
+    if (!errorElement) return;
+    
+    const valor = input.value;
+    if (!valor) {
+        errorElement.textContent = '';
+        input.classList.remove('field-error');
+        return;
+    }
+    
+    const resultado = validarRIF(valor);
+    if (!resultado.valido) {
+        errorElement.textContent = resultado.mensaje;
+        input.classList.add('field-error');
+    } else {
+        errorElement.textContent = '';
+        input.classList.remove('field-error');
+    }
+}
+
+// Función para limpiar RIF (eliminar guiones)
+function limpiarRIF(valor) {
+    return valor.replace(/[^a-zA-Z0-9]/g, '');
+}
+
+// ==================== VALIDACIÓN FORMULARIO ====================
 
 function validarFormularioAntesDeEnviar(form, nombreFormulario) {
     if (!window.FieldValidator) {
@@ -104,9 +207,95 @@ function initClientes() {
     filtroTipoCliente?.addEventListener("change", onFiltrarTipo);
     document.addEventListener("click", onTablaClick);
     cargarClientes();
+    
+    // INICIALIZAR RIF AUTOCOMPLETADO
+    initRIFAutocomplete();
 }
 
-initClientes();
+function initRIFAutocomplete() {
+    // Buscar el campo RIF en el formulario
+    const rifInput = document.getElementById('rif-input');
+    if (!rifInput) return;
+    
+    // Evento para formatear mientras escribe
+    rifInput.addEventListener('input', function(e) {
+        // Guardar posición del cursor
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        const oldLength = this.value.length;
+        
+        // Aplicar formato
+        formatearRIF(this);
+        
+        // Ajustar posición del cursor
+        const newLength = this.value.length;
+        const diff = newLength - oldLength;
+        let newPos = start + diff;
+        
+        // Si el cursor está después de un guion, moverlo después del siguiente caracter
+        if (this.value.charAt(newPos - 1) === '-') {
+            newPos = newPos + 1;
+        }
+        
+        // Asegurar que la posición no sea mayor que la longitud
+        if (newPos > this.value.length) {
+            newPos = this.value.length;
+        }
+        
+        this.setSelectionRange(newPos, newPos);
+        
+        // Validar en tiempo real
+        validarRIFEnTiempoReal(this);
+    });
+    
+    // Evento para validar al salir del campo
+    rifInput.addEventListener('blur', function() {
+        // Si el RIF está incompleto, mostrar error
+        if (this.value) {
+            validarRIFEnTiempoReal(this);
+            
+            // Intentar completar automáticamente si tiene todos los dígitos
+            const limpio = this.value.replace(/[^a-zA-Z0-9]/g, '');
+            if (limpio.length >= 2) {
+                const primeraLetra = limpio.charAt(0);
+                const numeros = limpio.substring(1).replace(/[^0-9]/g, '');
+                
+                // Si tiene 8 dígitos numéricos, formatear correctamente
+                if (numeros.length >= 8) {
+                    const verificador = numeros.length > 8 ? numeros.charAt(8) : '';
+                    this.value = `${primeraLetra}-${numeros.substring(0, 8)}${verificador ? '-' + verificador : ''}`;
+                    validarRIFEnTiempoReal(this);
+                }
+            }
+        }
+    });
+    
+    // Evento para validar antes de enviar
+    rifInput.addEventListener('keydown', function(e) {
+        // Permitir teclas de navegación y borrado
+        const teclasPermitidas = [
+            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Home', 'End', 'PageUp', 'PageDown'
+        ];
+        
+        if (teclasPermitidas.includes(e.key)) {
+            return;
+        }
+        
+        // Verificar que sea solo letras y números
+        if (!/^[a-zA-Z0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+}
+
+// Ejecutar inicialización cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClientes);
+} else {
+    initClientes();
+}
 
 // ==================== FUNCIONES DE UI ====================
 
@@ -263,7 +452,19 @@ function abrirEdicion(id) {
         setFieldValue("correo", cliente.correo || "");
         setFieldValue("direccion", cliente.direccion || "");
     } else {
-        setFieldValue("rif", cliente.rif || String(cliente.id || ""));
+        // Para jurídico, mostrar el RIF con formato
+        const rifLimpio = cliente.rif || String(cliente.id || "");
+        // Formatear RIF para mostrar: J-12345678-9
+        let rifFormateado = rifLimpio;
+        if (rifLimpio.length >= 9) {
+            const letra = rifLimpio.charAt(0);
+            const numeros = rifLimpio.substring(1);
+            if (numeros.length >= 8) {
+                rifFormateado = `${letra}-${numeros.substring(0, 8)}-${numeros.charAt(8) || ''}`;
+            }
+        }
+        
+        setFieldValue("rif", rifFormateado);
         setFieldValue("razon_social", cliente.razon_social || cliente.nombre || "");
         setFieldValue("telefono", cliente.celular || cliente.telefono || "");
         setFieldValue("correo_juridico", cliente.correo || "");
@@ -326,7 +527,6 @@ async function onSubmitCliente(event) {
             correo_cliente: correo,
         };
 
-        // CORREGIDO: Usar la URL correcta para persona natural
         if (isEdit) {
             if (!clienteId) {
                 mostrarToast("No se encontró el cliente a actualizar.", true);
@@ -335,31 +535,49 @@ async function onSubmitCliente(event) {
             url = `/api/clientes/natural/${encodeURIComponent(clienteId)}`;
             method = "PUT";
         } else {
-            url = "/api/clientes/natural";  // ← Cambiado de "/api/clientes" a "/api/clientes/natural"
+            url = "/api/clientes/natural";
             method = "POST";
         }
     } else if (tipo === "juridico") {
+        const rifInput = document.getElementById('rif-input');
         const rif = getFieldValue("rif");
         const razonSocial = getFieldValue("razon_social");
         const telefono = getFieldValue("telefono");
         const correo = getFieldValue("correo_juridico");
         const direccion = getFieldValue("direccion_juridico");
 
+        // VALIDAR RIF ANTES DE ENVIAR
+        const resultadoRIF = validarRIF(rif);
+        if (!resultadoRIF.valido) {
+            mostrarToast(resultadoRIF.mensaje, true);
+            if (rifInput) {
+                rifInput.focus();
+                rifInput.classList.add('field-error');
+                const errorElement = document.getElementById('rif-error');
+                if (errorElement) {
+                    errorElement.textContent = resultadoRIF.mensaje;
+                }
+            }
+            return;
+        }
+
         if (!rif || !razonSocial || !telefono) {
             mostrarToast("RIF, razón social y teléfono son obligatorios.", true);
             return;
         }
 
+        // Limpiar RIF para guardar (eliminar guiones)
+        const rifLimpio = limpiarRIF(rif);
+
         payload = {
-            Id_cliente: rif,
+            Id_cliente: rifLimpio,
             razon_social: razonSocial,
-            rif: rif,
+            rif: rifLimpio,
             direccion_cliente: direccion,
             telefono_cliente: telefono,
             correo_cliente: correo,
         };
 
-        // CORREGIDO: Usar la URL correcta para cliente jurídico
         if (isEdit) {
             if (!clienteId) {
                 mostrarToast("No se encontró el cliente a actualizar.", true);
@@ -368,7 +586,7 @@ async function onSubmitCliente(event) {
             url = `/api/clientes/juridico/${encodeURIComponent(clienteId)}`;
             method = "PUT";
         } else {
-            url = "/api/clientes/juridico";  // ← URL correcta para crear jurídico
+            url = "/api/clientes/juridico";
             method = "POST";
         }
     } else {
@@ -421,6 +639,12 @@ function limpiarFormulario() {
     }
     delete formCliente.dataset.editing;
 
+    // Limpiar error de RIF
+    const rifError = document.getElementById('rif-error');
+    if (rifError) rifError.textContent = '';
+    const rifInput = document.getElementById('rif-input');
+    if (rifInput) rifInput.classList.remove('field-error');
+
     if (window.FieldValidator) {
         window.FieldValidator.resetForm(formCliente);
     }
@@ -468,7 +692,7 @@ async function fetchJson(url, options = {}) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.success === false) {
-        throw new Error(data.error || "No se pudo completar la operación.");
+        throw new Error(data.error || data.message || "No se pudo completar la operación.");
     }
 
     return data;

@@ -203,12 +203,16 @@
             <label class="field">
                 <span>RIF *</span>
                 <input name="rif" 
+                       id="rif-input"
                        type="text" 
                        placeholder="J-12345678-9" 
-                       maxlength="9"
-                       data-validation-rules="sinEspacios"
-                       title="Formato: J-12345678-9">
-                <small class="field-hint">Formato: J-12345678-9</small>
+                       maxlength="13"
+                       data-validation-rules="rif"
+                       data-rif-input
+                       autocomplete="off"
+                       title="Formato: J-12345678-9 o E-12345678-9">
+                <small class="field-hint">Formato: J-12345678-9 o E-12345678-9</small>
+                <small class="field-error" id="rif-error"></small>
             </label>
             
             <label class="field field--full">

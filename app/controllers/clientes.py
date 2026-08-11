@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.clientes import Clientes, Persona_natural, Cliente_juridico
+import re
 
 clientes_blueprint = Blueprint("clientes", __name__)
 
@@ -45,8 +46,6 @@ def api_obtener_cliente(id_cliente):
 @jwt_required
 @tiene_permiso('Clientes', 'registrar')
 def api_registrar_cliente():
-    import re
-    
     data = request.get_json(silent=True) or request.form
     Id_cliente = data.get("cedula", "").strip()
     nombre_cliente = data.get("nombre", "").strip()
@@ -168,6 +167,35 @@ def api_registrar_cliente_juridico():
     telefono_cliente = data.get("telefono_cliente", "").strip()
     correo_cliente = data.get("correo_cliente", "").strip()
     
+    # Validación de RIF en el endpoint
+    patron_rif = r'^[JE]-\d{8}-\d$'
+    if not re.match(patron_rif, rif):
+        return jsonify({
+            "success": False, 
+            "message": "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+        }), 400
+    
+    # Validar que la razón social no esté vacía
+    if not razon_social:
+        return jsonify({
+            "success": False,
+            "message": "La razón social es obligatoria."
+        }), 400
+    
+    # Validar teléfono: 11 dígitos, solo números
+    if not re.match(r"^\d{11}$", telefono_cliente):
+        return jsonify({
+            "success": False,
+            "message": "El teléfono debe tener exactamente 11 dígitos numéricos."
+        }), 400
+    
+    # Validar correo si se proporciona
+    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
+        return jsonify({
+            "success": False,
+            "message": "El correo electrónico no es válido."
+        }), 400
+    
     # Obtener usuario actual para bitácora
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
@@ -203,6 +231,28 @@ def api_actualizar_cliente_juridico(id_cliente):
         return jsonify({"success": False, "message": "El ID del cliente es obligatorio."}), 400
     if not razon_social:
         return jsonify({"success": False, "message": "La razón social del cliente es obligatoria."}), 400
+    
+    # Validación de RIF en el endpoint
+    patron_rif = r'^[JE]-\d{8}-\d$'
+    if not re.match(patron_rif, rif):
+        return jsonify({
+            "success": False, 
+            "message": "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+        }), 400
+    
+    # Validar teléfono: 11 dígitos, solo números
+    if telefono_cliente and not re.match(r"^\d{11}$", telefono_cliente):
+        return jsonify({
+            "success": False,
+            "message": "El teléfono debe tener exactamente 11 dígitos numéricos."
+        }), 400
+    
+    # Validar correo si se proporciona
+    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
+        return jsonify({
+            "success": False,
+            "message": "El correo electrónico no es válido."
+        }), 400
     
     # Obtener usuario actual para bitácora
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")

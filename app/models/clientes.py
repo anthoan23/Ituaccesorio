@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+import re
 
 
 class Clientes():
@@ -606,6 +607,11 @@ class Cliente_juridico(Clientes):
     def registrar_cliente_juridico(self) -> str:
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
+        
+        # NUEVA VALIDACIÓN DE RIF
+        patron_rif = r'^[JE]-\d{8}-\d$'
+        if not re.match(patron_rif, rif):
+            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
 
         #Inicio de validaciones
         
@@ -618,29 +624,39 @@ class Cliente_juridico(Clientes):
         if not rif:
             return "El RIF del cliente no puede estar vacío."
         
-        if not rif.isalnum():
-            return "El RIF del cliente debe contener solo caracteres alfanuméricos."
+        # Eliminar guiones para verificar el RIF limpio
+        rif_limpio = rif.replace('-', '')
+        if not rif_limpio.isalnum():
+            return "El RIF del cliente debe contener solo letras y números."
         
-        if len(rif) > 9:
-            return "El RIF del cliente no puede exceder los 9 caracteres."
- 
+        if not rif_limpio[0] in ['J', 'E']:
+            return "El RIF debe comenzar con J (Persona Jurídica) o E (Empresa)."
+        
+        if len(rif_limpio) != 9:  # 1 letra + 8 dígitos + 1 dígito verificador
+            return "El RIF debe tener 1 letra, 8 dígitos y 1 dígito verificador."
+        
+        # Final de validaciones
+
         db = self._conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif,))
+            # Usar el RIF limpio (sin guiones) para guardar en la base de datos
+            rif_guardar = rif_limpio
+            
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif_guardar,))
             if cursor.fetchone():
                 return f"El cliente jurídico con RIF '{rif}' ya existe."
 
             cursor.execute(
                 "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
-                (rif, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+                (rif_guardar, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
             )
             cursor.execute(
                 "INSERT INTO Cliente_juridico (ID_cliente, Razon_social, Rif_cliente) VALUES (%s, %s, %s)",
-                (rif, razon_social, rif)
+                (rif_guardar, razon_social, rif_guardar)
             )
             db.commit()
             
@@ -648,7 +664,7 @@ class Cliente_juridico(Clientes):
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar cliente jurídico",
-                    descripcion=f"Se registró el cliente jurídico: {rif} - {razon_social}",
+                    descripcion=f"Se registró el cliente jurídico: {rif_guardar} - {razon_social}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Clientes"
                 )
@@ -665,6 +681,11 @@ class Cliente_juridico(Clientes):
     def actualizar_cliente_juridico(self):
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
+        
+        # NUEVA VALIDACIÓN DE RIF
+        patron_rif = r'^[JE]-\d{8}-\d$'
+        if not re.match(patron_rif, rif):
+            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
 
         #Inicio de validaciones
         
@@ -680,14 +701,13 @@ class Cliente_juridico(Clientes):
             mensaje = "El RIF del cliente no puede estar vacío."
             return mensaje
         
-        if not rif.isalnum():
-            mensaje = "El RIF del cliente debe contener solo caracteres alfanuméricos."
-            return mensaje
+        rif_limpio = rif.replace('-', '')
+        if not rif_limpio.isalnum():
+            return "El RIF del cliente debe contener solo letras y números."
         
-        if len(rif) > 9:
-            mensaje = "El RIF del cliente no puede exceder los 9 caracteres."
-            return mensaje
- 
+        if len(rif_limpio) != 9:
+            return "El RIF debe tener 1 letra, 8 dígitos y 1 dígito verificador."
+        
         #Final de validaciones
 
         db = self._conexion_bd.conexion1()
@@ -697,13 +717,15 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
+            rif_guardar = rif_limpio
+            
             cursor.execute(
                 "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
-                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif)
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif_guardar)
             )
             cursor.execute(
                 "UPDATE Cliente_juridico SET Razon_social = %s, Rif_cliente = %s WHERE ID_cliente = %s",
-                (razon_social, rif, rif)
+                (razon_social, rif_guardar, rif_guardar)
             )
             db.commit()
             
@@ -711,7 +733,7 @@ class Cliente_juridico(Clientes):
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar cliente jurídico",
-                    descripcion=f"Se actualizó el cliente jurídico: {rif} - {razon_social}",
+                    descripcion=f"Se actualizó el cliente jurídico: {rif_guardar} - {razon_social}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Clientes"
                 )

@@ -138,6 +138,12 @@
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'No se permiten símbolos especiales'
     },
+    // Regla específica para nombres de empresas: permite puntos para siglas como "C.A." además de letras, números y espacios
+    sinSimbolosEmpresa: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s\.]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s\.]*$/.test(value),
+      message: 'No se permiten símbolos especiales, salvo puntos para siglas (ej: C.A.)'
+    },
     email: {
       filter: (value) => value.replace(/[^a-zA-Z0-9@._\-]/g, ''),
       validate: (value) => /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(value),
@@ -157,13 +163,6 @@
       filter: (value) => value.replace(/\s/g, ''),
       validate: (value) => !/\s/.test(value),
       message: 'No se permiten espacios'
-    },
-    capitalizar: {
-      filter: (value) => {
-        return value.toLowerCase().replace(/[\p{L}\p{M}\p{N}]+/gu, palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1));
-      },
-      validate: () => true,
-      message: ''
     },
     sinCaracteresEspeciales: {
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
