@@ -1,18 +1,9 @@
-:root {
-	--bg: #1e1e1e;
-	--card: #ffffff;
-	--ink: #121212;
-	--muted: #666666;
-	--line: rgba(0, 0, 0, 0.12);
-	--shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-	--yellow: #f3c500;
-	--yellow-soft: #f8dd69;
-	--black: #0b0b0b;
-	--radius: 20px;
-}
-
 * {
 	box-sizing: border-box;
+}
+
+html {
+	background-color: #1e1e1e;
 }
 
 html, body {
@@ -23,7 +14,7 @@ html, body {
 body {
 	margin: 0;
 	font-family: "Manrope", sans-serif;
-	color: var(--card);
+	color: #ffffff;
 	background: url("../img/FONDO.jpg") 80% 25% / 120% no-repeat fixed;
 	position: relative;
 	overflow: hidden;
@@ -308,9 +299,15 @@ body::before {
 }
 
 .phone__captcha > div {
-	zoom: 0.85;
-	-moz-transform: scale(0.85);
-	-moz-transform-origin: center center;
+	transform: scale(0.85);
+	transform-origin: center center;
+}
+
+@supports (zoom: 1) {
+	.phone__captcha > div {
+		transform: none;
+		zoom: 0.85;
+	}
 }
 
 .phone__captcha .g-recaptcha {

@@ -335,7 +335,7 @@
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-size: 0.875rem;
     font-weight: 500;
     user-select: none;
@@ -343,7 +343,7 @@
 }
 
 .tradein-legend__summary:hover {
-    color: var(--color-text);
+    color: var(--text-strong);
 }
 
 .tradein-legend__summary svg {
@@ -366,14 +366,14 @@
 
 .tradein-legend__list dt {
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     padding: 0.25rem 0;
 }
 
 .tradein-legend__list dd {
     margin: 0;
     padding: 0.25rem 0;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     line-height: 1.4;
 }
 
@@ -406,7 +406,7 @@
 
 .tradein-result__grid span {
     font-size: 0.75rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
 }
 
 .tradein-result__grid strong {
@@ -435,7 +435,7 @@
 
 .tradein-detalle-descripcion {
     font-size: 0.75rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
 }
 
 .tradein-result__messages .warning {

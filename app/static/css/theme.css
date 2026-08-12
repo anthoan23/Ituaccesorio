@@ -14,6 +14,7 @@
     --bg-gradient: radial-gradient(circle at 20% 20%, rgba(243, 197, 0, 0.16) 0%, transparent 40%),
                     radial-gradient(circle at 70% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
                     linear-gradient(135deg, #1e1e1e, #2a2a2a);
+    --card: rgba(255, 255, 255, 0.05);
 
     /* --- Texto --- */
     --text-strong: #ffffff;
@@ -51,9 +52,16 @@
     /* --- Bordes y sombras --- */
     --border-color: rgba(255, 255, 255, 0.04);
     --border-light: rgba(255, 255, 255, 0.08);
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
     --shadow-dash: 0 8px 32px rgba(0, 0, 0, 0.4);
     --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.2);
     --shadow-card: 0 8px 32px rgba(243, 197, 0, 0.12), 0 18px 45px rgba(0, 0, 0, 0.35);
+
+    /* --- Chips y estados --- */
+    --chip-bg: rgba(255, 255, 255, 0.08);
+    --chip-text: #ffffff;
+    --skeleton-bg: rgba(255, 255, 255, 0.08);
+    --danger-text: #f87171;
 
     /* --- Radios --- */
     --radius-sm: 10px;
@@ -146,6 +154,8 @@
     --glass-border: rgba(243, 197, 0, 0.5);
     --glass-shadow: 0 8px 28px rgba(243, 197, 0, 0.08), 0 14px 36px rgba(18, 18, 18, 0.06);
     --shadow-card: 0 8px 28px rgba(243, 197, 0, 0.08), 0 14px 36px rgba(18, 18, 18, 0.06);
+    --card: #ffffff;
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
 
     --input-bg: #f5f5f8;
     --input-border: rgba(18, 18, 18, 0.12);
@@ -161,6 +171,11 @@
     --border-light: rgba(0, 0, 0, 0.10);
     --shadow-dash: 0 8px 28px rgba(0, 0, 0, 0.06);
     --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.04);
+
+    --chip-bg: rgba(17, 24, 39, 0.06);
+    --chip-text: rgba(18, 18, 18, 0.85);
+    --skeleton-bg: rgba(17, 24, 39, 0.08);
+    --danger-text: #7f1d1d;
 
     --table-header: #EDEDF2;
     --table-row: #F5F5F8;
@@ -199,15 +214,19 @@
    ============================================ */
 * { box-sizing: border-box; }
 
-html, body { min-height: 100%; }
+html {
+	min-height: 100%;
+	background-color: var(--bg);
+}
 
 body {
-    margin: 0;
-    font-family: var(--font-family-base);
-    color: var(--text-strong);
-    background: var(--bg-gradient);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+	margin: 0;
+	min-height: 100%;
+	font-family: var(--font-family-base);
+	color: var(--text-strong);
+	background: var(--bg-gradient);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 .page {

@@ -1,18 +1,9 @@
- :root {
-	--bg: #1e1e1e;
-	--card: #ffffff;
-	--ink: #121212;
-	--muted: #666666;
-	--line: rgba(0, 0, 0, 0.12);
-	--shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-	--yellow: #f3c500;
-	--yellow-soft: #f8dd69;
-	--black: #0b0b0b;
-	--radius: 20px;
+ * {
+	box-sizing: border-box;
 }
 
-* {
-	box-sizing: border-box;
+html {
+	background-color: #1e1e1e;
 }
 
 html, body {
@@ -22,7 +13,7 @@ html, body {
 body {
 	margin: 0;
 	font-family: "Manrope", sans-serif;
-	color: var(--ink);
+	color: var(--text-strong);
 	background:
 		radial-gradient(circle at 18% 18%, rgba(243, 197, 0, 0.18) 0%, transparent 36%),
 		radial-gradient(circle at 82% 82%, rgba(255, 255, 255, 0.06) 0%, transparent 34%),
@@ -40,9 +31,9 @@ body {
 	width: min(100%, 460px);
 	padding: 2rem;
 	border-radius: var(--radius);
-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 247, 0.96));
+	background: var(--card);
 	box-shadow: var(--shadow);
-	border: 1px solid rgba(255, 255, 255, 0.35);
+	border: 1px solid var(--border-light);
 	position: relative;
 	overflow: hidden;
 }
@@ -74,7 +65,7 @@ body {
 	letter-spacing: 0.18em;
 	font-size: 0.75rem;
 	font-weight: 800;
-	color: #3d3d3d;
+	color: var(--text-muted);
 }
 
 .auth-card__title {
@@ -83,13 +74,13 @@ body {
 	font-family: "Space Grotesk", sans-serif;
 	font-size: clamp(1.7rem, 3vw, 2.35rem);
 	line-height: 1;
-	color: var(--black);
+	color: var(--text-strong);
 }
 
 .auth-card__subtitle {
 	margin: 0.7rem 0 1.6rem;
 	text-align: center;
-	color: var(--muted);
+	color: var(--text-muted);
 	font-size: 0.98rem;
 }
 
@@ -119,7 +110,7 @@ body {
 	font-size: 0.86rem;
 	font-weight: 800;
 	letter-spacing: 0.03em;
-	color: #2a2a2a;
+	color: var(--text-muted);
 }
 
 .field__input {
@@ -127,9 +118,9 @@ body {
 	height: 52px;
 	padding: 0 1rem;
 	border-radius: 14px;
-	border: 1px solid var(--line);
-	background: #fff;
-	color: var(--ink);
+	border: 1px solid var(--border-light);
+	background: var(--input-bg);
+	color: var(--input-text);
 	font: inherit;
 	outline: none;
 	transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -150,7 +141,7 @@ body {
 	border: 0;
 	border-radius: 14px;
 	background: linear-gradient(135deg, var(--yellow), var(--yellow-soft));
-	color: var(--black);
+	color: var(--text-strong);
 	font: inherit;
 	font-weight: 900;
 	letter-spacing: 0.02em;
