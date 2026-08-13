@@ -72,13 +72,13 @@ class Clientes():
                 mensaje = "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
                 return mensaje
         else:
-            # Validación para cédula: solo números, 8 dígitos
+            # Validación para cédula: solo números, 7 u 8 dígitos
             if not Id_cliente.isdigit():
                 mensaje = "La cédula del cliente debe contener solo números."
                 return mensaje
             
-            if len(Id_cliente) > 8:
-                mensaje = "La cédula del cliente no puede exceder los 8 caracteres."
+            if len(Id_cliente) < 7 or len(Id_cliente) > 8:
+                mensaje = "La cédula del cliente debe tener 7 u 8 caracteres."
                 return mensaje
         
         # Final de validaciones
@@ -594,8 +594,9 @@ class Persona_natural(Clientes):
         if len(apellido) > 20:
             return "El apellido del cliente no puede exceder los 20 caracteres."
         
-        if len(cedula) > 8:
-            return "La cédula del cliente no puede exceder los 8 caracteres."
+        # Cambio: permitir 7 u 8 caracteres
+        if len(cedula) < 7 or len(cedula) > 8:
+            return "La cédula del cliente debe tener 7 u 8 caracteres."
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -667,8 +668,9 @@ class Persona_natural(Clientes):
             mensaje = "El apellido del cliente no puede exceder los 20 caracteres."
             return mensaje
         
-        if len(cedula) > 8:
-            mensaje = "La cédula del cliente no puede exceder los 8 caracteres."
+        # Cambio: permitir 7 u 8 caracteres
+        if len(cedula) < 7 or len(cedula) > 8:
+            mensaje = "La cédula del cliente debe tener 7 u 8 caracteres."
             return mensaje
         
         #final de validaciones

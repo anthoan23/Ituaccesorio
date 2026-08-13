@@ -57,8 +57,9 @@ def api_registrar_cliente():
     if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
         return jsonify({"success": False, "message": "Cédula, nombre, apellido y celular son obligatorios."}), 400
 
-    if not re.match(r"^\d{8}$", Id_cliente):
-        return jsonify({"success": False, "message": "La cédula debe tener exactamente 8 dígitos numéricos."}), 400
+    # Cambio: permitir 7 u 8 dígitos
+    if not re.match(r"^\d{7,8}$", Id_cliente):
+        return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
 
     if not re.match(r"^\d{11}$", telefono_cliente):
         return jsonify({"success": False, "message": "El celular debe tener exactamente 11 dígitos numéricos."}), 400
@@ -101,8 +102,9 @@ def api_registrar_persona_natural():
     if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
         return jsonify({"success": False, "message": "Cédula, nombre, apellido y teléfono son obligatorios."}), 400
     
-    if not re.match(r"^\d{8}$", Id_cliente):
-        return jsonify({"success": False, "message": "La cédula debe tener exactamente 8 dígitos numéricos."}), 400
+    # Cambio: permitir 7 u 8 dígitos
+    if not re.match(r"^\d{7,8}$", Id_cliente):
+        return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
     
     if not re.match(r"^\d{11}$", telefono_cliente):
         return jsonify({"success": False, "message": "El teléfono debe tener exactamente 11 dígitos numéricos."}), 400
@@ -143,8 +145,9 @@ def api_actualizar_persona_natural(cedula):
     if not nombre_cliente:
         return jsonify({"success": False, "message": "El nombre del cliente es obligatorio."}), 400
     
-    if not re.match(r"^\d{8}$", cedula):
-        return jsonify({"success": False, "message": "La cédula debe tener exactamente 8 dígitos numéricos."}), 400
+    # Cambio: permitir 7 u 8 dígitos
+    if not re.match(r"^\d{7,8}$", cedula):
+        return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
     
     if telefono_cliente and not re.match(r"^\d{11}$", telefono_cliente):
         return jsonify({"success": False, "message": "El teléfono debe tener exactamente 11 dígitos numéricos."}), 400

@@ -27,6 +27,33 @@ const Iconos = {
     ojo: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`
 };
 
+// ==================== FUNCIONES PARA CAPITALIZAR AUTOMÁTICAMENTE ====================
+
+function capitalizarInput(event) {
+    const input = event.target;
+    const valor = input.value;
+    
+    if (!valor) return;
+    
+    // Capitalizar solo la primera letra
+    const primeraLetra = valor.charAt(0).toUpperCase();
+    const resto = valor.slice(1);
+    input.value = primeraLetra + resto;
+    
+    // Mantener la posición del cursor al final
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+}
+
+function capitalizarAlPerderFoco(event) {
+    const input = event.target;
+    if (input.value) {
+        const primeraLetra = input.value.charAt(0).toUpperCase();
+        const resto = input.value.slice(1);
+        input.value = primeraLetra + resto;
+    }
+}
+
 // ==================== FUNCIONES PARA MODAL DE ELIMINACIÓN ====================
 
 function abrirModalEliminar(clienteId, nombreCliente) {
@@ -450,6 +477,29 @@ function initClientes() {
     initTelefonoValidation();
     initModalEliminar();
     initModalVerCliente();
+    
+    // Agregar capitalización automática para campos específicos
+    initCapitalizacionCampos();
+}
+
+function initCapitalizacionCampos() {
+    const camposCapitalizar = [
+        'input[name="nombre"]',
+        'input[name="apellido"]',
+        'input[name="direccion"]',
+        'input[name="direccion_juridico"]',
+        'input[name="razon_social"]'
+    ];
+    
+    camposCapitalizar.forEach(selector => {
+        const elementos = document.querySelectorAll(selector);
+        elementos.forEach(element => {
+            // Capitalizar en tiempo real mientras escribe
+            element.addEventListener('input', capitalizarInput);
+            // Capitalizar al perder el foco
+            element.addEventListener('blur', capitalizarAlPerderFoco);
+        });
+    });
 }
 
 function initRIFAutocomplete() {
@@ -845,6 +895,12 @@ async function onSubmitCliente(event) {
 
         if (!/^\d+$/.test(cedula)) {
             mostrarToast("La cédula debe contener solo números.", true);
+            return;
+        }
+
+        // Cambio: permitir 7 u 8 dígitos
+        if (cedula.length < 7 || cedula.length > 8) {
+            mostrarToast("La cédula debe tener 7 u 8 dígitos.", true);
             return;
         }
 
