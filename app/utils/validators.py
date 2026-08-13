@@ -83,6 +83,80 @@ def validar_email(valor):
     return None
 
 
+def validar_rif(valor, min_len=8, max_len=15, nombre_campo="RIF"):
+    if valor in (None, ""):
+        return None
+
+    valor_str = str(valor).strip()
+    if not valor_str:
+        return None
+
+    if len(valor_str) < min_len:
+        return f"El campo {nombre_campo} debe tener al menos {min_len} caracteres."
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
+
+    if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', valor_str):
+        return f"El campo {nombre_campo} debe tener formato válido. Ejemplo: J-12345678-9."
+
+    return None
+
+
+def validar_celular(valor, min_len=11, max_len=11, nombre_campo="Teléfono"):
+    if valor in (None, ""):
+        return None
+
+    valor_str = str(valor).strip()
+    if not valor_str:
+        return None
+
+    if len(valor_str) < min_len:
+        return f"El campo {nombre_campo} debe tener al menos {min_len} dígitos."
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} dígitos."
+
+    if not re.match(r'^\d+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener números."
+
+    return None
+
+
+def validar_direccion_proveedor(valor, max_len=100, nombre_campo="Dirección"):
+    if valor in (None, ""):
+        return None
+
+    valor_str = str(valor).strip()
+    if not valor_str:
+        return None
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
+
+    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-.,#()/]+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener letras, números, espacios y signos básicos."
+
+    return None
+
+
+def validar_limite_credito(valor, nombre_campo="Límite de crédito"):
+    if valor in (None, ""):
+        return None
+
+    valor_str = str(valor).strip()
+    if not valor_str:
+        return None
+
+    if not re.match(r'^\d+$', valor_str):
+        return f"El campo {nombre_campo} debe ser un número entero válido."
+
+    if int(valor_str) < 0:
+        return f"El campo {nombre_campo} no puede ser negativo."
+
+    return None
+
+
 # ==================== NUEVAS FUNCIONES REUTILIZABLES ====================
 
 def validar_solo_letras(valor, min_len=1, max_len=255, nombre_campo="Campo", permitir_espacios=True):
@@ -165,6 +239,26 @@ def validar_solo_letras_numeros(valor, min_len=1, max_len=255, nombre_campo="Cam
             return f"El campo {nombre_campo} solo puede contener letras y números (sin espacios)."
     
     return None
+
+
+def validar_nombre_producto(valor, min_len=2, max_len=50, nombre_campo="Producto"):
+    """Valida nombres de producto permitiendo letras, números, espacios, guiones y paréntesis."""
+    if not valor:
+        return f"El campo {nombre_campo} no puede estar vacío."
+
+    valor_str = str(valor).strip()
+
+    if len(valor_str) < min_len:
+        return f"El campo {nombre_campo} debe tener al menos {min_len} caracteres."
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
+
+    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-\(\)]+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener letras, números, espacios, guiones y paréntesis."
+
+    return None
+
 
 def validar_decimal(valor, nombre_campo="Valor", max_decimales=2, min_valor=0, max_valor=None):
     """

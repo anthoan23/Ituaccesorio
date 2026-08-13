@@ -391,6 +391,60 @@
     return el ? el.value : '';
   }
 
+  function focoCampo(id) {
+    const el = $id(id);
+    if (el) {
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function validarDatosProveedorFormulario(form, modoEdicion = false) {
+    if (!form) return { valido: true };
+
+    const nombreId = modoEdicion ? 'e-nombre' : 'c-nombre';
+    const rifId = modoEdicion ? 'e-rif' : 'c-id';
+    const celularId = modoEdicion ? 'e-celular' : 'c-celular';
+    const correoId = modoEdicion ? 'e-correo' : 'c-correo';
+    const limiteId = modoEdicion ? 'e-limite' : 'c-limite';
+    const direccionId = modoEdicion ? 'e-direccion' : 'c-direccion';
+
+    const nombre = getFormValue(nombreId).trim();
+    if (!nombre) {
+      return { valido: false, mensaje: 'El nombre del proveedor es obligatorio.', campoId: nombreId };
+    }
+    if (nombre.length < 2 || nombre.length > 60 || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+$/.test(nombre)) {
+      return { valido: false, mensaje: 'El nombre del proveedor debe tener entre 2 y 60 caracteres y solo puede incluir letras, números y espacios.', campoId: nombreId };
+    }
+
+    const rif = getFormValue(rifId).trim();
+    if (rif && !/^[A-Za-z]-?\d{8}-?\d$/.test(rif)) {
+      return { valido: false, mensaje: 'El RIF debe tener formato válido: J-12345678-9.', campoId: rifId };
+    }
+
+    const celular = getFormValue(celularId).trim();
+    if (celular && !/^\d{11}$/.test(celular.replace(/[\s\-+()]/g, ''))) {
+      return { valido: false, mensaje: 'El teléfono debe tener 11 dígitos numéricos.', campoId: celularId };
+    }
+
+    const correo = getFormValue(correoId).trim();
+    if (correo && !/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(correo)) {
+      return { valido: false, mensaje: 'El correo debe tener formato válido (ejemplo@dominio.com).', campoId: correoId };
+    }
+
+    const limite = getFormValue(limiteId).trim();
+    if (limite && (!/^\d+$/.test(limite) || Number(limite) < 0)) {
+      return { valido: false, mensaje: 'El límite de crédito debe ser un número entero mayor o igual a cero.', campoId: limiteId };
+    }
+
+    const direccion = getFormValue(direccionId).trim();
+    if (direccion && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-.,#()/]+$/.test(direccion)) {
+      return { valido: false, mensaje: 'La dirección solo puede incluir letras, números y signos básicos.', campoId: direccionId };
+    }
+
+    return { valido: true };
+  }
+
   function setValue(id, value) {
     const el = $id(id);
     if (el) el.value = value ?? '';
@@ -841,6 +895,13 @@
     formCrear?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       
+      const validacionCliente = validarDatosProveedorFormulario(formCrear, false);
+      if (!validacionCliente.valido) {
+        showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
+        if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
+        return;
+      }
+
       // Validar con FieldValidator
       if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
         const isValid = window.FieldValidator.validateForm(formCrear);
@@ -899,6 +960,13 @@
     formEditar?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       
+      const validacionCliente = validarDatosProveedorFormulario(formEditar, true);
+      if (!validacionCliente.valido) {
+        showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
+        if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
+        return;
+      }
+
       if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
         const isValid = window.FieldValidator.validateForm(formEditar);
         if (!isValid) {

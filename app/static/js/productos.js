@@ -314,7 +314,10 @@
     if (window.UiModal && typeof window.UiModal.openById === "function") {
       window.UiModal.openById("modal-producto");
       if (window.FieldValidator) {
-        setTimeout(() => window.FieldValidator.init(), 100);
+        setTimeout(() => {
+          window.FieldValidator.initModalFields(document.getElementById("modal-producto"));
+          window.FieldValidator.resetForm(formProducto);
+        }, 100);
       }
     }
   }
@@ -337,6 +340,10 @@
     if (title) title.textContent = "Registrar producto";
     setNewClassMode(false);
     setNewBrandMode(false);
+
+    if (pClase) pClase.value = "";
+    if (pMarca) pMarca.value = "";
+    if (pCategoria) pCategoria.value = "0";
     
     if (window.FieldValidator) {
       window.FieldValidator.resetForm(formProducto);
@@ -614,6 +621,8 @@
     const idModelo = String(formProducto.querySelector("input[name='id_modelo']")?.value || "").trim();
     const nombreModelo = String(pModelo?.value || "").trim();
     const descripcion = String(pDescripcion?.value || "").trim();
+    const claseIdFinal = Number(pClase?.value || 0);
+    const finalMarcaId = Number(pMarca?.value || 0);
     
     if (!nombreModelo) {
       notify("error", "El nombre del producto es obligatorio.");
@@ -633,10 +642,8 @@
         throw new Error("Primero guarda la clase con el botón 'Guardar clase'.");
       }
 
-      const claseIdFinal = Number(pClase?.value || 0);
       if (!claseIdFinal) throw new Error("La clase es obligatoria.");
 
-      const finalMarcaId = Number(pMarca?.value || 0);
       if (!finalMarcaId) throw new Error("La marca es obligatoria.");
 
       validateMaxLen("Producto", nombreModelo, MAX.producto);
@@ -804,14 +811,9 @@
   }
 
   async function onTablaClick(event) {
-    let target = event.target;
-    
-    if (target.tagName === 'svg' || target.tagName === 'path') {
-      target = target.closest('button');
-    }
-    
-    const btn = target?.closest('.icon-action');
-    
+    const target = event.target;
+    const btn = target?.closest?.('button.icon-action') || null;
+
     if (!btn) return;
 
     const action = btn.getAttribute('data-action');

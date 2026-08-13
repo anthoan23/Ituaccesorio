@@ -3,6 +3,14 @@ from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.proveedores import Proveedores
 from app.models.productos import Producto
 from app.models.bitacora import Bitacora
+from app.utils.validators import (
+    validar_celular,
+    validar_direccion_proveedor,
+    validar_email,
+    validar_limite_credito,
+    validar_rif,
+    validar_solo_letras_numeros,
+)
 import re
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
@@ -45,15 +53,30 @@ def api_crear_proveedor():
     limite_credito = datos.get("limite_credito")
     productos = datos.get("productos")
 
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
+    error_nombre = validar_solo_letras_numeros(nombre, 2, 60, "Nombre del proveedor")
+    if error_nombre:
+        return jsonify({"success": False, "error": error_nombre}), 400
 
-    # Validar formato de RIF si se proporciona
-    if rif:
-        if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', rif):
-            return jsonify({"success": False, "error": "Formato de RIF inválido. Use: J-12345678-9"}), 400
+    error_rif = validar_rif(rif, 8, 15, "RIF")
+    if error_rif:
+        return jsonify({"success": False, "error": error_rif}), 400
 
-    # Validar límite de crédito
+    error_celular = validar_celular(celular, 11, 11, "Teléfono")
+    if error_celular:
+        return jsonify({"success": False, "error": error_celular}), 400
+
+    error_correo = validar_email(correo) if correo else None
+    if error_correo:
+        return jsonify({"success": False, "error": error_correo}), 400
+
+    error_direccion = validar_direccion_proveedor(direccion, 100, "Dirección")
+    if error_direccion:
+        return jsonify({"success": False, "error": error_direccion}), 400
+
+    error_limite = validar_limite_credito(limite_credito, "Límite de crédito")
+    if error_limite:
+        return jsonify({"success": False, "error": error_limite}), 400
+
     try:
         if limite_credito in (None, ""):
             limite_val = None
@@ -150,13 +173,29 @@ def api_actualizar_proveedor(id_proveedor: int):
     direccion = str(datos.get("direccion", "")).strip() or None
     limite_credito = datos.get("limite_credito")
 
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre del proveedor es obligatorio."}), 400
+    error_nombre = validar_solo_letras_numeros(nombre, 2, 60, "Nombre del proveedor")
+    if error_nombre:
+        return jsonify({"success": False, "error": error_nombre}), 400
 
-    # Validar formato de RIF si se proporciona
-    if rif:
-        if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', rif):
-            return jsonify({"success": False, "error": "Formato de RIF inválido. Use: J-12345678-9"}), 400
+    error_rif = validar_rif(rif, 8, 15, "RIF")
+    if error_rif:
+        return jsonify({"success": False, "error": error_rif}), 400
+
+    error_celular = validar_celular(celular, 11, 11, "Teléfono")
+    if error_celular:
+        return jsonify({"success": False, "error": error_celular}), 400
+
+    error_correo = validar_email(correo) if correo else None
+    if error_correo:
+        return jsonify({"success": False, "error": error_correo}), 400
+
+    error_direccion = validar_direccion_proveedor(direccion, 100, "Dirección")
+    if error_direccion:
+        return jsonify({"success": False, "error": error_direccion}), 400
+
+    error_limite = validar_limite_credito(limite_credito, "Límite de crédito")
+    if error_limite:
+        return jsonify({"success": False, "error": error_limite}), 400
 
     try:
         if limite_credito in (None, ""):

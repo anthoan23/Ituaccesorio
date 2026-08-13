@@ -143,6 +143,11 @@
       validate: (value) => /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(value),
       message: 'Ingrese un correo electrónico válido'
     },
+    rif: {
+      filter: (value) => value.replace(/[^A-Za-z0-9\-]/g, ''),
+      validate: (value) => value === '' || /^[A-Za-z]-?\d{8}-?\d$/.test(value),
+      message: 'Ingrese un RIF válido (ej. J-12345678-9)'
+    },
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),
       validate: (value) => /^\d{11}$/.test(value.replace(/[\s\-+()]/g, '')),
@@ -169,6 +174,11 @@
       filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]/g, ''),
       validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s]*$/.test(value),
       message: 'No se permiten caracteres especiales'
+    },
+    productoNombre: {
+      filter: (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\d\s\-()]/g, ''),
+      validate: (value) => /^[A-Za-zÁÉÍÓÚáéíóúÑñ\d\s\-()]*$/.test(value),
+      message: 'Solo se permiten letras, números, espacios, guiones y paréntesis'
     },
     decimal: {
       filter: (value) => {

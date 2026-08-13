@@ -6,6 +6,7 @@ from app.models.bitacora import Bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto, Categoria
 from app.models.inventario import Inventario
 from app.utils.helpers import guardar_foto_inventario
+from app.utils.validators import validar_nombre_producto, validar_solo_letras, validar_solo_letras_numeros
 
 
 productos_blueprint = Blueprint("productos", __name__)
@@ -53,9 +54,10 @@ def api_listar_clases():
 def api_crear_clase():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
-    
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la clase es obligatorio."}), 400
+
+    error_validacion = validar_solo_letras(nombre, 2, 30, "Nombre de la clase")
+    if error_validacion:
+        return jsonify({"success": False, "error": error_validacion}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
     
@@ -86,9 +88,10 @@ def api_listar_marcas():
 def api_crear_marca():
     datos = request.get_json(silent=True) or {}
     nombre = str(datos.get("nombre", "")).strip()
-    
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre de la marca es obligatorio."}), 400
+
+    error_validacion = validar_solo_letras_numeros(nombre, 2, 30, "Nombre de la marca")
+    if error_validacion:
+        return jsonify({"success": False, "error": error_validacion}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 
@@ -132,12 +135,20 @@ def api_crear_modelo():
     id_clase = str(datos.get("id_clase", "")).strip()
     descripcion = datos.get("descripcion", "")
 
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+    error_nombre = validar_nombre_producto(nombre, 2, 50, "Nombre del producto")
+    if error_nombre:
+        return jsonify({"success": False, "error": error_nombre}), 400
+
     if not id_marca:
         return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
+
+    try:
+        int(id_marca)
+        int(id_clase)
+    except ValueError:
+        return jsonify({"success": False, "error": "Los identificadores de clase y marca deben ser numéricos."}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 
@@ -177,12 +188,20 @@ def api_actualizar_modelo(id_modelo: str):
     id_clase = str(datos.get("id_clase", "")).strip()
     descripcion = datos.get("descripcion")
 
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre del producto es obligatorio."}), 400
+    error_nombre = validar_nombre_producto(nombre, 2, 50, "Nombre del producto")
+    if error_nombre:
+        return jsonify({"success": False, "error": error_nombre}), 400
+
     if not id_marca:
         return jsonify({"success": False, "error": "La marca es obligatoria."}), 400
     if not id_clase:
         return jsonify({"success": False, "error": "La clase es obligatoria."}), 400
+
+    try:
+        int(id_marca)
+        int(id_clase)
+    except ValueError:
+        return jsonify({"success": False, "error": "Los identificadores de clase y marca deben ser numéricos."}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 

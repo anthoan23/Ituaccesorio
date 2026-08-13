@@ -2,10 +2,62 @@
     let notificacionesNoLeidas = 0;
     let panelAbierto = false;
     let inicializado = false;
+    const STORAGE_KEY = 'notificaciones_vistas';
+
+    // Función para obtener las notificaciones ya vistas
+    function getNotificacionesVistas() {
+        try {
+            const vistas = sessionStorage.getItem(STORAGE_KEY);
+            return vistas ? JSON.parse(vistas) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    // Función para guardar notificaciones vistas
+    function guardarNotificacionVista(id) {
+        try {
+            const vistas = getNotificacionesVistas();
+            if (!vistas.includes(id)) {
+                vistas.push(id);
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(vistas));
+            }
+        } catch (error) {
+            console.error('Error guardando notificación vista:', error);
+        }
+    }
+
+    // Función para verificar si una notificación ya fue vista
+    function notificacionYaVista(id) {
+        const vistas = getNotificacionesVistas();
+        return vistas.includes(id);
+    }
+
+    // Función para marcar TODAS las notificaciones como vistas
+    function marcarTodasComoVistas(notificaciones) {
+        try {
+            const vistas = getNotificacionesVistas();
+            const nuevosIds = notificaciones
+                .map(n => n.id)
+                .filter(id => id && !vistas.includes(id));
+            
+            if (nuevosIds.length > 0) {
+                const todasVistas = [...vistas, ...nuevosIds];
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(todasVistas));
+                console.log(`✅ ${nuevosIds.length} nuevas notificaciones marcadas como vistas en sesión`);
+            }
+        } catch (error) {
+            console.error('Error marcando notificaciones como vistas:', error);
+        }
+    }
 
     function crearElementoNotificacion(evento) {
         const item = document.createElement("article");
         item.className = "notifications__item";
+        // Añadir ID a la notificación
+        if (evento.id) {
+            item.dataset.notificacionId = evento.id;
+        }
 
         const header = document.createElement("div");
         header.className = "notifications__header";
@@ -105,6 +157,16 @@
         
         if (!list) return;
         
+        // Verificar si la notificación ya fue vista
+        if (evento.id && notificacionYaVista(evento.id)) {
+            console.log(`Notificación ${evento.id} ya vista, no se incrementa contador`);
+            // Aunque ya está vista, la mostramos en el panel
+            const item = crearElementoNotificacion(evento);
+            if (emptyState) emptyState.hidden = true;
+            list.prepend(item);
+            return;
+        }
+        
         const item = crearElementoNotificacion(evento);
         if (emptyState) emptyState.hidden = true;
         
@@ -123,7 +185,7 @@
         }
     }
 
-    async function cargarNotificacionesHistoricas(marcarComoLeidas = true) {
+    async function cargarNotificacionesHistoricas(marcarComoVistas = true) {
         try {
             const response = await fetch('/api/bitacora/ultimas-notificaciones', {
                 headers: {
@@ -139,14 +201,12 @@
             const notificaciones = data.notificaciones || [];
             const list = document.querySelector("[data-notifications-list]");
             const emptyState = document.querySelector("[data-notifications-empty]");
-            const badge = document.querySelector("[data-notifications-badge]");
 
             if (!list) return;
 
             if (notificaciones.length === 0) {
                 if (emptyState) emptyState.hidden = false;
                 list.innerHTML = '<div class="notifications__empty">No hay notificaciones</div>';
-                if (badge) badge.hidden = true;
                 notificacionesNoLeidas = 0;
                 actualizarBadge();
                 return;
@@ -155,22 +215,30 @@
             if (emptyState) emptyState.hidden = true;
             list.innerHTML = '';
 
+            // Contar notificaciones no vistas
+            let noVistas = 0;
+
             notificaciones.forEach(notificacion => {
                 const item = crearElementoNotificacion(notificacion);
                 list.appendChild(item);
+                
+                // Verificar si ya fue vista
+                if (notificacion.id && !notificacionYaVista(notificacion.id)) {
+                    noVistas++;
+                }
             });
 
-            // Si se deben marcar como leídas, resetear contador
-            if (marcarComoLeidas) {
+            // Si se deben marcar como vistas (cuando se abre el panel)
+            if (marcarComoVistas) {
+                marcarTodasComoVistas(notificaciones);
                 notificacionesNoLeidas = 0;
-                actualizarBadge();
             } else {
-                // Si no se marcan como leídas, mostrar el número de notificaciones
-                if (badge && notificacionesNoLeidas === 0) {
-                    badge.hidden = false;
-                    badge.textContent = String(notificaciones.length);
-                }
+                // Si no se marcan como vistas, mostrar el contador real
+                notificacionesNoLeidas = noVistas;
             }
+            
+            actualizarBadge();
+            
         } catch (error) {
             console.error("Error cargando notificaciones históricas:", error);
         }
@@ -191,13 +259,18 @@
             return;
         }
 
+        // Limpiar storage de notificaciones vistas al cambiar de usuario
+        const usuarioStorageKey = `${STORAGE_KEY}_${usuarioId}`;
+        // Si estamos usando una clave por usuario, podemos manejar múltiples usuarios
+        // pero como usamos sessionStorage, cada sesión es independiente
+
         // Estado inicial
         panel.hidden = true;
         panelAbierto = false;
         toggle.setAttribute("aria-expanded", "false");
         if (status) status.textContent = "Listo";
 
-        // Cargar notificaciones sin marcar como leídas
+        // Cargar notificaciones sin marcar como vistas
         cargarNotificacionesHistoricas(false);
 
         // Evento click en la campana
@@ -214,12 +287,12 @@
                 toggle.setAttribute("aria-expanded", "false");
                 console.log("Panel cerrado");
             } else {
-                // Abrir panel y marcar notificaciones como leídas
-                await cargarNotificacionesHistoricas(true); // true = marcar como leídas
+                // Abrir panel y marcar notificaciones como vistas
+                await cargarNotificacionesHistoricas(true); // true = marcar como vistas
                 panel.hidden = false;
                 panelAbierto = true;
                 toggle.setAttribute("aria-expanded", "true");
-                console.log("Panel abierto - notificaciones marcadas como leídas");
+                console.log("Panel abierto - notificaciones marcadas como vistas en sesión");
             }
         });
 

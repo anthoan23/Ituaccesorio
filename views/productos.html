@@ -150,7 +150,7 @@
       <label class="field">
         <span>Clase <span class="required-indicator">*</span></span>
         <div class="select-wrapper">
-          <select id="p-clase" name="id_clase" aria-label="Clase" required>
+          <select id="p-clase" name="id_clase" aria-label="Clase" required data-validation-rules="soloNumeros">
             <option value="">Selecciona una clase</option>
           </select>
         </div>
@@ -183,7 +183,7 @@
       <label class="field">
         <span>Marca <span class="required-indicator">*</span></span>
         <div class="select-wrapper">
-          <select id="p-marca" name="id_marca" aria-label="Marca" required>
+          <select id="p-marca" name="id_marca" aria-label="Marca" required data-validation-rules="soloNumeros">
             <option value="">Selecciona una marca</option>
           </select>
         </div>
@@ -231,7 +231,7 @@
              aria-label="Producto" 
              required
              maxlength="50"
-             data-validation-rules="soloLetrasNumeros,capitalizar,sinCaracteresEspeciales"
+             data-validation-rules="productoNombre,capitalizar"
              title="Solo letras, números, espacios, guiones y paréntesis">
       <small class="field-hint">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
     </label>
