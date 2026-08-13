@@ -131,12 +131,12 @@
                 <input name="cedula" 
                        type="text" 
                        inputmode="numeric" 
-                       placeholder="12345678" 
+                       placeholder="1234567" 
                        required 
                        maxlength="8"
                        data-validation-rules="soloNumeros"
-                       title="Solo números, 8 dígitos">
-                <small class="field-hint">Solo números (8 dígitos)</small>
+                       title="Solo números, 7 u 8 dígitos">
+                <small class="field-hint">Solo números (7 u 8 dígitos)</small>
             </label>
             
             <label class="field">
@@ -166,13 +166,15 @@
             <label class="field">
                 <span>Celular *</span>
                 <input name="celular" 
+                       id="celular-input"
                        type="tel" 
                        placeholder="04141234567" 
                        required 
                        maxlength="11"
                        data-validation-rules="telefono"
                        title="Formato: 04141234567 (11 dígitos)">
-                <small class="field-hint">11 dígitos (ej: 04141234567)</small>
+                <small class="field-hint">Prefijos permitidos: 0416, 0426, 0414, 0424, 0412, 0422, 0251</small>
+                <small class="field-error" id="celular-error"></small>
             </label>
             
             <label class="field">
@@ -191,7 +193,7 @@
                 <input name="direccion" 
                        type="text" 
                        placeholder="Calle Principal #123, Ciudad" 
-                       maxlength="40"
+                       maxlength="100"
                        data-validation-rules="sinCaracteresEspeciales"
                        title="Sin caracteres especiales">
                 <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
@@ -203,34 +205,42 @@
             <label class="field">
                 <span>RIF *</span>
                 <input name="rif" 
+                       id="rif-input"
                        type="text" 
                        placeholder="J-12345678-9" 
-                       maxlength="9"
-                       data-validation-rules="sinEspacios"
-                       title="Formato: J-12345678-9">
-                <small class="field-hint">Formato: J-12345678-9</small>
+                       maxlength="13"
+                       data-validation-rules="rif"
+                       data-rif-input
+                       autocomplete="off"
+                       title="Formato: J-12345678-9 o E-12345678-9">
+                <small class="field-hint">Formato: J-12345678-9 o E-12345678-9</small>
+                <small class="field-error" id="rif-error"></small>
             </label>
             
             <label class="field field--full">
                 <span>Razón Social *</span>
                 <input name="razon_social" 
+                       id="razon-social-input"
                        type="text" 
-                       placeholder="Empresa XYZ C.A." 
+                       placeholder="Comercializadora Sol C.A." 
                        maxlength="60"
-                       data-validation-rules="sinNumeros,sinSimbolos,capitalizar"
-                       title="Solo letras, espacios y caracteres normales">
-                <small class="field-hint">Solo letras, espacios (sin números ni símbolos)</small>
+                       data-validation-rules="razonSocial"
+                       title="Permite letras, números, puntos, guiones, espacios y &">
+                <small class="field-hint">Permite letras, números, puntos, guiones, espacios y &amp;</small>
+                <small class="field-error" id="razon-social-error"></small>
             </label>
             
             <label class="field">
                 <span>Teléfono *</span>
                 <input name="telefono" 
+                       id="telefono-input"
                        type="tel" 
-                       placeholder="02121234567" 
+                       placeholder="04141234567" 
                        maxlength="11"
                        data-validation-rules="telefono"
-                       title="Formato: 02121234567 (11 dígitos)">
-                <small class="field-hint">11 dígitos (ej: 02121234567)</small>
+                       title="Formato: 04141234567 (11 dígitos)">
+                <small class="field-hint">Prefijos permitidos: 0416, 0426, 0414, 0424, 0412, 0422, 0251</small>
+                <small class="field-error" id="telefono-error"></small>
             </label>
             
             <label class="field">
@@ -249,7 +259,7 @@
                 <input name="direccion_juridico" 
                        type="text" 
                        placeholder="Zona Industrial, Calle 2" 
-                       maxlength="40"
+                       maxlength="100"
                        data-validation-rules="sinCaracteresEspeciales"
                        title="Sin caracteres especiales">
                 <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
@@ -263,7 +273,67 @@
     </form>
     {% endcall %}
 
-    <!-- Toast (se mantiene igual, pero se puede estilizar con theme.css) -->
+    <!-- Modal de detalles del cliente (READ ONLY) -->
+    {% call modal('modal-ver-cliente', 'Detalles del cliente', 'md') %}
+      <div class="cliente-detalle">
+        <div class="cliente-detalle__avatar">
+          <span class="avatar-inicial" id="detalle-cliente-inicial"></span>
+        </div>
+        
+        <div class="cliente-detalle__grid">
+          <div class="detalle-item">
+            <label>ID / Cédula</label>
+            <p id="detalle-cliente-id">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Tipo</label>
+            <p id="detalle-cliente-tipo">-</p>
+          </div>
+          
+          <div class="detalle-item detalle-item--full">
+            <label>Nombre / Razón Social</label>
+            <p id="detalle-cliente-nombre">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Apellido / RIF</label>
+            <p id="detalle-cliente-apellido-rif">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Celular / Teléfono</label>
+            <p id="detalle-cliente-celular">-</p>
+          </div>
+          
+          <div class="detalle-item">
+            <label>Correo electrónico</label>
+            <p id="detalle-cliente-correo">-</p>
+          </div>
+          
+          <div class="detalle-item detalle-item--full">
+            <label>Dirección</label>
+            <p id="detalle-cliente-direccion">-</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ui-form__actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
+      </div>
+    {% endcall %}
+
+    <!-- Modal de confirmación para eliminar cliente -->
+    {% call modal('modal-eliminar-cliente', 'Eliminar cliente', 'sm') %}
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <p id="texto-confirmar-eliminar-cliente" class="confirm-text">¿Estás seguro de que quieres eliminar este registro?</p>
+      <div class="ui-form__actions">
+        <button id="btn-confirmar-eliminar-cliente" type="button" class="ui-btn ui-btn--primary">Sí, eliminar</button>
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+      </div>
+    {% endcall %}
+
+    <!-- Toast -->
     <div id="toast-mensaje" class="toast" aria-live="polite"></div>
 </main>
 {% endblock %}

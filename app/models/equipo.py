@@ -94,6 +94,7 @@ class Equipo:
             
             # Patrón: se guarda como string (con guiones o sin ellos)
             patron = self.Patron if self.Patron else None
+            # CORRECCIÓN: Limitar a 17 caracteres (formato maximo 1-2-3-4-5-6-7-8-9)
             if patron and len(str(patron)) > 17:
                 return "El patrón no puede tener más de 17 caracteres."
             
@@ -161,8 +162,8 @@ class Equipo:
             
             if self.Patron is not None:
                 patron = self.Patron if self.Patron else None
-                if patron and len(str(patron)) > 60:
-                    return "El patrón no puede tener más de 60 caracteres."
+                if patron and len(str(patron)) > 17:
+                    return "El patrón no puede tener más de 17 caracteres."
                 updates.append("Patron = %s")
                 params.append(patron)
             

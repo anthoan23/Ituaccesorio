@@ -87,7 +87,6 @@ const Utils = {
     showMessage(message, isError = false) {
         if (!message) return;
         if (isError) {
-            alert(`❌ ${message}`);
         } else {
             console.info(`✅ ${message}`);
         }
@@ -238,7 +237,7 @@ function renderTablaOrdenes(ordenesData) {
 
     const ordenesFiltradas = ordenesData.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
     if (!ordenesFiltradas.length) {
-        tablaOrdenes.innerHTML = '<tr><td colspan="8" class="table__empty">No hay órdenes registradas.</td></tr>';
+        tablaOrdenes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes registradas.</td></tr>';
         return;
     }
 
@@ -247,14 +246,13 @@ function renderTablaOrdenes(ordenesData) {
         const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
         return `
             <tr>
-                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(orden.Estado)}</span></td>
-                <td>${Utils.escapeHtml(clienteNombre)}</td>
-                <td>${Utils.escapeHtml(orden.Equipo ?? "")}</td>
-                <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
-                <td>${Utils.escapeHtml(orden.Des_cliente ?? "")}</td>
-                <td>${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
-                <td class="table__actions">
+                <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
+                <td class="col-estado"><span class="badge ${badgeClass}">${Utils.escapeHtml(orden.Estado)}</span></td>
+                <td class="col-cliente" title="${Utils.escapeHtml(clienteNombre)}">${Utils.escapeHtml(clienteNombre)}</td>
+                <td class="col-equipo" title="${Utils.escapeHtml(orden.Equipo ?? "")}">${Utils.escapeHtml(orden.Equipo ?? "")}</td>
+                <td class="col-modelo" title="${Utils.escapeHtml(orden.Modelo ?? "")}">${Utils.escapeHtml(orden.Modelo ?? "")}</td>
+                <td class="col-fecha">${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
+                <td class="table__actions col-acciones">
                     <div class="row-actions">
                         <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
                         <button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
@@ -268,7 +266,7 @@ function renderTablaOrdenes(ordenesData) {
 function renderTablaEstado(tablaDestino, lista) {
     if (!tablaDestino) return;
     if (!lista.length) {
-        tablaDestino.innerHTML = '<tr><td colspan="5" class="table__empty">Sin órdenes.</td></tr>';
+        tablaDestino.innerHTML = '<tr><td colspan="6" class="table__empty">Sin órdenes.</td></tr>';
         return;
     }
 
@@ -291,12 +289,12 @@ function renderTablaEstado(tablaDestino, lista) {
 
         return `
             <tr>
-                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
-                <td>${Utils.escapeHtml(clienteNombre)}</td>
-                <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
-                <td>${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
-                <td class="table__actions">
+                <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
+                <td class="col-estado"><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
+                <td class="col-cliente" title="${Utils.escapeHtml(clienteNombre)}">${Utils.escapeHtml(clienteNombre)}</td>
+                <td class="col-modelo" title="${Utils.escapeHtml(orden.Modelo ?? "")}">${Utils.escapeHtml(orden.Modelo ?? "")}</td>
+                <td class="col-fecha">${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
+                <td class="table__actions col-acciones">
                     <div class="row-actions">
                         ${acciones}
                     </div>
@@ -318,7 +316,7 @@ function renderModalOrdenesEstado(label, ordenesEstado) {
     if (!ordenesFiltradas.length) {
         tablaOrdenesEstadoBody.innerHTML = `
             <tr>
-                <td colspan="8" class="table__empty">
+                <td colspan="7" class="table__empty">
                     No hay órdenes en estado <strong>${label.toLowerCase()}</strong>
                 </td>
             </tr>`;
@@ -344,14 +342,13 @@ function renderModalOrdenesEstado(label, ordenesEstado) {
 
         return `
             <tr>
-                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
-                <td>${Utils.escapeHtml(clienteNombre)}</td>
-                <td>${Utils.escapeHtml(orden.Equipo ?? "")}</td>
-                <td>${Utils.escapeHtml(orden.Modelo ?? "")}</td>
-                <td>${Utils.escapeHtml(orden.Des_cliente ?? "")}</td>
-                <td>${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
-                <td class="table__actions">
+                <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
+                <td class="col-estado"><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
+                <td class="col-cliente" title="${Utils.escapeHtml(clienteNombre)}">${Utils.escapeHtml(clienteNombre)}</td>
+                <td class="col-equipo" title="${Utils.escapeHtml(orden.Equipo ?? "")}">${Utils.escapeHtml(orden.Equipo ?? "")}</td>
+                <td class="col-modelo" title="${Utils.escapeHtml(orden.Modelo ?? "")}">${Utils.escapeHtml(orden.Modelo ?? "")}</td>
+                <td class="col-fecha">${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
+                <td class="table__actions col-acciones">
                     <div class="row-actions">
                         ${acciones}
                     </div>
@@ -456,7 +453,7 @@ async function cargarOrdenesEstado(estado, tablaDestino) {
         const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`);
         renderTablaEstado(tablaDestino, data.ordenes || []);
     } catch (error) {
-        tablaDestino.innerHTML = '<tr><td colspan="5" class="table__empty">No se pudieron cargar las órdenes.</td></tr>';
+        tablaDestino.innerHTML = '<tr><td colspan="6" class="table__empty">No se pudieron cargar las órdenes.</td></tr>';
     }
 }
 
@@ -658,6 +655,10 @@ async function verificarEquipo() {
             }
             if (equipo.patron) {
                 setFieldValue("orden-patron", equipo.patron);
+                const inputPatron = document.getElementById("orden-patron");
+                if (inputPatron) {
+                    inputPatron.dispatchEvent(new Event('input'));
+                }
             }
             if (equipo.clave) {
                 setFieldValue("orden-clave", equipo.clave);
@@ -727,7 +728,6 @@ async function onSubmitOrden(event) {
     const { formOrden, inputFecha, selectModelo, btnCrearCliente } = getDomElements();
     if (!formOrden) return;
 
-    // Validar usando FieldValidator si está disponible
     if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
         const isValid = window.FieldValidator.validateForm(formOrden);
         if (!isValid) {
@@ -893,6 +893,7 @@ async function onSubmitOrden(event) {
         direccion: direccion || "",
         tipo: getFieldValue("cliente-tipo") || "natural",
         fecha_ingreso: fechaActual,
+        patron: getFieldValue("orden-patron") || "",
     };
 
     try {
@@ -1130,7 +1131,6 @@ async function guardarRevision(event) {
         return;
     }
 
-    // Validar usando FieldValidator si está disponible
     if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
         const isValid = window.FieldValidator.validateForm(formRevision);
         if (!isValid) {
@@ -1265,45 +1265,6 @@ function onModalEstadoClick(event) {
     }
 }
 
-function onEstadoCardClick(estado) {
-    const label = {
-        pendiente: "Pendientes",
-        asignada: "Asignadas",
-        revisada: "Revisadas",
-        reparada: "Reparadas",
-    }[estado] || "Órdenes";
-
-    const estadoParamMap = {
-        pendiente: "Pendiente",
-        asignada: "Asignada",
-        revisada: "Revisado,Revisada,En revisión,En revision",
-        reparada: "Reparado",
-    };
-
-    const estadoParam = estadoParamMap[estado] || estado;
-
-    console.log(`[DEBUG] Buscando órdenes ${label} con estado: ${estadoParam}`);
-
-    Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`)
-        .then((data) => {
-            console.log(`[DEBUG] Órdenes ${label} encontradas:`, data.ordenes);
-            if (data.ordenes && data.ordenes.length > 0) {
-                renderModalOrdenesEstado(label, data.ordenes);
-            } else {
-                renderModalOrdenesEstado(label, []);
-            }
-            openModal("modal-ordenes-estado");
-        })
-        .catch((error) => {
-            console.error(`Error cargando órdenes ${estado}:`, error);
-            const { modalOrdenesEstadoSubtitle } = getDomElements();
-            if (modalOrdenesEstadoSubtitle) {
-                modalOrdenesEstadoSubtitle.textContent = "No se pudo cargar la información.";
-            }
-            Utils.showMessage(`Error al cargar órdenes ${label}: ${error.message}`, true);
-        });
-}
-
 // ============================================
 // 12. INICIALIZACIÓN
 // ============================================
@@ -1319,7 +1280,6 @@ document.addEventListener("DOMContentLoaded", () => {
         formRevision,
         formFotos,
         inputFotos,
-        estadoCards,
         tablaOrdenes,
     } = getDomElements();
 
@@ -1334,12 +1294,10 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.style.opacity = '0.7';
     }
 
-    // Evento para inicializar FieldValidator
     if (window.FieldValidator) {
         setTimeout(() => window.FieldValidator.init(), 100);
     }
 
-    // Validación de IMEI
     const inputImei = document.getElementById("orden-id-equipo");
     if (inputImei) {
         inputImei.addEventListener("input", (e) => {
@@ -1347,7 +1305,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de cédula
     const inputCedula = document.getElementById("cliente-cedula");
     if (inputCedula) {
         inputCedula.addEventListener("input", (e) => {
@@ -1355,7 +1312,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de patrón
     const inputPatron = document.getElementById("orden-patron");
     if (inputPatron) {
         inputPatron.addEventListener("input", (e) => {
@@ -1374,7 +1330,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de celular
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
         inputCelular.addEventListener("input", (e) => {
@@ -1394,7 +1349,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de clave (sin espacios)
     const inputClave = document.getElementById("orden-clave");
     if (inputClave) {
         inputClave.addEventListener("input", (e) => {
@@ -1402,7 +1356,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de color (solo letras)
     const inputColor = document.getElementById("orden-color");
     if (inputColor) {
         inputColor.addEventListener("input", (e) => {
@@ -1414,7 +1367,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de nombre (solo letras, capitalizar)
     const inputNombre = document.getElementById("cliente-nombre");
     if (inputNombre) {
         inputNombre.addEventListener("input", (e) => {
@@ -1428,7 +1380,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de apellido (solo letras, capitalizar)
     const inputApellido = document.getElementById("cliente-apellido");
     if (inputApellido) {
         inputApellido.addEventListener("input", (e) => {
@@ -1442,7 +1393,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de dirección
     const inputDireccion = document.getElementById("cliente-direccion");
     if (inputDireccion) {
         inputDireccion.addEventListener("input", (e) => {
@@ -1452,7 +1402,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Validación de modelo custom
     const inputModeloCustom = document.getElementById("orden-modelo-custom");
     if (inputModeloCustom) {
         inputModeloCustom.addEventListener("input", (e) => {
@@ -1488,23 +1437,10 @@ document.addEventListener("DOMContentLoaded", () => {
         openModal("modal-asignar-tecnico");
     });
 
-    estadoCards.forEach((card) => {
-        const estado = card.dataset.estadoCard;
-        if (!estado) return;
-        card.addEventListener("click", () => onEstadoCardClick(estado));
-        card.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onEstadoCardClick(estado);
-            }
-        });
-    });
-
     document.getElementById("btn-nueva-orden")?.addEventListener("click", () => {
         if (inputFecha) {
             inputFecha.value = Utils.getFechaActual();
         }
-        // Resetear estado de cliente
         clienteActualId = null;
         setClienteStatus("");
         const { btnCrearCliente } = getDomElements();

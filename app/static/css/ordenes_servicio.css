@@ -99,6 +99,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 
 .badge--pendiente { 
@@ -123,10 +124,74 @@
 }
 
 /* ============================================
-   COLUMNA ID
+   COLUMNAS DE TABLA - TAMAÑOS AJUSTADOS
    ============================================ */
 .col-id {
-    width: 110px;
+    width: 130px;
+    min-width: 110px;
+    white-space: nowrap;
+}
+
+.col-estado {
+    width: 130px;
+    min-width: 110px;
+    white-space: nowrap;
+}
+
+.col-cliente {
+    width: 180px;
+    min-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.col-equipo {
+    width: 150px;
+    min-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.col-modelo {
+    width: 160px;
+    min-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.col-fecha {
+    width: 130px;
+    min-width: 110px;
+    white-space: nowrap;
+}
+
+.col-acciones {
+    width: 140px;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+/* Ajuste para celdas de la tabla */
+.table th,
+.table td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+    text-align: left;
+    vertical-align: middle;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+/* Para el chip de ID - asegurar que no se rompa */
+.table .chip {
+    white-space: nowrap;
+    display: inline-block;
 }
 
 /* ============================================
@@ -319,7 +384,38 @@
     }
     
     .col-id {
-        width: auto;
+        min-width: 90px;
+        width: 100px;
+    }
+    
+    .col-estado {
+        min-width: 90px;
+        width: 100px;
+    }
+    
+    .col-cliente {
+        min-width: 100px;
+        width: 130px;
+    }
+    
+    .col-equipo {
+        min-width: 90px;
+        width: 110px;
+    }
+    
+    .col-modelo {
+        min-width: 100px;
+        width: 120px;
+    }
+    
+    .col-fecha {
+        min-width: 90px;
+        width: 100px;
+    }
+    
+    .col-acciones {
+        min-width: 100px;
+        width: 110px;
     }
     
     .table {

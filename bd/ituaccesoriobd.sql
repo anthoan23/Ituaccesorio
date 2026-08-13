@@ -4,6 +4,7 @@
 -- Tipo: ituaccesorio
 -- ============================================
 
+SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 SET AUTOCOMMIT=0;
 SET SQL_QUOTE_SHOW_CREATE=1;
@@ -16,8 +17,6 @@ SET SQL_QUOTE_SHOW_CREATE=1;
 -- Table structure for `Abastece`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Abastece`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Abastece` (
   `ID_entrega_inventario` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) NOT NULL,
@@ -27,25 +26,21 @@ CREATE TABLE `Abastece` (
   CONSTRAINT `Abastece_ibfk_1` FOREIGN KEY (`ID_entrega_inventario`) REFERENCES `Entrega_inventario` (`ID_entrega_inventario`) ON DELETE CASCADE,
   CONSTRAINT `Abastece_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Abastece`
---
+-- ----------------------------------------------------
+-- Dumping data for `Abastece`
+-- ----------------------------------------------------
+INSERT INTO `Abastece` (`ID_entrega_inventario`, `ID_inventario`, `Cantidad_entregada`) VALUES
+('ENT0000001', '1', 10),
+('ENT0000002', '3', 5),
+('ENT0000003', '2', 20),
+('ENT0000004', '4', 8),
+('ENT0000005', '8', 30);
 
-LOCK TABLES `Abastece` WRITE;
-/*!40000 ALTER TABLE `Abastece` DISABLE KEYS */;
-INSERT INTO `Abastece` VALUES ('ENT0000001','1',10),('ENT0000002','3',5),('ENT0000003','2',20),('ENT0000004','4',8),('ENT0000005','8',30);
-/*!40000 ALTER TABLE `Abastece` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Capacitacion`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Capacitacion`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Capacitacion`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Capacitacion` (
   `ID_empleado` int NOT NULL,
   `ID_especialidad` varchar(10) NOT NULL,
@@ -75,8 +70,6 @@ INSERT INTO `Capacitacion` (`ID_empleado`, `ID_especialidad`, `Nivel_Capacitacio
 -- Table structure for `Cargo`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cargo`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Cargo` (
   `ID_cargo` varchar(10) NOT NULL,
   `Nombre_cargo` varchar(30) NOT NULL,
@@ -104,32 +97,22 @@ INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) VALUES
 -- Table structure for `Categoria`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Categoria`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Categoria` (
   `ID_categoria` int NOT NULL AUTO_INCREMENT,
   `Nombre_categoria` varchar(30) NOT NULL,
   PRIMARY KEY (`ID_categoria`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Categoria`
---
+-- ----------------------------------------------------
+-- Dumping data for `Categoria`
+-- ----------------------------------------------------
+INSERT INTO `Categoria` (`ID_categoria`, `Nombre_categoria`) VALUES
+(2, 't');
 
-LOCK TABLES `Categoria` WRITE;
-/*!40000 ALTER TABLE `Categoria` DISABLE KEYS */;
-INSERT INTO `Categoria` VALUES (2,'t');
-/*!40000 ALTER TABLE `Categoria` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Clase_producto`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Clase_producto`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Clase_producto`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Clase_producto` (
   `ID_Clase` varchar(10) NOT NULL,
   `Nombre_Clase` varchar(30) NOT NULL,
@@ -152,10 +135,8 @@ INSERT INTO `Clase_producto` (`ID_Clase`, `Nombre_Clase`) VALUES
 -- Table structure for `Cliente`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Cliente` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Direccion_cliente` varchar(40) DEFAULT NULL,
   `Celular_cliente` varchar(15) DEFAULT NULL,
   `Correo_cliente` varchar(120) DEFAULT NULL,
@@ -180,34 +161,26 @@ INSERT INTO `Cliente` (`ID_cliente`, `Direccion_cliente`, `Celular_cliente`, `Co
 -- Table structure for `Cliente_juridico`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente_juridico`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Cliente_juridico` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Razon_social` varchar(60) NOT NULL,
   `Rif_cliente` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_cliente`),
   CONSTRAINT `Cliente_juridico_ibfk_1` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Cliente_juridico`
---
+-- ----------------------------------------------------
+-- Dumping data for `Cliente_juridico`
+-- ----------------------------------------------------
+INSERT INTO `Cliente_juridico` (`ID_cliente`, `Razon_social`, `Rif_cliente`) VALUES
+('1', 'Tech Solutions C.A.', 'J-12345678-0'),
+('30548845', 'Comercializadora Digital S.A.', 'J-87654321-5'),
+('31143265', 'Importaciones Globales C.A.', 'J-11223344-1');
 
-LOCK TABLES `Cliente_juridico` WRITE;
-/*!40000 ALTER TABLE `Cliente_juridico` DISABLE KEYS */;
-INSERT INTO `Cliente_juridico` VALUES ('1','Tech Solutions C.A.','J-12345678-0'),('30548845','Comercializadora Digital S.A.','J-87654321-5'),('31143265','Importaciones Globales C.A.','J-11223344-1');
-/*!40000 ALTER TABLE `Cliente_juridico` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Credito`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Credito`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Credito`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Credito` (
   `ID_credito` varchar(10) NOT NULL,
   `ID_orden_compra` varchar(10) DEFAULT NULL,
@@ -217,25 +190,21 @@ CREATE TABLE `Credito` (
   KEY `ID_orden_compra` (`ID_orden_compra`),
   CONSTRAINT `Credito_ibfk_1` FOREIGN KEY (`ID_orden_compra`) REFERENCES `Orden_compra` (`ID_orden_compra`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Credito`
---
+-- ----------------------------------------------------
+-- Dumping data for `Credito`
+-- ----------------------------------------------------
+INSERT INTO `Credito` (`ID_credito`, `ID_orden_compra`, `Dias_credito`, `Monto_credito`) VALUES
+('CRE000001', 'OC0000002', 30, '15000.00'),
+('CRE000002', 'OC0000003', 15, '8000.00'),
+('CRE000003', 'OC0000004', 45, '25000.00'),
+('CRE000004', 'OC0000001', 0, '0.00'),
+('CRE000005', 'OC0000005', 20, '5000.00');
 
-LOCK TABLES `Credito` WRITE;
-/*!40000 ALTER TABLE `Credito` DISABLE KEYS */;
-INSERT INTO `Credito` VALUES ('CRE000001','OC0000002',30,15000.00),('CRE000002','OC0000003',15,8000.00),('CRE000003','OC0000004',45,25000.00),('CRE000004','OC0000001',0,0.00),('CRE000005','OC0000005',20,5000.00);
-/*!40000 ALTER TABLE `Credito` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Detalle_orden`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Detalle_orden`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Detalle_orden`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Detalle_orden` (
   `ID_orden_compra` varchar(10) NOT NULL,
   `ID_producto` varchar(10) NOT NULL,
@@ -245,25 +214,26 @@ CREATE TABLE `Detalle_orden` (
   CONSTRAINT `Detalle_orden_ibfk_1` FOREIGN KEY (`ID_orden_compra`) REFERENCES `Orden_compra` (`ID_orden_compra`),
   CONSTRAINT `Detalle_orden_ibfk_2` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Detalle_orden`
---
+-- ----------------------------------------------------
+-- Dumping data for `Detalle_orden`
+-- ----------------------------------------------------
+INSERT INTO `Detalle_orden` (`ID_orden_compra`, `ID_producto`, `Cantidad_producto`) VALUES
+('OC0000001', '1', 10),
+('OC0000001', '3', 5),
+('OC0000002', '2', 20),
+('OC0000002', '4', 8),
+('OC0000003', '5', 15),
+('OC0000003', '7', 50),
+('OC0000004', '6', 10),
+('OC0000004', '9', 20),
+('OC0000005', '10', 25),
+('OC0000005', '8', 30);
 
-LOCK TABLES `Detalle_orden` WRITE;
-/*!40000 ALTER TABLE `Detalle_orden` DISABLE KEYS */;
-INSERT INTO `Detalle_orden` VALUES ('OC0000001','1',10),('OC0000001','3',5),('OC0000002','2',20),('OC0000002','4',8),('OC0000003','5',15),('OC0000003','7',50),('OC0000004','6',10),('OC0000004','9',20),('OC0000005','10',25),('OC0000005','8',30);
-/*!40000 ALTER TABLE `Detalle_orden` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Detalle_venta`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Detalle_venta`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Detalle_venta`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Detalle_venta` (
   `ID_inventario` varchar(10) NOT NULL,
   `ID_factura` varchar(20) NOT NULL,
@@ -300,8 +270,6 @@ INSERT INTO `Detalle_venta` (`ID_inventario`, `ID_factura`, `Cantidad_articulo`)
 -- Table structure for `Empleado`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Empleado`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Empleado` (
   `ID_empleado` int NOT NULL,
   `ID_cargo` varchar(10) DEFAULT NULL,
@@ -337,8 +305,6 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 -- Table structure for `Entrega`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Entrega`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Entrega` (
   `ID_entrega` varchar(10) NOT NULL,
   `ID_factura` varchar(20) DEFAULT NULL,
@@ -367,8 +333,6 @@ INSERT INTO `Entrega` (`ID_entrega`, `ID_factura`, `Cedula_delivery`, `Estado_en
 -- Table structure for `Entrega_inventario`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Entrega_inventario`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Entrega_inventario` (
   `ID_entrega_inventario` varchar(10) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
@@ -380,25 +344,21 @@ CREATE TABLE `Entrega_inventario` (
   CONSTRAINT `Entrega_inventario_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
   CONSTRAINT `Entrega_inventario_ibfk_2` FOREIGN KEY (`ID_orden_compra`) REFERENCES `Orden_compra` (`ID_orden_compra`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Entrega_inventario`
---
+-- ----------------------------------------------------
+-- Dumping data for `Entrega_inventario`
+-- ----------------------------------------------------
+INSERT INTO `Entrega_inventario` (`ID_entrega_inventario`, `ID_empleado`, `ID_orden_compra`, `Fecha_entrega_inventario`) VALUES
+('ENT0000001', 20234567, 'OC0000001', '2026-06-02 15:00:00'),
+('ENT0000002', 20234567, 'OC0000001', '2026-06-02 15:00:00'),
+('ENT0000003', 20234567, 'OC0000002', '2026-06-03 14:30:00'),
+('ENT0000004', 20234567, 'OC0000002', '2026-06-03 14:30:00'),
+('ENT0000005', 20234567, 'OC0000005', '2026-06-07 10:00:00');
 
-LOCK TABLES `Entrega_inventario` WRITE;
-/*!40000 ALTER TABLE `Entrega_inventario` DISABLE KEYS */;
-INSERT INTO `Entrega_inventario` VALUES ('ENT0000001',20234567,'OC0000001','2026-06-02 15:00:00'),('ENT0000002',20234567,'OC0000001','2026-06-02 15:00:00'),('ENT0000003',20234567,'OC0000002','2026-06-03 14:30:00'),('ENT0000004',20234567,'OC0000002','2026-06-03 14:30:00'),('ENT0000005',20234567,'OC0000005','2026-06-07 10:00:00');
-/*!40000 ALTER TABLE `Entrega_inventario` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Equipo`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Equipo`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Equipo`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Equipo` (
   `ID_equipo` varchar(16) NOT NULL,
   `ID_producto` varchar(10) DEFAULT NULL,
@@ -410,25 +370,21 @@ CREATE TABLE `Equipo` (
   KEY `ID_producto` (`ID_producto`),
   CONSTRAINT `Equipo_ibfk_1` FOREIGN KEY (`ID_producto`) REFERENCES `Producto` (`ID_producto`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Equipo`
---
+-- ----------------------------------------------------
+-- Dumping data for `Equipo`
+-- ----------------------------------------------------
+INSERT INTO `Equipo` (`ID_equipo`, `ID_producto`, `Color`, `Capacidad`, `Clave`, `Patron`) VALUES
+('EQ0000001', '1', 'Negro', '128GB', 1234, 'PATRON123'),
+('EQ0000002', '3', 'Azul', '256GB', NULL, NULL),
+('EQ0000003', '4', 'Blanco', '512GB', NULL, NULL),
+('EQ0000004', '1', 'Rojo', '64GB', 1111, 'PATRON456'),
+('EQ0000005', '3', 'Verde', '128GB', NULL, NULL);
 
-LOCK TABLES `Equipo` WRITE;
-/*!40000 ALTER TABLE `Equipo` DISABLE KEYS */;
-INSERT INTO `Equipo` VALUES ('EQ0000001','1','Negro','128GB',1234,'PATRON123'),('EQ0000002','3','Azul','256GB',NULL,NULL),('EQ0000003','4','Blanco','512GB',NULL,NULL),('EQ0000004','1','Rojo','64GB',1111,'PATRON456'),('EQ0000005','3','Verde','128GB',NULL,NULL);
-/*!40000 ALTER TABLE `Equipo` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Especialidad`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Especialidad`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Especialidad`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Especialidad` (
   `ID_especialidad` varchar(10) NOT NULL,
   `Nombre_especialidad` varchar(30) NOT NULL,
@@ -455,8 +411,6 @@ INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripci
 -- Table structure for `Existencias_productos`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Existencias_productos`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Existencias_productos` (
   `ID_inventario` varchar(10) NOT NULL,
   `ID_producto` varchar(10) DEFAULT NULL,
@@ -489,8 +443,6 @@ INSERT INTO `Existencias_productos` (`ID_inventario`, `ID_producto`, `Existencia
 -- Table structure for `Fotos_inventario`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Fotos_inventario`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Fotos_inventario` (
   `ID_foto_inventario` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
@@ -499,25 +451,22 @@ CREATE TABLE `Fotos_inventario` (
   KEY `ID_inventario` (`ID_inventario`),
   CONSTRAINT `Fotos_inventario_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Fotos_inventario`
---
+-- ----------------------------------------------------
+-- Dumping data for `Fotos_inventario`
+-- ----------------------------------------------------
+INSERT INTO `Fotos_inventario` (`ID_foto_inventario`, `ID_inventario`, `Foto_inventario`) VALUES
+('1', '1', '/static/img/evidencias/inventario/1f33501ad0a140d59f4fd2bfe24a9459.jpeg'),
+('2', '2', '/static/img/evidencias/inventario/foto_2.jpeg'),
+('3', '3', '/static/img/evidencias/inventario/foto_3.jpeg'),
+('4', '4', '/static/img/evidencias/inventario/foto_4.jpeg'),
+('5', '5', '/static/img/evidencias/inventario/foto_5.jpeg'),
+('6', '6', '/static/img/evidencias/inventario/foto_6.jpeg');
 
-LOCK TABLES `Fotos_inventario` WRITE;
-/*!40000 ALTER TABLE `Fotos_inventario` DISABLE KEYS */;
-INSERT INTO `Fotos_inventario` VALUES ('1','1','/static/img/evidencias/inventario/1f33501ad0a140d59f4fd2bfe24a9459.jpeg'),('2','2','/static/img/evidencias/inventario/foto_2.jpeg'),('3','3','/static/img/evidencias/inventario/foto_3.jpeg'),('4','4','/static/img/evidencias/inventario/foto_4.jpeg'),('5','5','/static/img/evidencias/inventario/foto_5.jpeg'),('6','6','/static/img/evidencias/inventario/foto_6.jpeg');
-/*!40000 ALTER TABLE `Fotos_inventario` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Fotos_orden_servicio`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Fotos_orden_servicio`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Fotos_orden_servicio`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Fotos_orden_servicio` (
   `ID_foto_orden_servicio` varchar(10) NOT NULL,
   `ID_orden_servicio` varchar(10) DEFAULT NULL,
@@ -526,25 +475,22 @@ CREATE TABLE `Fotos_orden_servicio` (
   KEY `ID_orden_servicio` (`ID_orden_servicio`),
   CONSTRAINT `Fotos_orden_servicio_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Fotos_orden_servicio`
---
+-- ----------------------------------------------------
+-- Dumping data for `Fotos_orden_servicio`
+-- ----------------------------------------------------
+INSERT INTO `Fotos_orden_servicio` (`ID_foto_orden_servicio`, `ID_orden_servicio`, `Foto_orden_servicio`) VALUES
+('FOS000001', 'OS0000001', '/static/img/evidencias/orden_servicio/os1_1.jpeg'),
+('FOS000002', 'OS0000001', '/static/img/evidencias/orden_servicio/os1_2.jpeg'),
+('FOS000003', 'OS0000002', '/static/img/evidencias/orden_servicio/os2_1.jpeg'),
+('FOS000004', 'OS0000003', '/static/img/evidencias/orden_servicio/os3_1.jpeg'),
+('FOS000005', 'OS0000005', '/static/img/evidencias/orden_servicio/os5_1.jpeg'),
+('FOS000006', 'OS0000025', '/static/img/evidencias/taller/OS0000025/54a0a2acb2e64b5abbfd322e9d6ea48e.jpg');
 
-LOCK TABLES `Fotos_orden_servicio` WRITE;
-/*!40000 ALTER TABLE `Fotos_orden_servicio` DISABLE KEYS */;
-INSERT INTO `Fotos_orden_servicio` VALUES ('FOS000001','OS0000001','/static/img/evidencias/orden_servicio/os1_1.jpeg'),('FOS000002','OS0000001','/static/img/evidencias/orden_servicio/os1_2.jpeg'),('FOS000003','OS0000002','/static/img/evidencias/orden_servicio/os2_1.jpeg'),('FOS000004','OS0000003','/static/img/evidencias/orden_servicio/os3_1.jpeg'),('FOS000005','OS0000005','/static/img/evidencias/orden_servicio/os5_1.jpeg'),('FOS000006','OS0000025','/static/img/evidencias/taller/OS0000025/54a0a2acb2e64b5abbfd322e9d6ea48e.jpg');
-/*!40000 ALTER TABLE `Fotos_orden_servicio` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Fotos_trade_in`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Fotos_trade_in`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Fotos_trade_in`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Fotos_trade_in` (
   `ID_foto_trade_in` varchar(10) NOT NULL,
   `ID_Trade_in` varchar(10) DEFAULT NULL,
@@ -553,25 +499,21 @@ CREATE TABLE `Fotos_trade_in` (
   KEY `ID_Trade_in` (`ID_Trade_in`),
   CONSTRAINT `Fotos_trade_in_ibfk_1` FOREIGN KEY (`ID_Trade_in`) REFERENCES `Trade_in` (`ID_Trade_in`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Fotos_trade_in`
---
+-- ----------------------------------------------------
+-- Dumping data for `Fotos_trade_in`
+-- ----------------------------------------------------
+INSERT INTO `Fotos_trade_in` (`ID_foto_trade_in`, `ID_Trade_in`, `Foto_trade_in`) VALUES
+('FTI000001', 'TRD000001', '/static/img/evidencias/trade_in/trd1_1.jpeg'),
+('FTI000002', 'TRD000001', '/static/img/evidencias/trade_in/trd1_2.jpeg'),
+('FTI000003', 'TRD000002', '/static/img/evidencias/trade_in/trd2_1.jpeg'),
+('FTI000004', 'TRD000003', '/static/img/evidencias/trade_in/trd3_1.jpeg'),
+('FTI000005', 'TRD000005', '/static/img/evidencias/trade_in/trd5_1.jpeg');
 
-LOCK TABLES `Fotos_trade_in` WRITE;
-/*!40000 ALTER TABLE `Fotos_trade_in` DISABLE KEYS */;
-INSERT INTO `Fotos_trade_in` VALUES ('FTI000001','TRD000001','/static/img/evidencias/trade_in/trd1_1.jpeg'),('FTI000002','TRD000001','/static/img/evidencias/trade_in/trd1_2.jpeg'),('FTI000003','TRD000002','/static/img/evidencias/trade_in/trd2_1.jpeg'),('FTI000004','TRD000003','/static/img/evidencias/trade_in/trd3_1.jpeg'),('FTI000005','TRD000005','/static/img/evidencias/trade_in/trd5_1.jpeg');
-/*!40000 ALTER TABLE `Fotos_trade_in` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Interaccion`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Interaccion`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Interaccion`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Interaccion` (
   `ID_interaccion` varchar(10) NOT NULL,
   `ID_orden_servicio` varchar(10) DEFAULT NULL,
@@ -652,12 +594,10 @@ INSERT INTO `Interaccion` (`ID_interaccion`, `ID_orden_servicio`, `ID_empleado`,
 -- Table structure for `Lista_compra`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Lista_compra`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Lista_compra` (
   `ID_lista_compra` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Cantidad_producto` int DEFAULT NULL,
   `Estado_lista_compra` varchar(30) DEFAULT NULL,
   PRIMARY KEY (`ID_lista_compra`),
@@ -666,25 +606,22 @@ CREATE TABLE `Lista_compra` (
   CONSTRAINT `Lista_compra_ibfk_1` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Lista_compra_ibfk_2` FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Lista_compra`
---
+-- ----------------------------------------------------
+-- Dumping data for `Lista_compra`
+-- ----------------------------------------------------
+INSERT INTO `Lista_compra` (`ID_lista_compra`, `ID_inventario`, `ID_cliente`, `Cantidad_producto`, `Estado_lista_compra`) VALUES
+('LST000001', '1', '22345678', 1, 'Pendiente'),
+('LST000002', '3', '33456789', 1, 'Pendiente'),
+('LST000003', '2', '44567890', 2, 'Pendiente'),
+('LST000004', '4', '55678901', 1, 'Completada'),
+('LST000005', '5', '66789012', 1, 'Pendiente'),
+('LST000006', '7', '30548845', 3, 'Pendiente');
 
-LOCK TABLES `Lista_compra` WRITE;
-/*!40000 ALTER TABLE `Lista_compra` DISABLE KEYS */;
-INSERT INTO `Lista_compra` VALUES ('LST000001','1','22345678',1,'Pendiente'),('LST000002','3','33456789',1,'Pendiente'),('LST000003','2','44567890',2,'Pendiente'),('LST000004','4','55678901',1,'Completada'),('LST000005','5','66789012',1,'Pendiente'),('LST000006','7','30548845',3,'Pendiente');
-/*!40000 ALTER TABLE `Lista_compra` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Marca_producto`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Marca_producto`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Marca_producto`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Marca_producto` (
   `ID_marca` varchar(10) NOT NULL,
   `Nombre_marca` varchar(30) NOT NULL,
@@ -707,8 +644,6 @@ INSERT INTO `Marca_producto` (`ID_marca`, `Nombre_marca`) VALUES
 -- Table structure for `Metodo_pago`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Metodo_pago`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Metodo_pago` (
   `ID_factura` varchar(20) NOT NULL,
   `Moneda` varchar(10) DEFAULT NULL,
@@ -746,8 +681,6 @@ INSERT INTO `Metodo_pago` (`ID_factura`, `Moneda`, `Fecha_pago`, `Capture`, `Est
 -- Table structure for `Orden_compra`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Orden_compra`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Orden_compra` (
   `ID_orden_compra` varchar(10) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
@@ -761,29 +694,25 @@ CREATE TABLE `Orden_compra` (
   CONSTRAINT `Orden_compra_ibfk_1` FOREIGN KEY (`ID_empleado`) REFERENCES `Empleado` (`ID_empleado`),
   CONSTRAINT `Orden_compra_ibfk_2` FOREIGN KEY (`ID_proveedor`) REFERENCES `Proveedor` (`ID_proveedor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Orden_compra`
---
+-- ----------------------------------------------------
+-- Dumping data for `Orden_compra`
+-- ----------------------------------------------------
+INSERT INTO `Orden_compra` (`ID_orden_compra`, `ID_empleado`, `ID_proveedor`, `Estado_orden_compra`, `Fecha_orden_compra`, `Factura_compra`) VALUES
+('OC0000001', 20123456, 1, 'Completada', '2026-06-01 10:00:00', 'FAC-PROV-001'),
+('OC0000002', 20123456, 2, 'Completada', '2026-06-02 11:30:00', 'FAC-PROV-002'),
+('OC0000003', 20234567, 3, 'En proceso', '2026-06-03 09:15:00', 'FAC-PROV-003'),
+('OC0000004', 20234567, 4, 'Pendiente', '2026-06-05 14:45:00', 'FAC-PROV-004'),
+('OC0000005', 20123456, 5, 'Completada', '2026-06-06 08:20:00', 'FAC-PROV-005');
 
-LOCK TABLES `Orden_compra` WRITE;
-/*!40000 ALTER TABLE `Orden_compra` DISABLE KEYS */;
-INSERT INTO `Orden_compra` VALUES ('OC0000001',20123456,1,'Completada','2026-06-01 10:00:00','FAC-PROV-001'),('OC0000002',20123456,2,'Completada','2026-06-02 11:30:00','FAC-PROV-002'),('OC0000003',20234567,3,'En proceso','2026-06-03 09:15:00','FAC-PROV-003'),('OC0000004',20234567,4,'Pendiente','2026-06-05 14:45:00','FAC-PROV-004'),('OC0000005',20123456,5,'Completada','2026-06-06 08:20:00','FAC-PROV-005');
-/*!40000 ALTER TABLE `Orden_compra` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Orden_servicio`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Orden_servicio`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Orden_servicio`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Orden_servicio` (
   `ID_orden_servicio` varchar(10) NOT NULL,
   `ID_equipo` varchar(16) DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
   `Costo_reparacion` decimal(10,2) DEFAULT NULL,
@@ -827,8 +756,6 @@ INSERT INTO `Orden_servicio` (`ID_orden_servicio`, `ID_equipo`, `ID_cliente`, `E
 -- Table structure for `Pago_servicio`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Pago_servicio`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Pago_servicio` (
   `ID_orden_servicio` varchar(10) NOT NULL,
   `ID_factura` varchar(20) NOT NULL,
@@ -837,27 +764,20 @@ CREATE TABLE `Pago_servicio` (
   CONSTRAINT `Pago_servicio_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
   CONSTRAINT `Pago_servicio_ibfk_2` FOREIGN KEY (`ID_factura`) REFERENCES `Venta` (`ID_factura`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Pago_servicio`
---
+-- ----------------------------------------------------
+-- Dumping data for `Pago_servicio`
+-- ----------------------------------------------------
+INSERT INTO `Pago_servicio` (`ID_orden_servicio`, `ID_factura`) VALUES
+('OS0000001', 'FAC-202606-111111'),
+('OS0000004', 'FAC-202606-444444');
 
-LOCK TABLES `Pago_servicio` WRITE;
-/*!40000 ALTER TABLE `Pago_servicio` DISABLE KEYS */;
-INSERT INTO `Pago_servicio` VALUES ('OS0000001','FAC-202606-111111'),('OS0000004','FAC-202606-444444');
-/*!40000 ALTER TABLE `Pago_servicio` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Persona_natural`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Persona_natural`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Persona_natural`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Persona_natural` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Apellido_cliente` varchar(40) NOT NULL,
   `Nombre_cliente` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_cliente`),
@@ -882,8 +802,6 @@ INSERT INTO `Persona_natural` (`ID_cliente`, `Apellido_cliente`, `Nombre_cliente
 -- Table structure for `Personal_delivery`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Personal_delivery`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Personal_delivery` (
   `Cedula_delivery` varchar(15) NOT NULL,
   `Nombre_delivery` varchar(40) NOT NULL,
@@ -905,8 +823,6 @@ INSERT INTO `Personal_delivery` (`Cedula_delivery`, `Nombre_delivery`, `Apellido
 -- Table structure for `Producto`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Producto`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Producto` (
   `ID_producto` varchar(10) NOT NULL,
   `ID_Clase` varchar(10) DEFAULT NULL,
@@ -939,8 +855,6 @@ INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`
 -- Table structure for `Proveedor`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Proveedor`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Proveedor` (
   `ID_proveedor` int NOT NULL,
   `Nombre_proveedor` varchar(40) NOT NULL,
@@ -949,9 +863,7 @@ CREATE TABLE `Proveedor` (
   `Correo_proveedor` varchar(120) DEFAULT NULL,
   `Direccion_proveedor` varchar(60) DEFAULT NULL,
   `Limite_credito` decimal(10,2) DEFAULT NULL,
-  `Rif_proveedor` varchar(15) DEFAULT NULL COMMENT 'RIF del proveedor (ej: J-12345678-9)',
-  PRIMARY KEY (`ID_proveedor`),
-  UNIQUE KEY `Rif_proveedor` (`Rif_proveedor`)
+  PRIMARY KEY (`ID_proveedor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------------------------------
@@ -968,8 +880,6 @@ INSERT INTO `Proveedor` (`ID_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `
 -- Table structure for `Repuestos_usados`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Repuestos_usados`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Repuestos_usados` (
   `ID_orden_servicio` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) NOT NULL,
@@ -979,25 +889,24 @@ CREATE TABLE `Repuestos_usados` (
   CONSTRAINT `Repuestos_usados_ibfk_1` FOREIGN KEY (`ID_orden_servicio`) REFERENCES `Orden_servicio` (`ID_orden_servicio`),
   CONSTRAINT `Repuestos_usados_ibfk_2` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Repuestos_usados`
---
+-- ----------------------------------------------------
+-- Dumping data for `Repuestos_usados`
+-- ----------------------------------------------------
+INSERT INTO `Repuestos_usados` (`ID_orden_servicio`, `ID_inventario`, `Cantidad_usada`) VALUES
+('OS0000001', '10', 1),
+('OS0000001', '2', 1),
+('OS0000002', '10', 3),
+('OS0000003', '7', 1),
+('OS0000004', '2', 12),
+('OS0000005', '5', 3),
+('OS0000025', '10', 1),
+('OS0000034', '2', 3);
 
-LOCK TABLES `Repuestos_usados` WRITE;
-/*!40000 ALTER TABLE `Repuestos_usados` DISABLE KEYS */;
-INSERT INTO `Repuestos_usados` VALUES ('OS0000001','10',1),('OS0000001','2',1),('OS0000002','10',3),('OS0000003','7',1),('OS0000004','2',12),('OS0000005','5',3),('OS0000025','10',1),('OS0000034','2',3);
-/*!40000 ALTER TABLE `Repuestos_usados` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Suministra`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Suministra`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Suministra`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Suministra` (
   `ID_proveedor` int NOT NULL,
   `ID_producto` varchar(10) NOT NULL,
@@ -1027,8 +936,6 @@ INSERT INTO `Suministra` (`ID_proveedor`, `ID_producto`, `Costo_producto`) VALUE
 -- Table structure for `Test`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Test`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Test` (
   `ID_test` varchar(10) NOT NULL,
   `Numero_test` int DEFAULT NULL,
@@ -1179,8 +1086,6 @@ INSERT INTO `Test` (`ID_test`, `Numero_test`, `Nombre_test`, `Resultado_test`) V
 -- Table structure for `Test_realizados_interaccion`
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Test_realizados_interaccion`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Test_realizados_interaccion` (
   `ID_interaccion` varchar(10) NOT NULL,
   `ID_test` varchar(10) NOT NULL,
@@ -1189,25 +1094,149 @@ CREATE TABLE `Test_realizados_interaccion` (
   CONSTRAINT `Test_realizados_interaccion_ibfk_1` FOREIGN KEY (`ID_interaccion`) REFERENCES `Interaccion` (`ID_interaccion`),
   CONSTRAINT `Test_realizados_interaccion_ibfk_2` FOREIGN KEY (`ID_test`) REFERENCES `Test` (`ID_test`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Test_realizados_interaccion`
---
+-- ----------------------------------------------------
+-- Dumping data for `Test_realizados_interaccion`
+-- ----------------------------------------------------
+INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`) VALUES
+('INT000001', 'TST000001'),
+('INT000001', 'TST000002'),
+('INT000001', 'TST000003'),
+('INT000003', 'TST000004'),
+('INT000005', 'TST000005'),
+('INT000001', 'TST000006'),
+('INT000001', 'TST000007'),
+('INT000007', 'TST000008'),
+('INT000007', 'TST000009'),
+('INT000008', 'TST000010'),
+('INT000008', 'TST000011'),
+('INT000008', 'TST000012'),
+('INT000009', 'TST000013'),
+('INT000009', 'TST000014'),
+('INT000009', 'TST000015'),
+('INT000009', 'TST000016'),
+('INT000009', 'TST000017'),
+('INT000009', 'TST000018'),
+('INT000009', 'TST000019'),
+('INT000009', 'TST000020'),
+('INT000009', 'TST000021'),
+('INT000009', 'TST000022'),
+('INT000009', 'TST000023'),
+('INT000009', 'TST000024'),
+('INT000009', 'TST000025'),
+('INT000009', 'TST000026'),
+('INT000009', 'TST000027'),
+('INT000009', 'TST000028'),
+('INT000009', 'TST000029'),
+('INT000009', 'TST000030'),
+('INT000009', 'TST000031'),
+('INT000009', 'TST000032'),
+('INT000009', 'TST000033'),
+('INT000009', 'TST000034'),
+('INT000010', 'TST000035'),
+('INT000011', 'TST000036'),
+('INT000012', 'TST000037'),
+('INT000023', 'TST000038'),
+('INT000023', 'TST000039'),
+('INT000023', 'TST000040'),
+('INT000023', 'TST000041'),
+('INT000023', 'TST000042'),
+('INT000023', 'TST000043'),
+('INT000023', 'TST000044'),
+('INT000023', 'TST000045'),
+('INT000023', 'TST000046'),
+('INT000023', 'TST000047'),
+('INT000023', 'TST000048'),
+('INT000023', 'TST000049'),
+('INT000023', 'TST000050'),
+('INT000023', 'TST000051'),
+('INT000023', 'TST000052'),
+('INT000023', 'TST000053'),
+('INT000023', 'TST000054'),
+('INT000023', 'TST000055'),
+('INT000023', 'TST000056'),
+('INT000023', 'TST000057'),
+('INT000023', 'TST000058'),
+('INT000024', 'TST000059'),
+('INT000024', 'TST000060'),
+('INT000024', 'TST000061'),
+('INT000024', 'TST000062'),
+('INT000024', 'TST000063'),
+('INT000024', 'TST000064'),
+('INT000024', 'TST000065'),
+('INT000024', 'TST000066'),
+('INT000024', 'TST000067'),
+('INT000024', 'TST000068'),
+('INT000024', 'TST000069'),
+('INT000024', 'TST000070'),
+('INT000024', 'TST000071'),
+('INT000024', 'TST000072'),
+('INT000024', 'TST000073'),
+('INT000024', 'TST000074'),
+('INT000024', 'TST000075'),
+('INT000024', 'TST000076'),
+('INT000024', 'TST000077'),
+('INT000024', 'TST000078'),
+('INT000024', 'TST000079'),
+('INT000024', 'TST000080'),
+('INT000024', 'TST000081'),
+('INT000025', 'TST000082'),
+('INT000025', 'TST000083'),
+('INT000028', 'TST000084'),
+('INT000028', 'TST000085'),
+('INT000028', 'TST000086'),
+('INT000028', 'TST000087'),
+('INT000028', 'TST000088'),
+('INT000028', 'TST000089'),
+('INT000028', 'TST000090'),
+('INT000028', 'TST000091'),
+('INT000028', 'TST000092'),
+('INT000028', 'TST000093'),
+('INT000028', 'TST000094'),
+('INT000028', 'TST000095'),
+('INT000028', 'TST000096'),
+('INT000028', 'TST000097'),
+('INT000028', 'TST000098'),
+('INT000028', 'TST000099'),
+('INT000028', 'TST000100');
 
-LOCK TABLES `Test_realizados_interaccion` WRITE;
-/*!40000 ALTER TABLE `Test_realizados_interaccion` DISABLE KEYS */;
-INSERT INTO `Test_realizados_interaccion` VALUES ('INT000001','TST000001'),('INT000001','TST000002'),('INT000001','TST000003'),('INT000003','TST000004'),('INT000005','TST000005'),('INT000001','TST000006'),('INT000001','TST000007'),('INT000007','TST000008'),('INT000007','TST000009'),('INT000008','TST000010'),('INT000008','TST000011'),('INT000008','TST000012'),('INT000009','TST000013'),('INT000009','TST000014'),('INT000009','TST000015'),('INT000009','TST000016'),('INT000009','TST000017'),('INT000009','TST000018'),('INT000009','TST000019'),('INT000009','TST000020'),('INT000009','TST000021'),('INT000009','TST000022'),('INT000009','TST000023'),('INT000009','TST000024'),('INT000009','TST000025'),('INT000009','TST000026'),('INT000009','TST000027'),('INT000009','TST000028'),('INT000009','TST000029'),('INT000009','TST000030'),('INT000009','TST000031'),('INT000009','TST000032'),('INT000009','TST000033'),('INT000009','TST000034'),('INT000010','TST000035'),('INT000011','TST000036'),('INT000012','TST000037'),('INT000023','TST000038'),('INT000023','TST000039'),('INT000023','TST000040'),('INT000023','TST000041'),('INT000023','TST000042'),('INT000023','TST000043'),('INT000023','TST000044'),('INT000023','TST000045'),('INT000023','TST000046'),('INT000023','TST000047'),('INT000023','TST000048'),('INT000023','TST000049'),('INT000023','TST000050'),('INT000023','TST000051'),('INT000023','TST000052'),('INT000023','TST000053'),('INT000023','TST000054'),('INT000023','TST000055'),('INT000023','TST000056'),('INT000023','TST000057'),('INT000023','TST000058'),('INT000024','TST000059'),('INT000024','TST000060'),('INT000024','TST000061'),('INT000024','TST000062'),('INT000024','TST000063'),('INT000024','TST000064'),('INT000024','TST000065'),('INT000024','TST000066'),('INT000024','TST000067'),('INT000024','TST000068'),('INT000024','TST000069'),('INT000024','TST000070'),('INT000024','TST000071'),('INT000024','TST000072'),('INT000024','TST000073'),('INT000024','TST000074'),('INT000024','TST000075'),('INT000024','TST000076'),('INT000024','TST000077'),('INT000024','TST000078'),('INT000024','TST000079'),('INT000024','TST000080'),('INT000024','TST000081'),('INT000025','TST000082'),('INT000025','TST000083'),('INT000028','TST000084'),('INT000028','TST000085'),('INT000028','TST000086'),('INT000028','TST000087'),('INT000028','TST000088'),('INT000028','TST000089'),('INT000028','TST000090'),('INT000028','TST000091'),('INT000028','TST000092'),('INT000028','TST000093'),('INT000028','TST000094'),('INT000028','TST000095'),('INT000028','TST000096'),('INT000028','TST000097'),('INT000028','TST000098'),('INT000028','TST000099'),('INT000028','TST000100'),('INT000028','TST000101'),('INT000028','TST000102'),('INT000028','TST000103'),('INT000028','TST000104'),('INT000028','TST000105'),('INT000028','TST000106'),('INT000030','TST000107'),('INT000030','TST000108'),('INT000037','TST000109'),('INT000037','TST000110'),('INT000037','TST000111'),('INT000037','TST000112'),('INT000037','TST000113'),('INT000037','TST000114'),('INT000037','TST000115'),('INT000037','TST000116'),('INT000037','TST000117'),('INT000037','TST000118'),('INT000037','TST000119'),('INT000037','TST000120'),('INT000037','TST000121'),('INT000037','TST000122'),('INT000037','TST000123'),('INT000037','TST000124'),('INT000037','TST000125'),('INT000037','TST000126'),('INT000037','TST000127'),('INT000037','TST000128'),('INT000037','TST000129'),('INT000037','TST000130'),('INT000037','TST000131');
-/*!40000 ALTER TABLE `Test_realizados_interaccion` ENABLE KEYS */;
-UNLOCK TABLES;
+INSERT INTO `Test_realizados_interaccion` (`ID_interaccion`, `ID_test`) VALUES
+('INT000028', 'TST000101'),
+('INT000028', 'TST000102'),
+('INT000028', 'TST000103'),
+('INT000028', 'TST000104'),
+('INT000028', 'TST000105'),
+('INT000028', 'TST000106'),
+('INT000030', 'TST000107'),
+('INT000030', 'TST000108'),
+('INT000037', 'TST000109'),
+('INT000037', 'TST000110'),
+('INT000037', 'TST000111'),
+('INT000037', 'TST000112'),
+('INT000037', 'TST000113'),
+('INT000037', 'TST000114'),
+('INT000037', 'TST000115'),
+('INT000037', 'TST000116'),
+('INT000037', 'TST000117'),
+('INT000037', 'TST000118'),
+('INT000037', 'TST000119'),
+('INT000037', 'TST000120'),
+('INT000037', 'TST000121'),
+('INT000037', 'TST000122'),
+('INT000037', 'TST000123'),
+('INT000037', 'TST000124'),
+('INT000037', 'TST000125'),
+('INT000037', 'TST000126'),
+('INT000037', 'TST000127'),
+('INT000037', 'TST000128'),
+('INT000037', 'TST000129'),
+('INT000037', 'TST000130'),
+('INT000037', 'TST000131');
 
---
--- Table structure for table `Test_realizados_trade_in`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Test_realizados_trade_in`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Test_realizados_trade_in`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Test_realizados_trade_in` (
   `ID_Trade_in` varchar(10) NOT NULL,
   `ID_test` varchar(10) NOT NULL,
@@ -1216,29 +1245,25 @@ CREATE TABLE `Test_realizados_trade_in` (
   CONSTRAINT `Test_realizados_trade_in_ibfk_1` FOREIGN KEY (`ID_Trade_in`) REFERENCES `Trade_in` (`ID_Trade_in`),
   CONSTRAINT `Test_realizados_trade_in_ibfk_2` FOREIGN KEY (`ID_test`) REFERENCES `Test` (`ID_test`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Test_realizados_trade_in`
---
+-- ----------------------------------------------------
+-- Dumping data for `Test_realizados_trade_in`
+-- ----------------------------------------------------
+INSERT INTO `Test_realizados_trade_in` (`ID_Trade_in`, `ID_test`) VALUES
+('TRD000001', 'TST000001'),
+('TRD000002', 'TST000001'),
+('TRD000001', 'TST000002'),
+('TRD000003', 'TST000002'),
+('TRD000004', 'TST000004');
 
-LOCK TABLES `Test_realizados_trade_in` WRITE;
-/*!40000 ALTER TABLE `Test_realizados_trade_in` DISABLE KEYS */;
-INSERT INTO `Test_realizados_trade_in` VALUES ('TRD000001','TST000001'),('TRD000002','TST000001'),('TRD000001','TST000002'),('TRD000003','TST000002'),('TRD000004','TST000004');
-/*!40000 ALTER TABLE `Test_realizados_trade_in` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Trade_in`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Trade_in`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Trade_in`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Trade_in` (
   `ID_Trade_in` varchar(10) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
   `ID_equipo` varchar(10) DEFAULT NULL,
   `Numero_utilizado` int DEFAULT NULL,
@@ -1254,29 +1279,25 @@ CREATE TABLE `Trade_in` (
   CONSTRAINT `Trade_in_ibfk_3` FOREIGN KEY (`ID_inventario`) REFERENCES `Existencias_productos` (`ID_inventario`),
   CONSTRAINT `Trade_in_ibfk_4` FOREIGN KEY (`ID_equipo`) REFERENCES `Equipo` (`ID_equipo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `Trade_in`
---
+-- ----------------------------------------------------
+-- Dumping data for `Trade_in`
+-- ----------------------------------------------------
+INSERT INTO `Trade_in` (`ID_Trade_in`, `ID_empleado`, `ID_cliente`, `ID_inventario`, `ID_equipo`, `Numero_utilizado`, `Fecha_realizado`, `cotizacion`) VALUES
+('TRD000001', 20123456, '22345678', '1', 'EQ0000001', 1, '2026-06-01 09:00:00', '500.00'),
+('TRD000002', 20234567, '33456789', '3', 'EQ0000002', 1, '2026-06-02 10:30:00', '650.00'),
+('TRD000003', 20123456, '44567890', '4', 'EQ0000003', 0, '2026-06-03 14:00:00', '550.00'),
+('TRD000004', 20345678, '55678901', '1', 'EQ0000004', 1, '2026-06-04 08:15:00', '400.00'),
+('TRD000005', 20234567, '66789012', '2', 'EQ0000005', 0, '2026-06-05 11:30:00', '300.00');
 
-LOCK TABLES `Trade_in` WRITE;
-/*!40000 ALTER TABLE `Trade_in` DISABLE KEYS */;
-INSERT INTO `Trade_in` VALUES ('TRD000001',20123456,'22345678','1','EQ0000001',1,'2026-06-01 09:00:00',500.00),('TRD000002',20234567,'33456789','3','EQ0000002',1,'2026-06-02 10:30:00',650.00),('TRD000003',20123456,'44567890','4','EQ0000003',0,'2026-06-03 14:00:00',550.00),('TRD000004',20345678,'55678901','1','EQ0000004',1,'2026-06-04 08:15:00',400.00),('TRD000005',20234567,'66789012','2','EQ0000005',0,'2026-06-05 11:30:00',300.00);
-/*!40000 ALTER TABLE `Trade_in` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Venta`
---
-
+-- ----------------------------------------------------
+-- Table structure for `Venta`
+-- ----------------------------------------------------
 DROP TABLE IF EXISTS `Venta`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Venta` (
   `ID_factura` varchar(20) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Moneda` varchar(10) DEFAULT NULL,
   `Fecha_venta` datetime DEFAULT NULL,
   PRIMARY KEY (`ID_factura`),
@@ -1961,3 +1982,139 @@ DELIMITER ;
 -- ============================================
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;
+-- ============================================
+-- PROCEDIMIENTO PARA REGISTRAR TRADE-IN CON TESTS
+-- ============================================
+
+-- ----------------------------------------------------
+-- Procedure: sp_registrar_trade_in_con_tests
+-- Registra un trade-in completo con equipo, fotos y tests
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_trade_in_con_tests`;
+DELIMITER ;;
+CREATE PROCEDURE `sp_registrar_trade_in_con_tests`(
+    IN p_ID_empleado INT,
+    IN p_ID_cliente VARCHAR(12),
+    IN p_ID_producto VARCHAR(10),
+    IN p_ID_equipo VARCHAR(16),
+    IN p_Color VARCHAR(20),
+    IN p_Capacidad VARCHAR(20),
+    IN p_Clave INT,
+    IN p_Patron VARCHAR(60),
+    IN p_Valor_pagado DECIMAL(10,2),
+    IN p_Observaciones VARCHAR(300),
+    IN p_Json_Fotos JSON,
+    IN p_Json_Tests JSON
+)
+BEGIN
+    DECLARE v_trade_in_id VARCHAR(10);
+    DECLARE v_ultimo_id VARCHAR(10);
+    DECLARE v_siguiente_num INT;
+    DECLARE v_items_count INT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE v_foto_url VARCHAR(255);
+    DECLARE v_nombre_test VARCHAR(30);
+    DECLARE v_resultado_test VARCHAR(300);
+    DECLARE v_ultimo_id_test VARCHAR(10);
+    DECLARE v_siguiente_num_test INT;
+    DECLARE v_nuevo_id_test VARCHAR(10);
+    DECLARE v_foto_id VARCHAR(10);
+    DECLARE v_ultimo_id_foto VARCHAR(10);
+    DECLARE v_siguiente_num_foto INT;
+
+    -- Manejo de errores
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    -- 1. Verificar si el equipo ya existe
+    IF EXISTS (SELECT 1 FROM Equipo WHERE ID_equipo = p_ID_equipo) THEN
+        -- Actualizar equipo existente
+        UPDATE Equipo 
+        SET ID_producto = p_ID_producto,
+            Color = COALESCE(p_Color, Color),
+            Capacidad = COALESCE(p_Capacidad, Capacidad),
+            Clave = COALESCE(p_Clave, Clave),
+            Patron = COALESCE(p_Patron, Patron)
+        WHERE ID_equipo = p_ID_equipo;
+    ELSE
+        -- Crear nuevo equipo
+        INSERT INTO Equipo (ID_equipo, ID_producto, Color, Capacidad, Clave, Patron)
+        VALUES (p_ID_equipo, p_ID_producto, p_Color, p_Capacidad, p_Clave, p_Patron);
+    END IF;
+
+    -- 2. Generar ID para Trade_in
+    SELECT MAX(ID_Trade_in) INTO v_ultimo_id FROM Trade_in;
+    IF v_ultimo_id IS NULL THEN
+        SET v_siguiente_num = 1;
+    ELSE
+        SET v_siguiente_num = CAST(SUBSTRING(v_ultimo_id, 4) AS UNSIGNED) + 1;
+    END IF;
+    SET v_trade_in_id = CONCAT('TRD', LPAD(v_siguiente_num, 6, '0'));
+
+    -- 3. Insertar Trade_in
+    INSERT INTO Trade_in (ID_Trade_in, ID_empleado, ID_cliente, ID_equipo, Numero_utilizado, Fecha_realizado, cotizacion)
+    VALUES (v_trade_in_id, p_ID_empleado, p_ID_cliente, p_ID_equipo, 0, NOW(), p_Valor_pagado);
+
+    -- 4. Guardar fotos
+    IF p_Json_Fotos IS NOT NULL AND JSON_LENGTH(p_Json_Fotos) > 0 THEN
+        SET v_items_count = JSON_LENGTH(p_Json_Fotos);
+        SET i = 0;
+        
+        WHILE i < v_items_count DO
+            SET v_foto_url = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Fotos, CONCAT('$[', i, ']')));
+            
+            -- Generar ID para foto
+            SELECT MAX(ID_foto_trade_in) INTO v_ultimo_id_foto FROM Fotos_trade_in;
+            IF v_ultimo_id_foto IS NULL THEN
+                SET v_siguiente_num_foto = 1;
+            ELSE
+                SET v_siguiente_num_foto = CAST(SUBSTRING(v_ultimo_id_foto, 4) AS UNSIGNED) + 1;
+            END IF;
+            SET v_foto_id = CONCAT('FTI', LPAD(v_siguiente_num_foto, 7, '0'));
+            
+            INSERT INTO Fotos_trade_in (ID_foto_trade_in, ID_Trade_in, Foto_trade_in)
+            VALUES (v_foto_id, v_trade_in_id, v_foto_url);
+            
+            SET i = i + 1;
+        END WHILE;
+    END IF;
+
+    -- 5. Guardar tests
+    IF p_Json_Tests IS NOT NULL AND JSON_LENGTH(p_Json_Tests) > 0 THEN
+        SET v_items_count = JSON_LENGTH(p_Json_Tests);
+        SET i = 0;
+        
+        WHILE i < v_items_count DO
+            SET v_nombre_test = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].nombre')));
+            SET v_resultado_test = JSON_UNQUOTE(JSON_EXTRACT(p_Json_Tests, CONCAT('$[', i, '].resultado')));
+            
+            -- Generar ID para test
+            SELECT MAX(ID_test) INTO v_ultimo_id_test FROM Test;
+            IF v_ultimo_id_test IS NULL THEN
+                SET v_siguiente_num_test = 1;
+            ELSE
+                SET v_siguiente_num_test = CAST(SUBSTRING(v_ultimo_id_test, 4) AS UNSIGNED) + 1;
+            END IF;
+            SET v_nuevo_id_test = CONCAT('TST', LPAD(v_siguiente_num_test, 6, '0'));
+            
+            INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
+            VALUES (v_nuevo_id_test, 1, v_nombre_test, v_resultado_test);
+            
+            INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
+            VALUES (v_trade_in_id, v_nuevo_id_test);
+            
+            SET i = i + 1;
+        END WHILE;
+    END IF;
+
+    COMMIT;
+
+    -- Devolver resultado
+    SELECT v_trade_in_id AS trade_in_id, 'Trade-in registrado exitosamente' AS mensaje;
+END ;;
+DELIMITER ;

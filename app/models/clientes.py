@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+import re
 
 
 class Clientes():
@@ -56,21 +57,31 @@ class Clientes():
     def eliminar_cliente(self) -> str:
         Id_cliente = self.ID_cliente.strip()
 
-        #Inicio de validaciones
-
+        # Inicio de validaciones
         if not Id_cliente:
-            mensaje = "La cedula del cliente no puede estar vacío."
+            mensaje = "El ID del cliente no puede estar vacío."
             return mensaje
         
-        if not Id_cliente.isdigit():
-            mensaje = "La cedula del cliente debe contener solo números."
-            return mensaje
+        # Verificar si es un RIF (contiene letras o guiones) o una cédula (solo números)
+        es_rif = bool(re.search(r'[A-Za-z-]', Id_cliente))
         
-        if len(Id_cliente) > 8:
-            mensaje = "La cedula del cliente no puede exceder los 8 caracteres."
-            return mensaje
-    
-        #Final de validaciones
+        if es_rif:
+            # Validación para RIF: formato J-12345678-9 o E-12345678-9
+            patron_rif = r'^[JE]-\d{8}-\d$'
+            if not re.match(patron_rif, Id_cliente):
+                mensaje = "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+                return mensaje
+        else:
+            # Validación para cédula: solo números, 7 u 8 dígitos
+            if not Id_cliente.isdigit():
+                mensaje = "La cédula del cliente debe contener solo números."
+                return mensaje
+            
+            if len(Id_cliente) < 7 or len(Id_cliente) > 8:
+                mensaje = "La cédula del cliente debe tener 7 u 8 caracteres."
+                return mensaje
+        
+        # Final de validaciones
 
         db = self._conexion_bd.conexion1()
         if not db:
@@ -78,9 +89,11 @@ class Clientes():
             return mensaje
         
         cursor = db.cursor()
-        try: 
+        try:
             # Obtener nombre antes de eliminar (para bitácora)
             nombre_cliente = Id_cliente
+            
+            # Primero verificar si es persona natural
             cursor.execute(
                 "SELECT CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente) as nombre FROM Persona_natural p WHERE p.ID_cliente = %s",
                 (Id_cliente,)
@@ -89,6 +102,7 @@ class Clientes():
             if row:
                 nombre_cliente = row[0]
             else:
+                # Si no es persona natural, verificar si es jurídico
                 cursor.execute(
                     "SELECT Razon_social FROM Cliente_juridico WHERE ID_cliente = %s",
                     (Id_cliente,)
@@ -97,16 +111,127 @@ class Clientes():
                 if row:
                     nombre_cliente = row[0]
 
-            sql = "DELETE FROM Persona_natural WHERE ID_cliente = %s"
-            cursor.execute(sql, (Id_cliente,))
+            # ============================================
+            # ELIMINAR REGISTROS RELACIONADOS EN ORDEN
+            # ============================================
+            
+            # PRIMERO: Obtener todas las facturas de venta del cliente
+            cursor.execute("SELECT ID_factura FROM Venta WHERE ID_cliente = %s", (Id_cliente,))
+            ventas = cursor.fetchall()
+            
+            for venta in ventas:
+                factura_id = venta[0]
+                
+                # 1. Eliminar Metodo_pago asociado a la factura
+                cursor.execute("DELETE FROM Metodo_pago WHERE ID_factura = %s", (factura_id,))
+                db.commit()
+                
+                # 2. Eliminar Detalle_venta asociado a la factura
+                cursor.execute("DELETE FROM Detalle_venta WHERE ID_factura = %s", (factura_id,))
+                db.commit()
+            
+            # 3. Eliminar Fotos_trade_in (relacionado con Trade_in)
+            cursor.execute("""
+                DELETE fti FROM Fotos_trade_in fti 
+                INNER JOIN Trade_in t ON fti.ID_Trade_in = t.ID_Trade_in 
+                WHERE t.ID_cliente = %s
+            """, (Id_cliente,))
             db.commit()
-
-            sql = "DELETE FROM Cliente_juridico WHERE ID_cliente = %s"
-            cursor.execute(sql, (Id_cliente,))
+            
+            # 4. Eliminar Fotos_orden_servicio (relacionado con Orden_servicio)
+            cursor.execute("""
+                DELETE fos FROM Fotos_orden_servicio fos 
+                INNER JOIN Orden_servicio os ON fos.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
             db.commit()
-
-            sql = "DELETE FROM Cliente WHERE ID_cliente = %s"
-            cursor.execute(sql, (Id_cliente,))
+            
+            # 5. Eliminar Test_realizados_interaccion (relacionado con Interaccion)
+            cursor.execute("""
+                DELETE tri FROM Test_realizados_interaccion tri 
+                INNER JOIN Interaccion i ON tri.ID_interaccion = i.ID_interaccion 
+                INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 6. Eliminar Test_realizados_trade_in (relacionado con Trade_in)
+            cursor.execute("""
+                DELETE trti FROM Test_realizados_trade_in trti 
+                INNER JOIN Trade_in t ON trti.ID_Trade_in = t.ID_Trade_in 
+                WHERE t.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 7. Eliminar Test (relacionado con Interaccion)
+            cursor.execute("""
+                DELETE t FROM Test t 
+                INNER JOIN Test_realizados_interaccion tri ON t.ID_test = tri.ID_test 
+                INNER JOIN Interaccion i ON tri.ID_interaccion = i.ID_interaccion 
+                INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 8. Eliminar Test (relacionado con Trade_in)
+            cursor.execute("""
+                DELETE t FROM Test t 
+                INNER JOIN Test_realizados_trade_in trti ON t.ID_test = trti.ID_test 
+                INNER JOIN Trade_in tr ON trti.ID_Trade_in = tr.ID_Trade_in 
+                WHERE tr.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 9. Eliminar Interaccion (relacionado con Orden_servicio)
+            cursor.execute("""
+                DELETE i FROM Interaccion i 
+                INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 10. Eliminar Repuestos_usados (relacionado con Orden_servicio)
+            cursor.execute("""
+                DELETE ru FROM Repuestos_usados ru 
+                INNER JOIN Orden_servicio os ON ru.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 11. Eliminar Pago_servicio (relacionado con Orden_servicio)
+            cursor.execute("""
+                DELETE ps FROM Pago_servicio ps 
+                INNER JOIN Orden_servicio os ON ps.ID_orden_servicio = os.ID_orden_servicio 
+                WHERE os.ID_cliente = %s
+            """, (Id_cliente,))
+            db.commit()
+            
+            # 12. Eliminar Lista_compra
+            cursor.execute("DELETE FROM Lista_compra WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 13. Eliminar Trade_in
+            cursor.execute("DELETE FROM Trade_in WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 14. Eliminar Orden_servicio
+            cursor.execute("DELETE FROM Orden_servicio WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 15. Eliminar Venta (ahora que ya no tiene relaciones)
+            cursor.execute("DELETE FROM Venta WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 16. Eliminar de Persona_natural (si existe)
+            cursor.execute("DELETE FROM Persona_natural WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 17. Eliminar de Cliente_juridico (si existe)
+            cursor.execute("DELETE FROM Cliente_juridico WHERE ID_cliente = %s", (Id_cliente,))
+            db.commit()
+            
+            # 18. Finalmente eliminar de la tabla Cliente
+            cursor.execute("DELETE FROM Cliente WHERE ID_cliente = %s", (Id_cliente,))
             db.commit()
             
             # Registrar en bitácora
@@ -119,10 +244,22 @@ class Clientes():
                 )
                 bitacora.registrar()
             
-            mensaje = f"El cliente de cédula '{Id_cliente}' ha sido eliminado exitosamente."
+            mensaje = f"El cliente '{nombre_cliente}' con ID '{Id_cliente}' ha sido eliminado exitosamente."
             return mensaje
         except Exception as e:
-            mensaje = f"Error al eliminar cliente: {e}"
+            db.rollback()
+            # Si el error es por clave foránea, mostrar un mensaje más claro
+            if "foreign key constraint fails" in str(e).lower():
+                # Extraer el nombre de la tabla que causa el problema
+                match = re.search(r'FOREIGN KEY \(`(\w+)`\) REFERENCES `(\w+)`', str(e))
+                if match:
+                    columna = match.group(1)
+                    tabla = match.group(2)
+                    mensaje = f"No se puede eliminar el cliente porque tiene registros relacionados en la tabla '{tabla}' (columna '{columna}')."
+                else:
+                    mensaje = f"No se puede eliminar el cliente porque tiene registros relacionados en otras tablas."
+            else:
+                mensaje = f"Error al eliminar cliente: {e}"
             return mensaje
         finally:
             cursor.close()
@@ -457,8 +594,9 @@ class Persona_natural(Clientes):
         if len(apellido) > 20:
             return "El apellido del cliente no puede exceder los 20 caracteres."
         
-        if len(cedula) > 8:
-            return "La cédula del cliente no puede exceder los 8 caracteres."
+        # Cambio: permitir 7 u 8 caracteres
+        if len(cedula) < 7 or len(cedula) > 8:
+            return "La cédula del cliente debe tener 7 u 8 caracteres."
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -530,8 +668,9 @@ class Persona_natural(Clientes):
             mensaje = "El apellido del cliente no puede exceder los 20 caracteres."
             return mensaje
         
-        if len(cedula) > 8:
-            mensaje = "La cédula del cliente no puede exceder los 8 caracteres."
+        # Cambio: permitir 7 u 8 caracteres
+        if len(cedula) < 7 or len(cedula) > 8:
+            mensaje = "La cédula del cliente debe tener 7 u 8 caracteres."
             return mensaje
         
         #final de validaciones
@@ -606,41 +745,52 @@ class Cliente_juridico(Clientes):
     def registrar_cliente_juridico(self) -> str:
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
-
-        #Inicio de validaciones
         
+        # VALIDACIÓN DE RIF - Formato: J-12345678-9 o E-12345678-9
+        patron_rif = r'^[JE]-\d{8}-\d$'
+        
+        # Verificar formato
+        if not re.match(patron_rif, rif):
+            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+        
+        # Validar que la razón social no esté vacía
         if not razon_social:
             return "La razón social del cliente no puede estar vacía."
+        
+        # Validar razón social: permite letras, números, puntos, guiones, espacios y &
+        patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
+        if not re.match(patron_razon_social, razon_social):
+            return "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
         
         if len(razon_social) > 50:
             return "La razón social del cliente no puede exceder los 50 caracteres."
         
-        if not rif:
-            return "El RIF del cliente no puede estar vacío."
+        # Verificar longitud total del RIF (12 caracteres: 1 letra + 2 guiones + 9 dígitos)
+        if len(rif) != 12:
+            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
         
-        if not rif.isalnum():
-            return "El RIF del cliente debe contener solo caracteres alfanuméricos."
-        
-        if len(rif) > 9:
-            return "El RIF del cliente no puede exceder los 9 caracteres."
- 
+        # Final de validaciones
+
         db = self._conexion_bd.conexion1()
         if not db:
             return "Error al conectar a la base de datos."
 
         cursor = db.cursor()
         try:
-            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif,))
+            # Guardar el RIF con guiones tal cual como se ingresó
+            rif_guardar = rif
+            
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif_guardar,))
             if cursor.fetchone():
                 return f"El cliente jurídico con RIF '{rif}' ya existe."
 
             cursor.execute(
                 "INSERT INTO Cliente (ID_cliente, Direccion_cliente, Celular_cliente, Correo_cliente) VALUES (%s, %s, %s, %s)",
-                (rif, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
+                (rif_guardar, self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None)
             )
             cursor.execute(
                 "INSERT INTO Cliente_juridico (ID_cliente, Razon_social, Rif_cliente) VALUES (%s, %s, %s)",
-                (rif, razon_social, rif)
+                (rif_guardar, razon_social, rif_guardar)
             )
             db.commit()
             
@@ -648,7 +798,7 @@ class Cliente_juridico(Clientes):
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar cliente jurídico",
-                    descripcion=f"Se registró el cliente jurídico: {rif} - {razon_social}",
+                    descripcion=f"Se registró el cliente jurídico: {rif_guardar} - {razon_social}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Clientes"
                 )
@@ -665,12 +815,24 @@ class Cliente_juridico(Clientes):
     def actualizar_cliente_juridico(self):
         razon_social = self.Razon_social.strip()
         rif = self.Rif_cliente.strip()
+        
+        # VALIDACIÓN DE RIF - Formato: J-12345678-9 o E-12345678-9
+        patron_rif = r'^[JE]-\d{8}-\d$'
+        
+        # Verificar formato
+        if not re.match(patron_rif, rif):
+            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
 
         #Inicio de validaciones
         
         if not razon_social:
             mensaje = "La razón social del cliente no puede estar vacía."
             return mensaje
+        
+        # Validar razón social: permite letras, números, puntos, guiones, espacios y &
+        patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
+        if not re.match(patron_razon_social, razon_social):
+            return "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
         
         if len(razon_social) > 50:
             mensaje = "La razón social del cliente no puede exceder los 50 caracteres."
@@ -680,14 +842,10 @@ class Cliente_juridico(Clientes):
             mensaje = "El RIF del cliente no puede estar vacío."
             return mensaje
         
-        if not rif.isalnum():
-            mensaje = "El RIF del cliente debe contener solo caracteres alfanuméricos."
-            return mensaje
+        # Verificar longitud total del RIF (12 caracteres)
+        if len(rif) != 12:
+            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
         
-        if len(rif) > 9:
-            mensaje = "El RIF del cliente no puede exceder los 9 caracteres."
-            return mensaje
- 
         #Final de validaciones
 
         db = self._conexion_bd.conexion1()
@@ -697,13 +855,16 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
+            # Guardar el RIF con guiones tal cual como se ingresó
+            rif_guardar = rif
+            
             cursor.execute(
                 "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
-                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif)
+                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif_guardar)
             )
             cursor.execute(
                 "UPDATE Cliente_juridico SET Razon_social = %s, Rif_cliente = %s WHERE ID_cliente = %s",
-                (razon_social, rif, rif)
+                (razon_social, rif_guardar, rif_guardar)
             )
             db.commit()
             
@@ -711,7 +872,7 @@ class Cliente_juridico(Clientes):
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar cliente jurídico",
-                    descripcion=f"Se actualizó el cliente jurídico: {rif} - {razon_social}",
+                    descripcion=f"Se actualizó el cliente jurídico: {rif_guardar} - {razon_social}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Clientes"
                 )
