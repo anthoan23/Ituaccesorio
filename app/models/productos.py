@@ -2,6 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from decimal import Decimal
 from app.models.bitacora import Bitacora
+import mysql.connector
 
 
 class Categoria:
@@ -380,7 +381,7 @@ class Producto:
         cursor = db.cursor()
         try:
             cursor.execute("SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1", (self.id_producto,))
-            return cursor.fetchone() is not None
+            return cursor.fetchone() is not None        
         finally:
             cursor.close()
             db.close()
@@ -412,6 +413,67 @@ class Producto:
         finally:
             cursor.close()
             db.close()
+
+    # ==================== MÉTODO CON STORED PROCEDURE ====================
+    
+    def verificar_stock_procedure(self) -> dict:
+        """
+        Usa el stored procedure sp_verificar_stock_producto
+        para verificar el stock de un producto
+        """
+        if not self.id_producto:
+            return {"stock_total": 0, "tiene_stock": False, "detalle": [], "success": False, "error": "ID de producto no especificado"}
+        
+        db = self._conexion()
+        if not db:
+            return {"stock_total": 0, "tiene_stock": False, "detalle": [], "success": False, "error": "No se pudo conectar a la BD"}
+        
+        cursor = None
+        try:
+            cursor = db.cursor(dictionary=True)
+            
+            # Ejecutar el procedure con parámetros de salida
+            # Los parámetros OUT se pasan como valores dummy (0, False)
+            cursor.callproc('sp_verificar_stock_producto', (self.id_producto, 0, False))
+            
+            # Obtener los parámetros de salida
+            # MySQL guarda los OUT params como @_nombre_procedure_0, @_nombre_procedure_1, etc.
+            cursor.execute("SELECT @_sp_verificar_stock_producto_1 AS stock_total, @_sp_verificar_stock_producto_2 AS tiene_stock")
+            out_params = cursor.fetchone()
+            
+            stock_total = out_params['stock_total'] if out_params else 0
+            tiene_stock = bool(out_params['tiene_stock']) if out_params else False
+            
+            # Obtener el detalle (el SELECT que devuelve)
+            detalle = []
+            for result in cursor.stored_results():
+                rows = result.fetchall()
+                if rows:
+                    detalle = rows
+            
+            return {
+                "stock_total": stock_total,
+                "tiene_stock": tiene_stock,
+                "detalle": detalle,
+                "success": True
+            }
+            
+        except mysql.connector.Error as e:
+            print(f"Error en procedure: {e}")
+            return {
+                "stock_total": 0,
+                "tiene_stock": False,
+                "detalle": [],
+                "error": str(e),
+                "success": False
+            }
+        finally:
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
+    # ==================== FIN MÉTODO CON STORED PROCEDURE ====================
 
     def registrar_producto(self) -> str:
         if not self.id_clase or not self.id_marca or not self.nombre:

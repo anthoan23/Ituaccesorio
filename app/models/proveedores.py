@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+import mysql.connector
 
 
 class Proveedores:
@@ -116,6 +117,66 @@ class Proveedores:
         finally:
             cursor.close()
             db.close()
+
+    # ==================== MÉTODO CON STORED PROCEDURE ====================
+    
+    def obtener_proveedor_con_productos_procedure(self) -> dict:
+        """
+        Usa el stored procedure sp_obtener_proveedor_completo
+        para obtener el proveedor y sus productos en una sola llamada
+        """
+        if self.id_proveedor == 0:
+            return {"proveedor": None, "productos": [], "success": False, "error": "ID de proveedor no especificado"}
+        
+        db = self._conexion()
+        if not db:
+            return {"proveedor": None, "productos": [], "success": False, "error": "No se pudo conectar a la BD"}
+        
+        cursor = None
+        try:
+            cursor = db.cursor(dictionary=True)
+            
+            # Ejecutar el procedure
+            cursor.callproc('sp_obtener_proveedor_completo', (self.id_proveedor,))
+            
+            proveedor = None
+            productos = []
+            result_count = 0
+            
+            # Iterar sobre los resultados
+            for result in cursor.stored_results():
+                rows = result.fetchall()
+                result_count += 1
+                
+                if rows:
+                    # Primer resultado: datos del proveedor
+                    if result_count == 1:
+                        proveedor = rows[0] if len(rows) == 1 else rows
+                    # Segundo resultado: productos
+                    elif result_count == 2:
+                        productos = rows
+            
+            return {
+                "proveedor": proveedor,
+                "productos": productos,
+                "success": True
+            }
+            
+        except mysql.connector.Error as e:
+            print(f"Error en procedure: {e}")
+            return {
+                "proveedor": None,
+                "productos": [],
+                "error": str(e),
+                "success": False
+            }
+        finally:
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
+    # ==================== FIN MÉTODO CON STORED PROCEDURE ====================
 
     def crear_proveedor(self) -> int:
         """Crea un nuevo proveedor usando los atributos de la instancia"""

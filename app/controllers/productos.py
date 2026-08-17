@@ -249,13 +249,30 @@ def api_eliminar_modelo(id_modelo: str):
 @jwt_required
 @tiene_permiso('Productos', 'consultar')
 def api_verificar_stock_producto(id_modelo: str):
+    """Verifica el stock de un producto usando stored procedure"""
     modelo = Producto(id_producto=id_modelo)
-    tiene_stock = modelo.verificar_stock_asociado()
-    stock = modelo.obtener_stock_producto()
+    
+    # Usar el procedure
+    resultado = modelo.verificar_stock_procedure()
+    
+    if not resultado.get("success", False):
+        # Fallback: usar métodos tradicionales
+        tiene_stock = modelo.verificar_stock_asociado()
+        stock = modelo.obtener_stock_producto()
+        return jsonify({
+            "success": True,
+            "tiene_stock": tiene_stock,
+            "stock": stock,
+            "detalle": [],
+            "fallback": True
+        })
+    
     return jsonify({
         "success": True,
-        "tiene_stock": tiene_stock,
-        "stock": stock
+        "tiene_stock": resultado.get("tiene_stock", False),
+        "stock": resultado.get("stock_total", 0),
+        "detalle": resultado.get("detalle", []),
+        "usando_procedure": True
     })
 
 

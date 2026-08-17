@@ -149,7 +149,20 @@ def api_crear_proveedor():
 @jwt_required
 @tiene_permiso('Proveedores', 'consultar')
 def api_obtener_proveedor(id_proveedor: int):
+    """Obtiene un proveedor usando el stored procedure"""
     modelo = Proveedores(id_proveedor=id_proveedor)
+    
+    # Intentar usar el procedure primero
+    resultado = modelo.obtener_proveedor_con_productos_procedure()
+    
+    if resultado.get("success", False) and resultado.get("proveedor"):
+        return jsonify({
+            "success": True, 
+            "proveedor": resultado.get("proveedor"), 
+            "productos": resultado.get("productos", [])
+        })
+    
+    # Fallback: usar métodos tradicionales
     proveedor = modelo.obtener_proveedor()
     
     if not proveedor:
