@@ -2,6 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.models.equipo import Equipo
+from app.models.test import Tests  # IMPORTAR EL MODELO TESTS
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import json
@@ -92,41 +93,11 @@ class TradeInEmpleados:
         finally:
             cursor.close()
             db.close()
-
-    def _generar_id_test(self) -> str:
-        """Genera ID para Test (formato TST000001)"""
-        db = self._conexion()
-        if not db:
-            return "TST000001"
-        
-        cursor = db.cursor()
-        try:
-            cursor.execute("SELECT MAX(ID_test) FROM Test")
-            row = cursor.fetchone()
-            ultimo_id = row[0] if row and row[0] else None
-            
-            if ultimo_id:
-                try:
-                    num_str = ultimo_id[3:]
-                    num = int(num_str)
-                    siguiente = num + 1
-                except (ValueError, IndexError):
-                    siguiente = 1
-            else:
-                siguiente = 1
-            
-            return f"TST{str(siguiente).zfill(6)}"
-        except Exception as e:
-            print(f"Error generando ID test: {e}")
-            return f"TST{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        finally:
-            cursor.close()
-            db.close()
     
     # ==================== REGISTRAR NUEVO TRADE-IN ====================
     
     def registrar_trade_in(self, fotos: List[str] = None, tests: List[Dict[str, str]] = None) -> Dict[str, Any]:
-        """Registra un nuevo equipo recibido en trade-in con sus tests"""
+        """Registra un nuevo equipo recibido en trade-in con sus tests usando el modelo Tests"""
         if not self.cliente_id:
             return {"success": False, "error": "Debe seleccionar un cliente"}
         if not self.id_producto:
@@ -136,7 +107,6 @@ class TradeInEmpleados:
         if not self.valor_pagado:
             return {"success": False, "error": "Debe ingresar el valor pagado"}
         
-        # Validar que el IMEI no tenga espacios
         if ' ' in self.id_equipo:
             return {"success": False, "error": "El IMEI no debe contener espacios"}
         
@@ -151,8 +121,6 @@ class TradeInEmpleados:
             equipo_existente = cursor.fetchone()
             
             if equipo_existente:
-                # El equipo ya existe - actualizar datos si es necesario
-                equipo_id = self.id_equipo
                 equipo_producto_id = equipo_existente[1] if len(equipo_existente) > 1 else None
                 
                 if equipo_producto_id != self.id_producto:
@@ -181,7 +149,6 @@ class TradeInEmpleados:
                         if "Error" in resultado and "no se encontró" not in resultado:
                             print(f"Advertencia al actualizar equipo: {resultado}")
             else:
-                # 2. Crear NUEVO equipo con el producto asociado
                 equipo = Equipo(
                     ID_equipo=self.id_equipo,
                     ID_producto=self.id_producto,
@@ -194,7 +161,7 @@ class TradeInEmpleados:
                 if "Error" in resultado:
                     return {"success": False, "error": resultado}
             
-            # 3. Generar ID y registrar trade-in
+            # 2. Generar ID y registrar trade-in
             self.trade_in_id = self._generar_id_trade_in()
             fecha_actual = datetime.now()
             
@@ -211,7 +178,7 @@ class TradeInEmpleados:
                 self.valor_pagado
             ))
             
-            # 4. Guardar fotos
+            # 3. Guardar fotos
             if fotos:
                 for foto_url in fotos:
                     id_foto = self._generar_id_foto_trade_in()
@@ -220,23 +187,122 @@ class TradeInEmpleados:
                         VALUES (%s, %s, %s)
                     """, (id_foto, self.trade_in_id, foto_url))
             
-            # 5. Guardar tests
-            if tests:
-                for test in tests:
-                    nombre = test.get("nombre", "")
-                    resultado = test.get("resultado", "")
+            # 4. Guardar tests usando el modelo Tests (mismo que ordenes_servicio)
+            tests_registrados = 0
+            if tests and len(tests) > 0:
+                try:
+                    # Usar el método registrar_test del modelo Tests
+                    # Necesitamos construir la tupla de valores que espera registrar_test
                     
-                    if nombre:
-                        test_id = self._generar_id_test()
+                    # Crear un diccionario con los resultados de los tests
+                    resultados = {}
+                    for test in tests:
+                        nombre = test.get("nombre", "")
+                        resultado = test.get("resultado", "")
+                        # Mapear resultados a 1 (Funciona) o 0 (No funciona)
+                        if resultado == "Funciona":
+                            resultados[nombre] = 1
+                        elif resultado == "No funciona":
+                            resultados[nombre] = 0
+                        else:
+                            resultados[nombre] = 0  # Default
+                    
+                    # Construir la tupla de valores en el orden que espera registrar_test
+                    # (ID_empleado, Num_test, Btn_power, Btn_vol, Cornetas, ...)
+                    nombres_tests = [
+                        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil', 'Wifi',
+                        'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono', 'Flash', 'Btn_sil',
+                        'Auricular', 'Senal', 'Sensor_proximidad', 'Face_id', 'Bluetooth'
+                    ]
+                    
+                    # Empezamos con ID_empleado y Num_test
+                    valores_tuple = [self.empleado_id, 1]  # Num_test = 1 para trade-in
+                    
+                    # Agregar los resultados de cada test en el orden correcto
+                    for nombre in nombres_tests:
+                        if nombre in resultados:
+                            valores_tuple.append(resultados[nombre])
+                        else:
+                            valores_tuple.append(0)  # Default: No funciona
+                    
+                    # Agregar observaciones al final
+                    observacion = ""
+                    for test in tests:
+                        if test.get("nombre") == "Observaciones":
+                            observacion = test.get("resultado", "")
+                            break
+                    valores_tuple.append(observacion)
+                    
+                    # Crear instancia del modelo Tests y registrar
+                    test_model = Tests(usuario_id=self.usuario_id)
+                    
+                    # Llamar al método registrar_test
+                    # Este método crea los tests en la tabla Test y los relaciona con una interacción
+                    # Pero para trade-in no tenemos interacción, así que usamos un enfoque directo
+                    
+                    # Mejor: usamos el método registrar_revision_test adaptado para trade-in
+                    # O simplemente insertamos directamente los tests en la tabla Test
+                    # y en Test_realizados_trade_in
+                    
+                    # Opción directa: insertar tests en Test y Test_realizados_trade_in
+                    # Obtener el último ID de Test
+                    cursor.execute("SELECT MAX(ID_test) FROM Test")
+                    row = cursor.fetchone()
+                    ultimo_id_test = row[0] if row and row[0] else None
+                    
+                    if ultimo_id_test:
+                        try:
+                            num_str = ultimo_id_test[3:]
+                            siguiente_num = int(num_str) + 1 if num_str and num_str.isdigit() else 1
+                        except (ValueError, IndexError):
+                            siguiente_num = 1
+                    else:
+                        siguiente_num = 1
+                    
+                    for test in tests:
+                        nombre = test.get("nombre", "")
+                        resultado = test.get("resultado", "")
+                        
+                        if nombre and nombre != "Observaciones":
+                            nuevo_id_test = f"TST{str(siguiente_num).zfill(6)}"
+                            
+                            cursor.execute("""
+                                INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
+                                VALUES (%s, %s, %s, %s)
+                            """, (nuevo_id_test, 1, nombre, resultado))
+                            
+                            cursor.execute("""
+                                INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
+                                VALUES (%s, %s)
+                            """, (self.trade_in_id, nuevo_id_test))
+                            
+                            siguiente_num += 1
+                            tests_registrados += 1
+                    
+                    # Registrar observaciones como un test especial
+                    observacion = ""
+                    for test in tests:
+                        if test.get("nombre") == "Observaciones":
+                            observacion = test.get("resultado", "")
+                            break
+                    
+                    if observacion:
+                        nuevo_id_test = f"TST{str(siguiente_num).zfill(6)}"
                         cursor.execute("""
                             INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
                             VALUES (%s, %s, %s, %s)
-                        """, (test_id, 1, nombre, resultado))
+                        """, (nuevo_id_test, 1, "Observaciones", observacion))
                         
                         cursor.execute("""
                             INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
                             VALUES (%s, %s)
-                        """, (self.trade_in_id, test_id))
+                        """, (self.trade_in_id, nuevo_id_test))
+                        tests_registrados += 1
+                    
+                except Exception as e:
+                    print(f"Error al registrar tests: {e}")
+                    import traceback
+                    traceback.print_exc()
             
             db.commit()
             
@@ -244,7 +310,7 @@ class TradeInEmpleados:
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Registrar Trade-in",
-                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo: {self.id_equipo} - Producto: {self.id_producto} - Valor: {self.valor_pagado} - Tests: {len(tests) if tests else 0}",
+                    descripcion=f"Se registró nuevo trade-in ID: {self.trade_in_id} - Cliente: {self.cliente_id} - Equipo: {self.id_equipo} - Producto: {self.id_producto} - Valor: {self.valor_pagado} - Tests: {tests_registrados}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Trade-in"
                 )
@@ -255,12 +321,14 @@ class TradeInEmpleados:
                 "message": "Trade-in registrado correctamente",
                 "trade_in_id": self.trade_in_id,
                 "equipo_id": self.id_equipo,
-                "tests_registrados": len(tests) if tests else 0
+                "tests_registrados": tests_registrados
             }
             
         except Exception as e:
             db.rollback()
             print(f"Error en registrar_trade_in: {e}")
+            import traceback
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -327,7 +395,7 @@ class TradeInEmpleados:
                 self.trade_in_id
             ))
             
-            # 3. Actualizar fotos
+            # 3. Actualizar fotos: eliminar las existentes y agregar nuevas
             cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
             if fotos:
                 for foto_url in fotos:
@@ -337,38 +405,79 @@ class TradeInEmpleados:
                         VALUES (%s, %s, %s)
                     """, (id_foto, self.trade_in_id, foto_url))
             
-            # 4. Actualizar tests
-            if tests is not None:
-                # Eliminar tests existentes
-                cursor.execute("""
-                    DELETE tr FROM Test_realizados_trade_in tr
-                    INNER JOIN Test t ON tr.ID_test = t.ID_test
-                    WHERE tr.ID_Trade_in = %s
-                """, (self.trade_in_id,))
-                
-                # Registrar nuevos tests
-                for test in tests:
-                    nombre = test.get("nombre", "")
-                    resultado = test.get("resultado", "")
+            # 4. Actualizar tests: eliminar existentes y registrar nuevos
+            cursor.execute("""
+                DELETE tr FROM Test_realizados_trade_in tr
+                INNER JOIN Test t ON tr.ID_test = t.ID_test
+                WHERE tr.ID_Trade_in = %s
+            """, (self.trade_in_id,))
+            
+            tests_registrados = 0
+            if tests and len(tests) > 0:
+                try:
+                    # Obtener el último ID de Test
+                    cursor.execute("SELECT MAX(ID_test) FROM Test")
+                    row = cursor.fetchone()
+                    ultimo_id_test = row[0] if row and row[0] else None
                     
-                    if nombre:
-                        test_id = self._generar_id_test()
+                    if ultimo_id_test:
+                        try:
+                            num_str = ultimo_id_test[3:]
+                            siguiente_num = int(num_str) + 1 if num_str and num_str.isdigit() else 1
+                        except (ValueError, IndexError):
+                            siguiente_num = 1
+                    else:
+                        siguiente_num = 1
+                    
+                    for test in tests:
+                        nombre = test.get("nombre", "")
+                        resultado = test.get("resultado", "")
+                        
+                        if nombre and nombre != "Observaciones":
+                            nuevo_id_test = f"TST{str(siguiente_num).zfill(6)}"
+                            
+                            cursor.execute("""
+                                INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
+                                VALUES (%s, %s, %s, %s)
+                            """, (nuevo_id_test, 1, nombre, resultado))
+                            
+                            cursor.execute("""
+                                INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
+                                VALUES (%s, %s)
+                            """, (self.trade_in_id, nuevo_id_test))
+                            
+                            siguiente_num += 1
+                            tests_registrados += 1
+                    
+                    # Registrar observaciones
+                    observacion = ""
+                    for test in tests:
+                        if test.get("nombre") == "Observaciones":
+                            observacion = test.get("resultado", "")
+                            break
+                    
+                    if observacion:
+                        nuevo_id_test = f"TST{str(siguiente_num).zfill(6)}"
                         cursor.execute("""
                             INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
                             VALUES (%s, %s, %s, %s)
-                        """, (test_id, 1, nombre, resultado))
+                        """, (nuevo_id_test, 1, "Observaciones", observacion))
                         
                         cursor.execute("""
                             INSERT INTO Test_realizados_trade_in (ID_Trade_in, ID_test)
                             VALUES (%s, %s)
-                        """, (self.trade_in_id, test_id))
+                        """, (self.trade_in_id, nuevo_id_test))
+                        tests_registrados += 1
+                    
+                except Exception as e:
+                    print(f"Error al registrar tests: {e}")
             
             db.commit()
             
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Modificar Trade-in",
-                    descripcion=f"Se modificó el trade-in ID: {self.trade_in_id}",
+                    descripcion=f"Se modificó el trade-in ID: {self.trade_in_id} - Tests: {tests_registrados}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Trade-in"
                 )
@@ -377,12 +486,15 @@ class TradeInEmpleados:
             return {
                 "success": True,
                 "message": "Trade-in actualizado correctamente",
-                "trade_in_id": self.trade_in_id
+                "trade_in_id": self.trade_in_id,
+                "tests_registrados": tests_registrados
             }
             
         except Exception as e:
             db.rollback()
             print(f"Error en actualizar_trade_in: {e}")
+            import traceback
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()

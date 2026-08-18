@@ -332,49 +332,48 @@ const Iconos = {
 
     // ==================== CARGAR TESTS EN FORMULARIO ====================
     function cargarTestsEnFormulario(testsExistentes = []) {
-        const container = document.getElementById("tests-container-registro");
-        if (!container) return;
-        
-        const testsPorCategoria = {};
-        catalogoTests.forEach(test => {
-            if (!testsPorCategoria[test.categoria]) {
-                testsPorCategoria[test.categoria] = [];
-            }
-            testsPorCategoria[test.categoria].push(test);
-        });
-        
-        let html = `
-            <div class="tests-section">
-                <h4>🔧 Pruebas del equipo</h4>
-                <p class="field-hint">Seleccione el resultado de cada prueba para el equipo</p>
-        `;
-        
-        for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
-            html += `
-                <div class="test-categoria">
-                    <h5>${escapeHtml(categoria)}</h5>
-                    <div class="test-items">
-                        ${tests.map(test => {
-                            const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
-                            const existing = testsExistentes.find(t => t.nombre === test.nombre);
-                            const resultado = existing ? existing.resultado : "";
-                            return `
-                            <div class="test-item">
-                                <span class="test-nombre">${escapeHtml(test.nombre)}</span>
-                                <div class="test-resultados">
-                                    <label><input type="radio" name="test_${safeName}" value="Funciona" ${resultado === "Funciona" ? "checked" : ""}> ✅ Funciona</label>
-                                    <label><input type="radio" name="test_${safeName}" value="No funciona" ${resultado === "No funciona" ? "checked" : ""}> ❌ No funciona</label>
-                                    <label><input type="radio" name="test_${safeName}" value="No aplica" ${resultado === "No aplica" ? "checked" : ""}> ⚪ No aplica</label>
-                                </div>
-                            </div>
-                        `}).join("")}
-                    </div>
-                </div>
-            `;
+    const container = document.getElementById("tests-container-registro");
+    if (!container) return;
+    
+    const testsPorCategoria = {};
+    catalogoTests.forEach(test => {
+        if (!testsPorCategoria[test.categoria]) {
+            testsPorCategoria[test.categoria] = [];
         }
-        html += '</div>';
-        container.innerHTML = html;
+        testsPorCategoria[test.categoria].push(test);
+    });
+    
+    let html = `
+        <div class="tests-section">
+            <h4>🔧 Pruebas del equipo</h4>
+            <p class="field-hint">Seleccione el resultado de cada prueba para el equipo</p>
+    `;
+    
+    for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
+        html += `
+            <div class="test-categoria">
+                <h5>${escapeHtml(categoria)}</h5>
+                <div class="test-items">
+                    ${tests.map(test => {
+                        const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
+                        const existing = testsExistentes.find(t => t.nombre === test.nombre);
+                        const resultado = existing ? existing.resultado : "";
+                        return `
+                        <div class="test-item">
+                            <span class="test-nombre">${escapeHtml(test.nombre)}</span>
+                            <div class="test-resultados">
+                                <label><input type="radio" name="test_${safeName}" value="Funciona" ${resultado === "Funciona" ? "checked" : ""}> ✅ Funciona</label>
+                                <label><input type="radio" name="test_${safeName}" value="No funciona" ${resultado === "No funciona" ? "checked" : ""}> ❌ No funciona</label>
+                            </div>
+                        </div>
+                    `}).join("")}
+                </div>
+            </div>
+        `;
     }
+    html += '</div>';
+    container.innerHTML = html;
+}
 
     // ==================== ABRIR MODAL EDITAR ====================
     async function abrirModalEditar(tradeinId) {
@@ -620,7 +619,6 @@ const Iconos = {
                                     <div class="test-resultados">
                                         <label><input type="radio" name="test_${safeName}" value="Funciona"> ✅ Funciona</label>
                                         <label><input type="radio" name="test_${safeName}" value="No funciona"> ❌ No funciona</label>
-                                        <label><input type="radio" name="test_${safeName}" value="No aplica"> ⚪ No aplica</label>
                                     </div>
                                 </div>
                             `}).join("")}
