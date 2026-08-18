@@ -137,7 +137,11 @@ class ReportesVentasModel:
                     mp.Rechazado_por,
                     mp.Fecha_rechazo,
                     mp.Motivo_rechazo,
-                    mp.Capture AS capture_image
+                    mp.Capture AS capture_image,
+                    CASE 
+                        WHEN mp.Referencia LIKE 'LOCAL-%' THEN 'Local'
+                        ELSE 'Online'
+                    END AS tipo_venta
                 FROM Venta v
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
@@ -152,6 +156,8 @@ class ReportesVentasModel:
             pendientes = 0
             aprobados = 0
             rechazados = 0
+            locales = 0
+            online = 0
             
             for venta in ventas:
                 if venta.get("monto_pagado") and isinstance(venta["monto_pagado"], Decimal):
@@ -165,6 +171,11 @@ class ReportesVentasModel:
                     aprobados += 1
                 elif estado == "rechazado":
                     rechazados += 1
+                
+                if venta.get("tipo_venta") == "Local":
+                    locales += 1
+                else:
+                    online += 1
             
             return {
                 "success": True,
@@ -173,7 +184,9 @@ class ReportesVentasModel:
                 "total_monto": total_monto,
                 "pendientes": pendientes,
                 "aprobados": aprobados,
-                "rechazados": rechazados
+                "rechazados": rechazados,
+                "locales": locales,
+                "online": online
             }
         except Exception as e:
             print(f"Error en obtener_reportes_ventas: {e}")
@@ -215,7 +228,11 @@ class ReportesVentasModel:
                     mp.Fecha_aprobacion,
                     mp.Rechazado_por,
                     mp.Fecha_rechazo,
-                    mp.Motivo_rechazo
+                    mp.Motivo_rechazo,
+                    CASE 
+                        WHEN mp.Referencia LIKE 'LOCAL-%' THEN 'Local'
+                        ELSE 'Online'
+                    END AS tipo_venta
                 FROM Venta v
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
@@ -272,20 +289,25 @@ class ReportesVentasModel:
             db.close()
     
     def obtener_ventas_locales(self, busqueda: str = "", fecha: str = None) -> List[Dict[str, Any]]:
-        """Obtiene el historial de ventas locales (efectivo y pago_movil principalmente)"""
+        """
+        Obtiene el historial de ventas locales.
+        Una venta es local cuando su referencia comienza con 'LOCAL-'
+        """
         db = self._conexion()
         if not db:
             return []
         
         cursor = db.cursor(dictionary=True)
         try:
-            where_conditions = ["mp.Metodo IN ('efectivo_usd', 'efectivo_bs', 'pago_movil')"]
+            where_conditions = ["mp.Referencia LIKE 'LOCAL-%'"]
             params = []
             
             if busqueda:
                 search = f"%{busqueda}%"
-                where_conditions.append("(v.ID_factura LIKE %s OR pn.Nombre_cliente LIKE %s OR pn.Apellido_cliente LIKE %s)")
-                params.extend([search, search, search])
+                where_conditions.append(
+                    "(v.ID_factura LIKE %s OR pn.Nombre_cliente LIKE %s OR pn.Apellido_cliente LIKE %s OR mp.Referencia LIKE %s)"
+                )
+                params.extend([search, search, search, search])
             
             if fecha:
                 where_conditions.append("DATE(v.Fecha_venta) = %s")
@@ -301,14 +323,17 @@ class ReportesVentasModel:
                     v.Fecha_venta AS fecha_venta,
                     COALESCE(pn.Nombre_cliente, '') AS cliente_nombre,
                     COALESCE(pn.Apellido_cliente, '') AS cliente_apellido,
+                    COALESCE(cj.Razon_social, '') AS razon_social,
                     mp.Metodo AS metodo_pago,
                     mp.Referencia,
                     mp.Monto AS monto,
                     mp.Estado_pago AS estado,
-                    mp.Fecha_pago
+                    mp.Fecha_pago,
+                    'Local' AS tipo_venta
                 FROM Venta v
                 INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
                 LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON v.ID_cliente = cj.ID_cliente
                 WHERE {where_sql}
                 ORDER BY v.Fecha_venta DESC
                 LIMIT 100

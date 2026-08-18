@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.reportes_ventas import ReportesVentasModel
 from app.utils.validators import (
-    validar_texto,
+    validar_texto_numero,
     validar_numero,
     validar_decimal,
     validar_sin_caracteres_especiales
@@ -37,13 +37,7 @@ def api_listar_reportes_ventas():
     """Obtiene ventas para reportes con filtros avanzados"""
     datos = request.get_json(silent=True) or {}
     
-    # Validar búsqueda
-    q = datos.get("q", "").strip()
-    if q:
-        error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-    
+ 
     # Validar fechas
     fecha_desde = datos.get("fecha_desde")
     fecha_hasta = datos.get("fecha_hasta")
@@ -79,7 +73,6 @@ def api_listar_reportes_ventas():
             pass
     
     filtros = {
-        "q": q,
         "estado": datos.get("estado"),
         "metodo_pago": datos.get("metodo_pago"),
         "moneda": datos.get("moneda"),
@@ -107,9 +100,6 @@ def api_listar_reportes_ventas():
 @tiene_permiso('Reportes Ventas', 'consultar')
 def api_detalle_venta_reporte(factura_id):
     """Obtiene el detalle completo de una venta"""
-    error = validar_texto_numero(factura_id, 1, 50, "Factura")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
     
     modelo = ReportesVentasModel(factura_id=factura_id)
     resultado = modelo.obtener_detalle_venta_completo()

@@ -171,11 +171,7 @@ def api_crear_usuario():
 def api_actualizar_usuario(usuario_id):
     data = request.get_json(silent=True) or request.form
     
-    # Validar ID de usuario
-    error = validar_numero(usuario_id, 1, 10, "Usuario")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
+   
     # Validar nombre
     nombre = data.get("nombre", "").strip()
     error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
@@ -252,9 +248,7 @@ def api_actualizar_usuario(usuario_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_usuario(usuario_id):
-    error = validar_numero(usuario_id, 1, 10, "Usuario")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
+  
     
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
