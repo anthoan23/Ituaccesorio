@@ -248,6 +248,67 @@
 }
 
 /* ============================================
+   TEST OPTIONS GRID (inspirado en taller)
+   ============================================ */
+.test-options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.test-row-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem;
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+}
+
+.test-row-item:hover {
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+.test-row-item .radio-group {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.test-row-item .radio-label {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.radio-label--success {
+    color: var(--green);
+}
+
+.radio-label--success input:checked + span {
+    background: var(--green);
+    color: white;
+}
+
+.radio-label--danger {
+    color: var(--danger);
+}
+
+.radio-label--danger input:checked + span {
+    background: var(--danger);
+    color: white;
+}
+
+.ui-form__section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+}
+
+/* ============================================
    DETALLE DE ORDEN (estilo taller)
    ============================================ */
 .device-detail__grid {
@@ -421,6 +482,10 @@
     .table {
         min-width: 700px;
     }
+
+    .test-options-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 480px) {
@@ -434,5 +499,9 @@
     
     #preview-fotos {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .test-options-grid {
+        grid-template-columns: 1fr;
     }
 }

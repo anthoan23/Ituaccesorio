@@ -87,8 +87,9 @@ const Utils = {
     showMessage(message, isError = false) {
         if (!message) return;
         if (isError) {
+            console.error(`❌ ${message}`);
         } else {
-            console.info(`✅ ${message}`);
+            console.log(`✅ ${message}`);
         }
     },
 
@@ -721,7 +722,18 @@ async function registrarClienteDesdeFormulario() {
 }
 
 // ============================================
-// 10. EVENTOS PRINCIPALES
+// 10. FUNCIÓN PARA MARCAR TODOS LOS TESTS COMO OK
+// ============================================
+function marcarTodosTestsOK() {
+    const radios = document.querySelectorAll('#modal-nueva-orden input[type="radio"][value="1"]');
+    radios.forEach(radio => {
+        radio.checked = true;
+    });
+    Utils.showMessage('✅ Todos los componentes marcados como OK');
+}
+
+// ============================================
+// 11. EVENTOS PRINCIPALES
 // ============================================
 async function onSubmitOrden(event) {
     event.preventDefault();
@@ -845,6 +857,45 @@ async function onSubmitOrden(event) {
         return;
     }
 
+    // ============================================
+    // RECOLECTAR DATOS DE TESTS (inspirado en taller.js)
+    // ============================================
+    const testCampos = [
+        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
+        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth'
+    ];
+    
+    const testsData = [];
+    let hayTests = false;
+    
+    testCampos.forEach((campo) => {
+        const radio = document.querySelector(`input[name="test_${campo}"]:checked`);
+        if (radio) {
+            const valor = parseInt(radio.value, 10);
+            const resultado = valor === 1 ? "Funciona" : "No funciona";
+            testsData.push({
+                nombre: campo,
+                resultado: resultado
+            });
+            if (valor === 0) {
+                hayTests = true;
+            }
+        }
+    });
+    
+    const observaciones = document.getElementById("orden-test-observaciones")?.value?.trim() || "";
+    if (observaciones) {
+        testsData.push({
+            nombre: "Observaciones",
+            resultado: observaciones
+        });
+        hayTests = true;
+    }
+    
+    const incluirTests = hayTests && testsData.length > 0;
+
     let clienteId = clienteActualId;
     if (!clienteId) {
         try {
@@ -894,6 +945,9 @@ async function onSubmitOrden(event) {
         tipo: getFieldValue("cliente-tipo") || "natural",
         fecha_ingreso: fechaActual,
         patron: getFieldValue("orden-patron") || "",
+        // ==== TESTS ====
+        incluir_tests: incluirTests,
+        tests: incluirTests ? testsData : []
     };
 
     try {
@@ -902,7 +956,7 @@ async function onSubmitOrden(event) {
             body: JSON.stringify(payload),
         });
 
-        Utils.showMessage("Orden creada correctamente.");
+        Utils.showMessage("Orden creada correctamente." + (incluirTests ? " Revisión inicial registrada." : ""));
         formOrden.reset();
         closeModal("modal-nueva-orden");
 
@@ -1216,7 +1270,7 @@ async function guardarFotos(event) {
 }
 
 // ============================================
-// 11. EVENTOS DE TABLA
+// 12. EVENTOS DE TABLA
 // ============================================
 function onTablaClick(event) {
     const btn = event.target.closest("button[data-action]");
@@ -1266,7 +1320,7 @@ function onModalEstadoClick(event) {
 }
 
 // ============================================
-// 12. INICIALIZACIÓN
+// 13. INICIALIZACIÓN
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
     const {
@@ -1293,6 +1347,11 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.style.cursor = 'not-allowed';
         inputFecha.style.opacity = '0.7';
     }
+
+    // ============================================
+    // BOTÓN PARA MARCAR TODOS LOS TESTS COMO OK
+    // ============================================
+    document.getElementById('btn-marcar-todos-test')?.addEventListener('click', marcarTodosTestsOK);
 
     if (window.FieldValidator) {
         setTimeout(() => window.FieldValidator.init(), 100);
@@ -1445,6 +1504,15 @@ document.addEventListener("DOMContentLoaded", () => {
         setClienteStatus("");
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
+        
+        // Resetear tests a todos OK
+        setTimeout(() => {
+            document.querySelectorAll('#modal-nueva-orden input[type="radio"][value="1"]').forEach(radio => {
+                radio.checked = true;
+            });
+            const obsTextarea = document.getElementById("orden-test-observaciones");
+            if (obsTextarea) obsTextarea.value = "";
+        }, 100);
     });
 
     Promise.all([

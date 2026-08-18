@@ -4,6 +4,7 @@ from app.models.validacion_pagos import ValidacionPagosModel
 from app.utils.validators import (
     validar_texto,
     validar_numero,
+    validar_texto_numero,
     validar_decimal,
     validar_sin_caracteres_especiales
 )
@@ -79,9 +80,7 @@ def api_pagos_rechazados():
 @tiene_permiso('Validación Pagos', 'consultar')
 def api_detalle_venta(factura_id):
     try:
-        error = validar_texto_numero(factura_id, 1, 50, "Factura")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
+        
         
         modelo = ValidacionPagosModel(factura_id=factura_id)
         detalle = modelo.obtener_detalle_venta()
@@ -104,9 +103,7 @@ def api_detalle_venta(factura_id):
 @tiene_permiso('Validación Pagos', 'modificar')
 def api_aprobar_pago(factura_id):
     try:
-        error = validar_texto_numero(factura_id, 1, 50, "Factura")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
+       
         
         # Obtener cédula del empleado desde g.user
         if isinstance(g.user, dict):
@@ -149,9 +146,6 @@ def api_aprobar_pago(factura_id):
 @tiene_permiso('Validación Pagos', 'modificar')
 def api_rechazar_pago(factura_id):
     try:
-        error = validar_texto_numero(factura_id, 1, 50, "Factura")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
         
         datos = request.get_json(silent=True) or {}
         

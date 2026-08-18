@@ -412,6 +412,73 @@
         <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
       </label>
 
+      <!-- ============================================ -->
+      <!-- SECCIÓN DE TESTS INICIALES (inspirada en taller) -->
+      <!-- ============================================ -->
+      <div class="ui-form__section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-strong);">
+            Revisión inicial del equipo
+            <span style="font-weight: 400; font-size: 0.75rem; color: var(--text-muted);">(opcional)</span>
+          </h3>
+          <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm" style="font-size: 0.7rem;">
+            Marcar todos como OK
+          </button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Selecciona el estado de cada componente para registrar la primera revisión.
+        </p>
+        
+        <div class="test-options-grid" style="grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+          {% set componentes_iniciales = [
+            ('Btn_power', 'Botón Power'),
+            ('Btn_vol', 'Botón Volumen'),
+            ('Cornetas', 'Cornetas'),
+            ('Mica', 'Mica'),
+            ('LCD', 'LCD'),
+            ('Tactil', 'Táctil'),
+            ('Wifi', 'WiFi'),
+            ('Puerto_carga', 'Puerto Carga'),
+            ('Cam_pos', 'Cámara Posterior'),
+            ('Cam_del', 'Cámara Delantera'),
+            ('Microfono', 'Micrófono'),
+            ('Flash', 'Flash'),
+            ('Btn_sil', 'Botón Silencio'),
+            ('Auricular', 'Auricular'),
+            ('Senal', 'Señal'),
+            ('Sensor_proximidad', 'Sensor Proximidad'),
+            ('Face_id', 'Face ID'),
+            ('Bluetooth', 'Bluetooth')
+          ] %}
+          
+          {% for name, label in componentes_iniciales %}
+          <div class="test-row-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.25rem 0.5rem; background: var(--glass-bg); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-strong);">{{ label }}</span>
+            <div class="radio-group" style="display: flex; gap: 0.25rem;">
+              <label class="radio-label radio-label--success" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; cursor: pointer; border-radius: var(--radius-sm);">
+                <input type="radio" name="test_{{ name }}" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; cursor: pointer; border-radius: var(--radius-sm);">
+                <input type="radio" name="test_{{ name }}" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <label class="field field--full" style="margin-top: 0.75rem;">
+          <span>Observaciones de la revisión</span>
+          <textarea id="orden-test-observaciones" 
+                    name="test_observaciones" 
+                    rows="2" 
+                    placeholder="Observaciones de la revisión inicial..." 
+                    maxlength="250"
+                    data-validation-rules="sinCaracteresEspeciales"
+                    title="Sin caracteres especiales"></textarea>
+          <small class="field-hint">Máximo 250 caracteres</small>
+        </label>
+      </div>
+
       <div class="ui-form__actions">
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
         <button type="submit" class="ui-btn ui-btn--primary">Guardar orden</button>
