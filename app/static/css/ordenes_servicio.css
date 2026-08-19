@@ -102,24 +102,24 @@
     white-space: nowrap;
 }
 
-.badge--pendiente { 
-    background: rgba(239, 68, 68, 0.15); 
-    color: #ef4444; 
+.badge--pendiente {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
-.badge--asignada { 
-    background: rgba(59, 130, 246, 0.15); 
-    color: #3b82f6; 
+.badge--asignada {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
     border: 1px solid rgba(59, 130, 246, 0.25);
 }
-.badge--revisada { 
-    background: rgba(16, 185, 129, 0.15); 
-    color: #10b981; 
+.badge--revisada {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
-.badge--reparada { 
-    background: rgba(245, 158, 11, 0.15); 
-    color: #f59e0b; 
+.badge--reparada {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
     border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
@@ -223,34 +223,76 @@
 }
 
 /* ============================================
-   ICONOS DE ACCIÓN ESPECÍFICOS
+   CLASES PARA REEMPLAZAR ESTILOS INLINE
    ============================================ */
-.icon-action--view {
-    border-color: rgba(59, 130, 246, 0.3);
-    background: rgba(59, 130, 246, 0.08);
-}
-.icon-action--view svg { fill: #3b82f6; color: #3b82f6; }
-.icon-action--view:hover {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.18);
-    box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
+
+/* Contenedor de botones de acción */
+.cliente-actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    justify-content: flex-end;
 }
 
-.icon-action--primary {
-    border-color: var(--yellow);
-    background: rgba(243, 197, 0, 0.08);
-}
-.icon-action--primary svg { fill: var(--yellow); color: var(--yellow); }
-.icon-action--primary:hover {
-    border-color: var(--yellow-soft);
-    background: rgba(243, 197, 0, 0.18);
-    box-shadow: 0 0 24px rgba(243, 197, 0, 0.15);
+.cliente-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
-/* ============================================
-   TEST OPTIONS GRID (inspirado en taller)
-   ============================================ */
-.test-options-grid {
+.cliente-actions-buttons .ui-btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+.cliente-actions-buttons .ui-btn svg {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* Status messages */
+.field-help--status {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Equipo verification */
+.equipo-verify-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.equipo-verify-wrapper .ui-btn {
+    align-self: flex-start;
+}
+
+/* Revision modal */
+.revision-header {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.revision-components-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.revision-components-header h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+.revision-components-header .ui-btn {
+    font-size: 0.7rem;
+}
+
+.test-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
@@ -264,11 +306,12 @@
     background: var(--glass-bg);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
-    transition: var(--transition);
 }
 
-.test-row-item:hover {
-    border-color: rgba(243, 197, 0, 0.3);
+.test-row-item .test-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-strong);
 }
 
 .test-row-item .radio-group {
@@ -281,31 +324,83 @@
     padding: 0.1rem 0.4rem;
     cursor: pointer;
     border-radius: var(--radius-sm);
+}
+
+/* Revision actions */
+.revision-actions {
+    margin-top: 0.75rem;
+}
+
+/* Full width field */
+.field--full-width {
+    grid-column: 1 / -1;
+}
+
+/* Device photos */
+.device-photos-wrap {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+/* Fotos grid */
+.fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Foto item */
+.foto-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    cursor: pointer;
     transition: var(--transition);
 }
 
-.radio-label--success {
-    color: var(--green);
+.foto-item:hover {
+    border-color: var(--yellow);
+    transform: scale(1.02);
 }
 
-.radio-label--success input:checked + span {
-    background: var(--green);
-    color: white;
+.foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.radio-label--danger {
-    color: var(--danger);
+/* ============================================
+   ICONOS DE ACCIÓN ESPECÍFICOS
+   ============================================ */
+.icon-action--view {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.08);
+}
+.icon-action--view svg {
+    fill: #3b82f6;
+    color: #3b82f6;
+}
+.icon-action--view:hover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.18);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
 }
 
-.radio-label--danger input:checked + span {
-    background: var(--danger);
-    color: white;
+.icon-action--primary {
+    border-color: var(--yellow);
+    background: rgba(243, 197, 0, 0.08);
 }
-
-.ui-form__section {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-light);
+.icon-action--primary svg {
+    fill: var(--yellow);
+    color: var(--yellow);
+}
+.icon-action--primary:hover {
+    border-color: var(--yellow-soft);
+    background: rgba(243, 197, 0, 0.18);
+    box-shadow: 0 0 24px rgba(243, 197, 0, 0.15);
 }
 
 /* ============================================
@@ -355,11 +450,6 @@
     overflow-wrap: anywhere;
 }
 
-.device-photos-wrap {
-    margin-top: 0.5rem;
-    padding: 0.5rem 0;
-}
-
 .device-tests {
     margin-top: 1rem;
 }
@@ -403,21 +493,145 @@
 }
 
 /* ============================================
-   PREVIEW FOTOS (en modal)
+   MODAL DE REVISIÓN - DISEÑO MEJORADO
    ============================================ */
-#preview-fotos {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 0.5rem;
+
+.revision-subtitle {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-light);
 }
 
-#preview-fotos img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
+.revision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.revision-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Estilo para cada fila de test en revisión */
+.revision-column .test-row-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.75rem;
+    background: var(--glass-bg);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
+    transition: var(--transition);
+    min-height: 36px;
+}
+
+.revision-column .test-row-item:hover {
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+.revision-column .test-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+}
+
+.revision-column .radio-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.revision-column .radio-label {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.6rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    border: 1px solid transparent;
+    user-select: none;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.revision-column .radio-label--success {
+    color: var(--green);
+}
+
+.revision-column .radio-label--success:hover {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.revision-column .radio-label--danger {
+    color: var(--danger);
+}
+
+.revision-column .radio-label--danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Ocultar radio button pero mantenerlo clickeable */
+.revision-column .radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Estilo cuando está seleccionado */
+.revision-column .radio-label:has(input:checked) {
+    font-weight: 700;
+    border: 1px solid;
+}
+
+.revision-column .radio-label--success:has(input:checked) {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
+}
+
+.revision-column .radio-label--danger:has(input:checked) {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--danger);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
+}
+
+/* Observaciones en revisión */
+.revision-observations {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--border-light);
+}
+
+.revision-observations .field-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-strong);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.revision-observations textarea {
+    min-height: 80px;
+    resize: vertical;
+    width: 100%;
+}
+
+.revision-observations .field-hint {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.25rem;
 }
 
 /* ============================================
@@ -433,9 +647,34 @@
     .ordenes-toolbar {
         grid-template-columns: 1fr;
     }
-    
+
     .ordenes-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 820px) {
+    .revision-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .revision-column {
+        gap: 0.25rem;
+    }
+
+    .revision-column .test-row-item {
+        padding: 0.25rem 0.5rem;
+        min-height: 32px;
+    }
+
+    .revision-column .test-label {
+        font-size: 0.75rem;
+    }
+
+    .revision-column .radio-label {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.4rem;
     }
 }
 
@@ -443,47 +682,47 @@
     .stats--grid {
         grid-template-columns: 1fr 1fr;
     }
-    
+
     .col-id {
         min-width: 90px;
         width: 100px;
     }
-    
+
     .col-estado {
         min-width: 90px;
         width: 100px;
     }
-    
+
     .col-cliente {
         min-width: 100px;
         width: 130px;
     }
-    
+
     .col-equipo {
         min-width: 90px;
         width: 110px;
     }
-    
+
     .col-modelo {
         min-width: 100px;
         width: 120px;
     }
-    
+
     .col-fecha {
         min-width: 90px;
         width: 100px;
     }
-    
+
     .col-acciones {
         min-width: 100px;
         width: 110px;
     }
-    
+
     .table {
         min-width: 700px;
     }
 
-    .test-options-grid {
+    .test-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -492,16 +731,35 @@
     .stats--grid {
         grid-template-columns: 1fr;
     }
-    
+
     .device-detail__grid {
         grid-template-columns: 1fr;
     }
-    
-    #preview-fotos {
+
+    .fotos-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .test-options-grid {
+    .test-grid {
         grid-template-columns: 1fr;
+    }
+
+    .revision-column .test-row-item {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: space-between;
+    }
+
+    .revision-column .radio-group {
+        gap: 0.25rem;
+    }
+
+    .revision-column .test-label {
+        font-size: 0.7rem;
+    }
+
+    .revision-column .radio-label {
+        font-size: 0.6rem;
+        padding: 0.05rem 0.35rem;
     }
 }

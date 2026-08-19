@@ -558,6 +558,9 @@ def eliminar_orden_servicio(id_orden):
     return jsonify({"success": True, "message": "Orden eliminada"})
 
 
+# ============================================
+# RUTA PARA LISTAR MODELOS - SOLO TELÉFONOS
+# ============================================
 @ordenes_servicio_blueprint.route("/api/productos/modelos", methods=["GET"])
 @jwt_required
 def listar_modelos():
@@ -568,6 +571,7 @@ def listar_modelos():
 
     cursor = db.cursor(dictionary=True)
     try:
+        # Consulta para obtener solo teléfonos
         cursor.execute("""
             SELECT 
                 p.ID_producto AS id,
@@ -575,13 +579,20 @@ def listar_modelos():
                 mp.Nombre_marca AS marca_nombre,
                 cp.Nombre_Clase AS clase_nombre
             FROM Producto p
+            INNER JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
             LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-            LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
+            WHERE cp.Nombre_Clase = 'Telefono' OR cp.ID_Clase = '1'
             ORDER BY mp.Nombre_marca, p.Nombre_producto
         """)
         modelos = cursor.fetchall()
+        
+        print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
+        for m in modelos:
+            print(f"[DEBUG] - ID: {m.get('id')}, Clase: {m.get('clase_nombre')}, Marca: {m.get('marca_nombre')}, Nombre: {m.get('nombre')}")
+        
         return jsonify({"success": True, "modelos": modelos})
     except Exception as e:
+        print(f"[ERROR] Error al listar modelos: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
         cursor.close()

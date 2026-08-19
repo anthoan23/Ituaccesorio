@@ -7,6 +7,7 @@ const CONFIG = {
         ORDENES: '/api/ordenes-servicio/ordenes',
         TECNICOS: '/api/ordenes-servicio/tecnicos',
         MODELOS: '/api/productos/modelos',
+        CLIENTES: '/api/clientes',
     }
 };
 
@@ -107,6 +108,11 @@ const Utils = {
         return prefijos.includes(prefijo);
     },
 
+    validarRIF(rif) {
+        const patron = /^[JE]-\d{8}-\d$/;
+        return patron.test(rif);
+    },
+
     formatFecha(value) {
         if (!value) return "";
         const fecha = new Date(value);
@@ -142,18 +148,28 @@ const Utils = {
 
     soloNumeros(value) {
         return /^\d*$/.test(value);
+    },
+
+    capitalizarPalabras(texto) {
+        if (!texto) return texto;
+        const palabras = texto.split(' ');
+        return palabras.map(p => {
+            if (p.length > 0 && /^[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(p)) {
+                return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+            }
+            return p;
+        }).join(' ');
     }
 };
 
 // ============================================
-// 3. MANEJADORES DE MODALES (usando UiModal)
+// 3. MANEJADORES DE MODALES
 // ============================================
 function openModal(id) {
     if (window.UiModal && typeof window.UiModal.openById === "function") {
         window.UiModal.openById(id);
         return;
     }
-
     const modal = document.getElementById(id);
     if (modal) {
         modal.removeAttribute("hidden");
@@ -166,7 +182,6 @@ function closeModal(id) {
         window.UiModal.closeById(id);
         return;
     }
-
     const modal = document.getElementById(id);
     if (modal) {
         modal.setAttribute("hidden", "");
@@ -181,6 +196,7 @@ let ordenes = [];
 let clienteActualId = null;
 let ordenActualId = null;
 let testsOrdenActual = [];
+let datosOrdenPendiente = null;
 
 // ============================================
 // 5. REFERENCIAS DOM
@@ -190,11 +206,6 @@ function getDomElements() {
         tablaOrdenes: document.getElementById("tabla-ordenes"),
         tablaOrdenesEstadoBody: document.getElementById("modal-ordenes-estado-body"),
         modalOrdenesEstadoSubtitle: document.getElementById("modal-ordenes-estado-subtitle"),
-        estadoCards: document.querySelectorAll("[data-estado-card]"),
-        tablaPendientes: document.getElementById("tabla-pendientes"),
-        tablaAsignadas: document.getElementById("tabla-asignadas"),
-        tablaRevisadas: document.getElementById("tabla-revisadas"),
-        tablaTrabajosTecnico: document.getElementById("tabla-trabajos-tecnico"),
         statPendientes: document.getElementById("stat-pendientes"),
         statAsignadas: document.getElementById("stat-asignadas"),
         statRevisadas: document.getElementById("stat-revisadas"),
@@ -207,10 +218,8 @@ function getDomElements() {
         selectModelo: document.getElementById("orden-modelo"),
         inputFecha: document.getElementById("orden-fecha"),
         selectOrdenAsignar: document.getElementById("select-orden-asignar"),
-        selectTecnico: document.getElementById("select-tecnico"),
         modalTecnicoSelect: document.getElementById("modal-tecnico-select"),
         btnAsignarOrden: document.getElementById("btn-asignar-orden"),
-        btnCargarTrabajos: document.getElementById("btn-cargar-trabajos"),
         detalleOrdenId: document.getElementById("detalle-orden-id"),
         revisionOrdenId: document.getElementById("revision-orden-id"),
         fotosOrdenId: document.getElementById("fotos-orden-id"),
@@ -218,20 +227,30 @@ function getDomElements() {
         formFotos: document.getElementById("form-fotos-orden"),
         inputFotos: document.getElementById("input-fotos-orden"),
         previewFotos: document.getElementById("preview-fotos"),
+        formRevisionInicial: document.getElementById("form-revision-inicial"),
+        btnConfirmarRevision: document.getElementById("btn-confirmar-revision"),
+        revisionObservaciones: document.getElementById("revision-observaciones"),
+        clienteTipo: document.getElementById("cliente-tipo"),
+        clienteCedula: document.getElementById("cliente-cedula"),
+        clienteNombre: document.getElementById("cliente-nombre"),
+        clienteApellido: document.getElementById("cliente-apellido"),
+        clienteRif: document.getElementById("cliente-rif"),
+        clienteRazonSocial: document.getElementById("cliente-razon-social"),
+        clienteCelular: document.getElementById("cliente-celular"),
+        clienteCelularJuridico: document.getElementById("cliente-celular-juridico"),
+        clienteCorreo: document.getElementById("cliente-correo"),
+        clienteCorreoJuridico: document.getElementById("cliente-correo-juridico"),
+        clienteDireccion: document.getElementById("cliente-direccion"),
+        clienteDireccionJuridico: document.getElementById("cliente-direccion-juridico"),
+        camposNatural: document.getElementById("cliente-campos-natural"),
+        camposJuridico: document.getElementById("cliente-campos-juridico"),
+        revisionOrdenNumero: document.getElementById("revision-orden-numero"),
     };
 }
 
 // ============================================
 // 6. FUNCIONES DE RENDERIZADO
 // ============================================
-function renderContador(total) {
-    const contadores = document.querySelectorAll("[data-count]");
-    contadores.forEach(el => {
-        el.setAttribute("data-count", String(total));
-        el.textContent = String(total);
-    });
-}
-
 function renderTablaOrdenes(ordenesData) {
     const { tablaOrdenes } = getDomElements();
     if (!tablaOrdenes) return;
@@ -262,108 +281,6 @@ function renderTablaOrdenes(ordenesData) {
             </tr>
         `;
     }).join("");
-}
-
-function renderTablaEstado(tablaDestino, lista) {
-    if (!tablaDestino) return;
-    if (!lista.length) {
-        tablaDestino.innerHTML = '<tr><td colspan="6" class="table__empty">Sin órdenes.</td></tr>';
-        return;
-    }
-
-    const esPendiente = tablaDestino.id === 'tabla-pendientes';
-
-    tablaDestino.innerHTML = lista.map((orden) => {
-        const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
-        const estado = orden.Estado || orden.estado || '';
-        const badgeClass = Utils.getEstadoBadgeClass(estado);
-
-        let acciones = `
-            <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
-        `;
-
-        if (esPendiente) {
-            acciones += `
-                <button type="button" class="ui-btn ui-btn--primary ui-btn--sm" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}">Asignar</button>
-            `;
-        }
-
-        return `
-            <tr>
-                <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td class="col-estado"><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
-                <td class="col-cliente" title="${Utils.escapeHtml(clienteNombre)}">${Utils.escapeHtml(clienteNombre)}</td>
-                <td class="col-modelo" title="${Utils.escapeHtml(orden.Modelo ?? "")}">${Utils.escapeHtml(orden.Modelo ?? "")}</td>
-                <td class="col-fecha">${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
-                <td class="table__actions col-acciones">
-                    <div class="row-actions">
-                        ${acciones}
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
-}
-
-function renderModalOrdenesEstado(label, ordenesEstado) {
-    const { tablaOrdenesEstadoBody, modalOrdenesEstadoSubtitle } = getDomElements();
-    if (modalOrdenesEstadoSubtitle) {
-        modalOrdenesEstadoSubtitle.textContent = `Órdenes ${label}`;
-    }
-    if (!tablaOrdenesEstadoBody) return;
-
-    const ordenesFiltradas = ordenesEstado.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
-
-    if (!ordenesFiltradas.length) {
-        tablaOrdenesEstadoBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="table__empty">
-                    No hay órdenes en estado <strong>${label.toLowerCase()}</strong>
-                </td>
-            </tr>`;
-        return;
-    }
-
-    const mostrarAsignar = label.toLowerCase().includes('pendiente');
-
-    tablaOrdenesEstadoBody.innerHTML = ordenesFiltradas.map((orden) => {
-        const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
-        const estado = orden.Estado || orden.estado || '';
-        const badgeClass = Utils.getEstadoBadgeClass(estado);
-
-        let acciones = `
-            <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
-        `;
-
-        if (mostrarAsignar) {
-            acciones += `
-                <button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
-            `;
-        }
-
-        return `
-            <tr>
-                <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td class="col-estado"><span class="badge ${badgeClass}">${Utils.escapeHtml(estado)}</span></td>
-                <td class="col-cliente" title="${Utils.escapeHtml(clienteNombre)}">${Utils.escapeHtml(clienteNombre)}</td>
-                <td class="col-equipo" title="${Utils.escapeHtml(orden.Equipo ?? "")}">${Utils.escapeHtml(orden.Equipo ?? "")}</td>
-                <td class="col-modelo" title="${Utils.escapeHtml(orden.Modelo ?? "")}">${Utils.escapeHtml(orden.Modelo ?? "")}</td>
-                <td class="col-fecha">${Utils.escapeHtml(Utils.formatFecha(orden.Fecha_e ?? ""))}</td>
-                <td class="table__actions col-acciones">
-                    <div class="row-actions">
-                        ${acciones}
-                    </div>
-                </td>
-            </tr>`;
-    }).join("");
-
-    setTimeout(() => {
-        const modalBody = document.getElementById('modal-ordenes-estado-body');
-        if (modalBody) {
-            modalBody.removeEventListener('click', onModalEstadoClick);
-            modalBody.addEventListener('click', onModalEstadoClick);
-        }
-    }, 50);
 }
 
 function renderSelectTecnicos(select, tecnicos) {
@@ -399,31 +316,6 @@ function renderPreviewFotos(files) {
         .join("");
 }
 
-function renderTablaTrabajosTecnico(lista) {
-    const { tablaTrabajosTecnico } = getDomElements();
-    if (!tablaTrabajosTecnico) return;
-
-    if (!lista.length) {
-        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5" class="table__empty">Sin trabajos asignados.</td></tr>';
-        return;
-    }
-
-    tablaTrabajosTecnico.innerHTML = lista.map((orden) => {
-        const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
-        return `
-            <tr>
-                <td><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
-                <td>${Utils.escapeHtml(clienteNombre)}</td>
-                <td>${Utils.escapeHtml(orden.modelo ?? "")}</td>
-                <td><span class="badge ${Utils.getEstadoBadgeClass(orden.Estado)}">${Utils.escapeHtml(orden.Estado ?? "")}</span></td>
-                <td class="table__actions">
-                    <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}">Detalle</button>
-                </td>
-            </tr>
-        `;
-    }).join("");
-}
-
 // ============================================
 // 7. FUNCIONES DE CARGA DE DATOS
 // ============================================
@@ -434,27 +326,9 @@ async function cargarOrdenes() {
         renderTablaOrdenes(ordenes);
         actualizarEstadisticas(ordenes);
         renderSelectOrdenesAsignar(ordenes);
-
-        const { tablaPendientes, tablaAsignadas, tablaRevisadas } = getDomElements();
-        await Promise.all([
-            cargarOrdenesEstado("Pendiente", tablaPendientes),
-            cargarOrdenesEstado("Asignada", tablaAsignadas),
-            cargarOrdenesEstado(["Revisado", "Revisada", "En revisión", "En revision"], tablaRevisadas),
-        ]);
     } catch (error) {
         console.error("Error cargando órdenes:", error);
         Utils.showMessage(error.message || "No se pudieron cargar las órdenes.", true);
-    }
-}
-
-async function cargarOrdenesEstado(estado, tablaDestino) {
-    if (!tablaDestino) return;
-    try {
-        const estadoParam = Array.isArray(estado) ? estado.join(',') : estado;
-        const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}?estado=${encodeURIComponent(estadoParam)}`);
-        renderTablaEstado(tablaDestino, data.ordenes || []);
-    } catch (error) {
-        tablaDestino.innerHTML = '<tr><td colspan="6" class="table__empty">No se pudieron cargar las órdenes.</td></tr>';
     }
 }
 
@@ -478,34 +352,15 @@ async function cargarTecnicos() {
     try {
         const data = await Utils.fetchJson(CONFIG.API.TECNICOS);
         const tecnicos = data.tecnicos || [];
-        const { selectTecnico, modalTecnicoSelect } = getDomElements();
-        renderSelectTecnicos(selectTecnico, tecnicos);
+        const { modalTecnicoSelect } = getDomElements();
         renderSelectTecnicos(modalTecnicoSelect, tecnicos);
     } catch (error) {
         console.error("Error cargando técnicos:", error);
     }
 }
 
-async function cargarTrabajosTecnico() {
-    const { modalTecnicoSelect, tablaTrabajosTecnico } = getDomElements();
-    const idTecnico = modalTecnicoSelect?.value;
-
-    if (!idTecnico) {
-        Utils.showMessage("Selecciona un técnico.", true);
-        return;
-    }
-    if (!tablaTrabajosTecnico) return;
-
-    try {
-        const data = await Utils.fetchJson(`${CONFIG.API.TECNICOS}/${encodeURIComponent(idTecnico)}/ordenes`);
-        renderTablaTrabajosTecnico(data.ordenes || []);
-    } catch (error) {
-        tablaTrabajosTecnico.innerHTML = '<tr><td colspan="5" class="table__empty">No se pudieron cargar los trabajos.</td></tr>';
-    }
-}
-
 // ============================================
-// 8. FUNCIONES DE ACCIÓN (CRUD)
+// 8. FUNCIONES DE ACCIÓN
 // ============================================
 function actualizarEstadisticas(ordenesData) {
     const count = (estado) => ordenesData.filter((o) => String(o.Estado || "").toLowerCase() === estado).length;
@@ -551,24 +406,72 @@ function setEquipoStatus(message, isError = false) {
 }
 
 function limpiarClienteForm() {
+    setFieldValue("cliente-cedula", "");
     setFieldValue("cliente-nombre", "");
     setFieldValue("cliente-apellido", "");
+    setFieldValue("cliente-rif", "");
+    setFieldValue("cliente-razon-social", "");
     setFieldValue("cliente-celular", "");
+    setFieldValue("cliente-celular-juridico", "");
     setFieldValue("cliente-correo", "");
+    setFieldValue("cliente-correo-juridico", "");
     setFieldValue("cliente-direccion", "");
+    setFieldValue("cliente-direccion-juridico", "");
     setFieldValue("cliente-tipo", "natural");
+    toggleCamposCliente('natural');
 }
 
 function getFieldValue(fieldId) {
+    // Para campos compartidos que pueden tener diferentes IDs según el tipo
+    if (fieldId === 'celular') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-celular' : 'cliente-celular-juridico';
+        const field = document.getElementById(id);
+        return field && "value" in field ? String(field.value).trim() : "";
+    }
+    if (fieldId === 'correo') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-correo' : 'cliente-correo-juridico';
+        const field = document.getElementById(id);
+        return field && "value" in field ? String(field.value).trim() : "";
+    }
+    if (fieldId === 'direccion') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-direccion' : 'cliente-direccion-juridico';
+        const field = document.getElementById(id);
+        return field && "value" in field ? String(field.value).trim() : "";
+    }
+    
     const field = document.getElementById(fieldId);
     return field && "value" in field ? String(field.value).trim() : "";
 }
 
 function setFieldValue(fieldId, value) {
-    const field = document.getElementById(fieldId);
-    if (field && "value" in field) {
-        field.value = value;
+    // Para campos compartidos que pueden tener diferentes IDs según el tipo
+    if (fieldId === 'celular') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-celular' : 'cliente-celular-juridico';
+        const field = document.getElementById(id);
+        if (field && "value" in field) field.value = value;
+        return;
     }
+    if (fieldId === 'correo') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-correo' : 'cliente-correo-juridico';
+        const field = document.getElementById(id);
+        if (field && "value" in field) field.value = value;
+        return;
+    }
+    if (fieldId === 'direccion') {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        const id = tipo === 'natural' ? 'cliente-direccion' : 'cliente-direccion-juridico';
+        const field = document.getElementById(id);
+        if (field && "value" in field) field.value = value;
+        return;
+    }
+    
+    const field = document.getElementById(fieldId);
+    if (field && "value" in field) field.value = value;
 }
 
 function obtenerSiguienteNumeroTest() {
@@ -579,22 +482,98 @@ function obtenerSiguienteNumeroTest() {
 }
 
 // ============================================
-// 9. VERIFICACIONES
+// 9. FUNCIÓN PARA ALTERNAR CAMPOS DE CLIENTE
+// ============================================
+function toggleCamposCliente(tipo) {
+    const { camposNatural, camposJuridico, clienteCedula, clienteNombre, clienteApellido, clienteRif, clienteRazonSocial } = getDomElements();
+    
+    if (!camposNatural || !camposJuridico) return;
+    
+    // Obtener los campos de celular
+    const celularNatural = document.getElementById('cliente-celular');
+    const celularJuridico = document.getElementById('cliente-celular-juridico');
+    const correoNatural = document.getElementById('cliente-correo');
+    const correoJuridico = document.getElementById('cliente-correo-juridico');
+    const direccionNatural = document.getElementById('cliente-direccion');
+    const direccionJuridico = document.getElementById('cliente-direccion-juridico');
+    
+    if (tipo === 'juridico') {
+        camposNatural.style.display = 'none';
+        camposJuridico.style.display = 'grid';
+        
+        // Desactivar campos Natural
+        if (clienteCedula) { clienteCedula.removeAttribute('required'); clienteCedula.disabled = true; }
+        if (clienteNombre) { clienteNombre.removeAttribute('required'); clienteNombre.disabled = true; }
+        if (clienteApellido) { clienteApellido.removeAttribute('required'); clienteApellido.disabled = true; }
+        if (celularNatural) { celularNatural.removeAttribute('required'); celularNatural.disabled = true; }
+        if (correoNatural) { correoNatural.disabled = true; }
+        if (direccionNatural) { direccionNatural.disabled = true; }
+        
+        // Activar campos Jurídico
+        if (clienteRif) { clienteRif.setAttribute('required', ''); clienteRif.disabled = false; }
+        if (clienteRazonSocial) { clienteRazonSocial.setAttribute('required', ''); clienteRazonSocial.disabled = false; }
+        if (celularJuridico) { celularJuridico.setAttribute('required', ''); celularJuridico.disabled = false; }
+        if (correoJuridico) { correoJuridico.disabled = false; }
+        if (direccionJuridico) { direccionJuridico.disabled = false; }
+        
+        const btnVerificar = document.getElementById('btn-verificar-cliente');
+        if (btnVerificar) btnVerificar.textContent = 'Verificar empresa';
+    } else {
+        camposNatural.style.display = 'grid';
+        camposJuridico.style.display = 'none';
+        
+        // Activar campos Natural
+        if (clienteCedula) { clienteCedula.setAttribute('required', ''); clienteCedula.disabled = false; }
+        if (clienteNombre) { clienteNombre.setAttribute('required', ''); clienteNombre.disabled = false; }
+        if (clienteApellido) { clienteApellido.setAttribute('required', ''); clienteApellido.disabled = false; }
+        if (celularNatural) { celularNatural.setAttribute('required', ''); celularNatural.disabled = false; }
+        if (correoNatural) { correoNatural.disabled = false; }
+        if (direccionNatural) { direccionNatural.disabled = false; }
+        
+        // Desactivar campos Jurídico
+        if (clienteRif) { clienteRif.removeAttribute('required'); clienteRif.disabled = true; }
+        if (clienteRazonSocial) { clienteRazonSocial.removeAttribute('required'); clienteRazonSocial.disabled = true; }
+        if (celularJuridico) { celularJuridico.removeAttribute('required'); celularJuridico.disabled = true; }
+        if (correoJuridico) { correoJuridico.disabled = true; }
+        if (direccionJuridico) { direccionJuridico.disabled = true; }
+        
+        const btnVerificar = document.getElementById('btn-verificar-cliente');
+        if (btnVerificar) btnVerificar.textContent = 'Verificar cliente';
+    }
+    
+    setClienteStatus('');
+    const { btnCrearCliente } = getDomElements();
+    if (btnCrearCliente) btnCrearCliente.hidden = true;
+    clienteActualId = null;
+}
+
+// ============================================
+// 10. VERIFICACIONES DE CLIENTE
 // ============================================
 async function verificarCliente() {
+    const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+    
+    if (tipo === 'natural') {
+        await verificarClienteNatural();
+    } else {
+        await verificarClienteJuridico();
+    }
+}
+
+async function verificarClienteNatural() {
     const cedula = getFieldValue("cliente-cedula");
     if (!cedula) {
         setClienteStatus("Ingresa una cédula para verificar.", true);
         return;
     }
 
-    if (cedula.length !== 8) {
-        setClienteStatus("La cédula debe tener exactamente 8 dígitos.", true);
+    if (cedula.length < 7 || cedula.length > 8) {
+        setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true);
         return;
     }
 
     try {
-        const data = await Utils.fetchJson(`/api/clientes/${encodeURIComponent(cedula)}`);
+        const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(cedula)}`);
         const cliente = data.cliente || data.data || {};
 
         clienteActualId = cliente.id || cliente.cedula || cedula;
@@ -603,7 +582,7 @@ async function verificarCliente() {
         setFieldValue("cliente-celular", cliente.celular || "");
         setFieldValue("cliente-correo", cliente.correo || "");
         setFieldValue("cliente-direccion", cliente.direccion || "");
-        setFieldValue("cliente-tipo", cliente.tipo || "natural");
+        setFieldValue("cliente-tipo", "natural");
         setClienteStatus("Cliente verificado correctamente.");
 
         const { btnCrearCliente } = getDomElements();
@@ -617,6 +596,114 @@ async function verificarCliente() {
     }
 }
 
+async function verificarClienteJuridico() {
+    const rif = getFieldValue("cliente-rif");
+    if (!rif) {
+        setClienteStatus("Ingresa un RIF para verificar.", true);
+        return;
+    }
+
+    if (!Utils.validarRIF(rif)) {
+        setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true);
+        return;
+    }
+
+    try {
+        const rifNormalizado = rif.replace(/-/g, '').toUpperCase();
+        const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifNormalizado)}`);
+        const cliente = data.cliente || data.data || {};
+
+        clienteActualId = cliente.id || cliente.rif || rif;
+        setFieldValue("cliente-razon-social", cliente.razon_social || cliente.nombre || "");
+        setFieldValue("cliente-celular-juridico", cliente.celular || cliente.telefono || "");
+        setFieldValue("cliente-correo-juridico", cliente.correo || "");
+        setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
+        setFieldValue("cliente-tipo", "juridico");
+        setClienteStatus("Empresa verificada correctamente.");
+
+        const { btnCrearCliente } = getDomElements();
+        if (btnCrearCliente) btnCrearCliente.hidden = true;
+    } catch (error) {
+        clienteActualId = null;
+        limpiarClienteForm();
+        setClienteStatus("Empresa no encontrada. Regístrala para continuar.", true);
+        const { btnCrearCliente } = getDomElements();
+        if (btnCrearCliente) btnCrearCliente.hidden = false;
+    }
+}
+
+// ============================================
+// 11. REGISTRO DE CLIENTE
+// ============================================
+async function registrarClienteDesdeFormulario() {
+    try {
+        const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+        let payload = {
+            tipo: tipo,
+            celular: getFieldValue("celular"),
+            correo: getFieldValue("correo"),
+            direccion: getFieldValue("direccion"),
+        };
+
+        if (tipo === 'natural') {
+            payload.cedula = getFieldValue("cliente-cedula");
+            payload.nombre = getFieldValue("cliente-nombre");
+            payload.apellido = getFieldValue("cliente-apellido");
+
+            if (!payload.cedula || !payload.nombre || !payload.apellido) {
+                setClienteStatus("Cédula, nombre y apellido son obligatorios.", true);
+                return;
+            }
+            if (payload.cedula.length < 7 || payload.cedula.length > 8) {
+                setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true);
+                return;
+            }
+        } else {
+            payload.rif = getFieldValue("cliente-rif");
+            payload.razon_social = getFieldValue("cliente-razon-social");
+
+            if (!payload.rif || !payload.razon_social) {
+                setClienteStatus("RIF y Razón Social son obligatorios.", true);
+                return;
+            }
+            if (!Utils.validarRIF(payload.rif)) {
+                setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true);
+                return;
+            }
+        }
+
+        if (!payload.celular) {
+            setClienteStatus("El celular es obligatorio.", true);
+            return;
+        }
+        if (!Utils.validarCelular(payload.celular)) {
+            setClienteStatus("El celular debe tener 11 dígitos y comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426.", true);
+            return;
+        }
+        if (payload.correo && !Utils.isValidEmail(payload.correo)) {
+            setClienteStatus("El correo electrónico no es válido.", true);
+            return;
+        }
+
+        const data = await Utils.fetchJson(CONFIG.API.CLIENTES, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+
+        clienteActualId = data.id || payload.cedula || payload.rif;
+        setClienteStatus("Cliente registrado correctamente.");
+
+        const { btnCrearCliente } = getDomElements();
+        if (btnCrearCliente) btnCrearCliente.hidden = true;
+    } catch (error) {
+        console.error("Error registrando cliente:", error);
+        setClienteStatus(error.message || "No se pudo registrar el cliente.", true);
+    }
+}
+
+// ============================================
+// 12. VERIFICACIÓN DE EQUIPO
+// ============================================
 async function verificarEquipo() {
     const idEquipo = getFieldValue("orden-id-equipo");
     if (!idEquipo) {
@@ -646,7 +733,8 @@ async function verificarEquipo() {
                 selectModelo.value = String(equipo.id_modelo);
             }
             if (equipo.color) {
-                setFieldValue("orden-color", equipo.color);
+                const colorCapitalizado = Utils.capitalizarPalabras(equipo.color);
+                setFieldValue("orden-color", colorCapitalizado);
             }
             if (equipo.capacidad) {
                 const capSelect = document.getElementById("orden-capacidad");
@@ -656,10 +744,6 @@ async function verificarEquipo() {
             }
             if (equipo.patron) {
                 setFieldValue("orden-patron", equipo.patron);
-                const inputPatron = document.getElementById("orden-patron");
-                if (inputPatron) {
-                    inputPatron.dispatchEvent(new Event('input'));
-                }
             }
             if (equipo.clave) {
                 setFieldValue("orden-clave", equipo.clave);
@@ -673,59 +757,11 @@ async function verificarEquipo() {
     }
 }
 
-async function registrarClienteDesdeFormulario() {
-    try {
-        const payload = {
-            cedula: getFieldValue("cliente-cedula"),
-            nombre: getFieldValue("cliente-nombre"),
-            apellido: getFieldValue("cliente-apellido"),
-            celular: getFieldValue("cliente-celular"),
-            correo: getFieldValue("cliente-correo"),
-            direccion: getFieldValue("cliente-direccion"),
-            tipo: getFieldValue("cliente-tipo") || "natural",
-        };
-
-        if (!payload.cedula || !payload.nombre || !payload.apellido || !payload.celular) {
-            setClienteStatus("Cédula, nombre, apellido y celular son obligatorios.", true);
-            return;
-        }
-
-        if (!/^\d{8}$/.test(payload.cedula)) {
-            setClienteStatus("La cédula debe tener exactamente 8 dígitos.", true);
-            return;
-        }
-
-        if (!Utils.validarCelular(payload.celular)) {
-            setClienteStatus("El celular debe tener 11 dígitos y comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426.", true);
-            return;
-        }
-
-        if (payload.correo && !Utils.isValidEmail(payload.correo)) {
-            setClienteStatus("El correo electrónico no es válido.", true);
-            return;
-        }
-
-        const data = await Utils.fetchJson("/api/clientes", {
-            method: "POST",
-            body: JSON.stringify(payload),
-        });
-
-        clienteActualId = data.id || payload.cedula;
-        setClienteStatus("Cliente registrado correctamente.");
-
-        const { btnCrearCliente } = getDomElements();
-        if (btnCrearCliente) btnCrearCliente.hidden = true;
-    } catch (error) {
-        console.error("Error registrando cliente:", error);
-        setClienteStatus(error.message || "No se pudo registrar el cliente.", true);
-    }
-}
-
 // ============================================
-// 10. FUNCIÓN PARA MARCAR TODOS LOS TESTS COMO OK
+// 13. MARCAR TODOS LOS TESTS COMO OK
 // ============================================
 function marcarTodosTestsOK() {
-    const radios = document.querySelectorAll('#modal-nueva-orden input[type="radio"][value="1"]');
+    const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]');
     radios.forEach(radio => {
         radio.checked = true;
     });
@@ -733,11 +769,47 @@ function marcarTodosTestsOK() {
 }
 
 // ============================================
-// 11. EVENTOS PRINCIPALES
+// 14. RECOLECTAR TESTS
+// ============================================
+function recolectarTests() {
+    const testCampos = [
+        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
+        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth'
+    ];
+    
+    const testsData = [];
+    
+    testCampos.forEach((campo) => {
+        const radio = document.querySelector(`#modal-revision-inicial input[name="test_${campo}"]:checked`);
+        if (radio) {
+            const valor = parseInt(radio.value, 10);
+            const resultado = valor === 1 ? "Funciona" : "No funciona";
+            testsData.push({
+                nombre: campo,
+                resultado: resultado
+            });
+        }
+    });
+    
+    const observaciones = document.getElementById("revision-observaciones")?.value?.trim() || "";
+    if (observaciones) {
+        testsData.push({
+            nombre: "Observaciones",
+            resultado: observaciones
+        });
+    }
+    
+    return testsData;
+}
+
+// ============================================
+// 15. ENVÍO DEL FORMULARIO DE ORDEN
 // ============================================
 async function onSubmitOrden(event) {
     event.preventDefault();
-    const { formOrden, inputFecha, selectModelo, btnCrearCliente } = getDomElements();
+    const { formOrden, inputFecha, selectModelo } = getDomElements();
     if (!formOrden) return;
 
     if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
@@ -809,116 +881,125 @@ async function onSubmitOrden(event) {
         return;
     }
 
-    const correo = getFieldValue("cliente-correo");
+    const correo = getFieldValue("correo");
     if (correo && !Utils.isValidEmail(correo)) {
         Utils.showMessage("El correo electrónico no es válido.", true);
         return;
     }
 
-    const celular = getFieldValue("cliente-celular");
+    const celular = getFieldValue("celular");
     if (celular && !Utils.validarCelular(celular)) {
         Utils.showMessage("El celular debe tener 11 dígitos y comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426.", true);
         return;
     }
 
-    const cedula = getFieldValue("cliente-cedula");
-    if (!cedula) {
-        Utils.showMessage("La cédula del cliente es obligatoria.", true);
-        return;
-    }
-    if (!/^\d{8}$/.test(cedula)) {
-        Utils.showMessage("La cédula debe tener exactamente 8 dígitos numéricos.", true);
-        return;
+    const tipoCliente = document.getElementById('cliente-tipo')?.value || 'natural';
+    let clienteId = clienteActualId;
+
+    // Validar campos según tipo de cliente
+    if (tipoCliente === 'natural') {
+        const cedula = getFieldValue("cliente-cedula");
+        const nombre = getFieldValue("cliente-nombre");
+        const apellido = getFieldValue("cliente-apellido");
+
+        if (!cedula) {
+            Utils.showMessage("La cédula del cliente es obligatoria.", true);
+            return;
+        }
+        if (cedula.length < 7 || cedula.length > 8) {
+            Utils.showMessage("La cédula debe tener 7 u 8 dígitos numéricos.", true);
+            return;
+        }
+        if (nombre && nombre.length > 20) {
+            Utils.showMessage("El nombre no puede exceder los 20 caracteres.", true);
+            return;
+        }
+        if (nombre && !Utils.soloLetras(nombre)) {
+            Utils.showMessage("El nombre solo debe contener letras.", true);
+            return;
+        }
+        if (apellido && apellido.length > 20) {
+            Utils.showMessage("El apellido no puede exceder los 20 caracteres.", true);
+            return;
+        }
+        if (apellido && !Utils.soloLetras(apellido)) {
+            Utils.showMessage("El apellido solo debe contener letras.", true);
+            return;
+        }
+    } else {
+        const rif = getFieldValue("cliente-rif");
+        const razonSocial = getFieldValue("cliente-razon-social");
+
+        if (!rif) {
+            Utils.showMessage("El RIF es obligatorio para clientes jurídicos.", true);
+            return;
+        }
+        if (!Utils.validarRIF(rif)) {
+            Utils.showMessage("Formato de RIF inválido. Ej: J-12345678-9", true);
+            return;
+        }
+        if (!razonSocial) {
+            Utils.showMessage("La Razón Social es obligatoria para clientes jurídicos.", true);
+            return;
+        }
+        if (razonSocial.length > 60) {
+            Utils.showMessage("La Razón Social no puede exceder 60 caracteres.", true);
+            return;
+        }
     }
 
-    const nombre = getFieldValue("cliente-nombre");
-    const apellido = getFieldValue("cliente-apellido");
-    
-    if (nombre && nombre.length > 20) {
-        Utils.showMessage("El nombre no puede exceder los 20 caracteres.", true);
-        return;
-    }
-    if (nombre && !Utils.soloLetras(nombre)) {
-        Utils.showMessage("El nombre solo debe contener letras.", true);
-        return;
-    }
-    if (apellido && apellido.length > 20) {
-        Utils.showMessage("El apellido no puede exceder los 20 caracteres.", true);
-        return;
-    }
-    if (apellido && !Utils.soloLetras(apellido)) {
-        Utils.showMessage("El apellido solo debe contener letras.", true);
-        return;
-    }
-
-    const direccion = getFieldValue("cliente-direccion");
+    const direccion = getFieldValue("direccion");
     if (direccion && direccion.length > 50) {
         Utils.showMessage("La dirección no puede exceder los 50 caracteres.", true);
         return;
     }
 
-    // ============================================
-    // RECOLECTAR DATOS DE TESTS (inspirado en taller.js)
-    // ============================================
-    const testCampos = [
-        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
-        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
-        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
-        'Face_id', 'Bluetooth'
-    ];
-    
-    const testsData = [];
-    let hayTests = false;
-    
-    testCampos.forEach((campo) => {
-        const radio = document.querySelector(`input[name="test_${campo}"]:checked`);
-        if (radio) {
-            const valor = parseInt(radio.value, 10);
-            const resultado = valor === 1 ? "Funciona" : "No funciona";
-            testsData.push({
-                nombre: campo,
-                resultado: resultado
-            });
-            if (valor === 0) {
-                hayTests = true;
+    // Si no hay clienteId, intentar obtenerlo o registrarlo
+    if (!clienteId) {
+        if (tipoCliente === 'natural') {
+            const cedula = getFieldValue("cliente-cedula");
+            const nombre = getFieldValue("cliente-nombre");
+            const apellido = getFieldValue("cliente-apellido");
+            
+            try {
+                const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(cedula)}`);
+                const cliente = data.cliente || data.data || {};
+                clienteId = cliente.id || cliente.cedula || cedula;
+                setFieldValue("cliente-nombre", cliente.nombre || "");
+                setFieldValue("cliente-apellido", cliente.apellido || "");
+                setFieldValue("cliente-celular", cliente.celular || "");
+                setFieldValue("cliente-correo", cliente.correo || "");
+                setFieldValue("cliente-direccion", cliente.direccion || "");
+            } catch (e) {
+                if (!nombre || !apellido || !celular) {
+                    Utils.showMessage("Para registrar un nuevo cliente, completa nombre, apellido y celular.", true);
+                    return;
+                }
+                await registrarClienteDesdeFormulario();
+                clienteId = clienteActualId;
+            }
+        } else {
+            const rif = getFieldValue("cliente-rif");
+            const razonSocial = getFieldValue("cliente-razon-social");
+            
+            try {
+                const rifNormalizado = rif.replace(/-/g, '').toUpperCase();
+                const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifNormalizado)}`);
+                const cliente = data.cliente || data.data || {};
+                clienteId = cliente.id || cliente.rif || rif;
+                setFieldValue("cliente-razon-social", cliente.razon_social || cliente.nombre || "");
+                setFieldValue("cliente-celular-juridico", cliente.celular || cliente.telefono || "");
+                setFieldValue("cliente-correo-juridico", cliente.correo || "");
+                setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
+            } catch (e) {
+                if (!razonSocial || !celular) {
+                    Utils.showMessage("Para registrar una nueva empresa, completa Razón Social y celular.", true);
+                    return;
+                }
+                await registrarClienteDesdeFormulario();
+                clienteId = clienteActualId;
             }
         }
-    });
-    
-    const observaciones = document.getElementById("orden-test-observaciones")?.value?.trim() || "";
-    if (observaciones) {
-        testsData.push({
-            nombre: "Observaciones",
-            resultado: observaciones
-        });
-        hayTests = true;
-    }
-    
-    const incluirTests = hayTests && testsData.length > 0;
-
-    let clienteId = clienteActualId;
-    if (!clienteId) {
-        try {
-            const data = await Utils.fetchJson(`/api/clientes/${encodeURIComponent(cedula)}`);
-            const cliente = data.cliente || data.data || {};
-            clienteId = cliente.id || cliente.cedula || cedula;
-            setFieldValue("cliente-nombre", cliente.nombre || "");
-            setFieldValue("cliente-apellido", cliente.apellido || "");
-            setFieldValue("cliente-celular", cliente.celular || "");
-            setFieldValue("cliente-correo", cliente.correo || "");
-            setFieldValue("cliente-direccion", cliente.direccion || "");
-            setFieldValue("cliente-tipo", cliente.tipo || "natural");
-        } catch (e) {}
-    }
-
-    if (!clienteId) {
-        if (!nombre || !apellido || !celular) {
-            Utils.showMessage("Para registrar un nuevo cliente, completa nombre, apellido y celular.", true);
-            return;
-        }
-
-        await registrarClienteDesdeFormulario();
-        clienteId = clienteActualId;
     }
 
     if (!clienteId) {
@@ -928,7 +1009,8 @@ async function onSubmitOrden(event) {
 
     const fechaActual = Utils.getFechaActual();
 
-    const payload = {
+    // Guardar los datos de la orden para enviarlos después de la revisión
+    datosOrdenPendiente = {
         id_cliente: clienteId,
         id_equipo: idEquipo,
         id_modelo: idModelo || null,
@@ -937,33 +1019,91 @@ async function onSubmitOrden(event) {
         capacidad: getFieldValue("orden-capacidad") || "",
         descripcion: descripcion,
         nota: nota || null,
-        nombre: nombre || "",
-        apellido: apellido || "",
+        nombre: getFieldValue("cliente-nombre") || "",
+        apellido: getFieldValue("cliente-apellido") || "",
         celular: celular || "",
         correo: correo || "",
         direccion: direccion || "",
-        tipo: getFieldValue("cliente-tipo") || "natural",
+        tipo: tipoCliente,
         fecha_ingreso: fechaActual,
         patron: getFieldValue("orden-patron") || "",
-        // ==== TESTS ====
-        incluir_tests: incluirTests,
-        tests: incluirTests ? testsData : []
+        clave: getFieldValue("orden-clave") || "",
     };
 
+    // Cerrar el modal de nueva orden y abrir el de revisión
+    closeModal("modal-nueva-orden");
+    
+    setTimeout(() => {
+        document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => {
+            radio.checked = true;
+        });
+        const obsTextarea = document.getElementById("revision-observaciones");
+        if (obsTextarea) obsTextarea.value = "";
+    }, 100);
+    
+    openModal("modal-revision-inicial");
+}
+
+// ============================================
+// 16. CONFIRMAR REVISIÓN Y GUARDAR ORDEN
+// ============================================
+async function confirmarRevision(event) {
+    event.preventDefault();
+    
+    const testsData = recolectarTests();
+    
+    const testCampos = [
+        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
+        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth'
+    ];
+    
+    let todosSeleccionados = true;
+    testCampos.forEach((campo) => {
+        const radio = document.querySelector(`#modal-revision-inicial input[name="test_${campo}"]:checked`);
+        if (!radio) {
+            todosSeleccionados = false;
+        }
+    });
+    
+    if (!todosSeleccionados) {
+        Utils.showMessage("Por favor, selecciona el estado de todos los componentes.", true);
+        return;
+    }
+    
+    if (!datosOrdenPendiente) {
+        Utils.showMessage("No hay datos de orden para guardar.", true);
+        return;
+    }
+    
+    const incluirTests = testsData.length > 0;
+    
+    const payload = {
+        ...datosOrdenPendiente,
+        incluir_tests: incluirTests,
+        tests: testsData
+    };
+    
     try {
         await Utils.fetchJson(CONFIG.API.ORDENES_SERVICIO, {
             method: "POST",
             body: JSON.stringify(payload),
         });
 
-        Utils.showMessage("Orden creada correctamente." + (incluirTests ? " Revisión inicial registrada." : ""));
-        formOrden.reset();
-        closeModal("modal-nueva-orden");
-
+        Utils.showMessage("Orden creada correctamente con revisión inicial registrada.");
+        
+        datosOrdenPendiente = null;
+        closeModal("modal-revision-inicial");
+        
+        const { formOrden, btnCrearCliente } = getDomElements();
+        if (formOrden) formOrden.reset();
+        
         clienteActualId = null;
         setClienteStatus("");
         if (btnCrearCliente) btnCrearCliente.hidden = true;
-
+        
+        const { inputFecha } = getDomElements();
         if (inputFecha) {
             inputFecha.value = Utils.getFechaActual();
         }
@@ -976,12 +1116,10 @@ async function onSubmitOrden(event) {
 }
 
 // ============================================
-// FUNCIÓN DE DETALLE DE ORDEN (ESTILO TALLER)
+// 17. FUNCIONES DE DETALLE DE ORDEN
 // ============================================
 async function abrirDetalleOrden(idOrden) {
     try {
-        console.log(`Obteniendo detalle de orden: ${idOrden}`);
-
         const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}`);
         ordenActualId = idOrden;
         testsOrdenActual = data.test_orden || [];
@@ -992,10 +1130,15 @@ async function abrirDetalleOrden(idOrden) {
         renderFotosOrdenModal(data.fotos_orden || []);
         renderTestsOrdenModal(data.test_orden || []);
 
-        const { detalleOrdenId, revisionOrdenId, fotosOrdenId } = getDomElements();
+        const { detalleOrdenId, revisionOrdenId, fotosOrdenId, revisionOrdenNumero } = getDomElements();
         if (detalleOrdenId) detalleOrdenId.value = String(idOrden);
         if (revisionOrdenId) revisionOrdenId.value = String(idOrden);
         if (fotosOrdenId) fotosOrdenId.value = String(idOrden);
+
+        // Actualizar el subtítulo del modal de revisión con el número de orden
+        if (revisionOrdenNumero) {
+            revisionOrdenNumero.textContent = String(idOrden);
+        }
 
         openModal("modal-detalle-orden");
     } catch (error) {
@@ -1122,7 +1265,7 @@ function renderTestsOrdenModal(tests) {
 }
 
 // ============================================
-// FUNCIÓN DE ASIGNACIÓN
+// 18. FUNCIÓN DE ASIGNACIÓN
 // ============================================
 async function asignarOrden() {
     const selectOrden = document.getElementById("select-orden-asignar");
@@ -1130,10 +1273,6 @@ async function asignarOrden() {
 
     const idOrden = selectOrden?.value;
     const idTecnico = selectTecnico?.value;
-
-    console.log("=== ASIGNANDO ORDEN ===");
-    console.log("ID Orden:", idOrden);
-    console.log("ID Técnico:", idTecnico);
 
     if (!idOrden || idOrden === "") {
         Utils.showMessage("Por favor, selecciona una orden pendiente.", true);
@@ -1148,16 +1287,12 @@ async function asignarOrden() {
     const url = `${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}/asignar`;
     const payload = { id_empleado: parseInt(idTecnico, 10) };
 
-    console.log("URL:", url);
-    console.log("Payload:", payload);
-
     try {
-        const result = await Utils.fetchJson(url, {
+        await Utils.fetchJson(url, {
             method: "POST",
             body: JSON.stringify(payload),
         });
 
-        console.log("Resultado:", result);
         Utils.showMessage("✅ Orden asignada correctamente.");
         closeModal("modal-asignar-tecnico");
         await cargarOrdenes();
@@ -1167,13 +1302,12 @@ async function asignarOrden() {
 
     } catch (error) {
         console.error("Error completo:", error);
-        console.error("Mensaje de error:", error.message);
         Utils.showMessage(`❌ ${error.message || "No se pudo asignar la orden."}`, true);
     }
 }
 
 // ============================================
-// FUNCIÓN DE REVISIÓN
+// 19. FUNCIÓN DE REVISIÓN
 // ============================================
 async function guardarRevision(event) {
     event.preventDefault();
@@ -1229,7 +1363,7 @@ async function guardarRevision(event) {
 }
 
 // ============================================
-// FUNCIÓN DE FOTOS
+// 20. FUNCIÓN DE FOTOS
 // ============================================
 async function guardarFotos(event) {
     event.preventDefault();
@@ -1270,7 +1404,7 @@ async function guardarFotos(event) {
 }
 
 // ============================================
-// 12. EVENTOS DE TABLA
+// 21. EVENTOS DE TABLA
 // ============================================
 function onTablaClick(event) {
     const btn = event.target.closest("button[data-action]");
@@ -1295,32 +1429,8 @@ function onTablaClick(event) {
     }
 }
 
-function onModalEstadoClick(event) {
-    const btn = event.target.closest("button[data-action]");
-    if (!btn) return;
-
-    const action = btn.dataset.action;
-    const id = btn.dataset.id;
-    if (!id) return;
-
-    if (action === "ver-detalle") {
-        abrirDetalleOrden(id);
-        return;
-    }
-
-    if (action === "seleccionar-asignacion") {
-        const selectOrden = document.getElementById("select-orden-asignar");
-        if (selectOrden) {
-            selectOrden.value = String(id);
-            closeModal("modal-ordenes-estado");
-            openModal("modal-asignar-tecnico");
-        }
-        return;
-    }
-}
-
 // ============================================
-// 13. INICIALIZACIÓN
+// 22. INICIALIZACIÓN
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
     const {
@@ -1330,11 +1440,13 @@ document.addEventListener("DOMContentLoaded", () => {
         btnVerificarCliente,
         btnCrearCliente,
         btnAsignarOrden,
-        btnCargarTrabajos,
         formRevision,
         formFotos,
         inputFotos,
         tablaOrdenes,
+        formRevisionInicial,
+        btnConfirmarRevision,
+        clienteTipo,
     } = getDomElements();
 
     if (inputFecha) {
@@ -1348,15 +1460,22 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.style.opacity = '0.7';
     }
 
-    // ============================================
-    // BOTÓN PARA MARCAR TODOS LOS TESTS COMO OK
-    // ============================================
+    // Botón para marcar todos los tests como OK
     document.getElementById('btn-marcar-todos-test')?.addEventListener('click', marcarTodosTestsOK);
 
+    // Formulario de revisión inicial
+    formRevisionInicial?.addEventListener('submit', confirmarRevision);
+
+    // FieldValidator
     if (window.FieldValidator) {
         setTimeout(() => window.FieldValidator.init(), 100);
     }
 
+    // ============================================
+    // VALIDACIONES EN TIEMPO REAL
+    // ============================================
+    
+    // IMEI
     const inputImei = document.getElementById("orden-id-equipo");
     if (inputImei) {
         inputImei.addEventListener("input", (e) => {
@@ -1364,6 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Cédula
     const inputCedula = document.getElementById("cliente-cedula");
     if (inputCedula) {
         inputCedula.addEventListener("input", (e) => {
@@ -1371,6 +1491,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Patrón
     const inputPatron = document.getElementById("orden-patron");
     if (inputPatron) {
         inputPatron.addEventListener("input", (e) => {
@@ -1389,6 +1510,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Celular Natural
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
         inputCelular.addEventListener("input", (e) => {
@@ -1408,6 +1530,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Celular Jurídico
+    const inputCelularJuridico = document.getElementById("cliente-celular-juridico");
+    if (inputCelularJuridico) {
+        inputCelularJuridico.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^0-9]/g, "").slice(0, 11);
+            e.target.value = value;
+        });
+        
+        inputCelularJuridico.addEventListener("blur", (e) => {
+            const value = e.target.value;
+            if (value && !Utils.validarCelular(value)) {
+                e.target.style.borderColor = '#dc2626';
+                e.target.title = 'Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos';
+            } else {
+                e.target.style.borderColor = '';
+                e.target.title = '';
+            }
+        });
+    }
+
+    // Clave
     const inputClave = document.getElementById("orden-clave");
     if (inputClave) {
         inputClave.addEventListener("input", (e) => {
@@ -1415,6 +1558,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // RIF - Formateo automático
+    const inputRif = document.getElementById("cliente-rif");
+    if (inputRif) {
+        inputRif.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+            if (value.length === 0) {
+                e.target.value = "";
+                return;
+            }
+            if (!['J', 'E'].includes(value.charAt(0))) {
+                value = 'J' + value.substring(1);
+            }
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            let formatted = value.charAt(0);
+            const rest = value.substring(1);
+            if (rest.length > 0) {
+                formatted += '-';
+                if (rest.length <= 8) {
+                    formatted += rest;
+                } else {
+                    formatted += rest.substring(0, 8) + '-' + rest.substring(8);
+                }
+            }
+            e.target.value = formatted;
+        });
+    }
+
+    // ============================================
+    // CAMPOS CON CAPITALIZACIÓN AUTOMÁTICA
+    // ============================================
+    
     const inputColor = document.getElementById("orden-color");
     if (inputColor) {
         inputColor.addEventListener("input", (e) => {
@@ -1422,6 +1598,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (value.length > 15) {
                 value = value.slice(0, 15);
             }
+            value = Utils.capitalizarPalabras(value);
+            e.target.value = value;
+        });
+    }
+
+    const inputModeloCustom = document.getElementById("orden-modelo-custom");
+    if (inputModeloCustom) {
+        inputModeloCustom.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-Z0-9\s\-]/g, "");
+            if (value.length > 30) {
+                value = value.slice(0, 30);
+            }
+            value = Utils.capitalizarPalabras(value);
             e.target.value = value;
         });
     }
@@ -1433,8 +1622,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (value.length > 20) {
                 value = value.slice(0, 20);
             }
-            const palabras = value.split(' ');
-            value = palabras.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+            value = Utils.capitalizarPalabras(value);
             e.target.value = value;
         });
     }
@@ -1446,8 +1634,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (value.length > 20) {
                 value = value.slice(0, 20);
             }
-            const palabras = value.split(' ');
-            value = palabras.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+            value = Utils.capitalizarPalabras(value);
+            e.target.value = value;
+        });
+    }
+
+    const inputRazonSocial = document.getElementById("cliente-razon-social");
+    if (inputRazonSocial) {
+        inputRazonSocial.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s\.\-&]/g, "");
+            if (value.length > 60) {
+                value = value.slice(0, 60);
+            }
+            value = Utils.capitalizarPalabras(value);
             e.target.value = value;
         });
     }
@@ -1461,17 +1660,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const inputModeloCustom = document.getElementById("orden-modelo-custom");
-    if (inputModeloCustom) {
-        inputModeloCustom.addEventListener("input", (e) => {
-            let value = e.target.value.replace(/[^a-zA-Z0-9\s\-]/g, "");
-            if (value.length > 30) {
-                value = value.slice(0, 30);
+    const inputDireccionJuridico = document.getElementById("cliente-direccion-juridico");
+    if (inputDireccionJuridico) {
+        inputDireccionJuridico.addEventListener("input", (e) => {
+            if (e.target.value.length > 50) {
+                e.target.value = e.target.value.slice(0, 50);
             }
-            e.target.value = value;
         });
     }
 
+    // ============================================
+    // TIPO DE CLIENTE - TOGGLE DE CAMPOS
+    // ============================================
+    if (clienteTipo) {
+        clienteTipo.addEventListener('change', (e) => {
+            toggleCamposCliente(e.target.value);
+            setClienteStatus('');
+            const { btnCrearCliente } = getDomElements();
+            if (btnCrearCliente) btnCrearCliente.hidden = true;
+            clienteActualId = null;
+        });
+        // Inicializar con el valor por defecto
+        toggleCamposCliente(clienteTipo.value);
+    }
+
+    // ============================================
+    // EVENTOS DE BOTONES
+    // ============================================
     btnVerificarEquipo?.addEventListener("click", verificarEquipo);
     btnVerificarCliente?.addEventListener("click", verificarCliente);
     btnCrearCliente?.addEventListener("click", registrarClienteDesdeFormulario);
@@ -1481,16 +1696,10 @@ document.addEventListener("DOMContentLoaded", () => {
         btnAsignarOrden.addEventListener("click", asignarOrden);
     }
 
-    btnCargarTrabajos?.addEventListener("click", cargarTrabajosTecnico);
     formRevision?.addEventListener("submit", guardarRevision);
     formFotos?.addEventListener("submit", guardarFotos);
     inputFotos?.addEventListener("change", () => renderPreviewFotos(inputFotos.files));
     tablaOrdenes?.addEventListener("click", onTablaClick);
-
-    const modalEstadoBody = document.getElementById('modal-ordenes-estado-body');
-    if (modalEstadoBody) {
-        modalEstadoBody.addEventListener('click', onModalEstadoClick);
-    }
 
     document.getElementById("btn-asignar-tecnico")?.addEventListener("click", () => {
         openModal("modal-asignar-tecnico");
@@ -1504,17 +1713,15 @@ document.addEventListener("DOMContentLoaded", () => {
         setClienteStatus("");
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
-        
-        // Resetear tests a todos OK
-        setTimeout(() => {
-            document.querySelectorAll('#modal-nueva-orden input[type="radio"][value="1"]').forEach(radio => {
-                radio.checked = true;
-            });
-            const obsTextarea = document.getElementById("orden-test-observaciones");
-            if (obsTextarea) obsTextarea.value = "";
-        }, 100);
+        if (clienteTipo) {
+            clienteTipo.value = 'natural';
+            toggleCamposCliente('natural');
+        }
     });
 
+    // ============================================
+    // CARGA INICIAL DE DATOS
+    // ============================================
     Promise.all([
         cargarModelos(),
         cargarTecnicos(),

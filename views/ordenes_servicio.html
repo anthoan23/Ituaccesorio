@@ -190,10 +190,10 @@
                  title="15 dígitos numéricos">
           <small class="field-hint">15 dígitos numéricos</small>
         </label>
-        <label class="field" style="display:flex; flex-direction:column; gap:.5rem;">
+        <label class="field equipo-verify-wrapper">
           <span>&nbsp;</span>
           <button id="btn-verificar-equipo" type="button" class="ui-btn ui-btn--ghost">Verificar equipo</button>
-          <span id="equipo-status" class="field-help" style="font-size:0.7rem;color:var(--text-muted);"></span>
+          <span id="equipo-status" class="field-help field-help--status"></span>
         </label>
       </div>
 
@@ -229,7 +229,7 @@
                  type="text" 
                  placeholder="Color del equipo" 
                  maxlength="15" 
-                 data-validation-rules="soloLetras"
+                 data-validation-rules="soloLetras,capitalizar"
                  title="Solo letras, máximo 15 caracteres">
           <small class="field-hint">Solo letras, máximo 15 caracteres</small>
         </label>
@@ -254,7 +254,8 @@
       <div class="ui-form__grid ui-form__grid--two">
         <label class="field">
           <span>Fecha de ingreso</span>
-          <input id="orden-fecha" name="fecha_ingreso" type="date" readonly style="background:var(--input-bg); cursor: not-allowed; opacity:0.7;">
+          <input id="orden-fecha" name="fecha_ingreso" type="date" readonly>
+          <small class="field-hint">Fecha automática</small>
         </label>
         <label class="field">
           <span>Patrón (1-9, sin repetir)</span>
@@ -284,59 +285,60 @@
         </label>
       </div>
 
-      <!-- Cliente -->
+      <!-- ============================================ -->
+      <!-- SECCIÓN DE CLIENTE - SOPORTE NATURAL Y JURÍDICO -->
+      <!-- ============================================ -->
+      
+      <!-- Fila 1: Tipo de cliente + Botones de acción -->
       <div class="ui-form__grid ui-form__grid--two">
         <label class="field">
-          <span>Cédula cliente <span class="required-indicator">*</span></span>
+          <span>Tipo de cliente</span>
+          <div class="select-wrapper">
+            <select id="cliente-tipo" name="tipo">
+              <option value="natural">Natural</option>
+              <option value="juridico">Jurídico</option>
+            </select>
+          </div>
+        </label>
+        <div class="cliente-actions-wrapper">
+          <div class="cliente-actions-buttons">
+            <button id="btn-verificar-cliente" type="button" class="ui-btn ui-btn--ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Verificar
+            </button>
+            <button id="btn-crear-cliente" type="button" class="ui-btn ui-btn--primary" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Registrar
+            </button>
+          </div>
+          <span id="cliente-status" class="field-help field-help--status"></span>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- CAMPOS PARA PERSONA NATURAL -->
+      <!-- ============================================ -->
+      <div id="cliente-campos-natural" class="ui-form__grid ui-form__grid--two">
+        <!-- Cédula -->
+        <label class="field">
+          <span>Cédula <span class="required-indicator">*</span></span>
           <input id="cliente-cedula" 
                  name="cedula" 
                  type="text" 
-                 placeholder="Ej: 12345678" 
+                 placeholder="12345678" 
                  required 
                  maxlength="8" 
                  inputmode="numeric"
                  data-validation-rules="soloNumeros"
-                 title="8 dígitos numéricos">
-          <small class="field-hint">8 dígitos numéricos</small>
+                 title="7 u 8 dígitos numéricos">
+          <small class="field-hint">7 u 8 dígitos numéricos</small>
         </label>
-        <label class="field" style="display:flex; flex-direction:column; gap:.5rem;">
-          <span>&nbsp;</span>
-          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-            <button id="btn-verificar-cliente" type="button" class="ui-btn ui-btn--ghost">Verificar cliente</button>
-            <button id="btn-crear-cliente" type="button" class="ui-btn ui-btn--primary" hidden>Registrar cliente</button>
-          </div>
-          <span id="cliente-status" class="field-help" style="font-size:0.7rem;color:var(--text-muted);"></span>
-        </label>
-      </div>
-
-      <!-- Nombre y Apellido -->
-      <div class="ui-form__grid ui-form__grid--two">
-        <label class="field">
-          <span>Nombre</span>
-          <input id="cliente-nombre" 
-                 name="nombre" 
-                 type="text" 
-                 placeholder="Nombre del cliente" 
-                 maxlength="20" 
-                 data-validation-rules="soloLetras,capitalizar"
-                 title="Solo letras, máximo 20 caracteres">
-          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
-        </label>
-        <label class="field">
-          <span>Apellido</span>
-          <input id="cliente-apellido" 
-                 name="apellido" 
-                 type="text" 
-                 placeholder="Apellido del cliente" 
-                 maxlength="20" 
-                 data-validation-rules="soloLetras,capitalizar"
-                 title="Solo letras, máximo 20 caracteres">
-          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
-        </label>
-      </div>
-
-      <!-- Celular y Correo -->
-      <div class="ui-form__grid ui-form__grid--two">
+        <!-- Celular -->
         <label class="field">
           <span>Celular <span class="required-indicator">*</span></span>
           <input id="cliente-celular" 
@@ -349,6 +351,31 @@
                  title="11 dígitos, comienza con 0412, 0414, 0416, 0422, 0424 o 0426">
           <small class="field-hint">11 dígitos (ej: 04121234567)</small>
         </label>
+        <!-- Nombre -->
+        <label class="field">
+          <span>Nombre</span>
+          <input id="cliente-nombre" 
+                 name="nombre" 
+                 type="text" 
+                 placeholder="Nombre del cliente" 
+                 maxlength="20" 
+                 data-validation-rules="soloLetras,capitalizar"
+                 title="Solo letras, máximo 20 caracteres">
+          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
+        </label>
+        <!-- Apellido -->
+        <label class="field">
+          <span>Apellido</span>
+          <input id="cliente-apellido" 
+                 name="apellido" 
+                 type="text" 
+                 placeholder="Apellido del cliente" 
+                 maxlength="20" 
+                 data-validation-rules="soloLetras,capitalizar"
+                 title="Solo letras, máximo 20 caracteres">
+          <small class="field-hint">Solo letras, máximo 20 caracteres</small>
+        </label>
+        <!-- Correo -->
         <label class="field">
           <span>Correo</span>
           <input id="cliente-correo" 
@@ -359,10 +386,7 @@
                  title="Correo electrónico válido">
           <small class="field-hint">ejemplo@dominio.com</small>
         </label>
-      </div>
-
-      <!-- Dirección y Tipo -->
-      <div class="ui-form__grid ui-form__grid--two">
+        <!-- Dirección -->
         <label class="field">
           <span>Dirección</span>
           <input id="cliente-direccion" 
@@ -374,19 +398,75 @@
                  title="Sin caracteres especiales">
           <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
         </label>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- CAMPOS PARA PERSONA JURÍDICA -->
+      <!-- ============================================ -->
+      <div id="cliente-campos-juridico" class="ui-form__grid ui-form__grid--two" hidden>
+        <!-- RIF -->
         <label class="field">
-          <span>Tipo de cliente</span>
-          <div class="select-wrapper">
-            <select id="cliente-tipo" name="tipo">
-              <option value="natural">Natural</option>
-              <option value="juridico">Jurídico</option>
-            </select>
-          </div>
+          <span>RIF <span class="required-indicator">*</span></span>
+          <input id="cliente-rif" 
+                 name="rif" 
+                 type="text" 
+                 placeholder="J-12345678-9" 
+                 maxlength="12"
+                 data-validation-rules="rif"
+                 title="Formato: J-12345678-9 o E-12345678-9">
+          <small class="field-hint">Formato: J-12345678-9 o E-12345678-9</small>
+        </label>
+        <!-- Celular -->
+        <label class="field">
+          <span>Celular <span class="required-indicator">*</span></span>
+          <input id="cliente-celular-juridico" 
+                 name="celular" 
+                 type="text" 
+                 placeholder="04121234567" 
+                 maxlength="11" 
+                 data-validation-rules="telefono"
+                 title="11 dígitos, comienza con 0412, 0414, 0416, 0422, 0424 o 0426">
+          <small class="field-hint">11 dígitos (ej: 04121234567)</small>
+        </label>
+        <!-- Razón Social -->
+        <label class="field">
+          <span>Razón Social <span class="required-indicator">*</span></span>
+          <input id="cliente-razon-social" 
+                 name="razon_social" 
+                 type="text" 
+                 placeholder="Nombre de la empresa" 
+                 maxlength="60"
+                 data-validation-rules="soloLetrasNumeros"
+                 title="Letras, números, espacios, puntos, guiones y &">
+          <small class="field-hint">Máximo 60 caracteres</small>
+        </label>
+        <!-- Correo -->
+        <label class="field">
+          <span>Correo</span>
+          <input id="cliente-correo-juridico" 
+                 name="correo" 
+                 type="email" 
+                 placeholder="ejemplo@correo.com"
+                 data-validation-rules="email"
+                 title="Correo electrónico válido">
+          <small class="field-hint">ejemplo@dominio.com</small>
+        </label>
+        <!-- Dirección -->
+        <label class="field field--full-width">
+          <span>Dirección</span>
+          <input id="cliente-direccion-juridico" 
+                 name="direccion" 
+                 type="text" 
+                 placeholder="Dirección de la empresa" 
+                 maxlength="50"
+                 data-validation-rules="sinCaracteresEspeciales"
+                 title="Sin caracteres especiales">
+          <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
         </label>
       </div>
 
       <!-- Descripción -->
-      <label class="field field--full">
+      <label class="field field--full" style="margin-top:0.5rem;">
         <span>Descripción del problema <span class="required-indicator">*</span></span>
         <textarea id="orden-descripcion" 
                   name="descripcion" 
@@ -412,73 +492,6 @@
         <small class="field-hint">Sin caracteres especiales, máximo 50 caracteres</small>
       </label>
 
-      <!-- ============================================ -->
-      <!-- SECCIÓN DE TESTS INICIALES (inspirada en taller) -->
-      <!-- ============================================ -->
-      <div class="ui-form__section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-          <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-strong);">
-            Revisión inicial del equipo
-            <span style="font-weight: 400; font-size: 0.75rem; color: var(--text-muted);">(opcional)</span>
-          </h3>
-          <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm" style="font-size: 0.7rem;">
-            Marcar todos como OK
-          </button>
-        </div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-          Selecciona el estado de cada componente para registrar la primera revisión.
-        </p>
-        
-        <div class="test-options-grid" style="grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
-          {% set componentes_iniciales = [
-            ('Btn_power', 'Botón Power'),
-            ('Btn_vol', 'Botón Volumen'),
-            ('Cornetas', 'Cornetas'),
-            ('Mica', 'Mica'),
-            ('LCD', 'LCD'),
-            ('Tactil', 'Táctil'),
-            ('Wifi', 'WiFi'),
-            ('Puerto_carga', 'Puerto Carga'),
-            ('Cam_pos', 'Cámara Posterior'),
-            ('Cam_del', 'Cámara Delantera'),
-            ('Microfono', 'Micrófono'),
-            ('Flash', 'Flash'),
-            ('Btn_sil', 'Botón Silencio'),
-            ('Auricular', 'Auricular'),
-            ('Senal', 'Señal'),
-            ('Sensor_proximidad', 'Sensor Proximidad'),
-            ('Face_id', 'Face ID'),
-            ('Bluetooth', 'Bluetooth')
-          ] %}
-          
-          {% for name, label in componentes_iniciales %}
-          <div class="test-row-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.25rem 0.5rem; background: var(--glass-bg); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-strong);">{{ label }}</span>
-            <div class="radio-group" style="display: flex; gap: 0.25rem;">
-              <label class="radio-label radio-label--success" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; cursor: pointer; border-radius: var(--radius-sm);">
-                <input type="radio" name="test_{{ name }}" value="1" checked> OK
-              </label>
-              <label class="radio-label radio-label--danger" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; cursor: pointer; border-radius: var(--radius-sm);">
-                <input type="radio" name="test_{{ name }}" value="0"> ✗
-              </label>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        
-        <label class="field field--full" style="margin-top: 0.75rem;">
-          <span>Observaciones de la revisión</span>
-          <textarea id="orden-test-observaciones" 
-                    name="test_observaciones" 
-                    rows="2" 
-                    placeholder="Observaciones de la revisión inicial..." 
-                    maxlength="250"
-                    data-validation-rules="sinCaracteresEspeciales"
-                    title="Sin caracteres especiales"></textarea>
-          <small class="field-hint">Máximo 250 caracteres</small>
-        </label>
-      </div>
-
       <div class="ui-form__actions">
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
         <button type="submit" class="ui-btn ui-btn--primary">Guardar orden</button>
@@ -486,32 +499,24 @@
     </form>
   {% endcall %}
 
-  <!-- Modal Detalle de Orden -->
-  {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
-    <input type="hidden" id="detalle-orden-id" value="">
+  <!-- Modal de Revisión Inicial Obligatoria -->
+  {% call modal('modal-revision-inicial', 'Revisión inicial del equipo', 'lg') %}
+    <p class="revision-header">
+      Realiza una revisión completa del equipo para registrar el estado inicial de todos sus componentes.
+    </p>
     
-    <div id="modal-preview-body">
-      <div id="modal-order-info" class="device-detail__grid">
-        <p class="device-detail__empty">Cargando información...</p>
-      </div>
-      <div id="modal-order-photos" class="device-photos-wrap" style="margin-top: 1rem;"></div>
-      <div id="modal-order-tests" class="device-tests"></div>
-    </div>
-
-    <div class="ui-form__actions">
-      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
-    </div>
-  {% endcall %}
-
-  <!-- Modal Revisión -->
-  {% call modal('modal-revision-orden', 'Registrar revisión', 'lg') %}
-    <form id="form-revision-orden" class="ui-form">
+    <form class="ui-form" id="form-revision-inicial">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" id="revision-orden-id" value="">
       
-      <!-- Componentes de revisión - grid 3 columnas -->
-      <div class="test-options-grid" style="grid-template-columns: repeat(3, 1fr);">
-        {% set componentes = [
+      <div class="revision-components-header">
+        <h3>Componentes del equipo</h3>
+        <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm">
+          Marcar todos como OK
+        </button>
+      </div>
+      
+      <div class="test-grid">
+        {% set componentes_iniciales = [
           ('Btn_power', 'Botón Power'),
           ('Btn_vol', 'Botón Volumen'),
           ('Cornetas', 'Cornetas'),
@@ -532,28 +537,332 @@
           ('Bluetooth', 'Bluetooth')
         ] %}
         
-        {% for name, label in componentes %}
+        {% for name, label in componentes_iniciales %}
         <div class="test-row-item">
-          <span class="test-component-name">{{ label }}</span>
+          <span class="test-label">{{ label }}</span>
           <div class="radio-group">
             <label class="radio-label radio-label--success">
-              <input type="radio" name="{{ name }}" value="1"> OK
+              <input type="radio" name="test_{{ name }}" value="1" checked> OK
             </label>
             <label class="radio-label radio-label--danger">
-              <input type="radio" name="{{ name }}" value="0" checked> ✗
+              <input type="radio" name="test_{{ name }}" value="0"> ✗
             </label>
           </div>
         </div>
         {% endfor %}
       </div>
-
+      
       <label class="field field--full" style="margin-top: 0.75rem;">
-        <span>Observaciones</span>
-        <textarea name="Observaciones" rows="3" placeholder="Observaciones de la revisión..." maxlength="250"></textarea>
+        <span>Observaciones de la revisión</span>
+        <textarea id="revision-observaciones" 
+                  name="observaciones" 
+                  rows="3" 
+                  placeholder="Observaciones de la revisión inicial..." 
+                  maxlength="250"
+                  data-validation-rules="sinCaracteresEspeciales"
+                  title="Sin caracteres especiales"></textarea>
         <small class="field-hint">Máximo 250 caracteres</small>
       </label>
 
-      <div class="ui-form__actions" style="margin-top: 0.75rem;">
+      <div class="ui-form__actions revision-actions">
+        <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="ui-btn ui-btn--primary" id="btn-confirmar-revision">Confirmar y guardar orden</button>
+      </div>
+    </form>
+  {% endcall %}
+
+  <!-- Modal Detalle de Orden -->
+  {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
+    <input type="hidden" id="detalle-orden-id" value="">
+    
+    <div id="modal-preview-body">
+      <div id="modal-order-info" class="device-detail__grid">
+        <p class="device-detail__empty">Cargando información...</p>
+      </div>
+      <div id="modal-order-photos" class="device-photos-wrap"></div>
+      <div id="modal-order-tests" class="device-tests"></div>
+    </div>
+
+    <div class="ui-form__actions">
+      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
+    </div>
+  {% endcall %}
+
+  <!-- Modal Revisión - Diseño mejorado -->
+  {% call modal('modal-revision-orden', 'Revisión de la orden', 'lg') %}
+    <form id="form-revision-orden" class="ui-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="revision-orden-id" value="">
+      
+      <p id="revision-orden-subtitle" class="revision-subtitle">Revisión de la orden #<span id="revision-orden-numero">---</span></p>
+      
+      <div class="revision-grid">
+        <!-- Columna 1 -->
+        <div class="revision-column">
+          <div class="test-row-item">
+            <span class="test-label">Botón Power</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Btn_power" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Btn_power" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cornetas</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Cornetas" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Cornetas" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Mica</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Mica" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Mica" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">LCD</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="LCD" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="LCD" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Táctil</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Tactil" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Tactil" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Botón Vol</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Btn_vol" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Btn_vol" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Botón Silencio</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Btn_sil" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Btn_sil" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Puerto Carga</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Puerto_carga" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Puerto_carga" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">WiFi</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Wifi" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Wifi" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cámara Posterior</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Cam_pos" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Cam_pos" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cámara Delantera</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Cam_del" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Cam_del" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Flash</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Flash" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Flash" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna 2 -->
+        <div class="revision-column">
+          <div class="test-row-item">
+            <span class="test-label">Micrófono</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Microfono" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Microfono" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Señal</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Senal" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Senal" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Sensor Proximidad</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Sensor_proximidad" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Sensor_proximidad" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Face ID</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Face_id" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Face_id" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Bluetooth</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Bluetooth" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Bluetooth" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Caja</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Caja" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Caja" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cargador</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Cargador" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Cargador" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cable</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Cable" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Cable" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Auricular</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Auricular" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Auricular" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Manuales</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="Manuales" value="1"> Funciona
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="Manuales" value="0" checked> No funciona
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="revision-observations">
+        <label class="field field--full">
+          <span class="field-label">Observaciones</span>
+          <textarea name="Observaciones" 
+                    rows="3" 
+                    placeholder="Notas adicionales de la revisión..." 
+                    maxlength="250"
+                    data-validation-rules="sinCaracteresEspeciales"
+                    title="Sin caracteres especiales"></textarea>
+          <small class="field-hint">Sin caracteres especiales como &lt; &gt; | { } [ ] \ ^</small>
+        </label>
+      </div>
+
+      <div class="ui-form__actions revision-actions">
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
         <button type="submit" class="ui-btn ui-btn--primary">Guardar revisión</button>
       </div>
@@ -572,9 +881,9 @@
         <small class="field-hint">Formatos: JPG, PNG, GIF (máximo 5MB por foto)</small>
       </label>
       
-      <div id="preview-fotos" class="fotos-grid" style="margin-top: 0.5rem;"></div>
+      <div id="preview-fotos" class="fotos-grid"></div>
 
-      <div class="ui-form__actions" style="margin-top: 0.75rem;">
+      <div class="ui-form__actions revision-actions">
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
         <button type="submit" class="ui-btn ui-btn--primary">Subir fotos</button>
       </div>
