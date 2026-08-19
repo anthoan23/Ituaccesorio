@@ -444,3 +444,7 @@
         grid-template-columns: 1fr;
     }
 }
+
+#permisos-rol-container {
+    display: none;
+}

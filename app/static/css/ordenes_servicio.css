@@ -336,6 +336,10 @@
     grid-column: 1 / -1;
 }
 
+.campo-descripcion {
+    margin-top: 0.5rem;
+}
+
 /* Device photos */
 .device-photos-wrap {
     margin-top: 0.5rem;
@@ -448,6 +452,10 @@
     color: var(--text-strong);
     line-height: 1.25;
     overflow-wrap: anywhere;
+}
+
+.detail-value.detail-value--italic {
+    font-style: italic;
 }
 
 .device-tests {

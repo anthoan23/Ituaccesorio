@@ -11,34 +11,12 @@ const CONFIG = {
   },
   CHART_COLORS: {
     PIE_1: {
-      BACKGROUND: ['#ffce54', '#f3c500', '#ffe36b', '#e67e00', '#d4a017', '#f39c12', '#e67e22', '#f1c40f'],
-      BORDER: ['#ffce54', '#f3c500', '#ffe36b', '#e67e00', '#d4a017', '#f39c12', '#e67e22', '#f1c40f']
+      BACKGROUND: ['#f3c500', '#f8dd69', '#e6a817', '#ffce54', '#d4a017', '#f39c12', '#e67e22', '#c9971f'],
+      BORDER: ['#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e']
     },
     PIE_2: {
-      BACKGROUND: [
-        '#FF6B6B',
-        '#4ECDC4',
-        '#FFE66D',
-        '#A8E6CF',
-        '#FF8A5C',
-        '#6C5B7B',
-        '#F08A5D',
-        '#B83B5E',
-        '#2F9292',
-        '#FFD93D'
-      ],
-      BORDER: [
-        '#FF6B6B',
-        '#4ECDC4',
-        '#FFE66D',
-        '#A8E6CF',
-        '#FF8A5C',
-        '#6C5B7B',
-        '#F08A5D',
-        '#B83B5E',
-        '#2F9292',
-        '#FFD93D'
-      ]
+      BACKGROUND: ['#007AFF', '#34C759', '#5ac8fa', '#5856d6', '#af52de', '#ff9500', '#ff2d55', '#30b0c7', '#5e5ce6', '#bf5af2'],
+      BORDER: ['#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e', '#1e1e1e']
     }
   }
 };
@@ -744,7 +722,7 @@ function crearGraficoPie(canvasId, colors, labels, data) {
           position: 'bottom',
           labels: { 
             font: { size: 11 },
-            color: '#ffffff'
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-strong').trim() || '#ffffff'
           }
         },
         tooltip: {
@@ -918,7 +896,7 @@ function actualizarListaEspecialidades() {
   lista.innerHTML = especialidadesArray.map(esp => `
     <div class="especialidad-tag" data-id="${esp.id}">
       ${Utils.escapeHtml(esp.nombre)}
-      <span class="remove-especialidad" data-id="${esp.id}" style="cursor:pointer; margin-left: 8px;">×</span>
+      <span class="remove-especialidad" data-id="${esp.id}">×</span>
     </div>
   `).join('');
 

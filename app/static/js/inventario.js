@@ -407,7 +407,7 @@ async function generarReporteInventario() {
         reporteTabla.innerHTML = reporteDatosActuales.map(p => {
           const status = getStatusLabel(p.existencia || 0);
           const foto = p.foto_inventario || '';
-          const fotoHtml = foto ? `<img src="${foto}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">` : '<span style="color:#999;">Sin foto</span>';
+          const fotoHtml = foto ? `<img src="${foto}" class="reporte-foto-img">` : '<span class="reporte-foto-empty">Sin foto</span>';
           return `
             <tr>
               <td>${fotoHtml}</td>

@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 container.innerHTML = `
                     <tr>
-                        <td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px;">
+                        <td colspan="5" class="celda-cargando">
                             No hay órdenes recientes
                         </td>
                     </tr>
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error cargando órdenes:', error);
             container.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px;">
+                        <td colspan="5" class="celda-cargando">
                         Error al cargar órdenes
                     </td>
                 </tr>

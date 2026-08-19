@@ -287,6 +287,12 @@
     grid-column: 1 / -1;
 }
 
+.tests-divider {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 1rem 0;
+}
+
 .tests-section {
     background: var(--glass-bg);
     border-radius: var(--radius-md);
@@ -703,3 +709,11 @@
         min-width: 600px;
     }
 }
+
+/* ============================================
+   CLASES DE ESTADO (reemplazan style inline)
+   ============================================ */
+.texto-muted { color: var(--text-muted); }
+.texto-yellow { color: var(--yellow); }
+.empty-pruebas { text-align: center; padding: 2rem; }
+.detalle-valor { font-size: 1.2rem; font-weight: 900; color: var(--yellow); }

@@ -536,3 +536,11 @@ body::before {
 		gap: 0.5rem;
 	}
 }
+
+.test-mode-flag {
+	display: none;
+}
+
+.phone__captcha-wrapper--hidden {
+	display: none;
+}

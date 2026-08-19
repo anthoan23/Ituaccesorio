@@ -162,7 +162,7 @@
     </div>
 
     <!-- Campo oculto para nueva clase -->
-    <div id="p-clase-nueva-wrap" class="field is-hidden" style="margin-top: 0.5rem;">
+    <div id="p-clase-nueva-wrap" class="field is-hidden">
       <span>Nombre de la clase <span class="required-indicator">*</span></span>
       <input id="p-clase-nueva" 
              type="text" 
@@ -173,13 +173,13 @@
              data-validation-rules="soloLetras,capitalizar"
              title="Solo letras, espacios, acentos y ñ">
       <small class="field-hint">Solo letras, espacios, acentos y ñ (máximo 30 caracteres)</small>
-      <div class="ui-form__actions" style="margin-top: 0.5rem; justify-content: flex-start;">
+      <div class="ui-form__actions ui-form__actions--start">
         <button id="btn-guardar-clase" class="ui-btn ui-btn--primary ui-btn--sm" type="button">Guardar clase</button>
         <button id="btn-cancelar-clase" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Cancelar</button>
       </div>
     </div>
 
-    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+    <div class="ui-form__grid ui-form__grid--two ui-form__grid--mt-sm">
       <label class="field">
         <span>Marca <span class="required-indicator">*</span></span>
         <div class="select-wrapper">
@@ -195,7 +195,7 @@
     </div>
 
     <!-- Campo oculto para nueva marca -->
-    <div id="p-marca-nueva-wrap" class="field is-hidden" style="margin-top: 0.5rem;">
+    <div id="p-marca-nueva-wrap" class="field is-hidden">
       <span>Nombre de la marca <span class="required-indicator">*</span></span>
       <input id="p-marca-nueva" 
              type="text" 
@@ -206,13 +206,13 @@
              data-validation-rules="soloLetrasNumeros,capitalizar"
              title="Solo letras, números, espacios, acentos y ñ">
       <small class="field-hint">Solo letras, números, espacios, acentos y ñ (máximo 30 caracteres)</small>
-      <div class="ui-form__actions" style="margin-top: 0.5rem; justify-content: flex-start;">
+      <div class="ui-form__actions ui-form__actions--start">
         <button id="btn-guardar-marca" class="ui-btn ui-btn--primary ui-btn--sm" type="button">Guardar marca</button>
         <button id="btn-cancelar-marca" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Cancelar</button>
       </div>
     </div>
 
-    <label class="field" style="margin-top: 0.5rem;">
+    <label class="field field--mt">
       <span>Categoría</span>
       <div class="select-wrapper">
         <select id="p-categoria" name="id_categoria" aria-label="Categoría">
@@ -222,7 +222,7 @@
       <small class="field-hint">Clasificación adicional del producto</small>
     </label>
 
-    <label class="field" style="margin-top: 0.5rem;">
+    <label class="field field--mt">
       <span>Producto <span class="required-indicator">*</span></span>
       <input id="p-modelo" 
              type="text" 
@@ -236,7 +236,7 @@
       <small class="field-hint">Letras, números, espacios, guiones y paréntesis (máximo 50 caracteres)</small>
     </label>
 
-    <label class="field" style="margin-top: 0.5rem;">
+    <label class="field field--mt">
       <span>Descripción</span>
       <textarea id="p-descripcion" 
                 name="descripcion" 
@@ -249,13 +249,13 @@
       <small class="field-hint">Sin caracteres especiales (máximo 300 caracteres)</small>
     </label>
 
-    <label class="field" style="margin-top: 0.5rem;">
+    <label class="field field--mt">
       <span>Foto del producto</span>
       <input id="p-foto" name="foto_inventario" type="file" accept="image/*">
       <small class="field-hint">Formatos permitidos: JPG, PNG, GIF (máximo 5MB)</small>
     </label>
 
-    <div class="ui-form__actions" style="margin-top: 1.5rem;">
+    <div class="ui-form__actions ui-form__actions--mt-lg">
       <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
       <button type="submit" class="ui-btn ui-btn--primary">Guardar producto</button>
     </div>
@@ -285,14 +285,14 @@
       </label>
     </div>
 
-    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+    <div class="ui-form__grid ui-form__grid--two ui-form__grid--mt-sm">
       <label class="field field--full">
         <span>Búsqueda por nombre</span>
         <input type="text" id="reporte-busqueda" placeholder="Nombre del producto...">
       </label>
     </div>
 
-    <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+    <div class="ui-form__grid ui-form__grid--two ui-form__grid--mt-sm">
       <label class="field">
         <span>Stock mínimo</span>
         <input type="number" id="reporte-stock-min" min="0" placeholder="Ej: 0">
@@ -304,22 +304,22 @@
       </label>
     </div>
 
-    <div class="ui-form__actions" style="margin-top: 1rem;">
+    <div class="ui-form__actions ui-form__actions--mt-md">
       <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
       <button id="btn-limpiar-filtros-reporte" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
     </div>
 
-    <div id="reporte-preview" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+    <div id="reporte-preview">
+      <div class="reporte-preview__header">
         <strong id="reporte-total">Total de productos: 0</strong>
-        <div style="display: flex; gap: 0.5rem;">
+          <div class="reporte-preview__actions">
           <button id="btn-exportar-excel" class="ui-btn ui-btn--success ui-btn--sm" disabled>Excel</button>
           <button id="btn-exportar-pdf" class="ui-btn ui-btn--danger ui-btn--sm" disabled>PDF</button>
           <button id="btn-imprimir" class="ui-btn ui-btn--ghost ui-btn--sm" disabled>Imprimir</button>
         </div>
       </div>
-      <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-        <table class="table" style="min-width: 500px;">
+        <div class="table-wrap table-wrap--scroll">
+          <table class="table table--min">
           <thead>
             <tr>
               <th>ID</th>

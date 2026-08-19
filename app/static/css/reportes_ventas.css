@@ -583,6 +583,23 @@
     gap: 6px;
 }
 
+#cliente-buscar-btn {
+    padding: 0 12px;
+}
+
+.select-flexible {
+    flex: 1;
+}
+
+.campo-cantidad {
+    width: 100px;
+    margin: 0;
+}
+
+#cantidad-local {
+    text-align: center;
+}
+
 /* ============================================
    MODAL - NUEVA VENTA LOCAL
    ============================================ */

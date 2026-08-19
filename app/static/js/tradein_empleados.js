@@ -152,11 +152,11 @@ const Iconos = {
                     <td>${formatDate(trade.fecha)}</td>
                     <td>
                         <strong>${escapeHtml(trade.cliente_nombre)} ${escapeHtml(trade.cliente_apellido || "")}</strong>
-                        ${trade.cliente_celular ? `<br><small style="color: var(--text-muted);">${escapeHtml(trade.cliente_celular)}</small>` : ''}
+                        ${trade.cliente_celular ? `<br><small class="texto-muted">${escapeHtml(trade.cliente_celular)}</small>` : ''}
                     </td>
                     <td><strong>${escapeHtml(trade.producto_nombre || "N/A")}</strong></td>
                     <td>${escapeHtml(trade.marca || "N/A")}</td>
-                    <td><strong style="color: var(--yellow);">${formatCurrency(trade.valor_pagado || 0)}</strong></td>
+                    <td><strong class="texto-yellow">${formatCurrency(trade.valor_pagado || 0)}</strong></td>
                     <td>
                         ${trade.tests && trade.tests.length > 0 ? 
                             `<span class="badge badge--success">✅ ${trade.tests.length} pruebas</span>` : 
@@ -626,7 +626,7 @@ const Iconos = {
                     </div>
                 `;
             }
-            container.innerHTML = html || '<p style="text-align:center; padding:2rem;">No hay pruebas configuradas</p>';
+            container.innerHTML = html || '<p class="empty-pruebas">No hay pruebas configuradas</p>';
             
             abrirModal("modal-tests");
             
@@ -743,7 +743,7 @@ const Iconos = {
                         </div>
                         <div class="detalle-item">
                             <strong>Valor pagado</strong>
-                            <span style="font-size:1.2rem; font-weight:900; color:var(--yellow);">${formatCurrency(detalle.valor_pagado || 0)}</span>
+                            <span class="detalle-valor">${formatCurrency(detalle.valor_pagado || 0)}</span>
                         </div>
                     </div>
                 </div>

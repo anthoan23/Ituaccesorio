@@ -292,7 +292,7 @@
                 placeholder="Buscar cliente por ID, nombre o cédula..."
                 autocomplete="off"
               />
-              <button type="button" id="cliente-buscar-btn" class="ui-btn ui-btn--ghost" style="padding: 0 12px;">
+              <button type="button" id="cliente-buscar-btn" class="ui-btn ui-btn--ghost">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                   <circle cx="11" cy="11" r="8"/>
                   <path d="m21 21-4.35-4.35"/>
@@ -334,13 +334,13 @@
         <div class="field field--full">
           <span class="field__label">Agregar Producto</span>
           <div class="producto-agregar-row">
-            <div class="select-wrapper" style="flex: 1;">
+            <div class="select-wrapper select-flexible">
               <select id="producto-select" class="field__input">
                 <option value="">-- Selecciona un producto --</option>
               </select>
             </div>
-            <div class="field" style="width: 100px; margin: 0;">
-              <input type="number" id="cantidad-local" class="field__input" value="1" min="1" style="text-align: center;" />
+            <div class="field campo-cantidad">
+              <input type="number" id="cantidad-local" class="field__input" value="1" min="1" />
             </div>
             <button type="button" id="agregar-producto-local" class="ui-btn ui-btn--primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">

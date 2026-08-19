@@ -434,7 +434,7 @@
       
       if (imgSrc) {
         this.validationIcon.innerHTML = `
-          <img src="${imgSrc}" alt="${altText}" class="validation-icon-img" style="display:block;width:24px;height:24px;object-fit:contain;">
+          <img src="${imgSrc}" alt="${altText}" class="validation-icon-img">
         `;
       }
       

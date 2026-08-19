@@ -1239,7 +1239,7 @@ function renderDetalleOrdenModal(detalle) {
         ${detalle.Nota || detalle.Nota_orden_servicio ? `
             <div class="detail-group field--full">
                 <span class="detail-label">Notas adicionales</span>
-                <span class="detail-value" style="font-style: italic;">${Utils.escapeHtml(detalle.Nota || detalle.Nota_orden_servicio)}</span>
+                <span class="detail-value detail-value--italic">${Utils.escapeHtml(detalle.Nota || detalle.Nota_orden_servicio)}</span>
             </div>
         ` : ''}
     `;

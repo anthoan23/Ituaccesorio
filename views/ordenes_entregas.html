@@ -136,7 +136,7 @@
         <div id="detalle-orden-info" class="device-detail__grid">
             <p class="device-detail__empty">Cargando...</p>
         </div>
-        <div class="table-wrap" style="margin-top: 1rem;">
+        <div class="table-wrap table-wrap--mt">
             <table class="table">
                 <thead>
                     <tr>
@@ -152,7 +152,7 @@
                 </tbody>
             </table>
         </div>
-        <p class="form__total" style="margin-top: 1rem; font-weight: 700;">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
+        <p class="form__total form__total--mt">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
     {% endcall %}
 
     <!-- Modal Editar Entrega -->
@@ -163,11 +163,11 @@
             <div class="ui-form__grid ui-form__grid--two">
                 <label class="field">
                     <span>ID Entrega</span>
-                    <input id="editar-id-entrega" type="text" readonly style="font-weight: bold; background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="editar-id-entrega" type="text" readonly>
                 </label>
                 <label class="field">
                     <span>ID Orden</span>
-                    <input id="editar-id-orden-entrega" type="text" readonly style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="editar-id-orden-entrega" type="text" readonly>
                 </label>
             </div>
             
@@ -210,7 +210,7 @@
                 <button class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
             </div>
             <div class="ui-modal__body">
-                <p id="mensaje-texto" style="text-align: center; font-size: 1rem; color: var(--text-strong);"></p>
+                <p id="mensaje-texto"></p>
             </div>
         </div>
     </div>

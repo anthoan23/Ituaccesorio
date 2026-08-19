@@ -49,3 +49,16 @@
         grid-template-columns: 1fr;
     }
 }
+
+#especialidades-container {
+    display: none;
+}
+
+#detalle-especialidades-container {
+    display: none;
+}
+
+.remove-especialidad {
+    cursor: pointer;
+    margin-left: 8px;
+}
