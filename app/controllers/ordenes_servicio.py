@@ -32,7 +32,6 @@ def registrar_equipo():
     if not id_equipo or not color or not patron:
         return jsonify({"success": False, "message": "ID del equipo, color y patrón son obligatorios."}), 400
 
-    # CORRECCIÓN: No convertir id_equipo ni patron a int, se envían como strings al modelo
     if not id_equipo.isdigit():
         return jsonify({"success": False, "message": "El ID del equipo debe ser numérico."}), 400
         
@@ -159,8 +158,8 @@ def listar_ordenes_servicio():
                 normalizadas.append("Pendiente")
             elif st_lower in ("asignada", "asignado"):
                 normalizadas.append("Asignada")
-            elif st_lower in ("revisado", "revisada", "en revision", "en revisión"):
-                normalizadas.append("Revisado")
+            elif st_lower in ("en proceso", "en_proceso", "proceso", "enproceso"):
+                normalizadas.append("En proceso")
             elif st_lower in ("reparada", "reparado"):
                 normalizadas.append("Reparada")
             else:
@@ -431,6 +430,32 @@ def detalle_orden_servicio(id_orden):
     )
 
 
+# ============================================
+# RUTA PARA OBTENER DETALLE DE UN TEST ESPECÍFICO
+# ============================================
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/test/<string:num_test>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def detalle_test_orden(id_orden, num_test):
+    """Obtiene los componentes de un test específico de una orden"""
+    try:
+        tests_model = Tests()
+        componentes = tests_model.obtener_test_por_orden_y_numero(id_orden, num_test)
+        
+        if not componentes:
+            return jsonify({"success": False, "error": "No se encontraron componentes para este test."}), 404
+        
+        return jsonify({
+            "success": True,
+            "componentes": componentes,
+            "id_orden": id_orden,
+            "num_test": num_test
+        })
+    except Exception as e:
+        print(f"[ERROR] Error al obtener detalle del test: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # Ruta para asignar una orden
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/asignar", methods=["POST"])
 @jwt_required
@@ -494,8 +519,8 @@ def registrar_test_orden(id_orden):
     empleado_id = g.user.get("cedula")
     
     campos = [
-        'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
-        'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+        'ID_em', 'Num_test', 'Botón Power','Botón Vol','Cornetas','Mica','LCD','Tactil','Wifi',
+        'Puerto_carga','Cámara posterior','Cámara delantera','Microfono','Flash','Botón Silencio','Auricular',
         'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
     ]
 

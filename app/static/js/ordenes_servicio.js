@@ -245,6 +245,8 @@ function getDomElements() {
         camposNatural: document.getElementById("cliente-campos-natural"),
         camposJuridico: document.getElementById("cliente-campos-juridico"),
         revisionOrdenNumero: document.getElementById("revision-orden-numero"),
+        inputBuscar: document.getElementById("input-buscar-ordenes"),
+        filtroEstado: document.getElementById("filtro-estado-orden"),
     };
 }
 
@@ -255,7 +257,15 @@ function renderTablaOrdenes(ordenesData) {
     const { tablaOrdenes } = getDomElements();
     if (!tablaOrdenes) return;
 
+    // Si no hay datos, mostrar mensaje
+    if (!ordenesData || !ordenesData.length) {
+        tablaOrdenes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes que coincidan con los filtros.</td></tr>';
+        return;
+    }
+
+    // Filtrar para excluir "En proceso"
     const ordenesFiltradas = ordenesData.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
+    
     if (!ordenesFiltradas.length) {
         tablaOrdenes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes registradas.</td></tr>';
         return;
@@ -357,6 +367,42 @@ async function cargarTecnicos() {
     } catch (error) {
         console.error("Error cargando técnicos:", error);
     }
+}
+
+// ============================================
+// 7.1 FUNCIONES DE FILTRADO Y BÚSQUEDA
+// ============================================
+
+function filtrarOrdenes() {
+    const { inputBuscar, filtroEstado } = getDomElements();
+    
+    const terminoBusqueda = inputBuscar?.value?.toLowerCase()?.trim() || "";
+    const estadoFiltro = filtroEstado?.value?.toLowerCase()?.trim() || "";
+    
+    let ordenesFiltradas = [...ordenes];
+    
+    // Filtrar por estado
+    if (estadoFiltro) {
+        ordenesFiltradas = ordenesFiltradas.filter((o) => {
+            const estadoOrden = String(o.Estado || "").toLowerCase().trim();
+            return estadoOrden === estadoFiltro;
+        });
+    }
+    
+    // Filtrar por búsqueda (ID, cliente o equipo)
+    if (terminoBusqueda) {
+        ordenesFiltradas = ordenesFiltradas.filter((o) => {
+            const idOrden = String(o.ID_orden || "").toLowerCase();
+            const clienteNombre = `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}`.toLowerCase();
+            const equipo = String(o.Equipo || "").toLowerCase();
+            
+            return idOrden.includes(terminoBusqueda) ||
+                   clienteNombre.includes(terminoBusqueda) ||
+                   equipo.includes(terminoBusqueda);
+        });
+    }
+    
+    renderTablaOrdenes(ordenesFiltradas);
 }
 
 // ============================================
@@ -773,10 +819,10 @@ function marcarTodosTestsOK() {
 // ============================================
 function recolectarTests() {
     const testCampos = [
-        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
-        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
-        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
-        'Face_id', 'Bluetooth'
+        'Botón Power', 'Botón Vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Wifi', 'Puerto_carga', 'Cámara posterior', 'Cámara delantera', 'Microfono',
+        'Flash', 'Botón Silencio', 'Auricular', 'Senal', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth', 'Caja', 'Cargador', 'Cable', 'Manuales'
     ];
     
     const testsData = [];
@@ -1053,10 +1099,10 @@ async function confirmarRevision(event) {
     const testsData = recolectarTests();
     
     const testCampos = [
-        'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
-        'Wifi', 'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono',
-        'Flash', 'Btn_sil', 'Auricular', 'Senal', 'Sensor_proximidad',
-        'Face_id', 'Bluetooth'
+        'Botón Power', 'Botón Vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
+        'Wifi', 'Puerto_carga', 'Cámara posterior', 'Cámara delantera', 'Microfono',
+        'Flash', 'Botón Silencio', 'Auricular', 'Senal', 'Sensor_proximidad',
+        'Face_id', 'Bluetooth', 'Caja', 'Cargador', 'Cable', 'Manuales'
     ];
     
     let todosSeleccionados = true;
@@ -1116,8 +1162,9 @@ async function confirmarRevision(event) {
 }
 
 // ============================================
-// 17. FUNCIONES DE DETALLE DE ORDEN
+// 17. FUNCIONES DE DETALLE DE ORDEN (ESTILO TALLER)
 // ============================================
+
 async function abrirDetalleOrden(idOrden) {
     try {
         const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}`);
@@ -1128,14 +1175,13 @@ async function abrirDetalleOrden(idOrden) {
 
         renderDetalleOrdenModal(detalle);
         renderFotosOrdenModal(data.fotos_orden || []);
-        renderTestsOrdenModal(data.test_orden || []);
+        renderTestsOrdenModal(data.test_orden || [], idOrden);
 
         const { detalleOrdenId, revisionOrdenId, fotosOrdenId, revisionOrdenNumero } = getDomElements();
         if (detalleOrdenId) detalleOrdenId.value = String(idOrden);
         if (revisionOrdenId) revisionOrdenId.value = String(idOrden);
         if (fotosOrdenId) fotosOrdenId.value = String(idOrden);
 
-        // Actualizar el subtítulo del modal de revisión con el número de orden
         if (revisionOrdenNumero) {
             revisionOrdenNumero.textContent = String(idOrden);
         }
@@ -1228,7 +1274,7 @@ function renderFotosOrdenModal(fotos) {
     `;
 }
 
-function renderTestsOrdenModal(tests) {
+function renderTestsOrdenModal(tests, idOrden) {
     const container = document.getElementById('modal-order-tests');
     if (!container) return;
 
@@ -1237,31 +1283,120 @@ function renderTestsOrdenModal(tests) {
         return;
     }
 
+    // Agrupar tests por número de test
+    const testsPorNumero = {};
+    tests.forEach(test => {
+        const num = test.Num_test || test.num_test || '1';
+        if (!testsPorNumero[num]) {
+            testsPorNumero[num] = [];
+        }
+        testsPorNumero[num].push(test);
+    });
+
+    // Obtener los números de test ordenados
+    const numerosTest = Object.keys(testsPorNumero).sort((a, b) => Number(a) - Number(b));
+
     container.innerHTML = `
         <h3 class="card__subtitle">Historial de revisiones</h3>
         <div class="tests-table-wrap">
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>N°</th>
-                        <th>Observaciones</th>
-                        <th>Costo</th>
+                        <th>N° Test</th>
+                        <th>Cantidad</th>
+                        <th class="table__actions">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tests.map((test) => `
-                        <tr>
-                            <td>${Utils.escapeHtml(Utils.formatFecha(test.Fecha_e ?? test.Fecha ?? ""))}</td>
-                            <td>${Utils.escapeHtml(test.Num_test ?? "")}</td>
-                            <td>${Utils.escapeHtml(test.Observaciones ?? test.Resultado_test ?? "")}</td>
-                            <td>${test.Costo_reparacion ? `$${Number(test.Costo_reparacion).toFixed(2)}` : "—"}</td>
-                        </tr>
-                    `).join("")}
+                    ${numerosTest.map((num) => {
+                        const items = testsPorNumero[num];
+                        const cantidad = items.length;
+                        return `
+                            <tr>
+                                <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(num)}</span></td>
+                                <td data-label="Cantidad">${cantidad} ${cantidad === 1 ? 'componente' : 'componentes'}</td>
+                                <td data-label="Acción" class="table__actions">
+                                    <button type="button" class="icon-action icon-action--view" data-action="ver-test-detalle" data-id-orden="${Utils.escapeHtml(idOrden)}" data-num-test="${Utils.escapeHtml(num)}" title="Ver detalles del test">
+                                        ${Iconos.ojo}
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
     `;
+
+    // Event listeners para los botones de ver test
+    container.querySelectorAll('[data-action="ver-test-detalle"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const idOrd = btn.getAttribute('data-id-orden');
+            const numTest = btn.getAttribute('data-num-test');
+            await verDetalleTest(idOrd, numTest);
+        });
+    });
+}
+
+// ============================================
+// 17.1 FUNCIÓN PARA VER DETALLE DE TEST
+// ============================================
+
+async function verDetalleTest(idOrden, numTest) {
+    const modalBody = document.getElementById('modal-test-detalle-body');
+    if (!modalBody) return;
+
+    modalBody.innerHTML = `
+        <div class="test-detail-loading">
+            <span class="spinner-loading"></span>
+            <span>Cargando detalles del test #${Utils.escapeHtml(numTest)}...</span>
+        </div>
+    `;
+
+    // Actualizar título del modal
+    const modalTitle = document.querySelector('#modal-test-detalle .ui-modal__title');
+    if (modalTitle) {
+        modalTitle.textContent = `Detalle del test #${numTest} - Orden ${idOrden}`;
+    }
+
+    if (window.UiModal && typeof window.UiModal.openById === 'function') {
+        window.UiModal.openById('modal-test-detalle');
+    }
+
+    try {
+        // Obtener los detalles del test desde el backend
+        const data = await Utils.fetchJson(`/api/ordenes-servicio/ordenes/${encodeURIComponent(idOrden)}/test/${encodeURIComponent(numTest)}`);
+        
+        const componentes = data.componentes || data.tests || [];
+
+        if (!componentes || !componentes.length) {
+            modalBody.innerHTML = '<p class="device-detail__empty">No se encontraron componentes para este test.</p>';
+            return;
+        }
+
+        // Renderizar los componentes en grid de 4 columnas
+        modalBody.innerHTML = `
+            <div class="test-detail-grid">
+                ${componentes.map((comp) => {
+                    const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Componente';
+                    const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
+                    const esOk = resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
+                    const badgeClass = esOk ? 'test-badge--success' : 'test-badge--danger';
+                    return `
+                        <div class="test-detail-item">
+                            <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                            <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(resultado)}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error al cargar detalle del test:', error);
+        modalBody.innerHTML = `<p class="device-detail__empty error">Error al cargar el detalle: ${Utils.escapeHtml(error.message)}</p>`;
+    }
 }
 
 // ============================================
@@ -1329,10 +1464,10 @@ async function guardarRevision(event) {
 
     const payload = {};
     const campos = [
-        "Btn_power", "Btn_vol", "Cornetas", "Mica", "LCD", "Tactil",
-        "Wifi", "Puerto_carga", "Cam_pos", "Cam_del", "Microfono",
-        "Flash", "Btn_sil", "Auricular", "Senal", "Sensor_proximidad",
-        "Face_id", "Bluetooth"
+        "Botón Power", "Botón Vol", "Cornetas", "Mica", "LCD", "Tactil",
+        "Wifi", "Puerto_carga", "Cámara posterior", "Cámara delantera", "Microfono",
+        "Flash", "Botón Silencio", "Auricular", "Senal", "Sensor_proximidad",
+        "Face_id", "Bluetooth", "Caja", "Cargador", "Cable", "Manuales"
     ];
 
     campos.forEach((campo) => {
@@ -1447,6 +1582,8 @@ document.addEventListener("DOMContentLoaded", () => {
         formRevisionInicial,
         btnConfirmarRevision,
         clienteTipo,
+        inputBuscar,
+        filtroEstado,
     } = getDomElements();
 
     if (inputFecha) {
@@ -1682,6 +1819,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         // Inicializar con el valor por defecto
         toggleCamposCliente(clienteTipo.value);
+    }
+
+    // ============================================
+    // FILTROS Y BÚSQUEDA
+    // ============================================
+
+    if (inputBuscar) {
+        inputBuscar.addEventListener("input", filtrarOrdenes);
+        // También al presionar Enter para mejor UX
+        inputBuscar.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                filtrarOrdenes();
+            }
+        });
+    }
+
+    if (filtroEstado) {
+        filtroEstado.addEventListener("change", filtrarOrdenes);
     }
 
     // ============================================

@@ -38,9 +38,9 @@
         <strong class="stat-card__value" id="stat-asignadas" data-count="0">0</strong>
         <small class="stat-card__meta">Órdenes en proceso</small>
       </article>
-      <article class="stat-card" data-estado-card="revisada">
-        <span class="stat-card__label">Revisadas</span>
-        <strong class="stat-card__value" id="stat-revisadas" data-count="0">0</strong>
+      <article class="stat-card" data-estado-card="en_proceso">
+        <span class="stat-card__label">En proceso</span>
+        <strong class="stat-card__value" id="stat-en-proceso" data-count="0">0</strong>
         <small class="stat-card__meta">Órdenes en revisión</small>
       </article>
       <article class="stat-card stat-card--accent" data-estado-card="reparada">
@@ -91,7 +91,7 @@
               <option value="">Todos</option>
               <option value="pendiente">Pendiente</option>
               <option value="asignada">Asignada</option>
-              <option value="revisada">Revisada</option>
+              <option value="en proceso">En proceso</option>
               <option value="reparada">Reparada</option>
             </select>
           </div>
@@ -499,14 +499,14 @@
     </form>
   {% endcall %}
 
-  <!-- Modal de Revisión Inicial Obligatoria -->
+  <!-- ============================================ -->
+  <!-- MODAL DE REVISIÓN INICIAL - ESTILO TALLER    -->
+  <!-- ============================================ -->
   {% call modal('modal-revision-inicial', 'Revisión inicial del equipo', 'lg') %}
-    <p class="revision-header">
-      Realiza una revisión completa del equipo para registrar el estado inicial de todos sus componentes.
-    </p>
-    
     <form class="ui-form" id="form-revision-inicial">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      
+      <p class="revision-subtitle">Registro del estado inicial del equipo</p>
       
       <div class="revision-components-header">
         <h3>Componentes del equipo</h3>
@@ -515,54 +515,271 @@
         </button>
       </div>
       
-      <div class="test-grid">
-        {% set componentes_iniciales = [
-          ('Btn_power', 'Botón Power'),
-          ('Btn_vol', 'Botón Volumen'),
-          ('Cornetas', 'Cornetas'),
-          ('Mica', 'Mica'),
-          ('LCD', 'LCD'),
-          ('Tactil', 'Táctil'),
-          ('Wifi', 'WiFi'),
-          ('Puerto_carga', 'Puerto Carga'),
-          ('Cam_pos', 'Cámara Posterior'),
-          ('Cam_del', 'Cámara Delantera'),
-          ('Microfono', 'Micrófono'),
-          ('Flash', 'Flash'),
-          ('Btn_sil', 'Botón Silencio'),
-          ('Auricular', 'Auricular'),
-          ('Senal', 'Señal'),
-          ('Sensor_proximidad', 'Sensor Proximidad'),
-          ('Face_id', 'Face ID'),
-          ('Bluetooth', 'Bluetooth')
-        ] %}
-        
-        {% for name, label in componentes_iniciales %}
-        <div class="test-row-item">
-          <span class="test-label">{{ label }}</span>
-          <div class="radio-group">
-            <label class="radio-label radio-label--success">
-              <input type="radio" name="test_{{ name }}" value="1" checked> OK
-            </label>
-            <label class="radio-label radio-label--danger">
-              <input type="radio" name="test_{{ name }}" value="0"> ✗
-            </label>
+      <div class="revision-grid">
+        <!-- Columna 1 -->
+        <div class="revision-column">
+          <div class="test-row-item">
+            <span class="test-label">Botón Power</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Botón Power" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Botón Power" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cornetas</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Cornetas" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Cornetas" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Mica</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Mica" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Mica" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">LCD</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_LCD" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_LCD" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Táctil</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Tactil" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Tactil" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Botón Vol</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Botón Vol" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Botón Vol" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Botón Silencio</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Botón Silencio" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Botón Silencio" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Puerto Carga</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Puerto_carga" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Puerto_carga" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">WiFi</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Wifi" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Wifi" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cámara Posterior</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Cámara posterior" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Cámara posterior" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cámara Delantera</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Cámara delantera" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Cámara delantera" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Flash</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Flash" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Flash" value="0"> ✗
+              </label>
+            </div>
           </div>
         </div>
-        {% endfor %}
+
+        <!-- Columna 2 -->
+        <div class="revision-column">
+          <div class="test-row-item">
+            <span class="test-label">Micrófono</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Microfono" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Microfono" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Señal</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Senal" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Senal" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Sensor Proximidad</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Sensor_proximidad" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Sensor_proximidad" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Face ID</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Face_id" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Face_id" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Bluetooth</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Bluetooth" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Bluetooth" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Caja</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Caja" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Caja" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cargador</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Cargador" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Cargador" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Cable</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Cable" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Cable" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Auricular</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Auricular" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Auricular" value="0"> ✗
+              </label>
+            </div>
+          </div>
+          <div class="test-row-item">
+            <span class="test-label">Manuales</span>
+            <div class="radio-group">
+              <label class="radio-label radio-label--success">
+                <input type="radio" name="test_Manuales" value="1" checked> OK
+              </label>
+              <label class="radio-label radio-label--danger">
+                <input type="radio" name="test_Manuales" value="0"> ✗
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <label class="field field--full" style="margin-top: 0.75rem;">
-        <span>Observaciones de la revisión</span>
-        <textarea id="revision-observaciones" 
-                  name="observaciones" 
-                  rows="3" 
-                  placeholder="Observaciones de la revisión inicial..." 
-                  maxlength="250"
-                  data-validation-rules="sinCaracteresEspeciales"
-                  title="Sin caracteres especiales"></textarea>
-        <small class="field-hint">Máximo 250 caracteres</small>
-      </label>
+      <div class="revision-observations">
+        <label class="field field--full">
+          <span class="field-label">Observaciones de la revisión</span>
+          <textarea id="revision-observaciones" 
+                    name="observaciones" 
+                    rows="3" 
+                    placeholder="Observaciones de la revisión inicial..." 
+                    maxlength="250"
+                    data-validation-rules="sinCaracteresEspeciales"
+                    title="Sin caracteres especiales"></textarea>
+          <small class="field-hint">Máximo 250 caracteres</small>
+        </label>
+      </div>
 
       <div class="ui-form__actions revision-actions">
         <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
@@ -571,7 +788,9 @@
     </form>
   {% endcall %}
 
-  <!-- Modal Detalle de Orden -->
+  <!-- ============================================ -->
+  <!-- MODAL DETALLE DE ORDEN - ESTILO TALLER       -->
+  <!-- ============================================ -->
   {% call modal('modal-detalle-orden', 'Detalle de orden', 'lg') %}
     <input type="hidden" id="detalle-orden-id" value="">
     
@@ -583,6 +802,18 @@
       <div id="modal-order-tests" class="device-tests"></div>
     </div>
 
+    <div class="ui-form__actions">
+      <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
+    </div>
+  {% endcall %}
+
+  <!-- ============================================ -->
+  <!-- MODAL DETALLE DE TEST                       -->
+  <!-- ============================================ -->
+  {% call modal('modal-test-detalle', 'Detalle del test', 'lg') %}
+    <div id="modal-test-detalle-body" class="test-detail-container">
+      <p class="device-detail__empty">Cargando información...</p>
+    </div>
     <div class="ui-form__actions">
       <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
     </div>
@@ -603,10 +834,10 @@
             <span class="test-label">Botón Power</span>
             <div class="radio-group">
               <label class="radio-label radio-label--success">
-                <input type="radio" name="Btn_power" value="1"> Funciona
+                <input type="radio" name="Botón Power" value="1"> Funciona
               </label>
               <label class="radio-label radio-label--danger">
-                <input type="radio" name="Btn_power" value="0" checked> No funciona
+                <input type="radio" name="Botón Power" value="0" checked> No funciona
               </label>
             </div>
           </div>
@@ -658,10 +889,10 @@
             <span class="test-label">Botón Vol</span>
             <div class="radio-group">
               <label class="radio-label radio-label--success">
-                <input type="radio" name="Btn_vol" value="1"> Funciona
+                <input type="radio" name="Botón Vol" value="1"> Funciona
               </label>
               <label class="radio-label radio-label--danger">
-                <input type="radio" name="Btn_vol" value="0" checked> No funciona
+                <input type="radio" name="Botón Vol" value="0" checked> No funciona
               </label>
             </div>
           </div>
@@ -669,10 +900,10 @@
             <span class="test-label">Botón Silencio</span>
             <div class="radio-group">
               <label class="radio-label radio-label--success">
-                <input type="radio" name="Btn_sil" value="1"> Funciona
+                <input type="radio" name="Botón Silencio" value="1"> Funciona
               </label>
               <label class="radio-label radio-label--danger">
-                <input type="radio" name="Btn_sil" value="0" checked> No funciona
+                <input type="radio" name="Botón Silencio" value="0" checked> No funciona
               </label>
             </div>
           </div>
@@ -702,10 +933,10 @@
             <span class="test-label">Cámara Posterior</span>
             <div class="radio-group">
               <label class="radio-label radio-label--success">
-                <input type="radio" name="Cam_pos" value="1"> Funciona
+                <input type="radio" name="Cámara posterior" value="1"> Funciona
               </label>
               <label class="radio-label radio-label--danger">
-                <input type="radio" name="Cam_pos" value="0" checked> No funciona
+                <input type="radio" name="Cámara posterior" value="0" checked> No funciona
               </label>
             </div>
           </div>
@@ -713,10 +944,10 @@
             <span class="test-label">Cámara Delantera</span>
             <div class="radio-group">
               <label class="radio-label radio-label--success">
-                <input type="radio" name="Cam_del" value="1"> Funciona
+                <input type="radio" name="Cámara delantera" value="1"> Funciona
               </label>
               <label class="radio-label radio-label--danger">
-                <input type="radio" name="Cam_del" value="0" checked> No funciona
+                <input type="radio" name="Cámara delantera" value="0" checked> No funciona
               </label>
             </div>
           </div>

@@ -80,7 +80,7 @@ class Orden_servicio():
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
                 LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 INNER JOIN Producto p ON e.ID_producto = p.ID_producto
-                WHERE os.Estado_orden_servicio IN ('Pendiente', 'En Proceso')
+                WHERE os.Estado_orden_servicio IN ('Pendiente', 'En proceso')
                 ORDER BY os.ID_orden_servicio DESC;
                 """
             )
@@ -224,9 +224,6 @@ class Orden_servicio():
             db.close()
 
 
-
- 
-           
     def eliminar_foto_orden_servicio(self) -> dict:
         """
         Elimina una foto de la base de datos y retorna la ruta para eliminar el archivo físico
@@ -278,7 +275,6 @@ class Orden_servicio():
         finally:
             cursor.close()
             db.close()
-
 
 
     def registrar_fotos(self,) -> dict:
@@ -428,20 +424,6 @@ class Orden_servicio():
         finally:
             cursor.close()
             db.close()
-
-
-
-
-
-
-#============================================
-# ESTO ES DEL ORDENES DE SERVICIO SIN ESTO NO FUNCIONA UN CONO NO LO BORRES MMGVO
-# NO TOCAR, DE MANUEL ENRIQUE RODRIGUEZ MENDOZA 
-#============================================
-
-
-
-
 
 
     # ============================================
@@ -749,7 +731,7 @@ class Orden_servicio():
         
         Args:
             id_orden: ID de la orden
-            nuevo_estado: Nuevo estado (Pendiente, Asignada, En proceso, Revisada, Reparada)
+            nuevo_estado: Nuevo estado (Pendiente, Asignada, En proceso, Reparada)
         
         Returns:
             bool: True si se actualizó correctamente

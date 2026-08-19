@@ -154,9 +154,6 @@ class Tests():
 
 
 
-
-
-
 # =============================================
 # MÉTODO AGREGADO PARA EL FUNCIONAMIENTO DEL BLUEPRINT DE ÓRDENES DE SERVICIO
 # =============================================
@@ -199,7 +196,7 @@ class Tests():
         Registra un test individual en la base de datos.
         Este método es llamado desde el Blueprint de órdenes de servicio.
         
-        valores: tupla con (ID_empleado, Num_test, Btn_power, Btn_vol, Cornetas, ...)
+        valores: tupla con (ID_empleado, Num_test, Botón Power, Botón Vol, Cornetas, ...)
         id_orden: ID de la orden de servicio
         """
         db = self._conexion.conexion1()
@@ -228,8 +225,8 @@ class Tests():
             # Construir la lista de tests a partir de los valores
             # Los campos después del índice 1 son los resultados de los tests
             nombres_tests = [
-                'Btn_power', 'Btn_vol', 'Cornetas', 'Mica', 'LCD', 'Tactil', 'Wifi',
-                'Puerto_carga', 'Cam_pos', 'Cam_del', 'Microfono', 'Flash', 'Btn_sil',
+                'Botón Power', 'Botón Vol', 'Cornetas', 'Mica', 'LCD', 'Tactil', 'Wifi',
+                'Puerto_carga', 'Cámara posterior', 'Cámara delantera', 'Microfono', 'Flash', 'Botón Silencio',
                 'Auricular', 'Senal', 'Sensor_proximidad', 'Face_id', 'Bluetooth'
             ]
             
@@ -323,6 +320,46 @@ class Tests():
             import traceback
             traceback.print_exc()
             return False
+        finally:
+            cursor.close()
+            db.close()
+
+    # =============================================
+    # NUEVO MÉTODO: Obtener test por orden y número
+    # =============================================
+    def obtener_test_por_orden_y_numero(self, id_orden: str, num_test: str) -> list:
+        """
+        Obtiene todos los componentes de un test específico de una orden.
+        
+        Args:
+            id_orden: ID de la orden de servicio
+            num_test: Número del test
+        
+        Returns:
+            list: Lista de componentes con sus resultados
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT 
+                    t.Nombre_test,
+                    t.Resultado_test
+                FROM Test t
+                INNER JOIN Test_realizados_interaccion tri ON t.ID_test = tri.ID_test
+                INNER JOIN Interaccion i ON tri.ID_interaccion = i.ID_interaccion
+                WHERE i.ID_orden_servicio = %s 
+                AND t.Numero_test = %s
+                ORDER BY t.Nombre_test
+            """
+            cursor.execute(sql, (id_orden, num_test))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al obtener test por orden y número: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
