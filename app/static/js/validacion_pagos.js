@@ -212,12 +212,12 @@
     const detalleContainer = document.getElementById(`detalle-${facturaId}`);
 
     if (detallesAbiertos.has(facturaId)) {
-      detalleContainer.style.display = "none";
+      detalleContainer.classList.add("is-hidden");
       detallesAbiertos.delete(facturaId);
       btnElement.innerHTML = "Ver productos";
       btnElement.classList.remove("is-active");
     } else {
-      detalleContainer.style.display = "block";
+      detalleContainer.classList.remove("is-hidden");
       detallesAbiertos.add(facturaId);
       btnElement.innerHTML = "Cargando...";
       btnElement.classList.add("is-active");
@@ -290,9 +290,9 @@
             <td>${escapeHtml(p.Nombre_producto)}</td>
             <td>${escapeHtml(p.marca || '-')}</td>
             <td>${escapeHtml(p.clase || '-')}</td>
-            <td style="text-align: center;">${p.Cantidad_articulo}</td>
-            <td style="text-align: right;">${formatMoneyByCurrency(p.precio_unitario, venta.Moneda)}</td>
-            <td style="text-align: right;">${formatMoneyByCurrency(p.subtotal, venta.Moneda)}</td>
+            <td class="cell-center">${p.Cantidad_articulo}</td>
+            <td class="cell-right">${formatMoneyByCurrency(p.precio_unitario, venta.Moneda)}</td>
+            <td class="cell-right">${formatMoneyByCurrency(p.subtotal, venta.Moneda)}</td>
           </tr>
         `;
       }
@@ -427,11 +427,11 @@
             </div>
           </div>
 
-          <div style="margin-top:0.75rem">
+          <div class="detalle-actions">
             <button class="btn-ver-detalle ${estaAbierto ? "is-active" : ""}" data-factura="${p.factura_id}">${estaAbierto ? "Ocultar productos" : "Ver productos"}</button>
           </div>
 
-          <div id="detalle-${p.factura_id}" class="productos-list" style="display: ${estaAbierto ? "block" : "none"};">
+          <div id="detalle-${p.factura_id}" class="productos-list${estaAbierto ? "" : " is-hidden"}">
             ${estaAbierto ? '<div class="loading-productos">Cargando productos...</div>' : ""}
           </div>
 
@@ -773,8 +773,8 @@
               <td>${escapeHtml(p.Referencia || '-')}</td>
               <td>${formatMoneyPagos(p.monto_pagado, p.pago_moneda)}</td>
               <td>${getEstadoBadgeHtml(p.estado)}</td>
-              <td style="text-align: center;">${p.total_productos || 0}</td>
-              <td style="text-align: center;">
+              <td class="cell-center">${p.total_productos || 0}</td>
+              <td class="cell-center">
                 <button class="ui-btn ui-btn--ghost ui-btn--sm btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver</button>
               </td>
             </tr>
@@ -1016,7 +1016,7 @@
                 <td>${escapeHtml(p.Referencia || '-')}</td>
                 <td>${formatMoneyPagos(p.monto_pagado, p.pago_moneda)}</td>
                 <td><span class="badge badge-${p.estado || 'pendiente'}">${p.estado || 'pendiente'}</span></td>
-                <td style="text-align: center;">${p.total_productos || 0}</td>
+                <td class="cell-center">${p.total_productos || 0}</td>
               </tr>
             `).join('')}
           </tbody>

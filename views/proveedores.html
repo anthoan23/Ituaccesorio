@@ -223,7 +223,7 @@
       <div class="ui-form__grid ui-form__grid--two">
         <label class="field">
           <span>ID</span>
-          <input id="e-id" name="id_readonly" type="text" disabled style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+          <input id="e-id" name="id_readonly" type="text" disabled>
         </label>
 
         <label class="field">
@@ -473,7 +473,7 @@
         </label>
       </div>
       
-      <div class="ui-form__grid ui-form__grid--two" style="margin-top: 0.5rem;">
+      <div class="ui-form__grid ui-form__grid--two ui-form__grid--mt-sm">
         <label class="field">
           <span>Límite crédito mínimo</span>
           <input type="number" id="reporte-limite-min" min="0" placeholder="Ej: 0" class="field__input">
@@ -485,22 +485,22 @@
         </label>
       </div>
 
-      <div class="ui-form__actions" style="margin-top: 1rem;">
+      <div class="ui-form__actions ui-form__actions--mt-md">
         <button id="btn-generar-reporte" class="ui-btn ui-btn--primary">Generar reporte</button>
         <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost">Limpiar filtros</button>
       </div>
 
-      <div id="reporte-preview" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <div id="reporte-preview">
+        <div class="reporte-preview__header">
           <strong id="reporte-total">Total de proveedores: 0</strong>
-          <div style="display: flex; gap: 0.5rem;">
+          <div class="reporte-preview__actions">
             <button id="btn-exportar-excel" class="ui-btn ui-btn--success ui-btn--sm" disabled>Excel</button>
             <button id="btn-exportar-pdf" class="ui-btn ui-btn--danger ui-btn--sm" disabled>PDF</button>
             <button id="btn-imprimir" class="ui-btn ui-btn--ghost ui-btn--sm" disabled>Imprimir</button>
           </div>
         </div>
-        <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-          <table class="table" style="min-width: 600px;">
+        <div class="table-wrap table-wrap--scroll">
+          <table class="table table--min">
             <thead>
               <tr>
                 <th>ID</th>

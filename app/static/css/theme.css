@@ -2134,3 +2134,25 @@ body {
     .confirm-modal-actions { flex-direction: column; }
     .confirm-modal-actions .ui-btn { width: 100%; justify-content: center; }
 }
+
+/* ============================================
+   UTILIDADES GLOBALES (para eliminar estilos inline por CSP)
+   ============================================ */
+.is-hidden {
+    display: none !important;
+}
+
+.input-readonly {
+    background: var(--input-bg);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.input-readonly--bold {
+    font-weight: bold;
+}
+
+/* Alineación de celdas de tabla (para eliminar estilos inline por CSP) */
+.cell-center { text-align: center; }
+.cell-right { text-align: right; }
+.cell-right-bold { text-align: right; font-weight: 600; }

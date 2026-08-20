@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.tradein_empleados import TradeInEmpleados
 from app.utils.validators import (
-    validar_texto,
+    validar_texto_numero,
     validar_numero,
     validar_solo_letras,
     validar_solo_letras_numeros,
@@ -54,7 +54,7 @@ def api_registrar_trade_in():
         if not id_producto:
             return jsonify({"success": False, "error": "El campo Producto/Modelo es obligatorio."}), 400
         
-        error = validar_numero(id_producto, 1, 10, "Producto")
+        error = validar_texto_numero(id_producto, 1, 10, "Producto")
         if error:
             return jsonify({"success": False, "error": error}), 400
         
@@ -227,7 +227,7 @@ def api_verificar_equipo(id_equipo):
 def api_actualizar_trade_in(tradein_id):
     try:
         # Validar ID de trade-in
-        error = validar_numero(tradein_id, 1, 10, "ID de Trade-in")
+        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
         if error:
             return jsonify({"success": False, "error": error}), 400
         
@@ -245,7 +245,7 @@ def api_actualizar_trade_in(tradein_id):
         if not id_producto:
             return jsonify({"success": False, "error": "El campo Producto/Modelo es obligatorio."}), 400
         
-        error = validar_numero(id_producto, 1, 10, "Producto")
+        error = validar_texto_numero(id_producto, 1, 10, "Producto")
         if error:
             return jsonify({"success": False, "error": error}), 400
         
@@ -418,7 +418,7 @@ def api_trade_ins_por_cliente(cliente_id):
 @tiene_permiso('Trade-in', 'consultar')
 def api_tradein_detalle(tradein_id):
     try:
-        error = validar_numero(tradein_id, 1, 10, "ID de Trade-in")
+        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
         if error:
             return jsonify({"success": False, "error": error}), 400
         
@@ -526,7 +526,7 @@ def api_catalogo_tests():
 @tiene_permiso('Trade-in', 'eliminar')
 def api_eliminar_trade_in(tradein_id):
     try:
-        error = validar_numero(tradein_id, 1, 10, "ID de Trade-in")
+        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
         if error:
             return jsonify({"success": False, "error": error}), 400
         

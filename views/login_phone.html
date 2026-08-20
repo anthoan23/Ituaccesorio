@@ -13,7 +13,7 @@
 {% block content %}
 	<main class="login-phone">
 		<!-- Elemento oculto para pasar el estado del modo prueba al JavaScript -->
-		<div data-test-mode="{{ 'true' if is_test_mode else 'false' }}" style="display: none;"></div>
+		<div class="test-mode-flag" data-test-mode="{{ 'true' if is_test_mode else 'false' }}"></div>
 		
 		<section class="login-phone__info" aria-label="Información adicional sobre el login">
 			<img src="{{ url_for('static', filename='img/LOGO COMPLETO.png') }}" alt="Ituaccesorio">
@@ -83,7 +83,7 @@
 									</div>
 								{% else %}
 									<!-- En modo prueba, el captcha está oculto -->
-									<div class="phone__captcha-wrapper" style="display: none;">
+									<div class="phone__captcha-wrapper phone__captcha-wrapper--hidden">
 										<div class="phone__captcha">
 											<div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-size="normal"></div>
 										</div>
@@ -178,7 +178,7 @@
 						       maxlength="15"
 						       data-validation-rules="soloLetras,capitalizar"
 						       title="Solo letras, espacios, acentos y ñ">
-						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
+						<small class="field-hint" >Solo letras, espacios, acentos y ñ</small>
 					</label>
 					<label class="ui-field">
 						<span>Apellido *</span>
@@ -188,7 +188,7 @@
 						       maxlength="15"
 						       data-validation-rules="soloLetras,capitalizar"
 						       title="Solo letras, espacios, acentos y ñ">
-						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Solo letras, espacios, acentos y ñ</small>
+						<small class="field-hint" >Solo letras, espacios, acentos y ñ</small>
 					</label>
 					<label class="ui-field">
 						<span>Celular *</span>
@@ -198,7 +198,7 @@
 						       maxlength="11"
 						       data-validation-rules="telefono"
 						       title="Formato: 04141234567 (11 dígitos)">
-						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">11 dígitos (ej: 04141234567)</small>
+						<small class="field-hint" >11 dígitos (ej: 04141234567)</small>
 					</label>
 					<label class="ui-field">
 						<span>Correo</span>
@@ -207,7 +207,7 @@
 						       maxlength="120"
 						       data-validation-rules="email"
 						       title="Correo electrónico válido">
-						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">ejemplo@dominio.com</small>
+						<small class="field-hint" >ejemplo@dominio.com</small>
 					</label>
 					<label class="ui-field ui-field--full">
 						<span>Dirección</span>
@@ -216,7 +216,7 @@
 						       maxlength="40"
 						       data-validation-rules="sinCaracteresEspeciales"
 						       title="Sin caracteres especiales">
-						<small class="field-hint" style="font-size: 0.7rem; color: #6c757d; margin-top: 0.25rem; display: block;">Sin caracteres especiales (letras, números, espacios)</small>
+						<small class="field-hint" >Sin caracteres especiales (letras, números, espacios)</small>
 					</label>
 				</div>
 				<p class="registro-copy registro-copy--soft">Tipo de cliente asignado por defecto: <strong>Persona Natural</strong>.</p>

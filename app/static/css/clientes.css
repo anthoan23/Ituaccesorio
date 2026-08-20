@@ -401,3 +401,7 @@ select:disabled {
     cursor: not-allowed;
     background-color: #686a6c;
 }
+
+#campos-juridico {
+    display: none;
+}

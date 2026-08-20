@@ -86,20 +86,20 @@
             <div class="ui-form__grid ui-form__grid--two">
                 <label class="field">
                     <span>ID Proveedor</span>
-                    <input id="entrada-id-proveedor" type="text" readonly style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="entrada-id-proveedor" type="text" readonly>
                 </label>
                 <label class="field field--grow">
                     <span>Proveedor</span>
-                    <input id="entrada-nombre-proveedor" type="text" readonly style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="entrada-nombre-proveedor" type="text" readonly>
                 </label>
             </div>
 
-            <div class="ui-form__actions" style="justify-content: flex-start; margin-top: 0.5rem;">
+            <div class="ui-form__actions ui-form__actions--flex-start">
                 <button id="btn-desplegar-proveedores" class="ui-btn ui-btn--ghost" type="button">Buscar proveedor</button>
                 <button id="btn-desplegar-productos" class="ui-btn ui-btn--ghost" type="button" disabled>Agregar productos</button>
             </div>
 
-            <div class="field field--full" style="margin-top: 1rem;">
+            <div class="field field--full field--mt">
                 <span>Productos seleccionados</span>
                 <div class="table-wrap">
                     <table class="table">
@@ -119,8 +119,8 @@
                 </div>
             </div>
 
-            <div class="ui-form__actions" style="margin-top: 1rem;">
-                <p class="form__total" style="margin-right: auto; font-weight: 700;">Costo total: <strong>Bs. <span id="entrada-costo-total">0</span></strong></p>
+            <div class="ui-form__actions ui-form__actions--mt">
+                <p class="form__total form__total--auto">Costo total: <strong>Bs. <span id="entrada-costo-total">0</span></strong></p>
                 <button id="btn-guardar-entrada" class="ui-btn ui-btn--primary" type="submit" disabled>Registrar orden</button>
             </div>
         </form>
@@ -169,7 +169,7 @@
         <div id="detalle-orden-info" class="device-detail__grid">
             <p class="device-detail__empty">Cargando...</p>
         </div>
-        <div class="table-wrap" style="margin-top: 1rem;">
+        <div class="table-wrap table-wrap--mt">
             <table class="table">
                 <thead>
                     <tr>
@@ -185,7 +185,7 @@
                 </tbody>
             </table>
         </div>
-        <p class="form__total" style="margin-top: 1rem; font-weight: 700;">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
+        <p class="form__total form__total--mt">Costo total: <strong>Bs. <span id="detalle-orden-total-value">0</span></strong></p>
     {% endcall %}
 
     <!-- Modal Editar Orden -->
@@ -195,7 +195,7 @@
             
             <label class="field">
                 <span>ID Orden</span>
-                <input id="editar-id-orden" type="text" readonly style="font-weight: bold; background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                <input id="editar-id-orden" type="text" readonly>
             </label>
             
             <!-- Selector de empleado -->
@@ -211,20 +211,20 @@
             <div class="ui-form__grid ui-form__grid--two">
                 <label class="field">
                     <span>ID Proveedor</span>
-                    <input id="editar-id-proveedor" type="text" readonly style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="editar-id-proveedor" type="text" readonly>
                 </label>
                 <label class="field field--grow">
                     <span>Proveedor</span>
-                    <input id="editar-nombre-proveedor" type="text" readonly style="background:var(--input-bg); opacity:0.7; cursor:not-allowed;">
+                    <input id="editar-nombre-proveedor" type="text" readonly>
                 </label>
             </div>
 
-            <div class="ui-form__actions" style="justify-content: flex-start; margin-top: 0.5rem;">
+            <div class="ui-form__actions ui-form__actions--flex-start">
                 <button id="btn-desplegar-proveedores-editar" class="ui-btn ui-btn--ghost" type="button">Buscar proveedor</button>
                 <button id="btn-desplegar-productos-editar" class="ui-btn ui-btn--ghost" type="button" disabled>Agregar productos</button>
             </div>
 
-            <div class="field field--full" style="margin-top: 1rem;">
+            <div class="field field--full field--mt">
                 <span>Productos seleccionados</span>
                 <div class="table-wrap">
                     <table class="table">
@@ -244,8 +244,8 @@
                 </div>
             </div>
 
-            <div class="ui-form__actions" style="margin-top: 1rem;">
-                <p class="form__total" style="margin-right: auto; font-weight: 700;">Costo total: <strong>Bs. <span id="entrada-costo-total-editar">0</span></strong></p>
+            <div class="ui-form__actions ui-form__actions--mt">
+                <p class="form__total form__total--auto">Costo total: <strong>Bs. <span id="entrada-costo-total-editar">0</span></strong></p>
                 <button id="btn-guardar-editar" class="ui-btn ui-btn--primary" type="submit" disabled>Actualizar orden</button>
             </div>
         </form>
@@ -292,7 +292,7 @@
     <!-- Modal Confirmar Eliminar -->
     {% call modal('modal-confirmar-eliminar-orden', 'Confirmar eliminación', 'sm') %}
         <p id="texto-confirmar-eliminar-orden" class="confirm-text">¿Seguro que desea eliminar esta orden?</p>
-        <div class="ui-form__actions" style="margin-top: 1rem;">
+        <div class="ui-form__actions ui-form__actions--mt">
             <button class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
             <button id="btn-confirmar-eliminar-orden" class="ui-btn ui-btn--danger">Eliminar</button>
         </div>

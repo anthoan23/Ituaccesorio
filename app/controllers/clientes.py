@@ -57,7 +57,6 @@ def api_registrar_cliente():
     if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
         return jsonify({"success": False, "message": "Cédula, nombre, apellido y celular son obligatorios."}), 400
 
-    # Cambio: permitir 7 u 8 dígitos
     if not re.match(r"^\d{7,8}$", Id_cliente):
         return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
 
@@ -102,7 +101,6 @@ def api_registrar_persona_natural():
     if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
         return jsonify({"success": False, "message": "Cédula, nombre, apellido y teléfono son obligatorios."}), 400
     
-    # Cambio: permitir 7 u 8 dígitos
     if not re.match(r"^\d{7,8}$", Id_cliente):
         return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
     
@@ -145,7 +143,6 @@ def api_actualizar_persona_natural(cedula):
     if not nombre_cliente:
         return jsonify({"success": False, "message": "El nombre del cliente es obligatorio."}), 400
     
-    # Cambio: permitir 7 u 8 dígitos
     if not re.match(r"^\d{7,8}$", cedula):
         return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
     
@@ -186,7 +183,6 @@ def api_registrar_cliente_juridico():
     telefono_cliente = data.get("telefono_cliente", "").strip()
     correo_cliente = data.get("correo_cliente", "").strip()
     
-    # Validación de RIF - Formato: J-12345678-9 o E-12345678-9
     patron_rif = r'^[JE]-\d{8}-\d$'
     if not re.match(patron_rif, rif):
         return jsonify({
@@ -200,7 +196,6 @@ def api_registrar_cliente_juridico():
             "message": "La razón social es obligatoria."
         }), 400
     
-    # Validación de razón social (permite C.A., S.A., etc.)
     patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
     if not re.match(patron_razon_social, razon_social):
         return jsonify({
@@ -268,7 +263,6 @@ def api_actualizar_cliente_juridico(id_cliente):
     if not razon_social:
         return jsonify({"success": False, "message": "La razón social del cliente es obligatoria."}), 400
     
-    # Validación de razón social (permite C.A., S.A., etc.)
     patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
     if not re.match(patron_razon_social, razon_social):
         return jsonify({

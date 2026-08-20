@@ -28,13 +28,18 @@ class Clientes():
                 """
                 SELECT
                     c.ID_cliente AS id,
-                    COALESCE(CONCAT(p.Nombre_cliente, ' ', p.Apellido_cliente), j.Razon_social) AS nombre,
+                    -- Para persona natural: solo el nombre en 'nombre'
+                    p.Nombre_cliente AS nombre,
                     c.Direccion_cliente AS direccion,
                     c.Celular_cliente AS celular,
                     c.Correo_cliente AS correo,
+                    -- Para persona natural: apellido en 'apellido'
                     p.Apellido_cliente AS apellido,
+                    -- Para persona jurídica: razón social en 'razon_social'
                     j.Razon_social AS razon_social,
                     j.Rif_cliente AS rif,
+                    -- Para persona jurídica: teléfono en 'telefono'
+                    c.Celular_cliente AS telefono,
                     CASE
                         WHEN p.ID_cliente IS NOT NULL THEN 'natural'
                         WHEN j.ID_cliente IS NOT NULL THEN 'juridico'

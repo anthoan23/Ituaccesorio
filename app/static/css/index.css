@@ -65,6 +65,26 @@
     height: 18px;
 }
 
+.kpi-card__icon--yellow {
+    background: rgba(255,214,10,0.15);
+    color: #FFD60A;
+}
+
+.kpi-card__icon--blue {
+    background: rgba(0,122,255,0.15);
+    color: #007AFF;
+}
+
+.kpi-card__icon--green {
+    background: rgba(52,199,89,0.15);
+    color: #34C759;
+}
+
+.kpi-card__icon--red {
+    background: rgba(255,69,58,0.15);
+    color: #FF3B30;
+}
+
 .kpi-card__trend {
     font-size: 11px;
     font-weight: 600;
@@ -536,6 +556,12 @@
     font-size: 12px;
     padding: 12px;
     text-align: center;
+}
+
+.celda-cargando {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 16px;
 }
 
 /* ============================================ */

@@ -238,6 +238,10 @@
     border: 1px solid var(--border-light);
 }
 
+.detalle-actions {
+    margin-top: 0.75rem;
+}
+
 .productos-header {
     display: grid;
     grid-template-columns: 1fr auto auto;

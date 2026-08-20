@@ -684,8 +684,8 @@ function renderCarritoModal() {
     if (file) {
       previewUrl = URL.createObjectURL(file);
       previewContainer.innerHTML = `
-                <img src="${previewUrl}" alt="Vista previa del comprobante" style="max-width: 100%; max-height: 150px; border-radius: 8px; margin-top: 8px;">
-                <small style="display: block; color: #666;">${file.name} (${(file.size / 1024).toFixed(2)} KB)</small>
+                <img src="${previewUrl}" alt="Vista previa del comprobante" class="comprobante-preview">
+                <small class="comprobante-nombre">${file.name} (${(file.size / 1024).toFixed(2)} KB)</small>
             `;
     } else {
       previewContainer.innerHTML = "";

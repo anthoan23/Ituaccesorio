@@ -123,11 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
 				credentials: 'same-origin'
 			});
 			
-			if (response.ok) {
-				const data = await response.json();
-				permisosUsuario = data.permisos || {};
-				aplicarPermisosNavbar();
-			}
+		if (response.ok) {
+			const contentType = response.headers.get('content-type') || '';
+			if (!contentType.includes('application/json')) return;
+			const data = await response.json();
+			permisosUsuario = data.permisos || {};
+			aplicarPermisosNavbar();
+		}
 		} catch (error) {
 			console.error('Error cargando permisos:', error);
 		}
@@ -175,7 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 	
-	cargarPermisosNavbar();
+	if (document.body?.dataset?.userId) {
+		cargarPermisosNavbar();
+	}
 	
 	// ==================== SCROLL EN NAV ====================
 	
@@ -515,11 +519,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
 		// Badge
-		if (totalItems > 0) {
-			cartBadge.textContent = totalItems > 99 ? '99+' : totalItems;
-			cartBadge.removeAttribute('hidden');
-		} else {
-			cartBadge.setAttribute('hidden', '');
+		if (cartBadge) {
+			if (totalItems > 0) {
+				cartBadge.textContent = totalItems > 99 ? '99+' : totalItems;
+				cartBadge.removeAttribute('hidden');
+			} else {
+				cartBadge.setAttribute('hidden', '');
+			}
 		}
 
 		// Count

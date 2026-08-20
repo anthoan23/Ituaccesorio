@@ -268,3 +268,63 @@
         justify-content: center;
     }
 }
+
+/* ============================================
+   ESTILOS EXTRAIDOS DE INLINE STYLES
+   ============================================ */
+#p-clase-nueva-wrap {
+    margin-top: 0.5rem;
+}
+
+#p-marca-nueva-wrap {
+    margin-top: 0.5rem;
+}
+
+.ui-form__grid--mt-sm {
+    margin-top: 0.5rem;
+}
+
+.ui-form__actions--start {
+    margin-top: 0.5rem;
+    justify-content: flex-start;
+}
+
+.ui-form__actions--mt-md {
+    margin-top: 1rem;
+}
+
+.ui-form__actions--mt-lg {
+    margin-top: 1.5rem;
+}
+
+.field--mt {
+    margin-top: 0.5rem;
+}
+
+#reporte-preview {
+    display: none;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+}
+
+.reporte-preview__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.reporte-preview__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.table-wrap--scroll {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table--min {
+    min-width: 500px;
+}

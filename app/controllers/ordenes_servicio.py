@@ -32,7 +32,6 @@ def registrar_equipo():
     if not id_equipo or not color or not patron:
         return jsonify({"success": False, "message": "ID del equipo, color y patrón son obligatorios."}), 400
 
-    # CORRECCIÓN: No convertir id_equipo ni patron a int, se envían como strings al modelo
     if not id_equipo.isdigit():
         return jsonify({"success": False, "message": "El ID del equipo debe ser numérico."}), 400
         
@@ -159,8 +158,8 @@ def listar_ordenes_servicio():
                 normalizadas.append("Pendiente")
             elif st_lower in ("asignada", "asignado"):
                 normalizadas.append("Asignada")
-            elif st_lower in ("revisado", "revisada", "en revision", "en revisión"):
-                normalizadas.append("Revisado")
+            elif st_lower in ("en proceso", "en_proceso", "proceso", "enproceso"):
+                normalizadas.append("En proceso")
             elif st_lower in ("reparada", "reparado"):
                 normalizadas.append("Reparada")
             else:
@@ -204,7 +203,7 @@ def crear_orden_servicio():
     capacidad = (datos.get("capacidad") or "").strip()
     descripcion = (datos.get("descripcion") or "").strip()
     nota = (datos.get("nota") or "").strip() or None
-    patron = (datos.get("patron") or "").strip() # CORRECCIÓN: Obtenemos el patrón
+    patron = (datos.get("patron") or "").strip()
     
     # Datos del cliente (por si hay que registrarlo)
     nombre_cliente = (datos.get("nombre") or "").strip()
@@ -213,89 +212,63 @@ def crear_orden_servicio():
     correo_cliente = (datos.get("correo") or "").strip()
     direccion_cliente = (datos.get("direccion") or "").strip()
 
-    print(f"[DEBUG] id_cliente: {id_cliente}")
-    print(f"[DEBUG] imei: {imei}")
-    print(f"[DEBUG] id_modelo: {id_modelo}")
-    print(f"[DEBUG] modelo_custom: {modelo_custom}")
-
     # =============================================
     # 2. VALIDACIONES INICIALES
     # =============================================
     if not id_cliente:
-        print("ERROR: ID cliente vacío")
         return jsonify({"success": False, "error": "El ID del cliente es obligatorio."}), 400
     
     if not descripcion:
-        print("ERROR: Descripción vacía")
         return jsonify({"success": False, "error": "La descripción del problema es obligatoria."}), 400
     
     if not imei:
-        print("ERROR: IMEI vacío")
         return jsonify({"success": False, "error": "El IMEI del equipo es obligatorio."}), 400
     
     if not color:
-        print("ERROR: Color vacío")
         return jsonify({"success": False, "error": "El color del equipo es obligatorio."}), 400
     
     if not capacidad:
-        print("ERROR: Capacidad vacía")
         return jsonify({"success": False, "error": "La capacidad del equipo es obligatoria."}), 400
     
     if not id_modelo and not modelo_custom:
-        print("ERROR: No hay modelo seleccionado ni personalizado")
         return jsonify({"success": False, "error": "Debes seleccionar un modelo o escribir uno personalizado."}), 400
 
     try:
         id_cliente_val = int(id_cliente)
-        print(f"id_cliente_val convertido: {id_cliente_val}")
     except (ValueError, TypeError):
-        print(f"ERROR: ID cliente no es numérico: {id_cliente}")
         return jsonify({"success": False, "error": "El ID del cliente debe ser un número."}), 400
 
     if not imei.isdigit():
-        print(f"ERROR: IMEI no es numérico: {imei}")
         return jsonify({"success": False, "error": "El IMEI debe ser un número."}), 400
     
     if len(imei) != 15:
-        print(f"ERROR: IMEI longitud incorrecta: {len(imei)}")
         return jsonify({"success": False, "error": "El IMEI debe tener exactamente 15 dígitos."}), 400
 
-    print("Validaciones iniciales superadas correctamente")
-
+    usuario_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
+    
     # =============================================
     # 3. VALIDAR/REGISTRAR CLIENTE
     # =============================================
-    print("--- Validando/registrando cliente ---")
-    usuario_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
-    print(f"usuario_id: {usuario_id}")
-    
     cliente_model = Clientes(usuario_id=usuario_id)
     cliente_existente = cliente_model.obtener_cliente_por_id(str(id_cliente_val))
     
     if not cliente_existente:
-        print(f"Cliente {id_cliente_val} no existe, registrando...")
         if not nombre_cliente:
-            print("ERROR: Nombre cliente vacío")
             return jsonify({"success": False, "error": "El nombre del cliente es obligatorio para registrarlo."}), 400
         
         if not apellido_cliente:
-            print("ERROR: Apellido cliente vacío")
             return jsonify({"success": False, "error": "El apellido del cliente es obligatorio para registrarlo."}), 400
         
         if not celular_cliente:
-            print("ERROR: Celular cliente vacío")
             return jsonify({"success": False, "error": "El celular del cliente es obligatorio para registrarlo."}), 400
         
         if not celular_cliente.isdigit():
-            print(f"ERROR: Celular no es numérico: {celular_cliente}")
             return jsonify({"success": False, "error": "El celular debe contener solo números."}), 400
         
         if len(celular_cliente) != 11:
-            print(f"ERROR: Celular longitud incorrecta: {len(celular_cliente)}")
             return jsonify({"success": False, "error": "El celular debe tener exactamente 11 dígitos."}), 400
         
         if correo_cliente and not _validar_email(correo_cliente):
-            print(f"ERROR: Correo inválido: {correo_cliente}")
             return jsonify({"success": False, "error": "El correo electrónico no es válido."}), 400
         
         persona = Persona_natural(
@@ -308,16 +281,12 @@ def crear_orden_servicio():
             usuario_id=usuario_id
         )
         resultado_cliente = persona.registrar_persona_natural()
-        print(f"Resultado registro cliente: {resultado_cliente}")
         if "exitosamente" not in resultado_cliente.lower():
             return jsonify({"success": False, "error": f"Error al registrar cliente: {resultado_cliente}"}), 400
-    else:
-        print(f"Cliente {id_cliente_val} ya existe")
 
     # =============================================
     # 4. VALIDAR/REGISTRAR EQUIPO
     # =============================================
-    print("--- Validando/registrando equipo ---")
     equipo_model = Equipo()
     equipo_model.ID_equipo = imei
     equipo_existente = equipo_model.Consultar_equipo_por_id()
@@ -325,10 +294,7 @@ def crear_orden_servicio():
     id_producto_final = id_modelo
     
     if not equipo_existente:
-        print(f"Equipo {imei} no existe, registrando...")
-        
         if modelo_custom and not id_modelo:
-            print(f"Creando modelo personalizado: {modelo_custom}")
             producto = Producto(
                 nombre=modelo_custom,
                 id_clase="1",
@@ -338,44 +304,24 @@ def crear_orden_servicio():
             )
             try:
                 id_producto_final = producto.registrar_producto()
-                print(f"ID producto personalizado creado: {id_producto_final}")
             except Exception as e:
-                print(f"ERROR al registrar producto personalizado: {e}")
                 return jsonify({"success": False, "error": f"Error al registrar modelo personalizado: {str(e)}"}), 400
         
         if not id_producto_final:
-            print("ERROR: ID de modelo inválido")
             return jsonify({"success": False, "error": "ID de modelo inválido."}), 400
         
         equipo_model.ID_producto = str(id_producto_final)
         equipo_model.Color = color
         equipo_model.Capacidad = capacidad
-        equipo_model.Patron = patron # CORRECCIÓN: Asignamos el patrón al modelo
-        
-        print(f"Registrando equipo con:")
-        print(f"  ID_producto: {equipo_model.ID_producto}")
-        print(f"  Color: {equipo_model.Color}")
-        print(f"  Capacidad: {equipo_model.Capacidad}")
-        print(f"  Patron: {equipo_model.Patron}")
+        equipo_model.Patron = patron
         
         resultado_equipo = equipo_model.registrar_equipo()
-        print(f"Resultado registro equipo: {resultado_equipo}")
         if "exitosamente" not in resultado_equipo.lower():
             return jsonify({"success": False, "error": resultado_equipo}), 400
-    else:
-        print(f"Equipo {imei} ya existe")
 
     # =============================================
     # 5. CREAR LA ORDEN DE SERVICIO
     # =============================================
-    print("--- Creando orden de servicio ---")
-    print(f"Datos para crear orden:")
-    print(f"  id_cliente: {id_cliente_val}")
-    print(f"  id_equipo: {imei}")
-    print(f"  id_modelo: {id_producto_final}")
-    print(f"  descripcion: {descripcion}")
-    print(f"  nota: {nota}")
-    
     id_empleado = usuario_id
        
     orden_model = OrdenServicio()
@@ -390,23 +336,75 @@ def crear_orden_servicio():
         modelo_custom=modelo_custom,
     )
     
-    print(f"ID de orden creada: {nueva_id}")
-    
     if not nueva_id:
-        print("ERROR: No se pudo crear la orden de servicio")
         return jsonify({"success": False, "error": "No se pudo crear la orden de servicio."}), 500
+
+    # =============================================
+    # 6. REGISTRAR TESTS INICIALES (inspirado en taller.py)
+    # =============================================
+    incluir_tests = datos.get("incluir_tests", False)
+    tests_data = datos.get("tests", [])
+    
+    if incluir_tests and tests_data and len(tests_data) > 0:
+        try:
+            print(f"[DEBUG] Registrando tests iniciales para orden {nueva_id}")
+            
+            # Filtrar tests que no son observaciones
+            tests_filtrados = [t for t in tests_data if t.get('nombre') != 'Observaciones']
+            observaciones = next((t.get('resultado') for t in tests_data if t.get('nombre') == 'Observaciones'), "")
+            
+            if tests_filtrados or observaciones:
+                # Obtener número de test (1 para la primera revisión)
+                num_test = 1
+                
+                # Construir lista de tests para el procedimiento
+                lista_tests = []
+                for test in tests_filtrados:
+                    lista_tests.append({
+                        "nombre": test.get('nombre', ''),
+                        "resultado": test.get('resultado', 'Funciona')
+                    })
+                
+                # Agregar observaciones si existen
+                if observaciones:
+                    lista_tests.append({
+                        "nombre": "Observaciones",
+                        "resultado": observaciones
+                    })
+                
+                # Usar el modelo Tests para registrar
+                from app.models.test import Tests
+                test_model = Tests(usuario_id=usuario_id)
+                test_model.ID_orden = nueva_id
+                test_model.ID_empleado = id_empleado
+                test_model.Numero_test = num_test
+                test_model.lista_tests = lista_tests
+                
+                # Registrar la revisión
+                resultado_tests = test_model.registrar_revision_test()
+                print(f"[DEBUG] Resultado registro tests: {resultado_tests}")
+                
+            else:
+                print("[DEBUG] No hay tests válidos para registrar")
+                
+        except Exception as e:
+            print(f"[ERROR] Error al registrar tests iniciales: {e}")
+            import traceback
+            traceback.print_exc()
 
     print("=" * 60)
     print(f"ORDEN CREADA EXITOSAMENTE: {nueva_id}")
+    if incluir_tests and tests_data:
+        print(f"  Tests iniciales registrados: {len(tests_data)}")
     print("=" * 60)
 
     return jsonify({
         "success": True,
         "id": nueva_id,
         "equipo": imei,
-        "mensaje": "Orden de servicio creada exitosamente"
+        "tests_registrados": len(tests_data) if incluir_tests and tests_data else 0,
+        "mensaje": "Orden de servicio creada exitosamente" + (" con revisión inicial" if incluir_tests and tests_data else "")
     })
-
 
 # Ruta para obtener detalle de una orden específica
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["GET"])
@@ -430,6 +428,32 @@ def detalle_orden_servicio(id_orden):
             "empleados_orden": empleados,
         }
     )
+
+
+# ============================================
+# RUTA PARA OBTENER DETALLE DE UN TEST ESPECÍFICO
+# ============================================
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/test/<string:num_test>", methods=["GET"])
+@jwt_required
+@tiene_permiso('Órdenes de servicio', 'consultar')
+def detalle_test_orden(id_orden, num_test):
+    """Obtiene los componentes de un test específico de una orden"""
+    try:
+        tests_model = Tests()
+        componentes = tests_model.obtener_test_por_orden_y_numero(id_orden, num_test)
+        
+        if not componentes:
+            return jsonify({"success": False, "error": "No se encontraron componentes para este test."}), 404
+        
+        return jsonify({
+            "success": True,
+            "componentes": componentes,
+            "id_orden": id_orden,
+            "num_test": num_test
+        })
+    except Exception as e:
+        print(f"[ERROR] Error al obtener detalle del test: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # Ruta para asignar una orden
@@ -495,8 +519,8 @@ def registrar_test_orden(id_orden):
     empleado_id = g.user.get("cedula")
     
     campos = [
-        'ID_em', 'Num_test', 'Btn_power','Btn_vol','Cornetas','Mica','LCD','Tactil','Wifi',
-        'Puerto_carga','Cam_pos','Cam_del','Microfono','Flash','Btn_sil','Auricular',
+        'ID_em', 'Num_test', 'Botón Power','Botón Vol','Cornetas','Mica','LCD','Tactil','Wifi',
+        'Puerto_carga','Cámara posterior','Cámara delantera','Microfono','Flash','Botón Silencio','Auricular',
         'Senal','Sensor_proximidad','Face_id','Bluetooth','Observaciones'
     ]
 
@@ -559,6 +583,9 @@ def eliminar_orden_servicio(id_orden):
     return jsonify({"success": True, "message": "Orden eliminada"})
 
 
+# ============================================
+# RUTA PARA LISTAR MODELOS - SOLO TELÉFONOS
+# ============================================
 @ordenes_servicio_blueprint.route("/api/productos/modelos", methods=["GET"])
 @jwt_required
 def listar_modelos():
@@ -569,6 +596,7 @@ def listar_modelos():
 
     cursor = db.cursor(dictionary=True)
     try:
+        # Consulta para obtener solo teléfonos
         cursor.execute("""
             SELECT 
                 p.ID_producto AS id,
@@ -576,13 +604,20 @@ def listar_modelos():
                 mp.Nombre_marca AS marca_nombre,
                 cp.Nombre_Clase AS clase_nombre
             FROM Producto p
+            INNER JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
             LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-            LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
+            WHERE cp.Nombre_Clase = 'Telefono' OR cp.ID_Clase = '1'
             ORDER BY mp.Nombre_marca, p.Nombre_producto
         """)
         modelos = cursor.fetchall()
+        
+        print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
+        for m in modelos:
+            print(f"[DEBUG] - ID: {m.get('id')}, Clase: {m.get('clase_nombre')}, Marca: {m.get('marca_nombre')}, Nombre: {m.get('nombre')}")
+        
         return jsonify({"success": True, "modelos": modelos})
     except Exception as e:
+        print(f"[ERROR] Error al listar modelos: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
         cursor.close()

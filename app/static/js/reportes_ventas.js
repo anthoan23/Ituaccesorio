@@ -196,7 +196,7 @@
             <td>${escapeHtml(p.Referencia || '-')}</td>
             <td>${formatMoney(p.monto_pagado, p.venta_moneda)}</td>
             <td>${getEstadoBadgeHtml(p.estado)}</td>
-            <td style="text-align: center;">
+            <td class="cell-center">
               <button class="ui-btn ui-btn--ghost ui-btn--sm btn-ver-detalle-reporte" data-factura="${escapeHtml(p.factura_id)}">Ver</button>
             </td>
           </tr>
@@ -279,9 +279,9 @@
             <td>${escapeHtml(p.Nombre_producto)}</td>
             <td>${escapeHtml(p.marca || '-')}</td>
             <td>${escapeHtml(p.clase || '-')}</td>
-            <td style="text-align: center;">${p.Cantidad_articulo}</td>
-            <td style="text-align: right;">${formatMoney(p.precio_unitario, venta.Moneda)}</td>
-            <td style="text-align: right;">${formatMoney(p.subtotal, venta.Moneda)}</td>
+            <td class="cell-center">${p.Cantidad_articulo}</td>
+            <td class="cell-right">${formatMoney(p.precio_unitario, venta.Moneda)}</td>
+            <td class="cell-right">${formatMoney(p.subtotal, venta.Moneda)}</td>
           </tr>
         `;
       }
@@ -602,7 +602,7 @@
             <td>${escapeHtml(v.metodo_pago)}</td>
             <td>${formatMoney(v.monto, v.Moneda)}</td>
             <td>${getEstadoBadgeHtml(v.estado)}</td>
-            <td style="text-align: center;">
+            <td class="cell-center">
               <button class="ui-btn ui-btn--ghost ui-btn--sm btn-ver-detalle-reporte" data-factura="${escapeHtml(v.factura_id)}">Ver</button>
             </td>
           </tr>

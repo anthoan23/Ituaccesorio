@@ -255,7 +255,6 @@
         const status = document.querySelector("[data-notifications-status]");
 
         if (!usuarioId || !toggle || !panel) {
-            console.log("Faltan elementos necesarios");
             return;
         }
 

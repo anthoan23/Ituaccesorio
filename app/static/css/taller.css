@@ -205,3 +205,14 @@
         justify-content: center;
     }
 }
+
+/* ============================================
+   CLASES DE ESTADO (reemplazan style inline)
+   ============================================ */
+.texto-error { color: var(--danger); }
+
+.inventario-row-clickable { cursor: pointer; }
+.inventario-row-sinstock { cursor: not-allowed; }
+
+.stock-ok { font-weight: bold; color: #2e7d32; }
+.stock-out { font-weight: bold; color: #c62828; }

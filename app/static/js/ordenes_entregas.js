@@ -297,25 +297,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             <thead>
                                 <tr>
                                     <th>Producto</th>
-                                    <th style="text-align: center;">Cantidad</th>
-                                    <th style="text-align: right;">Costo unitario</th>
-                                    <th style="text-align: right;">Subtotal</th>
+                                    <th class="cell-center">Cantidad</th>
+                                    <th class="cell-right">Costo unitario</th>
+                                    <th class="cell-right">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${productos.map(p => `
                                     <tr>
                                         <td>${escapeHtml(p.N_modelo)}</td>
-                                        <td style="text-align: center;">${escapeHtml(p.Cantidad_p)}</td>
-                                        <td style="text-align: right;">Bs. ${formatMoney(p.Costo)}</td>
-                                        <td style="text-align: right;">Bs. ${formatMoney(p.sup_total)}</td>
+                                        <td class="cell-center">${escapeHtml(p.Cantidad_p)}</td>
+                                        <td class="cell-right">Bs. ${formatMoney(p.Costo)}</td>
+                                        <td class="cell-right">Bs. ${formatMoney(p.sup_total)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" style="text-align: right; font-weight: 600;">Total:</td>
-                                    <td style="text-align: right; font-weight: 600;">Bs. ${formatMoney(totalBs)}</td>
+                                    <td colspan="3" class="cell-right-bold">Total:</td>
+                                    <td class="cell-right-bold">Bs. ${formatMoney(totalBs)}</td>
                                 </tr>
                             </tfoot>
                         </table>

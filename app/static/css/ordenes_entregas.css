@@ -226,3 +226,31 @@
         padding: 0.4rem 0.5rem;
     }
 }
+
+.table-wrap--mt {
+    margin-top: 1rem;
+}
+
+.form__total--mt {
+    margin-top: 1rem;
+    font-weight: 700;
+}
+
+#editar-id-entrega {
+    font-weight: bold;
+    background: var(--input-bg);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#editar-id-orden-entrega {
+    background: var(--input-bg);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#mensaje-texto {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-strong);
+}

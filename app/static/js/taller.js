@@ -573,7 +573,7 @@ const OrdenesService = {
 
     renderizar(ordenes, tbody) {
         if (!ordenes.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay órdenes de servicio</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="cell-center">No hay órdenes de servicio</td></tr>';
             return;
         }
 
@@ -1189,7 +1189,7 @@ const RepuestosService = {
             this.renderizarInventario(inventario, tbody);
         } catch (error) {
             console.error('Error cargando inventario:', error);
-            tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger);">Error al cargar inventario: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="texto-error">Error al cargar inventario: ${error.message}</td></tr>`;
         }
     },
 
@@ -1207,20 +1207,18 @@ const RepuestosService = {
             const existencia = item.Existencia || 0;
             
             const rowClass = existencia > 0 ? 'inventario-row-clickable' : 'inventario-row-sinstock';
-            const cursorStyle = existencia > 0 ? 'pointer' : 'not-allowed';
             
             return `
                 <tr class="${rowClass}" 
                     data-id="${Utils.escapeHtml(idInventario)}"
                     data-nombre="${Utils.escapeHtml(nombreProducto)}"
-                    data-existencia="${existencia}"
-                    style="cursor: ${cursorStyle};">
+                    data-existencia="${existencia}">
                     <td data-label="ID">${Utils.escapeHtml(idInventario)}</td>
                     <td data-label="Producto"><strong>${Utils.escapeHtml(nombreProducto)}</strong></td>
                     <td data-label="Marca">${Utils.escapeHtml(nombreMarca)}</td>
                     <td data-label="Clase">${Utils.escapeHtml(nombreClase)}</td>
                     <td data-label="Existencia">
-                        <span style="font-weight: bold; color: ${existencia > 0 ? '#2e7d32' : '#c62828'}">
+                        <span class="${existencia > 0 ? 'stock-ok' : 'stock-out'}">
                             ${Utils.escapeHtml(existencia)}
                         </span>
                     </td>
@@ -1665,7 +1663,7 @@ async function abrirModalQr() {
             });
         } catch (error) {
             console.error('Error al generar QR:', error);
-            qrContainer.innerHTML = '<p style="color: var(--danger);">Error al generar el código QR</p>';
+            qrContainer.innerHTML = '<p class="texto-error">Error al generar el código QR</p>';
         }
     }, 200);
 }
