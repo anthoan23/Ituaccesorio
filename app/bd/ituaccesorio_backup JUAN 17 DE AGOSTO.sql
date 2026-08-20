@@ -1,6 +1,6 @@
 -- ============================================
 -- Backup de: ituaccesoriobd
--- Fecha: 2026-06-30 20:08:35
+-- Fecha: 2026-08-17 16:35:22
 -- Tipo: ituaccesorio
 -- ============================================
 
@@ -135,7 +135,7 @@ INSERT INTO `Clase_producto` (`ID_Clase`, `Nombre_Clase`) VALUES
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente`;
 CREATE TABLE `Cliente` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Direccion_cliente` varchar(40) DEFAULT NULL,
   `Celular_cliente` varchar(15) DEFAULT NULL,
   `Correo_cliente` varchar(120) DEFAULT NULL,
@@ -161,7 +161,7 @@ INSERT INTO `Cliente` (`ID_cliente`, `Direccion_cliente`, `Celular_cliente`, `Co
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Cliente_juridico`;
 CREATE TABLE `Cliente_juridico` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Razon_social` varchar(60) NOT NULL,
   `Rif_cliente` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_cliente`),
@@ -596,7 +596,7 @@ DROP TABLE IF EXISTS `Lista_compra`;
 CREATE TABLE `Lista_compra` (
   `ID_lista_compra` varchar(10) NOT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Cantidad_producto` int DEFAULT NULL,
   `Estado_lista_compra` varchar(30) DEFAULT NULL,
   PRIMARY KEY (`ID_lista_compra`),
@@ -711,7 +711,7 @@ DROP TABLE IF EXISTS `Orden_servicio`;
 CREATE TABLE `Orden_servicio` (
   `ID_orden_servicio` varchar(10) NOT NULL,
   `ID_equipo` varchar(16) DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Estado_orden_servicio` varchar(20) DEFAULT NULL,
   `Descripcion_reparacion` varchar(300) DEFAULT NULL,
   `Costo_reparacion` decimal(10,2) DEFAULT NULL,
@@ -776,7 +776,7 @@ INSERT INTO `Pago_servicio` (`ID_orden_servicio`, `ID_factura`) VALUES
 -- ----------------------------------------------------
 DROP TABLE IF EXISTS `Persona_natural`;
 CREATE TABLE `Persona_natural` (
-  `ID_cliente` varchar(10) NOT NULL,
+  `ID_cliente` varchar(12) NOT NULL,
   `Apellido_cliente` varchar(40) NOT NULL,
   `Nombre_cliente` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID_cliente`),
@@ -856,6 +856,7 @@ INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`
 DROP TABLE IF EXISTS `Proveedor`;
 CREATE TABLE `Proveedor` (
   `ID_proveedor` int NOT NULL,
+  `Rif_proveedor` varchar(15) DEFAULT NULL,
   `Nombre_proveedor` varchar(40) NOT NULL,
   `Tipo_proveedor` varchar(20) DEFAULT NULL,
   `Celular_proveedor` varchar(15) DEFAULT NULL,
@@ -868,12 +869,12 @@ CREATE TABLE `Proveedor` (
 -- ----------------------------------------------------
 -- Dumping data for `Proveedor`
 -- ----------------------------------------------------
-INSERT INTO `Proveedor` (`ID_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
-(1, 'Distribuidora Tech S.A.', 'Mayorista', '04121234500', 'ventas@distritech.com', 'Caracas', '50000.00'),
-(2, 'Importaciones Digitales C.A.', 'Importador', '04141234501', 'contacto@importdigital.com', 'Maracaibo', '75000.00'),
-(3, 'Repuestos Express', 'Minorista', '04241234502', 'info@repuestosexpress.com', 'Valencia', '25000.00'),
-(4, 'Global Parts', 'Mayorista', '04161234503', 'sales@globalparts.com', 'Barquisimeto', '100000.00'),
-(5, 'Suministros Móviles', 'Distribuidor', '04181234504', 'ventas@suministrosmoviles.com', 'San Cristóbal', '30000.00');
+INSERT INTO `Proveedor` (`ID_proveedor`, `Rif_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
+(1, NULL, 'Distribuidora Tech S.A.', 'Mayorista', '04121234500', 'ventas@distritech.com', 'Caracas', '50000.00'),
+(2, NULL, 'Importaciones Digitales C.A.', 'Importador', '04141234501', 'contacto@importdigital.com', 'Maracaibo', '75000.00'),
+(3, NULL, 'Repuestos Express', 'Minorista', '04241234502', 'info@repuestosexpress.com', 'Valencia', '25000.00'),
+(4, NULL, 'Global Parts', 'Mayorista', '04161234503', 'sales@globalparts.com', 'Barquisimeto', '100000.00'),
+(5, NULL, 'Suministros Móviles', 'Distribuidor', '04181234504', 'ventas@suministrosmoviles.com', 'San Cristóbal', '30000.00');
 
 -- ----------------------------------------------------
 -- Table structure for `Repuestos_usados`
@@ -1262,7 +1263,7 @@ DROP TABLE IF EXISTS `Trade_in`;
 CREATE TABLE `Trade_in` (
   `ID_Trade_in` varchar(10) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
   `ID_equipo` varchar(10) DEFAULT NULL,
   `Numero_utilizado` int DEFAULT NULL,
@@ -1296,7 +1297,7 @@ DROP TABLE IF EXISTS `Venta`;
 CREATE TABLE `Venta` (
   `ID_factura` varchar(20) NOT NULL,
   `ID_empleado` int DEFAULT NULL,
-  `ID_cliente` varchar(10) DEFAULT NULL,
+  `ID_cliente` varchar(12) DEFAULT NULL,
   `Moneda` varchar(10) DEFAULT NULL,
   `Fecha_venta` datetime DEFAULT NULL,
   PRIMARY KEY (`ID_factura`),
@@ -1479,6 +1480,14 @@ END ;;
 DELIMITER ;
 
 -- ----------------------------------------------------
+-- Procedure structure for `sp_actualizar_limite_credito`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_actualizar_limite_credito`;
+DELIMITER ;;
+None ;;
+DELIMITER ;
+
+-- ----------------------------------------------------
 -- Procedure structure for `sp_asignar_orden_servicio`
 -- ----------------------------------------------------
 DROP PROCEDURE IF EXISTS `sp_asignar_orden_servicio`;
@@ -1637,6 +1646,14 @@ p_ID_orden_servicio AS ID_orden_servicio,
 'Interacción actualizada correctamente' AS Mensaje;
 
 END ;;
+DELIMITER ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_obtener_proveedor_completo`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_obtener_proveedor_completo`;
+DELIMITER ;;
+None ;;
 DELIMITER ;
 
 -- ----------------------------------------------------
@@ -1958,6 +1975,22 @@ COMMIT;
 SELECT v_nuevo_id_interaccion AS `ID_interaccion`, v_items_count AS `Total_tests`;
 
 END ;;
+DELIMITER ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_registrar_trade_in_con_tests`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_trade_in_con_tests`;
+DELIMITER ;;
+None ;;
+DELIMITER ;
+
+-- ----------------------------------------------------
+-- Procedure structure for `sp_verificar_stock_producto`
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_verificar_stock_producto`;
+DELIMITER ;;
+None ;;
 DELIMITER ;
 
 
