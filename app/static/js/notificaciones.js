@@ -54,7 +54,6 @@
     function crearElementoNotificacion(evento) {
         const item = document.createElement("article");
         item.className = "notifications__item";
-        // Añadir ID a la notificación
         if (evento.id) {
             item.dataset.notificacionId = evento.id;
         }
@@ -66,29 +65,36 @@
         header.style.gap = "0.75rem";
         header.style.marginBottom = "0.5rem";
 
+        // Avatar con soporte para tema claro/oscuro
+        const avatarWrapper = document.createElement("div");
+        avatarWrapper.className = "avatar-icon";
+        
         if (evento.usuario_foto) {
             const foto = document.createElement("img");
             foto.src = evento.usuario_foto;
             foto.alt = evento.usuario_nombre || "Usuario";
+            foto.className = "avatar-img";
             foto.style.width = "32px";
             foto.style.height = "32px";
             foto.style.borderRadius = "50%";
             foto.style.objectFit = "cover";
-            header.appendChild(foto);
+            avatarWrapper.appendChild(foto);
         } else {
-            const icono = document.createElement("div");
-            icono.textContent = (evento.usuario_nombre || "U").charAt(0).toUpperCase();
-            icono.style.width = "32px";
-            icono.style.height = "32px";
-            icono.style.borderRadius = "50%";
-            icono.style.background = "#f3c500";
-            icono.style.color = "#111";
-            icono.style.display = "flex";
-            icono.style.alignItems = "center";
-            icono.style.justifyContent = "center";
-            icono.style.fontWeight = "bold";
-            header.appendChild(icono);
+            const inicial = (evento.usuario_nombre || "U").charAt(0).toUpperCase();
+            avatarWrapper.textContent = inicial;
+            avatarWrapper.style.width = "32px";
+            avatarWrapper.style.height = "32px";
+            avatarWrapper.style.borderRadius = "50%";
+            avatarWrapper.style.background = "var(--yellow, #f3c500)";
+            avatarWrapper.style.color = "var(--ink, #121212)";
+            avatarWrapper.style.display = "flex";
+            avatarWrapper.style.alignItems = "center";
+            avatarWrapper.style.justifyContent = "center";
+            avatarWrapper.style.fontWeight = "bold";
+            avatarWrapper.style.fontSize = "0.9rem";
+            avatarWrapper.style.flexShrink = "0";
         }
+        header.appendChild(avatarWrapper);
 
         const nombre = document.createElement("strong");
         nombre.textContent = evento.usuario_nombre || "Sistema";
@@ -106,7 +112,6 @@
         descripcion.textContent = evento.descripcion || "Se registró una nueva actividad en la bitácora.";
         descripcion.style.margin = "0.25rem 0";
         descripcion.style.fontSize = "0.85rem";
-        descripcion.style.color = "rgba(255, 255, 255, 0.82)";
         item.appendChild(descripcion);
 
         const meta = document.createElement("small");
@@ -130,8 +135,6 @@
             }
         }
         meta.textContent = partesMeta.join(" · ");
-        meta.style.fontSize = "0.72rem";
-        meta.style.color = "rgba(255, 255, 255, 0.55)";
         item.appendChild(meta);
 
         return item;
@@ -160,7 +163,6 @@
         // Verificar si la notificación ya fue vista
         if (evento.id && notificacionYaVista(evento.id)) {
             console.log(`Notificación ${evento.id} ya vista, no se incrementa contador`);
-            // Aunque ya está vista, la mostramos en el panel
             const item = crearElementoNotificacion(evento);
             if (emptyState) emptyState.hidden = true;
             list.prepend(item);
@@ -170,15 +172,12 @@
         const item = crearElementoNotificacion(evento);
         if (emptyState) emptyState.hidden = true;
         
-        // Agregar al principio de la lista
         list.prepend(item);
         
-        // Limitar a 20 notificaciones
         while (list.children.length > 20) {
             list.removeChild(list.lastChild);
         }
         
-        // Solo incrementar contador si el panel NO está abierto
         if (!panelAbierto) {
             notificacionesNoLeidas++;
             actualizarBadge();
@@ -215,25 +214,21 @@
             if (emptyState) emptyState.hidden = true;
             list.innerHTML = '';
 
-            // Contar notificaciones no vistas
             let noVistas = 0;
 
             notificaciones.forEach(notificacion => {
                 const item = crearElementoNotificacion(notificacion);
                 list.appendChild(item);
                 
-                // Verificar si ya fue vista
                 if (notificacion.id && !notificacionYaVista(notificacion.id)) {
                     noVistas++;
                 }
             });
 
-            // Si se deben marcar como vistas (cuando se abre el panel)
             if (marcarComoVistas) {
                 marcarTodasComoVistas(notificaciones);
                 notificacionesNoLeidas = 0;
             } else {
-                // Si no se marcan como vistas, mostrar el contador real
                 notificacionesNoLeidas = noVistas;
             }
             
@@ -258,21 +253,13 @@
             return;
         }
 
-        // Limpiar storage de notificaciones vistas al cambiar de usuario
-        const usuarioStorageKey = `${STORAGE_KEY}_${usuarioId}`;
-        // Si estamos usando una clave por usuario, podemos manejar múltiples usuarios
-        // pero como usamos sessionStorage, cada sesión es independiente
-
-        // Estado inicial
         panel.hidden = true;
         panelAbierto = false;
         toggle.setAttribute("aria-expanded", "false");
         if (status) status.textContent = "Listo";
 
-        // Cargar notificaciones sin marcar como vistas
         cargarNotificacionesHistoricas(false);
 
-        // Evento click en la campana
         toggle.addEventListener("click", async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -280,14 +267,12 @@
             console.log("Click en notificaciones - Panel abierto:", panelAbierto);
             
             if (panelAbierto) {
-                // Cerrar panel
                 panel.hidden = true;
                 panelAbierto = false;
                 toggle.setAttribute("aria-expanded", "false");
                 console.log("Panel cerrado");
             } else {
-                // Abrir panel y marcar notificaciones como vistas
-                await cargarNotificacionesHistoricas(true); // true = marcar como vistas
+                await cargarNotificacionesHistoricas(true);
                 panel.hidden = false;
                 panelAbierto = true;
                 toggle.setAttribute("aria-expanded", "true");
@@ -295,7 +280,6 @@
             }
         });
 
-        // Cerrar al hacer clic fuera
         document.addEventListener("click", (event) => {
             if (root && !root.contains(event.target) && panelAbierto) {
                 panel.hidden = true;
@@ -305,7 +289,6 @@
             }
         });
 
-        // Configurar EventSource para notificaciones en tiempo real
         let fuente = null;
         
         function conectarSSE() {
