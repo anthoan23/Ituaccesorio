@@ -12,7 +12,9 @@
 /* Grid principal - 2 columnas: tabla | filtros */
 .productos-grid {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(280px, 0.65fr);
+    /* Igual que en proveedores: single-column por defecto para ocupar 100%.
+       Si se necesita sidebar, convertir la sección a `productos-grid--with-filters`. */
+    grid-template-columns: 1fr;
     gap: 1rem;
     align-items: start;
     width: 100%;
@@ -34,7 +36,7 @@
    ============================================ */
 .productos-toolbar {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.75rem;
     margin-bottom: 0.75rem;
     align-items: end;
@@ -94,6 +96,39 @@
    ============================================ */
 .col-image {
     width: 90px;
+}
+
+/* Ajustes específicos para la tabla de productos: ocupar todo el ancho y centrar acciones */
+.productos-table-card .table__actions {
+    text-align: center;
+}
+.productos-table-card .row-actions {
+    justify-content: center;
+}
+
+/* Forzar que la tabla de productos ocupe el ancho disponible
+   Anula el `min-width` global definido en theme.css que provoca
+   un comportamiento de overflow y deja espacio vacío. */
+.productos-table-card .table-wrap {
+    width: 100%;
+    padding: 0; /* la card aporta el padding general */
+}
+
+.productos-table-card .table {
+    width: 100%;
+    min-width: 0 !important; /* override del min-width global */
+    table-layout: fixed; /* mejor reparto de columnas cuando es 100% */
+}
+
+.productos-table-card .table th,
+.productos-table-card .table td {
+    padding-left: 0.85rem; /* mantener espacio interior uniforme */
+    padding-right: 0.85rem;
+    vertical-align: middle;
+}
+
+.productos-table-card .table__actions {
+    width: 120px; /* reserva un ancho fijo para la columna de acciones */
 }
 
 /* ============================================

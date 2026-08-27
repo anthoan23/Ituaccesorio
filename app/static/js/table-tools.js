@@ -28,6 +28,13 @@
     };
 
     const controls = buildControls(table);
+    // Si la tabla tiene el atributo data-no-table-search="true" no incluimos
+    // el control de búsqueda generado automáticamente (se usa filtros externos).
+    if (table.dataset.noTableSearch === "true") {
+      const searchElem = controls.container.querySelector('.table-controls__search');
+      if (searchElem) searchElem.remove();
+      controls.searchInput = null;
+    }
     attachControls(table, controls.container);
     wireControls(controls, state, table);
 
@@ -122,7 +129,8 @@
   }
 
   function wireControls(controls, state, table) {
-    controls.searchInput.addEventListener("input", (event) => {
+    if (controls.searchInput) {
+      controls.searchInput.addEventListener("input", (event) => {
       if (state.debounceTimer) clearTimeout(state.debounceTimer);
       
       const newQuery = event.target.value || "";
@@ -140,7 +148,8 @@
           refreshTable(table);
         }, DEBOUNCE_DELAY);
       }
-    });
+      });
+    }
 
     controls.sizeSelect.addEventListener("change", (event) => {
       const value = Number(event.target.value);
