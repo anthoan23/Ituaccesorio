@@ -56,10 +56,6 @@
       <!-- Barra de herramientas -->
       <div class="productos-toolbar">
         <label class="field productos-toolbar__field">
-          <span>Buscar productos</span>
-          <input id="input-buscar-productos" type="search" placeholder="Buscar por nombre, código o marca">
-        </label>
-        <label class="field productos-toolbar__field">
           <span>Clase</span>
           <div class="select-wrapper">
             <select id="f-clase" aria-label="Clase">
@@ -103,41 +99,6 @@
         </div>
       </div>
     </article>
-
-    <!-- Filtros panel (sidebar) -->
-    <aside class="card card--filters" aria-label="Filtros de catálogo">
-      <div class="card__header">
-        <div class="card__header-left">
-          <h2 class="card__title">Filtros</h2>
-          <p class="card__subtitle">Refina tu búsqueda</p>
-        </div>
-      </div>
-
-      <div class="filters-section">
-        <label class="field">
-          <span>Clase</span>
-          <div class="select-wrapper">
-            <select id="f-clase-sidebar" aria-label="Clase">
-              <option value="">Todas</option>
-            </select>
-          </div>
-        </label>
-
-        <label class="field">
-          <span>Marca</span>
-          <div class="select-wrapper">
-            <select id="f-marca-sidebar" aria-label="Marca">
-              <option value="">Todas</option>
-            </select>
-          </div>
-        </label>
-
-        <div class="filters__actions">
-          <button id="btn-aplicar-filtros" class="ui-btn ui-btn--primary" type="button">Aplicar filtros</button>
-          <button id="btn-limpiar-filtros" class="ui-btn ui-btn--ghost" type="button">Limpiar</button>
-        </div>
-      </div>
-    </aside>
   </section>
 
   <!-- Modal Registrar/Editar Producto usando sistema unificado -->
@@ -212,7 +173,7 @@
       </div>
     </div>
 
-    <label class="field field--mt">
+    <!-- <label class="field field--mt">
       <span>Categoría</span>
       <div class="select-wrapper">
         <select id="p-categoria" name="id_categoria" aria-label="Categoría">
@@ -220,7 +181,7 @@
         </select>
       </div>
       <small class="field-hint">Clasificación adicional del producto</small>
-    </label>
+    </label> -->
 
     <label class="field field--mt">
       <span>Producto <span class="required-indicator">*</span></span>
