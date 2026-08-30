@@ -146,19 +146,57 @@ function cerrarModalVerCliente() {
 
 // ==================== VALIDACIÓN RIF ====================
 
+// Cache para evitar múltiples solicitudes a la misma cédula/RIF
+const verificarCache = new Map();
+
+async function verificarIdentificadorExiste(identificador, tipo) {
+    if (!identificador || identificador.length < 2) return false;
+    
+    const cacheKey = `${tipo}_${identificador}`;
+    // Verificar en cache primero
+    if (verificarCache.has(cacheKey)) {
+        return verificarCache.get(cacheKey);
+    }
+    
+    try {
+        const data = await fetchJson(`/api/clientes/verificar/${encodeURIComponent(identificador)}`);
+        const existe = data.success && data.existe === true;
+        // Guardar en cache por 5 segundos
+        verificarCache.set(cacheKey, existe);
+        setTimeout(() => {
+            verificarCache.delete(cacheKey);
+        }, 5000);
+        return existe;
+    } catch (error) {
+        // Si el cliente no existe, la API devuelve 404, lo cual es esperado
+        if (error.message.includes('404') || error.message.includes('No encontrado')) {
+            verificarCache.set(cacheKey, false);
+            setTimeout(() => {
+                verificarCache.delete(cacheKey);
+            }, 5000);
+            return false;
+        }
+        console.warn('Error al verificar identificador:', error);
+        return false;
+    }
+}
+
 function formatearRIF(input) {
-    let valor = input.value.replace(/[^a-zA-Z0-9]/g, '');
+    let valor = input.value.replace(/[^A-Za-z0-9]/g, '');
     valor = valor.toUpperCase();
     if (valor.length === 0) {
         input.value = '';
         return;
     }
+    // Si no comienza con J o E, forzar J
     if (!['J', 'E'].includes(valor.charAt(0))) {
         valor = 'J' + valor.substring(1);
     }
     const letra = valor.charAt(0);
     let numeros = valor.substring(1);
+    // Limitar a 9 dígitos (8 + 1 verificador)
     numeros = numeros.substring(0, 9);
+    
     let resultado = letra;
     if (numeros.length > 0) {
         resultado += '-';
@@ -171,55 +209,161 @@ function formatearRIF(input) {
     input.value = resultado;
 }
 
-function validarRIF(valor) {
-    const patronRIF = /^[JE]-\d{8}-\d$/;
-    if (!patronRIF.test(valor)) {
-        return { valido: false, mensaje: 'El RIF debe tener el formato: J-12345678-9 o E-12345678-9' };
-    }
-    if (valor.length !== 12) {
-        return { valido: false, mensaje: 'El RIF debe tener 12 caracteres (ej: J-12345678-9)' };
-    }
-    const partes = valor.split('-');
-    if (partes.length !== 3) {
-        return { valido: false, mensaje: 'El RIF debe tener el formato: Letra-8dígitos-1dígito' };
-    }
-    const letraParte = partes[0];
-    const numerosParte1 = partes[1];
-    const numerosParte2 = partes[2];
-    if (!['J', 'E'].includes(letraParte)) {
-        return { valido: false, mensaje: 'La primera parte debe ser J o E' };
-    }
-    if (numerosParte1.length !== 8 || !/^\d{8}$/.test(numerosParte1)) {
-        return { valido: false, mensaje: 'Debe tener 8 dígitos después del primer guion' };
-    }
-    if (numerosParte2.length !== 1 || !/^\d$/.test(numerosParte2)) {
-        return { valido: false, mensaje: 'Debe tener 1 dígito después del segundo guion' };
-    }
-    return { valido: true };
-}
-
 function validarRIFEnTiempoReal(input) {
     const errorElement = document.getElementById('rif-error');
     if (!errorElement) return;
+    
     const valor = input.value;
-    if (!valor) {
+    
+    // Si está vacío, limpiar mensajes
+    if (!valor || valor.trim() === '') {
         errorElement.textContent = '';
         errorElement.style.color = '';
         input.classList.remove('field-error', 'field-success');
+        input._rifValido = false;
         return;
     }
-    const resultado = validarRIF(valor);
-    if (!resultado.valido) {
-        errorElement.textContent = resultado.mensaje;
+    
+    // Limpiar el valor para verificar
+    const limpio = valor.replace(/-/g, '');
+    
+    // Verificar formato básico
+    if (!/^[JE]\d{9}$/.test(limpio)) {
+        errorElement.textContent = '✗ Formato inválido. Use J-12345678-9 o E-12345678-9';
         errorElement.style.color = '#ef4444';
         input.classList.add('field-error');
         input.classList.remove('field-success');
-    } else {
-        errorElement.textContent = '✓ Formato válido';
+        input._rifValido = false;
+        return;
+    }
+    
+    // Verificar formato con guiones
+    const patronRIF = /^[JE]-\d{8}-\d$/;
+    if (!patronRIF.test(valor)) {
+        errorElement.textContent = '✗ Formato inválido. Use J-12345678-9 o E-12345678-9';
+        errorElement.style.color = '#ef4444';
+        input.classList.add('field-error');
+        input.classList.remove('field-success');
+        input._rifValido = false;
+        return;
+    }
+    
+    // Verificar si es edición
+    const isEdit = document.getElementById('form-cliente')?.dataset?.editing === 'true';
+    if (isEdit) {
+        errorElement.textContent = '✓ Formato válido (edición)';
         errorElement.style.color = '#22c55e';
         input.classList.remove('field-error');
         input.classList.add('field-success');
+        input._rifValido = true;
+        return;
     }
+    
+    // Mostrar mensaje de verificando
+    errorElement.textContent = '⏳ Verificando RIF...';
+    errorElement.style.color = '#f59e0b';
+    input.classList.remove('field-error', 'field-success');
+    
+    // Verificar en la base de datos con debounce
+    clearTimeout(input._verificationTimeout);
+    input._verificationTimeout = setTimeout(async () => {
+        try {
+            const existe = await verificarIdentificadorExiste(valor, 'rif');
+            if (existe) {
+                errorElement.textContent = '✗ Este RIF ya está registrado';
+                errorElement.style.color = '#ef4444';
+                input.classList.add('field-error');
+                input.classList.remove('field-success');
+                input._rifValido = false;
+            } else {
+                errorElement.textContent = '✓ RIF disponible';
+                errorElement.style.color = '#22c55e';
+                input.classList.remove('field-error');
+                input.classList.add('field-success');
+                input._rifValido = true;
+            }
+        } catch (e) {
+            console.warn('Error verificando RIF:', e);
+            errorElement.textContent = '⚠️ Error al verificar';
+            errorElement.style.color = '#f59e0b';
+            input._rifValido = false;
+        }
+    }, 400);
+}
+
+function initRIFAutocomplete() {
+    const rifInput = document.getElementById('rif-input');
+    if (!rifInput) return;
+    
+    // Remover event listeners previos si existen
+    rifInput.removeEventListener('input', rifInput._rifInputHandler);
+    rifInput.removeEventListener('blur', rifInput._rifBlurHandler);
+    
+    rifInput._rifInputHandler = function(e) {
+        // Guardar posición del cursor
+        const start = this.selectionStart;
+        const oldLength = this.value.length;
+        
+        // Formatear el RIF
+        formatearRIF(this);
+        
+        // Ajustar posición del cursor
+        const newLength = this.value.length;
+        const diff = newLength - oldLength;
+        let newPos = start + diff;
+        
+        // Saltar guiones automáticamente
+        if (this.value.charAt(newPos) === '-') {
+            newPos++;
+        }
+        if (newPos > this.value.length) {
+            newPos = this.value.length;
+        }
+        
+        try {
+            this.setSelectionRange(newPos, newPos);
+        } catch (e) {
+            // Ignorar errores de selección
+        }
+        
+        // Actualizar el mensaje de validación
+        validarRIFEnTiempoReal(this);
+    };
+    
+    rifInput._rifBlurHandler = function() {
+        // Al perder el foco, verificar que el RIF esté completo
+        if (this.value) {
+            const limpio = this.value.replace(/-/g, '');
+            if (limpio.length === 10 && /^[JE]\d{9}$/.test(limpio)) {
+                // RIF completo, formatear correctamente
+                const letra = limpio.charAt(0);
+                const numeros = limpio.substring(1);
+                this.value = `${letra}-${numeros.substring(0, 8)}-${numeros.charAt(8)}`;
+            }
+            validarRIFEnTiempoReal(this);
+        }
+    };
+    
+    rifInput.addEventListener('input', rifInput._rifInputHandler);
+    rifInput.addEventListener('blur', rifInput._rifBlurHandler);
+    
+    // Permitir solo teclas válidas
+    rifInput.addEventListener('keydown', function(e) {
+        const teclasPermitidas = [
+            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Home', 'End', 'PageUp', 'PageDown'
+        ];
+        
+        if (teclasPermitidas.includes(e.key)) {
+            return;
+        }
+        
+        // Permitir solo letras y números
+        if (!/^[a-zA-Z0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
 }
 
 // ==================== VALIDACIÓN TELÉFONO ====================
@@ -311,6 +455,75 @@ function validarRazonSocialEnTiempoReal(input) {
     }
 }
 
+// ==================== VALIDACIÓN DE CÉDULA EN TIEMPO REAL ====================
+
+function validarCedulaEnTiempoReal(input) {
+    const errorElement = document.getElementById('cedula-error');
+    if (!errorElement) return;
+    const valor = input.value.trim();
+    
+    // Si está vacío, limpiar mensajes
+    if (!valor) {
+        errorElement.textContent = '';
+        errorElement.style.color = '';
+        input.classList.remove('field-error-input', 'field-success');
+        input._cedulaValida = false;
+        return;
+    }
+    
+    // Validar formato primero
+    if (!/^\d{7,8}$/.test(valor)) {
+        errorElement.textContent = '✗ La cédula debe tener 7 u 8 dígitos numéricos';
+        errorElement.style.color = '#ef4444';
+        input.classList.add('field-error-input');
+        input.classList.remove('field-success');
+        input._cedulaValida = false;
+        return;
+    }
+    
+    // Verificar si es edición
+    const isEdit = document.getElementById('form-cliente')?.dataset?.editing === 'true';
+    if (isEdit) {
+        errorElement.textContent = '✓ Formato válido (edición)';
+        errorElement.style.color = '#22c55e';
+        input.classList.remove('field-error-input');
+        input.classList.add('field-success');
+        input._cedulaValida = true;
+        return;
+    }
+    
+    // Mostrar mensaje de verificando
+    errorElement.textContent = '⏳ Verificando cédula...';
+    errorElement.style.color = '#f59e0b';
+    input.classList.remove('field-error-input', 'field-success');
+    
+    // Verificar en la base de datos con debounce
+    clearTimeout(input._verificationTimeout);
+    input._verificationTimeout = setTimeout(async () => {
+        try {
+            const existe = await verificarIdentificadorExiste(valor, 'cedula');
+            if (existe) {
+                errorElement.textContent = '✗ Esta cédula ya está registrada';
+                errorElement.style.color = '#ef4444';
+                input.classList.add('field-error-input');
+                input.classList.remove('field-success');
+                input._cedulaValida = false;
+            } else {
+                errorElement.textContent = '✓ Cédula disponible';
+                errorElement.style.color = '#22c55e';
+                input.classList.remove('field-error-input');
+                input.classList.add('field-success');
+                input._cedulaValida = true;
+            }
+        } catch (e) {
+            console.warn('Error verificando cédula:', e);
+            errorElement.textContent = '⚠️ Error al verificar';
+            errorElement.style.color = '#f59e0b';
+            input._cedulaValida = false;
+        }
+    }, 400);
+}
+
 // ==================== VALIDACIÓN FORMULARIO ====================
 
 function validarFormularioAntesDeEnviar(form, nombreFormulario) {
@@ -394,6 +607,7 @@ function initClientes() {
     initModalEliminar();
     initModalVerCliente();
     initCapitalizacionCampos();
+    initCedulaValidation();
 }
 
 function initCapitalizacionCampos() {
@@ -410,59 +624,6 @@ function initCapitalizacionCampos() {
             element.addEventListener('input', capitalizarInput);
             element.addEventListener('blur', capitalizarAlPerderFoco);
         });
-    });
-}
-
-function initRIFAutocomplete() {
-    const rifInput = document.getElementById('rif-input');
-    if (!rifInput) return;
-    rifInput.addEventListener('input', function() {
-        const start = this.selectionStart;
-        const oldLength = this.value.length;
-        formatearRIF(this);
-        const newLength = this.value.length;
-        const diff = newLength - oldLength;
-        let newPos = start + diff;
-        if (this.value.charAt(newPos - 1) === '-') {
-            newPos = newPos + 1;
-        }
-        if (newPos > this.value.length) {
-            newPos = this.value.length;
-        }
-        this.setSelectionRange(newPos, newPos);
-        validarRIFEnTiempoReal(this);
-    });
-    rifInput.addEventListener('blur', function() {
-        if (this.value) {
-            const limpio = this.value.replace(/[^a-zA-Z0-9]/g, '');
-            if (limpio.length >= 9) {
-                const letra = limpio.charAt(0);
-                const numeros = limpio.substring(1);
-                if (numeros.length >= 8) {
-                    const verificador = numeros.length > 8 ? numeros.charAt(8) : '';
-                    this.value = `${letra}-${numeros.substring(0, 8)}${verificador ? '-' + verificador : ''}`;
-                }
-            }
-            validarRIFEnTiempoReal(this);
-        }
-    });
-    rifInput.addEventListener('keydown', function(e) {
-        const teclasPermitidas = [
-            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-            'Home', 'End', 'PageUp', 'PageDown'
-        ];
-        if (teclasPermitidas.includes(e.key)) {
-            return;
-        }
-        if (!/^[a-zA-Z0-9]$/.test(e.key)) {
-            e.preventDefault();
-        }
-    });
-    rifInput.addEventListener('keyup', function() {
-        if (this.value.length > 12) {
-            this.value = this.value.substring(0, 12);
-        }
     });
 }
 
@@ -499,6 +660,32 @@ function initTelefonoValidation() {
             }
         });
     });
+}
+
+function initCedulaValidation() {
+    const cedulaInput = document.getElementById('cedula-input');
+    if (!cedulaInput) return;
+    // Eliminar eventos previos para evitar duplicados
+    cedulaInput.removeEventListener('input', cedulaInput._cedulaHandler);
+    cedulaInput.removeEventListener('blur', cedulaInput._cedulaBlurHandler);
+    
+    cedulaInput._cedulaHandler = function() {
+        // Solo permitir números
+        this.value = this.value.replace(/\D/g, '');
+        if (this.value.length > 8) {
+            this.value = this.value.substring(0, 8);
+        }
+        validarCedulaEnTiempoReal(this);
+    };
+    
+    cedulaInput._cedulaBlurHandler = function() {
+        if (this.value) {
+            validarCedulaEnTiempoReal(this);
+        }
+    };
+    
+    cedulaInput.addEventListener('input', cedulaInput._cedulaHandler);
+    cedulaInput.addEventListener('blur', cedulaInput._cedulaBlurHandler);
 }
 
 function initModalEliminar() {
@@ -564,6 +751,26 @@ function abrirFormularioNuevo() {
     const cedulaInput = document.getElementById('cedula-input');
     if (cedulaInput) {
         cedulaInput.disabled = false;
+        cedulaInput._cedulaValida = false;
+        const errorElement = document.getElementById('cedula-error');
+        if (errorElement) {
+            errorElement.textContent = '';
+            errorElement.style.color = '';
+        }
+        cedulaInput.classList.remove('field-error-input', 'field-success');
+        cedulaInput.value = '';
+    }
+    // Limpiar validación de RIF
+    const rifInput = document.getElementById('rif-input');
+    if (rifInput) {
+        rifInput._rifValido = false;
+        rifInput.classList.remove('field-error', 'field-success');
+        rifInput.value = '';
+    }
+    const rifError = document.getElementById('rif-error');
+    if (rifError) {
+        rifError.textContent = '';
+        rifError.style.color = '';
     }
     toggleCamposPorTipo();
     if (window.UiModal && typeof window.UiModal.openById === "function") {
@@ -695,6 +902,14 @@ function abrirEdicion(id) {
     const cedulaInput = document.getElementById('cedula-input');
     if (cedulaInput) {
         cedulaInput.disabled = true;
+        cedulaInput._cedulaValida = true;
+        const errorElement = document.getElementById('cedula-error');
+        if (errorElement) {
+            errorElement.textContent = '✓ Edición (no se puede modificar)';
+            errorElement.style.color = '#60a5fa';
+        }
+        cedulaInput.classList.remove('field-error-input');
+        cedulaInput.classList.add('field-success');
     }
     if (tipo === "natural") {
         const nombre = cliente.nombre || "";
@@ -731,6 +946,19 @@ function abrirEdicion(id) {
         setFieldValue("telefono", cliente.celular || cliente.telefono || "");
         setFieldValue("correo_juridico", cliente.correo || "");
         setFieldValue("direccion_juridico", cliente.direccion || "");
+        
+        // Marcar RIF como válido en edición
+        const rifInput = document.getElementById('rif-input');
+        if (rifInput) {
+            rifInput._rifValido = true;
+            rifInput.classList.remove('field-error');
+            rifInput.classList.add('field-success');
+            const rifError = document.getElementById('rif-error');
+            if (rifError) {
+                rifError.textContent = '✓ Edición (no se puede modificar)';
+                rifError.style.color = '#60a5fa';
+            }
+        }
     }
     if (clienteIdInput) {
         clienteIdInput.value = String(cliente.id || cliente.rif || "");
@@ -774,6 +1002,24 @@ async function onSubmitCliente(event) {
         if (cedula.length < 7 || cedula.length > 8) {
             mostrarToast("La cédula debe tener 7 u 8 dígitos.", true);
             return;
+        }
+        // Verificar que la cédula no esté duplicada (solo para nuevos)
+        if (!isEdit) {
+            const existe = await verificarIdentificadorExiste(cedula, 'cedula');
+            if (existe) {
+                mostrarToast(`La cédula "${cedula}" ya está registrada.`, true);
+                const cedulaInput = document.getElementById('cedula-input');
+                if (cedulaInput) {
+                    cedulaInput.focus();
+                    cedulaInput.classList.add('field-error-input');
+                    const errorElement = document.getElementById('cedula-error');
+                    if (errorElement) {
+                        errorElement.textContent = '✗ Esta cédula ya está registrada';
+                        errorElement.style.color = '#ef4444';
+                    }
+                }
+                return;
+            }
         }
         const resultadoTelefono = validarTelefono(celular);
         if (!resultadoTelefono.valido) {
@@ -841,6 +1087,7 @@ async function onSubmitCliente(event) {
             if (rifInput) rifInput.focus();
             return;
         }
+        // Verificar el formato del RIF
         const patronRIF = /^[JE]-\d{8}-\d$/;
         if (!patronRIF.test(rif)) {
             mostrarToast("El RIF debe tener el formato: J-12345678-9 o E-12345678-9 (12 caracteres)", true);
@@ -854,6 +1101,23 @@ async function onSubmitCliente(event) {
                 }
             }
             return;
+        }
+        // Verificar que el RIF no esté duplicado (solo para nuevos)
+        if (!isEdit) {
+            const existe = await verificarIdentificadorExiste(rif, 'rif');
+            if (existe) {
+                mostrarToast(`El RIF "${rif}" ya está registrado.`, true);
+                if (rifInput) {
+                    rifInput.focus();
+                    rifInput.classList.add('field-error');
+                    const errorElement = document.getElementById('rif-error');
+                    if (errorElement) {
+                        errorElement.textContent = '✗ Este RIF ya está registrado';
+                        errorElement.style.color = '#ef4444';
+                    }
+                }
+                return;
+            }
         }
         if (!razonSocial) {
             mostrarToast("La razón social es obligatoria.", true);
@@ -968,7 +1232,16 @@ function limpiarFormulario() {
     const cedulaInput = document.getElementById('cedula-input');
     if (cedulaInput) {
         cedulaInput.disabled = false;
+        cedulaInput._cedulaValida = false;
+        const errorElement = document.getElementById('cedula-error');
+        if (errorElement) {
+            errorElement.textContent = '';
+            errorElement.style.color = '';
+        }
+        cedulaInput.classList.remove('field-error-input', 'field-success');
+        cedulaInput.value = '';
     }
+    // Limpiar errores de RIF
     const rifError = document.getElementById('rif-error');
     if (rifError) {
         rifError.textContent = '';
@@ -976,7 +1249,9 @@ function limpiarFormulario() {
     }
     const rifInput = document.getElementById('rif-input');
     if (rifInput) {
+        rifInput._rifValido = false;
         rifInput.classList.remove('field-error', 'field-success');
+        rifInput.value = '';
     }
     const razonSocialError = document.getElementById('razon-social-error');
     if (razonSocialError) {
@@ -986,6 +1261,7 @@ function limpiarFormulario() {
     const razonSocialInput = document.getElementById('razon-social-input');
     if (razonSocialInput) {
         razonSocialInput.classList.remove('field-error', 'field-success');
+        razonSocialInput.value = '';
     }
     const telefonos = document.querySelectorAll('input[name="celular"], input[name="telefono"]');
     telefonos.forEach(input => {

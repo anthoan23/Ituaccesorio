@@ -272,7 +272,7 @@ function renderTablaOrdenes(ordenesData) {
     }
 
     tablaOrdenes.innerHTML = ordenesFiltradas.map((orden) => {
-        const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
+        const clienteNombre = orden.Nombre_completo || `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim() || orden.Razon_social || "Cliente no especificado";
         const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
         return `
             <tr>
@@ -393,7 +393,7 @@ function filtrarOrdenes() {
     if (terminoBusqueda) {
         ordenesFiltradas = ordenesFiltradas.filter((o) => {
             const idOrden = String(o.ID_orden || "").toLowerCase();
-            const clienteNombre = `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}`.toLowerCase();
+            const clienteNombre = (o.Nombre_completo || `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}` || o.Razon_social || "").toLowerCase();
             const equipo = String(o.Equipo || "").toLowerCase();
             
             return idOrden.includes(terminoBusqueda) ||
@@ -635,7 +635,6 @@ async function verificarClienteNatural() {
         if (btnCrearCliente) btnCrearCliente.hidden = true;
     } catch (error) {
         clienteActualId = null;
-        limpiarClienteForm();
         setClienteStatus("Cliente no encontrado. Regístralo para continuar.", true);
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
@@ -665,13 +664,12 @@ async function verificarClienteJuridico() {
         setFieldValue("cliente-correo-juridico", cliente.correo || "");
         setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
         setFieldValue("cliente-tipo", "juridico");
-        setClienteStatus("Empresa verificada correctamente.");
+        setClienteStatus("Empresa verificado correctamente.");
 
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
     } catch (error) {
         clienteActualId = null;
-        limpiarClienteForm();
         setClienteStatus("Empresa no encontrada. Regístrala para continuar.", true);
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
@@ -804,14 +802,23 @@ async function verificarEquipo() {
 }
 
 // ============================================
-// 13. MARCAR TODOS LOS TESTS COMO OK
+// 13. MARCAR TODOS LOS TESTS COMO OK O NO FUNCIONA
 // ============================================
+
 function marcarTodosTestsOK() {
     const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]');
     radios.forEach(radio => {
         radio.checked = true;
     });
     Utils.showMessage('✅ Todos los componentes marcados como OK');
+}
+
+function marcarTodosTestsFallo() {
+    const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]');
+    radios.forEach(radio => {
+        radio.checked = true;
+    });
+    Utils.showMessage('❌ Todos los componentes marcados como No funciona');
 }
 
 // ============================================
@@ -916,8 +923,8 @@ async function onSubmitOrden(event) {
         Utils.showMessage("La descripción del problema es obligatoria.", true);
         return;
     }
-    if (descripcion.length > 100) {
-        Utils.showMessage("La descripción no puede exceder 100 caracteres.", true);
+    if (descripcion.length > 300) {
+        Utils.showMessage("La descripción no puede exceder 300 caracteres.", true);
         return;
     }
 
@@ -1204,7 +1211,7 @@ function renderDetalleOrdenModal(detalle) {
 
     const estado = detalle.Estado || 'Pendiente';
     const badgeClass = Utils.getEstadoBadgeClass(estado);
-    const clienteNombre = `${detalle.Nombre_cliente || ''} ${detalle.Apellido_cliente || ''}`.trim() || 'No especificado';
+    const clienteNombre = detalle.Nombre_completo || `${detalle.Nombre_cliente || ''} ${detalle.Apellido_cliente || ''}`.trim() || detalle.Razon_social || 'No especificado';
     const costo = detalle.Costo_reparacion;
 
     container.innerHTML = `
@@ -1311,10 +1318,29 @@ function renderTestsOrdenModal(tests, idOrden) {
                     ${numerosTest.map((num) => {
                         const items = testsPorNumero[num];
                         const cantidad = items.length;
+                        // Contar cuántos funcionan y cuántos no
+                        const funcionan = items.filter(t => {
+                            const resultado = t.Resultado_test || t.resultado || '';
+                            return resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
+                        }).length;
+                        const noFuncionan = items.filter(t => {
+                            const resultado = t.Resultado_test || t.resultado || '';
+                            return resultado.toLowerCase().includes('no funciona') || resultado.toLowerCase().includes('falla');
+                        }).length;
+                        const observaciones = items.filter(t => {
+                            const nombre = t.Nombre_test || t.nombre || '';
+                            return nombre.toLowerCase().includes('observacion');
+                        }).length;
+                        
                         return `
                             <tr>
                                 <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(num)}</span></td>
-                                <td data-label="Cantidad">${cantidad} ${cantidad === 1 ? 'componente' : 'componentes'}</td>
+                                <td data-label="Cantidad">
+                                    ${cantidad} ${cantidad === 1 ? 'componente' : 'componentes'}
+                                    ${funcionan > 0 ? `<span class="badge badge--success" style="background:rgba(34,197,94,0.15);color:#22c55e;font-size:0.6rem;margin-left:0.5rem;">✅ ${funcionan}</span>` : ''}
+                                    ${noFuncionan > 0 ? `<span class="badge badge--danger" style="background:rgba(239,68,68,0.15);color:#ef4444;font-size:0.6rem;margin-left:0.3rem;">❌ ${noFuncionan}</span>` : ''}
+                                    ${observaciones > 0 ? `<span class="badge badge--warning" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.6rem;margin-left:0.3rem;">📝 ${observaciones}</span>` : ''}
+                                </td>
                                 <td data-label="Acción" class="table__actions">
                                     <button type="button" class="icon-action icon-action--view" data-action="ver-test-detalle" data-id-orden="${Utils.escapeHtml(idOrden)}" data-num-test="${Utils.escapeHtml(num)}" title="Ver detalles del test">
                                         ${Iconos.ojo}
@@ -1340,7 +1366,7 @@ function renderTestsOrdenModal(tests, idOrden) {
 }
 
 // ============================================
-// 17.1 FUNCIÓN PARA VER DETALLE DE TEST
+// 17.1 FUNCIÓN PARA VER DETALLE DE TEST - CON COLORES Y OBSERVACIONES
 // ============================================
 
 async function verDetalleTest(idOrden, numTest) {
@@ -1365,7 +1391,6 @@ async function verDetalleTest(idOrden, numTest) {
     }
 
     try {
-        // Obtener los detalles del test desde el backend
         const data = await Utils.fetchJson(`/api/ordenes-servicio/ordenes/${encodeURIComponent(idOrden)}/test/${encodeURIComponent(numTest)}`);
         
         const componentes = data.componentes || data.tests || [];
@@ -1375,23 +1400,92 @@ async function verDetalleTest(idOrden, numTest) {
             return;
         }
 
-        // Renderizar los componentes en grid de 4 columnas
-        modalBody.innerHTML = `
-            <div class="test-detail-grid">
-                ${componentes.map((comp) => {
-                    const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Componente';
-                    const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
-                    const esOk = resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
-                    const badgeClass = esOk ? 'test-badge--success' : 'test-badge--danger';
-                    return `
-                        <div class="test-detail-item">
-                            <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
-                            <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(resultado)}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+        // Separar observaciones del resto de componentes
+        const observaciones = [];
+        const componentesFiltrados = [];
+        
+        componentes.forEach((comp) => {
+            const nombre = comp.Nombre_test || comp.nombre || comp.test || '';
+            if (nombre.toLowerCase().includes('observacion')) {
+                observaciones.push(comp);
+            } else {
+                componentesFiltrados.push(comp);
+            }
+        });
+
+        // Renderizar los componentes con colores según su estado
+        let html = '<div class="test-detail-grid">';
+        
+        // Primero los componentes normales
+        componentesFiltrados.forEach((comp) => {
+            const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Componente';
+            const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
+            
+            // Determinar el color según el resultado
+            let badgeClass = 'test-badge--default';
+            let displayResultado = resultado;
+            
+            // Normalizar el resultado para comparación
+            const resultadoLower = resultado.toLowerCase().trim();
+            
+            // VERIFICAR PRIMERO "NO FUNCIONA" ANTES QUE "FUNCIONA"
+            if (resultadoLower.includes('no funciona') || 
+                resultadoLower.includes('no func') || 
+                resultadoLower === '0' ||
+                resultadoLower === 'falla' ||
+                resultadoLower === 'malo' ||
+                resultadoLower.includes('fallo')) {
+                badgeClass = 'test-badge--danger';
+                displayResultado = '❌ No funciona';
+            } else if (resultadoLower.includes('funciona') || 
+                       resultadoLower.includes('ok') || 
+                       resultadoLower === '1' ||
+                       resultadoLower === 'bueno' ||
+                       resultadoLower.includes('correcto')) {
+                badgeClass = 'test-badge--success';
+                displayResultado = '✅ Funciona';
+            } else {
+                // Si no se reconoce, mostrar el valor original
+                displayResultado = resultado;
+            }
+            
+            html += `
+                <div class="test-detail-item ${badgeClass}">
+                    <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                    <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(displayResultado)}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        // Agregar observaciones al final con estilo amarillo
+        if (observaciones.length > 0) {
+            html += `
+                <div class="test-detail-observations">
+                    <h4 class="test-detail-observations-title">📝 Observaciones</h4>
+                    <div class="test-detail-grid">
+            `;
+            
+            observaciones.forEach((comp) => {
+                const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Observaciones';
+                const resultado = comp.Resultado_test || comp.resultado || '';
+                
+                html += `
+                    <div class="test-detail-item test-badge--warning" style="grid-column: 1 / -1; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08);">
+                        <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                        <span class="test-detail-result test-badge--warning" style="color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">${Utils.escapeHtml(resultado)}</span>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
+        modalBody.innerHTML = html;
 
     } catch (error) {
         console.error('Error al cargar detalle del test:', error);
@@ -1597,8 +1691,9 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.style.opacity = '0.7';
     }
 
-    // Botón para marcar todos los tests como OK
+    // Botones para marcar todos los tests
     document.getElementById('btn-marcar-todos-test')?.addEventListener('click', marcarTodosTestsOK);
+    document.getElementById('btn-marcar-todos-fallo')?.addEventListener('click', marcarTodosTestsFallo);
 
     // Formulario de revisión inicial
     formRevisionInicial?.addEventListener('submit', confirmarRevision);
