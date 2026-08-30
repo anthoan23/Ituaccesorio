@@ -654,7 +654,7 @@ body {
 .table td {
     padding: 0.85rem 0.75rem;
     border-bottom: 1px solid var(--border-light);
-    text-align: left;
+    text-align: center;
     vertical-align: middle;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -685,13 +685,13 @@ body {
 .table tbody tr.is-selected { background: rgba(243, 197, 0, 0.13); }
 
 .table__actions {
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
 }
 
 .row-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
     gap: 0.35rem;
     flex-wrap: nowrap;
@@ -942,18 +942,21 @@ body {
 .icon-action--view,
 .icon-action[data-action="ver"],
 .icon-action[data-accion="ver-orden"],
-.icon-action[data-accion="ver-test"] {
+.icon-action[data-accion="ver-test"],
+.icon-action[data-accion="ver-test-modal"] {
     border-color: var(--blue);
     background: rgba(59, 130, 246, 0.08);
 }
 .icon-action--view svg,
 .icon-action[data-action="ver"] svg,
 .icon-action[data-accion="ver-orden"] svg,
-.icon-action[data-accion="ver-test"] svg { fill: var(--blue); color: var(--blue); }
+.icon-action[data-accion="ver-test"] svg,
+.icon-action[data-accion="ver-test-modal"] svg { fill: var(--blue); color: var(--blue); }
 .icon-action--view:hover,
 .icon-action[data-action="ver"]:hover,
 .icon-action[data-accion="ver-orden"]:hover,
-.icon-action[data-accion="ver-test"]:hover {
+.icon-action[data-accion="ver-test"]:hover,
+.icon-action[data-accion="ver-test-modal"]:hover {
     border-color: #60a5fa;
     background: rgba(59, 130, 246, 0.18);
     box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
@@ -1006,6 +1009,23 @@ body {
     gap: 0.75rem;
     flex-wrap: wrap;
     margin-top: 0.5rem;
+}
+
+/* Sección interna de formulario */
+.ui-form__section {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+}
+
+.ui-form__subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.4rem;
 }
 
 /* Campos de formulario - UNIFICADO */

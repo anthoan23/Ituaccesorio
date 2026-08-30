@@ -133,6 +133,8 @@
 
     if (u.includes("/api/reportes-ventas/listar")) return false;
 
+    // El QR de taller_celular abre su propio modal; no mostrar feedback de éxito
+    if (u.includes("/api/taller_celular/crear-token")) return false;
 
     return true;
   }

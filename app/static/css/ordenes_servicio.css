@@ -182,7 +182,7 @@
 .table td {
     padding: 0.85rem 0.75rem;
     border-bottom: 1px solid var(--border-light);
-    text-align: left;
+    text-align: center;
     vertical-align: middle;
     overflow-wrap: break-word;
     word-break: normal;
