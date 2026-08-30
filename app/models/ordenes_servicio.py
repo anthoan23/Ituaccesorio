@@ -457,14 +457,74 @@ class Orden_servicio():
         
         cursor = db.cursor(dictionary=True)
         try:
-            # 1. Verificar que el cliente existe
-            cursor.execute(
-                "SELECT ID_cliente FROM Cliente WHERE ID_cliente = %s",
-                (id_cliente,)
-            )
-            cliente = cursor.fetchone()
-            if not cliente:
+            # 1. Verificar que el cliente existe (buscando con y sin guiones)
+            cliente_encontrado = False
+            cliente_id_real = id_cliente
+            
+            # Buscar en la tabla Cliente
+            if '-' in id_cliente:
+                # Tiene guiones, buscar con y sin guiones
+                id_sin_guiones = id_cliente.replace("-", "").upper()
+                cursor.execute(
+                    "SELECT ID_cliente FROM Cliente WHERE ID_cliente = %s OR ID_cliente = %s",
+                    (id_cliente, id_sin_guiones)
+                )
+                row = cursor.fetchone()
+                if row:
+                    cliente_encontrado = True
+                    cliente_id_real = row['ID_cliente']
+            else:
+                # No tiene guiones
+                import re
+                if re.search(r'[A-Za-z]', id_cliente) and len(id_cliente) == 10 and id_cliente[0] in 'JE':
+                    # Es un RIF sin guiones, buscar también con guiones
+                    id_con_guiones = f"{id_cliente[0]}-{id_cliente[1:9]}-{id_cliente[9]}"
+                    cursor.execute(
+                        "SELECT ID_cliente FROM Cliente WHERE ID_cliente = %s OR ID_cliente = %s",
+                        (id_cliente, id_con_guiones)
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        cliente_encontrado = True
+                        cliente_id_real = row['ID_cliente']
+                else:
+                    cursor.execute(
+                        "SELECT ID_cliente FROM Cliente WHERE ID_cliente = %s",
+                        (id_cliente,)
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        cliente_encontrado = True
+                        cliente_id_real = row['ID_cliente']
+            
+            # Si no se encontró, buscar en Cliente_juridico por RIF
+            if not cliente_encontrado:
+                cursor.execute(
+                    "SELECT ID_cliente FROM Cliente_juridico WHERE Rif_cliente = %s",
+                    (id_cliente,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    cliente_encontrado = True
+                    cliente_id_real = row['ID_cliente']
+            
+            # Si aún no se encontró, buscar sin guiones en Rif_cliente
+            if not cliente_encontrado and '-' in id_cliente:
+                id_sin_guiones = id_cliente.replace("-", "").upper()
+                cursor.execute(
+                    "SELECT ID_cliente FROM Cliente_juridico WHERE Rif_cliente = %s",
+                    (id_sin_guiones,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    cliente_encontrado = True
+                    cliente_id_real = row['ID_cliente']
+            
+            if not cliente_encontrado:
                 raise Exception(f"El cliente con ID {id_cliente} no existe en la base de datos.")
+            
+            # Usar el ID real del cliente (como está en la base de datos)
+            id_cliente_guardar = cliente_id_real
             
             # 2. Verificar que el equipo existe
             cursor.execute(
@@ -510,7 +570,7 @@ class Orden_servicio():
             cursor.execute(sql, (
                 nuevo_id,
                 id_equipo,
-                id_cliente,
+                id_cliente_guardar,  # Usar el ID real del cliente
                 'Pendiente',  # Estado inicial
                 descripcion,
                 nota,
@@ -550,7 +610,7 @@ class Orden_servicio():
 
 
     # ============================================
-    # MÉTODO PARA LISTAR ÓRDENES CON FILTRO
+    # MÉTODO PARA LISTAR ÓRDENES CON FILTRO - CORREGIDO
     # ============================================
     def listado_ordenes_servicio(self, estados=None):
         """
@@ -585,6 +645,13 @@ class Orden_servicio():
                     c.Correo_cliente AS Correo_cliente,
                     pn.Nombre_cliente AS Nombre_cliente,
                     pn.Apellido_cliente AS Apellido_cliente,
+                    cj.Razon_social AS Razon_social,
+                    -- Campo combinado para mostrar en la tabla
+                    CASE 
+                        WHEN pn.ID_cliente IS NOT NULL THEN CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente)
+                        WHEN cj.ID_cliente IS NOT NULL THEN cj.Razon_social
+                        ELSE 'Cliente no especificado'
+                    END AS Nombre_completo,
                     -- Datos del equipo
                     e.ID_equipo AS Equipo,
                     e.Color AS Color,
@@ -623,7 +690,7 @@ class Orden_servicio():
 
 
     # ============================================
-    # MÉTODO PARA OBTENER DETALLES DE UNA ORDEN
+    # MÉTODO PARA OBTENER DETALLES DE UNA ORDEN - CORREGIDO
     # ============================================
     def detalles_orden(self, id_orden: str) -> dict:
         """
@@ -657,6 +724,13 @@ class Orden_servicio():
                     c.Correo_cliente AS Correo_cliente,
                     pn.Nombre_cliente AS Nombre_cliente,
                     pn.Apellido_cliente AS Apellido_cliente,
+                    cj.Razon_social AS Razon_social,
+                    -- Campo combinado para mostrar
+                    CASE 
+                        WHEN pn.ID_cliente IS NOT NULL THEN CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente)
+                        WHEN cj.ID_cliente IS NOT NULL THEN cj.Razon_social
+                        ELSE 'Cliente no especificado'
+                    END AS Nombre_completo,
                     -- Datos del equipo
                     e.ID_equipo AS Equipo,
                     e.Color AS Color,
@@ -860,13 +934,17 @@ class Orden_servicio():
                     os.Estado_orden_servicio AS Estado,
                     os.Descripcion_reparacion AS Descripcion,
                     os.Fecha_entrada AS Fecha_e,
-                    pn.Nombre_cliente AS Nombre_cliente,
-                    pn.Apellido_cliente AS Apellido_cliente,
+                    CASE 
+                        WHEN pn.ID_cliente IS NOT NULL THEN CONCAT(pn.Nombre_cliente, ' ', pn.Apellido_cliente)
+                        WHEN cj.ID_cliente IS NOT NULL THEN cj.Razon_social
+                        ELSE 'Cliente no especificado'
+                    END AS Nombre_cliente,
                     prod.Nombre_producto AS modelo,
                     i.Accion AS Accion
                 FROM Orden_servicio os
                 INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
                 LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente
+                LEFT JOIN Cliente_juridico cj ON c.ID_cliente = cj.ID_cliente
                 INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
                 INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
                 INNER JOIN Interaccion i ON os.ID_orden_servicio = i.ID_orden_servicio

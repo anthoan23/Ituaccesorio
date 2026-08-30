@@ -279,17 +279,69 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .revision-components-header h3 {
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-strong);
+    margin: 0;
 }
 
-.revision-components-header .ui-btn {
+.revision-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.revision-header-buttons .ui-btn {
     font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.revision-header-buttons .ui-btn--sm {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.6rem;
+}
+
+/* Botón Marcar todos como OK */
+#btn-marcar-todos-test {
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+#btn-marcar-todos-test:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+#btn-marcar-todos-test:active {
+    transform: scale(0.97);
+}
+
+/* Botón Marcar todos como No funciona */
+#btn-marcar-todos-fallo {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+#btn-marcar-todos-fallo:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+#btn-marcar-todos-fallo:active {
+    transform: scale(0.97);
 }
 
 .test-grid {
@@ -672,7 +724,7 @@
 }
 
 /* ============================================
-   MODAL DETALLE DE TEST
+   MODAL DETALLE DE TEST - CON COLORES
    ============================================ */
 
 .test-detail-container {
@@ -720,7 +772,6 @@
 }
 
 .test-detail-item:hover {
-    border-color: rgba(243, 197, 0, 0.3);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -742,16 +793,114 @@
     align-self: flex-start;
 }
 
+/* ============================================
+   ESTILOS PARA DETALLE DE TEST - COLORES
+   ============================================ */
+
+/* Color por defecto */
+.test-detail-item.test-badge--default {
+    border-color: var(--border-light);
+    background: var(--glass-bg);
+}
+
+/* Color verde para "Funciona" */
+.test-detail-item.test-badge--success {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.test-detail-item.test-badge--success:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}
+
 .test-detail-result.test-badge--success {
-    color: var(--green);
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* Color rojo para "No funciona" */
+.test-detail-item.test-badge--danger {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.test-detail-item.test-badge--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .test-detail-result.test-badge--danger {
-    color: var(--danger);
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Color amarillo para "Observaciones" */
+.test-detail-item.test-badge--warning {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.test-detail-item.test-badge--warning:hover {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.test-detail-result.test-badge--warning {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ============================================
+   BADGES EN EL HISTORIAL DE TESTS
+   ============================================ */
+
+.badge--success {
+    background: rgba(34, 197, 94, 0.15) !important;
+    color: #22c55e !important;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.badge--danger {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.badge--warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
 }
 
 /* ============================================
@@ -851,6 +1000,12 @@
     }
 }
 
+@media (max-width: 600px) {
+    .test-detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 480px) {
     .stats--grid {
         grid-template-columns: 1fr;
@@ -889,5 +1044,22 @@
     
     .test-detail-grid {
         grid-template-columns: 1fr;
+    }
+
+    .revision-components-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .revision-header-buttons {
+        justify-content: stretch;
+    }
+    
+    .revision-header-buttons .ui-btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.65rem;
+        padding: 0.3rem 0.5rem;
     }
 }

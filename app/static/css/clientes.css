@@ -19,26 +19,6 @@
 }
 
 /* ============================================
-   TOOLBAR DE CLIENTES
-   ============================================ */
-.clientes-toolbar {
-    display: grid;
-    grid-template-columns: 1fr 240px;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-    align-items: end;
-}
-
-.clientes-toolbar__field {
-    margin: 0;
-}
-
-.clientes-toolbar__field input,
-.clientes-toolbar__field .select-wrapper select {
-    width: 100%;
-}
-
-/* ============================================
    BADGES PARA TIPOS DE CLIENTE
    ============================================ */
 .badge {
@@ -343,12 +323,6 @@
     }
     .stats {
         grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 920px) {
-    .clientes-toolbar {
-        grid-template-columns: 1fr;
     }
 }
 

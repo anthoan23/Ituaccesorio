@@ -473,10 +473,10 @@
                   rows="4" 
                   required 
                   placeholder="Describe la falla o servicio solicitado" 
-                  maxlength="100"
+                  maxlength="300"
                   data-validation-rules="sinCaracteresEspeciales"
                   title="Sin caracteres especiales"></textarea>
-        <small class="field-hint">Sin caracteres especiales, máximo 100 caracteres</small>
+        <small class="field-hint">Sin caracteres especiales, máximo 300 caracteres</small>
       </label>
 
       <!-- Notas -->
@@ -510,9 +510,14 @@
       
       <div class="revision-components-header">
         <h3>Componentes del equipo</h3>
-        <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm">
-          Marcar todos como OK
-        </button>
+        <div class="revision-header-buttons">
+          <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm">
+            ✅ Marcar todos como OK
+          </button>
+          <button type="button" id="btn-marcar-todos-fallo" class="ui-btn ui-btn--ghost ui-btn--sm">
+            ❌ Marcar todos como No funciona
+          </button>
+        </div>
       </div>
       
       <div class="revision-grid">

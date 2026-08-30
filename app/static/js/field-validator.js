@@ -61,7 +61,7 @@
 
   // Reglas predefinidas para bloquear entrada en tiempo real
   const INPUT_FILTER_RULES = {
-  noDuplicadoTabla: {
+    noDuplicadoTabla: {
       filter: (value) => value,
       validate: (value, field) => {
         if (!value || !value.trim()) return true;
@@ -150,9 +150,29 @@
       message: 'Ingrese un correo electrónico válido'
     },
     rif: {
-      filter: (value) => value.replace(/[^A-Za-z0-9\-]/g, ''),
-      validate: (value) => value === '' || /^[A-Za-z]-?\d{8}-?\d$/.test(value),
-      message: 'Ingrese un RIF válido (ej. J-12345678-9)'
+      filter: (value) => {
+        // Permitir solo letras (J/E), números y guiones
+        let filtered = value.replace(/[^A-Za-z0-9\-]/g, '');
+        filtered = filtered.toUpperCase();
+        return filtered;
+      },
+      validate: (value) => {
+        // Si está vacío, es válido (no requerido)
+        if (!value || value.trim() === '') return true;
+        
+        // Limpiar el valor para verificar
+        const limpio = value.replace(/-/g, '');
+        
+        // Verificar formato: debe comenzar con J o E y tener 10 caracteres (1 letra + 9 dígitos)
+        if (!/^[JE]\d{9}$/.test(limpio)) {
+          return false;
+        }
+        
+        // Verificar el formato completo con guiones
+        const patronRIF = /^[JE]-\d{8}-\d$/;
+        return patronRIF.test(value);
+      },
+      message: 'Formato inválido. Use J-12345678-9 o E-12345678-9'
     },
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),

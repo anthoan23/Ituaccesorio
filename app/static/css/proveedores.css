@@ -74,7 +74,7 @@
 
 .col-cost {
     width: 130px;
-    text-align: right;
+    text-align: center;
 }
 
 /* ============================================
@@ -117,7 +117,7 @@
     padding: 0.4rem 0.6rem;
     font: inherit;
     font-weight: 700;
-    text-align: right;
+    text-align: center;
     background: var(--input-bg);
     color: var(--input-text);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;

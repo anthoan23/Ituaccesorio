@@ -301,7 +301,7 @@
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--yellow);
-    text-align: right;
+    text-align: center;
     min-width: 120px;
 }
 
@@ -693,12 +693,12 @@
     }
     
     .producto-cantidad {
-        text-align: left;
+        text-align: center;
         min-width: auto;
     }
     
     .producto-precio {
-        text-align: left;
+        text-align: center;
         min-width: auto;
     }
     
