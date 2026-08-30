@@ -8,11 +8,40 @@ home_blueprint = Blueprint('home', __name__)
 
 @home_blueprint.route('/')
 def home():
-    usuario = getattr(g, "user", None)
-    nombre_rol = getattr(usuario, "nombre_rol", "") if usuario else ""
-    if str(nombre_rol or "").strip().lower() != "cliente" and usuario:
-        return render_template('index.html', show_navbar=True, show_notifications=True, active_page='dashboard')
-    return redirect(url_for("ventas.pagina_catalogo"))
+    try:
+        usuario = getattr(g, "user", None)
+        
+        
+        if not usuario:
+            print("[DEBUG] Home - No hay usuario, redirigiendo a login")
+            return redirect(url_for("login.pagina_login"))
+        
+        if isinstance(usuario, dict):
+            nombre_rol = usuario.get("rol_nombre", "")
+            if not nombre_rol:
+                nombre_rol = getattr(g, "nombre_rol", "")
+        else:
+            nombre_rol = getattr(usuario, "rol_nombre", "")
+            if not nombre_rol:
+                nombre_rol = getattr(g, "nombre_rol", "")
+        
+        
+        nombre_rol_str = str(nombre_rol).strip().lower() if nombre_rol else ""
+        
+        if nombre_rol_str == "admin" or nombre_rol_str == "administrador":
+            return render_template(
+                'index.html', 
+                show_navbar=True, 
+                show_notifications=True, 
+                active_page='dashboard'
+            )
+        
+        return redirect(url_for("ventas.pagina_catalogo"))
+        
+    except Exception as e:
+        print(f"[ERROR] Home: {e}")
+        traceback.print_exc()
+        return redirect(url_for("login.pagina_login"))
 
 
 @home_blueprint.route('/inventario')
