@@ -32,19 +32,48 @@
    COLUMNAS DE TABLA
    ============================================ */
 .col-id {
-    width: 70px;
+    width: 100px;
+    min-width: 80px;
+    white-space: nowrap;
 }
 
 .col-usuario {
-    width: 180px;
+    width: 200px;
+    min-width: 160px;
 }
 
 .col-accion {
-    width: 140px;
+    width: 150px;
+    min-width: 120px;
 }
 
 .col-fecha {
-    width: 180px;
+    width: 200px;
+    min-width: 170px;
+}
+
+/* Columna de descripción */
+.table td:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-fecha),
+.table th:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-fecha) {
+    min-width: 150px;
+    max-width: 350px;
+    word-break: break-word;
+}
+
+/* ============================================
+   CHIP PARA ID
+   ============================================ */
+.chip {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.8rem;
+    min-width: 35px;
+    text-align: center;
+    border: 1px solid var(--border-light);
+    color: var(--text-strong);
 }
 
 /* ============================================
@@ -210,10 +239,12 @@
     .col-accion,
     .col-fecha {
         width: auto;
+        min-width: 0;
+        white-space: normal;
     }
     
     .table {
-        min-width: 600px;
+        min-width: 650px;
     }
     
     .detail-grid {
@@ -225,14 +256,40 @@
         height: 28px;
         font-size: 0.7rem;
     }
+    
+    .chip {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        min-width: 28px;
+    }
 }
 
 @media (max-width: 480px) {
     .table {
-        min-width: 500px;
+        min-width: 550px;
     }
     
     .user-cell span {
         font-size: 0.8rem;
+    }
+    
+    .col-id {
+        width: 70px;
+        min-width: 60px;
+    }
+    
+    .col-usuario {
+        width: 150px;
+        min-width: 120px;
+    }
+    
+    .col-accion {
+        width: 120px;
+        min-width: 100px;
+    }
+    
+    .col-fecha {
+        width: 160px;
+        min-width: 140px;
     }
 }
