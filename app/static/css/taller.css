@@ -245,3 +245,51 @@
 #modal-qr-code img {
     margin: 0 auto;
 }
+
+/* ============================================
+   MODAL DETALLE DE ORDEN - SEPARACIÓN DE SECCIONES
+   ============================================ */
+#modal-preview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+#modal-preview-orden .card__subtitle {
+    margin: 0 0 0.75rem 0;
+    font-family: var(--font-family-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+#modal-preview-orden #modal-order-photos,
+#modal-preview-orden #modal-order-tests {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+}
+
+#modal-preview-orden .device-photos-wrap,
+#modal-preview-orden .device-tests {
+    margin-top: 0;
+}
+
+#modal-preview-orden #modal-order-tests .table-wrap {
+    margin-top: 0.25rem;
+}
+
+#modal-preview-body .service-form__actions {
+    margin-top: 0;
+}
+
+/* ============================================
+   FILA DE ACCIONES (botones al pie de modales)
+   ============================================ */
+.service-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+}

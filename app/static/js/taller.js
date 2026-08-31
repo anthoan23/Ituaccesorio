@@ -685,16 +685,18 @@ const OrdenesService = {
                     return `
                         <div class="foto-item" data-foto-index="${index}">
                             <div class="foto-thumbnail">
-                                <img src="${Utils.escapeHtml(fotoUrl)}" 
-                                     alt="Foto ${index + 1}" 
+                                <img src="${Utils.escapeHtml(fotoUrl)}"
+                                     alt="Foto ${index + 1}"
                                      loading="lazy"
-                                     onclick="OrdenesService.verFotoAmpliada('${Utils.escapeHtml(fotoUrl)}')">
+                                     data-foto-url="${Utils.escapeHtml(fotoUrl)}"
+                                     title="Clic para ampliar">
                             </div>
                         </div>
                     `;
                 }).join('')}
             </div>
         `;
+        this.configurarZoomFotos(container);
     },
 
     renderizarTestsModal(container, tests, idOrden) {
@@ -899,13 +901,14 @@ const OrdenesService = {
                     return `
                         <div class="foto-item" data-foto-index="${index}">
                             <div class="foto-thumbnail">
-                                <img src="${Utils.escapeHtml(fotoUrl)}" 
-                                     alt="Foto ${index + 1}" 
+                                <img src="${Utils.escapeHtml(fotoUrl)}"
+                                     alt="Foto ${index + 1}"
                                      loading="lazy"
-                                     onclick="OrdenesService.verFotoAmpliada('${Utils.escapeHtml(fotoUrl)}')">
+                                     data-foto-url="${Utils.escapeHtml(fotoUrl)}"
+                                     title="Clic para ampliar">
                                 ${showDelete ? `
-                                    <button type="button" class="foto-delete-btn" 
-                                            data-accion="eliminar-foto" 
+                                    <button type="button" class="foto-delete-btn"
+                                            data-accion="eliminar-foto"
                                             data-id-foto="${Utils.escapeHtml(fotoId)}"
                                             aria-label="Eliminar foto">
                                         ✕
@@ -917,6 +920,7 @@ const OrdenesService = {
                 }).join('')}
             </div>
         `;
+        this.configurarZoomFotos(container);
 
         if (showDelete) {
             container.querySelectorAll('[data-accion="eliminar-foto"]').forEach(btn => {
@@ -932,20 +936,40 @@ const OrdenesService = {
         }
     },
 
+    configurarZoomFotos(container) {
+        if (!container) return;
+        container.querySelectorAll('.foto-thumbnail img[data-foto-url]').forEach(img => {
+            img.addEventListener('click', () => this.verFotoAmpliada(img.dataset.fotoUrl));
+        });
+    },
+
     verFotoAmpliada(url) {
         const existingOverlay = document.querySelector('.foto-modal-overlay');
-        if (existingOverlay) {
-            existingOverlay.remove();
-            return;
-        }
+        if (existingOverlay) existingOverlay.remove();
 
         const overlay = document.createElement('div');
         overlay.className = 'foto-modal-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Foto ampliada');
         overlay.innerHTML = `
-            <button class="close-btn" onclick="this.closest('.foto-modal-overlay').remove()">✕</button>
-            <img src="${Utils.escapeHtml(url)}" alt="Foto ampliada" onclick="event.stopPropagation()">
+            <button type="button" class="close-btn" aria-label="Cerrar">✕</button>
+            <img src="${Utils.escapeHtml(url)}" alt="Foto ampliada">
         `;
-        overlay.addEventListener('click', () => overlay.remove());
+
+        const cerrar = () => {
+            overlay.remove();
+            document.removeEventListener('keydown', onKey);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') cerrar();
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) cerrar();
+        });
+        overlay.querySelector('.close-btn').addEventListener('click', cerrar);
+        document.addEventListener('keydown', onKey);
         document.body.appendChild(overlay);
     },
 
