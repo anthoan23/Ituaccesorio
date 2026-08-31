@@ -128,7 +128,7 @@
     modalDiv.className = `ui-modal ui-modal--confirm ${modalClass}`;
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true">
+      <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true">
         <header class="ui-modal__header">
           <h3 class="ui-modal__title">${titulo}</h3>
           <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>

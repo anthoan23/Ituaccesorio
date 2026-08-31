@@ -99,7 +99,7 @@
                  maxlength="15"
                  data-validation-rules="rif"
                  title="Formato: J-12345678-9">
-          <small class="field-hint">Formato: J-12345678-9 (opcional)</small>
+          <small id="c-rif-error" class="field-hint">Formato: J-12345678-9 (opcional)</small>
         </label>
 
         <label class="field">
@@ -231,7 +231,7 @@
                  maxlength="15"
                  data-validation-rules="rif"
                  title="Formato: J-12345678-9">
-          <small class="field-hint">Formato: J-12345678-9 (opcional)</small>
+          <small id="e-rif-error" class="field-hint">Formato: J-12345678-9 (opcional)</small>
         </label>
 
         <label class="field field--full">
@@ -343,33 +343,57 @@
   {% endcall %}
 
   <!-- Modal Agregar Producto a Proveedor Existente -->
-  {% call modal('modal-proveedor-agregar-producto', 'Agregar producto', 'sm') %}
+  {% call modal('modal-proveedor-agregar-producto', 'Agregar producto', 'lg') %}
     <form id="form-proveedor-agregar-producto" class="ui-form" action="#" method="post" autocomplete="off">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <input id="ap-proveedor-id" type="hidden" name="id_proveedor" value="">
 
       <div class="ui-form__grid ui-form__grid--one">
-        <label class="field">
-          <span>Producto (modelo)</span>
-          <div class="select-wrapper">
-            <select id="ap-id-modelo" name="id_modelo" aria-label="Producto"></select>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="flex:1; min-width:180px;">
+            <label class="field">
+              <span>Buscar (nombre)</span>
+              <input id="ap-buscar-q" type="text" placeholder="Buscar modelo..." class="field__input">
+            </label>
           </div>
-        </label>
+          <div style="flex: 0 0 240px; min-width:180px;">
+            <label class="field">
+              <span>Clase</span>
+              <div class="select-wrapper">
+                <select id="ap-id-clase" name="id_clase" aria-label="Clase">
+                  <option value="">(Opcional) Selecciona</option>
+                </select>
+              </div>
+            </label>
+          </div>
+          <div style="flex: 0 0 240px; min-width:180px;">
+            <label class="field">
+              <span>Marca</span>
+              <div class="select-wrapper">
+                <select id="ap-id-marca" name="id_marca" aria-label="Marca">
+                  <option value="">(Opcional) Selecciona</option>
+                </select>
+              </div>
+            </label>
+          </div>
+        </div>
 
-        <label class="field">
-          <span>Costo <span class="required-indicator">*</span></span>
-          <input id="ap-costo" 
-                 name="costo" 
-                 type="number" 
-                 inputmode="numeric" 
-                 min="0" 
-                 step="1" 
-                 placeholder="Ej: 550000" 
-                 required
-                 data-validation-rules="soloNumeros"
-                 title="Solo números enteros positivos">
-          <small class="field-hint">Solo números enteros</small>
-        </label>
+        <div style="margin-top:8px; width:100%">
+          <div class="table-wrap" role="region" aria-label="Seleccionar modelo" style="max-height:300px; overflow:auto;">
+            <table class="table" id="ap-modelos-table" style="width:100%; table-layout:fixed;">
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Marca</th>
+                  <th>Clase</th>
+                  <th>Costo</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="ap-modelos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div class="ui-form__actions">
@@ -380,32 +404,56 @@
   {% endcall %}
 
   <!-- Modal Agregar Producto Inicial (Creación) -->
-  {% call modal('modal-proveedor-agregar-producto-crear', 'Agregar producto inicial', 'sm') %}
+  {% call modal('modal-proveedor-agregar-producto-crear', 'Agregar producto inicial', 'lg') %}
     <form id="form-proveedor-agregar-producto-crear" class="ui-form" action="#" method="post" autocomplete="off">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
       <div class="ui-form__grid ui-form__grid--one">
-        <label class="field">
-          <span>Producto (modelo)</span>
-          <div class="select-wrapper">
-            <select id="cp-id-modelo" name="id_modelo" aria-label="Producto"></select>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="flex:1; min-width:180px;">
+            <label class="field">
+              <span>Buscar (nombre)</span>
+              <input id="cp-buscar-q" type="text" placeholder="Buscar modelo..." class="field__input">
+            </label>
           </div>
-        </label>
+          <div style="flex: 0 0 240px; min-width:180px;">
+            <label class="field">
+              <span>Clase</span>
+              <div class="select-wrapper">
+                <select id="cp-id-clase" name="id_clase" aria-label="Clase">
+                  <option value="">(Opcional) Selecciona</option>
+                </select>
+              </div>
+            </label>
+          </div>
+          <div style="flex: 0 0 240px; min-width:180px;">
+            <label class="field">
+              <span>Marca</span>
+              <div class="select-wrapper">
+                <select id="cp-id-marca" name="id_marca" aria-label="Marca">
+                  <option value="">(Opcional) Selecciona</option>
+                </select>
+              </div>
+            </label>
+          </div>
+        </div>
 
-        <label class="field">
-          <span>Costo <span class="required-indicator">*</span></span>
-          <input id="cp-costo" 
-                 name="costo" 
-                 type="number" 
-                 inputmode="numeric" 
-                 min="0" 
-                 step="1" 
-                 placeholder="Ej: 550000" 
-                 required
-                 data-validation-rules="soloNumeros"
-                 title="Solo números enteros positivos">
-          <small class="field-hint">Solo números enteros</small>
-        </label>
+        <div style="margin-top:8px; width:100%">
+          <div class="table-wrap" role="region" aria-label="Seleccionar modelo" style="max-height:300px; overflow:auto;">
+            <table class="table" id="cp-modelos-table" style="width:100%; table-layout:fixed;">
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Marca</th>
+                  <th>Clase</th>
+                  <th>Costo</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="cp-modelos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div class="ui-form__actions">

@@ -189,7 +189,7 @@
     modalDiv.className = `ui-modal ui-modal--confirm ${esError || !soloInformacion ? 'ui-modal--confirm-danger' : 'ui-modal--confirm-info'}`;
     
     modalDiv.innerHTML = `
-      <div class="ui-modal__dialog ui-modal__dialog--sm" role="dialog" aria-modal="true">
+      <div class="ui-modal__dialog ui-modal__dialog--lg" role="dialog" aria-modal="true">
         <header class="ui-modal__header">
           <h3 class="ui-modal__title">${titulo}</h3>
           <button type="button" class="ui-modal__close" data-close-modal aria-label="Cerrar">×</button>
@@ -374,14 +374,140 @@
     return state.modelos;
   }
 
+  async function obtenerModelosFiltro(marcaId = null, claseId = null, q = null) {
+    const params = [];
+    const parts = [];
+    if (marcaId) parts.push(`marca_id=${encodeURIComponent(marcaId)}`);
+    if (claseId) parts.push(`clase_id=${encodeURIComponent(claseId)}`);
+    if (q) parts.push(`q=${encodeURIComponent(q)}`);
+    const url = `/api/proveedores/modelos${parts.length ? '?' + parts.join('&') : ''}`;
+    const data = await fetchJson(url, { method: 'GET' });
+    const modelos = Array.isArray(data?.modelos) ? data.modelos : Array.isArray(data) ? data : [];
+    state.modelos = modelos; // mantener sincronizado para findModeloById
+    return modelos;
+  }
+
+  function renderModelosTable(prefix, modelos) {
+    const tbodyId = `${prefix}-modelos-tbody`;
+    const tbody = $id(tbodyId);
+    if (!tbody) return;
+
+    if (!Array.isArray(modelos) || modelos.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="5" class="table__empty">No hay modelos.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = modelos.map((m) => {
+      const id = escapeHtml(m?.id ?? m?.ID_producto ?? m?.ID_modelo ?? '');
+      const nombre = escapeHtml(m?.nombre ?? m?.N_modelo ?? m?.Nombre_producto ?? '');
+      const marca = escapeHtml(m?.marca_nombre ?? m?.N_marca ?? m?.Nombre_marca ?? '');
+      const clase = escapeHtml(m?.clase_nombre ?? m?.N_clase ?? m?.Nombre_Clase ?? '');
+
+      return `
+        <tr>
+          <td>${nombre}</td>
+          <td>${marca}</td>
+          <td>${clase}</td>
+          <td><input type="number" min="0" step="1" class="table-input table-input--cost" data-id-modelo="${id}" aria-label="Costo ${nombre}"></td>
+          <td><button class="ui-btn ui-btn--primary ui-btn--sm" data-action="agregar-modelo" data-prefix="${prefix}" data-id-modelo="${id}">Agregar</button></td>
+        </tr>`;
+    }).join('');
+  }
+
+  async function actualizarTablaSegunFiltros(prefix) {
+    const selectClase = $id(`${prefix}-id-clase`);
+    const selectMarca = $id(`${prefix}-id-marca`);
+    const claseId = selectClase ? selectClase.value || null : null;
+    const marcaId = selectMarca ? selectMarca.value || null : null;
+    const q = $id(`${prefix}-buscar-q`) ? $id(`${prefix}-buscar-q`).value.trim() || null : null;
+
+    // nombre mostrado en los selects (útil si la API devuelve todos los modelos)
+    const claseNombre = selectClase ? (selectClase.selectedOptions?.[0]?.textContent || '').trim() : '';
+    const marcaNombre = selectMarca ? (selectMarca.selectedOptions?.[0]?.textContent || '').trim() : '';
+
+    try {
+      const modelos = await obtenerModelosFiltro(marcaId, claseId, q);
+
+      // Si la API no filtró correctamente, aplicar filtro local por nombre de clase/marca
+      let filtrados = Array.isArray(modelos) ? modelos : [];
+
+      if ((claseId && String(claseId) !== '') || (claseNombre && claseNombre !== '(Opcional) Selecciona')) {
+        const target = claseNombre && claseNombre !== '(Opcional) Selecciona' ? claseNombre.toLowerCase() : null;
+        if (target) {
+          filtrados = filtrados.filter((m) => {
+            const mn = (m?.clase_nombre || m?.N_clase || m?.Nombre_Clase || '').toString().toLowerCase();
+            return mn === target || mn.includes(target);
+          });
+        }
+      }
+
+      if ((marcaId && String(marcaId) !== '') || (marcaNombre && marcaNombre !== '(Opcional) Selecciona')) {
+        const targetM = marcaNombre && marcaNombre !== '(Opcional) Selecciona' ? marcaNombre.toLowerCase() : null;
+        if (targetM) {
+          filtrados = filtrados.filter((m) => {
+            const mm = (m?.marca_nombre || m?.N_marca || m?.Nombre_marca || '').toString().toLowerCase();
+            return mm === targetM || mm.includes(targetM);
+          });
+        }
+      }
+
+      renderModelosTable(prefix, filtrados);
+    } catch (e) {
+      showFeedback('error', e.message || 'No se pudieron cargar los modelos.');
+    }
+  }
+
+  async function cargarClases() {
+    if (state.clases) return state.clases;
+    const data = await fetchJson('/api/productos/clases', { method: 'GET' });
+    state.clases = Array.isArray(data?.clases) ? data.clases : Array.isArray(data) ? data : [];
+    return state.clases;
+  }
+
+  async function cargarMarcas(id_clase = null) {
+    // acepta filtro por clase
+    const url = id_clase ? `/api/productos/marcas?clase_id=${encodeURIComponent(id_clase)}` : '/api/productos/marcas';
+    const data = await fetchJson(url, { method: 'GET' });
+    const marcas = Array.isArray(data?.marcas) ? data.marcas : Array.isArray(data) ? data : [];
+    return marcas;
+  }
+
+  function fillSelectClases(selectEl, clases) {
+    if (!selectEl) return;
+    const options = [`<option value="">(Opcional) Selecciona</option>`];
+    for (const c of clases) {
+      const id = escapeHtml(c?.id ?? c?.ID_Clase ?? '');
+      const nombre = escapeHtml(c?.nombre ?? c?.Nombre_Clase ?? '');
+      options.push(`<option value="${id}">${nombre}</option>`);
+    }
+    selectEl.innerHTML = options.join('');
+  }
+
+  function fillSelectMarcas(selectEl, marcas) {
+    if (!selectEl) return;
+    const options = [`<option value="">(Opcional) Selecciona</option>`];
+    for (const m of marcas) {
+      const id = escapeHtml(m?.id ?? m?.ID_marca ?? '');
+      const nombre = escapeHtml(m?.nombre ?? m?.Nombre_marca ?? '');
+      options.push(`<option value="${id}">${nombre}</option>`);
+    }
+    selectEl.innerHTML = options.join('');
+  }
+
   function fillSelectModelos(selectEl, modelos) {
     if (!selectEl) return;
-
+    // mantener estado local de modelos para búsquedas posteriores
+    state.modelos = modelos || [];
+    
     const options = [`<option value="">Selecciona un producto</option>`];
     for (const m of modelos) {
       const id = escapeHtml(m?.ID_modelo ?? m?.id ?? '');
       const nombre = escapeHtml(m?.N_modelo ?? m?.nombre ?? '');
-      options.push(`<option value="${id}">${nombre}</option>`);
+      // incluir datos de marca y clase como atributos data para uso posterior
+      const marca = escapeHtml(m?.marca_nombre ?? m?.N_marca ?? '');
+      const clase = escapeHtml(m?.clase_nombre ?? m?.N_clase ?? '');
+      options.push(`<option value="${id}" data-marca="${marca}" data-clase="${clase}">${nombre}</option>`);
     }
     selectEl.innerHTML = options.join('');
   }
@@ -453,6 +579,83 @@
   function setText(id, value) {
     const el = $id(id);
     if (el) el.textContent = value ?? '';
+  }
+
+  // ==================== VALIDACIÓN/FORMATEO RIF (copiado desde clientes.js) ====================
+  function formatearRIF(input) {
+    let valor = input.value.replace(/[^a-zA-Z0-9]/g, '');
+    valor = valor.toUpperCase();
+    if (valor.length === 0) {
+      input.value = '';
+      return;
+    }
+    if (!['J', 'E'].includes(valor.charAt(0))) {
+      valor = 'J' + valor.substring(1);
+    }
+    const letra = valor.charAt(0);
+    let numeros = valor.substring(1);
+    numeros = numeros.substring(0, 9);
+    let resultado = letra;
+    if (numeros.length > 0) {
+      resultado += '-';
+      if (numeros.length <= 8) {
+        resultado += numeros;
+      } else {
+        resultado += numeros.substring(0, 8) + '-' + numeros.substring(8);
+      }
+    }
+    input.value = resultado;
+  }
+
+  function validarRIF(valor) {
+    const patronRIF = /^[JE]-\d{8}-\d$/;
+    if (!patronRIF.test(valor)) {
+      return { valido: false, mensaje: 'El RIF debe tener el formato: J-12345678-9 o E-12345678-9' };
+    }
+    if (valor.length !== 12) {
+      return { valido: false, mensaje: 'El RIF debe tener 12 caracteres (ej: J-12345678-9)' };
+    }
+    const partes = valor.split('-');
+    if (partes.length !== 3) {
+      return { valido: false, mensaje: 'El RIF debe tener el formato: Letra-8dígitos-1dígito' };
+    }
+    const letraParte = partes[0];
+    const numerosParte1 = partes[1];
+    const numerosParte2 = partes[2];
+    if (!['J', 'E'].includes(letraParte)) {
+      return { valido: false, mensaje: 'La primera parte debe ser J o E' };
+    }
+    if (numerosParte1.length !== 8 || !/^\d{8}$/.test(numerosParte1)) {
+      return { valido: false, mensaje: 'Debe tener 8 dígitos después del primer guion' };
+    }
+    if (numerosParte2.length !== 1 || !/^\d$/.test(numerosParte2)) {
+      return { valido: false, mensaje: 'Debe tener 1 dígito después del segundo guion' };
+    }
+    return { valido: true };
+  }
+
+  function validarRIFEnTiempoReal(input, errorElementId) {
+    const errorElement = $id(errorElementId);
+    if (!errorElement) return;
+    const valor = input.value;
+    if (!valor) {
+      errorElement.textContent = '';
+      errorElement.style.color = '';
+      input.classList.remove('field-error', 'field-success');
+      return;
+    }
+    const resultado = validarRIF(valor);
+    if (!resultado.valido) {
+      errorElement.textContent = resultado.mensaje;
+      errorElement.style.color = '#ef4444';
+      input.classList.add('field-error');
+      input.classList.remove('field-success');
+    } else {
+      errorElement.textContent = '✓ Formato válido';
+      errorElement.style.color = '#22c55e';
+      input.classList.remove('field-error');
+      input.classList.add('field-success');
+    }
   }
 
   // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
@@ -892,6 +1095,16 @@
     });
 
     const formCrear = $id('form-proveedor-crear');
+    const inputCRif = $id('c-id');
+    const inputERif = $id('e-rif');
+    if (inputCRif) {
+      inputCRif.addEventListener('input', () => formatearRIF(inputCRif));
+      inputCRif.addEventListener('input', () => validarRIFEnTiempoReal(inputCRif, 'c-rif-error'));
+    }
+    if (inputERif) {
+      inputERif.addEventListener('input', () => formatearRIF(inputERif));
+      inputERif.addEventListener('input', () => validarRIFEnTiempoReal(inputERif, 'e-rif-error'));
+    }
     formCrear?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       
@@ -1047,8 +1260,15 @@
 
       try {
         setValue('ap-proveedor-id', state.currentProveedorId || '');
-        const modelos = await cargarModelos();
+        const clases = await cargarClases();
+        fillSelectClases($id('ap-id-clase'), clases);
+        const marcas = await cargarMarcas();
+        fillSelectMarcas($id('ap-id-marca'), marcas);
+        const modelos = await obtenerModelosFiltro();
         fillSelectModelos($id('ap-id-modelo'), modelos);
+        renderModelosTable('ap', modelos);
+        // asegurar que la tabla se actualice según selects (por si el modal clonó nodos)
+        await actualizarTablaSegunFiltros('ap');
       } catch (e) {
         showFeedback('error', e.message || 'No se pudieron cargar los productos.');
       }
@@ -1059,10 +1279,178 @@
       if (!btn) return;
 
       try {
-        const modelos = await cargarModelos();
+        const clases = await cargarClases();
+        fillSelectClases($id('cp-id-clase'), clases);
+        const marcas = await cargarMarcas();
+        fillSelectMarcas($id('cp-id-marca'), marcas);
+        const modelos = await obtenerModelosFiltro();
         fillSelectModelos($id('cp-id-modelo'), modelos);
+        renderModelosTable('cp', modelos);
+        await actualizarTablaSegunFiltros('cp');
       } catch (e) {
         showFeedback('error', e.message || 'No se pudieron cargar los productos.');
+      }
+    });
+
+    // Delegated change handler: cubre selects clonados dentro del modal
+    document.addEventListener('change', async (ev) => {
+      const target = ev.target;
+      if (!target) return;
+      const id = target.id;
+      if (id === 'ap-id-clase' || id === 'ap-id-marca') {
+        try { await actualizarTablaSegunFiltros('ap'); } catch (e) { /* ignore */ }
+      }
+      if (id === 'cp-id-clase' || id === 'cp-id-marca') {
+        try { await actualizarTablaSegunFiltros('cp'); } catch (e) { /* ignore */ }
+      }
+    });
+
+    // Buscar/filtrar en tablas
+    document.addEventListener('input', (ev) => {
+      const el = ev.target;
+      if (!el) return;
+      if (el.id === 'ap-buscar-q' || el.id === 'ap-id-clase' || el.id === 'ap-id-marca') {
+        debounce(() => actualizarTablaSegunFiltros('ap'), 200)();
+      }
+      if (el.id === 'cp-buscar-q' || el.id === 'cp-id-clase' || el.id === 'cp-id-marca') {
+        debounce(() => actualizarTablaSegunFiltros('cp'), 200)();
+      }
+    });
+
+    // Delegation: manejar clicks en botones Agregar dentro de las tablas
+    document.addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest?.('button[data-action="agregar-modelo"][data-id-modelo][data-prefix]');
+      if (!btn) return;
+      const prefix = btn.getAttribute('data-prefix');
+      const idModelo = btn.getAttribute('data-id-modelo');
+      const row = btn.closest('tr');
+      const inputCost = row?.querySelector('input.table-input--cost');
+      const costo = inputCost ? inputCost.value : '';
+
+      try {
+        if (costo === '' || costo === null) throw new Error('El costo es obligatorio para agregar el producto.');
+        if (Number(costo) < 0) throw new Error('El costo no puede ser negativo.');
+
+        if (prefix === 'ap') {
+          // establecer campo ap-costo temporalmente y llamar al flujo existente
+          setValue('ap-costo', costo);
+          setValue('ap-id-modelo', idModelo);
+          await agregarProductoProveedorFromForm();
+          await cargarProductosProveedorEditar(state.currentProveedorId);
+          showFeedback('success', 'Producto agregado correctamente.');
+          // refrescar tabla
+          actualizarTablaSegunFiltros('ap');
+        } else {
+          // cp: agregar a state.productosCrear
+          setValue('cp-costo', costo);
+          setValue('cp-id-modelo', idModelo);
+          agregarProductoCrearFromForm();
+          renderProductosCrear();
+          showFeedback('success', 'Producto agregado al proveedor inicial.');
+          // refrescar tabla
+          actualizarTablaSegunFiltros('cp');
+        }
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudo agregar el producto.');
+      }
+    });
+
+    // Debounce helper
+    function debounce(fn, wait) {
+      let t;
+      return function () {
+        clearTimeout(t);
+        t = setTimeout(fn, wait);
+      };
+    }
+
+    // Sincronizar cambios: cuando se selecciona clase, cargar marcas filtradas y modelos
+    const apClase = $id('ap-id-clase');
+    const apMarca = $id('ap-id-marca');
+    const apModelo = $id('ap-id-modelo');
+    const cpClase = $id('cp-id-clase');
+    const cpMarca = $id('cp-id-marca');
+    const cpModelo = $id('cp-id-modelo');
+
+    apClase?.addEventListener('change', async () => {
+      try {
+        const claseId = apClase.value || null;
+        const marcas = await cargarMarcas(claseId);
+        fillSelectMarcas(apMarca, marcas);
+        await actualizarTablaSegunFiltros('ap');
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudieron cargar las marcas/modelos.');
+      }
+    });
+
+    apMarca?.addEventListener('change', async () => {
+      try {
+        await actualizarTablaSegunFiltros('ap');
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudieron filtrar los modelos.');
+      }
+    });
+
+    apModelo?.addEventListener('change', () => {
+      const opt = apModelo.selectedOptions?.[0];
+      if (!opt) return;
+      const marca = opt.getAttribute('data-marca') || '';
+      const clase = opt.getAttribute('data-clase') || '';
+      // intentar seleccionar valores en los selects de marca/clase si existen y disparar change
+      if (clase && apClase) {
+        const found = Array.from(apClase.options).find(o => o.textContent.trim() === clase || o.value === clase);
+        if (found) {
+          apClase.value = found.value;
+          apClase.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (marca && apMarca) {
+        const found = Array.from(apMarca.options).find(o => o.textContent.trim() === marca || o.value === marca);
+        if (found) {
+          apMarca.value = found.value;
+          apMarca.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    });
+
+    // CP (crear) handlers
+    cpClase?.addEventListener('change', async () => {
+      try {
+        const claseId = cpClase.value || null;
+        const marcas = await cargarMarcas(claseId);
+        fillSelectMarcas(cpMarca, marcas);
+        await actualizarTablaSegunFiltros('cp');
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudieron cargar las marcas/modelos.');
+      }
+    });
+
+    cpMarca?.addEventListener('change', async () => {
+      try {
+        await actualizarTablaSegunFiltros('cp');
+      } catch (e) {
+        showFeedback('error', e.message || 'No se pudieron filtrar los modelos.');
+      }
+    });
+
+    cpModelo?.addEventListener('change', () => {
+      const opt = cpModelo.selectedOptions?.[0];
+      if (!opt) return;
+      const marca = opt.getAttribute('data-marca') || '';
+      const clase = opt.getAttribute('data-clase') || '';
+      if (clase && cpClase) {
+        const found = Array.from(cpClase.options).find(o => o.textContent.trim() === clase || o.value === clase);
+        if (found) {
+          cpClase.value = found.value;
+          cpClase.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (marca && cpMarca) {
+        const found = Array.from(cpMarca.options).find(o => o.textContent.trim() === marca || o.value === marca);
+        if (found) {
+          cpMarca.value = found.value;
+          cpMarca.dispatchEvent(new Event('change', { bubbles: true }));
+        }
       }
     });
   }
