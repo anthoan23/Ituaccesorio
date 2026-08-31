@@ -2,7 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.models.equipo import Equipo
-from app.models.test import Tests  # IMPORTAR EL MODELO TESTS
+from app.models.test import Tests  
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import json

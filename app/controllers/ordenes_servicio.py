@@ -3,7 +3,7 @@ from app.models.empleados import Empleados
 from app.models.ordenes_servicio import Orden_servicio as OrdenServicio
 from app.models.test import Tests
 from app.models.equipo import Equipo
-from app.models.clientes import Clientes, Persona_natural
+from app.models.clientes import Clientes, Persona_natural, Cliente_juridico
 from app.models.productos import Producto
 from app.utils.decorators import jwt_required, tiene_permiso
 import re
@@ -17,6 +17,14 @@ def _validar_email(email):
     """Valida un correo electrónico"""
     patron = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
     return re.match(patron, email) is not None
+
+
+def _validar_rif(rif):
+    """Valida un RIF venezolano (con o sin guiones)"""
+    # Eliminar guiones y convertir a mayúsculas
+    rif_limpio = rif.replace("-", "").upper()
+    # Validar formato: J/E seguido de 9 dígitos
+    return re.match(r'^[JE]\d{9}$', rif_limpio) is not None
 
 
 @ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["POST"])
@@ -60,7 +68,7 @@ def _obtener_nombre_cliente(cliente_id):
         ordenes = orden.listado_ordenes_servicio()
         for o in ordenes:
             if o.get("ID_cliente") == cliente_id:
-                return o.get("Nombre_cliente", str(cliente_id))
+                return o.get("Nombre_completo", str(cliente_id))
     except Exception:
         pass
     return str(cliente_id)
@@ -180,6 +188,32 @@ def listar_ordenes_servicio():
         return jsonify({"success": False, "error": str(error)}), 500
 
 
+# ============================================
+# RUTA PARA LISTAR MODELOS - USANDO EL MODELO ORDEN_SERVICIO
+# ============================================
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/modelos", methods=["GET"])
+@jwt_required
+def listar_modelos():
+    """
+    Lista los modelos de teléfonos para el select de órdenes de servicio.
+    Utiliza el método del modelo Orden_servicio.
+    """
+    try:
+        # Usar el modelo Orden_servicio para obtener los modelos
+        orden_model = OrdenServicio()
+        modelos = orden_model.listar_modelos_telefonos()
+        
+        if not modelos:
+            return jsonify({"success": True, "modelos": [], "message": "No se encontraron modelos de teléfonos."})
+        
+        print(f"[DEBUG] Modelos de teléfonos devueltos: {len(modelos)}")
+        return jsonify({"success": True, "modelos": modelos})
+    except Exception as e:
+        print(f"[ERROR] Error al listar modelos: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
 # Ruta para crear una nueva orden (POST)
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @jwt_required
@@ -211,6 +245,7 @@ def crear_orden_servicio():
     celular_cliente = (datos.get("celular") or "").strip()
     correo_cliente = (datos.get("correo") or "").strip()
     direccion_cliente = (datos.get("direccion") or "").strip()
+    tipo_cliente = (datos.get("tipo") or "natural").strip()
 
     # =============================================
     # 2. VALIDACIONES INICIALES
@@ -218,8 +253,25 @@ def crear_orden_servicio():
     if not id_cliente:
         return jsonify({"success": False, "error": "El ID del cliente es obligatorio."}), 400
     
+    # El ID del cliente puede ser numérico (cédula) o alfanumérico (RIF)
+    id_cliente_val = str(id_cliente).strip()
+    
+    # Validar formato según el tipo
+    if tipo_cliente == "natural":
+        if not id_cliente_val.isdigit():
+            return jsonify({"success": False, "error": "La cédula debe contener solo números."}), 400
+        if len(id_cliente_val) < 7 or len(id_cliente_val) > 8:
+            return jsonify({"success": False, "error": "La cédula debe tener 7 u 8 dígitos."}), 400
+    else:
+        # Para cliente jurídico, validar que tenga formato de RIF (con o sin guiones)
+        if not _validar_rif(id_cliente_val):
+            return jsonify({"success": False, "error": "El RIF debe tener el formato J-12345678-9 o E-12345678-9."}), 400
+    
     if not descripcion:
         return jsonify({"success": False, "error": "La descripción del problema es obligatoria."}), 400
+    
+    if descripcion and len(descripcion) > 300:
+        return jsonify({"success": False, "error": "La descripción no puede exceder 300 caracteres."}), 400
     
     if not imei:
         return jsonify({"success": False, "error": "El IMEI del equipo es obligatorio."}), 400
@@ -233,11 +285,6 @@ def crear_orden_servicio():
     if not id_modelo and not modelo_custom:
         return jsonify({"success": False, "error": "Debes seleccionar un modelo o escribir uno personalizado."}), 400
 
-    try:
-        id_cliente_val = int(id_cliente)
-    except (ValueError, TypeError):
-        return jsonify({"success": False, "error": "El ID del cliente debe ser un número."}), 400
-
     if not imei.isdigit():
         return jsonify({"success": False, "error": "El IMEI debe ser un número."}), 400
     
@@ -250,39 +297,86 @@ def crear_orden_servicio():
     # 3. VALIDAR/REGISTRAR CLIENTE
     # =============================================
     cliente_model = Clientes(usuario_id=usuario_id)
-    cliente_existente = cliente_model.obtener_cliente_por_id(str(id_cliente_val))
+    cliente_existente = None
+    
+    # Normalizar el ID para búsqueda
+    id_cliente_buscar = id_cliente_val
+    if tipo_cliente == "juridico":
+        # Para RIF, buscar con y sin guiones
+        id_cliente_buscar = id_cliente_val.replace("-", "").upper()
+    
+    # Intentar obtener el cliente
+    cliente_existente = cliente_model.obtener_datos_cliente_completo(id_cliente_buscar)
+    
+    # Si no se encuentra y es RIF, intentar con guiones
+    if not cliente_existente and tipo_cliente == "juridico" and '-' not in id_cliente_val:
+        # Convertir J123456789 a J-12345678-9
+        if len(id_cliente_val) == 10 and id_cliente_val[0] in 'JE':
+            id_con_guiones = f"{id_cliente_val[0]}-{id_cliente_val[1:9]}-{id_cliente_val[9]}"
+            cliente_existente = cliente_model.obtener_datos_cliente_completo(id_con_guiones)
     
     if not cliente_existente:
-        if not nombre_cliente:
-            return jsonify({"success": False, "error": "El nombre del cliente es obligatorio para registrarlo."}), 400
-        
-        if not apellido_cliente:
-            return jsonify({"success": False, "error": "El apellido del cliente es obligatorio para registrarlo."}), 400
-        
-        if not celular_cliente:
-            return jsonify({"success": False, "error": "El celular del cliente es obligatorio para registrarlo."}), 400
-        
-        if not celular_cliente.isdigit():
-            return jsonify({"success": False, "error": "El celular debe contener solo números."}), 400
-        
-        if len(celular_cliente) != 11:
-            return jsonify({"success": False, "error": "El celular debe tener exactamente 11 dígitos."}), 400
-        
-        if correo_cliente and not _validar_email(correo_cliente):
-            return jsonify({"success": False, "error": "El correo electrónico no es válido."}), 400
-        
-        persona = Persona_natural(
-            Cedula_cliente=str(id_cliente_val),
-            Nombre_cliente=nombre_cliente,
-            Apellido_cliente=apellido_cliente,
-            Telefono_cliente=celular_cliente,
-            Correo_cliente=correo_cliente,
-            Direccion_cliente=direccion_cliente,
-            usuario_id=usuario_id
-        )
-        resultado_cliente = persona.registrar_persona_natural()
-        if "exitosamente" not in resultado_cliente.lower():
-            return jsonify({"success": False, "error": f"Error al registrar cliente: {resultado_cliente}"}), 400
+        if tipo_cliente == "natural":
+            if not nombre_cliente:
+                return jsonify({"success": False, "error": "El nombre del cliente es obligatorio para registrarlo."}), 400
+            
+            if not apellido_cliente:
+                return jsonify({"success": False, "error": "El apellido del cliente es obligatorio para registrarlo."}), 400
+            
+            if not celular_cliente:
+                return jsonify({"success": False, "error": "El celular del cliente es obligatorio para registrarlo."}), 400
+            
+            if not celular_cliente.isdigit():
+                return jsonify({"success": False, "error": "El celular debe contener solo números."}), 400
+            
+            if len(celular_cliente) != 11:
+                return jsonify({"success": False, "error": "El celular debe tener exactamente 11 dígitos."}), 400
+            
+            if correo_cliente and not _validar_email(correo_cliente):
+                return jsonify({"success": False, "error": "El correo electrónico no es válido."}), 400
+            
+            persona = Persona_natural(
+                Cedula_cliente=id_cliente_val,
+                Nombre_cliente=nombre_cliente,
+                Apellido_cliente=apellido_cliente,
+                Telefono_cliente=celular_cliente,
+                Correo_cliente=correo_cliente,
+                Direccion_cliente=direccion_cliente,
+                usuario_id=usuario_id
+            )
+            resultado_cliente = persona.registrar_persona_natural()
+            if "exitosamente" not in resultado_cliente.lower():
+                return jsonify({"success": False, "error": f"Error al registrar cliente: {resultado_cliente}"}), 400
+        else:
+            # Cliente jurídico
+            if not celular_cliente:
+                return jsonify({"success": False, "error": "El celular del cliente es obligatorio para registrarlo."}), 400
+            
+            if not celular_cliente.isdigit():
+                return jsonify({"success": False, "error": "El celular debe contener solo números."}), 400
+            
+            if len(celular_cliente) != 11:
+                return jsonify({"success": False, "error": "El celular debe tener exactamente 11 dígitos."}), 400
+            
+            if correo_cliente and not _validar_email(correo_cliente):
+                return jsonify({"success": False, "error": "El correo electrónico no es válido."}), 400
+            
+            # El ID del cliente jurídico es el RIF sin guiones para la tabla Cliente
+            id_cliente_juridico = id_cliente_val.replace("-", "").upper()
+            
+            # Registrar cliente jurídico
+            juridico_model = Cliente_juridico(
+                Id_cliente=id_cliente_juridico,
+                Razon_social=nombre_cliente if nombre_cliente else "Cliente Jurídico",
+                Rif_cliente=id_cliente_val,  # Guardamos el RIF con guiones o sin guiones
+                Direccion_cliente=direccion_cliente,
+                Telefono_cliente=celular_cliente,
+                Correo_cliente=correo_cliente,
+                usuario_id=usuario_id
+            )
+            resultado_cliente = juridico_model.registrar_cliente_juridico()
+            if "exitosamente" not in resultado_cliente.lower():
+                return jsonify({"success": False, "error": f"Error al registrar cliente jurídico: {resultado_cliente}"}), 400
 
     # =============================================
     # 4. VALIDAR/REGISTRAR EQUIPO
@@ -327,8 +421,13 @@ def crear_orden_servicio():
     orden_model = OrdenServicio()
     orden_model.ID_empleado = id_empleado
     
+    # Para cliente jurídico, usar el ID sin guiones para la tabla Cliente
+    id_cliente_final = id_cliente_val
+    if tipo_cliente == "juridico":
+        id_cliente_final = id_cliente_val.replace("-", "").upper()
+    
     nueva_id = orden_model.crear_orden(
-        id_cliente=str(id_cliente_val),
+        id_cliente=id_cliente_final,
         id_equipo=imei,
         id_modelo=id_producto_final,
         descripcion=descripcion,
@@ -340,7 +439,7 @@ def crear_orden_servicio():
         return jsonify({"success": False, "error": "No se pudo crear la orden de servicio."}), 500
 
     # =============================================
-    # 6. REGISTRAR TESTS INICIALES (inspirado en taller.py)
+    # 6. REGISTRAR TESTS INICIALES
     # =============================================
     incluir_tests = datos.get("incluir_tests", False)
     tests_data = datos.get("tests", [])
@@ -349,15 +448,12 @@ def crear_orden_servicio():
         try:
             print(f"[DEBUG] Registrando tests iniciales para orden {nueva_id}")
             
-            # Filtrar tests que no son observaciones
             tests_filtrados = [t for t in tests_data if t.get('nombre') != 'Observaciones']
             observaciones = next((t.get('resultado') for t in tests_data if t.get('nombre') == 'Observaciones'), "")
             
             if tests_filtrados or observaciones:
-                # Obtener número de test (1 para la primera revisión)
                 num_test = 1
                 
-                # Construir lista de tests para el procedimiento
                 lista_tests = []
                 for test in tests_filtrados:
                     lista_tests.append({
@@ -365,14 +461,12 @@ def crear_orden_servicio():
                         "resultado": test.get('resultado', 'Funciona')
                     })
                 
-                # Agregar observaciones si existen
                 if observaciones:
                     lista_tests.append({
                         "nombre": "Observaciones",
                         "resultado": observaciones
                     })
                 
-                # Usar el modelo Tests para registrar
                 from app.models.test import Tests
                 test_model = Tests(usuario_id=usuario_id)
                 test_model.ID_orden = nueva_id
@@ -380,7 +474,6 @@ def crear_orden_servicio():
                 test_model.Numero_test = num_test
                 test_model.lista_tests = lista_tests
                 
-                # Registrar la revisión
                 resultado_tests = test_model.registrar_revision_test()
                 print(f"[DEBUG] Resultado registro tests: {resultado_tests}")
                 
@@ -405,6 +498,7 @@ def crear_orden_servicio():
         "tests_registrados": len(tests_data) if incluir_tests and tests_data else 0,
         "mensaje": "Orden de servicio creada exitosamente" + (" con revisión inicial" if incluir_tests and tests_data else "")
     })
+
 
 # Ruta para obtener detalle de una orden específica
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["GET"])
@@ -581,47 +675,6 @@ def eliminar_orden_servicio(id_orden):
     if not ok:
         return jsonify({"success": False, "error": "No se pudo eliminar la orden."}), 400
     return jsonify({"success": True, "message": "Orden eliminada"})
-
-
-# ============================================
-# RUTA PARA LISTAR MODELOS - SOLO TELÉFONOS
-# ============================================
-@ordenes_servicio_blueprint.route("/api/productos/modelos", methods=["GET"])
-@jwt_required
-def listar_modelos():
-    from app.models.database import conectar
-    db = conectar().conexion1()
-    if not db:
-        return jsonify({"success": False, "error": "Error de conexión"}), 500
-
-    cursor = db.cursor(dictionary=True)
-    try:
-        # Consulta para obtener solo teléfonos
-        cursor.execute("""
-            SELECT 
-                p.ID_producto AS id,
-                p.Nombre_producto AS nombre,
-                mp.Nombre_marca AS marca_nombre,
-                cp.Nombre_Clase AS clase_nombre
-            FROM Producto p
-            INNER JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
-            LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-            WHERE cp.Nombre_Clase = 'Telefono' OR cp.ID_Clase = '1'
-            ORDER BY mp.Nombre_marca, p.Nombre_producto
-        """)
-        modelos = cursor.fetchall()
-        
-        print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
-        for m in modelos:
-            print(f"[DEBUG] - ID: {m.get('id')}, Clase: {m.get('clase_nombre')}, Marca: {m.get('marca_nombre')}, Nombre: {m.get('nombre')}")
-        
-        return jsonify({"success": True, "modelos": modelos})
-    except Exception as e:
-        print(f"[ERROR] Error al listar modelos: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-    finally:
-        cursor.close()
-        db.close()
 
 
 @ordenes_servicio_blueprint.route("/api/taller/ordenes/<string:id_orden>/fotos", methods=["POST"])

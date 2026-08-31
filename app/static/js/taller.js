@@ -323,14 +323,21 @@ const FotosService = {
     configurarDragDrop() {
         const dropzone = document.getElementById('photo-dropzone');
         if (!dropzone) return;
-        
+
+        // Bindear una sola vez y guardar la referencia: .bind() devuelve una
+        // función nueva en cada llamada, por lo que removeEventListener solo
+        // funciona si se usa exactamente la misma referencia que se agregó.
+        this.handleDragOver = this.handleDragOver.bind(this);
+        this.handleDragLeave = this.handleDragLeave.bind(this);
+        this.handleDrop = this.handleDrop.bind(this);
+
         dropzone.removeEventListener('dragover', this.handleDragOver);
         dropzone.removeEventListener('dragleave', this.handleDragLeave);
         dropzone.removeEventListener('drop', this.handleDrop);
-        
-        dropzone.addEventListener('dragover', this.handleDragOver.bind(this));
-        dropzone.addEventListener('dragleave', this.handleDragLeave.bind(this));
-        dropzone.addEventListener('drop', this.handleDrop.bind(this));
+
+        dropzone.addEventListener('dragover', this.handleDragOver);
+        dropzone.addEventListener('dragleave', this.handleDragLeave);
+        dropzone.addEventListener('drop', this.handleDrop);
     },
 
     handleDragOver(e) {
@@ -1638,10 +1645,7 @@ async function abrirModalQr() {
     const qrContainer = document.getElementById('modal-qr-code');
     if (!qrContainer) return;
     qrContainer.innerHTML = '';
-    
-    const urlText = document.getElementById('modal-qr-url');
-    if (urlText) urlText.textContent = url;
-    
+
     if (window.UiModal && typeof window.UiModal.openById === 'function') {
         window.UiModal.openById('modal-qr-celular');
     }
@@ -1666,41 +1670,6 @@ async function abrirModalQr() {
             qrContainer.innerHTML = '<p class="texto-error">Error al generar el código QR</p>';
         }
     }, 200);
-}
-
-async function copiarUrlModal() {
-    const urlText = document.getElementById('modal-qr-url');
-    if (!urlText) return;
-    const url = urlText.textContent;
-    
-    if (!url || url === '-') {
-        Utils.showMessage('No hay URL para copiar', true);
-        return;
-    }
-    
-    try {
-        await navigator.clipboard.writeText(url);
-        Utils.showMessage('✅ URL copiada al portapapeles');
-        const btn = document.getElementById('modal-btn-copiar-url');
-        if (btn) {
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✅ ¡Copiado!';
-            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-        }
-    } catch (error) {
-        console.error('Error al copiar:', error);
-        try {
-            const range = document.createRange();
-            range.selectNode(urlText);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-            Utils.showMessage('✅ URL copiada (método alternativo)');
-        } catch (fallbackError) {
-            Utils.showMessage('❌ No se pudo copiar la URL', true);
-        }
-    }
 }
 
 const btnUsarCelular = document.getElementById('btn-usar-celular');
@@ -1903,11 +1872,6 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             abrirModalQr();
         });
-    }
-
-    const modalBtnCopiar = document.getElementById('modal-btn-copiar-url');
-    if (modalBtnCopiar) {
-        modalBtnCopiar.addEventListener('click', copiarUrlModal);
     }
 
     document.querySelectorAll('#modal-confirm-eliminar [data-close-modal]').forEach(btn => {

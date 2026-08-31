@@ -66,23 +66,7 @@
                 </div>
             </div>
 
-            <!-- Barra de herramientas -->
-            <div class="clientes-toolbar">
-                <label class="field clientes-toolbar__field">
-                    <span>Buscar clientes</span>
-                    <input id="input-buscar-clientes" type="search" placeholder="Buscar por cédula, nombre, RIF o correo">
-                </label>
-                <label class="field clientes-toolbar__field">
-                    <span>Filtrar por tipo</span>
-                    <div class="select-wrapper">
-                        <select id="filtro-tipo-cliente">
-                            <option value="">Todos</option>
-                            <option value="natural">Persona Natural</option>
-                            <option value="juridico">Persona Jurídica</option>
-                        </select>
-                    </div>
-                </label>
-            </div>
+            <!-- Barra de herramientas eliminada -->
 
             <div class="table-wrap" role="region" aria-label="Tabla de clientes">
                 <table class="table">
@@ -135,9 +119,9 @@
                        placeholder="1234567" 
                        required 
                        maxlength="8"
-                       data-validation-rules="soloNumeros"
                        title="Solo números, 7 u 8 dígitos">
                 <small class="field-hint">Solo números (7 u 8 dígitos)</small>
+                <small class="field-error" id="cedula-error"></small>
             </label>
             
             <label class="field">
@@ -146,10 +130,10 @@
                        type="text" 
                        placeholder="María" 
                        required 
-                       maxlength="15"
-                       data-validation-rules="soloLetras,capitalizar"
-                       title="Solo letras, espacios, acentos y ñ">
-                <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+                       maxlength="20"
+                       title="Solo letras, espacios, acentos y ñ. Mínimo 3 letras">
+                <small class="field-hint">Solo letras, espacios, acentos y ñ (mínimo 3 letras)</small>
+                <small class="field-error" id="nombre-error"></small>
             </label>
             
             <label class="field">
@@ -158,10 +142,10 @@
                        type="text" 
                        placeholder="González" 
                        required 
-                       maxlength="15"
-                       data-validation-rules="soloLetras,capitalizar"
-                       title="Solo letras, espacios, acentos y ñ">
-                <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+                       maxlength="20"
+                       title="Solo letras, espacios, acentos y ñ. Mínimo 3 letras">
+                <small class="field-hint">Solo letras, espacios, acentos y ñ (mínimo 3 letras)</small>
+                <small class="field-error" id="apellido-error"></small>
             </label>
             
             <label class="field">
@@ -172,21 +156,19 @@
                        placeholder="04141234567" 
                        required 
                        maxlength="11"
-                       data-validation-rules="telefono"
                        title="Formato: 04141234567 (11 dígitos)">
-                <small class="field-hint">Prefijos permitidos: 0416, 0426, 0414, 0424, 0412, 0422, 0251</small>
+                <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422,0251</small>
                 <small class="field-error" id="celular-error"></small>
             </label>
             
-            <label class="field">
+            <label class="field field--full">
                 <span>Correo</span>
                 <input name="correo" 
                        type="email" 
                        placeholder="cliente@example.com" 
                        maxlength="120"
-                       data-validation-rules="email"
-                       title="Correo electrónico válido">
-                <small class="field-hint">ejemplo@dominio.com</small>
+                       title="Correo electrónico válido (máx. 120 caracteres)">
+                <small class="field-hint">ejemplo@dominio.com (máx. 120 caracteres)</small>
             </label>
             
             <label class="field field--full">
@@ -194,15 +176,14 @@
                 <input name="direccion" 
                        type="text" 
                        placeholder="Calle Principal #123, Ciudad" 
-                       maxlength="100"
-                       data-validation-rules="sinCaracteresEspeciales"
-                       title="Sin caracteres especiales">
-                <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
+                       maxlength="40"
+                       title="Sin caracteres especiales (máx. 40 caracteres)">
+                <small class="field-hint">Sin caracteres especiales (máx. 40 caracteres)</small>
             </label>
         </div>
 
         <!-- Campos para Persona Jurídica -->
-        <div id="campos-juridico" class="ui-form__grid ui-form__grid--two campos-condicionales">
+        <div id="campos-juridico" class="ui-form__grid ui-form__grid--two campos-condicionales" style="display:none;">
             <label class="field">
                 <span>RIF *</span>
                 <input name="rif" 
@@ -210,7 +191,6 @@
                        type="text" 
                        placeholder="J-12345678-9" 
                        maxlength="13"
-                       data-validation-rules="rif"
                        data-rif-input
                        autocomplete="off"
                        title="Formato: J-12345678-9 o E-12345678-9">
@@ -225,9 +205,8 @@
                        type="text" 
                        placeholder="Comercializadora Sol C.A." 
                        maxlength="60"
-                       data-validation-rules="razonSocial"
-                       title="Permite letras, números, puntos, guiones, espacios y &">
-                <small class="field-hint">Permite letras, números, puntos, guiones, espacios y &amp;</small>
+                       title="Permite letras, números, puntos, guiones, espacios y &. Mínimo 3 letras">
+                <small class="field-hint">Permite letras, números, puntos, guiones, espacios y &amp; (mínimo 3 letras)</small>
                 <small class="field-error" id="razon-social-error"></small>
             </label>
             
@@ -238,21 +217,19 @@
                        type="tel" 
                        placeholder="04141234567" 
                        maxlength="11"
-                       data-validation-rules="telefono"
                        title="Formato: 04141234567 (11 dígitos)">
-                <small class="field-hint">Prefijos permitidos: 0416, 0426, 0414, 0424, 0412, 0422, 0251</small>
+                <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422,0251</small>
                 <small class="field-error" id="telefono-error"></small>
             </label>
             
-            <label class="field">
+            <label class="field field--full">
                 <span>Correo</span>
                 <input name="correo_juridico" 
                        type="email" 
                        placeholder="contacto@empresa.com" 
                        maxlength="120"
-                       data-validation-rules="email"
-                       title="Correo electrónico válido">
-                <small class="field-hint">ejemplo@dominio.com</small>
+                       title="Correo electrónico válido (máx. 120 caracteres)">
+                <small class="field-hint">ejemplo@dominio.com (máx. 120 caracteres)</small>
             </label>
             
             <label class="field field--full">
@@ -260,10 +237,9 @@
                 <input name="direccion_juridico" 
                        type="text" 
                        placeholder="Zona Industrial, Calle 2" 
-                       maxlength="100"
-                       data-validation-rules="sinCaracteresEspeciales"
-                       title="Sin caracteres especiales">
-                <small class="field-hint">Sin caracteres especiales (letras, números, espacios)</small>
+                       maxlength="40"
+                       title="Sin caracteres especiales (máx. 40 caracteres)">
+                <small class="field-hint">Sin caracteres especiales (máx. 40 caracteres)</small>
             </label>
         </div>
         

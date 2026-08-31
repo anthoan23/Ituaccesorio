@@ -6,7 +6,7 @@ const CONFIG = {
         ORDENES_SERVICIO: '/api/ordenes-servicio',
         ORDENES: '/api/ordenes-servicio/ordenes',
         TECNICOS: '/api/ordenes-servicio/tecnicos',
-        MODELOS: '/api/productos/modelos',
+        MODELOS: '/api/ordenes-servicio/modelos',
         CLIENTES: '/api/clientes',
     }
 };
@@ -102,15 +102,66 @@ const Utils = {
     validarCelular(celular) {
         if (!celular) return false;
         const limpio = celular.replace(/\D/g, '');
-        const prefijos = ['0412', '0414', '0416', '0422', '0424', '0426'];
+        const prefijos = ['0412', '0414', '0416', '0422', '0424', '0426', '0410', '0418', '0420', '0411', '0413', '0415', '0417', '0419'];
         if (limpio.length !== 11) return false;
         const prefijo = limpio.substring(0, 4);
         return prefijos.includes(prefijo);
     },
 
+    // ============================================
+    // VALIDACIÓN RIF - CORREGIDA
+    // ============================================
     validarRIF(rif) {
+        // El formato debe ser: J-12345678-9 o E-12345678-9
+        // La letra debe ser J o E, seguida de guión, 8 dígitos, guión y 1 dígito
         const patron = /^[JE]-\d{8}-\d$/;
         return patron.test(rif);
+    },
+
+    validarRIFEnTiempoReal(input) {
+        // Buscar o crear el elemento de error
+        let errorElement = document.getElementById(input.id + '-error');
+        if (!errorElement) {
+            errorElement = document.createElement('small');
+            errorElement.className = 'field-error';
+            errorElement.id = input.id + '-error';
+            errorElement.style.display = 'block';
+            errorElement.style.marginTop = '0.15rem';
+            errorElement.style.fontSize = '0.7rem';
+            errorElement.style.fontWeight = '600';
+            input.parentElement.appendChild(errorElement);
+        }
+        
+        const valor = input.value;
+        
+        // Limpiar mensaje si no hay valor
+        if (!valor) {
+            errorElement.textContent = '';
+            errorElement.style.color = '';
+            input.classList.remove('field-error', 'field-success');
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            return;
+        }
+        
+        // Validar el RIF
+        const esValido = this.validarRIF(valor);
+        
+        if (!esValido) {
+            errorElement.textContent = '✗ Use J-12345678-9 o E-12345678-9 (solo números después de la letra)';
+            errorElement.style.color = '#ef4444';
+            input.classList.add('field-error');
+            input.classList.remove('field-success');
+            input.style.borderColor = '#ef4444';
+            input.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+        } else {
+            errorElement.textContent = '✓ RIF válido';
+            errorElement.style.color = '#22c55e';
+            input.classList.remove('field-error');
+            input.classList.add('field-success');
+            input.style.borderColor = '#22c55e';
+            input.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.15)';
+        }
     },
 
     formatFecha(value) {
@@ -159,6 +210,111 @@ const Utils = {
             }
             return p;
         }).join(' ');
+    },
+
+    // ============================================
+    // VALIDACIÓN DE TELÉFONO EN TIEMPO REAL
+    // ============================================
+    validarTelefonoOrden(telefono) {
+        if (!telefono) {
+            return { valido: false, mensaje: 'El teléfono es obligatorio' };
+        }
+        
+        // Eliminar caracteres no numéricos
+        const telefonoLimpio = telefono.replace(/\D/g, '');
+        
+        // Verificar longitud (11 dígitos para Venezuela)
+        if (telefonoLimpio.length !== 11) {
+            return { 
+                valido: false, 
+                mensaje: `Debe tener 11 dígitos (actual: ${telefonoLimpio.length})`,
+                telefonoLimpio
+            };
+        }
+        
+        // Extraer prefijo (primeros 4 dígitos)
+        const prefijo = telefonoLimpio.substring(0, 4);
+        
+        // Prefijos permitidos para teléfonos móviles en Venezuela
+        const prefijosPermitidos = [
+            '0412', '0414', '0416', // Movistar
+            '0422', '0424', '0426', // Movilnet
+            '0410', '0418', '0420', // Digitel
+            '0411', '0413', '0415', '0417', '0419', // Otros operadores
+            '0212', '0234', '0241', '0243', '0251', '0261', '0271', '0274', '0281', '0283', '0285' // Fijos
+        ];
+        
+        if (!prefijosPermitidos.includes(prefijo)) {
+            return { 
+                valido: false, 
+                mensaje: `Prefijo "${prefijo}" no permitido. Usa: 0412, 0414, 0416, 0422, 0424, 0426`,
+                telefonoLimpio,
+                prefijo
+            };
+        }
+        
+        return { valido: true, mensaje: 'Teléfono válido', prefijo };
+    },
+
+    validarTelefonoOrdenEnTiempoReal(input) {
+        // Buscar o crear el elemento de error
+        let errorElement = document.getElementById(input.id + '-error');
+        if (!errorElement) {
+            errorElement = document.createElement('small');
+            errorElement.className = 'field-error';
+            errorElement.id = input.id + '-error';
+            errorElement.style.display = 'block';
+            errorElement.style.marginTop = '0.15rem';
+            errorElement.style.fontSize = '0.7rem';
+            errorElement.style.fontWeight = '600';
+            input.parentElement.appendChild(errorElement);
+        }
+        
+        const valor = input.value;
+        
+        // Limpiar mensaje si no hay valor
+        if (!valor) {
+            errorElement.textContent = '';
+            errorElement.style.color = '';
+            input.classList.remove('field-error', 'field-success');
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            return;
+        }
+        
+        // Validar el teléfono
+        const resultado = this.validarTelefonoOrden(valor);
+        
+        if (!resultado.valido) {
+            errorElement.textContent = '✗ ' + resultado.mensaje;
+            errorElement.style.color = '#ef4444';
+            input.classList.add('field-error');
+            input.classList.remove('field-success');
+            input.style.borderColor = '#ef4444';
+            input.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+        } else {
+            errorElement.textContent = '✓ ' + resultado.mensaje + ' (' + resultado.prefijo + ')';
+            errorElement.style.color = '#22c55e';
+            input.classList.remove('field-error');
+            input.classList.add('field-success');
+            input.style.borderColor = '#22c55e';
+            input.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.15)';
+        }
+    },
+
+    formatearTelefonoOrden(input) {
+        // Solo permitir números
+        let valor = input.value.replace(/\D/g, '');
+        
+        // Limitar a 11 dígitos (máximo para Venezuela)
+        if (valor.length > 11) {
+            valor = valor.substring(0, 11);
+        }
+        
+        input.value = valor;
+        
+        // Validar en tiempo real después de formatear
+        this.validarTelefonoOrdenEnTiempoReal(input);
     }
 };
 
@@ -208,7 +364,7 @@ function getDomElements() {
         modalOrdenesEstadoSubtitle: document.getElementById("modal-ordenes-estado-subtitle"),
         statPendientes: document.getElementById("stat-pendientes"),
         statAsignadas: document.getElementById("stat-asignadas"),
-        statRevisadas: document.getElementById("stat-revisadas"),
+        // statRevisadas: document.getElementById("stat-revisadas"), // ELIMINADO
         formOrden: document.getElementById("form-orden-servicio"),
         btnVerificarEquipo: document.getElementById("btn-verificar-equipo"),
         btnVerificarCliente: document.getElementById("btn-verificar-cliente"),
@@ -257,13 +413,11 @@ function renderTablaOrdenes(ordenesData) {
     const { tablaOrdenes } = getDomElements();
     if (!tablaOrdenes) return;
 
-    // Si no hay datos, mostrar mensaje
     if (!ordenesData || !ordenesData.length) {
         tablaOrdenes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes que coincidan con los filtros.</td></tr>';
         return;
     }
 
-    // Filtrar para excluir "En proceso"
     const ordenesFiltradas = ordenesData.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
     
     if (!ordenesFiltradas.length) {
@@ -272,8 +426,12 @@ function renderTablaOrdenes(ordenesData) {
     }
 
     tablaOrdenes.innerHTML = ordenesFiltradas.map((orden) => {
-        const clienteNombre = `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim();
+        const clienteNombre = orden.Nombre_completo || `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim() || orden.Razon_social || "Cliente no especificado";
         const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
+        const estado = String(orden.Estado || "").toLowerCase();
+        
+        const mostrarAsignar = estado !== "reparada";
+        
         return `
             <tr>
                 <td class="col-id"><span class="chip">${Utils.escapeHtml(orden.ID_orden)}</span></td>
@@ -285,7 +443,9 @@ function renderTablaOrdenes(ordenesData) {
                 <td class="table__actions col-acciones">
                     <div class="row-actions">
                         <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
-                        <button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
+                        ${mostrarAsignar ? `
+                            <button type="button" class="icon-action icon-action--primary" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -349,8 +509,9 @@ async function cargarModelos() {
     try {
         const data = await Utils.fetchJson(CONFIG.API.MODELOS);
         const modelos = data.modelos || [];
+        
         selectModelo.innerHTML = '<option value="">Seleccione modelo</option>' + modelos.map((modelo) => {
-            const label = `${modelo.clase_nombre ?? ""} ${modelo.marca_nombre ?? ""} ${modelo.nombre ?? ""}`.trim();
+            const label = `${modelo.marca_nombre ?? ""} ${modelo.nombre ?? ""}`.trim();
             return `<option value="${Utils.escapeHtml(modelo.id)}">${Utils.escapeHtml(label)}</option>`;
         }).join("");
     } catch (error) {
@@ -381,7 +542,6 @@ function filtrarOrdenes() {
     
     let ordenesFiltradas = [...ordenes];
     
-    // Filtrar por estado
     if (estadoFiltro) {
         ordenesFiltradas = ordenesFiltradas.filter((o) => {
             const estadoOrden = String(o.Estado || "").toLowerCase().trim();
@@ -389,11 +549,10 @@ function filtrarOrdenes() {
         });
     }
     
-    // Filtrar por búsqueda (ID, cliente o equipo)
     if (terminoBusqueda) {
         ordenesFiltradas = ordenesFiltradas.filter((o) => {
             const idOrden = String(o.ID_orden || "").toLowerCase();
-            const clienteNombre = `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}`.toLowerCase();
+            const clienteNombre = (o.Nombre_completo || `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}` || o.Razon_social || "").toLowerCase();
             const equipo = String(o.Equipo || "").toLowerCase();
             
             return idOrden.includes(terminoBusqueda) ||
@@ -412,16 +571,11 @@ function actualizarEstadisticas(ordenesData) {
     const count = (estado) => ordenesData.filter((o) => String(o.Estado || "").toLowerCase() === estado).length;
     const pendientes = count("pendiente");
     const asignadas = count("asignada");
-    const revisadas = ordenesData.filter((o) => {
-        const estado = String(o.Estado || "").toLowerCase();
-        return estado.includes("revis");
-    }).length;
     const reparadas = count("reparada");
 
-    const { statPendientes, statAsignadas, statRevisadas } = getDomElements();
+    const { statPendientes, statAsignadas } = getDomElements();
     if (statPendientes) statPendientes.textContent = String(pendientes);
     if (statAsignadas) statAsignadas.textContent = String(asignadas);
-    if (statRevisadas) statRevisadas.textContent = String(revisadas);
 
     const statReparadas = document.getElementById("stat-reparadas");
     if (statReparadas) statReparadas.textContent = String(reparadas);
@@ -468,7 +622,6 @@ function limpiarClienteForm() {
 }
 
 function getFieldValue(fieldId) {
-    // Para campos compartidos que pueden tener diferentes IDs según el tipo
     if (fieldId === 'celular') {
         const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
         const id = tipo === 'natural' ? 'cliente-celular' : 'cliente-celular-juridico';
@@ -493,7 +646,6 @@ function getFieldValue(fieldId) {
 }
 
 function setFieldValue(fieldId, value) {
-    // Para campos compartidos que pueden tener diferentes IDs según el tipo
     if (fieldId === 'celular') {
         const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
         const id = tipo === 'natural' ? 'cliente-celular' : 'cliente-celular-juridico';
@@ -535,7 +687,6 @@ function toggleCamposCliente(tipo) {
     
     if (!camposNatural || !camposJuridico) return;
     
-    // Obtener los campos de celular
     const celularNatural = document.getElementById('cliente-celular');
     const celularJuridico = document.getElementById('cliente-celular-juridico');
     const correoNatural = document.getElementById('cliente-correo');
@@ -543,11 +694,36 @@ function toggleCamposCliente(tipo) {
     const direccionNatural = document.getElementById('cliente-direccion');
     const direccionJuridico = document.getElementById('cliente-direccion-juridico');
     
+    // Limpiar estilos de validación de RIF
+    const rifInput = document.getElementById('cliente-rif');
+    if (rifInput) {
+        rifInput.classList.remove('field-error', 'field-success');
+        rifInput.style.borderColor = '';
+        rifInput.style.boxShadow = '';
+        const rifError = document.getElementById('cliente-rif-error');
+        if (rifError) {
+            rifError.textContent = '';
+            rifError.style.color = '';
+        }
+    }
+    
+    // Limpiar estilos de validación de cédula
+    const cedulaInput = document.getElementById('cliente-cedula');
+    if (cedulaInput) {
+        cedulaInput.classList.remove('field-error', 'field-success');
+        cedulaInput.style.borderColor = '';
+        cedulaInput.style.boxShadow = '';
+        const cedulaError = document.getElementById('cliente-cedula-error');
+        if (cedulaError) {
+            cedulaError.textContent = '';
+            cedulaError.style.color = '';
+        }
+    }
+    
     if (tipo === 'juridico') {
         camposNatural.style.display = 'none';
         camposJuridico.style.display = 'grid';
         
-        // Desactivar campos Natural
         if (clienteCedula) { clienteCedula.removeAttribute('required'); clienteCedula.disabled = true; }
         if (clienteNombre) { clienteNombre.removeAttribute('required'); clienteNombre.disabled = true; }
         if (clienteApellido) { clienteApellido.removeAttribute('required'); clienteApellido.disabled = true; }
@@ -555,7 +731,6 @@ function toggleCamposCliente(tipo) {
         if (correoNatural) { correoNatural.disabled = true; }
         if (direccionNatural) { direccionNatural.disabled = true; }
         
-        // Activar campos Jurídico
         if (clienteRif) { clienteRif.setAttribute('required', ''); clienteRif.disabled = false; }
         if (clienteRazonSocial) { clienteRazonSocial.setAttribute('required', ''); clienteRazonSocial.disabled = false; }
         if (celularJuridico) { celularJuridico.setAttribute('required', ''); celularJuridico.disabled = false; }
@@ -568,7 +743,6 @@ function toggleCamposCliente(tipo) {
         camposNatural.style.display = 'grid';
         camposJuridico.style.display = 'none';
         
-        // Activar campos Natural
         if (clienteCedula) { clienteCedula.setAttribute('required', ''); clienteCedula.disabled = false; }
         if (clienteNombre) { clienteNombre.setAttribute('required', ''); clienteNombre.disabled = false; }
         if (clienteApellido) { clienteApellido.setAttribute('required', ''); clienteApellido.disabled = false; }
@@ -576,7 +750,6 @@ function toggleCamposCliente(tipo) {
         if (correoNatural) { correoNatural.disabled = false; }
         if (direccionNatural) { direccionNatural.disabled = false; }
         
-        // Desactivar campos Jurídico
         if (clienteRif) { clienteRif.removeAttribute('required'); clienteRif.disabled = true; }
         if (clienteRazonSocial) { clienteRazonSocial.removeAttribute('required'); clienteRazonSocial.disabled = true; }
         if (celularJuridico) { celularJuridico.removeAttribute('required'); celularJuridico.disabled = true; }
@@ -594,10 +767,13 @@ function toggleCamposCliente(tipo) {
 }
 
 // ============================================
-// 10. VERIFICACIONES DE CLIENTE
+// 10. VERIFICACIONES DE CLIENTE - CORREGIDAS
 // ============================================
 async function verificarCliente() {
     const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
+    
+    // Limpiar estado anterior
+    setClienteStatus("Verificando...", false);
     
     if (tipo === 'natural') {
         await verificarClienteNatural();
@@ -633,12 +809,30 @@ async function verificarClienteNatural() {
 
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
+        
+        // Marcar el campo cédula como válido
+        const cedulaInput = document.getElementById('cliente-cedula');
+        if (cedulaInput) {
+            cedulaInput.classList.remove('field-error');
+            cedulaInput.classList.add('field-success');
+            cedulaInput.style.borderColor = '#22c55e';
+            cedulaInput.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.15)';
+        }
+        
     } catch (error) {
         clienteActualId = null;
-        limpiarClienteForm();
         setClienteStatus("Cliente no encontrado. Regístralo para continuar.", true);
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
+        
+        // Marcar el campo cédula como inválido
+        const cedulaInput = document.getElementById('cliente-cedula');
+        if (cedulaInput) {
+            cedulaInput.classList.add('field-error');
+            cedulaInput.classList.remove('field-success');
+            cedulaInput.style.borderColor = '#ef4444';
+            cedulaInput.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+        }
     }
 }
 
@@ -649,32 +843,80 @@ async function verificarClienteJuridico() {
         return;
     }
 
+    // Validación estricta del RIF
     if (!Utils.validarRIF(rif)) {
-        setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true);
+        setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9 (solo números después de la letra)", true);
+        const rifInput = document.getElementById('cliente-rif');
+        if (rifInput) {
+            rifInput.classList.add('field-error');
+            rifInput.classList.remove('field-success');
+            rifInput.style.borderColor = '#ef4444';
+            rifInput.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+            const errorElement = document.getElementById('cliente-rif-error');
+            if (errorElement) {
+                errorElement.textContent = '✗ Use J-12345678-9 o E-12345678-9 (solo números)';
+                errorElement.style.color = '#ef4444';
+            }
+        }
         return;
     }
 
     try {
-        const rifNormalizado = rif.replace(/-/g, '').toUpperCase();
-        const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifNormalizado)}`);
+        // Guardar el RIF original con guiones
+        const rifConGuiones = rif;
+        // Quitar guiones para la búsqueda
+        const rifSinGuiones = rif.replace(/-/g, '').toUpperCase();
+        
+        console.log(`[DEBUG] Buscando RIF con guiones: ${rifConGuiones}`);
+        console.log(`[DEBUG] Buscando RIF sin guiones: ${rifSinGuiones}`);
+        
+        // Primero intentar buscar con guiones
+        let data;
+        try {
+            data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifConGuiones)}`);
+        } catch (e) {
+            // Si no funciona con guiones, intentar sin guiones
+            console.log(`[DEBUG] No encontrado con guiones, intentando sin guiones...`);
+            data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifSinGuiones)}`);
+        }
+        
         const cliente = data.cliente || data.data || {};
 
-        clienteActualId = cliente.id || cliente.rif || rif;
+        clienteActualId = cliente.id || cliente.rif || rifConGuiones;
         setFieldValue("cliente-razon-social", cliente.razon_social || cliente.nombre || "");
         setFieldValue("cliente-celular-juridico", cliente.celular || cliente.telefono || "");
         setFieldValue("cliente-correo-juridico", cliente.correo || "");
         setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
         setFieldValue("cliente-tipo", "juridico");
-        setClienteStatus("Empresa verificada correctamente.");
+        setClienteStatus("Empresa verificado correctamente.");
 
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
+        
+        // Marcar el campo RIF como válido
+        const rifInput = document.getElementById('cliente-rif');
+        if (rifInput) {
+            rifInput.classList.remove('field-error');
+            rifInput.classList.add('field-success');
+            rifInput.style.borderColor = '#22c55e';
+            rifInput.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.15)';
+        }
+        
     } catch (error) {
+        console.error("[ERROR] Error verificando empresa:", error);
         clienteActualId = null;
-        limpiarClienteForm();
         setClienteStatus("Empresa no encontrada. Regístrala para continuar.", true);
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
+        
+        // Marcar el campo RIF como inválido
+        const rifInput = document.getElementById('cliente-rif');
+        if (rifInput) {
+            rifInput.classList.add('field-error');
+            rifInput.classList.remove('field-success');
+            rifInput.style.borderColor = '#ef4444';
+            rifInput.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+        }
     }
 }
 
@@ -722,10 +964,14 @@ async function registrarClienteDesdeFormulario() {
             setClienteStatus("El celular es obligatorio.", true);
             return;
         }
-        if (!Utils.validarCelular(payload.celular)) {
-            setClienteStatus("El celular debe tener 11 dígitos y comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426.", true);
+
+        // Validación de teléfono mejorada
+        const resultadoTelefono = Utils.validarTelefonoOrden(payload.celular);
+        if (!resultadoTelefono.valido) {
+            setClienteStatus(resultadoTelefono.mensaje, true);
             return;
         }
+
         if (payload.correo && !Utils.isValidEmail(payload.correo)) {
             setClienteStatus("El correo electrónico no es válido.", true);
             return;
@@ -804,14 +1050,23 @@ async function verificarEquipo() {
 }
 
 // ============================================
-// 13. MARCAR TODOS LOS TESTS COMO OK
+// 13. MARCAR TODOS LOS TESTS COMO OK O NO FUNCIONA
 // ============================================
+
 function marcarTodosTestsOK() {
     const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]');
     radios.forEach(radio => {
         radio.checked = true;
     });
     Utils.showMessage('✅ Todos los componentes marcados como OK');
+}
+
+function marcarTodosTestsFallo() {
+    const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]');
+    radios.forEach(radio => {
+        radio.checked = true;
+    });
+    Utils.showMessage('❌ Todos los componentes marcados como No funciona');
 }
 
 // ============================================
@@ -916,8 +1171,8 @@ async function onSubmitOrden(event) {
         Utils.showMessage("La descripción del problema es obligatoria.", true);
         return;
     }
-    if (descripcion.length > 100) {
-        Utils.showMessage("La descripción no puede exceder 100 caracteres.", true);
+    if (descripcion.length > 300) {
+        Utils.showMessage("La descripción no puede exceder 300 caracteres.", true);
         return;
     }
 
@@ -934,15 +1189,26 @@ async function onSubmitOrden(event) {
     }
 
     const celular = getFieldValue("celular");
-    if (celular && !Utils.validarCelular(celular)) {
-        Utils.showMessage("El celular debe tener 11 dígitos y comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426.", true);
-        return;
+    if (celular) {
+        const resultadoTelefono = Utils.validarTelefonoOrden(celular);
+        if (!resultadoTelefono.valido) {
+            Utils.showMessage(resultadoTelefono.mensaje, true);
+            const tipoCliente = document.getElementById('cliente-tipo')?.value || 'natural';
+            const idCelular = tipoCliente === 'natural' ? 'cliente-celular' : 'cliente-celular-juridico';
+            const campoCelular = document.getElementById(idCelular);
+            if (campoCelular) {
+                campoCelular.focus();
+                campoCelular.classList.add('field-error');
+                campoCelular.style.borderColor = '#ef4444';
+                campoCelular.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+            }
+            return;
+        }
     }
 
     const tipoCliente = document.getElementById('cliente-tipo')?.value || 'natural';
     let clienteId = clienteActualId;
 
-    // Validar campos según tipo de cliente
     if (tipoCliente === 'natural') {
         const cedula = getFieldValue("cliente-cedula");
         const nombre = getFieldValue("cliente-nombre");
@@ -981,7 +1247,7 @@ async function onSubmitOrden(event) {
             return;
         }
         if (!Utils.validarRIF(rif)) {
-            Utils.showMessage("Formato de RIF inválido. Ej: J-12345678-9", true);
+            Utils.showMessage("Formato de RIF inválido. Ej: J-12345678-9 (solo números después de la letra)", true);
             return;
         }
         if (!razonSocial) {
@@ -1000,7 +1266,6 @@ async function onSubmitOrden(event) {
         return;
     }
 
-    // Si no hay clienteId, intentar obtenerlo o registrarlo
     if (!clienteId) {
         if (tipoCliente === 'natural') {
             const cedula = getFieldValue("cliente-cedula");
@@ -1029,8 +1294,13 @@ async function onSubmitOrden(event) {
             const razonSocial = getFieldValue("cliente-razon-social");
             
             try {
-                const rifNormalizado = rif.replace(/-/g, '').toUpperCase();
-                const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifNormalizado)}`);
+                const rifSinGuiones = rif.replace(/-/g, '').toUpperCase();
+                let data;
+                try {
+                    data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rif)}`);
+                } catch (e) {
+                    data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifSinGuiones)}`);
+                }
                 const cliente = data.cliente || data.data || {};
                 clienteId = cliente.id || cliente.rif || rif;
                 setFieldValue("cliente-razon-social", cliente.razon_social || cliente.nombre || "");
@@ -1055,7 +1325,6 @@ async function onSubmitOrden(event) {
 
     const fechaActual = Utils.getFechaActual();
 
-    // Guardar los datos de la orden para enviarlos después de la revisión
     datosOrdenPendiente = {
         id_cliente: clienteId,
         id_equipo: idEquipo,
@@ -1076,7 +1345,6 @@ async function onSubmitOrden(event) {
         clave: getFieldValue("orden-clave") || "",
     };
 
-    // Cerrar el modal de nueva orden y abrir el de revisión
     closeModal("modal-nueva-orden");
     
     setTimeout(() => {
@@ -1162,7 +1430,7 @@ async function confirmarRevision(event) {
 }
 
 // ============================================
-// 17. FUNCIONES DE DETALLE DE ORDEN (ESTILO TALLER)
+// 17. FUNCIONES DE DETALLE DE ORDEN
 // ============================================
 
 async function abrirDetalleOrden(idOrden) {
@@ -1204,7 +1472,7 @@ function renderDetalleOrdenModal(detalle) {
 
     const estado = detalle.Estado || 'Pendiente';
     const badgeClass = Utils.getEstadoBadgeClass(estado);
-    const clienteNombre = `${detalle.Nombre_cliente || ''} ${detalle.Apellido_cliente || ''}`.trim() || 'No especificado';
+    const clienteNombre = detalle.Nombre_completo || `${detalle.Nombre_cliente || ''} ${detalle.Apellido_cliente || ''}`.trim() || detalle.Razon_social || 'No especificado';
     const costo = detalle.Costo_reparacion;
 
     container.innerHTML = `
@@ -1283,7 +1551,6 @@ function renderTestsOrdenModal(tests, idOrden) {
         return;
     }
 
-    // Agrupar tests por número de test
     const testsPorNumero = {};
     tests.forEach(test => {
         const num = test.Num_test || test.num_test || '1';
@@ -1293,7 +1560,6 @@ function renderTestsOrdenModal(tests, idOrden) {
         testsPorNumero[num].push(test);
     });
 
-    // Obtener los números de test ordenados
     const numerosTest = Object.keys(testsPorNumero).sort((a, b) => Number(a) - Number(b));
 
     container.innerHTML = `
@@ -1311,10 +1577,28 @@ function renderTestsOrdenModal(tests, idOrden) {
                     ${numerosTest.map((num) => {
                         const items = testsPorNumero[num];
                         const cantidad = items.length;
+                        const funcionan = items.filter(t => {
+                            const resultado = t.Resultado_test || t.resultado || '';
+                            return resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
+                        }).length;
+                        const noFuncionan = items.filter(t => {
+                            const resultado = t.Resultado_test || t.resultado || '';
+                            return resultado.toLowerCase().includes('no funciona') || resultado.toLowerCase().includes('falla');
+                        }).length;
+                        const observaciones = items.filter(t => {
+                            const nombre = t.Nombre_test || t.nombre || '';
+                            return nombre.toLowerCase().includes('observacion');
+                        }).length;
+                        
                         return `
                             <tr>
                                 <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(num)}</span></td>
-                                <td data-label="Cantidad">${cantidad} ${cantidad === 1 ? 'componente' : 'componentes'}</td>
+                                <td data-label="Cantidad">
+                                    ${cantidad} ${cantidad === 1 ? 'componente' : 'componentes'}
+                                    ${funcionan > 0 ? `<span class="badge badge--success" style="background:rgba(34,197,94,0.15);color:#22c55e;font-size:0.6rem;margin-left:0.5rem;">✅ ${funcionan}</span>` : ''}
+                                    ${noFuncionan > 0 ? `<span class="badge badge--danger" style="background:rgba(239,68,68,0.15);color:#ef4444;font-size:0.6rem;margin-left:0.3rem;">❌ ${noFuncionan}</span>` : ''}
+                                    ${observaciones > 0 ? `<span class="badge badge--warning" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.6rem;margin-left:0.3rem;">📝 ${observaciones}</span>` : ''}
+                                </td>
                                 <td data-label="Acción" class="table__actions">
                                     <button type="button" class="icon-action icon-action--view" data-action="ver-test-detalle" data-id-orden="${Utils.escapeHtml(idOrden)}" data-num-test="${Utils.escapeHtml(num)}" title="Ver detalles del test">
                                         ${Iconos.ojo}
@@ -1328,7 +1612,6 @@ function renderTestsOrdenModal(tests, idOrden) {
         </div>
     `;
 
-    // Event listeners para los botones de ver test
     container.querySelectorAll('[data-action="ver-test-detalle"]').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -1354,7 +1637,6 @@ async function verDetalleTest(idOrden, numTest) {
         </div>
     `;
 
-    // Actualizar título del modal
     const modalTitle = document.querySelector('#modal-test-detalle .ui-modal__title');
     if (modalTitle) {
         modalTitle.textContent = `Detalle del test #${numTest} - Orden ${idOrden}`;
@@ -1365,7 +1647,6 @@ async function verDetalleTest(idOrden, numTest) {
     }
 
     try {
-        // Obtener los detalles del test desde el backend
         const data = await Utils.fetchJson(`/api/ordenes-servicio/ordenes/${encodeURIComponent(idOrden)}/test/${encodeURIComponent(numTest)}`);
         
         const componentes = data.componentes || data.tests || [];
@@ -1375,23 +1656,84 @@ async function verDetalleTest(idOrden, numTest) {
             return;
         }
 
-        // Renderizar los componentes en grid de 4 columnas
-        modalBody.innerHTML = `
-            <div class="test-detail-grid">
-                ${componentes.map((comp) => {
-                    const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Componente';
-                    const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
-                    const esOk = resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
-                    const badgeClass = esOk ? 'test-badge--success' : 'test-badge--danger';
-                    return `
-                        <div class="test-detail-item">
-                            <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
-                            <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(resultado)}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+        const observaciones = [];
+        const componentesFiltrados = [];
+        
+        componentes.forEach((comp) => {
+            const nombre = comp.Nombre_test || comp.nombre || comp.test || '';
+            if (nombre.toLowerCase().includes('observacion')) {
+                observaciones.push(comp);
+            } else {
+                componentesFiltrados.push(comp);
+            }
+        });
+
+        let html = '<div class="test-detail-grid">';
+        
+        componentesFiltrados.forEach((comp) => {
+            const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Componente';
+            const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
+            
+            let badgeClass = 'test-badge--default';
+            let displayResultado = resultado;
+            
+            const resultadoLower = resultado.toLowerCase().trim();
+            
+            if (resultadoLower.includes('no funciona') || 
+                resultadoLower.includes('no func') || 
+                resultadoLower === '0' ||
+                resultadoLower === 'falla' ||
+                resultadoLower === 'malo' ||
+                resultadoLower.includes('fallo')) {
+                badgeClass = 'test-badge--danger';
+                displayResultado = '❌ No funciona';
+            } else if (resultadoLower.includes('funciona') || 
+                       resultadoLower.includes('ok') || 
+                       resultadoLower === '1' ||
+                       resultadoLower === 'bueno' ||
+                       resultadoLower.includes('correcto')) {
+                badgeClass = 'test-badge--success';
+                displayResultado = '✅ Funciona';
+            } else {
+                displayResultado = resultado;
+            }
+            
+            html += `
+                <div class="test-detail-item ${badgeClass}">
+                    <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                    <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(displayResultado)}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        if (observaciones.length > 0) {
+            html += `
+                <div class="test-detail-observations">
+                    <h4 class="test-detail-observations-title">📝 Observaciones</h4>
+                    <div class="test-detail-grid">
+            `;
+            
+            observaciones.forEach((comp) => {
+                const nombre = comp.Nombre_test || comp.nombre || comp.test || 'Observaciones';
+                const resultado = comp.Resultado_test || comp.resultado || '';
+                
+                html += `
+                    <div class="test-detail-item test-badge--warning" style="grid-column: 1 / -1; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08);">
+                        <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                        <span class="test-detail-result test-badge--warning" style="color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">${Utils.escapeHtml(resultado)}</span>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
+        modalBody.innerHTML = html;
 
     } catch (error) {
         console.error('Error al cargar detalle del test:', error);
@@ -1597,13 +1939,11 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFecha.style.opacity = '0.7';
     }
 
-    // Botón para marcar todos los tests como OK
     document.getElementById('btn-marcar-todos-test')?.addEventListener('click', marcarTodosTestsOK);
+    document.getElementById('btn-marcar-todos-fallo')?.addEventListener('click', marcarTodosTestsFallo);
 
-    // Formulario de revisión inicial
     formRevisionInicial?.addEventListener('submit', confirmarRevision);
 
-    // FieldValidator
     if (window.FieldValidator) {
         setTimeout(() => window.FieldValidator.init(), 100);
     }
@@ -1647,44 +1987,56 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ============================================
+    // VALIDACIÓN DE TELÉFONO EN TIEMPO REAL
+    // ============================================
+
     // Celular Natural
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
-        inputCelular.addEventListener("input", (e) => {
-            let value = e.target.value.replace(/[^0-9]/g, "").slice(0, 11);
-            e.target.value = value;
-        });
+        inputCelular.removeEventListener('input', inputCelular._telefonoHandler);
+        inputCelular.removeEventListener('blur', inputCelular._telefonoBlurHandler);
         
-        inputCelular.addEventListener("blur", (e) => {
-            const value = e.target.value;
-            if (value && !Utils.validarCelular(value)) {
-                e.target.style.borderColor = '#dc2626';
-                e.target.title = 'Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos';
-            } else {
-                e.target.style.borderColor = '';
-                e.target.title = '';
+        inputCelular._telefonoHandler = function() {
+            Utils.formatearTelefonoOrden(this);
+        };
+        
+        inputCelular._telefonoBlurHandler = function() {
+            if (this.value) {
+                Utils.validarTelefonoOrdenEnTiempoReal(this);
             }
-        });
+        };
+        
+        inputCelular.addEventListener('input', inputCelular._telefonoHandler);
+        inputCelular.addEventListener('blur', inputCelular._telefonoBlurHandler);
+        
+        if (inputCelular.value) {
+            setTimeout(() => Utils.validarTelefonoOrdenEnTiempoReal(inputCelular), 100);
+        }
     }
 
     // Celular Jurídico
     const inputCelularJuridico = document.getElementById("cliente-celular-juridico");
     if (inputCelularJuridico) {
-        inputCelularJuridico.addEventListener("input", (e) => {
-            let value = e.target.value.replace(/[^0-9]/g, "").slice(0, 11);
-            e.target.value = value;
-        });
+        inputCelularJuridico.removeEventListener('input', inputCelularJuridico._telefonoHandler);
+        inputCelularJuridico.removeEventListener('blur', inputCelularJuridico._telefonoBlurHandler);
         
-        inputCelularJuridico.addEventListener("blur", (e) => {
-            const value = e.target.value;
-            if (value && !Utils.validarCelular(value)) {
-                e.target.style.borderColor = '#dc2626';
-                e.target.title = 'Debe comenzar con: 0412, 0414, 0416, 0422, 0424 o 0426, seguido de 7 dígitos';
-            } else {
-                e.target.style.borderColor = '';
-                e.target.title = '';
+        inputCelularJuridico._telefonoHandler = function() {
+            Utils.formatearTelefonoOrden(this);
+        };
+        
+        inputCelularJuridico._telefonoBlurHandler = function() {
+            if (this.value) {
+                Utils.validarTelefonoOrdenEnTiempoReal(this);
             }
-        });
+        };
+        
+        inputCelularJuridico.addEventListener('input', inputCelularJuridico._telefonoHandler);
+        inputCelularJuridico.addEventListener('blur', inputCelularJuridico._telefonoBlurHandler);
+        
+        if (inputCelularJuridico.value) {
+            setTimeout(() => Utils.validarTelefonoOrdenEnTiempoReal(inputCelularJuridico), 100);
+        }
     }
 
     // Clave
@@ -1695,33 +2047,149 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // RIF - Formateo automático
+    // ============================================
+    // RIF - FORMATEO AUTOMÁTICO Y VALIDACIÓN ESTRICTA - CORREGIDO
+    // ============================================
     const inputRif = document.getElementById("cliente-rif");
     if (inputRif) {
-        inputRif.addEventListener("input", (e) => {
-            let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-            if (value.length === 0) {
-                e.target.value = "";
-                return;
-            }
-            if (!['J', 'E'].includes(value.charAt(0))) {
-                value = 'J' + value.substring(1);
-            }
-            if (value.length > 10) {
-                value = value.substring(0, 10);
-            }
-            let formatted = value.charAt(0);
-            const rest = value.substring(1);
-            if (rest.length > 0) {
-                formatted += '-';
-                if (rest.length <= 8) {
-                    formatted += rest;
-                } else {
-                    formatted += rest.substring(0, 8) + '-' + rest.substring(8);
+        // Remover event listeners previos
+        inputRif.removeEventListener('input', inputRif._rifHandler);
+        inputRif.removeEventListener('blur', inputRif._rifBlurHandler);
+        
+        inputRif._rifHandler = function(e) {
+            let value = this.value;
+            
+            // Eliminar cualquier carácter que no sea letra (solo la primera) o número
+            let cleanValue = '';
+            let hasLetter = false;
+            
+            for (let i = 0; i < value.length; i++) {
+                const char = value[i];
+                // Solo permitir letras (J o E) al inicio
+                if (i === 0 && /[A-Za-z]/.test(char)) {
+                    // Solo permitir J o E
+                    if (char.toUpperCase() === 'J' || char.toUpperCase() === 'E') {
+                        cleanValue += char.toUpperCase();
+                        hasLetter = true;
+                    } else {
+                        // Forzar a J si no es J o E
+                        cleanValue += 'J';
+                        hasLetter = true;
+                    }
+                }
+                // Permitir números en el resto
+                else if (/\d/.test(char)) {
+                    cleanValue += char;
+                }
+                // Permitir guiones en posiciones específicas
+                else if (char === '-') {
+                    // Solo permitir guiones si hay al menos una letra al inicio
+                    if (hasLetter || cleanValue.length > 0) {
+                        cleanValue += char;
+                    }
                 }
             }
-            e.target.value = formatted;
-        });
+            
+            // Si no hay letra al inicio, agregar J
+            if (cleanValue.length === 0) {
+                cleanValue = 'J';
+            } else if (!/^[JE]/.test(cleanValue)) {
+                // Si el primer carácter no es J o E, forzar J al inicio
+                cleanValue = 'J' + cleanValue;
+            }
+            
+            // Limitar la longitud
+            if (cleanValue.length > 12) {
+                cleanValue = cleanValue.substring(0, 12);
+            }
+            
+            // Aplicar el formato correcto automáticamente
+            let formatted = cleanValue;
+            
+            // Si hay letra al inicio
+            if (/^[JE]/.test(formatted)) {
+                const letra = formatted.charAt(0);
+                let resto = formatted.substring(1);
+                
+                // Eliminar guiones del resto para trabajar con números puros
+                resto = resto.replace(/-/g, '');
+                
+                // Solo permitir números en el resto
+                resto = resto.replace(/\D/g, '');
+                
+                // Limitar a 9 dígitos (8 + 1 verificador)
+                if (resto.length > 9) {
+                    resto = resto.substring(0, 9);
+                }
+                
+                // Reconstruir con el formato correcto
+                let resultado = letra;
+                
+                if (resto.length > 0) {
+                    resultado += '-';
+                    if (resto.length <= 8) {
+                        resultado += resto;
+                    } else {
+                        // Si hay más de 8 dígitos, separar con guión
+                        resultado += resto.substring(0, 8) + '-' + resto.substring(8);
+                    }
+                }
+                
+                // Si el resultado es diferente al valor actual, actualizar
+                if (this.value !== resultado) {
+                    // Guardar la posición del cursor
+                    const cursorPos = this.selectionStart;
+                    this.value = resultado;
+                    
+                    // Ajustar la posición del cursor
+                    let newPos = cursorPos;
+                    if (newPos > this.value.length) {
+                        newPos = this.value.length;
+                    }
+                    
+                    // Saltar guiones automáticamente
+                    if (this.value.charAt(newPos) === '-') {
+                        newPos++;
+                    }
+                    
+                    try {
+                        this.setSelectionRange(newPos, newPos);
+                    } catch (e) {
+                        // Ignorar errores de selección
+                    }
+                    
+                    // Validar automáticamente
+                    Utils.validarRIFEnTiempoReal(this);
+                }
+            } else {
+                // Si no comienza con J o E, forzar J
+                this.value = 'J' + this.value.replace(/[^0-9]/g, '');
+            }
+        };
+        
+        inputRif._rifBlurHandler = function() {
+            if (this.value) {
+                // Validar al perder el foco
+                Utils.validarRIFEnTiempoReal(this);
+                
+                // Si el formato es inválido, mostrar mensaje
+                const resultado = Utils.validarRIF(this.value);
+                if (!resultado) {
+                    const errorElement = document.getElementById('cliente-rif-error');
+                    if (errorElement) {
+                        errorElement.textContent = '✗ Formato inválido. Use J-12345678-9 o E-12345678-9';
+                        errorElement.style.color = '#ef4444';
+                    }
+                    this.classList.add('field-error');
+                    this.classList.remove('field-success');
+                    this.style.borderColor = '#ef4444';
+                    this.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+                }
+            }
+        };
+        
+        inputRif.addEventListener('input', inputRif._rifHandler);
+        inputRif.addEventListener('blur', inputRif._rifBlurHandler);
     }
 
     // ============================================
@@ -1817,7 +2285,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnCrearCliente) btnCrearCliente.hidden = true;
             clienteActualId = null;
         });
-        // Inicializar con el valor por defecto
         toggleCamposCliente(clienteTipo.value);
     }
 
@@ -1827,7 +2294,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (inputBuscar) {
         inputBuscar.addEventListener("input", filtrarOrdenes);
-        // También al presionar Enter para mejor UX
         inputBuscar.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();

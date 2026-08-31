@@ -356,7 +356,7 @@
 }
 
 .orders-table thead th {
-    text-align: left;
+    text-align: center;
     padding: 8px 10px;
     color: var(--text-muted);
     font-weight: 500;

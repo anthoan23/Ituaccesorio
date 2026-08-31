@@ -62,3 +62,19 @@
     cursor: pointer;
     margin-left: 8px;
 }
+
+/* ============================================
+   MODAL REGISTRAR EMPLEADO
+   Scroll en el contenedor (overlay), no dentro
+   del diálogo: el modal fluye a su altura natural
+   y el overlay completo hace scroll.
+   ============================================ */
+#modal-registrar-empleado.ui-modal {
+    overflow-y: auto;
+}
+
+#modal-registrar-empleado .ui-modal__dialog {
+    margin: auto; /* centra cuando cabe; al desbordar alinea arriba y permite el scroll */
+    max-height: none;
+    overflow: visible;
+}

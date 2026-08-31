@@ -174,7 +174,7 @@
                   id="reg-correo-empleado" 
                   placeholder="ejemplo@empresa.com"
                   minlength="10"
-                  maxlength="120"
+                  maxlength="40"
                   data-validation-rules="email"
                   title="Correo electrónico válido">
             <small class="field-hint">ejemplo@dominio.com</small>
@@ -198,15 +198,15 @@
         <div id="especialidades-container">
           <div class="ui-form__section">
             <h3 class="ui-form__subtitle">Especialidades</h3>
-            
-            <div class="ui-form__field">
-              <label class="ui-label">Seleccionar especialidad</label>
+
+            <label class="empleado-form__field">
+              <span>Seleccionar especialidad</span>
               <div class="select-wrapper">
-                <select id="select-especialidad" class="ui-select">
+                <select id="select-especialidad">
                   <option value="">Seleccione una especialidad</option>
                 </select>
               </div>
-            </div>
+            </label>
 
             <div id="lista-especialidades" class="especialidades-list">
               <!-- Aquí se mostrarán las especialidades agregadas -->

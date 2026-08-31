@@ -43,8 +43,8 @@ def validar_email(valor):
         return "El campo correo no puede estar vacío."
     if len(valor_str) < 3:
         return "El campo correo debe tener al menos 3 caracteres."
-    if len(valor_str) > 60:
-        return "El campo correo no puede tener más de 60 caracteres."
+    if len(valor_str) > 50:
+        return "El campo correo no puede tener más de 50 caracteres."
     
     # Validación específica para @
     if '@' not in valor_str:
