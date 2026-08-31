@@ -38,11 +38,6 @@
         <strong class="stat-card__value" id="stat-asignadas" data-count="0">0</strong>
         <small class="stat-card__meta">Órdenes en proceso</small>
       </article>
-      <article class="stat-card" data-estado-card="en_proceso">
-        <span class="stat-card__label">En proceso</span>
-        <strong class="stat-card__value" id="stat-en-proceso" data-count="0">0</strong>
-        <small class="stat-card__meta">Órdenes en revisión</small>
-      </article>
       <article class="stat-card stat-card--accent" data-estado-card="reparada">
         <span class="stat-card__label">Reparadas</span>
         <strong class="stat-card__value" id="stat-reparadas" data-count="0">0</strong>
@@ -76,26 +71,6 @@
             Nueva orden
           </button>
         </div>
-      </div>
-
-      <!-- Barra de herramientas -->
-      <div class="ordenes-toolbar">
-        <label class="field ordenes-toolbar__field">
-          <span>Buscar órdenes</span>
-          <input id="input-buscar-ordenes" type="search" placeholder="Buscar por ID, cliente o equipo">
-        </label>
-        <label class="field ordenes-toolbar__field">
-          <span>Filtrar por estado</span>
-          <div class="select-wrapper">
-            <select id="filtro-estado-orden">
-              <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="asignada">Asignada</option>
-              <option value="en proceso">En proceso</option>
-              <option value="reparada">Reparada</option>
-            </select>
-          </div>
-        </label>
       </div>
 
       <div class="table-wrap" role="region" aria-label="Tabla de órdenes">

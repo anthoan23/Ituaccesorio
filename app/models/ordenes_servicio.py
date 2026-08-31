@@ -19,6 +19,46 @@ class Orden_servicio():
 
         self._conexion = conectar()
 
+    # ============================================
+    # MÉTODO PARA LISTAR MODELOS DE TELÉFONOS
+    # ============================================
+    def listar_modelos_telefonos(self) -> list:
+        """
+        Lista todos los modelos de teléfonos/celulares para el select de órdenes de servicio.
+        
+        Returns:
+            list: Lista de diccionarios con id, nombre, marca_nombre, clase_nombre
+        """
+        db = self._conexion.conexion1()
+        if not db:
+            print("[ERROR] Error al conectar con la base de datos.")
+            return []
+        
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT 
+                    p.ID_producto AS id,
+                    p.Nombre_producto AS nombre,
+                    cp.Nombre_Clase AS clase_nombre
+                FROM Producto p
+                INNER JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
+                WHERE cp.Nombre_Clase LIKE '%Telefono%' 
+                   OR cp.ID_Clase = '1'
+                ORDER BY p.Nombre_producto
+            """)
+            modelos = cursor.fetchall()
+            print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
+            return modelos
+        except Exception as e:
+            print(f"[ERROR] Error al listar modelos de teléfonos: {e}")
+            return []
+        finally:
+            cursor.close()
+            db.close()
+
+   
+
     def listar_ordenes_servicio(self):
         db = self._conexion.conexion1()
         if not db:

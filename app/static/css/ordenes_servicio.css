@@ -23,7 +23,7 @@
    ============================================ */
 .stats--grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.85rem;
 }
 
@@ -904,11 +904,67 @@
 }
 
 /* ============================================
+   VALIDACIÓN DE TELÉFONO EN ÓRDENES DE SERVICIO
+   ============================================ */
+
+.field-error {
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 0.15rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.field-error:not(:empty) {
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--radius-sm);
+}
+
+.field-error:not(:empty) {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+input.field-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input.field-error:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+input.field-success {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input.field-success:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}
+
+/* Mensaje de ayuda más visible */
+.field-hint {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+    display: block;
+}
+
+.field-hint .highlight {
+    color: var(--yellow);
+    font-weight: 600;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1100px) {
     .stats--grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 

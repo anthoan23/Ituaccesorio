@@ -188,7 +188,33 @@ def listar_ordenes_servicio():
         return jsonify({"success": False, "error": str(error)}), 500
 
 
-# Ruta para crear una nueva orden (POST) - CORREGIDA
+# ============================================
+# RUTA PARA LISTAR MODELOS - USANDO EL MODELO ORDEN_SERVICIO
+# ============================================
+@ordenes_servicio_blueprint.route("/api/ordenes-servicio/modelos", methods=["GET"])
+@jwt_required
+def listar_modelos():
+    """
+    Lista los modelos de teléfonos para el select de órdenes de servicio.
+    Utiliza el método del modelo Orden_servicio.
+    """
+    try:
+        # Usar el modelo Orden_servicio para obtener los modelos
+        orden_model = OrdenServicio()
+        modelos = orden_model.listar_modelos_telefonos()
+        
+        if not modelos:
+            return jsonify({"success": True, "modelos": [], "message": "No se encontraron modelos de teléfonos."})
+        
+        print(f"[DEBUG] Modelos de teléfonos devueltos: {len(modelos)}")
+        return jsonify({"success": True, "modelos": modelos})
+    except Exception as e:
+        print(f"[ERROR] Error al listar modelos: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+# Ruta para crear una nueva orden (POST)
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @jwt_required
 @tiene_permiso('Órdenes de servicio', 'registrar')
@@ -649,47 +675,6 @@ def eliminar_orden_servicio(id_orden):
     if not ok:
         return jsonify({"success": False, "error": "No se pudo eliminar la orden."}), 400
     return jsonify({"success": True, "message": "Orden eliminada"})
-
-
-# ============================================
-# RUTA PARA LISTAR MODELOS - SOLO TELÉFONOS
-# ============================================
-@ordenes_servicio_blueprint.route("/api/productos/modelos", methods=["GET"])
-@jwt_required
-def listar_modelos():
-    from app.models.database import conectar
-    db = conectar().conexion1()
-    if not db:
-        return jsonify({"success": False, "error": "Error de conexión"}), 500
-
-    cursor = db.cursor(dictionary=True)
-    try:
-        # Consulta para obtener solo teléfonos
-        cursor.execute("""
-            SELECT 
-                p.ID_producto AS id,
-                p.Nombre_producto AS nombre,
-                mp.Nombre_marca AS marca_nombre,
-                cp.Nombre_Clase AS clase_nombre
-            FROM Producto p
-            INNER JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
-            LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
-            WHERE cp.ID_Clase = '1'
-            ORDER BY mp.Nombre_marca, p.Nombre_producto
-        """)
-        modelos = cursor.fetchall()
-        
-        print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
-        for m in modelos:
-            print(f"[DEBUG] - ID: {m.get('id')}, Clase: {m.get('clase_nombre')}, Marca: {m.get('marca_nombre')}, Nombre: {m.get('nombre')}")
-        
-        return jsonify({"success": True, "modelos": modelos})
-    except Exception as e:
-        print(f"[ERROR] Error al listar modelos: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-    finally:
-        cursor.close()
-        db.close()
 
 
 @ordenes_servicio_blueprint.route("/api/taller/ordenes/<string:id_orden>/fotos", methods=["POST"])
