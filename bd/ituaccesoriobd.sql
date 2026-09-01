@@ -1265,7 +1265,7 @@ CREATE TABLE `Trade_in` (
   `ID_empleado` int DEFAULT NULL,
   `ID_cliente` varchar(12) DEFAULT NULL,
   `ID_inventario` varchar(10) DEFAULT NULL,
-  `ID_equipo` varchar(10) DEFAULT NULL,
+  `ID_equipo` varchar(16) DEFAULT NULL,
   `Numero_utilizado` int DEFAULT NULL,
   `Fecha_realizado` datetime DEFAULT NULL,
   `cotizacion` decimal(10,2) DEFAULT NULL,
