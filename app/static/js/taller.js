@@ -324,12 +324,17 @@ const FotosService = {
         const dropzone = document.getElementById('photo-dropzone');
         if (!dropzone) return;
 
-        // Bindear una sola vez y guardar la referencia: .bind() devuelve una
-        // función nueva en cada llamada, por lo que removeEventListener solo
-        // funciona si se usa exactamente la misma referencia que se agregó.
-        this.handleDragOver = this.handleDragOver.bind(this);
-        this.handleDragLeave = this.handleDragLeave.bind(this);
-        this.handleDrop = this.handleDrop.bind(this);
+        // Bindear una sola vez: .bind() devuelve una función nueva en cada llamada,
+        // por lo que rebindear haría que removeEventListener no encontrara la
+        // referencia original y los handlers se acumularan en cada apertura de la modal.
+        if (!this._handlersBindeados) {
+            this.handleDragOver = this.handleDragOver.bind(this);
+            this.handleDragLeave = this.handleDragLeave.bind(this);
+            this.handleDrop = this.handleDrop.bind(this);
+            this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
+            this.handleFileChange = this.handleFileChange.bind(this);
+            this._handlersBindeados = true;
+        }
 
         dropzone.removeEventListener('dragover', this.handleDragOver);
         dropzone.removeEventListener('dragleave', this.handleDragLeave);
@@ -371,14 +376,15 @@ const FotosService = {
         const fileInput = document.getElementById('fotos-input');
         
         if (!dropzone || !fileInput) return;
-        
+
+        // Los handlers ya están bindeados una sola vez en configurarDragDrop().
+        // Aquí solo re-registramos con la misma referencia, por lo que el
+        // removeEventListener sí elimina los listeners previos.
         dropzone.removeEventListener('click', this.handleDropzoneClick);
         fileInput.removeEventListener('change', this.handleFileChange);
-        
-        this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
+
         dropzone.addEventListener('click', this.handleDropzoneClick);
-        
-        this.handleFileChange = this.handleFileChange.bind(this);
+
         fileInput.addEventListener('change', this.handleFileChange);
     },
 
