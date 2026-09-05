@@ -47,14 +47,19 @@
     min-width: 120px;
 }
 
+.col-modulo {
+    width: 150px;
+    min-width: 120px;
+}
+
 .col-fecha {
     width: 200px;
     min-width: 170px;
 }
 
 /* Columna de descripción */
-.table td:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-fecha),
-.table th:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-fecha) {
+.table td:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-modulo):not(.col-fecha),
+.table th:not(.col-id):not(.col-usuario):not(.col-accion):not(.col-modulo):not(.col-fecha) {
     min-width: 150px;
     max-width: 350px;
     word-break: break-word;
@@ -237,6 +242,7 @@
     .col-id,
     .col-usuario,
     .col-accion,
+    .col-modulo,
     .col-fecha {
         width: auto;
         min-width: 0;
@@ -287,7 +293,12 @@
         width: 120px;
         min-width: 100px;
     }
-    
+
+    .col-modulo {
+        width: 120px;
+        min-width: 100px;
+    }
+
     .col-fecha {
         width: 160px;
         min-width: 140px;

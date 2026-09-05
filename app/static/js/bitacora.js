@@ -85,9 +85,10 @@
     $id('d-id').textContent = evento.id || '';
     $id('d-usuario').textContent = evento.usuario || '';
     $id('d-accion').textContent = evento.accion || '';
+    $id('d-modulo').textContent = evento.modulo || 'General';
     $id('d-descripcion').textContent = evento.descripcion || '';
     $id('d-fecha').textContent = formatFecha(evento.fecha);
-    
+
     abrirModal('modal-detalle');
   }
 
@@ -104,10 +105,11 @@
         const id = row.getAttribute('data-id');
         const usuario = row.getAttribute('data-usuario');
         const accion = row.getAttribute('data-accion');
+        const modulo = row.getAttribute('data-modulo');
         const descripcion = row.getAttribute('data-descripcion');
         const fecha = row.getAttribute('data-fecha');
-        
-        mostrarDetalleEvento({ id, usuario, accion, descripcion, fecha });
+
+        mostrarDetalleEvento({ id, usuario, accion, modulo, descripcion, fecha });
       });
     });
   }

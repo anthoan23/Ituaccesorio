@@ -53,6 +53,7 @@
               <th class="col-id">ID</th>
               <th class="col-usuario">Usuario</th>
               <th class="col-accion">Acción</th>
+              <th class="col-modulo">Módulo</th>
               <th>Descripción</th>
               <th class="col-fecha">Fecha/Hora</th>
             </tr>
@@ -60,7 +61,7 @@
           <tbody id="tabla-bitacora">
             {% if registros %}
               {% for registro in registros %}
-              <tr class="evento-row" data-id="{{ registro.id }}" data-usuario="{{ registro.usuario_id }}" data-accion="{{ registro.accion }}" data-descripcion="{{ registro.descripcion|escape }}" data-fecha="{{ registro.fecha_hora }}">
+              <tr class="evento-row" data-id="{{ registro.id }}" data-usuario="{{ registro.usuario_id }}" data-accion="{{ registro.accion }}" data-modulo="{{ (registro.modulo_nombre or 'General')|escape }}" data-descripcion="{{ registro.descripcion|escape }}" data-fecha="{{ registro.fecha_hora }}">
                 <td class="col-id"><span class="chip">{{ registro.id }}</span></td>
                 <td class="col-usuario">
                   <div class="user-cell">
@@ -71,13 +72,16 @@
                 <td class="col-accion">
                   <span class="badge badge--{{ registro.accion|lower|replace(' ', '-') }}">{{ registro.accion }}</span>
                 </td>
+                <td class="col-modulo">
+                  <span class="badge badge--default">{{ registro.modulo_nombre or 'General' }}</span>
+                </td>
                 <td title="{{ registro.descripcion|escape }}">{{ registro.descripcion|truncate(80) }}</td>
                 <td class="col-fecha">{{ registro.fecha_hora }}</td>
               </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="5" class="table__empty">No hay eventos registrados para mostrar.</td>
+                <td colspan="6" class="table__empty">No hay eventos registrados para mostrar.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -106,6 +110,10 @@
           <div class="detail-item">
             <span class="detail-label">Acción</span>
             <span id="d-accion" class="detail-value"></span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Módulo</span>
+            <span id="d-modulo" class="detail-value"></span>
           </div>
           <div class="detail-item detail-item--full">
             <span class="detail-label">Fecha y hora</span>
