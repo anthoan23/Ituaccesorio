@@ -293,3 +293,424 @@
     gap: 0.6rem;
     margin-top: 1.25rem;
 }
+/* ============================================
+   TESTS - UNIFICADO CON ORDENES_DE_SERVICIO.CSS
+   ============================================ */
+
+/* Bloque de revisión a ancho completo dentro del form grid */
+.revision-block {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+/* Header de componentes + botones "Marcar todos" */
+.revision-components-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.revision-components-header h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin: 0;
+}
+
+.revision-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.revision-header-buttons .ui-btn {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+#btn-marcar-todos-test {
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+#btn-marcar-todos-test:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+#btn-marcar-todos-test:active {
+    transform: scale(0.97);
+}
+
+#btn-marcar-todos-fallo {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+#btn-marcar-todos-fallo:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+#btn-marcar-todos-fallo:active {
+    transform: scale(0.97);
+}
+
+/* Grid de revisión en 2 columnas */
+.revision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.revision-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.revision-column .test-row-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.75rem;
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+    min-height: 36px;
+}
+
+.revision-column .test-row-item:hover {
+    border-color: rgba(243, 197, 0, 0.3);
+}
+
+.revision-column .test-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+}
+
+.revision-column .radio-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.revision-column .radio-label {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.6rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    border: 1px solid transparent;
+    user-select: none;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.revision-column .radio-label--success {
+    color: var(--green);
+}
+
+.revision-column .radio-label--success:hover {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.revision-column .radio-label--danger {
+    color: var(--danger);
+}
+
+.revision-column .radio-label--danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Ocultar radio button pero mantenerlo clickeable */
+.revision-column .radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.revision-column .radio-label:has(input:checked) {
+    font-weight: 700;
+    border: 1px solid;
+}
+
+.revision-column .radio-label--success:has(input:checked) {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
+}
+
+.revision-column .radio-label--danger:has(input:checked) {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--danger);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.1);
+}
+
+/* Tabla del historial de tests */
+.tests-table-wrap {
+    overflow-x: auto;
+}
+
+.tests-table-wrap .table {
+    min-width: 400px;
+    font-size: 0.85rem;
+}
+
+.tests-table-wrap .table th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 800;
+    padding: 0.6rem 0.75rem;
+    background: var(--table-header);
+}
+
+.tests-table-wrap .table td {
+    padding: 0.6rem 0.75rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tests-table-wrap .table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Modal de detalle del test */
+.test-detail-container {
+    padding: 0.5rem 0;
+}
+
+.test-detail-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.spinner-loading {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.test-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.test-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0.85rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.test-detail-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.test-detail-item--full {
+    grid-column: 1 / -1;
+}
+
+.test-detail-name {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.test-detail-result {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    align-self: flex-start;
+}
+
+/* Colores por estado del componente */
+.test-detail-item.test-badge--default {
+    border-color: var(--border-light);
+    background: var(--glass-bg);
+}
+
+.test-detail-item.test-badge--success {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.test-detail-item.test-badge--success:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.7);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}
+
+.test-detail-result.test-badge--success {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.test-detail-item.test-badge--danger {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.test-detail-item.test-badge--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.7);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.test-detail-result.test-badge--danger {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.test-detail-item.test-badge--warning {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.test-detail-item.test-badge--warning:hover {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.7);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.test-detail-result.test-badge--warning {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Sección de observaciones del test */
+.test-detail-observations {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--border-light);
+}
+
+.test-detail-observations-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin: 0 0 0.5rem 0;
+}
+
+/* ============================================
+   TESTS - RESPONSIVE
+   ============================================ */
+@media (max-width: 820px) {
+    .revision-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .revision-column {
+        gap: 0.25rem;
+    }
+
+    .revision-column .test-row-item {
+        padding: 0.25rem 0.5rem;
+        min-height: 32px;
+    }
+
+    .revision-column .test-label {
+        font-size: 0.75rem;
+    }
+
+    .revision-column .radio-label {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.4rem;
+    }
+
+    .test-detail-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .test-detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .revision-column .test-row-item {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: space-between;
+    }
+
+    .revision-column .radio-group {
+        gap: 0.25rem;
+    }
+
+    .revision-column .test-label {
+        font-size: 0.7rem;
+    }
+
+    .revision-column .radio-label {
+        font-size: 0.6rem;
+        padding: 0.05rem 0.35rem;
+    }
+
+    .test-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .revision-components-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .revision-header-buttons {
+        justify-content: stretch;
+    }
+
+    .revision-header-buttons .ui-btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.65rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
