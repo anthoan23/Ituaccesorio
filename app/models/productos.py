@@ -478,13 +478,15 @@ class Producto:
     def registrar_producto(self) -> str:
         if not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("Clase, marca y nombre son obligatorios.")
-        
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        
-        cursor = db.cursor()
+
+        cursor = None
         try:
+            cursor = db.cursor(dictionary=True)
+
             # Validación: Verificar que la clase exista
             cursor.execute(
                 "SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1",
@@ -492,7 +494,7 @@ class Producto:
             )
             if not cursor.fetchone():
                 raise ValueError(f"La clase con ID '{self.id_clase}' no existe.")
-            
+
             # Validación: Verificar que la marca exista
             cursor.execute(
                 "SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1",
@@ -500,40 +502,58 @@ class Producto:
             )
             if not cursor.fetchone():
                 raise ValueError(f"La marca con ID '{self.id_marca}' no existe.")
-            
+
             # Validación: Verificar si ya existe un producto con el mismo nombre, clase y marca
             cursor.execute("""
                 SELECT 1 FROM Producto 
-                WHERE Nombre_producto = %s AND ID_Clase = %s AND ID_marca = %s
+                WHERE LOWER(TRIM(Nombre_producto)) = LOWER(TRIM(%s))
+                  AND ID_Clase = %s AND ID_marca = %s
                 LIMIT 1
             """, (self.nombre, self.id_clase, self.id_marca))
             if cursor.fetchone():
                 raise ValueError(f"Ya existe un producto con el nombre '{self.nombre}' en esta clase y marca.")
-            
-            new_id = self._siguiente_id()
-            cursor.execute("""
-                INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (new_id, self.id_clase, self.id_marca, self.nombre, self.descripcion))
+
+            # Invocar el stored procedure para registrar el producto con validación y generación de ID
+            cursor.callproc(
+                'sp_registrar_producto',
+                (self.id_clase, self.id_marca, self.nombre, self.descripcion or '', None, None, None)
+            )
+
+            # Obtener los parámetros OUT del procedure
+            cursor.execute(
+                "SELECT @_sp_registrar_producto_4 AS id_producto, @_sp_registrar_producto_5 AS estado, @_sp_registrar_producto_6 AS mensaje"
+            )
+            resultado = cursor.fetchone()
+
+            if not resultado:
+                raise RuntimeError("El procedimiento de registro no devolvió información.")
+
+            self.id_producto = resultado['id_producto']
+            estado = resultado['estado']
+            mensaje = resultado['mensaje']
+
+            if not self.id_producto or estado != 'OK':
+                raise ValueError(mensaje or 'No se pudo registrar el producto.')
+
             db.commit()
-            self.id_producto = new_id
-            
+
             # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear producto",
-                    descripcion=f"Producto creado: {self.nombre} (ID: {new_id})",
+                    descripcion=f"Producto creado: {self.nombre} (ID: {self.id_producto})",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Productos"
                 )
                 bitacora.registrar()
-            
-            return new_id
+
+            return str(self.id_producto)
         except Exception:
             db.rollback()
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             db.close()
 
     def actualizar_producto(self) -> bool:

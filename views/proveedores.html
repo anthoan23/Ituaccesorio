@@ -347,6 +347,8 @@
     <form id="form-proveedor-agregar-producto" class="ui-form" action="#" method="post" autocomplete="off">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <input id="ap-proveedor-id" type="hidden" name="id_proveedor" value="">
+      <input id="ap-id-modelo" type="hidden" name="id_modelo" value="">
+      <input id="ap-costo" type="hidden" name="costo" value="">
 
       <div class="ui-form__grid ui-form__grid--one">
         <div style="display:flex;gap:8px;align-items:center;">
@@ -407,6 +409,8 @@
   {% call modal('modal-proveedor-agregar-producto-crear', 'Agregar producto inicial', 'lg') %}
     <form id="form-proveedor-agregar-producto-crear" class="ui-form" action="#" method="post" autocomplete="off">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <input id="cp-id-modelo" type="hidden" name="id_modelo" value="">
+      <input id="cp-costo" type="hidden" name="costo" value="">
 
       <div class="ui-form__grid ui-form__grid--one">
         <div style="display:flex;gap:8px;align-items:center;">

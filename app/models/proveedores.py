@@ -179,37 +179,72 @@ class Proveedores:
     # ==================== FIN MÉTODO CON STORED PROCEDURE ====================
 
     def crear_proveedor(self) -> int:
-        """Crea un nuevo proveedor usando los atributos de la instancia"""
+        """Crea un nuevo proveedor usando el stored procedure sp_registrar_proveedor."""
         if not self.nombre:
             raise ValueError("El nombre del proveedor es obligatorio.")
-        
+
         if self.limite_credito is not None and self.limite_credito < 0:
             raise ValueError("El límite de crédito no puede ser negativo.")
-        
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        
+
         cursor = None
         try:
-            cursor = db.cursor()
-            
-            # Si no tiene ID o es 0, obtener el siguiente
-            if self.id_proveedor == 0:
-                self.id_proveedor = self._siguiente_id()
-            
+            cursor = db.cursor(dictionary=True)
+
+            # Validación extra del modelo: evitar duplicados por nombre y rif
             cursor.execute("""
-                INSERT INTO Proveedor
-                    (ID_proveedor, Rif_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
-                     Correo_proveedor, Direccion_proveedor, Limite_credito)
-                VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None, 
-                  self.celular or None, self.correo or None, 
-                  self.direccion or None, self.limite_credito or None))
-            
+                SELECT 1 FROM Proveedor
+                WHERE LOWER(TRIM(Nombre_proveedor)) = LOWER(TRIM(%s))
+                LIMIT 1
+            """, (self.nombre,))
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe un proveedor con el nombre '{self.nombre}'.")
+
+            if self.rif:
+                cursor.execute("""
+                    SELECT 1 FROM Proveedor
+                    WHERE LOWER(TRIM(Rif_proveedor)) = LOWER(TRIM(%s))
+                    LIMIT 1
+                """, (self.rif,))
+                if cursor.fetchone():
+                    raise ValueError(f"Ya existe un proveedor con el RIF '{self.rif}'.")
+
+            cursor.callproc(
+                'sp_registrar_proveedor',
+                (
+                    self.rif or '',
+                    self.nombre,
+                    self.tipo or '',
+                    self.celular or '',
+                    self.correo or '',
+                    self.direccion or '',
+                    self.limite_credito if self.limite_credito is not None else 0,
+                    0,
+                    '',
+                    ''
+                )
+            )
+
+            cursor.execute(
+                "SELECT @_sp_registrar_proveedor_7 AS id_proveedor, @_sp_registrar_proveedor_8 AS estado, @_sp_registrar_proveedor_9 AS mensaje"
+            )
+            resultado = cursor.fetchone()
+
+            if not resultado:
+                raise RuntimeError("El procedimiento de registro no devolvió información.")
+
+            self.id_proveedor = int(resultado['id_proveedor'])
+            estado = resultado['estado']
+            mensaje = resultado['mensaje']
+
+            if not self.id_proveedor or estado != 'OK':
+                raise ValueError(mensaje or "No se pudo registrar el proveedor.")
+
             db.commit()
-            
+
             # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
@@ -219,7 +254,7 @@ class Proveedores:
                     modulo_nombre="Proveedores"
                 )
                 bitacora.registrar()
-            
+
             return self.id_proveedor
         except Exception as e:
             if db:
