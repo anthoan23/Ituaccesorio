@@ -526,11 +526,11 @@
             <td><span class="badge-clase">${escapeHtml(m.clase_nombre || "")}</span></td>
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones del producto">
-                <button class="icon-action icon-action--edit" type="button" aria-label="Editar" data-action="edit" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                <button class="icon-action icon-action--edit" type="button" aria-label="Editar" data-action="editar" data-id="${escapeHtml(m.id ?? "")}">
+                  ${Iconos.lapiz}
                 </button>
-                <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="delete" data-id="${escapeHtml(m.id ?? "")}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                <button class="icon-action icon-action--danger" type="button" aria-label="Eliminar" data-action="eliminar" data-id="${escapeHtml(m.id ?? "")}">
+                  ${Iconos.basura}
                 </button>
               </div>
             </td>
@@ -829,13 +829,13 @@
       return;
     }
 
-    if (action === "edit") {
+    if (action === "editar") {
       await prepararFormularioEdicion(id);
       openModal();
       return;
     }
 
-    if (action === "delete") {
+    if (action === "eliminar") {
       const modelo = findModeloById(id);
       const nombreProducto = modelo ? `${modelo.nombre} (${modelo.marca_nombre || ""})` : `ID ${id}`;
       await eliminarProducto(id, nombreProducto);

@@ -582,8 +582,8 @@ function renderUsuarios() {
             <td class="col-rol">${escapeHtml(usuario.rol_nombre || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action icon-action--edit" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Editar">✎</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Eliminar">🗑</button>
+                    <button class="icon-action icon-action--edit" type="button" data-action="edit-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Editar">${Iconos.lapiz}</button>
+                    <button class="icon-action icon-action--danger" type="button" data-action="delete-usuario" data-id="${escapeHtml(String(usuario.id))}" title="Eliminar">${Iconos.basura}</button>
                 </div>
             </td>
         </tr>
@@ -610,8 +610,8 @@ function renderRoles() {
                 <td>${escapeHtml(rol.descripcion || "")}</td>
                 <td class="table__actions">
                     <div class="row-actions">
-                        <button class="icon-action icon-action--edit" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}" title="Editar">✎</button>
-                        ${!esProtegido ? `<button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" title="Eliminar">🗑</button>` : ''}
+                        <button class="icon-action icon-action--edit" type="button" data-action="edit-rol" data-id="${escapeHtml(String(rol.id))}" title="Editar">${Iconos.lapiz}</button>
+                        ${!esProtegido ? `<button class="icon-action icon-action--danger" type="button" data-action="delete-rol" data-id="${escapeHtml(String(rol.id))}" title="Eliminar">${Iconos.basura}</button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -635,8 +635,8 @@ function renderModulos() {
             <td>${escapeHtml(modulo.descripcion || "")}</td>
             <td class="table__actions">
                 <div class="row-actions">
-                    <button class="icon-action icon-action--edit" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Editar">✎</button>
-                    <button class="icon-action icon-action--danger" type="button" data-action="delete-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Eliminar">🗑</button>
+                    <button class="icon-action icon-action--edit" type="button" data-action="edit-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Editar">${Iconos.lapiz}</button>
+                    <button class="icon-action icon-action--danger" type="button" data-action="delete-modulo" data-id="${escapeHtml(String(modulo.id))}" title="Eliminar">${Iconos.basura}</button>
                 </div>
             </td>
         </tr>

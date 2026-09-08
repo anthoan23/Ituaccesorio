@@ -158,12 +158,6 @@ function renderTabla(backups) {
         return;
     }
 
-    const iconos = {
-        basura: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z" fill="currentColor"/></svg>`,
-        descargar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
-        restaurar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9m0 0v6m0-6h-6"/><path d="M3 3v6h6"/></svg>`
-    };
-
     tbody.innerHTML = backups
         .map((backup) => {
             const id = Utils.escapeHtml(backup.id_backup);
@@ -192,19 +186,19 @@ function renderTabla(backups) {
                                     data-id="${id}" 
                                     data-nombre="${nombre}" 
                                     aria-label="Restaurar">
-                                ${iconos.restaurar}
+                                ${Iconos.restaurar}
                             </button>
                             <button class="icon-action icon-action--download" type="button" data-action="descargar" 
                                     data-id="${id}" 
                                     data-archivo="${Utils.escapeHtml(backup.direccion_bd || '')}" 
                                     aria-label="Descargar">
-                                ${iconos.descargar}
+                                ${Iconos.descargar}
                             </button>
                             <button class="icon-action icon-action--danger" type="button" data-action="eliminar" 
                                     data-id="${id}" 
                                     data-nombre="${nombre}" 
                                     aria-label="Eliminar">
-                                ${iconos.basura}
+                                ${Iconos.basura}
                             </button>
                         </div>
                     </td>

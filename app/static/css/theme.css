@@ -915,7 +915,7 @@ body {
     background: rgba(243, 197, 0, 0.08);
 }
 .icon-action--edit svg,
-.icon-action[data-action="editar"] svg { fill: var(--yellow); color: var(--yellow); }
+.icon-action[data-action="editar"] svg { color: var(--yellow); }
 .icon-action--edit:hover,
 .icon-action[data-action="editar"]:hover {
     border-color: var(--yellow-soft);
@@ -930,7 +930,7 @@ body {
     background: rgba(220, 38, 38, 0.08);
 }
 .icon-action--danger svg,
-.icon-action[data-action="eliminar"] svg { fill: #dc2626; color: #dc2626; }
+.icon-action[data-action="eliminar"] svg { color: #dc2626; }
 .icon-action--danger:hover,
 .icon-action[data-action="eliminar"]:hover {
     border-color: #ef4444;
@@ -951,7 +951,7 @@ body {
 .icon-action[data-action="ver"] svg,
 .icon-action[data-accion="ver-orden"] svg,
 .icon-action[data-accion="ver-test"] svg,
-.icon-action[data-accion="ver-test-modal"] svg { fill: var(--blue); color: var(--blue); }
+.icon-action[data-accion="ver-test-modal"] svg { color: var(--blue); }
 .icon-action--view:hover,
 .icon-action[data-action="ver"]:hover,
 .icon-action[data-accion="ver-orden"]:hover,
@@ -971,7 +971,7 @@ body {
 }
 .icon-action--success svg,
 .icon-action[data-accion="tomar-orden"] svg,
-.icon-action[data-accion="ver-detalle"] svg { fill: #22c55e; color: #22c55e; }
+.icon-action[data-accion="ver-detalle"] svg { color: #22c55e; }
 .icon-action--success:hover,
 .icon-action[data-accion="tomar-orden"]:hover,
 .icon-action[data-accion="ver-detalle"]:hover {
@@ -985,11 +985,35 @@ body {
     border-color: #dc2626;
     background: rgba(220, 38, 38, 0.08);
 }
-.icon-action[data-accion="liberar-orden"] svg { fill: #dc2626; color: #dc2626; }
+.icon-action[data-accion="liberar-orden"] svg { color: #dc2626; }
 .icon-action[data-accion="liberar-orden"]:hover {
     border-color: #ef4444;
     background: rgba(220, 38, 38, 0.18);
     box-shadow: 0 0 24px rgba(220, 38, 38, 0.15);
+}
+
+/* Descargar - Azul */
+.icon-action--download {
+    border-color: var(--blue);
+    background: rgba(59, 130, 246, 0.08);
+}
+.icon-action--download svg { color: var(--blue); }
+.icon-action--download:hover {
+    border-color: #60a5fa;
+    background: rgba(59, 130, 246, 0.18);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
+}
+
+/* Restaurar - Ámbar */
+.icon-action--restore {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+}
+.icon-action--restore svg { color: #f59e0b; }
+.icon-action--restore:hover {
+    border-color: #d97706;
+    background: rgba(245, 158, 11, 0.18);
+    box-shadow: 0 0 24px rgba(245, 158, 11, 0.15);
 }
 
 /* ============================================

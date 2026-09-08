@@ -258,17 +258,6 @@
 /* ============================================
    ICONOS DE ACCIÓN ESPECÍFICOS
    ============================================ */
-.icon-action--view {
-    border-color: rgba(59, 130, 246, 0.3);
-    background: rgba(59, 130, 246, 0.08);
-}
-.icon-action--view svg { fill: #3b82f6; color: #3b82f6; }
-.icon-action--view:hover {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.18);
-    box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
-}
-
 .icon-action--tests {
     border-color: var(--yellow);
     background: rgba(243, 197, 0, 0.08);

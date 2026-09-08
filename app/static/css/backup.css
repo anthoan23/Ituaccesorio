@@ -119,64 +119,6 @@
 }
 
 /* ============================================
-   ICONOS DE ACCIÓN (específicos de backup)
-   ============================================ */
-
-/* Botón de descargar - Azul */
-.icon-action--download {
-    border-color: var(--blue);
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--blue);
-}
-
-.icon-action--download svg {
-    fill: var(--blue);
-}
-
-.icon-action--download:hover {
-    border-color: #2563eb;
-    background: rgba(59, 130, 246, 0.18);
-    box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
-    transform: translateY(-2px) scale(1.05);
-    color: #2563eb;
-}
-
-.icon-action--download:hover svg {
-    fill: #2563eb;
-}
-
-.icon-action--download:active {
-    transform: scale(0.95);
-}
-
-/* Botón de restaurar - Ámbar/Naranja */
-.icon-action--restore {
-    border-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.08);
-    color: #f59e0b;
-}
-
-.icon-action--restore svg {
-    fill: #f59e0b;
-}
-
-.icon-action--restore:hover {
-    border-color: #d97706;
-    background: rgba(245, 158, 11, 0.18);
-    box-shadow: 0 0 24px rgba(245, 158, 11, 0.15);
-    transform: translateY(-2px) scale(1.05);
-    color: #d97706;
-}
-
-.icon-action--restore:hover svg {
-    fill: #d97706;
-}
-
-.icon-action--restore:active {
-    transform: scale(0.95);
-}
-
-/* ============================================
    MODAL - OPCIONES DE BACKUP
    ============================================ */
 .backup-options {

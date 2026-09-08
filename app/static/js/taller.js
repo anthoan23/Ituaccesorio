@@ -39,16 +39,6 @@ const TALLER_CONFIG = {
 // --------------------------------
 // 2. ICONOS SVG - CONSTANTES
 // --------------------------------
-const ICON_EYE = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.7a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" fill="currentColor"/>
-    </svg>`;
-
-const ICON_TRASH = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" fill="currentColor"/>
-    </svg>`;
-
 const ICON_CHECK_GREEN = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
@@ -611,7 +601,7 @@ const OrdenesService = {
                 <td data-label="Fecha ingreso">${Utils.formatDate(orden.fecha_e)}</td>
                 <td class="table__actions" data-label="Acciones">
                     <div class="row-actions">
-                        <button class="icon-action" type="button" data-accion="ver-orden" data-id="${orden.id_orden}" aria-label="Ver orden">${ICON_EYE}</button>
+                        <button class="icon-action" type="button" data-accion="ver-orden" data-id="${orden.id_orden}" aria-label="Ver orden">${Iconos.ojo}</button>
                         <button class="icon-action" type="button" data-accion="tomar-orden" data-id="${orden.id_orden}" aria-label="Tomar orden">${ICON_CHECK_GREEN}</button>
                     </div>
                 </td>
@@ -734,7 +724,7 @@ const OrdenesService = {
                                 <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(test.Numero_test)}</span></td>
                                 <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)} ${Number(test.cantidad) === 1 ? 'componente' : 'componentes'}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="icon-action icon-action--view" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
+                                    <button class="icon-action icon-action--view" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${Iconos.ojo}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -892,7 +882,7 @@ const OrdenesService = {
                                 <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(test.Numero_test)}</span></td>
                                 <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)} ${Number(test.cantidad) === 1 ? 'componente' : 'componentes'}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="icon-action icon-action--view" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
+                                    <button class="icon-action icon-action--view" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${Iconos.ojo}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -1622,7 +1612,7 @@ const ReparacionesService = {
                 <td class="table__actions" data-label="Acciones">
                     <div class="row-actions">
                         <button class="icon-action" type="button" data-accion="ver-detalle" data-id="${rep.id_orden}" aria-label="Ver detalle de la orden">${ICON_WRENCH}</button>
-                        <button class="icon-action icon-action--danger" type="button" data-accion="liberar-orden" data-id="${rep.id_orden}" aria-label="Liberar orden">${ICON_TRASH}</button>
+                        <button class="icon-action icon-action--danger" type="button" data-accion="liberar-orden" data-id="${rep.id_orden}" aria-label="Liberar orden">${Iconos.basura}</button>
                     </div>
                 </td>
             </tr>

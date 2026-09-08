@@ -150,10 +150,10 @@ function renderizarTablaEntregas(entregas) {
                     <button class="icon-action icon-action--edit" data-action="editar-entrega" data-id="${Utils.escapeHtml(e.id)}" 
                         data-factura="${Utils.escapeHtml(e.factura_id)}" data-cedula="${Utils.escapeHtml(e.cedula_delivery)}"
                         data-direccion="${Utils.escapeHtml(e.direccion || '')}" data-estado="${e.estado}" title="Editar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                        ${Iconos.lapiz}
                     </button>
                     <button class="icon-action icon-action--danger" data-action="eliminar-entrega" data-id="${Utils.escapeHtml(e.id)}" title="Eliminar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                        ${Iconos.basura}
                     </button>
                 </div>
             </td>
@@ -181,11 +181,11 @@ function renderizarTablaPersonal(personal) {
                 <div class="row-actions">
                     <button class="icon-action icon-action--edit" data-action="editar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
                         data-nombre="${Utils.escapeHtml(p.nombre)}" data-apellido="${Utils.escapeHtml(p.apellido)}" title="Editar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm18-11.5a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.12 1.12 3.75 3.75L21 5.75Z" fill="currentColor"/></svg>
+                        ${Iconos.lapiz}
                     </button>
                     <button class="icon-action icon-action--danger" data-action="eliminar-personal" data-cedula="${Utils.escapeHtml(p.cedula)}" 
                         data-nombre="${Utils.escapeHtml(p.nombre_completo)}" title="Eliminar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                        ${Iconos.basura}
                     </button>
                 </div>
             </td>

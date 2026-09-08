@@ -239,27 +239,6 @@
     });
   }
 
-  function iconEye() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
-        <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2.7a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" fill="currentColor"/>
-      </svg>`;
-  }
-
-  function iconPencil() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.83H5v-.92l9.06-9.06.92.92L5.92 20.08ZM20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="currentColor"/>
-      </svg>`;
-  }
-
-  function iconTrash() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16">
-        <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" fill="currentColor"/>
-      </svg>`;
-  }
-
   function findModeloById(idModelo) {
     if (!Array.isArray(state.modelos)) return null;
     return state.modelos.find((m) => String(m?.id ?? m?.ID_modelo) === String(idModelo)) || null;
@@ -346,9 +325,9 @@
             <td>${direccion}</td>
             <td class="table__actions">
               <div class="row-actions" aria-label="Acciones">
-                <button class="icon-action icon-action--view" type="button" data-action="ver" data-id="${id}" aria-label="Ver">${iconEye()}</button>
-                <button class="icon-action icon-action--edit" type="button" data-action="editar" data-id="${id}" aria-label="Modificar">${iconPencil()}</button>
-                <button class="icon-action icon-action--danger" type="button" data-action="eliminar" data-id="${id}" aria-label="Eliminar">${iconTrash()}</button>
+                <button class="icon-action icon-action--view" type="button" data-action="ver" data-id="${id}" aria-label="Ver">${Iconos.ojo}</button>
+                <button class="icon-action icon-action--edit" type="button" data-action="editar" data-id="${id}" aria-label="Modificar">${Iconos.lapiz}</button>
+                <button class="icon-action icon-action--danger" type="button" data-action="eliminar" data-id="${id}" aria-label="Eliminar">${Iconos.basura}</button>
               </div>
             </td>
           </tr>`;
@@ -804,7 +783,7 @@
             </td>
             <td class="table__actions">
               <div class="row-actions row-actions--center" aria-label="Acciones">
-                <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${iconTrash()}</button>
+                <button class="icon-action icon-action--danger" type="button" data-action="eliminar-producto-editar" data-id-modelo="${idModelo}" aria-label="Eliminar producto">${Iconos.basura}</button>
               </div>
             </td>
           </tr>`;
@@ -840,7 +819,7 @@
             <td class="col-cost">${formatMoney(costo)} $</td>
             <td class="table__actions">
               <div class="row-actions row-actions--center" aria-label="Acciones">
-                <button class="icon-action icon-action--danger" type="button" data-action="quitar-producto-crear" data-id-modelo="${idModelo}" aria-label="Quitar">${iconTrash()}</button>
+                <button class="icon-action icon-action--danger" type="button" data-action="quitar-producto-crear" data-id-modelo="${idModelo}" aria-label="Quitar">${Iconos.basura}</button>
               </div>
             </td>
           </tr>`;
