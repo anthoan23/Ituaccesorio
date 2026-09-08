@@ -185,7 +185,20 @@
         <input type="hidden" id="numero_test_revision" name="Num_test" value="" />
 
         <div class="service-form__grid">
-          <div class="test-options-grid" id="test-componentes-grid"></div>
+          <div class="revision-block">
+            <div class="revision-components-header">
+              <h3>Componentes del equipo</h3>
+              <div class="revision-header-buttons">
+                <button type="button" id="btn-marcar-todos-test" class="ui-btn ui-btn--ghost ui-btn--sm">
+                  ✅ Marcar todos como OK
+                </button>
+                <button type="button" id="btn-marcar-todos-fallo" class="ui-btn ui-btn--ghost ui-btn--sm">
+                  ❌ Marcar todos como No funciona
+                </button>
+              </div>
+            </div>
+            <div class="revision-grid" id="test-componentes-grid"></div>
+          </div>
 
           <label class="field field--full">
             <span>Observaciones</span>
@@ -419,7 +432,12 @@
 
 <!-- Modal: Detalle del test -->
 {% call modal('modal-test-detail', 'Detalle del test', 'lg') %}
-<div id="modal-test-body" class="test-modal-grid"></div>
+<div id="modal-test-body" class="test-detail-container">
+  <p class="device-detail__empty">Cargando información...</p>
+</div>
+<div class="ui-form__actions">
+  <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cerrar</button>
+</div>
 {% endcall %}
 
 <!-- Modal: Registrar fotos -->

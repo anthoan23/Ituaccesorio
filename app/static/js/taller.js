@@ -54,6 +54,17 @@ const ICON_CHECK_GREEN = `
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
     </svg>`;
 
+const ICON_CHECK = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+    </svg>`;
+
+const ICON_X = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>`;
+
 const ICON_WRENCH = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1-.1-1.4z" fill="currentColor"/>
@@ -324,12 +335,17 @@ const FotosService = {
         const dropzone = document.getElementById('photo-dropzone');
         if (!dropzone) return;
 
-        // Bindear una sola vez y guardar la referencia: .bind() devuelve una
-        // función nueva en cada llamada, por lo que removeEventListener solo
-        // funciona si se usa exactamente la misma referencia que se agregó.
-        this.handleDragOver = this.handleDragOver.bind(this);
-        this.handleDragLeave = this.handleDragLeave.bind(this);
-        this.handleDrop = this.handleDrop.bind(this);
+        // Bindear una sola vez: .bind() devuelve una función nueva en cada llamada,
+        // por lo que rebindear haría que removeEventListener no encontrara la
+        // referencia original y los handlers se acumularan en cada apertura de la modal.
+        if (!this._handlersBindeados) {
+            this.handleDragOver = this.handleDragOver.bind(this);
+            this.handleDragLeave = this.handleDragLeave.bind(this);
+            this.handleDrop = this.handleDrop.bind(this);
+            this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
+            this.handleFileChange = this.handleFileChange.bind(this);
+            this._handlersBindeados = true;
+        }
 
         dropzone.removeEventListener('dragover', this.handleDragOver);
         dropzone.removeEventListener('dragleave', this.handleDragLeave);
@@ -371,14 +387,15 @@ const FotosService = {
         const fileInput = document.getElementById('fotos-input');
         
         if (!dropzone || !fileInput) return;
-        
+
+        // Los handlers ya están bindeados una sola vez en configurarDragDrop().
+        // Aquí solo re-registramos con la misma referencia, por lo que el
+        // removeEventListener sí elimina los listeners previos.
         dropzone.removeEventListener('click', this.handleDropzoneClick);
         fileInput.removeEventListener('change', this.handleFileChange);
-        
-        this.handleDropzoneClick = this.handleDropzoneClick.bind(this);
+
         dropzone.addEventListener('click', this.handleDropzoneClick);
-        
-        this.handleFileChange = this.handleFileChange.bind(this);
+
         fileInput.addEventListener('change', this.handleFileChange);
     },
 
@@ -685,22 +702,24 @@ const OrdenesService = {
                     return `
                         <div class="foto-item" data-foto-index="${index}">
                             <div class="foto-thumbnail">
-                                <img src="${Utils.escapeHtml(fotoUrl)}" 
-                                     alt="Foto ${index + 1}" 
+                                <img src="${Utils.escapeHtml(fotoUrl)}"
+                                     alt="Foto ${index + 1}"
                                      loading="lazy"
-                                     onclick="OrdenesService.verFotoAmpliada('${Utils.escapeHtml(fotoUrl)}')">
+                                     data-foto-url="${Utils.escapeHtml(fotoUrl)}"
+                                     title="Clic para ampliar">
                             </div>
                         </div>
                     `;
                 }).join('')}
             </div>
         `;
+        this.configurarZoomFotos(container);
     },
 
     renderizarTestsModal(container, tests, idOrden) {
         container.innerHTML = `
-            <h3 class="card__subtitle">Tests Realizados</h3>
-            <div class="table-wrap">
+            <h3 class="card__subtitle">Historial de revisiones</h3>
+            <div class="tests-table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
@@ -712,10 +731,10 @@ const OrdenesService = {
                     <tbody>
                         ${tests.map(test => `
                             <tr>
-                                <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
-                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
+                                <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(test.Numero_test)}</span></td>
+                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)} ${Number(test.cantidad) === 1 ? 'componente' : 'componentes'}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="icon-action" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
+                                    <button class="icon-action icon-action--view" data-accion="ver-test-modal" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -858,7 +877,7 @@ const OrdenesService = {
         }
 
         container.innerHTML = `
-            <div class="table-wrap">
+            <div class="tests-table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
@@ -870,10 +889,10 @@ const OrdenesService = {
                     <tbody>
                         ${tests.map(test => `
                             <tr>
-                                <td data-label="N° Test">Test #${Utils.escapeHtml(test.Numero_test)}</td>
-                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)}</td>
+                                <td data-label="N° Test"><span class="chip">Test #${Utils.escapeHtml(test.Numero_test)}</span></td>
+                                <td data-label="Cantidad">${Utils.escapeHtml(test.cantidad)} ${Number(test.cantidad) === 1 ? 'componente' : 'componentes'}</td>
                                 <td data-label="Acción" class="table__actions">
-                                    <button class="icon-action" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
+                                    <button class="icon-action icon-action--view" data-accion="ver-test" data-id-test="${Utils.escapeHtml(test.Numero_test)}" data-id-orden="${idOrden}" aria-label="Ver detalles">${ICON_EYE}</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -899,13 +918,14 @@ const OrdenesService = {
                     return `
                         <div class="foto-item" data-foto-index="${index}">
                             <div class="foto-thumbnail">
-                                <img src="${Utils.escapeHtml(fotoUrl)}" 
-                                     alt="Foto ${index + 1}" 
+                                <img src="${Utils.escapeHtml(fotoUrl)}"
+                                     alt="Foto ${index + 1}"
                                      loading="lazy"
-                                     onclick="OrdenesService.verFotoAmpliada('${Utils.escapeHtml(fotoUrl)}')">
+                                     data-foto-url="${Utils.escapeHtml(fotoUrl)}"
+                                     title="Clic para ampliar">
                                 ${showDelete ? `
-                                    <button type="button" class="foto-delete-btn" 
-                                            data-accion="eliminar-foto" 
+                                    <button type="button" class="foto-delete-btn"
+                                            data-accion="eliminar-foto"
                                             data-id-foto="${Utils.escapeHtml(fotoId)}"
                                             aria-label="Eliminar foto">
                                         ✕
@@ -917,6 +937,7 @@ const OrdenesService = {
                 }).join('')}
             </div>
         `;
+        this.configurarZoomFotos(container);
 
         if (showDelete) {
             container.querySelectorAll('[data-accion="eliminar-foto"]').forEach(btn => {
@@ -932,20 +953,40 @@ const OrdenesService = {
         }
     },
 
+    configurarZoomFotos(container) {
+        if (!container) return;
+        container.querySelectorAll('.foto-thumbnail img[data-foto-url]').forEach(img => {
+            img.addEventListener('click', () => this.verFotoAmpliada(img.dataset.fotoUrl));
+        });
+    },
+
     verFotoAmpliada(url) {
         const existingOverlay = document.querySelector('.foto-modal-overlay');
-        if (existingOverlay) {
-            existingOverlay.remove();
-            return;
-        }
+        if (existingOverlay) existingOverlay.remove();
 
         const overlay = document.createElement('div');
         overlay.className = 'foto-modal-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', 'Foto ampliada');
         overlay.innerHTML = `
-            <button class="close-btn" onclick="this.closest('.foto-modal-overlay').remove()">✕</button>
-            <img src="${Utils.escapeHtml(url)}" alt="Foto ampliada" onclick="event.stopPropagation()">
+            <button type="button" class="close-btn" aria-label="Cerrar">✕</button>
+            <img src="${Utils.escapeHtml(url)}" alt="Foto ampliada">
         `;
-        overlay.addEventListener('click', () => overlay.remove());
+
+        const cerrar = () => {
+            overlay.remove();
+            document.removeEventListener('keydown', onKey);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') cerrar();
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) cerrar();
+        });
+        overlay.querySelector('.close-btn').addEventListener('click', cerrar);
+        document.addEventListener('keydown', onKey);
         document.body.appendChild(overlay);
     },
 
@@ -1056,31 +1097,52 @@ const RevisionService = {
             return;
         }
 
-        console.log('Cargando componentes de prueba...');
-        
-        container.innerHTML = TALLER_CONFIG.COMPONENTES_TEST.map(comp => {
-            const nombreLegible = comp.replace(/_/g, ' ')
-                .replace('Btn', 'Botón')
-                .replace('Cam', 'Cámara')
-                .replace('sil', 'silencio')
-                .replace('pos', 'posterior')
-                .replace('del', 'delantera');
-            return `
+        const nombreLegible = (comp) => comp.replace(/_/g, ' ')
+            .replace('Btn', 'Botón')
+            .replace('Cam', 'Cámara')
+            .replace('sil', 'silencio')
+            .replace('pos', 'posterior')
+            .replace('del', 'delantera');
+
+        const itemHtml = (comp) => `
                 <div class="test-row-item">
-                    <span class="test-component-name">${Utils.escapeHtml(nombreLegible)}</span>
+                    <span class="test-label">${Utils.escapeHtml(nombreLegible(comp))}</span>
                     <div class="radio-group">
-                        <label class="radio-label radio-label--success">
-                            <input type="radio" name="test_${comp}" value="Funciona"> ✅ Funciona
+                        <label class="radio-label radio-label--success" title="Funciona">
+                            <input type="radio" name="test_${comp}" value="Funciona"> ${ICON_CHECK}
                         </label>
-                        <label class="radio-label radio-label--danger">
-                            <input type="radio" name="test_${comp}" value="No funciona"> ❌ No funciona
+                        <label class="radio-label radio-label--danger" title="No funciona">
+                            <input type="radio" name="test_${comp}" value="No funciona"> ${ICON_X}
                         </label>
                     </div>
                 </div>
             `;
-        }).join('');
-        
-        console.log('Componentes cargados correctamente');
+
+        const componentes = TALLER_CONFIG.COMPONENTES_TEST;
+        const mitad = Math.ceil(componentes.length / 2);
+
+        container.innerHTML = `
+                <div class="revision-column">
+                    ${componentes.slice(0, mitad).map(itemHtml).join('')}
+                </div>
+                <div class="revision-column">
+                    ${componentes.slice(mitad).map(itemHtml).join('')}
+                </div>
+            `;
+    },
+
+    marcarTodosTestsOK() {
+        document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="Funciona"]').forEach(radio => {
+            radio.checked = true;
+        });
+        Utils.showMessage('✅ Todos los componentes marcados como OK');
+    },
+
+    marcarTodosTestsFallo() {
+        document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="No funciona"]').forEach(radio => {
+            radio.checked = true;
+        });
+        Utils.showMessage('❌ Todos los componentes marcados como No funciona');
     },
 
     async guardar(event) {
@@ -1138,8 +1200,18 @@ const RevisionService = {
         const modalBody = document.getElementById('modal-test-body');
         if (!modalBody) return;
 
-        modalBody.innerHTML = '<p>Cargando...</p>';
-        
+        modalBody.innerHTML = `
+            <div class="test-detail-loading">
+                <span class="spinner-loading"></span>
+                <span>Cargando detalles del test #${Utils.escapeHtml(numeroTest)}...</span>
+            </div>
+        `;
+
+        const modalTitle = document.querySelector('#modal-test-detail .ui-modal__title');
+        if (modalTitle) {
+            modalTitle.textContent = `Detalle del test #${numeroTest} - Orden ${idOrden}`;
+        }
+
         if (window.UiModal && typeof window.UiModal.openById === 'function') {
             window.UiModal.openById('modal-test-detail');
         }
@@ -1151,21 +1223,91 @@ const RevisionService = {
             });
 
             const items = Array.isArray(data) ? data : [data];
-            
+
             if (!items.length || !items[0]) {
-                modalBody.innerHTML = '<p>No se encontraron registros</p>';
+                modalBody.innerHTML = '<p class="device-detail__empty">No se encontraron componentes para este test.</p>';
                 return;
             }
 
-            modalBody.innerHTML = items.map(item => `
-                <div class="test-item-card">
-                    <span class="test-component-name">${Utils.escapeHtml(item.test || 'Componente')}</span>
-                    <strong>${Utils.escapeHtml(item.Resultado_test || 'Sin especificar')}</strong>
-                </div>
-            `).join('');
+            const observaciones = [];
+            const componentesFiltrados = [];
+
+            items.forEach((comp) => {
+                const nombre = comp.test || comp.nombre || comp.Nombre_test || '';
+                if (nombre.toLowerCase().includes('observacion')) {
+                    observaciones.push(comp);
+                } else {
+                    componentesFiltrados.push(comp);
+                }
+            });
+
+            let html = '<div class="test-detail-grid">';
+
+            componentesFiltrados.forEach((comp) => {
+                const nombre = comp.test || comp.nombre || comp.Nombre_test || 'Componente';
+                const resultado = comp.Resultado_test || comp.resultado || 'Sin especificar';
+
+                let badgeClass = 'test-badge--default';
+                let displayResultado = resultado;
+
+                const resultadoLower = String(resultado).toLowerCase().trim();
+
+                if (resultadoLower.includes('no funciona') ||
+                    resultadoLower.includes('no func') ||
+                    resultadoLower === '0' ||
+                    resultadoLower === 'falla' ||
+                    resultadoLower === 'malo' ||
+                    resultadoLower.includes('fallo')) {
+                    badgeClass = 'test-badge--danger';
+                    displayResultado = '❌ No funciona';
+                } else if (resultadoLower.includes('funciona') ||
+                           resultadoLower.includes('ok') ||
+                           resultadoLower === '1' ||
+                           resultadoLower === 'bueno' ||
+                           resultadoLower.includes('correcto')) {
+                    badgeClass = 'test-badge--success';
+                    displayResultado = '✅ Funciona';
+                }
+
+                html += `
+                    <div class="test-detail-item ${badgeClass}">
+                        <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                        <span class="test-detail-result ${badgeClass}">${Utils.escapeHtml(displayResultado)}</span>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            if (observaciones.length > 0) {
+                html += `
+                    <div class="test-detail-observations">
+                        <h4 class="test-detail-observations-title">📝 Observaciones</h4>
+                        <div class="test-detail-grid">
+                `;
+
+                observaciones.forEach((comp) => {
+                    const nombre = comp.test || comp.nombre || comp.Nombre_test || 'Observaciones';
+                    const resultado = comp.Resultado_test || comp.resultado || '';
+
+                    html += `
+                        <div class="test-detail-item test-detail-item--full test-badge--warning">
+                            <span class="test-detail-name">${Utils.escapeHtml(nombre)}</span>
+                            <span class="test-detail-result test-badge--warning">${Utils.escapeHtml(resultado)}</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = html;
         } catch (error) {
             console.error('Error al cargar test:', error);
-            modalBody.innerHTML = `<p class="error">Error: ${Utils.escapeHtml(error.message)}</p>`;
+            modalBody.innerHTML = `<p class="device-detail__empty error">Error al cargar el detalle: ${Utils.escapeHtml(error.message)}</p>`;
         }
     }
 };
@@ -1799,6 +1941,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formularioRevision) {
         formularioRevision.addEventListener('submit', (e) => RevisionService.guardar(e));
     }
+
+    document.getElementById('btn-marcar-todos-test')?.addEventListener('click', () => RevisionService.marcarTodosTestsOK());
+    document.getElementById('btn-marcar-todos-fallo')?.addEventListener('click', () => RevisionService.marcarTodosTestsFallo());
 
     const btnGuardarReparacion = document.getElementById('btn-guardar-reparacion');
     if (btnGuardarReparacion) {
