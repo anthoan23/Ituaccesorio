@@ -50,7 +50,7 @@ class OrdenEntregaModel:
                 SELECT 
                     ei.ID_entrega_inventario as ID_entrega,
                     ei.ID_orden_compra as ID_orden_c,
-                    DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
+                    DATE_FORMAT(ei.Fecha_entrega_inventario, '%Y-%m-%d %H:%i') as Fecha_entrega,
                     p.Nombre_proveedor as Proveedor,
                     CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por,
                     o.Estado_orden_compra as Estado_orden
@@ -80,7 +80,7 @@ class OrdenEntregaModel:
                 SELECT 
                     ei.ID_entrega_inventario as ID_entrega,
                     ei.ID_orden_compra as ID_orden_c,
-                    DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
+                    DATE_FORMAT(ei.Fecha_entrega_inventario, '%Y-%m-%d %H:%i') as Fecha_entrega,
                     p.Nombre_proveedor as Proveedor,
                     CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por,
                     o.Estado_orden_compra as Estado_orden

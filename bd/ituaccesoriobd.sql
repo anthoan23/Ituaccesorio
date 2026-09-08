@@ -857,6 +857,7 @@ INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`
 DROP TABLE IF EXISTS `Proveedor`;
 CREATE TABLE `Proveedor` (
   `ID_proveedor` int NOT NULL,
+  `RIF_proveedor` varchar(15) DEFAULT NULL,
   `Nombre_proveedor` varchar(40) NOT NULL,
   `Tipo_proveedor` varchar(20) DEFAULT NULL,
   `Celular_proveedor` varchar(15) DEFAULT NULL,
@@ -869,12 +870,12 @@ CREATE TABLE `Proveedor` (
 -- ----------------------------------------------------
 -- Dumping data for `Proveedor`
 -- ----------------------------------------------------
-INSERT INTO `Proveedor` (`ID_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
-(1, 'Distribuidora Tech S.A.', 'Mayorista', '04121234500', 'ventas@distritech.com', 'Caracas', '50000.00'),
-(2, 'Importaciones Digitales C.A.', 'Importador', '04141234501', 'contacto@importdigital.com', 'Maracaibo', '75000.00'),
-(3, 'Repuestos Express', 'Minorista', '04241234502', 'info@repuestosexpress.com', 'Valencia', '25000.00'),
-(4, 'Global Parts', 'Mayorista', '04161234503', 'sales@globalparts.com', 'Barquisimeto', '100000.00'),
-(5, 'Suministros Móviles', 'Distribuidor', '04181234504', 'ventas@suministrosmoviles.com', 'San Cristóbal', '30000.00');
+INSERT INTO `Proveedor` (`ID_proveedor`, `RIF_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
+(1, 'J-123456789', 'Distribuidora Tech S.A.', 'Mayorista', '04121234500', 'ventas@distritech.com', 'Caracas', '50000.00'),
+(2, 'J-987654321', 'Importaciones Digitales C.A.', 'Importador', '04141234501', 'contacto@importdigital.com', 'Maracaibo', '75000.00'),
+(3, 'J-456789123', 'Repuestos Express', 'Minorista', '04241234502', 'info@repuestosexpress.com', 'Valencia', '25000.00'),
+(4, 'J-321654987', 'Global Parts', 'Mayorista', '04161234503', 'sales@globalparts.com', 'Barquisimeto', '100000.00'),
+(5, 'J-654987321', 'Suministros Móviles', 'Distribuidor', '04181234504', 'ventas@suministrosmoviles.com', 'San Cristóbal', '30000.00');
 
 -- ----------------------------------------------------
 -- Table structure for `Repuestos_usados`
@@ -1408,74 +1409,6 @@ VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
 
 -- 5. Mostramos el resultado del registro creado
 SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
-END ;;
-DELIMITER ;
-
--- ----------------------------------------------------
--- Procedure structure for `Listar_ordenes_servicio_con_equipo`
--- ----------------------------------------------------
-DROP PROCEDURE IF EXISTS `Listar_ordenes_servicio_con_equipo`;
-DELIMITER ;;
-CREATE DEFINER=`user_flask`@`%` PROCEDURE `Listar_ordenes_servicio_con_equipo`(
--- Parámetros opcionales para filtrar
-IN p_ID_orden_servicio VARCHAR(10),
-IN p_Estado_orden_servicio VARCHAR(20),
-IN p_ID_cliente VARCHAR(10)
-)
-BEGIN
--- Consulta principal que une Orden_servicio con Equipo y tablas relacionadas
-SELECT
--- Datos de la orden de servicio
-os.ID_orden_servicio,
-os.Estado_orden_servicio,
-os.Descripcion_reparacion,
-os.Costo_reparacion,
-os.Nota_orden_servicio,
-os.Fecha_entrada,
-os.Fecha_salida,
-
--- Datos del cliente (a través de Orden_servicio)
-os.ID_cliente,
-pn.Nombre_cliente,
-pn.Apellido_cliente,
-c.Celular_cliente,
-c.Correo_cliente,
-c.Direccion_cliente,
-
--- Datos del equipo asociado
-e.ID_equipo,
-e.IMEI,
-e.Color,
-e.Capacidad,
-e.Clave,
-e.Patron,
-
--- Datos del producto (asociado al equipo)
-e.ID_producto,
-prod.Nombre_producto,
-prod.Descripcion,
-
--- Datos de la clase del producto
-cp.Nombre_Clase AS Clase_producto,
-
--- Datos de la marca
-mp.Nombre_marca AS Marca_producto
-
-FROM Orden_servicio os
-INNER JOIN Equipo e ON os.ID_equipo = e.ID_equipo
-INNER JOIN Producto prod ON e.ID_producto = prod.ID_producto
-INNER JOIN Clase_producto cp ON prod.ID_Clase = cp.ID_Clase
-INNER JOIN Marca_producto mp ON prod.ID_marca = mp.ID_marca
-INNER JOIN Cliente c ON os.ID_cliente = c.ID_cliente
-LEFT JOIN Persona_natural pn ON c.ID_cliente = pn.ID_cliente  -- LEFT JOIN porque puede ser cliente jurídico también
-
-WHERE
-(p_ID_orden_servicio IS NULL OR os.ID_orden_servicio = p_ID_orden_servicio)
-AND (p_Estado_orden_servicio IS NULL OR os.Estado_orden_servicio = p_Estado_orden_servicio)
-AND (p_ID_cliente IS NULL OR os.ID_cliente = p_ID_cliente)
-
-ORDER BY os.Fecha_entrada DESC;
-
 END ;;
 DELIMITER ;
 

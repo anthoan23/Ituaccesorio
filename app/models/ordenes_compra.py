@@ -33,7 +33,7 @@ class OrdenCompra:
                     o.ID_orden_compra as ID_orden_c,
                     o.ID_proveedor,
                     p.Nombre_proveedor as N_proveedor,
-                    DATE(o.Fecha_orden_compra) as Fecha_o,
+                    DATE_FORMAT(o.Fecha_orden_compra, '%Y-%m-%d %H:%i') as Fecha_o,
                     o.Estado_orden_compra as Estado,
                     COALESCE((
                         SELECT SUM(d2.Cantidad_producto * COALESCE(s2.Costo_producto, 0))
@@ -69,7 +69,7 @@ class OrdenCompra:
                 SELECT 
                     o.ID_orden_compra as ID_orden_c,
                     p.Nombre_proveedor as N_proveedor,
-                    DATE(ei.Fecha_entrega_inventario) as Fecha_entrega,
+                    DATE_FORMAT(ei.Fecha_entrega_inventario, '%Y-%m-%d %H:%i') as Fecha_entrega,
                     ei.Recibido_por,
                     COALESCE((
                         SELECT SUM(d2.Cantidad_producto * COALESCE(s2.Costo_producto, 0))
@@ -106,7 +106,7 @@ class OrdenCompra:
                     o.ID_orden_compra as ID_orden_c,
                     o.ID_proveedor,
                     o.ID_empleado,
-                    DATE(o.Fecha_orden_compra) as Fecha_o,
+                    DATE_FORMAT(o.Fecha_orden_compra, '%Y-%m-%d %H:%i') as Fecha_o,
                     o.Estado_orden_compra as Estado
                 FROM Orden_compra o
                 WHERE o.ID_orden_compra = %s

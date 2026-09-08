@@ -95,11 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dateStr) return 'Fecha no disponible';
         try {
             if (typeof dateStr === 'string') {
-                const datePart = dateStr.substring(0, 10);
-                if (datePart.match(/^\d{4}-\d{2}-\d{2}/)) {
-                    const [year, month, day] = datePart.split('-');
-                    return `${day}/${month}/${year}`;
-                }
+                const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) return `${match[3]}/${match[2]}/${match[1]}`;
             }
             const date = new Date(dateStr);
             if (!isNaN(date.getTime())) {
@@ -111,6 +108,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return dateStr;
         } catch (error) {
             return dateStr || 'Fecha inválida';
+        }
+    }
+
+    // Formatear hora en formato 12 horas (a.m./p.m.)
+    function formatTime(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const match = String(dateStr).match(/(\d{2}):(\d{2})/);
+            if (!match) return '-';
+            let hours = parseInt(match[1], 10);
+            const minutes = match[2];
+            const periodo = hours >= 12 ? 'p.m.' : 'a.m.';
+            hours = hours % 12;
+            if (hours === 0) hours = 12;
+            return `${String(hours).padStart(2, '0')}:${minutes} ${periodo}`;
+        } catch (error) {
+            return '-';
         }
     }
 
@@ -154,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span class="chip">${escapeHtml(orden.ID_orden_c)}</span></td>
                         <td><strong>${escapeHtml(orden.N_proveedor || 'Sin proveedor')}</strong></td>
                         <td>${escapeHtml(formatDate(orden.Fecha_o))}</td>
+                        <td>${escapeHtml(formatTime(orden.Fecha_o))}</td>
                         <td><span class="status-badge status-pendiente">${escapeHtml(orden.Estado || 'Pendiente')}</span></td>
                         <td class="order-total">Bs. ${escapeHtml(formatMoney(orden.Costo_venta || 0))}</td>
                         <td class="table__actions">
@@ -166,11 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 `).join('');
             } else {
-                tablaPendientes.innerHTML = '<tr><td colspan="6" class="table__empty">No hay órdenes pendientes de entrega.</td></tr>';
+                tablaPendientes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes pendientes de entrega.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando pendientes:', error);
-            tablaPendientes.innerHTML = `<tr><td colspan="6" class="table__empty">Error al cargar las órdenes: ${escapeHtml(error.message)}</td></tr>`;
+            tablaPendientes.innerHTML = `<tr><td colspan="7" class="table__empty">Error al cargar las órdenes: ${escapeHtml(error.message)}</td></tr>`;
         }
     }
 
@@ -188,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${escapeHtml(entrega.ID_orden_c)}</td>
                         <td>${escapeHtml(entrega.Proveedor || 'Sin proveedor')}</td>
                         <td>${escapeHtml(formatDate(entrega.Fecha_entrega))}</td>
+                        <td>${escapeHtml(formatTime(entrega.Fecha_entrega))}</td>
                         <td>${escapeHtml(entrega.Recibido_por || '-')}</td>
                         <td class="table__actions">
                             <div class="row-actions">
@@ -199,11 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 `).join('');
             } else {
-                tablaHistorial.innerHTML = '<tr><td colspan="6" class="table__empty">No hay entregas registradas.</td></tr>';
+                tablaHistorial.innerHTML = '<tr><td colspan="7" class="table__empty">No hay entregas registradas.</td></tr>';
             }
         } catch (error) {
             console.error('Error cargando historial:', error);
-            tablaHistorial.innerHTML = `<tr><td colspan="6" class="table__empty">Error: ${escapeHtml(error.message)}</td></tr>`;
+            tablaHistorial.innerHTML = `<tr><td colspan="7" class="table__empty">Error: ${escapeHtml(error.message)}</td></tr>`;
         }
     }
 
@@ -345,9 +361,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('editar-recibido-por').value = e.Recibido_por || '';
                 
                 if (e.Fecha_entrega) {
-                    const dateParts = e.Fecha_entrega.split('/');
-                    if (dateParts.length === 3) {
-                        document.getElementById('editar-fecha-entrega').value = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+                    const match = e.Fecha_entrega.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+                    if (match) {
+                        document.getElementById('editar-fecha-entrega').value = `${match[1]}-${match[2]}-${match[3]}`;
+                        const inputHora = document.getElementById('editar-hora-entrega');
+                        if (inputHora) inputHora.value = `${match[4]}:${match[5]}`;
+                    } else {
+                        document.getElementById('editar-fecha-entrega').value = e.Fecha_entrega.substring(0, 10);
                     }
                 }
                 
@@ -541,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const recibidoPor = document.getElementById('editar-recibido-por')?.value.trim();
             const fechaEntrega = document.getElementById('editar-fecha-entrega')?.value;
+            const horaEntrega = document.getElementById('editar-hora-entrega')?.value;
             
             // Validar con FieldValidator
             const form = document.getElementById('form-editar-entrega');
@@ -562,13 +583,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            const fechaHoraEntrega = horaEntrega ? `${fechaEntrega} ${horaEntrega}:00` : fechaEntrega;
+
             btnGuardarEditar.disabled = true;
             btnGuardarEditar.textContent = 'Guardando...';
             
             try {
                 const response = await fetchJson(`/api/ordenes_entregas/${entregaParaEditar}/editar`, {
                     method: 'PUT',
-                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
+                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaHoraEntrega })
                 });
                 if (response.success) {
                     mostrarMensaje('Entrega actualizada exitosamente.');

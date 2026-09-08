@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>Bs. ${formatMoney(p.costo)}</td>
                 <td class="table__actions">
-                    <button class="btn-eliminar" data-index="${idx}">Eliminar</button>
+                    <button class="icon-action icon-action--danger btn-eliminar" type="button" data-index="${idx}" aria-label="Eliminar">${Iconos.basura}</button>
                 </td>
             </tr>
         `).join('');
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>Bs. ${formatMoney(p.costo || 0)}</td>
                 <td class="table__actions">
-                    <button class="btn-eliminar" data-index="${idx}">Eliminar</button>
+                    <button class="icon-action icon-action--danger btn-eliminar" type="button" data-index="${idx}" aria-label="Eliminar">${Iconos.basura}</button>
                 </td>
             </tr>
         `).join('');
