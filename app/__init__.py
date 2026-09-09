@@ -59,7 +59,9 @@ def create_app():
         app.config['CSRF_DISABLE'] = True
         csrf = SeaSurf(app)
     else:
-        talisman = Talisman(app, content_security_policy=csp)
+        # force_https=False: el TLS lo terminara nginx / AWS API Gateway, Flask recibe HTTP
+        # (si se activara, cada peticion HTTP recibiria un 301 a HTTPS = bucle infinito)
+        talisman = Talisman(app, content_security_policy=csp, force_https=False)
         csrf = SeaSurf(app)
     
     # --- REGISTRO DE BLUEPRINTS ---
