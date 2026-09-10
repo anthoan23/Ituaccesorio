@@ -12,7 +12,8 @@ services:
     build: .
     restart: always
     ports:
-      - "80:5000"
+      # Con Nginx en el host: solo el loopback alcanza la web, Nginx hace de frente (80/443)
+      - "127.0.0.1:5000:5000"
     env_file:
       - .env
     environment:
