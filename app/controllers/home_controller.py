@@ -13,8 +13,9 @@ def home():
         
         
         if not usuario:
-            print("[DEBUG] Home - No hay usuario, redirigiendo a login")
-            return redirect(url_for("login.pagina_login"))
+            # Visitantes sin sesion: el catalogo es publico, alli pueden ver
+            # productos y desde el navbar acceder al login
+            return redirect(url_for("ventas.pagina_catalogo"))
         
         if isinstance(usuario, dict):
             nombre_rol = usuario.get("rol_nombre", "")
