@@ -1,0 +1,24 @@
+# Variante de produccion con RDS de AWS (EC2 solo corre la web).
+# Requiere:
+#   1. Una instancia RDS MySQL 8.0 (puede tener las 2 BDs: ituaccesoriobd y seguridad)
+#   2. .env con DB_HOST1 y DB_HOST2 apuntando al endpoint de RDS
+#   3. Los seeds de bd/*.sql importados una sola vez a mano (ver notas del proyecto)
+services:
+  web:
+    build: .
+    restart: always
+    ports:
+      - "80:5000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_DEBUG=0
+      - DB_HOST1=${DB_HOST1}
+      - DB_HOST2=${DB_HOST2}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PASSWORD2=${DB_PASSWORD2}
+      - DB_NAME1=${DB_NAME1}
+      - DB_NAME2=${DB_NAME2}
+    # Las BDs ya no son servicios del compose: RDS las reemplaza

@@ -34,7 +34,9 @@ services:
   db1:
     image: mysql:8.0
     restart: always
-    command: --default-time-zone='-04:00'
+    # Tuning de memoria para instancias EC2 pequeñas (1 GB):
+    # performance schema OFF ahorra ~200 MB, buffer pool reducido a 64 MB
+    command: --default-time-zone='-04:00' --performance-schema=OFF --innodb-buffer-pool-size=64M --max-connections=50
     env_file:
       - .env
     environment:
@@ -54,7 +56,8 @@ services:
   db2:
     image: mysql:8.0
     restart: always
-    command: --default-time-zone='-04:00'
+    # Mismo tuning de memoria que db1
+    command: --default-time-zone='-04:00' --performance-schema=OFF --innodb-buffer-pool-size=64M --max-connections=50
     env_file:
       - .env
     environment:
