@@ -1,17 +1,22 @@
+# Compose de produccion para EC2.
+# Diferencias con docker-compose.yml (desarrollo):
+#   - Sin volumen .:/app (el codigo vive dentro de la imagen, no hay hot reload)
+#   - FLASK_DEBUG=0
+#   - Gunicorn (CMD del Dockerfile)
+#   - Las BDs NO exponen puertos al host: solo se alcanzan por la red interna
+#     del compose, nadie de internet las ve.
+#   - La web publica 5000 en el puerto 80 del host (mientras no haya Nginx;
+#     cuando lo agreguemos, cambia a "127.0.0.1:5000:5000").
 services:
   web:
     build: .
-    # En desarrollo usamos el dev server de Flask (hot reload); en produccion
-    # el Dockerfile arranca con Gunicorn (ver docker-compose.prod.yml)
-    command: python run.py
+    restart: always
     ports:
-      - "5000:5000"
-    volumes:
-      - .:/app  # <-- Sube los cambios al instante (Hot Reload)
+      - "80:5000"
     env_file:
       - .env
     environment:
-      - FLASK_DEBUG=${FLASK_DEBUG:-1}
+      - FLASK_DEBUG=0
       - DB_HOST1=db1
       - DB_HOST2=db2
       - DB_PORT=3306
@@ -37,8 +42,6 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    ports:
-      - "3307:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}"]
       interval: 5s
@@ -59,8 +62,6 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD2}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    ports:
-      - "3308:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD}"]
       interval: 5s

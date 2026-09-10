@@ -3,3 +3,8 @@ __pycache__
 .git
 nota.txt
 .gitignore
+.env
+.env Ejemplo
+bd/
+pruebas/
+docker-compose.prod.yml
