@@ -38,3 +38,15 @@ class conectar:
             os.getenv("DB_NAME2"),
             password=os.getenv("DB_PASSWORD2", os.getenv("DB_PASSWORD")),
         )
+
+    def cerrar_conexion(self, cursor, db):
+        try:
+            if cursor:
+                cursor.close()
+        except Exception:
+            pass
+        try:
+            if db:
+                db.close()
+        except Exception:
+            pass

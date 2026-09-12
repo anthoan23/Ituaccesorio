@@ -12,18 +12,6 @@ class Bitacora(conectar):
         self.usuario_id = usuario_id
         self.modulo_nombre = modulo_nombre
 
-    def _cerrar_cursor_conexion(self, cursor, db):
-        try:
-            if cursor:
-                cursor.close()
-        except Exception:
-            pass
-        try:
-            if db:
-                db.close()
-        except Exception:
-            pass
-
     def obtener_modulo_id(self, modulo_nombre=None):
         """Obtiene el ID del módulo por su nombre"""
         nombre = modulo_nombre or self.modulo_nombre
@@ -50,7 +38,7 @@ class Bitacora(conectar):
         except mysql.connector.Error:
             return 1
         finally:
-            self._cerrar_cursor_conexion(cursor, db)
+            self.cerrar_conexion(cursor, db)
 
     def registrar(self, accion=None, descripcion=None, usuario_id=None, modulo_nombre=None):
         """
@@ -106,7 +94,7 @@ class Bitacora(conectar):
         except mysql.connector.Error as error:
             return {"success": False, "warning": f"No se pudo registrar la bitácora: {error}"}
         finally:
-            self._cerrar_cursor_conexion(cursor, db)
+            self.cerrar_conexion(cursor, db)
 
     def listar_recientes(self, limite=100):
         """Lista los registros recientes de bitácora"""
@@ -147,7 +135,7 @@ class Bitacora(conectar):
             print(f"Error al listar bitácora: {e}")
             return []
         finally:
-            self._cerrar_cursor_conexion(cursor, db)
+            self.cerrar_conexion(cursor, db)
 
     def _obtener_info_usuario(self, usuario_id):
         """Obtiene nombre y foto de un usuario desde la BD principal"""
@@ -235,7 +223,7 @@ class Bitacora(conectar):
             print(f"Error en listar_actividad_reciente: {e}")
             return []
         finally:
-            self._cerrar_cursor_conexion(cursor, db)
+            self.cerrar_conexion(cursor, db)
 
 
 def listar_actividad_reciente_dashboard(limite: int = 5):
