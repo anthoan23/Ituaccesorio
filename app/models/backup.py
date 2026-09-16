@@ -1,6 +1,7 @@
 # app/models/backup.py
 from __future__ import annotations
 import os
+import re
 import datetime
 import pymysql
 from app.models.database import conectar
@@ -205,6 +206,10 @@ class Backup:
             with open(ruta_archivo, 'r', encoding='utf-8') as file:
                 sql_content = file.read()
             
+            # Sanear el SQL: los dumps hechos como root incluyen DEFINER=root@localhost
+            # y SET @@GLOBAL (GTID_PURGED/SQL_LOG_BIN) que un usuario limitado no puede ejecutar
+            sql_content = self._preparar_sql_para_restaurar(sql_content)
+            
             # Dividir el SQL en statements individuales
             # Esto maneja procedimientos, triggers, etc.
             statements = self._split_sql_statements(sql_content)
@@ -216,6 +221,10 @@ class Backup:
             
             for i, statement in enumerate(statements):
                 if not statement or statement.strip() == '':
+                    continue
+                
+                # Omitir statements de administración global (GRANT, CREATE USER, etc.)
+                if self._statement_debe_omitirse(statement):
                     continue
                     
                 try:
@@ -263,6 +272,35 @@ class Backup:
             return {"success": False, "message": f"Error de base de datos: {str(e)}"}
         except Exception as e:
             return {"success": False, "message": f"Error al restaurar backup: {str(e)}"}
+
+    def _preparar_sql_para_restaurar(self, sql_content: str) -> str:
+        """
+        Sanea un archivo SQL para que pueda restaurarse con un usuario limitado:
+        - Elimina cláusulas DEFINER=`usuario`@`host` (exigirían los privilegios del definer)
+        - Comenta SET @@GLOBAL.GTID_PURGED / SQL_LOG_BIN (requieren privilegios globales)
+        """
+        # DEFINER=... en vistas, rutinas, triggers y eventos
+        sql_content = re.sub(
+            r"DEFINER=`?[\w%\-\.]+`?@`?[\w%\-\.]+`?",
+            "",
+            sql_content
+        )
+        # Comentar variables globales no permitidas
+        lineas = []
+        for linea in sql_content.split('\n'):
+            if re.match(r"^SET @@(GLOBAL|SESSION)?\s*\.?\s*(GTID_PURGED|SQL_LOG_BIN)", linea.strip(), re.IGNORECASE):
+                lineas.append("-- Comentado al restaurar: " + linea)
+            else:
+                lineas.append(linea)
+        return '\n'.join(lineas)
+
+    def _statement_debe_omitirse(self, statement: str) -> bool:
+        """Statements de administración global que el usuario de la app no puede ejecutar"""
+        inicio = statement.strip().upper()
+        return bool(re.match(
+            r"^(CREATE USER|ALTER USER|DROP USER|GRANT|REVOKE|SET @@(GLOBAL|SESSION)?\s*\.?\s*(GTID_PURGED|SQL_LOG_BIN)|LOCK TABLES|UNLOCK TABLES)",
+            inicio
+        ))
 
     def _split_sql_statements(self, sql_content: str) -> list:
         """
