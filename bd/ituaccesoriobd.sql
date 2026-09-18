@@ -808,12 +808,8 @@ END IF;
 SET nuevo_id = CONCAT('ESP', LPAD(siguiente_numero, 7, '0'));
 
 -- 4. Insertamos el registro
-INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) VALUES
-('ESP0000001', 'Reparación iOS', 'Especialista en reparación de dispositivos Apple'),
-('ESP0000002', 'Reparación Android', 'Especialista en reparación de dispositivos Android'),
-('ESP0000003', 'Cambio de Pantalla', 'Especialista en cambio de pantallas'),
-('ESP0000004', 'Reparación Placa', 'Especialista en reparación de placas madre'),
-('ESP0000005', 'Software', 'Especialista en problemas de software');
+INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`)
+VALUES (nuevo_id, p_Nombre_especialidad, p_Descripcion_especialidad);
 
 -- 5. Mostramos el resultado del registro creado
 SELECT * FROM `Especialidad` WHERE `ID_especialidad` = nuevo_id;
@@ -1303,6 +1299,216 @@ END ;;
 DELIMITER ;
 
 
+-- ----------------------------------------------------
+-- Procedure: sp_registrar_producto
+-- Registra un producto con validaciones y genera su ID
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_producto`;
+DELIMITER ;;
+CREATE PROCEDURE `sp_registrar_producto`(
+    IN p_id_clase VARCHAR(10),
+    IN p_id_marca VARCHAR(10),
+    IN p_nombre_producto VARCHAR(50),
+    IN p_descripcion VARCHAR(300),
+    OUT p_id_producto VARCHAR(10),
+    OUT p_estado VARCHAR(20),
+    OUT p_mensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE v_existe_clase INT DEFAULT 0;
+    DECLARE v_existe_marca INT DEFAULT 0;
+    DECLARE v_existe_producto INT DEFAULT 0;
+    DECLARE v_siguiente_num INT DEFAULT 0;
+    DECLARE v_nuevo_id VARCHAR(10);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_id_producto = NULL;
+        SET p_estado = 'ERROR';
+        SET p_mensaje = 'No se pudo registrar el producto';
+    END;
+
+    SET p_id_producto = NULL;
+    SET p_estado = 'ERROR';
+    SET p_mensaje = '';
+
+    -- Validaciones básicas
+    IF p_id_clase IS NULL OR TRIM(p_id_clase) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La clase del producto es obligatoria';
+    END IF;
+
+    IF p_id_marca IS NULL OR TRIM(p_id_marca) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La marca del producto es obligatoria';
+    END IF;
+
+    IF p_nombre_producto IS NULL OR TRIM(p_nombre_producto) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El nombre del producto es obligatorio';
+    END IF;
+
+    -- Validar que existan clase y marca
+    SELECT COUNT(*) INTO v_existe_clase
+    FROM Clase_producto
+    WHERE ID_Clase = p_id_clase;
+
+    IF v_existe_clase = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La clase indicada no existe';
+    END IF;
+
+    SELECT COUNT(*) INTO v_existe_marca
+    FROM Marca_producto
+    WHERE ID_marca = p_id_marca;
+
+    IF v_existe_marca = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La marca indicada no existe';
+    END IF;
+
+    -- Validar producto duplicado
+    SELECT COUNT(*) INTO v_existe_producto
+    FROM Producto
+    WHERE LOWER(TRIM(Nombre_producto)) = LOWER(TRIM(p_nombre_producto))
+      AND ID_Clase = p_id_clase
+      AND ID_marca = p_id_marca;
+
+    IF v_existe_producto > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ya existe un producto con ese nombre, clase y marca';
+    END IF;
+
+    START TRANSACTION;
+
+    -- Generar ID secuencial compatible con el modelo actual
+    SELECT COALESCE(MAX(CAST(ID_producto AS UNSIGNED)), 0) + 1
+    INTO v_siguiente_num
+    FROM Producto;
+
+    SET v_nuevo_id = CAST(v_siguiente_num AS CHAR);
+
+    INSERT INTO Producto (
+        ID_producto,
+        ID_Clase,
+        ID_marca,
+        Nombre_producto,
+        Descripcion
+    ) VALUES (
+        v_nuevo_id,
+        p_id_clase,
+        p_id_marca,
+        TRIM(p_nombre_producto),
+        NULLIF(TRIM(p_descripcion), '')
+    );
+
+    SET p_id_producto = v_nuevo_id;
+    SET p_estado = 'OK';
+    SET p_mensaje = 'Producto registrado correctamente';
+
+    COMMIT;
+
+    SELECT
+        p_id_producto AS id_producto,
+        p_estado AS estado,
+        p_mensaje AS mensaje;
+END ;;
+DELIMITER ;
+
+-- ----------------------------------------------------
+-- Procedure: sp_registrar_proveedor
+-- Registra un proveedor con validaciones y genera su ID
+-- ----------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_registrar_proveedor`;
+DELIMITER ;;
+CREATE PROCEDURE `sp_registrar_proveedor`(
+    IN p_rif VARCHAR(50),
+    IN p_nombre VARCHAR(255),
+    IN p_tipo VARCHAR(50),
+    IN p_celular VARCHAR(50),
+    IN p_correo VARCHAR(200),
+    IN p_direccion TEXT,
+    IN p_limite_credito DECIMAL(12,2),
+    OUT p_id_proveedor INT,
+    OUT p_estado VARCHAR(20),
+    OUT p_mensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE v_existe_nombre INT DEFAULT 0;
+    DECLARE v_existe_rif INT DEFAULT 0;
+    DECLARE v_siguiente_id INT DEFAULT 0;
+    DECLARE v_nombre_limpio VARCHAR(255);
+    DECLARE v_rif_limpio VARCHAR(50);
+
+    SET p_id_proveedor = 0;
+    SET p_estado = 'ERROR';
+    SET p_mensaje = '';
+
+    SET v_nombre_limpio = TRIM(COALESCE(p_nombre, ''));
+    SET v_rif_limpio = TRIM(COALESCE(p_rif, ''));
+
+    IF v_nombre_limpio = '' THEN
+        SET p_mensaje = 'El nombre del proveedor es obligatorio.';
+    ELSEIF p_limite_credito IS NOT NULL AND p_limite_credito < 0 THEN
+        SET p_mensaje = 'El límite de crédito no puede ser negativo.';
+    END IF;
+
+    IF p_mensaje = '' THEN
+        SELECT COUNT(*)
+        INTO v_existe_nombre
+        FROM Proveedor
+        WHERE LOWER(TRIM(Nombre_proveedor)) = LOWER(v_nombre_limpio);
+
+        IF v_existe_nombre > 0 THEN
+            SET p_mensaje = CONCAT('Ya existe un proveedor con el nombre ''', v_nombre_limpio, '''.');
+        END IF;
+    END IF;
+
+    IF p_mensaje = '' AND v_rif_limpio != '' THEN
+        SELECT COUNT(*)
+        INTO v_existe_rif
+        FROM Proveedor
+        WHERE LOWER(TRIM(RIF_proveedor)) = LOWER(v_rif_limpio);
+
+        IF v_existe_rif > 0 THEN
+            SET p_mensaje = CONCAT('Ya existe un proveedor con el RIF ''', v_rif_limpio, '''.');
+        END IF;
+    END IF;
+
+    IF p_mensaje = '' THEN
+        SELECT COALESCE(MAX(CAST(ID_proveedor AS UNSIGNED)), 0) + 1
+        INTO v_siguiente_id
+        FROM Proveedor;
+
+        INSERT INTO Proveedor (
+            ID_proveedor,
+            RIF_proveedor,
+            Nombre_proveedor,
+            Tipo_proveedor,
+            Celular_proveedor,
+            Correo_proveedor,
+            Direccion_proveedor,
+            Limite_credito
+        ) VALUES (
+            v_siguiente_id,
+            CASE WHEN v_rif_limpio = '' THEN NULL ELSE v_rif_limpio END,
+            v_nombre_limpio,
+            CASE WHEN TRIM(COALESCE(p_tipo, '')) = '' THEN NULL ELSE TRIM(p_tipo) END,
+            CASE WHEN TRIM(COALESCE(p_celular, '')) = '' THEN NULL ELSE TRIM(p_celular) END,
+            CASE WHEN TRIM(COALESCE(p_correo, '')) = '' THEN NULL ELSE TRIM(p_correo) END,
+            CASE WHEN TRIM(COALESCE(p_direccion, '')) = '' THEN NULL ELSE p_direccion END,
+            CASE WHEN p_limite_credito IS NULL THEN 0 ELSE p_limite_credito END
+        );
+
+        SET p_id_proveedor = v_siguiente_id;
+        SET p_estado = 'OK';
+        SET p_mensaje = 'Proveedor registrado correctamente.';
+    END IF;
+END ;;
+DELIMITER ;
+
+
 -- ============================================
 -- FUNCIONES
 -- ============================================
@@ -1311,6 +1517,67 @@ DELIMITER ;
 -- ============================================
 -- TRIGGERS
 -- ============================================
+
+-- ----------------------------------------------------
+-- Trigger: after_trade_in_insert
+-- Al registrar un trade-in, suma el equipo al inventario
+-- (o crea su registro de inventario si no existe)
+-- ----------------------------------------------------
+DROP TRIGGER IF EXISTS `after_trade_in_insert`;
+DELIMITER ;;
+CREATE TRIGGER `after_trade_in_insert`
+AFTER INSERT ON `Trade_in`
+FOR EACH ROW
+BEGIN
+    DECLARE v_id_producto VARCHAR(10);
+    DECLARE v_existencia_actual INT;
+    DECLARE v_nuevo_id_inv VARCHAR(10);
+
+    -- 1. Obtener el ID del producto
+    SELECT ID_producto INTO v_id_producto
+    FROM Equipo
+    WHERE ID_equipo = NEW.ID_equipo;
+
+    IF v_id_producto IS NOT NULL AND NEW.Numero_utilizado > 0 THEN
+
+        -- Verificar si ya existe en el inventario
+        SELECT Existencia INTO v_existencia_actual
+        FROM Existencias_productos
+        WHERE ID_producto = v_id_producto
+        LIMIT 1;
+
+        IF v_existencia_actual IS NOT NULL THEN
+            UPDATE Existencias_productos
+            SET Existencia = Existencia + NEW.Numero_utilizado
+            WHERE ID_producto = v_id_producto;
+        ELSE
+            -- Generar el ID_inventario secuencial
+            SELECT CONCAT('INV', LPAD(
+                COALESCE(
+                    MAX(CAST(SUBSTRING(ID_inventario, 4) AS UNSIGNED)), 0
+                ) + 1, 6, '0'
+            )) INTO v_nuevo_id_inv
+            FROM Existencias_productos;
+
+            -- Insertar el equipo recibido como inventario
+            -- (ID_categoria queda NULL, igual que el resto de la app)
+            INSERT INTO Existencias_productos (
+                ID_inventario,
+                ID_producto,
+                Existencia,
+                Costo_venta,
+                ID_categoria
+            ) VALUES (
+                v_nuevo_id_inv,
+                v_id_producto,
+                NEW.Numero_utilizado,
+                COALESCE(NEW.cotizacion, 0),
+                NULL
+            );
+        END IF;
+    END IF;
+END ;;
+DELIMITER ;
 
 
 -- ============================================
