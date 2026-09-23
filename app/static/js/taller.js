@@ -36,6 +36,12 @@ const TALLER_CONFIG = {
     ]
 };
 
+// ============================================
+// 1.5. VALIDACIÓN ANTI-MANIPULACIÓN DE LAS TABLAS
+// ============================================
+const validadorOrdenes = ValidadorTabla.crear({ tituloEntidad: 'La orden de servicio' });
+const validadorReparaciones = ValidadorTabla.crear({ tituloEntidad: 'La reparación' });
+
 // --------------------------------
 // 2. ICONOS SVG - CONSTANTES
 // --------------------------------
@@ -570,6 +576,12 @@ const FotosService = {
 // ============================================
 const OrdenesService = {
     ordenActualId: null,
+    ordenPreviewConfiable: null,
+    ordenDetalleConfiable: null,
+
+    obtenerOrdenConfiable() {
+        return this.ordenDetalleConfiable;
+    },
 
     async cargar() {
         const tbody = document.getElementById('tabla-ordenes-servicio');
@@ -588,11 +600,12 @@ const OrdenesService = {
     renderizar(ordenes, tbody) {
         if (!ordenes.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="cell-center">No hay órdenes de servicio</td></tr>';
+            validadorOrdenes.registrarFilas(tbody);
             return;
         }
 
         tbody.innerHTML = ordenes.map(orden => `
-            <tr>
+            <tr data-id="${orden.id_orden}">
                 <td data-label="ID orden">${Utils.escapeHtml(orden.id_orden)}</td>
                 <td data-label="Estado"><span class="estado-badge ${Utils.getEstadoClase(orden.estado)}">${Utils.escapeHtml(orden.estado)}</span></td>
                 <td data-label="ID cliente">${Utils.escapeHtml(orden.id_cliente)}</td>
@@ -607,9 +620,14 @@ const OrdenesService = {
                 </td>
             </tr>
         `).join('');
+
+        validadorOrdenes.registrarFilas(tbody);
     },
 
-    async verOrdenPreview(idOrden) {
+    async verOrdenPreview(idOrden, idConfiable = null) {
+        if (!validadorOrdenes.validarId(idOrden, 'consultar', idConfiable)) return;
+        this.ordenPreviewConfiable = idOrden;
+
         const modalBodyInfo = document.getElementById('modal-order-info');
         const modalBodyTests = document.getElementById('modal-order-tests');
         const modalBodyFotos = document.getElementById('modal-order-photos');
@@ -738,13 +756,15 @@ const OrdenesService = {
                 e.stopPropagation();
                 const numTest = btn.getAttribute('data-id-test');
                 const idOrd = btn.getAttribute('data-id-orden');
-                await RevisionService.verDetalle(idOrd, numTest);
+                await RevisionService.verDetalle(idOrd, numTest, this.ordenPreviewConfiable);
             });
         });
     },
 
-    async verDetalle(idOrden) {
+    async verDetalle(idOrden, idConfiable = null) {
+        if (!validadorReparaciones.validarId(idOrden, 'consultar', idConfiable ?? this.ordenDetalleConfiable)) return;
         this.ordenActualId = idOrden;
+        this.ordenDetalleConfiable = idOrden;
         sessionStorage.setItem('orden_actual_id', idOrden);
         
         const infoContainer = document.getElementById('order-info');
@@ -997,7 +1017,9 @@ const OrdenesService = {
         return this.ordenActualId || sessionStorage.getItem('orden_actual_id');
     },
 
-    async asignarOrden(idOrden) {
+    async asignarOrden(idOrden, idConfiable = null) {
+        if (!validadorOrdenes.validarId(idOrden, 'tomar', idConfiable)) return;
+
         try {
             const idEmpleado = Utils.obtenerIdEmpleadoActual();
             
@@ -1148,6 +1170,10 @@ const RevisionService = {
             return;
         }
 
+        if (!validadorReparaciones.validarId(idOrden, 'guardar revisión', OrdenesService.obtenerOrdenConfiable())) {
+            return;
+        }
+
         const componentesEvaluados = [];
         document.querySelectorAll('#form-revision-tecnica input[type="radio"]:checked').forEach(radio => {
             const nombre = radio.name.replace('test_', '').replace(/_/g, ' ');
@@ -1186,7 +1212,9 @@ const RevisionService = {
         }
     },
 
-    async verDetalle(idOrden, numeroTest) {
+    async verDetalle(idOrden, numeroTest, idConfiable = null) {
+        if (!validadorOrdenes.validarCoincidencia(idOrden, idConfiable, 'consultar test')) return;
+
         const modalBody = document.getElementById('modal-test-body');
         if (!modalBody) return;
 
@@ -1601,11 +1629,12 @@ const ReparacionesService = {
     renderizarAsignadas(reparaciones, tbody) {
         if (!reparaciones.length) {
             tbody.innerHTML = '<tr><td colspan="4">Sin reparaciones asignadas por ahora.</td></tr>';
+            validadorReparaciones.registrarFilas(tbody);
             return;
         }
 
         tbody.innerHTML = reparaciones.map(rep => `
-            <tr>
+            <tr data-id="${rep.id_orden}">
                 <td data-label="ID orden">${Utils.escapeHtml(rep.id_orden)}</td>
                 <td data-label="Modelo">${Utils.escapeHtml(rep.modelo)}</td>
                 <td data-label="Fecha ingreso">${Utils.formatDate(rep.fecha_e)}</td>
@@ -1617,15 +1646,12 @@ const ReparacionesService = {
                 </td>
             </tr>
         `).join('');
+
+        validadorReparaciones.registrarFilas(tbody);
     },
 
-    verDetalleOrden(idOrden) {
-        if (!idOrden) {
-            console.warn('No hay ID de orden');
-            return;
-        }
-        
-        OrdenesService.verDetalle(idOrden);
+    verDetalleOrden(idOrden, idConfiable = null) {
+        OrdenesService.verDetalle(idOrden, idConfiable);
     },
 
     iniciar(idOrden = null) {
@@ -1650,7 +1676,9 @@ const ReparacionesService = {
         }, 500);
     },
 
-    async liberarOrden(idOrden) {
+    async liberarOrden(idOrden, idConfiable = null) {
+        if (!validadorReparaciones.validarId(idOrden, 'liberar', idConfiable)) return;
+
         try {
             const idEmpleado = Utils.obtenerIdEmpleadoActual();
             
@@ -1680,7 +1708,11 @@ const ReparacionesService = {
             Utils.showMessage('No hay una orden seleccionada', true);
             return;
         }
-        
+
+        if (!validadorReparaciones.validarId(ordenId, 'guardar reparación', OrdenesService.obtenerOrdenConfiable())) {
+            return;
+        }
+
         if (!reparacionTexto) {
             Utils.showMessage('Debes describir la reparación realizada', true);
             return;
@@ -1891,9 +1923,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const idOrden = button.getAttribute("data-id");
 
             if (accion === "ver-orden") {
-                OrdenesService.verOrdenPreview(idOrden);
+                const idConfiable = validadorOrdenes.validarFila(button, 'consultar');
+                if (idConfiable === null) return;
+                OrdenesService.verOrdenPreview(idOrden, idConfiable);
             } else if (accion === "tomar-orden") {
-                await OrdenesService.asignarOrden(idOrden);
+                const idConfiable = validadorOrdenes.validarFila(button, 'tomar');
+                if (idConfiable === null) return;
+                await OrdenesService.asignarOrden(idOrden, idConfiable);
             }
         });
     }
@@ -1908,9 +1944,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const idOrden = button.getAttribute("data-id");
 
             if (accion === "ver-detalle") {
-                ReparacionesService.verDetalleOrden(idOrden);
+                const idConfiable = validadorReparaciones.validarFila(button, 'consultar');
+                if (idConfiable === null) return;
+                ReparacionesService.verDetalleOrden(idOrden, idConfiable);
             } else if (accion === "liberar-orden") {
-                await ReparacionesService.liberarOrden(idOrden);
+                const idConfiable = validadorReparaciones.validarFila(button, 'liberar');
+                if (idConfiable === null) return;
+                await ReparacionesService.liberarOrden(idOrden, idConfiable);
             }
         });
     }
@@ -1923,7 +1963,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const numTest = button.getAttribute("data-id-test");
             const idOrden = button.getAttribute("data-id-orden");
-            RevisionService.verDetalle(idOrden, numTest);
+            RevisionService.verDetalle(idOrden, numTest, OrdenesService.ordenDetalleConfiable);
         });
     }
 
@@ -1967,7 +2007,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modalTomarOrdenBtn.addEventListener('click', async () => {
             const idOrden = modalTomarOrdenBtn.getAttribute('data-id');
             if (idOrden) {
-                await OrdenesService.asignarOrden(idOrden);
+                await OrdenesService.asignarOrden(idOrden, OrdenesService.ordenPreviewConfiable);
             }
         });
     }

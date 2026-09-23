@@ -18,6 +18,11 @@ const CONFIG = {
 };
 
 // ============================================
+// 1.5. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
+// ============================================
+const validadorCargos = ValidadorTabla.crear({ tituloEntidad: 'El cargo' });
+
+// ============================================
 // 2. SISTEMA DE NOTIFICACIONES
 // ============================================
 const NotificationSystem = {
@@ -290,6 +295,7 @@ const TableManager = {
                     <td colspan="4" class="table__empty">No hay cargos para mostrar.</td>
                 </tr>
             `;
+            validadorCargos.registrarFilas(tbody);
             this.renderContador(0);
             return;
         }
@@ -302,7 +308,7 @@ const TableManager = {
                 const descripcion = Utils.escapeHtml(cargo.descripcion || "-");
 
                 return `
-                    <tr>
+                    <tr data-id="${id}">
                         <td><span class="chip">${id}</span></td>
                         <td>${nombre}</td>
                         <td>${descripcion}</td>
@@ -328,6 +334,7 @@ const TableManager = {
             })
             .join("");
 
+        validadorCargos.registrarFilas(tbody);
         this.renderContador(cargos.length);
     },
 
@@ -362,6 +369,8 @@ const TableManager = {
 // ============================================
 const CargosModule = {
     cargoPendienteEliminar: null,
+    cargoEliminarConfiable: null,
+    cargoEditarConfiable: null,
     isProcessing: false,
 
     async cargarCargos() {
@@ -378,19 +387,20 @@ const CargosModule = {
         }
     },
 
-    abrirModalEditar(button) {
+    abrirModalEditar(button, idConfiable) {
         const inputEditarId = document.getElementById("editar-id-cargo");
         const inputEditarNombre = document.getElementById("editar-nombre-cargo");
         const inputEditarDescripcion = document.getElementById("editar-descripcion-cargo");
         const formEditar = document.getElementById("form-editar-cargo");
 
-        const id = button.getAttribute("data-id") || "";
         const nombre = button.getAttribute("data-nombre") || "";
         const descripcion = button.getAttribute("data-descripcion") || "";
 
-        if (inputEditarId) inputEditarId.value = id;
+        if (inputEditarId) inputEditarId.value = idConfiable;
         if (inputEditarNombre) inputEditarNombre.value = nombre;
         if (inputEditarDescripcion) inputEditarDescripcion.value = descripcion === "-" ? "" : descripcion;
+
+        this.cargoEditarConfiable = idConfiable;
 
         if (formEditar) {
             FormManager.clearValidationStates(formEditar);
@@ -399,12 +409,12 @@ const CargosModule = {
         ModalManager.open("modal-editar-cargo");
     },
 
-    abrirModalEliminar(button) {
+    abrirModalEliminar(button, idConfiable) {
         const textoEliminar = document.getElementById("texto-confirmar-eliminar-cargo");
 
-        const id = button.getAttribute("data-id") || "";
         const nombre = button.getAttribute("data-nombre") || "";
-        this.cargoPendienteEliminar = { id, nombre };
+        this.cargoPendienteEliminar = { id: idConfiable, nombre };
+        this.cargoEliminarConfiable = idConfiable;
 
         if (textoEliminar) {
             textoEliminar.textContent = `¿Estás seguro de que quieres eliminar el cargo "${nombre}"?`;
@@ -491,6 +501,13 @@ const CargosModule = {
             }
 
             const idCargo = inputEditarId?.value.trim() || "";
+
+            if (!validadorCargos.validarId(idCargo, 'editar', this.cargoEditarConfiable)) {
+                this.isProcessing = false;
+                Utils.setLoading(submitBtn, false);
+                return;
+            }
+
             const payload = {
                 id_cargo: idCargo,
                 nombre_cargo: inputEditarNombre?.value.trim() || "",
@@ -534,6 +551,10 @@ const CargosModule = {
             return;
         }
 
+        if (!validadorCargos.validarId(this.cargoPendienteEliminar.id, 'eliminar', this.cargoEliminarConfiable)) {
+            return;
+        }
+
         this.isProcessing = true;
         const btnConfirmar = document.getElementById("btn-confirmar-eliminar-cargo");
         Utils.setLoading(btnConfirmar, true);
@@ -547,6 +568,7 @@ const CargosModule = {
             if (result.success) {
                 NotificationSystem.success(result.message || "Cargo eliminado correctamente.");
                 this.cargoPendienteEliminar = null;
+                this.cargoEliminarConfiable = null;
                 ModalManager.close("modal-eliminar-cargo");
                 await this.cargarCargos();
             } else {
@@ -587,9 +609,13 @@ const CargosModule = {
 
                 const action = button.getAttribute("data-action");
                 if (action === "editar") {
-                    this.abrirModalEditar(button);
+                    const idConfiable = validadorCargos.validarFila(button, 'editar');
+                    if (idConfiable === null) return;
+                    this.abrirModalEditar(button, idConfiable);
                 } else if (action === "eliminar") {
-                    this.abrirModalEliminar(button);
+                    const idConfiable = validadorCargos.validarFila(button, 'eliminar');
+                    if (idConfiable === null) return;
+                    this.abrirModalEliminar(button, idConfiable);
                 }
             });
         }
@@ -602,6 +628,7 @@ const CargosModule = {
         if (modalEditar && formEditar) {
             const observer = new MutationObserver(() => {
                 if (modalEditar.hasAttribute('hidden') || modalEditar.style.display === 'none') {
+                    this.cargoEditarConfiable = null;
                     if (formEditar && !this.isProcessing) {
                         FormManager.resetForm(formEditar);
                     }

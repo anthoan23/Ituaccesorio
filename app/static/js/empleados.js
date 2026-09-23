@@ -27,6 +27,15 @@ let especialidadesList = [];
 let cargosList = [];
 let especialidadesArray = [];
 window.especialidadesArray = especialidadesArray;
+// ============================================
+// 1.5. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
+// ============================================
+const validadorEmpleados = ValidadorTabla.crear({
+  tituloEntidad: 'El empleado',
+  campoId: 'data-cedula'
+});
+let cedulaEliminarConfiable = null;
+let cedulaEditarConfiable = null;
 
 const Utils = {
   getCsrfToken() {
@@ -259,6 +268,7 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
       
       const editIdInput = document.getElementById('edit-id-empleado');
       if (editIdInput) editIdInput.value = '';
+      cedulaEditarConfiable = null;
       
       const cedulaInput = document.getElementById('reg-cedula-empleado');
       if (cedulaInput) {
@@ -314,8 +324,7 @@ function openModal(id, mode = 'register', empleadoData = null, especialidadesDat
   }
 }
 
-function resetSelects() {
-  const selects = document.querySelectorAll('.select-wrapper select');
+function resetSelects() {  const selects = document.querySelectorAll('.select-wrapper select');
   selects.forEach(select => {
     const wrapper = select.parentElement;
     wrapper.classList.remove('is-open', 'has-value');
@@ -327,8 +336,9 @@ function closeModal(id) {
   if (modal) {
     modal.setAttribute("hidden", "");
     modal.setAttribute("aria-hidden", "true");
-    
+
     if (id === 'modal-registrar-empleado') {
+      cedulaEditarConfiable = null;
       const form = modal.querySelector('#form-registrar-empleado');
       const modalTitle = modal.querySelector('.modal__title');
       const submitBtn = modal.querySelector('#modal-submit-btn');
@@ -376,6 +386,10 @@ function closeModal(id) {
       if (selectEspecialidad) selectEspecialidad.value = '';
       
       resetSelects();
+    }
+
+    if (id === 'modal-eliminar-empleado') {
+      cedulaEliminarConfiable = null;
     }
   }
 }
@@ -515,7 +529,8 @@ function cargarDatosEnFormulario(empleado, especialidades = null) {
   }
 }
 
-async function verEmpleado(cedula) {
+async function verEmpleado(cedula, cedulaConfiable = null) {
+  if (!validadorEmpleados.validarId(cedula, 'consultar', cedulaConfiable)) return;
   try {
     const response = await Utils.fetchJson(CONFIG.API.CONSULTAR, {
       method: 'POST',
@@ -533,7 +548,9 @@ async function verEmpleado(cedula) {
   }
 }
 
-async function editarEmpleado(cedula) {
+async function editarEmpleado(cedula, cedulaConfiable = null) {
+  if (!validadorEmpleados.validarId(cedula, 'editar', cedulaConfiable)) return;
+  cedulaEditarConfiable = String(cedula).trim();
   try {
     const response = await Utils.fetchJson(CONFIG.API.CONSULTAR, {
       method: 'POST',
@@ -564,8 +581,15 @@ function renderTabla(empleados) {
   
   if (!tbody) return;
 
+  empleadosEnTabla = new Set(
+    (empleados || []).map(empleado =>
+      String(empleado.cedula || empleado.cedula_empleado || empleado.id_empleado || '').trim()
+    ).filter(cedula => cedula !== '')
+  );
+
   if (!empleados || empleados.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="table__empty">No hay empleados para mostrar.</td></tr>`;
+    validadorEmpleados.registrarFilas(tbody);
     if (contador) {
       contador.setAttribute("data-count", "0");
       contador.textContent = "0";
@@ -610,6 +634,8 @@ function renderTabla(empleados) {
     `;
   }).join('');
 
+  validadorEmpleados.registrarFilas(tbody);
+
   if (contador) {
     contador.setAttribute("data-count", String(empleados.length));
     contador.textContent = String(empleados.length);
@@ -637,16 +663,23 @@ function agregarEventosTabla() {
 
 function handleEditarClick(e) {
   const cedula = e.currentTarget.getAttribute('data-cedula');
-  editarEmpleado(cedula);
+  const cedulaConfiable = validadorEmpleados.validarFila(e.currentTarget, 'editar');
+  if (cedulaConfiable === null) return;
+  editarEmpleado(cedula, cedulaConfiable);
 }
 
 function handleVerClick(e) {
   const cedula = e.currentTarget.getAttribute('data-cedula');
-  verEmpleado(cedula);
+  const cedulaConfiable = validadorEmpleados.validarFila(e.currentTarget, 'consultar');
+  if (cedulaConfiable === null) return;
+  verEmpleado(cedula, cedulaConfiable);
 }
 
 function handleEliminarClick(e) {
   const cedula = e.currentTarget.getAttribute('data-cedula');
+  const cedulaConfiable = validadorEmpleados.validarFila(e.currentTarget, 'eliminar');
+  if (cedulaConfiable === null) return;
+  cedulaEliminarConfiable = cedulaConfiable;
   const nombre = e.currentTarget.getAttribute('data-nombre');
   const apellido = e.currentTarget.getAttribute('data-apellido');
   const nombreCompleto = `${nombre} ${apellido}`.trim();
@@ -985,6 +1018,7 @@ async function registrarEmpleado(event) {
     let response;
     
     if (mode === 'edit' && editId) {
+      if (!validadorEmpleados.validarId(editId, 'actualizar', cedulaEditarConfiable)) return;
       const updateData = {
         id_empleado: editId,
         cedula: formData.cedula,
@@ -1033,6 +1067,7 @@ async function registrarEmpleado(event) {
 }
 
 async function eliminarEmpleado(cedula) {
+  if (!validadorEmpleados.validarId(cedula, 'eliminar', cedulaEliminarConfiable)) return;
   try {
     const response = await Utils.fetchJson(CONFIG.API.EMPLEADOS, {
       method: 'DELETE',

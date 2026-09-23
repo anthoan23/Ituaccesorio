@@ -8,6 +8,11 @@ const CONFIG = {
 };
 
 // ============================================
+// 1.5. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
+// ============================================
+const validadorEspecialidades = ValidadorTabla.crear({ tituloEntidad: 'La especialidad' });
+
+// ============================================
 // 2. UTILIDADES
 // ============================================
 const Utils = {
@@ -165,6 +170,7 @@ function renderTabla(especialidades) {
                 <td colspan="4" class="table__empty">No hay especialidades para mostrar.</td>
             </tr>
         `;
+        validadorEspecialidades.registrarFilas(tbody);
         renderContador(0);
         return;
     }
@@ -177,7 +183,7 @@ function renderTabla(especialidades) {
             const descripcion = Utils.escapeHtml(especialidad.descripcion || "-");
 
             return `
-                <tr>
+                <tr data-id="${id}">
                     <td><span class="chip">${id}</span></td>
                     <td>${nombre}</td>
                     <td>${descripcion}</td>
@@ -203,6 +209,7 @@ function renderTabla(especialidades) {
         })
         .join("");
 
+    validadorEspecialidades.registrarFilas(tbody);
     renderContador(especialidades.length);
 }
 
@@ -215,19 +222,20 @@ async function cargarEspecialidades() {
     renderTabla(especialidades);
 }
 
-function abrirModalEditar(button) {
+function abrirModalEditar(button, idConfiable) {
     const inputEditarId = document.getElementById("editar-id-especialidad");
     const inputEditarNombre = document.getElementById("editar-nombre-especialidad");
     const inputEditarDescripcion = document.getElementById("editar-descripcion-especialidad");
 
-    const id = button.getAttribute("data-id") || "";
     const nombre = button.getAttribute("data-nombre") || "";
     const descripcion = button.getAttribute("data-descripcion") || "";
 
     // PRIMERO: Cargar los datos
-    if (inputEditarId) inputEditarId.value = id;
+    if (inputEditarId) inputEditarId.value = idConfiable;
     if (inputEditarNombre) inputEditarNombre.value = nombre;
     if (inputEditarDescripcion) inputEditarDescripcion.value = descripcion === "-" ? "" : descripcion;
+
+    especialidadEditarConfiable = idConfiable;
     
     // DESPUÉS: Limpiar estados de validación (sin borrar los valores)
     const formEditar = document.getElementById("form-editar-especialidad");
@@ -270,13 +278,15 @@ function abrirModalEditar(button) {
 }
 
 let especialidadPendienteEliminar = null;
+let especialidadEliminarConfiable = null;
+let especialidadEditarConfiable = null;
 
-function abrirModalEliminar(button) {
+function abrirModalEliminar(button, idConfiable) {
     const textoEliminar = document.getElementById("texto-confirmar-eliminar-especialidad");
-    
-    const id = button.getAttribute("data-id") || "";
+
     const nombre = button.getAttribute("data-nombre") || "";
-    especialidadPendienteEliminar = { id, nombre };
+    especialidadPendienteEliminar = { id: idConfiable, nombre };
+    especialidadEliminarConfiable = idConfiable;
 
     if (textoEliminar) {
         textoEliminar.textContent = `¿Estás seguro de que quieres eliminar la especialidad "${nombre}"?`;
@@ -331,6 +341,9 @@ async function actualizarEspecialidad(event) {
     const formEditar = document.getElementById("form-editar-especialidad");
 
     const idEspecialidad = inputEditarId?.value.trim() || "";
+
+    if (!validadorEspecialidades.validarId(idEspecialidad, 'editar', especialidadEditarConfiable)) return;
+
     const payload = {
         id_especialidad: idEspecialidad,
         nombre_especialidad: inputEditarNombre?.value.trim() || "",
@@ -372,6 +385,8 @@ async function actualizarEspecialidad(event) {
 async function eliminarEspecialidad() {
     if (!especialidadPendienteEliminar?.id) return;
 
+    if (!validadorEspecialidades.validarId(especialidadPendienteEliminar.id, 'eliminar', especialidadEliminarConfiable)) return;
+
     try {
         const result = await Utils.fetchJson(CONFIG.API.ESPECIALIDADES, {
             method: "DELETE",
@@ -381,6 +396,7 @@ async function eliminarEspecialidad() {
         if (result.success) {
             Utils.showMessage(result.message || "Especialidad eliminada correctamente.");
             especialidadPendienteEliminar = null;
+            especialidadEliminarConfiable = null;
             closeModal("modal-eliminar-especialidad");
             await cargarEspecialidades();
         } else {
@@ -419,9 +435,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const action = button.getAttribute("data-action");
             if (action === "editar") {
-                abrirModalEditar(button);
+                const idConfiable = validadorEspecialidades.validarFila(button, 'editar');
+                if (idConfiable === null) return;
+                abrirModalEditar(button, idConfiable);
             } else if (action === "eliminar") {
-                abrirModalEliminar(button);
+                const idConfiable = validadorEspecialidades.validarFila(button, 'eliminar');
+                if (idConfiable === null) return;
+                abrirModalEliminar(button, idConfiable);
             }
         });
     }
@@ -437,6 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Escuchar cuando el modal se cierra
         const observer = new MutationObserver(() => {
             if (modalEditar.hasAttribute('hidden') || modalEditar.style.display === 'none') {
+                especialidadEditarConfiable = null;
                 if (formEditar) {
                     resetFormFields(formEditar);
                 }
