@@ -1,5 +1,7 @@
 from __future__ import annotations
-from datetime import date
+
+from flask import jsonify
+from app.utils.validators import validar_numero, validar_texto, validar_texto_numero, validar_email
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -144,6 +146,10 @@ class Empleados():
     def consultar_empleado(self):
         """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
+
+        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
             
         db = self.__conexion_bd.conexion1()
         if not db:
@@ -233,6 +239,34 @@ class Empleados():
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
 
+        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
+        
+        validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+        
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+        
+        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        if validar_apellido:
+            return validar_apellido
+        
+        validar_celular = validar_numero(celular, 9, 15, "Celular")
+        if validar_celular:
+            return validar_celular
+    
+        validar_email_ = validar_email(correo)
+        if validar_email_:
+            return validar_email_
+        
+        validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
+        if validar_direccion:
+            return validar_direccion        
+
         if self.verificar_empleado():
             return f"El empleado con cédula {cedula} ya existe."
 
@@ -292,6 +326,38 @@ class Empleados():
         correo = self.correo_empleado.strip()
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
+
+        validar_cedula = validar_numero(id_empleado, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
+
+        validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+        
+        validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
+        if validar_empleado_id:
+            return validar_empleado_id
+        
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+        
+        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        if validar_apellido:
+            return validar_apellido
+        
+        validar_celular = validar_numero(celular, 10, 10, "Celular")
+        if validar_celular:
+            return validar_celular
+    
+        validar_email_ = validar_email(correo)
+        if validar_email_:
+            return validar_email_
+        
+        validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
+        if validar_direccion:
+            return validar_direccion
 
         if not self.verificar_empleado():
             return f"El empleado con identificador {id_empleado} no existe."
@@ -358,7 +424,11 @@ class Empleados():
     def eliminar_empleado(self) -> str:
         """Elimina un empleado usando el atributo id_empleado"""
         id_empleado = self.id_empleado.strip()
- 
+
+        validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
+        if validar_empleado_id:
+            return validar_empleado_id
+
         empleado_info = self.consultar_empleado()
         nombre_completo = f"{empleado_info.get('nombre', '')} {empleado_info.get('apellido', '')}" if empleado_info else id_empleado
 

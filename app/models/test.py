@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from app.utils.validators import validar_numero, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -74,6 +75,14 @@ class Tests():
             db.close()
 
     def consultar_test(self):
+        validar_id_orden = validar_texto_numero(self.ID_orden, 1, 10, "ID dela orden")
+        if validar_id_orden:
+            return validar_id_orden
+
+        validar_numero_test = validar_numero(self.Numero_test, 1, 3, "Numero de test")
+        if validar_numero_test:
+            return validar_numero_test
+
         db = self._conexion.conexion1()
         if not db:
             return None
@@ -104,6 +113,14 @@ class Tests():
         
         id_orden = self.ID_orden
         id_empleado = self.ID_empleado
+
+        validar_orden_id = validar_texto_numero(id_orden, 1, 10, "ID del Cargo")
+        if validar_orden_id:
+            return validar_orden_id
+
+        validar_id_empleado = validar_numero(id_empleado, 6, 9, "Cédula")
+        if validar_id_empleado:
+            return validar_id_empleado
 
         try:
             json_tests_string = json.dumps(self.lista_tests, ensure_ascii=False)

@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.cargos import Cargo
-from app.utils.validators import validar_texto, validar_texto_numero
 
 cargos_blueprint = Blueprint("cargos", __name__)
 
@@ -35,14 +34,6 @@ def api_agregar_cargo():
     nombre_cargo = data.get("nombre_cargo", "").strip()
     descripcion_cargo = data.get("descripcion_cargo", "").strip()
 
-    validar_nombre = validar_texto(nombre_cargo, 3, 30, "Nombre")
-    if validar_nombre:
-        return jsonify({"success": False, "message": validar_nombre}), 400
-
-    validar_descripcion = validar_texto_numero(descripcion_cargo, 3, 250, "Descripción")
-    if validar_descripcion:
-        return jsonify({"success": False, "message": validar_descripcion}), 400
-
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     cargo_model = Cargo(
@@ -68,18 +59,6 @@ def api_actualizar_cargo():
     nombre_cargo = data.get("nombre_cargo", "").strip()
     descripcion_cargo = data.get("descripcion_cargo", "").strip()
 
-    validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
-    if validar_cargo_id:
-        return jsonify({"success": False, "message": validar_cargo_id}), 400
-    
-    validar_nombre = validar_texto(nombre_cargo, 3, 30, "Nombre")
-    if validar_nombre:
-        return jsonify({"success": False, "message": validar_nombre}), 400
-    
-    validar_descripcion = validar_texto_numero(descripcion_cargo, 3, 250, "Descripción")
-    if validar_descripcion:
-        return jsonify({"success": False, "message": validar_descripcion}), 400
-
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     cargo_model = Cargo(
@@ -102,10 +81,6 @@ def api_actualizar_cargo():
 def api_eliminar_cargo():
     data = request.get_json(silent=True) or request.form
     cargo_id = data.get("id_cargo", "").strip()
-
-    validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
-    if validar_cargo_id:
-        return jsonify({"success": False, "message": validar_cargo_id}), 400
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 

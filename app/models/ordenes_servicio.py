@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.utils.validators import validar_texto_numero
 from app.models.database import conectar
 from datetime import datetime
 
@@ -168,6 +169,11 @@ class Orden_servicio():
 
     def consultar_orden(self):
         id_orden = self.ID_orden_servicio
+
+        validar_id_orden = validar_texto_numero(id_orden, 1, 10, "ID dela orden")
+        if validar_id_orden:
+            return validar_id_orden
+
         db = self._conexion.conexion1()
         if not db:
             return None
@@ -274,7 +280,7 @@ class Orden_servicio():
         id_foto = self.ID_foto_orden_servicio
         
         if not id_foto:
-            return {"success": False, "error": "ID de foto no proporcionado"}
+            return {"success": False, "error": "El ID de la foto es obligatorio"}
         
         db = self._conexion.conexion1()
         if not db:
@@ -419,6 +425,10 @@ class Orden_servicio():
             db.close()
 
     def registrar_reparacion(self):
+        validar_descripcion = validar_texto_numero(self.Descripcion_reparacion, 0, 300, "Desdescripcion ")
+        if validar_descripcion:
+            return {"success": False, "error": validar_descripcion}
+
         db = self._conexion.conexion1()
         if not db:
             return {"error": "Error de conexión a la base de datos"}

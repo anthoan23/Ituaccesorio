@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.utils.validators import validar_texto, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -42,6 +43,13 @@ class Cargo:
         nombre = self.nombre_cargo.strip()
         descripcion = self.descripcion_cargo.strip()
 
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+
+        validar_descripcion = validar_texto_numero(descripcion, 3, 250, "Descripción")
+        if validar_descripcion:
+            return validar_descripcion
 
         if self.obtener_id_por_nombre():
             mensaje = f"El cargo '{nombre}' ya existe."
@@ -82,7 +90,11 @@ class Cargo:
     def eliminar_cargo(self) -> str:
         # Usar el atributo id_cargo
         cargo_id = self.id_cargo.strip()
-        
+
+        validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+
         if not self.verificar_cargo_por_id():
             return f"El cargo con identificador {cargo_id} no existe."
 
@@ -121,6 +133,18 @@ class Cargo:
         cargo_id = self.id_cargo.strip()
         nuevo_nombre = self.nombre_cargo.strip()
         nueva_descripcion = self.descripcion_cargo.strip()
+
+        validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+
+        validar_nombre = validar_texto(nuevo_nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+
+        validar_descripcion = validar_texto_numero(nueva_descripcion, 3, 250, "Descripción")
+        if validar_descripcion:
+            return validar_descripcion
 
         # Verificar si el cargo existe
         if not self.verificar_cargo_por_id():
