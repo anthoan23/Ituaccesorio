@@ -143,7 +143,6 @@ const Utils = {
         const csrf = this.getCsrfToken();
         if (csrf) {
             headers.set("X-CSRFToken", csrf);
-            headers.set("X-CSRF-Token", csrf);
         }
 
         const token = this.getAccessToken();
@@ -152,8 +151,8 @@ const Utils = {
         }
 
         const response = await fetch(url, {
-            credentials: "same-origin",
             ...options,
+            credentials: "same-origin",
             headers,
         });
 
@@ -172,19 +171,25 @@ const Utils = {
 
     escapeHtml(str) {
         if (str === undefined || str === null) return '';
-        const text = String(str);
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     },
 
+    // Muestra el mensaje en pantalla (FeedbackModal global) y en consola.
     showMessage(message, isError = false) {
         if (!message) return;
         console[isError ? 'error' : 'log'](message);
-        if (isError) {
-            console.log(`❌ Error: ${message}`);
-        } else {
-            console.log(`✅ ${message}`);
+
+        if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+            window.FeedbackModal.show({
+                type: isError ? 'error' : 'success',
+                title: isError ? 'Atención' : 'Aviso',
+                message
+            });
         }
     },
 
@@ -217,7 +222,8 @@ const Utils = {
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
-                return user.id_empleado || user.ID_empleado || user.empleado_id;
+                const id = user.id_empleado || user.ID_empleado || user.empleado_id;
+                if (id) return String(id);
             } catch(e) {}
         }
         
@@ -225,12 +231,15 @@ const Utils = {
         if (token) {
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.id_empleado || payload.ID_empleado || payload.empleado_id;
+                const id = payload.id_empleado || payload.ID_empleado || payload.empleado_id;
+                if (id) return String(id);
             } catch(e) {}
         }
         
-        console.warn('No se pudo obtener ID del empleado, usando valor por defecto');
-        return '32014004';
+        // Sin empleado identificado no se puede operar sobre órdenes:
+        // se devuelve null y los flujos que dependen de él se bloquean.
+        console.warn('No se pudo obtener el ID del empleado logueado');
+        return null;
     }
 };
 
@@ -249,8 +258,6 @@ const ViewManager = {
     },
 
     activate(targetClass) {
-        console.log('Activando vista:', targetClass);
-        
         const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION, 
                                  TALLER_CONFIG.VISTAS.REPARACION, TALLER_CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
         
@@ -532,7 +539,6 @@ const FotosService = {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
-                    'X-CSRF-Token': csrfToken,
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: formData,
@@ -550,11 +556,11 @@ const FotosService = {
             this.fotosSeleccionadas = [];
             this.renderizarPrevisualizacion();
             this.actualizarBotonSubir();
-            
-            if (window.UiModal && typeof window.UiModal.close === 'function') {
-                window.UiModal.close();
+
+            if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                window.UiModal.closeById('modal-fotos-registrar');
             }
-            
+
             if (this.ordenIdActual) {
                 OrdenesService.verDetalle(this.ordenIdActual);
             }
@@ -593,7 +599,9 @@ const OrdenesService = {
             this.renderizar(ordenes, tbody);
         } catch (error) {
             console.error('Error cargando órdenes:', error);
-            this.renderizar([], tbody);
+            tbody.innerHTML = '<tr><td colspan="7" class="cell-center">⚠️ No fue posible cargar las órdenes de servicio</td></tr>';
+            validadorOrdenes.registrarFilas(tbody);
+            Utils.showMessage(error.message || 'No fue posible cargar las órdenes de servicio.', true);
         }
     },
 
@@ -1020,9 +1028,13 @@ const OrdenesService = {
     async asignarOrden(idOrden, idConfiable = null) {
         if (!validadorOrdenes.validarId(idOrden, 'tomar', idConfiable)) return;
 
+        const idEmpleado = Utils.obtenerIdEmpleadoActual();
+        if (!idEmpleado) {
+            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
+            return;
+        }
+
         try {
-            const idEmpleado = Utils.obtenerIdEmpleadoActual();
-            
             await Utils.fetchJson(TALLER_CONFIG.API.ASIGNAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
@@ -1031,8 +1043,8 @@ const OrdenesService = {
                 })
             });
             
-            if (window.UiModal && typeof window.UiModal.close === 'function') {
-                window.UiModal.close();
+            if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+                window.UiModal.closeById('modal-preview-orden');
             }
             
             await this.cargar();
@@ -1167,6 +1179,11 @@ const RevisionService = {
 
         if (!idOrden || !numeroTest) {
             console.warn('Datos de orden incompletos');
+            return;
+        }
+
+        if (!idEmpleado) {
+            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
             return;
         }
 
@@ -1622,7 +1639,9 @@ const ReparacionesService = {
             this.renderizarAsignadas(reparaciones, tbody);
         } catch (error) {
             console.error('Error cargando reparaciones:', error);
-            this.renderizarAsignadas([], tbody);
+            tbody.innerHTML = '<tr><td colspan="4">⚠️ No fue posible cargar las reparaciones asignadas</td></tr>';
+            validadorReparaciones.registrarFilas(tbody);
+            Utils.showMessage(error.message || 'No fue posible cargar las reparaciones asignadas.', true);
         }
     },
 
@@ -1654,34 +1673,16 @@ const ReparacionesService = {
         OrdenesService.verDetalle(idOrden, idConfiable);
     },
 
-    iniciar(idOrden = null) {
-        const ordenId = idOrden || OrdenesService.obtenerOrdenActual();
-        
-        if (!ordenId) {
-            console.warn('No hay orden seleccionada');
-            return;
-        }
-        
-        RepuestosService.limpiar();
-        
-        const reparacionOrdenId = document.getElementById('reparacion-orden-id');
-        if (reparacionOrdenId) reparacionOrdenId.textContent = ordenId;
-        
-        const reparacionTextarea = document.getElementById('reparacion-textarea');
-        if (reparacionTextarea) reparacionTextarea.value = '';
-        
-        setTimeout(() => {
-            OrdenesService.verDetalle(ordenId);
-            ViewManager.activate(TALLER_CONFIG.VISTAS.REPARACION);
-        }, 500);
-    },
-
     async liberarOrden(idOrden, idConfiable = null) {
         if (!validadorReparaciones.validarId(idOrden, 'liberar', idConfiable)) return;
 
+        const idEmpleado = Utils.obtenerIdEmpleadoActual();
+        if (!idEmpleado) {
+            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
+            return;
+        }
+
         try {
-            const idEmpleado = Utils.obtenerIdEmpleadoActual();
-            
             await Utils.fetchJson(TALLER_CONFIG.API.LIBERAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
@@ -1855,8 +1856,8 @@ function confirmarEliminarFoto(fotoId, ordenId) {
 }
 
 function cerrarModalConfirmacion() {
-    if (window.UiModal && typeof window.UiModal.close === 'function') {
-        window.UiModal.close();
+    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
+        window.UiModal.closeById('modal-confirm-eliminar');
     }
     fotoAEliminar = null;
 }
@@ -1893,8 +1894,6 @@ async function eliminarFotoConfirmada() {
 // 12. INICIALIZACIÓN Y EVENTOS
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
-    console.log('DOM cargado - Inicializando taller.js');
-    
     ViewManager.init();
 
     const reparacionTextarea = document.getElementById('reparacion-textarea');
@@ -2049,10 +2048,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    document.querySelectorAll('#modal-confirm-eliminar [data-close-modal]').forEach(btn => {
-        btn.addEventListener('click', cerrarModalConfirmacion);
-    });
-
     const btnConfirmEliminar = document.getElementById('confirm-eliminar-foto-btn');
     if (btnConfirmEliminar) {
         btnConfirmEliminar.addEventListener('click', async () => {
@@ -2060,20 +2055,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    document.querySelectorAll('[data-view-target]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (window.UiModal && typeof window.UiModal.close === 'function') {
-                window.UiModal.close();
+    // UiModal ya cierra el modal por ESC, click fuera y [data-close-modal];
+    // el observer solo limpia el estado de la foto pendiente al cerrarse.
+    const modalConfirmEliminar = document.getElementById('modal-confirm-eliminar');
+    if (modalConfirmEliminar) {
+        const observer = new MutationObserver(() => {
+            if (modalConfirmEliminar.hasAttribute('hidden')) {
+                fotoAEliminar = null;
             }
         });
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const modalConfirm = document.getElementById('modal-confirm-eliminar');
-            if (modalConfirm && !modalConfirm.hidden) {
-                cerrarModalConfirmacion();
-            }
-        }
-    });
+        observer.observe(modalConfirmEliminar, { attributes: true, attributeFilter: ['hidden'] });
+    }
 });

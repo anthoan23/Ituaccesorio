@@ -133,8 +133,9 @@ def create_app():
             g.user = SimpleNamespace(**payload)
         else:
             if IS_TEST_MODE:
+                # Debe imitar el payload real del JWT (login.py usa la clave "id").
                 g.user = SimpleNamespace(
-                    id_usuario=999,
+                    id=999,
                     username="test_admin",
                     rol_id=1,
                     rol_nombre="admin",

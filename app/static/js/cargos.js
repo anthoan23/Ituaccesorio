@@ -7,66 +7,14 @@ const CONFIG = {
     },
     UI: {
         LOADING_CLASS: 'is-loading',
-        DISABLED_CLASS: 'is-disabled',
         TIMEOUT: 30000
-    },
-    VALIDATION: {
-        MIN_NOMBRE: 4,
-        MAX_NOMBRE: 30,
-        MAX_DESCRIPCION: 250
     }
 };
 
 // ============================================
-// 1.5. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
+// 2. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
 // ============================================
 const validadorCargos = ValidadorTabla.crear({ tituloEntidad: 'El cargo' });
-
-// ============================================
-// 2. SISTEMA DE NOTIFICACIONES
-// ============================================
-const NotificationSystem = {
-    show(message, type = 'info') {
-        if (!message) return;
-
-        let container = document.getElementById('notification-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'notification-container';
-            container.className = 'notification-container';
-            document.body.appendChild(container);
-        }
-
-        const notification = document.createElement('div');
-        notification.className = `notification notification--${type}`;
-        notification.setAttribute('role', 'alert');
-
-        notification.innerHTML = `
-            <span class="notification__message">${message}</span>
-            <button class="notification__close" aria-label="Cerrar notificación">&times;</button>
-        `;
-
-        const closeBtn = notification.querySelector('.notification__close');
-        closeBtn.addEventListener('click', () => {
-            notification.classList.add('notification--closing');
-            setTimeout(() => notification.remove(), 300);
-        });
-
-        container.appendChild(notification);
-
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.classList.add('notification--closing');
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, 5000);
-    },
-
-    success(message) { this.show(message, 'success'); },
-    error(message) { this.show(message, 'error'); },
-    info(message) { this.show(message, 'info'); },
-    warning(message) { this.show(message, 'warning'); }
-};
 
 // ============================================
 // 3. UTILIDADES
@@ -110,9 +58,9 @@ const Utils = {
             }
 
             const response = await fetch(url, {
+                ...options,
                 credentials: "same-origin",
                 signal: controller.signal,
-                ...options,
                 headers,
             });
 
@@ -155,27 +103,18 @@ const Utils = {
         };
     },
 
-    debounce(func, wait = 300) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    },
+    // Muestra el mensaje en pantalla (FeedbackModal global) y en consola.
+    showMessage(message, isError = false) {
+        if (!message) return;
+        console[isError ? 'error' : 'log'](message);
 
-    throttle(func, limit = 1000) {
-        let inThrottle;
-        return function(...args) {
-            if (!inThrottle) {
-                func.apply(this, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
+        if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+            window.FeedbackModal.show({
+                type: isError ? 'error' : 'success',
+                title: isError ? 'Atención' : 'Aviso',
+                message
+            });
+        }
     },
 
     setLoading(element, isLoading) {
@@ -220,11 +159,6 @@ const ModalManager = {
             modal.setAttribute("aria-hidden", "true");
             document.body.classList.remove('modal-open');
         }
-    },
-
-    isOpen(id) {
-        const modal = document.getElementById(id);
-        return modal && !modal.hasAttribute('hidden') && modal.style.display !== 'none';
     }
 };
 
@@ -259,10 +193,16 @@ const FormManager = {
     },
 
     validateForm(form) {
-        let isValid = true;
-        const requiredInputs = form.querySelectorAll('[required]');
+        if (!form) return false;
 
-        requiredInputs.forEach(input => {
+        // Usa el validador global si está disponible; el chequeo de campos
+        // requeridos actúa como respaldo.
+        if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+            return window.FieldValidator.validateForm(form);
+        }
+
+        let isValid = true;
+        form.querySelectorAll('[required]').forEach(input => {
             if (!input.value.trim()) {
                 isValid = false;
                 input.classList.add('field-error');
@@ -275,7 +215,7 @@ const FormManager = {
 };
 
 // ============================================
-// 7. MANEJADORES DE TABLA
+// 6. MANEJADORES DE TABLA
 // ============================================
 const TableManager = {
     renderContador(total) {
@@ -314,16 +254,16 @@ const TableManager = {
                         <td>${descripcion}</td>
                         <td class="table__actions">
                             <div class="row-actions" aria-label="Acciones del cargo">
-                                <button class="icon-action icon-action--edit" type="button" data-action="editar" 
-                                        data-id="${id}" 
-                                        data-nombre="${nombre}" 
-                                        data-descripcion="${descripcion}" 
+                                <button class="icon-action icon-action--edit" type="button" data-action="editar"
+                                        data-id="${id}"
+                                        data-nombre="${nombre}"
+                                        data-descripcion="${descripcion}"
                                         aria-label="Modificar">
                                     ${Iconos.lapiz}
                                 </button>
-                                <button class="icon-action icon-action--danger" type="button" data-action="eliminar" 
-                                        data-id="${id}" 
-                                        data-nombre="${nombre}" 
+                                <button class="icon-action icon-action--danger" type="button" data-action="eliminar"
+                                        data-id="${id}"
+                                        data-nombre="${nombre}"
                                         aria-label="Eliminar">
                                     ${Iconos.basura}
                                 </button>
@@ -365,7 +305,7 @@ const TableManager = {
 };
 
 // ============================================
-// 8. CRUD DE CARGOS - MÓDULO PRINCIPAL
+// 7. CRUD DE CARGOS - MÓDULO PRINCIPAL
 // ============================================
 const CargosModule = {
     cargoPendienteEliminar: null,
@@ -383,7 +323,7 @@ const CargosModule = {
             TableManager.renderTabla(cargos);
         } catch (error) {
             TableManager.showError(tbody, error.message || "No fue posible cargar los cargos.");
-            NotificationSystem.error(error.message || "No fue posible cargar los cargos.");
+            Utils.showMessage(error.message || "No fue posible cargar los cargos.", true);
         }
     },
 
@@ -440,7 +380,7 @@ const CargosModule = {
 
         try {
             if (!FormManager.validateForm(formCrear)) {
-                NotificationSystem.warning("Por favor, completa todos los campos requeridos.");
+                Utils.showMessage("Por favor, completa todos los campos requeridos.", true);
                 this.isProcessing = false;
                 Utils.setLoading(submitBtn, false);
                 return;
@@ -452,7 +392,7 @@ const CargosModule = {
             };
 
             if (!payload.nombre_cargo) {
-                NotificationSystem.warning("El nombre del cargo es requerido.");
+                Utils.showMessage("El nombre del cargo es requerido.", true);
                 this.isProcessing = false;
                 Utils.setLoading(submitBtn, false);
                 return;
@@ -464,14 +404,14 @@ const CargosModule = {
             });
 
             if (result.success) {
-                NotificationSystem.success(result.message || "Cargo registrado correctamente.");
+                Utils.showMessage(result.message || "Cargo registrado correctamente.");
                 FormManager.resetForm(formCrear);
                 await this.cargarCargos();
             } else {
-                NotificationSystem.error(result.message || "No fue posible registrar el cargo.");
+                Utils.showMessage(result.message || "No fue posible registrar el cargo.", true);
             }
         } catch (error) {
-            NotificationSystem.error(error.message || "No fue posible registrar el cargo.");
+            Utils.showMessage(error.message || "No fue posible registrar el cargo.", true);
         } finally {
             this.isProcessing = false;
             Utils.setLoading(submitBtn, false);
@@ -494,7 +434,7 @@ const CargosModule = {
 
         try {
             if (!FormManager.validateForm(formEditar)) {
-                NotificationSystem.warning("Por favor, completa todos los campos requeridos.");
+                Utils.showMessage("Por favor, completa todos los campos requeridos.", true);
                 this.isProcessing = false;
                 Utils.setLoading(submitBtn, false);
                 return;
@@ -515,7 +455,7 @@ const CargosModule = {
             };
 
             if (!payload.nombre_cargo) {
-                NotificationSystem.warning("El nombre del cargo es requerido.");
+                Utils.showMessage("El nombre del cargo es requerido.", true);
                 this.isProcessing = false;
                 Utils.setLoading(submitBtn, false);
                 return;
@@ -527,17 +467,17 @@ const CargosModule = {
             });
 
             if (result.success) {
-                NotificationSystem.success(result.message || "Cargo modificado correctamente.");
+                Utils.showMessage(result.message || "Cargo modificado correctamente.");
                 ModalManager.close("modal-editar-cargo");
                 if (formEditar) {
                     FormManager.resetForm(formEditar);
                 }
                 await this.cargarCargos();
             } else {
-                NotificationSystem.error(result.message || "No fue posible modificar el cargo.");
+                Utils.showMessage(result.message || "No fue posible modificar el cargo.", true);
             }
         } catch (error) {
-            NotificationSystem.error(error.message || "No fue posible modificar el cargo.");
+            Utils.showMessage(error.message || "No fue posible modificar el cargo.", true);
         } finally {
             this.isProcessing = false;
             Utils.setLoading(submitBtn, false);
@@ -547,7 +487,7 @@ const CargosModule = {
     async eliminarCargo() {
         if (this.isProcessing) return;
         if (!this.cargoPendienteEliminar?.id) {
-            NotificationSystem.warning("No hay un cargo seleccionado para eliminar.");
+            Utils.showMessage("No hay un cargo seleccionado para eliminar.", true);
             return;
         }
 
@@ -566,16 +506,16 @@ const CargosModule = {
             });
 
             if (result.success) {
-                NotificationSystem.success(result.message || "Cargo eliminado correctamente.");
+                Utils.showMessage(result.message || "Cargo eliminado correctamente.");
                 this.cargoPendienteEliminar = null;
                 this.cargoEliminarConfiable = null;
                 ModalManager.close("modal-eliminar-cargo");
                 await this.cargarCargos();
             } else {
-                NotificationSystem.error(result.message || "No fue posible eliminar el cargo.");
+                Utils.showMessage(result.message || "No fue posible eliminar el cargo.", true);
             }
         } catch (error) {
-            NotificationSystem.error(error.message || "No fue posible eliminar el cargo.");
+            Utils.showMessage(error.message || "No fue posible eliminar el cargo.", true);
         } finally {
             this.isProcessing = false;
             Utils.setLoading(btnConfirmar, false);
@@ -591,8 +531,6 @@ const CargosModule = {
         this.registrarCargo = this.registrarCargo.bind(this);
         this.actualizarCargo = this.actualizarCargo.bind(this);
         this.eliminarCargo = this.eliminarCargo.bind(this);
-        this.abrirModalEditar = this.abrirModalEditar.bind(this);
-        this.abrirModalEliminar = this.abrirModalEliminar.bind(this);
 
         if (formCrear) {
             formCrear.addEventListener("submit", this.registrarCargo);
@@ -655,7 +593,7 @@ const CargosModule = {
 };
 
 // ============================================
-// 9. INICIALIZACIÓN
+// 8. INICIALIZACIÓN
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
     CargosModule.init();
