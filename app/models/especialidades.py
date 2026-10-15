@@ -18,8 +18,7 @@ class Especialidad():
     def listar_especialidades(self):
         db = self.__conexion_bd.conexion1()
         if not db:
-            Mensaje = "Error al conectar a la base de datos."
-            return Mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -55,7 +54,7 @@ class Especialidad():
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -90,12 +89,15 @@ class Especialidad():
         if validar_id:
             return validar_id
 
-        if not self.verificar_especialidad_por_id():
+        existe = self.verificar_especialidad_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"La especialidad con identificador {especialidad_id} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -142,7 +144,10 @@ class Especialidad():
             return validar_descripcion
 
         # Verificar si la especialidad existe
-        if not self.verificar_especialidad_por_id():
+        existe = self.verificar_especialidad_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"La especialidad con identificador {especialidad_id} no existe."
 
         # Verificar si el nuevo nombre ya existe (excepto para la misma especialidad)
@@ -152,7 +157,7 @@ class Especialidad():
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -183,12 +188,12 @@ class Especialidad():
             cursor.close()
             db.close()
 
-    def verificar_especialidad_por_id(self) -> bool:
+    def verificar_especialidad_por_id(self) -> bool | None:
         especialidad_id = self.id_especialidad.strip()
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return False
+            return None
 
         cursor = db.cursor()
         try:

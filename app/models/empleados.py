@@ -34,7 +34,7 @@ class Empleados():
     def listar_empleados(self):
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -59,7 +59,7 @@ class Empleados():
         """Lista todos los cargos disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -79,7 +79,7 @@ class Empleados():
         """Lista todas las especialidades disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -99,7 +99,7 @@ class Empleados():
         """Obtiene cantidad de empleados por cargo para gráficos"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -123,7 +123,7 @@ class Empleados():
         """Obtiene cantidad de empleados por especialidad para gráficos"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -153,7 +153,7 @@ class Empleados():
             
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -186,7 +186,7 @@ class Empleados():
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -208,13 +208,13 @@ class Empleados():
             cursor.close()
             db.close()
 
-    def verificar_empleado(self) -> bool:
+    def verificar_empleado(self) -> bool | None:
         """Verifica si un empleado existe (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
             
         db = self.__conexion_bd.conexion1()
         if not db:
-            return False
+            return None
 
         cursor = db.cursor()
         try:
@@ -267,12 +267,15 @@ class Empleados():
         if validar_direccion:
             return validar_direccion        
 
-        if self.verificar_empleado():
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if existe:
             return f"El empleado con cédula {cedula} ya existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -359,12 +362,15 @@ class Empleados():
         if validar_direccion:
             return validar_direccion
 
-        if not self.verificar_empleado():
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El empleado con identificador {id_empleado} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -425,19 +431,24 @@ class Empleados():
         """Elimina un empleado usando el atributo id_empleado"""
         id_empleado = self.id_empleado.strip()
 
-        validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
+        validar_empleado_id = validar_numero(id_empleado, 6, 9, "ID del Empleado")
         if validar_empleado_id:
             return validar_empleado_id
 
         empleado_info = self.consultar_empleado()
+        if isinstance(empleado_info, str):
+            return empleado_info
         nombre_completo = f"{empleado_info.get('nombre', '')} {empleado_info.get('apellido', '')}" if empleado_info else id_empleado
 
-        if not self.verificar_empleado():
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El empleado con identificador {id_empleado} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -476,7 +487,7 @@ class Empleados():
         """Lista empleados con cargo Técnico"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:

@@ -23,6 +23,8 @@ def pagina_cargos():
 def api_listar_cargos():
     cargo_model = Cargo()
     cargos = cargo_model.listar_cargos()
+    if isinstance(cargos, str):
+        return jsonify({"success": False, "error": cargos}), 503
     return jsonify(cargos)
 
 

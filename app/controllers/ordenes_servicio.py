@@ -96,8 +96,10 @@ def pagina_ordenes_servicio():
 @tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_tecnicos():
     modelo = Empleados()
-    tecnicos = modelo.listar_tecnicos() or []
-    return jsonify({"success": True, "tecnicos": tecnicos})
+    tecnicos = modelo.listar_tecnicos()
+    if isinstance(tecnicos, str):
+        return jsonify({"success": False, "error": tecnicos}), 503
+    return jsonify({"success": True, "tecnicos": tecnicos or []})
 
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos/<int:id_empleado>/ordenes", methods=["GET"])
@@ -583,6 +585,9 @@ def asignar_orden_servicio(id_orden):
 
     empleado_model = Empleados(id_empleado=str(id_empleado_val))
     empleado = empleado_model.consultar_empleado()
+
+    if isinstance(empleado, str):
+        return jsonify({"success": False, "error": empleado}), 503
 
     if not empleado:
         return jsonify({"success": False, "error": f"El técnico con ID {id_empleado_val} no existe."}), 400

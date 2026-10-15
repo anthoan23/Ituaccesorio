@@ -23,6 +23,8 @@ def pagina_especialidades():
 def api_listar_especialidades():
     especialidad_model = Especialidad()
     especialidades = especialidad_model.listar_especialidades()
+    if isinstance(especialidades, str):
+        return jsonify({"success": False, "error": especialidades}), 503
     return jsonify(especialidades)
 
 

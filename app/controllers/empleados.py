@@ -23,6 +23,8 @@ def pagina_empleados():
 def api_listar_empleados():
     empleados_model = Empleados()
     resultado = empleados_model.listar_empleados()
+    if isinstance(resultado, str):
+        return jsonify({"success": False, "error": resultado}), 503
     return jsonify(resultado)
 
 
@@ -33,6 +35,10 @@ def api_listar_empleados_cargos():
     empleados_model = Empleados()
     resultado1 = empleados_model.listar_cargos()
     resultado2 = empleados_model.listar_especialidades()
+    if isinstance(resultado1, str):
+        return jsonify({"success": False, "error": resultado1}), 503
+    if isinstance(resultado2, str):
+        return jsonify({"success": False, "error": resultado2}), 503
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
 
 
@@ -43,6 +49,10 @@ def api_listar_empleados_graficos():
     empleados_model = Empleados()
     resultado1 = empleados_model.listar_empleados_por_cargo()
     resultado2 = empleados_model.listar_empleados_por_especialidad()
+    if isinstance(resultado1, str):
+        return jsonify({"success": False, "error": resultado1}), 503
+    if isinstance(resultado2, str):
+        return jsonify({"success": False, "error": resultado2}), 503
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
 
 
@@ -65,6 +75,8 @@ def api_consultar_empleado():
     
     if resultado1['cargo'] == 'Técnico':
         resultado2 = empleados_model.consultar_especialidades_empleado()
+        if isinstance(resultado2, str):
+            return jsonify({"success": False, "error": resultado2}), 503
         return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
     
     return jsonify({"success": True, "empleado": resultado1})
@@ -197,4 +209,6 @@ def api_eliminar_empleado():
 def api_listar_tecnicos():
     empleados_model = Empleados()
     tecnicos = empleados_model.listar_tecnicos()
+    if isinstance(tecnicos, str):
+        return jsonify({"success": False, "error": tecnicos}), 503
     return jsonify(tecnicos)

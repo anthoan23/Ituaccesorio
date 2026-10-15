@@ -18,8 +18,7 @@ class Cargo:
     def listar_cargos(self):
         db = self.__conexion_bd.conexion1()
         if not db:
-            Mensaje = "Error al conectar a la base de datos."
-            return Mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -57,8 +56,7 @@ class Cargo:
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -95,13 +93,15 @@ class Cargo:
         if validar_cargo_id:
             return validar_cargo_id
 
-        if not self.verificar_cargo_por_id():
+        existe = self.verificar_cargo_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El cargo con identificador {cargo_id} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -147,7 +147,10 @@ class Cargo:
             return validar_descripcion
 
         # Verificar si el cargo existe
-        if not self.verificar_cargo_por_id():
+        existe = self.verificar_cargo_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El cargo con identificador {cargo_id} no existe."
 
         # Verificar si el nuevo nombre ya existe (excepto para el mismo cargo)
@@ -157,7 +160,7 @@ class Cargo:
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -188,13 +191,13 @@ class Cargo:
             cursor.close()
             db.close()
 
-    def verificar_cargo_por_id(self) -> bool:
+    def verificar_cargo_por_id(self) -> bool | None:
         # Usar el atributo id_cargo
         cargo_id = self.id_cargo.strip()
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return False
+            return None
 
         cursor = db.cursor()
         try:
