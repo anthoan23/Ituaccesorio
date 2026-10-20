@@ -8,3 +8,4 @@ nota.txt
 bd/
 pruebas/
 docker-compose.prod.yml
+tests

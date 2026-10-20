@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
-from app.utils.validators import validar_numero, validar_texto, validar_texto_numero, validar_email
 from app.models.empleados import Empleados
 
 empleados_blueprint = Blueprint("empleados", __name__)
@@ -24,6 +23,8 @@ def pagina_empleados():
 def api_listar_empleados():
     empleados_model = Empleados()
     resultado = empleados_model.listar_empleados()
+    if isinstance(resultado, str):
+        return jsonify({"success": False, "error": resultado}), 503
     return jsonify(resultado)
 
 
@@ -34,6 +35,10 @@ def api_listar_empleados_cargos():
     empleados_model = Empleados()
     resultado1 = empleados_model.listar_cargos()
     resultado2 = empleados_model.listar_especialidades()
+    if isinstance(resultado1, str):
+        return jsonify({"success": False, "error": resultado1}), 503
+    if isinstance(resultado2, str):
+        return jsonify({"success": False, "error": resultado2}), 503
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
 
 
@@ -44,6 +49,10 @@ def api_listar_empleados_graficos():
     empleados_model = Empleados()
     resultado1 = empleados_model.listar_empleados_por_cargo()
     resultado2 = empleados_model.listar_empleados_por_especialidad()
+    if isinstance(resultado1, str):
+        return jsonify({"success": False, "error": resultado1}), 503
+    if isinstance(resultado2, str):
+        return jsonify({"success": False, "error": resultado2}), 503
     return jsonify({"cargos": resultado1, "especialidades": resultado2})
 
 
@@ -53,20 +62,21 @@ def api_listar_empleados_graficos():
 def api_consultar_empleado():
     datos = request.get_json(silent=True) or {}
     cedula = str(datos.get("cedula", "")).strip()
-    
-    validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
-    if validar_cedula:
-        return jsonify({"success": False, "error": validar_cedula}), 400
 
     empleados_model = Empleados(id_empleado=cedula)
     resultado1 = empleados_model.consultar_empleado()
-    
+
+    if isinstance(resultado1, str):
+        return jsonify({"success": False, "error": resultado1}), 400
+
     if not resultado1:
         return jsonify({"success": False, "error": "Empleado no encontrado."}), 404
     
     
     if resultado1['cargo'] == 'Técnico':
         resultado2 = empleados_model.consultar_especialidades_empleado()
+        if isinstance(resultado2, str):
+            return jsonify({"success": False, "error": resultado2}), 503
         return jsonify({"success": True, "empleado": resultado1, "especialidades": resultado2})
     
     return jsonify({"success": True, "empleado": resultado1})
@@ -86,33 +96,6 @@ def api_agregar_empleado():
     correo = str(datos.get("correo", "")).strip()
     direccion = str(datos.get("direccion", "")).strip()
 
-    validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
-    if validar_cedula:
-        return jsonify({"success": False, "error": validar_cedula}), 400
-    
-    validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
-    if validar_cargo_id:
-        return jsonify({"success": False, "error": validar_cargo_id}), 400
-    
-    validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
-    if validar_nombre:
-        return jsonify({"success": False, "error": validar_nombre}), 400
-    
-    validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
-    if validar_apellido:
-        return jsonify({"success": False, "error": validar_apellido}), 400
-    
-    validar_celular = validar_numero(celular, 9, 15, "Celular")
-    if validar_celular:
-        return jsonify({"success": False, "error": validar_celular}), 400
-
-    validar_email_ = validar_email(correo)
-    if validar_email_:
-        return jsonify({"success": False, "error": validar_email_}), 400
-    
-    validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
-    if validar_direccion:
-        return jsonify({"success": False, "error": validar_direccion}), 400
 
     especialidades = datos.get('especialidades') or []
     if isinstance(especialidades, str):
@@ -157,41 +140,7 @@ def api_actualizar_empleado():
     apellido = str(datos.get("apellido", "")).strip()
     celular = str(datos.get("celular", "")).strip()
     correo = str(datos.get("correo", "")).strip()
-    direccion = str(datos.get("direccion", "")).strip()
-
-
-    validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
-    if validar_cedula:
-        return jsonify({"success": False, "error": validar_cedula}), 400
-    
-    validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
-    if validar_cargo_id:
-        return jsonify({"success": False, "error": validar_cargo_id}), 400
-    
-    validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
-    if validar_empleado_id:
-        return jsonify({"success": False, "error": validar_empleado_id}), 400
-    
-    validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
-    if validar_nombre:
-        return jsonify({"success": False, "error": validar_nombre}), 400
-    
-    validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
-    if validar_apellido:
-        return jsonify({"success": False, "error": validar_apellido}), 400
-    
-    validar_celular = validar_numero(celular, 10, 10, "Celular")
-    if validar_celular:
-        return jsonify({"success": False, "error": validar_celular}), 400
-
-    validar_email_ = validar_email(correo)
-    if validar_email_:
-        return jsonify({"success": False, "error": validar_email_}), 400
-    
-    validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
-    if validar_direccion:
-        return jsonify({"success": False, "error": validar_direccion}), 400
-    
+    direccion = str(datos.get("direccion", "")).strip()    
 
     especialidades = datos.get('especialidades') or []
     if isinstance(especialidades, str):
@@ -239,10 +188,6 @@ def api_eliminar_empleado():
     datos = request.get_json(silent=True) or {}
     id_empleado = str(datos.get("id_empleado", "")).strip()
 
-    validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
-    if validar_empleado_id:
-        return jsonify({"success": False, "error": validar_empleado_id}), 400
-
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     empleados_model = Empleados(
@@ -264,4 +209,6 @@ def api_eliminar_empleado():
 def api_listar_tecnicos():
     empleados_model = Empleados()
     tecnicos = empleados_model.listar_tecnicos()
+    if isinstance(tecnicos, str):
+        return jsonify({"success": False, "error": tecnicos}), 503
     return jsonify(tecnicos)

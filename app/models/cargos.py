@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.utils.validators import validar_texto, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -17,8 +18,7 @@ class Cargo:
     def listar_cargos(self):
         db = self.__conexion_bd.conexion1()
         if not db:
-            Mensaje = "Error al conectar a la base de datos."
-            return Mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -42,6 +42,13 @@ class Cargo:
         nombre = self.nombre_cargo.strip()
         descripcion = self.descripcion_cargo.strip()
 
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+
+        validar_descripcion = validar_texto_numero(descripcion, 3, 250, "Descripción")
+        if validar_descripcion:
+            return validar_descripcion
 
         if self.obtener_id_por_nombre():
             mensaje = f"El cargo '{nombre}' ya existe."
@@ -49,8 +56,7 @@ class Cargo:
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -82,14 +88,20 @@ class Cargo:
     def eliminar_cargo(self) -> str:
         # Usar el atributo id_cargo
         cargo_id = self.id_cargo.strip()
-        
-        if not self.verificar_cargo_por_id():
+
+        validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+
+        existe = self.verificar_cargo_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El cargo con identificador {cargo_id} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            mensaje = "Error al conectar a la base de datos."
-            return mensaje
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -122,8 +134,23 @@ class Cargo:
         nuevo_nombre = self.nombre_cargo.strip()
         nueva_descripcion = self.descripcion_cargo.strip()
 
+        validar_cargo_id = validar_texto_numero(cargo_id, 9, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+
+        validar_nombre = validar_texto(nuevo_nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+
+        validar_descripcion = validar_texto_numero(nueva_descripcion, 3, 250, "Descripción")
+        if validar_descripcion:
+            return validar_descripcion
+
         # Verificar si el cargo existe
-        if not self.verificar_cargo_por_id():
+        existe = self.verificar_cargo_por_id()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El cargo con identificador {cargo_id} no existe."
 
         # Verificar si el nuevo nombre ya existe (excepto para el mismo cargo)
@@ -133,7 +160,7 @@ class Cargo:
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -164,13 +191,13 @@ class Cargo:
             cursor.close()
             db.close()
 
-    def verificar_cargo_por_id(self) -> bool:
+    def verificar_cargo_por_id(self) -> bool | None:
         # Usar el atributo id_cargo
         cargo_id = self.id_cargo.strip()
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return False
+            return None
 
         cursor = db.cursor()
         try:

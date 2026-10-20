@@ -1,5 +1,7 @@
 from __future__ import annotations
-from datetime import date
+
+from flask import jsonify
+from app.utils.validators import validar_numero, validar_texto, validar_texto_numero, validar_email
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -32,7 +34,7 @@ class Empleados():
     def listar_empleados(self):
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -57,7 +59,7 @@ class Empleados():
         """Lista todos los cargos disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -77,7 +79,7 @@ class Empleados():
         """Lista todas las especialidades disponibles"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -97,7 +99,7 @@ class Empleados():
         """Obtiene cantidad de empleados por cargo para gráficos"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -121,7 +123,7 @@ class Empleados():
         """Obtiene cantidad de empleados por especialidad para gráficos"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -144,10 +146,14 @@ class Empleados():
     def consultar_empleado(self):
         """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
+
+        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
             
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -180,7 +186,7 @@ class Empleados():
         
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:
@@ -202,13 +208,13 @@ class Empleados():
             cursor.close()
             db.close()
 
-    def verificar_empleado(self) -> bool:
+    def verificar_empleado(self) -> bool | None:
         """Verifica si un empleado existe (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
             
         db = self.__conexion_bd.conexion1()
         if not db:
-            return False
+            return None
 
         cursor = db.cursor()
         try:
@@ -233,12 +239,43 @@ class Empleados():
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
 
-        if self.verificar_empleado():
+        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
+        
+        validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+        
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+        
+        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        if validar_apellido:
+            return validar_apellido
+        
+        validar_celular = validar_numero(celular, 9, 15, "Celular")
+        if validar_celular:
+            return validar_celular
+    
+        validar_email_ = validar_email(correo)
+        if validar_email_:
+            return validar_email_
+        
+        validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
+        if validar_direccion:
+            return validar_direccion        
+
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if existe:
             return f"El empleado con cédula {cedula} ya existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -293,12 +330,47 @@ class Empleados():
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
 
-        if not self.verificar_empleado():
+        validar_cedula = validar_numero(id_empleado, 6, 9, "Cédula")
+        if validar_cedula:
+            return validar_cedula
+
+        validar_cargo_id = validar_texto_numero(cargo_id, 1, 10, "ID del Cargo")
+        if validar_cargo_id:
+            return validar_cargo_id
+        
+        validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
+        if validar_empleado_id:
+            return validar_empleado_id
+        
+        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        if validar_nombre:
+            return validar_nombre
+        
+        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        if validar_apellido:
+            return validar_apellido
+        
+        validar_celular = validar_numero(celular, 10, 10, "Celular")
+        if validar_celular:
+            return validar_celular
+    
+        validar_email_ = validar_email(correo)
+        if validar_email_:
+            return validar_email_
+        
+        validar_direccion = validar_texto_numero(direccion, 2, 60, "Dirección")
+        if validar_direccion:
+            return validar_direccion
+
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El empleado con identificador {id_empleado} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -358,16 +430,25 @@ class Empleados():
     def eliminar_empleado(self) -> str:
         """Elimina un empleado usando el atributo id_empleado"""
         id_empleado = self.id_empleado.strip()
- 
+
+        validar_empleado_id = validar_numero(id_empleado, 6, 9, "ID del Empleado")
+        if validar_empleado_id:
+            return validar_empleado_id
+
         empleado_info = self.consultar_empleado()
+        if isinstance(empleado_info, str):
+            return empleado_info
         nombre_completo = f"{empleado_info.get('nombre', '')} {empleado_info.get('apellido', '')}" if empleado_info else id_empleado
 
-        if not self.verificar_empleado():
+        existe = self.verificar_empleado()
+        if existe is None:
+            return self.__conexion_bd.mostrar_error()
+        if not existe:
             return f"El empleado con identificador {id_empleado} no existe."
 
         db = self.__conexion_bd.conexion1()
         if not db:
-            return "Error al conectar a la base de datos."
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor()
         try:
@@ -406,7 +487,7 @@ class Empleados():
         """Lista empleados con cargo Técnico"""
         db = self.__conexion_bd.conexion1()
         if not db:
-            return None
+            return self.__conexion_bd.mostrar_error()
 
         cursor = db.cursor(dictionary=True)
         try:

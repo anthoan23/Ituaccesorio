@@ -239,6 +239,11 @@ class Backup:
                 except Exception as e:
                     error_msg = f"Error en statement {i+1}: {str(e)[:100]}..."
                     errors.append(error_msg)
+                    # Error 1227 (SYSTEM_USER): statement que requiere privilegios de
+                    # superusuario (definer root, roles, variables globales). Se omite
+                    # y se continúa con la restauración.
+                    if hasattr(e, 'errno') and e.errno == 1227:
+                        continue
                     # Si hay un error crítico, hacer rollback y detener
                     if "syntax error" in str(e).lower() or "access denied" in str(e).lower():
                         connection.rollback()
@@ -298,7 +303,12 @@ class Backup:
         """Statements de administración global que el usuario de la app no puede ejecutar"""
         inicio = statement.strip().upper()
         return bool(re.match(
-            r"^(CREATE USER|ALTER USER|DROP USER|GRANT|REVOKE|SET @@(GLOBAL|SESSION)?\s*\.?\s*(GTID_PURGED|SQL_LOG_BIN)|LOCK TABLES|UNLOCK TABLES)",
+            r"^(CREATE USER|CREATE ROLE|ALTER USER|ALTER ROLE|DROP USER|DROP ROLE"
+            r"|GRANT|REVOKE|SET PASSWORD|RENAME USER"
+            r"|SET @@(GLOBAL|SESSION)?\s*\.?\s*(GTID_PURGED|SQL_LOG_BIN)"
+            r"|LOCK TABLES|UNLOCK TABLES"
+            r"|FLUSH|PURGE|RESET|CHANGE REPLICATION|START (SLAVE|REPLICA)|STOP (SLAVE|REPLICA)"
+            r"|INSTALL|UNINSTALL)",
             inicio
         ))
 

@@ -29,3 +29,8 @@ bandit -r . --exclude ./.venv -f html -o reporte_seguridad.html
 
 bandit -r . --exclude ./.venv
 
+
+source .venv/bin/activate.fish
+
+pytest tests/test_cargos.py -v
+

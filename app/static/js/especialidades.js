@@ -8,7 +8,12 @@ const CONFIG = {
 };
 
 // ============================================
-// 2. UTILIDADES
+// 2. VALIDACIÓN ANTI-MANIPULACIÓN DE LA TABLA
+// ============================================
+const validadorEspecialidades = ValidadorTabla.crear({ tituloEntidad: 'La especialidad' });
+
+// ============================================
+// 3. UTILIDADES
 // ============================================
 const Utils = {
     getCsrfToken() {
@@ -45,8 +50,8 @@ const Utils = {
         }
 
         const response = await fetch(url, {
-            credentials: "same-origin",
             ...options,
+            credentials: "same-origin",
             headers,
         });
 
@@ -73,9 +78,18 @@ const Utils = {
             .replace(/'/g, "&#039;");
     },
 
+    // Muestra el mensaje en pantalla (FeedbackModal global) y en consola.
     showMessage(message, isError = false) {
         if (!message) return;
-        console.info(message);
+        console[isError ? 'error' : 'log'](message);
+
+        if (window.FeedbackModal && typeof window.FeedbackModal.show === 'function') {
+            window.FeedbackModal.show({
+                type: isError ? 'error' : 'success',
+                title: isError ? 'Atención' : 'Aviso',
+                message
+            });
+        }
     },
 
     normalizeEspecialidad(especialidad) {
@@ -88,14 +102,14 @@ const Utils = {
 };
 
 // ============================================
-// 2.5 FUNCIÓN PARA LIMPIAR FORMULARIOS
+// 4. LIMPIEZA DE FORMULARIOS
 // ============================================
 function resetFormFields(form) {
     if (!form) return;
-    
+
     // Resetear valores del formulario
     form.reset();
-    
+
     // Limpiar estados de validación usando el validador global
     if (window.FieldValidator && typeof window.FieldValidator.resetForm === 'function') {
         window.FieldValidator.resetForm(form);
@@ -105,7 +119,7 @@ function resetFormFields(form) {
         inputs.forEach(input => {
             input.classList.remove('field-success', 'field-error');
             input.removeAttribute('aria-invalid');
-            
+
             // Limpiar mensajes de error
             const errorElement = input.closest('.field-validator-wrapper')?.querySelector('.field-message');
             if (errorElement) {
@@ -117,7 +131,7 @@ function resetFormFields(form) {
 }
 
 // ============================================
-// 3. MANEJADORES DE MODALES
+// 5. MANEJADORES DE MODALES
 // ============================================
 function openModal(id) {
     if (window.UiModal && typeof window.UiModal.openById === "function") {
@@ -146,7 +160,7 @@ function closeModal(id) {
 }
 
 // ============================================
-// 4. MANEJADORES DE TABLA
+// 6. MANEJADORES DE TABLA
 // ============================================
 function renderContador(total) {
     const contador = document.querySelector("[data-count]");
@@ -165,6 +179,7 @@ function renderTabla(especialidades) {
                 <td colspan="4" class="table__empty">No hay especialidades para mostrar.</td>
             </tr>
         `;
+        validadorEspecialidades.registrarFilas(tbody);
         renderContador(0);
         return;
     }
@@ -177,7 +192,7 @@ function renderTabla(especialidades) {
             const descripcion = Utils.escapeHtml(especialidad.descripcion || "-");
 
             return `
-                <tr>
+                <tr data-id="${id}">
                     <td><span class="chip">${id}</span></td>
                     <td>${nombre}</td>
                     <td>${descripcion}</td>
@@ -203,11 +218,12 @@ function renderTabla(especialidades) {
         })
         .join("");
 
+    validadorEspecialidades.registrarFilas(tbody);
     renderContador(especialidades.length);
 }
 
 // ============================================
-// 5. CRUD DE ESPECIALIDADES
+// 7. CRUD DE ESPECIALIDADES
 // ============================================
 async function cargarEspecialidades() {
     const data = await Utils.fetchJson(CONFIG.API.ESPECIALIDADES, { method: "GET" });
@@ -215,19 +231,20 @@ async function cargarEspecialidades() {
     renderTabla(especialidades);
 }
 
-function abrirModalEditar(button) {
+function abrirModalEditar(button, idConfiable) {
     const inputEditarId = document.getElementById("editar-id-especialidad");
     const inputEditarNombre = document.getElementById("editar-nombre-especialidad");
     const inputEditarDescripcion = document.getElementById("editar-descripcion-especialidad");
 
-    const id = button.getAttribute("data-id") || "";
     const nombre = button.getAttribute("data-nombre") || "";
     const descripcion = button.getAttribute("data-descripcion") || "";
 
     // PRIMERO: Cargar los datos
-    if (inputEditarId) inputEditarId.value = id;
+    if (inputEditarId) inputEditarId.value = idConfiable;
     if (inputEditarNombre) inputEditarNombre.value = nombre;
     if (inputEditarDescripcion) inputEditarDescripcion.value = descripcion === "-" ? "" : descripcion;
+
+    especialidadEditarConfiable = idConfiable;
     
     // DESPUÉS: Limpiar estados de validación (sin borrar los valores)
     const formEditar = document.getElementById("form-editar-especialidad");
@@ -270,13 +287,15 @@ function abrirModalEditar(button) {
 }
 
 let especialidadPendienteEliminar = null;
+let especialidadEliminarConfiable = null;
+let especialidadEditarConfiable = null;
 
-function abrirModalEliminar(button) {
+function abrirModalEliminar(button, idConfiable) {
     const textoEliminar = document.getElementById("texto-confirmar-eliminar-especialidad");
-    
-    const id = button.getAttribute("data-id") || "";
+
     const nombre = button.getAttribute("data-nombre") || "";
-    especialidadPendienteEliminar = { id, nombre };
+    especialidadPendienteEliminar = { id: idConfiable, nombre };
+    especialidadEliminarConfiable = idConfiable;
 
     if (textoEliminar) {
         textoEliminar.textContent = `¿Estás seguro de que quieres eliminar la especialidad "${nombre}"?`;
@@ -285,33 +304,39 @@ function abrirModalEliminar(button) {
     openModal("modal-eliminar-especialidad");
 }
 
+let isProcessing = false;
+
 async function registrarEspecialidad(event) {
     event.preventDefault();
-    const formCrear = document.getElementById("form-especialidad");
-    if (!formCrear) return;
 
-    const payload = {
-        nombre_especialidad: formCrear.nombre_especialidad.value.trim(),
-        descripcion_especialidad: formCrear.descripcion_especialidad.value.trim(),
-    };
-
-    if (!payload.nombre_especialidad) {
-        Utils.showMessage("El nombre de la especialidad es requerido.", true);
-        return;
-    }
+    if (isProcessing) return;
+    isProcessing = true;
 
     try {
+        const formCrear = document.getElementById("form-especialidad");
+        if (!formCrear) return;
+
+        const payload = {
+            nombre_especialidad: formCrear.nombre_especialidad.value.trim(),
+            descripcion_especialidad: formCrear.descripcion_especialidad.value.trim(),
+        };
+
+        if (!payload.nombre_especialidad) {
+            Utils.showMessage("El nombre de la especialidad es requerido.", true);
+            return;
+        }
+
         const result = await Utils.fetchJson(CONFIG.API.ESPECIALIDADES, {
             method: "POST",
             body: JSON.stringify(payload),
         });
-        
+
         if (result.success) {
             Utils.showMessage(result.message || "Especialidad registrada correctamente.");
-            
+
             // Limpiar el formulario y sus estados de validación
             resetFormFields(formCrear);
-            
+
             // Recargar la tabla
             await cargarEspecialidades();
         } else {
@@ -319,46 +344,54 @@ async function registrarEspecialidad(event) {
         }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible registrar la especialidad.", true);
+    } finally {
+        isProcessing = false;
     }
 }
 
 async function actualizarEspecialidad(event) {
     event.preventDefault();
-    
-    const inputEditarId = document.getElementById("editar-id-especialidad");
-    const inputEditarNombre = document.getElementById("editar-nombre-especialidad");
-    const inputEditarDescripcion = document.getElementById("editar-descripcion-especialidad");
-    const formEditar = document.getElementById("form-editar-especialidad");
 
-    const idEspecialidad = inputEditarId?.value.trim() || "";
-    const payload = {
-        id_especialidad: idEspecialidad,
-        nombre_especialidad: inputEditarNombre?.value.trim() || "",
-        descripcion_especialidad: inputEditarDescripcion?.value.trim() || "",
-    };
-
-    if (!payload.nombre_especialidad) {
-        Utils.showMessage("El nombre de la especialidad es requerido.", true);
-        return;
-    }
+    if (isProcessing) return;
+    isProcessing = true;
 
     try {
+        const inputEditarId = document.getElementById("editar-id-especialidad");
+        const inputEditarNombre = document.getElementById("editar-nombre-especialidad");
+        const inputEditarDescripcion = document.getElementById("editar-descripcion-especialidad");
+        const formEditar = document.getElementById("form-editar-especialidad");
+
+        const idEspecialidad = inputEditarId?.value.trim() || "";
+
+        if (!validadorEspecialidades.validarId(idEspecialidad, 'editar', especialidadEditarConfiable)) return;
+
+        const payload = {
+            id_especialidad: idEspecialidad,
+            nombre_especialidad: inputEditarNombre?.value.trim() || "",
+            descripcion_especialidad: inputEditarDescripcion?.value.trim() || "",
+        };
+
+        if (!payload.nombre_especialidad) {
+            Utils.showMessage("El nombre de la especialidad es requerido.", true);
+            return;
+        }
+
         const result = await Utils.fetchJson(CONFIG.API.ESPECIALIDADES, {
             method: "PUT",
             body: JSON.stringify(payload),
         });
-        
+
         if (result.success) {
             Utils.showMessage(result.message || "Especialidad modificada correctamente.");
-            
+
             // Cerrar el modal
             closeModal("modal-editar-especialidad");
-            
+
             // Limpiar el formulario de edición después de cerrar
             if (formEditar) {
                 resetFormFields(formEditar);
             }
-            
+
             // Recargar la tabla
             await cargarEspecialidades();
         } else {
@@ -366,21 +399,29 @@ async function actualizarEspecialidad(event) {
         }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible modificar la especialidad.", true);
+    } finally {
+        isProcessing = false;
     }
 }
 
 async function eliminarEspecialidad() {
+    if (isProcessing) return;
     if (!especialidadPendienteEliminar?.id) return;
+
+    if (!validadorEspecialidades.validarId(especialidadPendienteEliminar.id, 'eliminar', especialidadEliminarConfiable)) return;
+
+    isProcessing = true;
 
     try {
         const result = await Utils.fetchJson(CONFIG.API.ESPECIALIDADES, {
             method: "DELETE",
             body: JSON.stringify({ id_especialidad: especialidadPendienteEliminar.id }),
         });
-        
+
         if (result.success) {
             Utils.showMessage(result.message || "Especialidad eliminada correctamente.");
             especialidadPendienteEliminar = null;
+            especialidadEliminarConfiable = null;
             closeModal("modal-eliminar-especialidad");
             await cargarEspecialidades();
         } else {
@@ -388,11 +429,13 @@ async function eliminarEspecialidad() {
         }
     } catch (error) {
         Utils.showMessage(error.message || "No fue posible eliminar la especialidad.", true);
+    } finally {
+        isProcessing = false;
     }
 }
 
 // ============================================
-// 6. EVENTOS E INICIALIZACIÓN
+// 8. EVENTOS E INICIALIZACIÓN
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
     // Elementos DOM
@@ -419,9 +462,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const action = button.getAttribute("data-action");
             if (action === "editar") {
-                abrirModalEditar(button);
+                const idConfiable = validadorEspecialidades.validarFila(button, 'editar');
+                if (idConfiable === null) return;
+                abrirModalEditar(button, idConfiable);
             } else if (action === "eliminar") {
-                abrirModalEliminar(button);
+                const idConfiable = validadorEspecialidades.validarFila(button, 'eliminar');
+                if (idConfiable === null) return;
+                abrirModalEliminar(button, idConfiable);
             }
         });
     }
@@ -437,6 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Escuchar cuando el modal se cierra
         const observer = new MutationObserver(() => {
             if (modalEditar.hasAttribute('hidden') || modalEditar.style.display === 'none') {
+                especialidadEditarConfiable = null;
                 if (formEditar) {
                     resetFormFields(formEditar);
                 }
