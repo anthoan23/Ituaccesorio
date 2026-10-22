@@ -6,14 +6,6 @@ from flask import Blueprint, jsonify, render_template, request, g, current_app
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.tradein_empleados import TradeInEmpleados
-from app.utils.validators import (
-    validar_texto_numero,
-    validar_numero,
-    validar_solo_letras,
-    validar_solo_letras_numeros,
-    validar_sin_caracteres_especiales,
-    validar_decimal
-)
 import traceback
 
 tradein_empleados_blueprint = Blueprint("tradein_empleados", __name__)
@@ -33,6 +25,36 @@ def pagina_tradein_empleados():
     )
 
 
+# ==================== HELPERS ====================
+
+def _obtener_empleado_id():
+    empleado_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
+    return str(empleado_id) if empleado_id else None
+
+
+def _obtener_usuario_id():
+    return g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+
+
+def _guardar_fotos():
+    fotos = []
+    archivos = request.files.getlist("fotos")
+    for archivo in archivos:
+        if archivo and getattr(archivo, "filename", ""):
+            nombre_seguro = secure_filename(archivo.filename)
+            _, extension = os.path.splitext(nombre_seguro)
+            extension = extension.lower()[:10] or ".jpg"
+            nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
+
+            carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
+            os.makedirs(carpeta_destino, exist_ok=True)
+
+            ruta_fisica = os.path.join(carpeta_destino, nombre_final)
+            archivo.save(ruta_fisica)
+            fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
+    return fotos
+
+
 # ==================== REGISTRAR NUEVO TRADE-IN ====================
 
 @tradein_empleados_blueprint.route("/api/tradein", methods=["POST"])
@@ -40,151 +62,36 @@ def pagina_tradein_empleados():
 @tiene_permiso('Trade-in', 'registrar')
 def api_registrar_trade_in():
     try:
-        # Validar cliente
-        cliente_id = request.form.get("cliente_id", "").strip()
-        if not cliente_id:
-            return jsonify({"success": False, "error": "El campo Cliente es obligatorio."}), 400
-        
-        error = validar_numero(cliente_id, 6, 9, "Cliente")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar producto
-        id_producto = request.form.get("id_producto", "").strip()
-        if not id_producto:
-            return jsonify({"success": False, "error": "El campo Producto/Modelo es obligatorio."}), 400
-        
-        error = validar_texto_numero(id_producto, 1, 10, "Producto")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar ID del equipo (IMEI) - solo números, sin espacios
-        id_equipo = request.form.get("id_equipo", "").strip()
-        if not id_equipo:
-            return jsonify({"success": False, "error": "El campo IMEI/ID del equipo es obligatorio."}), 400
-        
-        error = validar_numero(id_equipo, 8, 20, "IMEI")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar valor pagado
-        valor_pagado = request.form.get("valor_pagado", "").strip()
-        if not valor_pagado:
-            return jsonify({"success": False, "error": "El campo Valor pagado es obligatorio."}), 400
-        
-        error = validar_decimal(valor_pagado, "Valor pagado", max_decimales=2, min_valor=0)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar color (opcional)
-        color = request.form.get("color", "").strip() or None
-        if color:
-            error = validar_solo_letras(color, 1, 30, "Color", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Validar capacidad (opcional)
-        capacidad = request.form.get("capacidad", "").strip() or None
-        if capacidad:
-            error = validar_solo_letras_numeros(capacidad, 1, 20, "Capacidad", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Validar clave numérica (opcional)
-        clave = request.form.get("clave", "").strip() or None
-        if clave:
-            error = validar_numero(clave, 1, 10, "Clave numérica")
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Validar patrón (opcional)
-        patron = request.form.get("patron", "").strip() or None
-        if patron:
-            error = validar_numero(patron, 1, 20, "Patrón")
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Validar observaciones (opcional)
-        observaciones = request.form.get("observaciones", "").strip() or None
-        if observaciones:
-            error = validar_sin_caracteres_especiales(observaciones, 1, 500, "Observaciones", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Obtener tests del JSON y validarlos
-        tests_data = request.form.get("tests", "[]")
-        try:
-            tests = json.loads(tests_data) if tests_data else []
-        except:
-            tests = []
-        
-        if tests:
-            resultados_validos = ["Funciona", "No funciona", "No aplica", "Pendiente", "Sin revisar"]
-            for i, test in enumerate(tests):
-                nombre = test.get("nombre", "").strip()
-                if not nombre:
-                    return jsonify({"success": False, "error": f"El test #{i+1} debe tener un nombre."}), 400
-                
-                resultado = test.get("resultado", "").strip()
-                if not resultado:
-                    return jsonify({"success": False, "error": f"El test '{nombre}' debe tener un resultado."}), 400
-                
-                if resultado not in resultados_validos:
-                    return jsonify({"success": False, "error": f"El resultado '{resultado}' no es válido para el test '{nombre}'."}), 400
-        
-        try:
-            valor_pagado_float = float(valor_pagado)
-        except ValueError:
-            return jsonify({"success": False, "error": "El valor pagado debe ser un número válido"}), 400
-        
-        # Obtener usuario
-        empleado_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
-        empleado_id = str(empleado_id) if empleado_id else None
-        
+        empleado_id = _obtener_empleado_id()
         if not empleado_id:
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-        
-        # Guardar fotos
-        fotos = []
-        archivos = request.files.getlist("fotos")
-        for archivo in archivos:
-            if archivo and getattr(archivo, "filename", ""):
-                nombre_seguro = secure_filename(archivo.filename)
-                _, extension = os.path.splitext(nombre_seguro)
-                extension = extension.lower()[:10] or ".jpg"
-                nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
-                
-                carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
-                os.makedirs(carpeta_destino, exist_ok=True)
-                
-                ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-                archivo.save(ruta_fisica)
-                fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
-        
-        # Crear instancia del modelo
+
+        usuario_id = _obtener_usuario_id()
+        tests_data = request.form.get("tests", "[]")
+        fotos = _guardar_fotos()
+
         modelo = TradeInEmpleados(
-            cliente_id=cliente_id,
-            id_producto=id_producto,
-            valor_pagado=valor_pagado_float,
+            cliente_id=request.form.get("cliente_id", "").strip(),
+            id_producto=request.form.get("id_producto", "").strip(),
+            valor_pagado=request.form.get("valor_pagado", "").strip(),
             empleado_id=empleado_id,
-            id_equipo=id_equipo,
+            id_equipo=request.form.get("id_equipo", "").strip(),
             usuario_id=usuario_id,
-            color=color,
-            capacidad=capacidad,
-            clave=clave,
-            patron=patron,
-            observaciones=observaciones
+            color=request.form.get("color", "").strip() or None,
+            capacidad=request.form.get("capacidad", "").strip() or None,
+            clave=request.form.get("clave", "").strip() or None,
+            patron=request.form.get("patron", "").strip() or None
         )
-        
-        resultado = modelo.registrar_trade_in(fotos=fotos, tests=tests)
-        
+
+        resultado = modelo.registrar_trade_in(fotos=fotos, tests=tests_data)
+
         if resultado["success"]:
             return jsonify(resultado), 201
-        else:
-            return jsonify({"success": False, "error": resultado.get("error", "Error al registrar")}), 500
-            
+
+        error_msg = resultado.get("error", "Error al registrar")
+        status = 500 if error_msg.startswith("Error") else 400
+        return jsonify({"success": False, "error": error_msg}), status
+
     except Exception as e:
         print(f"Error en api_registrar_trade_in: {e}")
         traceback.print_exc()
@@ -196,24 +103,12 @@ def api_registrar_trade_in():
 @tiene_permiso('Trade-in', 'consultar')
 def api_verificar_equipo(id_equipo):
     try:
-        error = validar_numero(id_equipo, 8, 20, "IMEI")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
         modelo = TradeInEmpleados(id_equipo=id_equipo)
         equipo = modelo.verificar_equipo_existente()
-        
+
         if equipo:
-            return jsonify({
-                "success": True,
-                "exists": True,
-                "equipo": equipo
-            })
-        else:
-            return jsonify({
-                "success": True,
-                "exists": False
-            })
+            return jsonify({"success": True, "exists": True, "equipo": equipo})
+        return jsonify({"success": True, "exists": False})
     except Exception as e:
         print(f"Error en api_verificar_equipo: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -226,153 +121,37 @@ def api_verificar_equipo(id_equipo):
 @tiene_permiso('Trade-in', 'modificar')
 def api_actualizar_trade_in(tradein_id):
     try:
-        # Validar ID de trade-in
-        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar cliente
-        cliente_id = request.form.get("cliente_id", "").strip()
-        if not cliente_id:
-            return jsonify({"success": False, "error": "El campo Cliente es obligatorio."}), 400
-        
-        error = validar_numero(cliente_id, 6, 9, "Cliente")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar producto
-        id_producto = request.form.get("id_producto", "").strip()
-        if not id_producto:
-            return jsonify({"success": False, "error": "El campo Producto/Modelo es obligatorio."}), 400
-        
-        error = validar_texto_numero(id_producto, 1, 10, "Producto")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar ID del equipo
-        id_equipo = request.form.get("id_equipo", "").strip()
-        if not id_equipo:
-            return jsonify({"success": False, "error": "El campo IMEI/ID del equipo es obligatorio."}), 400
-        
-        error = validar_numero(id_equipo, 8, 20, "IMEI")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar valor pagado
-        valor_pagado = request.form.get("valor_pagado", "").strip()
-        if not valor_pagado:
-            return jsonify({"success": False, "error": "El campo Valor pagado es obligatorio."}), 400
-        
-        error = validar_decimal(valor_pagado, "Valor pagado", max_decimales=2, min_valor=0)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar campos opcionales
-        color = request.form.get("color", "").strip() or None
-        if color:
-            error = validar_solo_letras(color, 1, 30, "Color", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        capacidad = request.form.get("capacidad", "").strip() or None
-        if capacidad:
-            error = validar_solo_letras_numeros(capacidad, 1, 20, "Capacidad", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        clave = request.form.get("clave", "").strip() or None
-        if clave:
-            error = validar_numero(clave, 1, 10, "Clave numérica")
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        patron = request.form.get("patron", "").strip() or None
-        if patron:
-            error = validar_numero(patron, 1, 20, "Patrón")
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        observaciones = request.form.get("observaciones", "").strip() or None
-        if observaciones:
-            error = validar_sin_caracteres_especiales(observaciones, 1, 500, "Observaciones", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Obtener tests del JSON y validarlos
-        tests_data = request.form.get("tests", "[]")
-        try:
-            tests = json.loads(tests_data) if tests_data else []
-        except:
-            tests = []
-        
-        if tests:
-            resultados_validos = ["Funciona", "No funciona", "No aplica", "Pendiente", "Sin revisar"]
-            for i, test in enumerate(tests):
-                nombre = test.get("nombre", "").strip()
-                if not nombre:
-                    return jsonify({"success": False, "error": f"El test #{i+1} debe tener un nombre."}), 400
-                
-                resultado = test.get("resultado", "").strip()
-                if not resultado:
-                    return jsonify({"success": False, "error": f"El test '{nombre}' debe tener un resultado."}), 400
-                
-                if resultado not in resultados_validos:
-                    return jsonify({"success": False, "error": f"El resultado '{resultado}' no es válido para el test '{nombre}'."}), 400
-        
-        try:
-            valor_pagado_float = float(valor_pagado)
-        except ValueError:
-            return jsonify({"success": False, "error": "El valor pagado debe ser un número válido"}), 400
-        
-        # Obtener usuario
-        empleado_id = g.user.get("cedula") if isinstance(g.user, dict) else getattr(g.user, "cedula", None)
-        empleado_id = str(empleado_id) if empleado_id else None
-        
+        empleado_id = _obtener_empleado_id()
         if not empleado_id:
             return jsonify({"success": False, "error": "Empleado no identificado"}), 400
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-        
-        # Guardar fotos
-        fotos = []
-        archivos = request.files.getlist("fotos")
-        for archivo in archivos:
-            if archivo and getattr(archivo, "filename", ""):
-                nombre_seguro = secure_filename(archivo.filename)
-                _, extension = os.path.splitext(nombre_seguro)
-                extension = extension.lower()[:10] or ".jpg"
-                nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
-                
-                carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
-                os.makedirs(carpeta_destino, exist_ok=True)
-                
-                ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-                archivo.save(ruta_fisica)
-                fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
-        
-        # Crear instancia del modelo
+
+        usuario_id = _obtener_usuario_id()
+        tests_data = request.form.get("tests", "[]")
+        fotos = _guardar_fotos()
+
         modelo = TradeInEmpleados(
             trade_in_id=tradein_id,
-            cliente_id=cliente_id,
-            id_producto=id_producto,
-            valor_pagado=valor_pagado_float,
+            cliente_id=request.form.get("cliente_id", "").strip(),
+            id_producto=request.form.get("id_producto", "").strip(),
+            valor_pagado=request.form.get("valor_pagado", "").strip(),
             empleado_id=empleado_id,
-            id_equipo=id_equipo,
+            id_equipo=request.form.get("id_equipo", "").strip(),
             usuario_id=usuario_id,
-            color=color,
-            capacidad=capacidad,
-            clave=clave,
-            patron=patron,
-            observaciones=observaciones
+            color=request.form.get("color", "").strip() or None,
+            capacidad=request.form.get("capacidad", "").strip() or None,
+            clave=request.form.get("clave", "").strip() or None,
+            patron=request.form.get("patron", "").strip() or None
         )
-        
-        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests)
-        
+
+        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests_data)
+
         if resultado["success"]:
             return jsonify(resultado), 200
-        else:
-            return jsonify({"success": False, "error": resultado.get("error", "Error al actualizar")}), 500
-            
+
+        error_msg = resultado.get("error", "Error al actualizar")
+        status = 500 if error_msg.startswith("Error") else 400
+        return jsonify({"success": False, "error": error_msg}), status
+
     except Exception as e:
         print(f"Error en api_actualizar_trade_in: {e}")
         traceback.print_exc()
@@ -399,10 +178,6 @@ def api_listar_trade_ins():
 @tiene_permiso('Trade-in', 'consultar')
 def api_trade_ins_por_cliente(cliente_id):
     try:
-        error = validar_numero(cliente_id, 6, 9, "Cliente")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
         modelo = TradeInEmpleados(cliente_id=cliente_id)
         resultados = modelo.obtener_trade_ins_por_cliente()
         return jsonify({"success": True, "tradeins": resultados})
@@ -418,15 +193,11 @@ def api_trade_ins_por_cliente(cliente_id):
 @tiene_permiso('Trade-in', 'consultar')
 def api_tradein_detalle(tradein_id):
     try:
-        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
         modelo = TradeInEmpleados(trade_in_id=tradein_id)
         detalle = modelo.obtener_detalle_trade_in()
         tests = modelo.obtener_tests_trade_in()
         fotos = modelo.obtener_fotos_trade_in()
-        
+
         return jsonify({
             "success": True,
             "detalle": detalle,
@@ -474,14 +245,9 @@ def api_productos_disponibles():
 @tiene_permiso('Trade-in', 'consultar')
 def api_buscar_clientes():
     try:
-        q = request.args.get("q", "").strip()
-        if q:
-            error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
+        q = request.args.get("q", "").strip() or None
         modelo = TradeInEmpleados()
-        clientes = modelo.obtener_clientes(q if q else None)
+        clientes = modelo.obtener_clientes(q)
         return jsonify({"success": True, "clientes": clientes})
     except Exception as e:
         print(f"Error en api_buscar_clientes: {e}")
@@ -526,19 +292,17 @@ def api_catalogo_tests():
 @tiene_permiso('Trade-in', 'eliminar')
 def api_eliminar_trade_in(tradein_id):
     try:
-        error = validar_texto_numero(tradein_id, 1, 10, "ID de Trade-in")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-        
+        usuario_id = _obtener_usuario_id()
+
         modelo = TradeInEmpleados(trade_in_id=tradein_id, usuario_id=usuario_id)
         resultado = modelo.eliminar_trade_in()
-        
+
         if resultado["success"]:
             return jsonify(resultado), 200
-        else:
-            return jsonify({"success": False, "error": resultado.get("error", "Error al eliminar")}), 400
+
+        error_msg = resultado.get("error", "Error al eliminar")
+        status = 500 if error_msg.startswith("Error") else 400
+        return jsonify({"success": False, "error": error_msg}), status
     except Exception as e:
         print(f"Error en api_eliminar_trade_in: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

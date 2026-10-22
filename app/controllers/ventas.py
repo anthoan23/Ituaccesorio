@@ -4,11 +4,7 @@ from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
 from app.models.venta import VentaModel
 from app.models.clientes import Clientes
-from app.utils.validators import (
-    validar_texto,
-    validar_numero,
-    validar_sin_caracteres_especiales
-)
+from app.utils.validators import validar_sin_caracteres_especiales
 import requests
 import traceback
 import os
@@ -17,6 +13,19 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 
 ventas_blueprint = Blueprint("ventas", __name__)
+
+
+# ==================== HELPERS ====================
+
+def _obtener_cliente_id():
+    """Obtiene el ID de cliente desde g.user (dict o SimpleNamespace)."""
+    if isinstance(g.user, dict):
+        return g.user.get("cedula") or g.user.get("cedula_personal")
+    return getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
+
+
+def _obtener_usuario_id():
+    return g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
 
 
 # ==================== VISTAS CLIENTE ====================
@@ -38,23 +47,21 @@ def api_listar_productos_catalogo():
     try:
         clase_id = request.args.get("clase_id", type=str)
         marca_id = request.args.get("marca_id", type=str)
-        q = request.args.get("q", "")
-        
-        # Validar filtros de búsqueda
-        if q:
-            error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
+        q = request.args.get("q", "").strip()
+
+        # El modelo valida el filtro de búsqueda (CatalogoModel._validar_filtros)
         modelo_catalogo = CatalogoModel(
             clase_id=clase_id,
             marca_id=marca_id,
             q=q if q else None
         )
-        
-        productos = modelo_catalogo.listar_productos_catalogo()
-        
-        # Obtener tasas de dólar
+
+        resultado = modelo_catalogo.listar_productos_catalogo()
+        if isinstance(resultado, dict) and not resultado.get("success", True):
+            return jsonify({"success": False, "error": resultado.get("error", "Error en búsqueda")}), 400
+
+        productos = resultado if isinstance(resultado, list) else resultado.get("productos", [])
+
         try:
             oficial_resp = requests.get("https://ve.dolarapi.com/v1/dolares/oficial", timeout=5)
             paralelo_resp = requests.get("https://ve.dolarapi.com/v1/dolares/paralelo", timeout=5)
@@ -63,26 +70,21 @@ def api_listar_productos_catalogo():
         except:
             tasa_oficial = 520.91
             tasa_paralelo = 710.12
-        
-        # Calcular precios en bolívares
+
         for p in productos:
             precio_usd = float(p.get("precio_usd", 0))
             p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
             p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
-        
-        modelo_mas_vendidos = CatalogoModel()
-        mas_vendidos = modelo_mas_vendidos.productos_mas_vendidos()
+
+        mas_vendidos = CatalogoModel().productos_mas_vendidos()
         for p in mas_vendidos:
             precio_usd = float(p.get("precio_usd", 0))
             p["precio_bs_oficial"] = round(precio_usd * tasa_oficial, 2)
             p["precio_bs_paralelo"] = round(precio_usd * tasa_paralelo, 2)
-        
-        modelo_clases = CatalogoModel()
-        clases = modelo_clases.listar_clases()
-        
-        modelo_marcas = CatalogoModel()
-        marcas = modelo_marcas.listar_marcas()
-        
+
+        clases = CatalogoModel().listar_clases()
+        marcas = CatalogoModel().listar_marcas()
+
         return jsonify({
             "success": True,
             "productos": productos,
@@ -104,33 +106,26 @@ def api_listar_productos_catalogo():
 def api_obtener_carrito():
     """Obtiene el carrito del cliente actual"""
     try:
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             cliente_id = session.get('cliente_id') or request.headers.get('X-Client-ID')
-        
+
         if not cliente_id:
             return jsonify({"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}), 200
-        
+
         carrito_model = CarritoModel(cliente_id=cliente_id)
         resultado = carrito_model.obtener_carrito()
-        
-        # Si resultado es un diccionario, devolverlo directamente
+
         if isinstance(resultado, dict):
             return jsonify(resultado), 200
-        else:
-            return jsonify({
-                "items": [],
-                "total": 0,
-                "tasas": {"oficial": 0, "paralelo": 0}
-            }), 200
-            
+        return jsonify({
+            "items": [],
+            "total": 0,
+            "tasas": {"oficial": 0, "paralelo": 0}
+        }), 200
+
     except Exception as e:
         print(f"Error en api_obtener_carrito: {e}")
-        import traceback
         traceback.print_exc()
         return jsonify({
             "items": [],
@@ -147,51 +142,40 @@ def api_agregar_carrito():
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-        
+
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
-        
+
         cliente_id_str = str(cliente_id)
         modelo_clientes = Clientes(ID_cliente=cliente_id_str)
-        
         try:
             if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
                 return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
         except:
             return jsonify({"success": False, "error": "Debes ser un cliente registrado para agregar productos al carrito"}), 400
-        
+
         datos = request.get_json(silent=True) or {}
-        
-        # Validar producto
         producto_id = datos.get("producto_id") or datos.get("inventario_id")
-        if not producto_id:
-            return jsonify({"success": False, "error": "El campo Producto es obligatorio."}), 400
-        
-        # Validar cantidad
         cantidad = datos.get("cantidad", 1)
-        error = validar_numero(cantidad, 1, 10, "Cantidad")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-        
+        usuario_id = _obtener_usuario_id()
+
+        # Validaciones (producto, cantidad, stock) en CarritoModel
         modelo_carrito = CarritoModel(
             cliente_id=cliente_id_str,
-            inventario_id=str(producto_id),
+            inventario_id=producto_id,
             cantidad=cantidad,
             usuario_id=usuario_id
         )
-        modelo_carrito.agregar_al_carrito()
-        
-        return jsonify({"success": True, "message": "Producto agregado al carrito"})
-    except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+        resultado = modelo_carrito.agregar_al_carrito()
+
+        if not resultado.get("success"):
+            return jsonify({"success": False, "error": resultado.get("error", "Error al agregar al carrito")}), 400
+
+        return jsonify({
+            "success": True,
+            "message": resultado.get("message", "Producto agregado al carrito")
+        })
     except Exception as e:
         print(f"Error en api_agregar_carrito: {e}")
         traceback.print_exc()
@@ -205,16 +189,11 @@ def api_eliminar_carrito(producto_id):
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-        
+
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             return jsonify({"success": True})
-        
+
         modelo_carrito = CarritoModel(cliente_id=str(cliente_id), inventario_id=producto_id)
         modelo_carrito.eliminar_item()
         return jsonify({"success": True})
@@ -230,38 +209,27 @@ def api_actualizar_cantidad():
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-        
+
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
-        
+
         datos = request.get_json(silent=True) or {}
-        
-        # Validar producto
         producto_id = datos.get("producto_id") or datos.get("inventario_id")
-        if not producto_id:
-            return jsonify({"success": False, "error": "El campo Producto es obligatorio."}), 400
-        
-        # Validar cantidad
         cantidad = datos.get("cantidad", 1)
-        error = validar_numero(cantidad, 1, 10, "Cantidad")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
+
+        # Validaciones (producto, cantidad, stock) en CarritoModel
         modelo_carrito = CarritoModel(
             cliente_id=str(cliente_id),
-            inventario_id=str(producto_id),
+            inventario_id=producto_id,
             cantidad=cantidad
         )
-        modelo_carrito.actualizar_cantidad()
+        resultado = modelo_carrito.actualizar_cantidad()
+
+        if not resultado.get("success"):
+            return jsonify({"success": False, "error": resultado.get("error", "Error al actualizar cantidad")}), 400
+
         return jsonify({"success": True})
-    except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         print(f"Error en api_actualizar_cantidad: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -274,16 +242,11 @@ def api_vaciar_carrito():
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-        
+
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             return jsonify({"success": True})
-        
+
         modelo_carrito = CarritoModel(cliente_id=str(cliente_id))
         modelo_carrito.vaciar_carrito()
         return jsonify({"success": True})
@@ -300,25 +263,19 @@ def pagina_pagos():
     """Página de selección de método de pago"""
     if not hasattr(g, 'user') or not g.user:
         return redirect("/login")
-    
-    # Obtener ID del cliente
-    if isinstance(g.user, dict):
-        cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-    else:
-        cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-    
+
+    cliente_id = _obtener_cliente_id()
     if not cliente_id:
         return redirect("/catalogo")
-    
+
     cliente_id_str = str(cliente_id)
     modelo_clientes = Clientes(ID_cliente=cliente_id_str)
-    
     try:
         if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
             return redirect("/catalogo")
     except:  # noqa: E722
         return redirect("/catalogo")
-    
+
     return render_template(
         "ventas/pagos.html",
         show_navbar=True,
@@ -348,68 +305,41 @@ def api_procesar_pago():
     try:
         if not hasattr(g, 'user') or not g.user:
             return jsonify({"success": False, "error": "No autorizado"}), 401
-        
-        # Obtener ID del cliente
-        if isinstance(g.user, dict):
-            cliente_id = g.user.get("cedula") or g.user.get("cedula_personal")
-        else:
-            cliente_id = getattr(g.user, "cedula", None) or getattr(g.user, "cedula_personal", None)
-        
+
+        cliente_id = _obtener_cliente_id()
         if not cliente_id:
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
-        
+
         cliente_id_str = str(cliente_id)
         modelo_clientes = Clientes(ID_cliente=cliente_id_str)
-        
         try:
             if not modelo_clientes.verificar_cliente_existe(int(cliente_id_str)):
                 return jsonify({"success": False, "error": "Cliente no identificado"}), 400
         except:  # noqa: E722
             return jsonify({"success": False, "error": "Cliente no identificado"}), 400
-        
-        # Validar método de pago
+
+        # Datos del form (validación de método/referencia/monto en VentaModel)
         metodo_pago = request.form.get("metodo_pago")
-        if not metodo_pago:
-            return jsonify({"success": False, "error": "El método de pago es obligatorio."}), 400
-        
-        metodos_validos = ["pago_movil", "zelle", "binance", "efectivo_bs", "efectivo_usd"]
-        if metodo_pago not in metodos_validos:
-            return jsonify({"success": False, "error": f"Método de pago '{metodo_pago}' no válido."}), 400
-        
-        # Validar referencia (opcional)
         referencia = request.form.get("referencia", "").strip()
-        if referencia:
-            error = validar_sin_caracteres_especiales(referencia, 1, 100, "Referencia", permitir_espacios=True)
-            if error:
-                return jsonify({"success": False, "error": error}), 400
-        
-        # Validar que se haya subido una captura para métodos que lo requieren
+        fecha_pago = request.form.get("fecha_pago")
+        monto = request.form.get("monto", None)
+
+        # Validación de captura (requisito de UI/negocio, no de formato)
         capture_file = request.files.get("capture")
         if metodo_pago not in ("efectivo_bs", "efectivo_usd"):
             if not capture_file or not getattr(capture_file, "filename", ""):
                 return jsonify({"success": False, "error": "Debe subir una captura del comprobante de pago."}), 400
-        
-        fecha_pago = request.form.get("fecha_pago")
-        monto = request.form.get("monto", None)
-        
-        if monto:
-            try:
-                monto_float = float(monto)
-                if monto_float < 0:
-                    return jsonify({"success": False, "error": "El monto no puede ser negativo."}), 400
-            except (ValueError, TypeError):
-                return jsonify({"success": False, "error": "El monto debe ser un número válido."}), 400
-        
-        usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-        
+
+        usuario_id = _obtener_usuario_id()
+
         # Obtener carrito
         modelo_carrito = CarritoModel(cliente_id=cliente_id_str)
         resultado = modelo_carrito.obtener_carrito()
         carrito = resultado.get("items", []) if isinstance(resultado, dict) else []
-        
+
         if not carrito:
             return jsonify({"success": False, "error": "Carrito vacío"}), 400
-        
+
         # Guardar imagen de captura si existe
         capture_path = None
         if capture_file and metodo_pago not in ("efectivo_bs", "efectivo_usd"):
@@ -418,55 +348,60 @@ def api_procesar_pago():
                 _, extension = os.path.splitext(nombre_seguro)
                 extension = extension.lower()
                 nombre_final = f"capture_{uuid.uuid4().hex}{extension}"
-                
+
                 static_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
                 carpeta_destino = os.path.join(static_folder, "img", "capturas")
                 os.makedirs(carpeta_destino, exist_ok=True)
-                
+
                 ruta_fisica = os.path.join(carpeta_destino, nombre_final)
                 capture_file.save(ruta_fisica)
                 capture_path = f"/static/img/capturas/{nombre_final}"
             except Exception as e:
                 print(f"Error guardando archivo: {e}")
-        
-        estado_pago = "pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "Pagado"
-        
-        # Crear la venta
-        modelo_venta = VentaModel(
-            cliente_id=cliente_id_str,
-            items=carrito,
-            metodo_pago=metodo_pago,
-            estado_pago=estado_pago,
-            usuario_id=usuario_id
-        )
-        factura_id = modelo_venta.crear_venta_desde_carrito()
-        
-        # Guardar registro de pago
+
+        estado_pago = "pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "aprobado"
+
+        # Crear la venta (VentaModel valida cliente/items/método)
+        try:
+            modelo_venta = VentaModel(
+                cliente_id=cliente_id_str,
+                items=carrito,
+                metodo_pago=metodo_pago,
+                estado_pago=estado_pago,
+                usuario_id=usuario_id
+            )
+            factura_id = modelo_venta.crear_venta_desde_carrito()
+        except ValueError as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+        # Guardar registro de pago (VentaModel valida método/referencia/monto)
         datos_pago = {
             "fecha_pago": fecha_pago or datetime.now().isoformat(),
             "referencia": referencia,
             "monto": monto,
             "capture": capture_path
         }
-        
-        modelo_pago = VentaModel(
-            factura_id=factura_id,
-            metodo_pago=metodo_pago,
-            estado_pago=estado_pago,
-            datos_pago=datos_pago,
-            usuario_id=usuario_id
-        )
-        modelo_pago.guardar_registro_pago()
-        
-        # Vaciar el carrito
+
+        try:
+            modelo_pago = VentaModel(
+                factura_id=factura_id,
+                metodo_pago=metodo_pago,
+                estado_pago=estado_pago,
+                datos_pago=datos_pago,
+                usuario_id=usuario_id
+            )
+            modelo_pago.guardar_registro_pago()
+        except ValueError as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
         modelo_carrito.vaciar_carrito()
-        
+
         return jsonify({
             "success": True,
             "factura_id": factura_id,
             "mensaje": "Venta registrada. Tu pago está siendo verificado."
         })
-        
+
     except Exception as e:
         print(f"ERROR EN PROCESAR PAGO: {e}")
         traceback.print_exc()
@@ -495,10 +430,10 @@ def api_ventas_hoy():
     try:
         modelo_venta = VentaModel()
         ventas_hoy = modelo_venta.obtener_ventas_hoy()
-        
+
         total_formateado = f"{ventas_hoy['total_ventas']:,.2f}"
         moneda = ventas_hoy['moneda']
-        
+
         return jsonify({
             "success": True,
             "total_ventas": ventas_hoy['total_ventas'],

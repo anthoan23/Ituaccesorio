@@ -37,6 +37,27 @@ def validar_texto_numero(valor, min_len, max_len, nombre_campo):
         
     return None
 
+def validar_codigo_factura(valor, min_len=1, max_len=20, nombre_campo="Factura"):
+    """
+    Valida un código de factura con formato tipo FAC-YYYYMM-XXXXXX.
+    Permite letras, números y guiones.
+    """
+    if not valor or not str(valor).strip():
+        return f"El campo {nombre_campo} no puede estar vacío."
+
+    valor_str = str(valor).strip()
+
+    if len(valor_str) < min_len:
+        return f"El campo {nombre_campo} debe tener al menos {min_len} caracteres."
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
+
+    if not re.match(r'^[A-Za-z0-9\-]+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener letras, números y guiones."
+
+    return None
+
 def validar_email(valor):
     valor_str = str(valor).strip() if valor is not None else ""
     if not valor_str:

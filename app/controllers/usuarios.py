@@ -10,19 +10,31 @@ from app.models.modulos import Modulo
 from app.models.permisos import Permiso
 from app.models.roles import Rol
 from app.models.clientes import Clientes
-from app.utils.validators import (
-    validar_texto,
-    validar_numero,
-    validar_solo_letras,
-    validar_solo_letras_numeros,
-    validar_contraseña,
-    validar_cedula_venezolana,
-    validar_sin_espacios,
-    validar_sin_caracteres_especiales,
-    validar_campo_comun
-)
+from app.models.bitacora import Bitacora
 
 usuarios_blueprint = Blueprint("usuarios", __name__)
+
+
+def _obtener_usuario_actual_id():
+    return g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
+
+
+def _guardar_foto_perfil():
+    """Guarda la foto de perfil y devuelve la ruta relativa o None."""
+    archivo = request.files.get("foto_perfil")
+    if not archivo or not getattr(archivo, "filename", ""):
+        return None
+    nombre_seguro = secure_filename(archivo.filename)
+    _, extension = os.path.splitext(nombre_seguro)
+    extension = extension.lower()[:10]
+    nombre_final = f"{uuid.uuid4().hex}{extension}"
+
+    carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
+    os.makedirs(carpeta_destino, exist_ok=True)
+
+    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
+    archivo.save(ruta_fisica)
+    return f"/static/img/perfil/{nombre_final}"
 
 
 # ==================== PÁGINAS ====================
@@ -66,15 +78,14 @@ def api_listar_empleados():
 def api_listar_clientes():
     cliente_model = Clientes()
     clientes_raw = cliente_model.listar_clientes()
-    
+
     if not clientes_raw or isinstance(clientes_raw, str):
         return jsonify({"success": True, "clientes": []})
-    
+
     clientes_transformados = []
     for cliente in clientes_raw:
         if not isinstance(cliente, dict):
             continue
-            
         clientes_transformados.append({
             "cedula": cliente.get("id", ""),
             "nombre_completo": cliente.get("nombre", ""),
@@ -85,7 +96,7 @@ def api_listar_clientes():
             "razon_social": cliente.get("razon_social", ""),
             "rif": cliente.get("rif", "")
         })
-    
+
     return jsonify({"success": True, "clientes": clientes_transformados})
 
 
@@ -94,75 +105,26 @@ def api_listar_clientes():
 @solo_roles(['admin'])
 def api_crear_usuario():
     data = request.get_json(silent=True) or request.form
-    
-    # Validar nombre
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar cédula
+
     cedula = data.get("cedula_personal") or data.get("cedula", "")
-    error = validar_cedula_venezolana(cedula, "Cédula")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar contraseña
-    password = data.get("password", "").strip()
-    error = validar_contraseña(password, 6, 50, "Contraseña")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar rol
-    rol_id = data.get("rol_id", "").strip()
-    if not rol_id:
-        return jsonify({"success": False, "error": "El campo Rol es obligatorio."}), 400
-    
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Verificar que el rol exista
-    from app.models.roles import Rol
-    rol_model = Rol(id=rol_id)
-    if not rol_model.verificar_rol_por_id():
-        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 400
-    
-    # Guardar foto de perfil
-    foto_perfil = None
-    archivo = request.files.get("foto_perfil")
-    if archivo and getattr(archivo, "filename", ""):
-        nombre_seguro = secure_filename(archivo.filename)
-        _, extension = os.path.splitext(nombre_seguro)
-        extension = extension.lower()[:10]
-        nombre_final = f"{uuid.uuid4().hex}{extension}"
-        
-        carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
-        os.makedirs(carpeta_destino, exist_ok=True)
-        
-        ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-        archivo.save(ruta_fisica)
-        foto_perfil = f"/static/img/perfil/{nombre_final}"
-    elif data.get("foto_perfil_actual"):
-        foto_perfil = data.get("foto_perfil_actual")
-    
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-    
+    foto_perfil = _guardar_foto_perfil() or data.get("foto_perfil_actual")
+
     usuario_model = Usuarios(
-        nombre=nombre,
+        nombre=data.get("nombre", ""),
         cedula=cedula,
-        password=password,
-        rol_id=rol_id,
-        foto_perfil=foto_perfil,
-        usuario_id=usuario_actual_id
+        password=data.get("password", ""),
+        rol_id=data.get("rol_id", ""),
+        foto_perfil=foto_perfil or "",
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
+
     mensaje = usuario_model.agregar_usuario()
-    
+
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje, "id": usuario_model.id}), 201
-    
-    return jsonify({"success": False, "error": mensaje}), 400
+
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["PUT"])
@@ -170,87 +132,34 @@ def api_crear_usuario():
 @solo_roles(['admin'])
 def api_actualizar_usuario(usuario_id):
     data = request.get_json(silent=True) or request.form
-    
-   
-    # Validar nombre
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar cédula
-    cedula = data.get("cedula_personal") or data.get("cedula", "")
-    error = validar_cedula_venezolana(cedula, "Cédula")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar contraseña (opcional)
-    password = data.get("password", "").strip()
-    if password:
-        error = validar_contraseña(password, 6, 50, "Contraseña")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-    
-    # Validar rol
-    rol_id = data.get("rol_id", "").strip()
-    if not rol_id:
-        return jsonify({"success": False, "error": "El campo Rol es obligatorio."}), 400
-    
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Verificar que el rol exista
-    from app.models.roles import Rol
-    rol_model = Rol(id=rol_id)
-    if not rol_model.verificar_rol_por_id():
-        return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 400
-    
-    # Guardar foto de perfil
-    foto_perfil = None
-    archivo = request.files.get("foto_perfil")
-    if archivo and getattr(archivo, "filename", ""):
-        nombre_seguro = secure_filename(archivo.filename)
-        _, extension = os.path.splitext(nombre_seguro)
-        extension = extension.lower()[:10]
-        nombre_final = f"{uuid.uuid4().hex}{extension}"
-        
-        carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
-        os.makedirs(carpeta_destino, exist_ok=True)
-        
-        ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-        archivo.save(ruta_fisica)
-        foto_perfil = f"/static/img/perfil/{nombre_final}"
-    else:
-        foto_perfil = data.get("foto_perfil_actual")
 
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    cedula = data.get("cedula_personal") or data.get("cedula", "")
+    foto_perfil = _guardar_foto_perfil() or data.get("foto_perfil_actual")
 
     usuario_model = Usuarios(
         id=usuario_id,
-        nombre=nombre,
+        nombre=data.get("nombre", ""),
         cedula=cedula,
-        password=password,
-        rol_id=rol_id,
-        foto_perfil=foto_perfil,
-        usuario_id=usuario_actual_id
+        password=data.get("password", ""),
+        rol_id=data.get("rol_id", ""),
+        foto_perfil=foto_perfil or "",
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
+
     mensaje = usuario_model.actualizar_usuario()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/usuarios/<usuario_id>", methods=["DELETE"])
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_usuario(usuario_id):
-  
-    
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    usuario_actual_id = _obtener_usuario_actual_id()
 
     if usuario_actual_id == usuario_id:
         return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
@@ -261,9 +170,10 @@ def api_eliminar_usuario(usuario_id):
     if not usuario_objetivo:
         return jsonify({"success": False, "error": "El usuario no existe."}), 404
 
-    rol_objetivo = usuario_objetivo.get("rol_nombre", "").lower()
-    usuario_actual_rol = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "").lower()
-    
+    rol_objetivo = (usuario_objetivo.get("rol_nombre") or "").lower()
+    usuario_actual_rol = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
+    usuario_actual_rol = (usuario_actual_rol or "").lower()
+
     if rol_objetivo == "admin" and usuario_actual_rol != "admin":
         return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
 
@@ -273,7 +183,8 @@ def api_eliminar_usuario(usuario_id):
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 # ==================== PERFIL PROPIO ====================
@@ -281,8 +192,8 @@ def api_eliminar_usuario(usuario_id):
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["GET"])
 @jwt_required
 def api_obtener_mi_perfil():
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-    
+    usuario_id = _obtener_usuario_actual_id()
+
     if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
@@ -298,44 +209,15 @@ def api_obtener_mi_perfil():
 @usuarios_blueprint.route("/api/usuarios/mi-perfil", methods=["PUT"])
 @jwt_required
 def api_actualizar_mi_perfil():
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-    
+    usuario_id = _obtener_usuario_actual_id()
+
     if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario actual."}), 401
 
     data = request.get_json(silent=True) or request.form
-    nombre = data.get("nombre", "").strip()
-    password = data.get("password", "").strip()
-    
-    # Validar nombre
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    # Validar contraseña si se proporciona
-    if password:
-        error = validar_contraseña(password, 6, 50, "Contraseña")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-    
-    if not nombre:
-        return jsonify({"success": False, "error": "El nombre es obligatorio."}), 400
-    
-    # Guardar foto de perfil
-    foto_perfil = None
-    archivo = request.files.get("foto_perfil")
-    if archivo and getattr(archivo, "filename", ""):
-        nombre_seguro = secure_filename(archivo.filename)
-        _, extension = os.path.splitext(nombre_seguro)
-        extension = extension.lower()[:10]
-        nombre_final = f"{uuid.uuid4().hex}{extension}"
-        
-        carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
-        os.makedirs(carpeta_destino, exist_ok=True)
-        
-        ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-        archivo.save(ruta_fisica)
-        foto_perfil = f"/static/img/perfil/{nombre_final}"
+    nombre = data.get("nombre", "")
+    password = data.get("password", "")
+    foto_perfil = _guardar_foto_perfil()
 
     usuario_model = Usuarios(usuario_id=usuario_id)
     usuario_actual_db = usuario_model.obtener_usuario_por_id(usuario_id)
@@ -355,8 +237,7 @@ def api_actualizar_mi_perfil():
         usuario_actualizado = usuario_model.obtener_usuario_por_id(usuario_id)
 
         resp = jsonify({"success": True, "message": mensaje, "usuario": usuario_actualizado})
-        
-        # Actualizar cookie
+
         payload = {
             "id": usuario_actualizado.get("id"),
             "usuario_nombre": usuario_actualizado.get("nombre"),
@@ -368,7 +249,8 @@ def api_actualizar_mi_perfil():
         }
         return set_auth_cookies(resp, payload)
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 # ==================== MÓDULOS ====================
@@ -387,32 +269,19 @@ def api_listar_modulos():
 @solo_roles(['admin'])
 def api_crear_modulo():
     data = request.get_json(silent=True) or {}
-    
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     modulo_model = Modulo(
-        nombre=nombre,
-        descripcion=descripcion,
-        usuario_id=usuario_actual_id
+        nombre=data.get("nombre", ""),
+        descripcion=data.get("descripcion", ""),
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
     mensaje = modulo_model.agregar_modulo()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje, "id": modulo_model.id}), 201
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/modulos/<modulo_id>", methods=["PUT"])
@@ -420,56 +289,34 @@ def api_crear_modulo():
 @solo_roles(['admin'])
 def api_actualizar_modulo(modulo_id):
     data = request.get_json(silent=True) or {}
-    
-    error = validar_numero(modulo_id, 1, 10, "Módulo")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     modulo_model = Modulo(
         id=modulo_id,
-        nombre=nombre,
-        descripcion=descripcion,
-        usuario_id=usuario_actual_id
+        nombre=data.get("nombre", ""),
+        descripcion=data.get("descripcion", ""),
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
     mensaje = modulo_model.actualizar_modulo()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/modulos/<modulo_id>", methods=["DELETE"])
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_modulo(modulo_id):
-    error = validar_numero(modulo_id, 1, 10, "Módulo")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-
-    modulo_model = Modulo(id=modulo_id, usuario_id=usuario_actual_id)
+    modulo_model = Modulo(id=modulo_id, usuario_id=_obtener_usuario_actual_id())
     mensaje = modulo_model.eliminar_modulo()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 # ==================== PERMISOS ====================
@@ -478,10 +325,6 @@ def api_eliminar_modulo(modulo_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_obtener_permisos_por_rol(rol_id):
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
     rol_model = Rol(id=rol_id)
     if not rol_model.verificar_rol_por_id():
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
@@ -500,10 +343,6 @@ def api_obtener_permisos_por_rol(rol_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_actualizar_permisos_rol(rol_id):
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
     data = request.get_json(silent=True) or {}
     permisos = data.get("permisos", [])
 
@@ -516,24 +355,22 @@ def api_actualizar_permisos_rol(rol_id):
     if not rol_existente:
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
 
-    nombre_rol = rol_existente.get("nombre", "").lower()
+    nombre_rol = (rol_existente.get("nombre") or "").lower()
     usuario_actual = getattr(g, 'user', None)
     usuario_rol = ""
     if usuario_actual:
         if isinstance(usuario_actual, dict):
-            usuario_rol = usuario_actual.get("rol_nombre", "").lower()
+            usuario_rol = (usuario_actual.get("rol_nombre") or "").lower()
         else:
-            usuario_rol = getattr(usuario_actual, "rol_nombre", "").lower()
+            usuario_rol = (getattr(usuario_actual, "rol_nombre", "") or "").lower()
 
     if nombre_rol == "admin" and usuario_rol != "admin":
         return jsonify({"success": False, "error": "No tienes permisos para modificar los permisos del rol Admin."}), 403
 
-    # Preparar datos para guardado masivo
     permisos_data = []
     for permiso in permisos:
         modulo_id = permiso.get("modulo_id")
         if modulo_id:
-            # Convertir a booleano
             registrar = permiso.get("registrar", False)
             if isinstance(registrar, str):
                 registrar = registrar.lower() in {"1", "true", "on", "si", "yes"}
@@ -543,7 +380,7 @@ def api_actualizar_permisos_rol(rol_id):
             eliminar = permiso.get("eliminar", False)
             if isinstance(eliminar, str):
                 eliminar = eliminar.lower() in {"1", "true", "on", "si", "yes"}
-            
+
             permisos_data.append({
                 "modulo_id": modulo_id,
                 "registrar": 1 if registrar else 0,
@@ -564,16 +401,12 @@ def api_actualizar_permisos_rol(rol_id):
             "detalles": errores
         }), 500
 
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-    
-    from app.models.bitacora import Bitacora
-    bitacora = Bitacora(
+    Bitacora(
         accion="Actualizar permisos de rol",
         descripcion=f"Se actualizaron {exitosos} permisos para el rol ID: {rol_id} - {rol_existente.get('nombre', 'N/A')}",
-        usuario_id=usuario_actual_id,
+        usuario_id=_obtener_usuario_actual_id(),
         modulo_nombre="Usuarios"
-    )
-    bitacora.registrar()
+    ).registrar()
 
     return jsonify({
         "success": True,
@@ -586,14 +419,6 @@ def api_actualizar_permisos_rol(rol_id):
 @jwt_required
 @solo_roles(['admin'])
 def api_obtener_permiso_especifico(rol_id, modulo_id):
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    error = validar_numero(modulo_id, 1, 10, "Módulo")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
     rol_model = Rol(id=rol_id)
     if not rol_model.verificar_rol_por_id():
         return jsonify({"success": False, "error": f"El rol con ID {rol_id} no existe."}), 404
@@ -605,7 +430,7 @@ def api_obtener_permiso_especifico(rol_id, modulo_id):
 
     permiso_model = Permiso(rol_id=rol_id, modulo_id=modulo_id)
     permisos = permiso_model.listar_permisos_completos_por_rol()
-    
+
     permiso = None
     for p in (permisos or []):
         if p["modulo_id"] == int(modulo_id):
@@ -629,8 +454,8 @@ def api_obtener_permiso_especifico(rol_id, modulo_id):
 @usuarios_blueprint.route("/api/usuarios/mis-permisos", methods=["GET"])
 @jwt_required
 def api_obtener_mis_permisos():
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
-    
+    usuario_id = _obtener_usuario_actual_id()
+
     if not usuario_id or usuario_id == "SYSTEM":
         return jsonify({"success": False, "error": "No se pudo identificar al usuario."}), 401
 
@@ -656,32 +481,19 @@ def api_listar_roles():
 @solo_roles(['admin'])
 def api_crear_rol():
     data = request.get_json(silent=True) or {}
-    
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
     rol_model = Rol(
-        nombre=nombre,
-        descripcion=descripcion,
-        usuario_id=usuario_actual_id
+        nombre=data.get("nombre", ""),
+        descripcion=data.get("descripcion", ""),
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
     mensaje = rol_model.agregar_rol()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje, "id": rol_model.id}), 201
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/roles/<rol_id>", methods=["PUT"])
@@ -689,67 +501,45 @@ def api_crear_rol():
 @solo_roles(['admin'])
 def api_actualizar_rol(rol_id):
     data = request.get_json(silent=True) or {}
-    
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    nombre = data.get("nombre", "").strip()
-    error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
-    descripcion = data.get("descripcion", "").strip()
-    if descripcion:
-        error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
-        if error:
-            return jsonify({"success": False, "error": error}), 400
 
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
-    
-    if rol_data and rol_data.get("nombre", "").lower() == "admin":
-        usuario_actual = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
-        if usuario_actual != "admin":
-            return jsonify({"success": False, "error": "No se puede modificar el rol Admin."}), 403
 
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    if rol_data and (rol_data.get("nombre") or "").lower() == "admin":
+        usuario_actual = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
+        if (usuario_actual or "").lower() != "admin":
+            return jsonify({"success": False, "error": "No se puede modificar el rol Admin."}), 403
 
     rol_model = Rol(
         id=rol_id,
-        nombre=nombre,
-        descripcion=descripcion,
-        usuario_id=usuario_actual_id
+        nombre=data.get("nombre", ""),
+        descripcion=data.get("descripcion", ""),
+        usuario_id=_obtener_usuario_actual_id()
     )
-    
     mensaje = rol_model.actualizar_rol()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
 
 
 @usuarios_blueprint.route("/api/roles/<rol_id>", methods=["DELETE"])
 @jwt_required
 @solo_roles(['admin'])
 def api_eliminar_rol(rol_id):
-    error = validar_numero(rol_id, 1, 10, "Rol")
-    if error:
-        return jsonify({"success": False, "error": error}), 400
-    
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
-    
-    if rol_data and rol_data.get("nombre", "").lower() == "admin":
+
+    if rol_data and (rol_data.get("nombre") or "").lower() == "admin":
         return jsonify({"success": False, "error": "No se puede eliminar el rol Admin."}), 403
 
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-
-    rol_model = Rol(id=rol_id, usuario_id=usuario_actual_id)
+    rol_model = Rol(id=rol_id, usuario_id=_obtener_usuario_actual_id())
     mensaje = rol_model.eliminar_rol()
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
 
-    return jsonify({"success": False, "error": mensaje}), 400
+    status = 500 if mensaje.startswith("Error") else 400
+    return jsonify({"success": False, "error": mensaje}), status
