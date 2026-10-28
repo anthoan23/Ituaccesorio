@@ -2,7 +2,7 @@
 import pytest
 
 from app.models.empleados import Empleados
-from tests.helpers import cierra_recursos, sin_sentencia, ultima_sentencia
+from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 MENSAJE_ERROR_CONEXION = (
     "No se pudo conectar con la base de datos. "

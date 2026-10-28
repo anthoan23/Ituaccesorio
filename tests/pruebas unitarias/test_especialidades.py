@@ -1,12 +1,13 @@
 """Pruebas unitarias de la clase Especialidad (app.models.especialidades).
 
-Los fixtures `conexion_falsa` y `conexion_caída` viven en tests/conftest.py
-y los helpers en tests/helpers.py.
+Los fixtures `conexion_falsa` y `conexion_caída` viven en
+tests/pruebas unitarias/conftest.py y los helpers en
+tests/pruebas unitarias/helpers.py.
 """
 import pytest
 
 from app.models.especialidades import Especialidad
-from tests.helpers import cierra_recursos, sin_sentencia, ultima_sentencia
+from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 MENSAJE_ERROR_CONEXION = (
     "No se pudo conectar con la base de datos. "
