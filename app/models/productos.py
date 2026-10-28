@@ -17,7 +17,6 @@ class Categoria:
         return self.__conexion_bd.conexion1()
 
     def listar_categorias(self):
-        """Lista todas las categorías"""
         db = self._conexion()
         if not db:
             return []
@@ -34,7 +33,6 @@ class Categoria:
             db.close()
 
     def obtener_categoria(self) -> dict | None:
-        """Obtiene una categoría por su ID"""
         if not self.id_categoria:
             return None
         db = self._conexion()
@@ -79,7 +77,6 @@ class ClaseProducto:
             db.close()
 
     def listar_clases(self):
-        """Lista todas las clases"""
         db = self._conexion()
         if not db:
             return []
@@ -137,7 +134,6 @@ class ClaseProducto:
         
         cursor = db.cursor()
         try:
-            # Validación: Verificar si ya existe una clase con el mismo nombre
             cursor.execute(
                 "SELECT 1 FROM Clase_producto WHERE Nombre_Clase = %s LIMIT 1",
                 (self.nombre,)
@@ -153,7 +149,6 @@ class ClaseProducto:
             db.commit()
             self.id_clase = new_id
             
-            # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear clase",
@@ -266,7 +261,6 @@ class MarcaProducto:
         
         cursor = db.cursor()
         try:
-            # Validación: Verificar si ya existe una marca con el mismo nombre
             cursor.execute(
                 "SELECT 1 FROM Marca_producto WHERE Nombre_marca = %s LIMIT 1",
                 (self.nombre,)
@@ -282,7 +276,6 @@ class MarcaProducto:
             db.commit()
             self.id_marca = new_id
             
-            # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear marca",
@@ -381,7 +374,7 @@ class Producto:
         cursor = db.cursor()
         try:
             cursor.execute("SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1", (self.id_producto,))
-            return cursor.fetchone() is not None        
+            return cursor.fetchone() is not None
         finally:
             cursor.close()
             db.close()
@@ -414,13 +407,7 @@ class Producto:
             cursor.close()
             db.close()
 
-    # ==================== MÉTODO CON STORED PROCEDURE ====================
-    
     def verificar_stock_procedure(self) -> dict:
-        """
-        Usa el stored procedure sp_verificar_stock_producto
-        para verificar el stock de un producto
-        """
         if not self.id_producto:
             return {"stock_total": 0, "tiene_stock": False, "detalle": [], "success": False, "error": "ID de producto no especificado"}
         
@@ -431,33 +418,22 @@ class Producto:
         cursor = None
         try:
             cursor = db.cursor(dictionary=True)
-            
-            # Ejecutar el procedure con parámetros de salida
-            # Los parámetros OUT se pasan como valores dummy (0, False)
             cursor.callproc('sp_verificar_stock_producto', (self.id_producto, 0, False))
-            
-            # Obtener los parámetros de salida
-            # MySQL guarda los OUT params como @_nombre_procedure_0, @_nombre_procedure_1, etc.
             cursor.execute("SELECT @_sp_verificar_stock_producto_1 AS stock_total, @_sp_verificar_stock_producto_2 AS tiene_stock")
             out_params = cursor.fetchone()
-            
             stock_total = out_params['stock_total'] if out_params else 0
             tiene_stock = bool(out_params['tiene_stock']) if out_params else False
-            
-            # Obtener el detalle (el SELECT que devuelve)
             detalle = []
             for result in cursor.stored_results():
                 rows = result.fetchall()
                 if rows:
                     detalle = rows
-            
             return {
                 "stock_total": stock_total,
                 "tiene_stock": tiene_stock,
                 "detalle": detalle,
                 "success": True
             }
-            
         except mysql.connector.Error as e:
             print(f"Error en procedure: {e}")
             return {
@@ -473,11 +449,37 @@ class Producto:
             if db:
                 db.close()
 
-    # ==================== FIN MÉTODO CON STORED PROCEDURE ====================
+    def buscar_por_nombre_clase_marca(self, nombre: str, id_clase: str, id_marca: str) -> str | None:
+        if not nombre or not id_clase or not id_marca:
+            return None
+        db = self._conexion()
+        if not db:
+            return None
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT ID_producto FROM Producto
+                WHERE LOWER(TRIM(Nombre_producto)) = LOWER(TRIM(%s))
+                  AND ID_Clase = %s AND ID_marca = %s
+                LIMIT 1
+            """, (nombre, id_clase, id_marca))
+            row = cursor.fetchone()
+            return row['ID_producto'] if row else None
+        except Exception as e:
+            print(f"Error al buscar producto existente: {e}")
+            return None
+        finally:
+            cursor.close()
+            db.close()
 
     def registrar_producto(self) -> str:
         if not self.id_clase or not self.id_marca or not self.nombre:
             raise ValueError("Clase, marca y nombre son obligatorios.")
+
+        if len(self.nombre.strip()) > 50:
+            raise ValueError("El nombre no puede exceder 50 caracteres.")
+        if self.descripcion and len(self.descripcion) > 300:
+            raise ValueError("La descripción no puede exceder 300 caracteres.")
 
         db = self._conexion()
         if not db:
@@ -487,7 +489,6 @@ class Producto:
         try:
             cursor = db.cursor(dictionary=True)
 
-            # Validación: Verificar que la clase exista
             cursor.execute(
                 "SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1",
                 (self.id_clase,)
@@ -495,7 +496,6 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"La clase con ID '{self.id_clase}' no existe.")
 
-            # Validación: Verificar que la marca exista
             cursor.execute(
                 "SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1",
                 (self.id_marca,)
@@ -503,9 +503,8 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"La marca con ID '{self.id_marca}' no existe.")
 
-            # Validación: Verificar si ya existe un producto con el mismo nombre, clase y marca
             cursor.execute("""
-                SELECT 1 FROM Producto 
+                SELECT ID_producto FROM Producto
                 WHERE LOWER(TRIM(Nombre_producto)) = LOWER(TRIM(%s))
                   AND ID_Clase = %s AND ID_marca = %s
                 LIMIT 1
@@ -513,41 +512,38 @@ class Producto:
             if cursor.fetchone():
                 raise ValueError(f"Ya existe un producto con el nombre '{self.nombre}' en esta clase y marca.")
 
-            # Invocar el stored procedure para registrar el producto con validación y generación de ID
-            cursor.callproc(
-                'sp_registrar_producto',
-                (self.id_clase, self.id_marca, self.nombre, self.descripcion or '', None, None, None)
-            )
+            cursor.execute("SELECT COALESCE(MAX(CAST(ID_producto AS UNSIGNED)), 0) + 1 AS next_id FROM Producto")
+            row = cursor.fetchone()
+            siguiente_num = int(row['next_id'] or 1)
+            nuevo_id = str(siguiente_num)
 
-            # Obtener los parámetros OUT del procedure
-            cursor.execute(
-                "SELECT @_sp_registrar_producto_4 AS id_producto, @_sp_registrar_producto_5 AS estado, @_sp_registrar_producto_6 AS mensaje"
-            )
-            resultado = cursor.fetchone()
-
-            if not resultado:
-                raise RuntimeError("El procedimiento de registro no devolvió información.")
-
-            self.id_producto = resultado['id_producto']
-            estado = resultado['estado']
-            mensaje = resultado['mensaje']
-
-            if not self.id_producto or estado != 'OK':
-                raise ValueError(mensaje or 'No se pudo registrar el producto.')
+            cursor.execute("""
+                INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                nuevo_id,
+                self.id_clase,
+                self.id_marca,
+                self.nombre.strip(),
+                self.descripcion.strip() if self.descripcion else None
+            ))
 
             db.commit()
+            self.id_producto = nuevo_id
 
-            # Registrar en bitácora
-            if self.usuario_id:
-                bitacora = Bitacora(
-                    accion="Crear producto",
-                    descripcion=f"Producto creado: {self.nombre} (ID: {self.id_producto})",
-                    usuario_id=self.usuario_id,
-                    modulo_nombre="Productos"
-                )
-                bitacora.registrar()
+            try:
+                if self.usuario_id:
+                    Bitacora(
+                        accion="Crear producto",
+                        descripcion=f"Producto creado: {self.nombre} (ID: {nuevo_id})",
+                        usuario_id=self.usuario_id,
+                        modulo_nombre="Productos"
+                    ).registrar()
+            except Exception as bit_err:
+                print(f"[WARN] No se pudo registrar en bitacora: {bit_err}")
 
-            return str(self.id_producto)
+            return nuevo_id
+
         except Exception:
             db.rollback()
             raise
@@ -568,7 +564,6 @@ class Producto:
         
         cursor = db.cursor()
         try:
-            # Validación: Verificar que el producto exista
             cursor.execute(
                 "SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1",
                 (self.id_producto,)
@@ -576,7 +571,6 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"El producto con ID '{self.id_producto}' no existe.")
             
-            # Validación: Verificar que la clase exista
             cursor.execute(
                 "SELECT 1 FROM Clase_producto WHERE ID_Clase = %s LIMIT 1",
                 (self.id_clase,)
@@ -584,7 +578,6 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"La clase con ID '{self.id_clase}' no existe.")
             
-            # Validación: Verificar que la marca exista
             cursor.execute(
                 "SELECT 1 FROM Marca_producto WHERE ID_marca = %s LIMIT 1",
                 (self.id_marca,)
@@ -592,7 +585,6 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"La marca con ID '{self.id_marca}' no existe.")
             
-            # Validación: Verificar nombre duplicado (excluyendo el producto actual)
             cursor.execute("""
                 SELECT 1 FROM Producto 
                 WHERE Nombre_producto = %s AND ID_Clase = %s AND ID_marca = %s 
@@ -610,7 +602,6 @@ class Producto:
             db.commit()
             updated = cursor.rowcount > 0
             
-            # Registrar en bitácora
             if updated and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar producto",
@@ -638,7 +629,6 @@ class Producto:
         
         cursor = db.cursor()
         try:
-            # Validación: Verificar que el producto exista
             cursor.execute(
                 "SELECT 1 FROM Producto WHERE ID_producto = %s LIMIT 1",
                 (self.id_producto,)
@@ -646,26 +636,19 @@ class Producto:
             if not cursor.fetchone():
                 raise ValueError(f"El producto con ID '{self.id_producto}' no existe.")
             
-            # Primero eliminar fotos del inventario
             cursor.execute("""
                 DELETE fi FROM Fotos_inventario fi
                 JOIN Existencias_productos e ON fi.ID_inventario = e.ID_inventario
                 WHERE e.ID_producto = %s
             """, (self.id_producto,))
             
-            # Eliminar existencias (inventario)
             cursor.execute("DELETE FROM Existencias_productos WHERE ID_producto = %s", (self.id_producto,))
-            
-            # Eliminar suministra
             cursor.execute("DELETE FROM Suministra WHERE ID_producto = %s", (self.id_producto,))
-            
-            # Eliminar producto
             cursor.execute("DELETE FROM Producto WHERE ID_producto = %s", (self.id_producto,))
             
             db.commit()
             deleted = cursor.rowcount > 0
             
-            # Registrar en bitácora
             if deleted and self.usuario_id:
                 bitacora = Bitacora(
                     accion="Eliminar producto",
@@ -686,11 +669,9 @@ class Producto:
     def verificar_stock_asociado(self) -> bool:
         if not self.id_producto:
             return False
-        
         db = self._conexion()
         if not db:
             return False
-        
         cursor = db.cursor()
         try:
             cursor.execute("""
@@ -706,11 +687,9 @@ class Producto:
     def obtener_stock_producto(self) -> int:
         if not self.id_producto:
             return 0
-        
         db = self._conexion()
         if not db:
             return 0
-        
         cursor = db.cursor()
         try:
             cursor.execute("""

@@ -15,6 +15,31 @@ class Clientes():
        
         self._conexion_bd = conectar()
 
+    # ============================================
+    # MÉTODOS DE VALIDACIÓN (Lógica en el modelo)
+    # ============================================
+    @staticmethod
+    def _validar_email(email):
+        if email and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+            return "El correo electrónico no es válido."
+        return None
+
+    @staticmethod
+    def _validar_telefono(telefono, obligatorio=True):
+        if obligatorio and not telefono:
+            return "El celular/teléfono es obligatorio."
+        if telefono and not re.match(r"^\d{11}$", telefono):
+            return "El teléfono debe tener exactamente 11 dígitos numéricos."
+        return None
+
+    @staticmethod
+    def _validar_direccion(direccion, max_length=40):
+        if direccion and len(direccion) > max_length:
+            return f"La dirección no puede exceder los {max_length} caracteres."
+        return None
+
+    # ============================================
+
     def listar_clientes(self):
         db = self._conexion_bd.conexion1()
         if not db:
@@ -213,16 +238,12 @@ class Clientes():
             db.close()
 
     def obtener_cliente_por_id(self, cliente_id=None):
-        """
-        Obtiene un cliente por su ID (cédula para persona natural)
-        """
         id_buscar = cliente_id or self.ID_cliente
         if not id_buscar:
             return None
         
         id_buscar = str(id_buscar).strip()
         
-        # Normalizar para búsqueda
         if re.search(r'[A-Za-z]', id_buscar):
             id_buscar_sin_guiones = id_buscar.replace("-", "").upper()
             id_buscar_con_guiones = id_buscar
@@ -236,7 +257,6 @@ class Clientes():
         
         cursor = db.cursor(dictionary=True)
         try:
-            # Buscar primero en Persona_natural
             cursor.execute(
                 """
                 SELECT
@@ -260,7 +280,6 @@ class Clientes():
             if resultado:
                 return resultado
             
-            # Si no es persona natural, buscar en Cliente_juridico
             cursor.execute(
                 """
                 SELECT
@@ -288,16 +307,12 @@ class Clientes():
             db.close()
     
     def obtener_datos_cliente_completo(self, cliente_id: int = None):
-        """
-        Obtiene todos los datos de un cliente incluyendo información específica según su tipo
-        """
         id_buscar = cliente_id or self.ID_cliente
         if not id_buscar:
             return None
         
         id_buscar = str(id_buscar).strip()
         
-        # Normalizar para búsqueda
         if re.search(r'[A-Za-z]', id_buscar):
             id_buscar_sin_guiones = id_buscar.replace("-", "").upper()
             id_buscar_con_guiones = id_buscar
@@ -311,17 +326,12 @@ class Clientes():
         
         cursor = db.cursor(dictionary=True)
         try:
-            # ============================================
-            # PRIMERO: Buscar en la tabla Cliente
-            # ============================================
-            # Intentar primero con el ID con guiones (formato original)
             cursor.execute(
                 "SELECT * FROM Cliente WHERE ID_cliente = %s",
                 (id_buscar_con_guiones,)
             )
             cliente_base = cursor.fetchone()
             
-            # Si no se encuentra, intentar sin guiones
             if not cliente_base:
                 cursor.execute(
                     "SELECT * FROM Cliente WHERE ID_cliente = %s",
@@ -329,7 +339,6 @@ class Clientes():
                 )
                 cliente_base = cursor.fetchone()
             
-            # Si aún no se encuentra, buscar en Rif_cliente de Cliente_juridico
             if not cliente_base and re.search(r'[A-Za-z]', id_buscar):
                 cursor.execute(
                     """
@@ -346,9 +355,6 @@ class Clientes():
             
             cliente_id_real = cliente_base["ID_cliente"]
             
-            # ============================================
-            # SEGUNDO: Verificar si es Persona Natural
-            # ============================================
             cursor.execute(
                 "SELECT Nombre_cliente, Apellido_cliente FROM Persona_natural WHERE ID_cliente = %s",
                 (cliente_id_real,)
@@ -368,9 +374,6 @@ class Clientes():
                     "tipo": "natural"
                 }
             
-            # ============================================
-            # TERCERO: Verificar si es Cliente Jurídico
-            # ============================================
             cursor.execute(
                 "SELECT Razon_social, Rif_cliente FROM Cliente_juridico WHERE ID_cliente = %s",
                 (cliente_id_real,)
@@ -390,9 +393,6 @@ class Clientes():
                     "tipo": "juridico"
                 }
             
-            # ============================================
-            # CUARTO: Si no tiene tipo específico
-            # ============================================
             return {
                 "id": str(cliente_base["ID_cliente"]),
                 "direccion": cliente_base.get("Direccion_cliente"),
@@ -415,8 +415,6 @@ class Clientes():
     
     def crear_cliente(self, cliente_id: int, nombre: str, apellido: str, celular: str, 
                       correo: str = None, direccion: str = None) -> bool:
-        from app.models.clientes import Persona_natural
-        
         if not cliente_id or not nombre or not apellido or not celular:
             return False
         
@@ -582,10 +580,11 @@ class Persona_natural(Clientes):
         self.Nombre_cliente = Nombre_cliente
 
     def registrar_persona_natural(self) -> str:
-        cedula = self.Cedula_cliente.strip()
-        apellido = self.Apellido_cliente.strip()
-        nombre = self.Nombre_cliente.strip()
+        cedula = self.Cedula_cliente.strip() if self.Cedula_cliente else ""
+        apellido = self.Apellido_cliente.strip() if self.Apellido_cliente else ""
+        nombre = self.Nombre_cliente.strip() if self.Nombre_cliente else ""
 
+        # Validaciones en el Modelo
         if not cedula:
             return "La cédula del cliente no puede estar vacía."
         if not apellido:
@@ -594,18 +593,26 @@ class Persona_natural(Clientes):
             return "El nombre del cliente no puede estar vacío."
         if not cedula.isdigit():
             return "La cédula del cliente debe contener solo números."
-        if len(nombre) > 20:
-            return "El nombre del cliente no puede exceder los 20 caracteres."
-        if len(apellido) > 20:
-            return "El apellido del cliente no puede exceder los 20 caracteres."
         if len(cedula) < 7 or len(cedula) > 8:
             return "La cédula del cliente debe tener 7 u 8 caracteres."
-        # Validar correo máximo 120 caracteres
-        if self.Correo_cliente and len(self.Correo_cliente) > 120:
-            return "El correo electrónico no puede exceder los 120 caracteres."
-        # Validar dirección máximo 40 caracteres
-        if self.Direccion_cliente and len(self.Direccion_cliente) > 40:
-            return "La dirección no puede exceder los 40 caracteres."
+        
+        # NUEVA VALIDACIÓN: Mínimo 3 letras en el nombre
+        if len(nombre) < 3:
+            return "El nombre del cliente debe tener al menos 3 caracteres."
+        if len(nombre) > 20:
+            return "El nombre del cliente no puede exceder los 20 caracteres."
+        
+        if len(apellido) > 20:
+            return "El apellido del cliente no puede exceder los 20 caracteres."
+
+        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=True)
+        if error_tel: return error_tel
+
+        error_correo = self._validar_email(self.Correo_cliente)
+        if error_correo: return error_correo
+
+        error_dir = self._validar_direccion(self.Direccion_cliente)
+        if error_dir: return error_dir
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -645,10 +652,11 @@ class Persona_natural(Clientes):
             db.close()
     
     def actualizar_persona_natural(self):
-        cedula = self.Cedula_cliente.strip()
-        apellido = self.Apellido_cliente.strip()
-        nombre = self.Nombre_cliente.strip()
+        cedula = self.Cedula_cliente.strip() if self.Cedula_cliente else ""
+        apellido = self.Apellido_cliente.strip() if self.Apellido_cliente else ""
+        nombre = self.Nombre_cliente.strip() if self.Nombre_cliente else ""
 
+        # Validaciones en el Modelo
         if not cedula:
             return "La cédula del cliente no puede estar vacía."
         if not apellido:
@@ -657,18 +665,26 @@ class Persona_natural(Clientes):
             return "El nombre del cliente no puede estar vacío."
         if not cedula.isdigit():
             return "La cédula del cliente debe contener solo números."
-        if len(nombre) > 20:
-            return "El nombre del cliente no puede exceder los 20 caracteres."
-        if len(apellido) > 20:
-            return "El apellido del cliente no puede exceder los 20 caracteres."
         if len(cedula) < 7 or len(cedula) > 8:
             return "La cédula del cliente debe tener 7 u 8 caracteres."
-        # Validar correo máximo 120 caracteres
-        if self.Correo_cliente and len(self.Correo_cliente) > 120:
-            return "El correo electrónico no puede exceder los 120 caracteres."
-        # Validar dirección máximo 40 caracteres
-        if self.Direccion_cliente and len(self.Direccion_cliente) > 40:
-            return "La dirección no puede exceder los 40 caracteres."
+        
+        # NUEVA VALIDACIÓN: Mínimo 3 letras en el nombre
+        if len(nombre) < 3:
+            return "El nombre del cliente debe tener al menos 3 caracteres."
+        if len(nombre) > 20:
+            return "El nombre del cliente no puede exceder los 20 caracteres."
+            
+        if len(apellido) > 20:
+            return "El apellido del cliente no puede exceder los 20 caracteres."
+
+        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=False)
+        if error_tel: return error_tel
+
+        error_correo = self._validar_email(self.Correo_cliente)
+        if error_correo: return error_correo
+
+        error_dir = self._validar_direccion(self.Direccion_cliente)
+        if error_dir: return error_dir
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -697,7 +713,6 @@ class Persona_natural(Clientes):
             
             return f"El cliente '{nombre} {apellido}' se actualizó exitosamente."
         except Exception as e:
-            print(f"Error al actualizar cliente: {e}")
             db.rollback()
             return f"Error al actualizar cliente: {e}"
         finally:
@@ -731,9 +746,10 @@ class Cliente_juridico(Clientes):
         self.Rif_cliente = Rif_cliente or RIF
 
     def registrar_cliente_juridico(self) -> str:
-        razon_social = self.Razon_social.strip()
-        rif = self.Rif_cliente.strip()
+        razon_social = self.Razon_social.strip() if self.Razon_social else ""
+        rif = self.Rif_cliente.strip() if self.Rif_cliente else ""
         
+        # Validaciones en el Modelo
         patron_rif = r'^[JE]-\d{8}-\d$'
         if not re.match(patron_rif, rif):
             return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
@@ -747,20 +763,15 @@ class Cliente_juridico(Clientes):
         
         if len(razon_social) > 60:
             return "La razón social del cliente no puede exceder los 60 caracteres."
-        if len(rif) != 12:
-            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
-        if not self.Celular_cliente:
-            return "El teléfono del cliente es obligatorio."
-        if not re.match(r"^\d{11}$", self.Celular_cliente):
-            return "El teléfono debe tener exactamente 11 dígitos numéricos."
-        # Validar correo máximo 120 caracteres
-        if self.Correo_cliente and len(self.Correo_cliente) > 120:
-            return "El correo electrónico no puede exceder los 120 caracteres."
-        # Validar dirección máximo 40 caracteres
-        if self.Direccion_cliente and len(self.Direccion_cliente) > 40:
-            return "La dirección no puede exceder los 40 caracteres."
-        if self.Correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", self.Correo_cliente):
-            return "El correo electrónico no es válido."
+
+        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=True)
+        if error_tel: return error_tel
+
+        error_correo = self._validar_email(self.Correo_cliente)
+        if error_correo: return error_correo
+
+        error_dir = self._validar_direccion(self.Direccion_cliente)
+        if error_dir: return error_dir
 
         db = self._conexion_bd.conexion1()
         if not db:
@@ -768,10 +779,8 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
-            # Guardar el RIF con guiones como ID_cliente
             rif_guardar = rif
             
-            # Verificar si ya existe
             cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (rif_guardar,))
             if cursor.fetchone():
                 return f"El cliente jurídico con RIF '{rif}' ya existe."
@@ -804,9 +813,10 @@ class Cliente_juridico(Clientes):
             db.close()
 
     def actualizar_cliente_juridico(self):
-        razon_social = self.Razon_social.strip()
-        rif = self.Rif_cliente.strip()
+        razon_social = self.Razon_social.strip() if self.Razon_social else ""
+        rif = self.Rif_cliente.strip() if self.Rif_cliente else ""
         
+        # Validaciones en el Modelo
         patron_rif = r'^[JE]-\d{8}-\d$'
         if not re.match(patron_rif, rif):
             return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
@@ -820,20 +830,15 @@ class Cliente_juridico(Clientes):
         
         if len(razon_social) > 60:
             return "La razón social del cliente no puede exceder los 60 caracteres."
-        if not rif:
-            return "El RIF del cliente no puede estar vacío."
-        if len(rif) != 12:
-            return f"El RIF debe tener exactamente 12 caracteres (actual: {len(rif)})"
-        if self.Celular_cliente and not re.match(r"^\d{11}$", self.Celular_cliente):
-            return "El teléfono debe tener exactamente 11 dígitos numéricos."
-        # Validar correo máximo 120 caracteres
-        if self.Correo_cliente and len(self.Correo_cliente) > 120:
-            return "El correo electrónico no puede exceder los 120 caracteres."
-        # Validar dirección máximo 40 caracteres
-        if self.Direccion_cliente and len(self.Direccion_cliente) > 40:
-            return "La dirección no puede exceder los 40 caracteres."
-        if self.Correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", self.Correo_cliente):
-            return "El correo electrónico no es válido."
+            
+        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=False)
+        if error_tel: return error_tel
+
+        error_correo = self._validar_email(self.Correo_cliente)
+        if error_correo: return error_correo
+
+        error_dir = self._validar_direccion(self.Direccion_cliente)
+        if error_dir: return error_dir
 
         db = self._conexion_bd.conexion1()
         if not db:
@@ -864,7 +869,6 @@ class Cliente_juridico(Clientes):
             
             return f"El cliente jurídico '{razon_social}' se actualizó exitosamente."
         except Exception as e:
-            print(f"Error al actualizar cliente jurídico: {e}")
             db.rollback()
             return f"Error al actualizar cliente jurídico: {e}"
         finally:

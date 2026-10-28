@@ -35,17 +35,13 @@ def api_obtener_cliente(id_cliente):
     if not id_cliente:
         return jsonify({"success": False, "message": "El ID del cliente es obligatorio."}), 400
 
-    # Normalizar el ID
     id_buscar = id_cliente
-    
-    # Si es un RIF, intentar con y sin guiones
     if re.search(r'[A-Za-z]', id_cliente):
         id_buscar = id_cliente.replace("-", "").upper()
     
     cliente_model = Clientes(ID_cliente=id_buscar)
     cliente = cliente_model.obtener_datos_cliente_completo(cliente_id=id_cliente)
     
-    # Si no se encuentra con el ID normalizado, intentar con el original
     if not cliente and id_cliente != id_buscar:
         cliente_model = Clientes(ID_cliente=id_cliente)
         cliente = cliente_model.obtener_datos_cliente_completo(cliente_id=id_cliente)
@@ -61,86 +57,22 @@ def api_obtener_cliente(id_cliente):
 @tiene_permiso('Clientes', 'registrar')
 def api_registrar_cliente():
     data = request.get_json(silent=True) or request.form
-    
-    # Obtener el tipo de cliente
     tipo = data.get("tipo", "natural").lower()
     
+    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    
     if tipo == "juridico":
-        # ============================================
-        # REGISTRAR CLIENTE JURÍDICO
-        # ============================================
         rif = data.get("rif", "").strip().upper()
         razon_social = data.get("razon_social", "").strip()
         direccion_cliente = data.get("direccion", "").strip()
         telefono_cliente = data.get("celular", "").strip()
         correo_cliente = data.get("correo", "").strip()
         
-        # Validar RIF
-        patron_rif = r'^[JE]-\d{8}-\d$'
-        if not re.match(patron_rif, rif):
-            return jsonify({
-                "success": False, 
-                "message": "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
-            }), 400
-        
-        # Validar Razón Social
-        if not razon_social:
-            return jsonify({
-                "success": False,
-                "message": "La Razón Social es obligatoria."
-            }), 400
-        
-        if len(razon_social) > 60:
-            return jsonify({
-                "success": False,
-                "message": "La Razón Social no puede exceder los 60 caracteres."
-            }), 400
-        
-        # Validar teléfono
-        if not telefono_cliente:
-            return jsonify({
-                "success": False,
-                "message": "El celular es obligatorio."
-            }), 400
-        
-        if not re.match(r"^\d{11}$", telefono_cliente):
-            return jsonify({
-                "success": False,
-                "message": "El celular debe tener exactamente 11 dígitos numéricos."
-            }), 400
-        
-        # Validar correo
-        if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-            return jsonify({
-                "success": False,
-                "message": "El correo electrónico no es válido."
-            }), 400
-        
-        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-        
-        # El ID del cliente es el RIF sin guiones
-        id_cliente = rif.replace("-", "")
-        
-        # Verificar si ya existe
-        cliente_model = Clientes(ID_cliente=id_cliente)
-        existente = cliente_model.obtener_datos_cliente_completo(cliente_id=rif)
-        
-        if not existente:
-            existente = cliente_model.obtener_datos_cliente_completo(cliente_id=id_cliente)
-        
-        if existente:
-            return jsonify({
-                "success": True,
-                "message": "El cliente ya existe.",
-                "id": existente.get("id"),
-                "cliente": existente
-            }), 200
-        
-        # Registrar cliente jurídico
+        # Delegar lógica de validación al modelo
         juridico_model = Cliente_juridico(
-            Id_cliente=id_cliente,
+            Id_cliente=rif.replace("-", ""),
             Razon_social=razon_social,
-            Rif_cliente=rif,  # Guardamos el RIF con guiones
+            Rif_cliente=rif,
             Direccion_cliente=direccion_cliente,
             Telefono_cliente=telefono_cliente,
             Correo_cliente=correo_cliente,
@@ -149,19 +81,11 @@ def api_registrar_cliente():
         mensaje = juridico_model.registrar_cliente_juridico()
         
         if "exitosamente" in mensaje:
-            return jsonify({
-                "success": True,
-                "message": mensaje,
-                "id": id_cliente,
-                "tipo": "juridico"
-            }), 201
+            return jsonify({"success": True, "message": mensaje, "id": rif.replace("-", ""), "tipo": "juridico"}), 201
         else:
             return jsonify({"success": False, "message": mensaje}), 400
     
     else:
-        # ============================================
-        # REGISTRAR PERSONA NATURAL (comportamiento original)
-        # ============================================
         Id_cliente = data.get("cedula", "").strip()
         nombre_cliente = data.get("nombre", "").strip()
         apellido_cliente = data.get("apellido", "").strip()
@@ -169,20 +93,7 @@ def api_registrar_cliente():
         telefono_cliente = data.get("celular", "").strip()
         correo_cliente = data.get("correo", "").strip()
         
-        if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
-            return jsonify({"success": False, "message": "Cédula, nombre, apellido y celular son obligatorios."}), 400
-
-        if not re.match(r"^\d{7,8}$", Id_cliente):
-            return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
-
-        if not re.match(r"^\d{11}$", telefono_cliente):
-            return jsonify({"success": False, "message": "El celular debe tener exactamente 11 dígitos numéricos."}), 400
-
-        if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-            return jsonify({"success": False, "message": "El correo electrónico no es válido."}), 400
-
-        usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
-        
+        # Delegar lógica de validación al modelo
         cliente_model = Persona_natural(
             Cedula_cliente=Id_cliente,
             Nombre_cliente=nombre_cliente,
@@ -200,43 +111,20 @@ def api_registrar_cliente():
             return jsonify({"success": False, "message": mensaje}), 400
 
 
-# ============================================
-# RUTAS ESPECÍFICAS PARA PERSONA NATURAL
-# ============================================
-
 @clientes_blueprint.route("/api/clientes/natural", methods=["POST"])
 @jwt_required
 @tiene_permiso('Clientes', 'registrar')
 def api_registrar_persona_natural():
     data = request.get_json(silent=True) or request.form
-    Id_cliente = data.get("Id_cliente", "").strip()
-    nombre_cliente = data.get("nombre_cliente", "").strip()
-    apellido_cliente = data.get("apellido_cliente", "").strip()
-    direccion_cliente = data.get("direccion_cliente", "").strip()
-    telefono_cliente = data.get("telefono_cliente", "").strip()
-    correo_cliente = data.get("correo_cliente", "").strip()
-    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
-    if not Id_cliente or not nombre_cliente or not apellido_cliente or not telefono_cliente:
-        return jsonify({"success": False, "message": "Cédula, nombre, apellido y teléfono son obligatorios."}), 400
-    
-    if not re.match(r"^\d{7,8}$", Id_cliente):
-        return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
-    
-    if not re.match(r"^\d{11}$", telefono_cliente):
-        return jsonify({"success": False, "message": "El teléfono debe tener exactamente 11 dígitos numéricos."}), 400
-    
-    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-        return jsonify({"success": False, "message": "El correo electrónico no es válido."}), 400
-    
     cliente_model = Persona_natural(
-        Cedula_cliente=Id_cliente,
-        Nombre_cliente=nombre_cliente,
-        Apellido_cliente=apellido_cliente,
-        Direccion_cliente=direccion_cliente,
-        Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente,
+        Cedula_cliente=data.get("Id_cliente", "").strip(),
+        Nombre_cliente=data.get("nombre_cliente", "").strip(),
+        Apellido_cliente=data.get("apellido_cliente", "").strip(),
+        Direccion_cliente=data.get("direccion_cliente", "").strip(),
+        Telefono_cliente=data.get("telefono_cliente", "").strip(),
+        Correo_cliente=data.get("correo_cliente", "").strip(),
         usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.registrar_persona_natural()
@@ -252,35 +140,15 @@ def api_registrar_persona_natural():
 @tiene_permiso('Clientes', 'modificar')
 def api_actualizar_persona_natural(cedula):
     data = request.get_json(silent=True) or request.form
-    nombre_cliente = data.get("nombre_cliente", "").strip()
-    apellido_cliente = data.get("apellido_cliente", "").strip()
-    direccion_cliente = data.get("direccion_cliente", "").strip()
-    telefono_cliente = data.get("telefono_cliente", "").strip()
-    correo_cliente = data.get("correo_cliente", "").strip()
-    
-    if not cedula:
-        return jsonify({"success": False, "message": "La cédula del cliente es obligatoria."}), 400
-    if not nombre_cliente:
-        return jsonify({"success": False, "message": "El nombre del cliente es obligatorio."}), 400
-    
-    if not re.match(r"^\d{7,8}$", cedula):
-        return jsonify({"success": False, "message": "La cédula debe tener 7 u 8 dígitos numéricos."}), 400
-    
-    if telefono_cliente and not re.match(r"^\d{11}$", telefono_cliente):
-        return jsonify({"success": False, "message": "El teléfono debe tener exactamente 11 dígitos numéricos."}), 400
-    
-    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-        return jsonify({"success": False, "message": "El correo electrónico no es válido."}), 400
-    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
     cliente_model = Persona_natural(
         Cedula_cliente=cedula,
-        Nombre_cliente=nombre_cliente,
-        Apellido_cliente=apellido_cliente,
-        Direccion_cliente=direccion_cliente,
-        Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente,
+        Nombre_cliente=data.get("nombre_cliente", "").strip(),
+        Apellido_cliente=data.get("apellido_cliente", "").strip(),
+        Direccion_cliente=data.get("direccion_cliente", "").strip(),
+        Telefono_cliente=data.get("telefono_cliente", "").strip(),
+        Correo_cliente=data.get("correo_cliente", "").strip(),
         usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.actualizar_persona_natural()
@@ -291,75 +159,20 @@ def api_actualizar_persona_natural(cedula):
         return jsonify({"success": False, "message": mensaje}), 400
 
 
-# ============================================
-# RUTAS ESPECÍFICAS PARA CLIENTE JURÍDICO
-# ============================================
-
 @clientes_blueprint.route("/api/clientes/juridico", methods=["POST"])
 @jwt_required
 @tiene_permiso('Clientes', 'registrar')
 def api_registrar_cliente_juridico():
     data = request.get_json(silent=True) or request.form
-    Id_cliente = data.get("Id_cliente", "").strip()
-    razon_social = data.get("razon_social", "").strip()
-    rif = data.get("rif", "").strip()
-    direccion_cliente = data.get("direccion_cliente", "").strip()
-    telefono_cliente = data.get("telefono_cliente", "").strip()
-    correo_cliente = data.get("correo_cliente", "").strip()
-    
-    patron_rif = r'^[JE]-\d{8}-\d$'
-    if not re.match(patron_rif, rif):
-        return jsonify({
-            "success": False, 
-            "message": "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
-        }), 400
-    
-    if not razon_social:
-        return jsonify({
-            "success": False,
-            "message": "La razón social es obligatoria."
-        }), 400
-    
-    patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
-    if not re.match(patron_razon_social, razon_social):
-        return jsonify({
-            "success": False,
-            "message": "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
-        }), 400
-    
-    if len(razon_social) > 60:
-        return jsonify({
-            "success": False,
-            "message": "La razón social no puede exceder los 60 caracteres."
-        }), 400
-    
-    if not telefono_cliente:
-        return jsonify({
-            "success": False,
-            "message": "El teléfono es obligatorio."
-        }), 400
-    
-    if telefono_cliente and not re.match(r"^\d{11}$", telefono_cliente):
-        return jsonify({
-            "success": False,
-            "message": "El teléfono debe tener exactamente 11 dígitos numéricos."
-        }), 400
-    
-    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-        return jsonify({
-            "success": False,
-            "message": "El correo electrónico no es válido."
-        }), 400
-    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
     cliente_model = Cliente_juridico(
-        Id_cliente=Id_cliente,
-        Razon_social=razon_social,
-        Rif_cliente=rif,
-        Direccion_cliente=direccion_cliente,
-        Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente,
+        Id_cliente=data.get("Id_cliente", "").strip(),
+        Razon_social=data.get("razon_social", "").strip(),
+        Rif_cliente=data.get("rif", "").strip(),
+        Direccion_cliente=data.get("direccion_cliente", "").strip(),
+        Telefono_cliente=data.get("telefono_cliente", "").strip(),
+        Correo_cliente=data.get("correo_cliente", "").strip(),
         usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.registrar_cliente_juridico()
@@ -375,59 +188,15 @@ def api_registrar_cliente_juridico():
 @tiene_permiso('Clientes', 'modificar')
 def api_actualizar_cliente_juridico(id_cliente):
     data = request.get_json(silent=True) or request.form
-    razon_social = data.get("razon_social", "").strip()
-    rif = data.get("rif", "").strip()
-    direccion_cliente = data.get("direccion_cliente", "").strip()
-    telefono_cliente = data.get("telefono_cliente", "").strip()
-    correo_cliente = data.get("correo_cliente", "").strip()
-    
-    if not id_cliente:
-        return jsonify({"success": False, "message": "El ID del cliente es obligatorio."}), 400
-    
-    if not razon_social:
-        return jsonify({"success": False, "message": "La razón social del cliente es obligatoria."}), 400
-    
-    patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
-    if not re.match(patron_razon_social, razon_social):
-        return jsonify({
-            "success": False,
-            "message": "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
-        }), 400
-    
-    if len(razon_social) > 60:
-        return jsonify({
-            "success": False,
-            "message": "La razón social no puede exceder los 60 caracteres."
-        }), 400
-    
-    patron_rif = r'^[JE]-\d{8}-\d$'
-    if not re.match(patron_rif, rif):
-        return jsonify({
-            "success": False, 
-            "message": "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
-        }), 400
-    
-    if telefono_cliente and not re.match(r"^\d{11}$", telefono_cliente):
-        return jsonify({
-            "success": False,
-            "message": "El teléfono debe tener exactamente 11 dígitos numéricos."
-        }), 400
-    
-    if correo_cliente and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", correo_cliente):
-        return jsonify({
-            "success": False,
-            "message": "El correo electrónico no es válido."
-        }), 400
-    
     usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
     
     cliente_model = Cliente_juridico(
         Id_cliente=id_cliente,
-        Razon_social=razon_social,
-        Rif_cliente=rif,
-        Direccion_cliente=direccion_cliente,
-        Telefono_cliente=telefono_cliente,
-        Correo_cliente=correo_cliente,
+        Razon_social=data.get("razon_social", "").strip(),
+        Rif_cliente=data.get("rif", "").strip(),
+        Direccion_cliente=data.get("direccion_cliente", "").strip(),
+        Telefono_cliente=data.get("telefono_cliente", "").strip(),
+        Correo_cliente=data.get("correo_cliente", "").strip(),
         usuario_id=usuario_actual_id
     )
     mensaje = cliente_model.actualizar_cliente_juridico()
