@@ -1,0 +1,46 @@
+services:
+  db1_test:
+    image: mysql:8.0
+    command: --default-time-zone='-04:00'
+    env_file:
+      - .env.test
+    environment:
+      MYSQL_DATABASE: ${DB_NAME1}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.2:3317:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    volumes:
+      - ./bd/ituaccesoriobd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
+
+  db2_test:
+    image: mysql:8.0
+    command: --default-time-zone='-04:00'
+    env_file:
+      - .env.test
+    environment:
+      MYSQL_DATABASE: ${DB_NAME2}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD2}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.3:3317:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    volumes:
+      - ./bd/seguridad.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
