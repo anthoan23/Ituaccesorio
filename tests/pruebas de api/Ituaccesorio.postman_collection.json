@@ -1,0 +1,256 @@
+{
+  "info": {
+    "name": "Ituaccesorio",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Empleados",
+      "item": [
+        {
+          "name": "Render web empleados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/empleados"
+          }
+        },
+        {
+          "name": "Lista de empleados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/empleados"
+          }
+        },
+        {
+          "name": "Lista de cargos y especialidades",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/empleados/lista"
+          }
+        },
+        {
+          "name": "Datos para gráficos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/empleados/graficos"
+          }
+        },
+        {
+          "name": "Listar técnicos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/empleados/tecnicos"
+          }
+        },
+        {
+          "name": "Consultar empleado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/empleados/consultar"
+          }
+        },
+        {
+          "name": "Crear empleado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"987654321\",\n  \"id_cargo\": \"CRG0000001\",\n  \"nombre\": \"Empleado\",\n  \"apellido\": \"Prueba\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"prueba.api@ituaccesorio.com\",\n  \"direccion\": \"Barquisimeto\",\n  \"especialidades\": [\"ESP0000001\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/empleados"
+          }
+        },
+        {
+          "name": "Actualizar empleado",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": \"987654321\",\n  \"cedula\": \"987654321\",\n  \"id_cargo\": \"CRG0000001\",\n  \"nombre\": \"Empleado Actualizado\",\n  \"apellido\": \"Prueba\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"actualizado.api@ituaccesorio.com\",\n  \"direccion\": \"Caracas\",\n  \"especialidades\": [\"ESP0000003\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/empleados"
+          }
+        },
+        {
+          "name": "Eliminar empleado",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": \"987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/empleados"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cargos",
+      "item": [
+        {
+          "name": "Render web cargos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/cargos"
+          }
+        },
+        {
+          "name": "Listar cargos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/cargos"
+          }
+        },
+        {
+          "name": "Crear cargo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_cargo\": \"Cargo Prueba API\",\n  \"descripcion_cargo\": \"Cargo temporal para pruebas automatizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/cargos"
+          }
+        },
+        {
+          "name": "Actualizar cargo",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cargo\": \"CRG0000003\",\n  \"nombre_cargo\": \"Cargo Prueba API\",\n  \"descripcion_cargo\": \"Descripcion actualizada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/cargos"
+          }
+        },
+        {
+          "name": "Eliminar cargo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cargo\": \"CRG0000003\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/cargos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Especialidades",
+      "item": [
+        {
+          "name": "Render web especialidades",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/especialidades"
+          }
+        },
+        {
+          "name": "Listar especialidades",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/especialidades"
+          }
+        },
+        {
+          "name": "Crear especialidad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_especialidad\": \"Especialidad Prueba API\",\n  \"descripcion_especialidad\": \"Especialidad temporal para pruebas automatizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/especialidades"
+          }
+        },
+        {
+          "name": "Actualizar especialidad",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": \"ESP0000006\",\n  \"nombre_especialidad\": \"Especialidad Prueba API\",\n  \"descripcion_especialidad\": \"Descripcion actualizada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/especialidades"
+          }
+        },
+        {
+          "name": "Eliminar especialidad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especialidad\": \"ESP0000006\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/especialidades"
+          }
+        }
+      ]
+    }
+  ]
+}
