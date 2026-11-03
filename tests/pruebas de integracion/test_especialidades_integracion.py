@@ -40,7 +40,7 @@ ESPECIALIDAD_MISMO_NOMBRE = "Esp Mismo Nombre"
 ESPECIALIDAD_DUPLICADA = "Esp Duplicada"
 ESPECIALIDAD_ELIMINAR = "Esp Temporal Eliminar"
 ESPECIALIDAD_EN_USO = "Esp Temporal En Uso"
-CEDULA_EN_USO = "987654327"
+CEDULA_EN_USO = "98765426"
 
 
 class TestListarEspecialidades:
@@ -418,7 +418,7 @@ class TestEliminarEspecialidad:
                 id_cargo="CRG0000001",
                 nombre_empleado="Empleado",
                 apellido_empleado="Prueba",
-                celular_empleado="0414123456",
+                celular_empleado="04141234567",
                 correo_empleado="prueba@mail.com",
                 direccion_empleado="Barquisimeto",
                 especialidades=[id_especialidad],

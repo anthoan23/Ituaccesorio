@@ -28,7 +28,7 @@ def crear_empleado(driver, cedula):
     driver.find_element(By.ID, "reg-cedula-empleado").send_keys(cedula)
     driver.find_element(By.ID, "reg-nombre-empleado").send_keys("Empleado")
     driver.find_element(By.ID, "reg-apellido-empleado").send_keys("Prueba")
-    driver.find_element(By.ID, "reg-celular-empleado").send_keys("0414123456")
+    driver.find_element(By.ID, "reg-celular-empleado").send_keys("04141234567")
     driver.find_element(By.ID, "reg-correo-empleado").send_keys(
         "empleado.prueba@example.com"
     )
@@ -69,7 +69,7 @@ def modificar_empleado(driver, cedula):
     nombre.send_keys("EmpleadoEditado")
     celular = driver.find_element(By.ID, "reg-celular-empleado")
     celular.clear()
-    celular.send_keys("0414123456")
+    celular.send_keys("04141234567")
     driver.find_element(By.ID, "modal-submit-btn").click()
 
     espera.until(

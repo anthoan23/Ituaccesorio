@@ -28,16 +28,16 @@ EMPLEADO = {
     "cargo": "Administrador",
 }
 
-CELULAR = "0414123456"
+CELULAR = "04141234567"
 ID_CARGO_VALIDO = "CRG0000001"
 DESCRIPCION_ESPECIALIDAD = "Especialidad temporal"
-CEDULA_INEXISTENTE = "999999999"
-CEDULA_AGREGAR = "987654321"
-CEDULA_AGREGAR_ESPECIALIDAD = "987654322"
-CEDULA_ACTUALIZAR = "987654323"
-CEDULA_ACTUALIZAR_ESPECIALIDAD = "987654324"
-CEDULA_ELIMINAR = "987654325"
-CEDULA_ELIMINAR_CAPACITACION = "987654326"
+CEDULA_INEXISTENTE = "99999999"
+CEDULA_AGREGAR = "98765432"
+CEDULA_AGREGAR_ESPECIALIDAD = "98765431"
+CEDULA_ACTUALIZAR = "98765430"
+CEDULA_ACTUALIZAR_ESPECIALIDAD = "98765429"
+CEDULA_ELIMINAR = "98765428"
+CEDULA_ELIMINAR_CAPACITACION = "98765427"
 
 
 def datos_empleado(**cambios):
@@ -196,8 +196,8 @@ class TestAgregarEmpleado:
                 id="cedula-demasiado-corta",
             ),
             pytest.param(
-                {"id_empleado": "1234567890"},
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                {"id_empleado": "123456789"},
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="cedula-demasiado-larga",
             ),
             pytest.param(
@@ -231,8 +231,8 @@ class TestAgregarEmpleado:
                 id="nombre-demasiado-corto",
             ),
             pytest.param(
-                {"nombre_empleado": "N" * 31},
-                "El campo Nombre no puede tener más de 30 caracteres.",
+                {"nombre_empleado": "N" * 16},
+                "El campo Nombre no puede tener más de 15 caracteres.",
                 id="nombre-demasiado-largo",
             ),
             pytest.param(
@@ -251,8 +251,8 @@ class TestAgregarEmpleado:
                 id="apellido-demasiado-corto",
             ),
             pytest.param(
-                {"apellido_empleado": "A" * 31},
-                "El campo Apellido no puede tener más de 30 caracteres.",
+                {"apellido_empleado": "A" * 16},
+                "El campo Apellido no puede tener más de 15 caracteres.",
                 id="apellido-demasiado-largo",
             ),
             pytest.param(
@@ -266,14 +266,20 @@ class TestAgregarEmpleado:
                 id="celular-vacio",
             ),
             pytest.param(
-                {"celular_empleado": "12345678"},
-                "El campo Celular debe tener al menos 9 dígitos.",
+                {"celular_empleado": "0414123456"},
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="celular-demasiado-corto",
             ),
             pytest.param(
-                {"celular_empleado": "1234567890123456"},
-                "El campo Celular no puede tener más de 15 dígitos.",
+                {"celular_empleado": "041412345678"},
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="celular-demasiado-largo",
+            ),
+            pytest.param(
+                {"celular_empleado": "03121234567"},
+                "El campo Celular debe comenzar con un prefijo válido: "
+                "0412, 0414, 0416, 0422, 0424 o 0426.",
+                id="celular-prefijo-invalido",
             ),
             pytest.param(
                 {"celular_empleado": "0412abc123"},
@@ -416,8 +422,8 @@ class TestActualizarEmpleado:
                 id="cedula-demasiado-corta",
             ),
             pytest.param(
-                {"id_empleado": "1234567890"},
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                {"id_empleado": "123456789"},
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="cedula-demasiado-larga",
             ),
             pytest.param(
@@ -451,8 +457,8 @@ class TestActualizarEmpleado:
                 id="nombre-demasiado-corto",
             ),
             pytest.param(
-                {"nombre_empleado": "N" * 31},
-                "El campo Nombre no puede tener más de 30 caracteres.",
+                {"nombre_empleado": "N" * 16},
+                "El campo Nombre no puede tener más de 15 caracteres.",
                 id="nombre-demasiado-largo",
             ),
             pytest.param(
@@ -471,8 +477,8 @@ class TestActualizarEmpleado:
                 id="apellido-demasiado-corto",
             ),
             pytest.param(
-                {"apellido_empleado": "A" * 31},
-                "El campo Apellido no puede tener más de 30 caracteres.",
+                {"apellido_empleado": "A" * 16},
+                "El campo Apellido no puede tener más de 15 caracteres.",
                 id="apellido-demasiado-largo",
             ),
             pytest.param(
@@ -486,14 +492,20 @@ class TestActualizarEmpleado:
                 id="celular-vacio",
             ),
             pytest.param(
-                {"celular_empleado": "123456789"},
-                "El campo Celular debe tener al menos 10 dígitos.",
+                {"celular_empleado": "0414123456"},
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="celular-demasiado-corto",
             ),
             pytest.param(
-                {"celular_empleado": "12345678901"},
-                "El campo Celular no puede tener más de 10 dígitos.",
+                {"celular_empleado": "041412345678"},
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="celular-demasiado-largo",
+            ),
+            pytest.param(
+                {"celular_empleado": "03121234567"},
+                "El campo Celular debe comenzar con un prefijo válido: "
+                "0412, 0414, 0416, 0422, 0424 o 0426.",
+                id="celular-prefijo-invalido",
             ),
             pytest.param(
                 {"celular_empleado": "0412abc123"},
@@ -622,8 +634,8 @@ class TestEliminarEmpleado:
                 id="id-demasiado-corto",
             ),
             pytest.param(
-                "1234567890",
-                "El campo ID del Empleado no puede tener más de 9 dígitos.",
+                "123456789",
+                "El campo ID del Empleado no puede tener más de 8 dígitos.",
                 id="id-demasiado-largo",
             ),
             pytest.param(

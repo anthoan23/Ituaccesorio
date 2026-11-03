@@ -144,6 +144,39 @@ def validar_celular(valor, min_len=11, max_len=11, nombre_campo="Teléfono"):
     return None
 
 
+def validar_celular_venezolano(valor, nombre_campo="Celular"):
+    """
+    Valida un celular móvil venezolano: 11 dígitos con prefijo válido.
+
+    Prefijos permitidos: 0412, 0414, 0416, 0422, 0424 y 0426.
+
+    Args:
+        valor (str): El valor a validar
+        nombre_campo (str): Nombre del campo para el mensaje de error
+
+    Returns:
+        str or None: Mensaje de error o None si es válido
+    """
+    valor_str = str(valor).strip() if valor is not None else ""
+
+    if not valor_str:
+        return f"El campo {nombre_campo} no puede estar vacío."
+
+    if not re.match(r'^\d+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener números."
+
+    if len(valor_str) != 11:
+        return f"El campo {nombre_campo} debe tener exactamente 11 dígitos."
+
+    if not re.match(r'^(0412|0414|0416|0422|0424|0426)\d{7}$', valor_str):
+        return (
+            f"El campo {nombre_campo} debe comenzar con un prefijo válido: "
+            "0412, 0414, 0416, 0422, 0424 o 0426."
+        )
+
+    return None
+
+
 def validar_direccion_proveedor(valor, max_len=100, nombre_campo="Dirección"):
     if valor in (None, ""):
         return None

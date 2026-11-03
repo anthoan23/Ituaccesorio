@@ -316,6 +316,11 @@ async function registrarEspecialidad(event) {
         const formCrear = document.getElementById("form-especialidad");
         if (!formCrear) return;
 
+        const nombreCrear = formCrear.querySelector('[name="nombre_especialidad"]');
+        if (nombreCrear && window.FieldValidator && typeof window.FieldValidator.validateField === 'function') {
+            if (!window.FieldValidator.validateField(nombreCrear)) return;
+        }
+
         const payload = {
             nombre_especialidad: formCrear.nombre_especialidad.value.trim(),
             descripcion_especialidad: formCrear.descripcion_especialidad.value.trim(),
@@ -360,6 +365,11 @@ async function actualizarEspecialidad(event) {
         const inputEditarNombre = document.getElementById("editar-nombre-especialidad");
         const inputEditarDescripcion = document.getElementById("editar-descripcion-especialidad");
         const formEditar = document.getElementById("form-editar-especialidad");
+
+        const nombreEditar = formEditar?.querySelector('[name="nombre_especialidad"]');
+        if (nombreEditar && window.FieldValidator && typeof window.FieldValidator.validateField === 'function') {
+            if (!window.FieldValidator.validateField(nombreEditar)) return;
+        }
 
         const idEspecialidad = inputEditarId?.value.trim() || "";
 
