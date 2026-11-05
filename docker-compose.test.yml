@@ -1,4 +1,28 @@
+# Sistema completo en modo prueba:
+# docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml up --build
+# La app queda en http://localhost:5001
 services:
+  web:
+    build: .
+    command: python run.py
+    ports:
+      - "5001:5000"
+    env_file:
+      - .env.test
+    environment:
+      ENTORNO_PRUEBA: "true"
+      FLASK_DEBUG: "1"
+      DB_HOST1: db1_test
+      DB_HOST2: db2_test
+      DB_PORT: 3306
+    volumes:
+      - .:/app
+    depends_on:
+      db1_test:
+        condition: service_healthy
+      db2_test:
+        condition: service_healthy
+
   db1_test:
     image: mysql:8.0
     command: --default-time-zone='-04:00'
