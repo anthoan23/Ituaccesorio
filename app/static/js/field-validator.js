@@ -179,6 +179,11 @@
       validate: (value) => /^\d{11}$/.test(value.replace(/[\s\-+()]/g, '')),
       message: 'Ingrese un número de teléfono válido (11 dígitos)'
     },
+    celularVenezolano: {
+      filter: (value) => value.replace(/[^\d]/g, ''),
+      validate: (value) => /^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(value),
+      message: 'Ingrese un celular válido (11 dígitos, ej: 04141234567)'
+    },
     cedula: {
       filter: (value) => value.replace(/[^\d]/g, ''),
       validate: (value) => /^\d{6,8}$/.test(value),

@@ -110,12 +110,12 @@
                   required 
                   placeholder="Ej: 12345678"
                   minlength="6"
-                  maxlength="9"
+                  maxlength="8"
                   data-validation-rules="soloNumeros,noDuplicadoTabla"
                   data-validar-tabla="#tabla-empleados"
                   data-validar-columna="1"
-                  title="Solo números, 8 dígitos">
-            <small class="field-hint" id="cedula-hint">Solo números (máximo 8 dígitos)</small>
+                  title="Solo números, entre 6 y 8 dígitos">
+            <small class="field-hint" id="cedula-hint">Solo números (entre 6 y 8 dígitos)</small>
           </label>
 
           <label class="empleado-form__field">
@@ -125,10 +125,10 @@
                   id="reg-nombre-empleado" 
                   required
                   minlength="3"
-                  maxlength="30"
+                  maxlength="15"
                   data-validation-rules="soloLetras,capitalizar"
-                  title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+                  title="Solo letras, espacios, acentos y ñ (máximo 15 caracteres)">
+            <small class="field-hint">Solo letras, espacios, acentos y ñ (máx. 15 caracteres)</small>
           </label>
 
           <label class="empleado-form__field">
@@ -138,10 +138,10 @@
                   id="reg-apellido-empleado" 
                   required
                   minlength="3"
-                  maxlength="30"
+                  maxlength="15"
                   data-validation-rules="soloLetras,capitalizar"
-                  title="Solo letras, espacios, acentos y ñ">
-            <small class="field-hint">Solo letras, espacios, acentos y ñ</small>
+                  title="Solo letras, espacios, acentos y ñ (máximo 15 caracteres)">
+            <small class="field-hint">Solo letras, espacios, acentos y ñ (máx. 15 caracteres)</small>
           </label>
 
           <label class="empleado-form__field">
@@ -155,16 +155,17 @@
           </label>
 
           <label class="empleado-form__field">
-            <span>Celular</span>
+            <span>Celular *</span>
             <input type="tel" 
                   name="celular_empleado" 
                   id="reg-celular-empleado" 
+                  required
                   placeholder="Ej: 04141234567"
-                  minlength="9"
-                  maxlength="15"
-                  data-validation-rules="telefono"
-                  title="Formato: 04141234567 (11 dígitos)">
-            <small class="field-hint">11 dígitos (ej: 04141234567)</small>
+                  minlength="11"
+                  maxlength="11"
+                  data-validation-rules="celularVenezolano"
+                  title="11 dígitos, comienza con 0412, 0414, 0416, 0422, 0424 o 0426">
+            <small class="field-hint">11 dígitos (ej: 04141234567). Prefijos: 0412, 0414, 0416, 0422, 0424 o 0426</small>
           </label>
 
           <label class="empleado-form__field empleado-form__field--full">

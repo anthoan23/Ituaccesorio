@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Fábrica de aplicaciones Flask (Python 3.12) para "Ituaccesorio", un sistema de gestión de tienda de accesorios. Todo el texto de la interfaz y los comentarios de código están en **español** — sigue esa convención. No existen pruebas unitarias automatizadas (no hay pytest); los únicos assets de prueba son `pruebas/locustfile.py` (prueba de carga) y `bandit` (escaneo de seguridad).
+Fábrica de aplicaciones Flask (Python 3.12) para "Ituaccesorio", un sistema de gestión de tienda de accesorios. Todo el texto de la interfaz y los comentarios de código están en **español** — sigue esa convención. Hay pruebas unitarias con pytest en `tests/pruebas unitarias/` e integración con BD real en `tests/pruebas de integracion/`; otros assets de prueba son `pruebas/locustfile.py` (prueba de carga) y `bandit` (escaneo de seguridad).
 
 ## Ejecución / desarrollo (Docker es el único flujo soportado)
 
@@ -14,6 +14,17 @@ docker-compose down -v      # elimina volúmenes de BD → reinicia ambas BD des
 - El `.env` en la raíz es obligatorio para compose (gitignored; `.env Ejemplo` es la plantilla). `FLASK_DEBUG=1` activa el modo debug.
 - `run.py` llama a `create_app()`; en desarrollo se ejecuta `python run.py` dentro del contenedor.
 - Escaneo de seguridad: `bandit -r . --exclude ./.venv` (reporte HTML: `bandit -r . --exclude ./.venv -f html -o reporte_seguridad.html`). `nota.txt` tiene más apuntes sueltos del proyecto.
+
+## Pruebas
+
+- `pytest -q` ejecuta unitarias e integración. La integración necesita las BD de `docker-compose.test.yml` levantadas manualmente.
+  ```bash
+  docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml up -d --wait
+  pytest -q
+  docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml down -v
+  ```
+- `tests/pruebas de integracion/conftest.py` solo carga `.env.test`; las pruebas instancian `conectar`, `Cargo`, `Empleados` y `Especialidad` y usan sus propios métodos. No reinicia datos ni gestiona contenedores; las pruebas de escritura crean registros temporales y los eliminan en `finally`.
+- El compose de prueba usa dos MySQL en `127.0.0.2:3317` y `127.0.0.3:3317` (mismo puerto en IPs de loopback distintas) porque la app comparte `DB_PORT`. Esquema válido en Linux.
 
 ## Arquitectura (no es obvio por los nombres de archivo)
 

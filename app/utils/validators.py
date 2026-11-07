@@ -37,6 +37,27 @@ def validar_texto_numero(valor, min_len, max_len, nombre_campo):
         
     return None
 
+def validar_codigo_factura(valor, min_len=1, max_len=20, nombre_campo="Factura"):
+    """
+    Valida un código de factura con formato tipo FAC-YYYYMM-XXXXXX.
+    Permite letras, números y guiones.
+    """
+    if not valor or not str(valor).strip():
+        return f"El campo {nombre_campo} no puede estar vacío."
+
+    valor_str = str(valor).strip()
+
+    if len(valor_str) < min_len:
+        return f"El campo {nombre_campo} debe tener al menos {min_len} caracteres."
+
+    if len(valor_str) > max_len:
+        return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
+
+    if not re.match(r'^[A-Za-z0-9\-]+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener letras, números y guiones."
+
+    return None
+
 def validar_email(valor):
     valor_str = str(valor).strip() if valor is not None else ""
     if not valor_str:
@@ -119,6 +140,39 @@ def validar_celular(valor, min_len=11, max_len=11, nombre_campo="Teléfono"):
 
     if not re.match(r'^\d+$', valor_str):
         return f"El campo {nombre_campo} solo puede contener números."
+
+    return None
+
+
+def validar_celular_venezolano(valor, nombre_campo="Celular"):
+    """
+    Valida un celular móvil venezolano: 11 dígitos con prefijo válido.
+
+    Prefijos permitidos: 0412, 0414, 0416, 0422, 0424 y 0426.
+
+    Args:
+        valor (str): El valor a validar
+        nombre_campo (str): Nombre del campo para el mensaje de error
+
+    Returns:
+        str or None: Mensaje de error o None si es válido
+    """
+    valor_str = str(valor).strip() if valor is not None else ""
+
+    if not valor_str:
+        return f"El campo {nombre_campo} no puede estar vacío."
+
+    if not re.match(r'^\d+$', valor_str):
+        return f"El campo {nombre_campo} solo puede contener números."
+
+    if len(valor_str) != 11:
+        return f"El campo {nombre_campo} debe tener exactamente 11 dígitos."
+
+    if not re.match(r'^(0412|0414|0416|0422|0424|0426)\d{7}$', valor_str):
+        return (
+            f"El campo {nombre_campo} debe comenzar con un prefijo válido: "
+            "0412, 0414, 0416, 0422, 0424 o 0426."
+        )
 
     return None
 

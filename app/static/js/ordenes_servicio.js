@@ -94,27 +94,12 @@ const Utils = {
         return emailRegex.test(email);
     },
 
-    validarCelular(celular) {
-        if (!celular) return false;
-        const limpio = celular.replace(/\D/g, '');
-        const prefijos = ['0412', '0414', '0416', '0422', '0424', '0426', '0410', '0418', '0420', '0411', '0413', '0415', '0417', '0419'];
-        if (limpio.length !== 11) return false;
-        const prefijo = limpio.substring(0, 4);
-        return prefijos.includes(prefijo);
-    },
-
-    // ============================================
-    // VALIDACIÓN RIF - CORREGIDA
-    // ============================================
     validarRIF(rif) {
-        // El formato debe ser: J-12345678-9 o E-12345678-9
-        // La letra debe ser J o E, seguida de guión, 8 dígitos, guión y 1 dígito
         const patron = /^[JE]-\d{8}-\d$/;
         return patron.test(rif);
     },
 
     validarRIFEnTiempoReal(input) {
-        // Buscar o crear el elemento de error
         let errorElement = document.getElementById(input.id + '-error');
         if (!errorElement) {
             errorElement = document.createElement('small');
@@ -129,7 +114,6 @@ const Utils = {
         
         const valor = input.value;
         
-        // Limpiar mensaje si no hay valor
         if (!valor) {
             errorElement.textContent = '';
             errorElement.style.color = '';
@@ -139,11 +123,10 @@ const Utils = {
             return;
         }
         
-        // Validar el RIF
         const esValido = this.validarRIF(valor);
         
         if (!esValido) {
-            errorElement.textContent = '✗ Use J-12345678-9 o E-12345678-9 (solo números después de la letra)';
+            errorElement.textContent = '✗ Use J-12345678-9 o E-12345678-9';
             errorElement.style.color = '#ef4444';
             input.classList.add('field-error');
             input.classList.remove('field-success');
@@ -168,18 +151,10 @@ const Utils = {
 
     getEstadoBadgeClass(estado) {
         const estadoLower = String(estado ?? "").toLowerCase().trim();
-        if (estadoLower.includes("pendient")) {
-            return "badge--pendiente";
-        }
-        if (estadoLower.includes("asign")) {
-            return "badge--asignada";
-        }
-        if (estadoLower.includes("revis")) {
-            return "badge--revisada";
-        }
-        if (estadoLower.includes("repar")) {
-            return "badge--reparada";
-        }
+        if (estadoLower.includes("pendient")) return "badge--pendiente";
+        if (estadoLower.includes("asign")) return "badge--asignada";
+        if (estadoLower.includes("revis")) return "badge--revisada";
+        if (estadoLower.includes("repar")) return "badge--reparada";
         return "badge--pendiente";
     },
 
@@ -190,10 +165,6 @@ const Utils = {
 
     soloLetras(value) {
         return /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]*$/.test(value);
-    },
-
-    soloNumeros(value) {
-        return /^\d*$/.test(value);
     },
 
     capitalizarPalabras(texto) {
@@ -207,18 +178,13 @@ const Utils = {
         }).join(' ');
     },
 
-    // ============================================
-    // VALIDACIÓN DE TELÉFONO EN TIEMPO REAL
-    // ============================================
     validarTelefonoOrden(telefono) {
         if (!telefono) {
             return { valido: false, mensaje: 'El teléfono es obligatorio' };
         }
         
-        // Eliminar caracteres no numéricos
         const telefonoLimpio = telefono.replace(/\D/g, '');
         
-        // Verificar longitud (11 dígitos para Venezuela)
         if (telefonoLimpio.length !== 11) {
             return { 
                 valido: false, 
@@ -227,22 +193,17 @@ const Utils = {
             };
         }
         
-        // Extraer prefijo (primeros 4 dígitos)
         const prefijo = telefonoLimpio.substring(0, 4);
-        
-        // Prefijos permitidos para teléfonos móviles en Venezuela
         const prefijosPermitidos = [
-            '0412', '0414', '0416', // Movistar
-            '0422', '0424', '0426', // Movilnet
-            '0410', '0418', '0420', // Digitel
-            '0411', '0413', '0415', '0417', '0419', // Otros operadores
-            '0212', '0234', '0241', '0243', '0251', '0261', '0271', '0274', '0281', '0283', '0285' // Fijos
+            '0412', '0414', '0416', '0422', '0424', '0426', '0410', '0418', '0420', 
+            '0411', '0413', '0415', '0417', '0419', '0212', '0234', '0241', '0243', 
+            '0251', '0261', '0271', '0274', '0281', '0283', '0285'
         ];
         
         if (!prefijosPermitidos.includes(prefijo)) {
             return { 
                 valido: false, 
-                mensaje: `Prefijo "${prefijo}" no permitido. Usa: 0412, 0414, 0416, 0422, 0424, 0426`,
+                mensaje: `Prefijo "${prefijo}" no permitido.`,
                 telefonoLimpio,
                 prefijo
             };
@@ -252,7 +213,6 @@ const Utils = {
     },
 
     validarTelefonoOrdenEnTiempoReal(input) {
-        // Buscar o crear el elemento de error
         let errorElement = document.getElementById(input.id + '-error');
         if (!errorElement) {
             errorElement = document.createElement('small');
@@ -267,7 +227,6 @@ const Utils = {
         
         const valor = input.value;
         
-        // Limpiar mensaje si no hay valor
         if (!valor) {
             errorElement.textContent = '';
             errorElement.style.color = '';
@@ -277,7 +236,6 @@ const Utils = {
             return;
         }
         
-        // Validar el teléfono
         const resultado = this.validarTelefonoOrden(valor);
         
         if (!resultado.valido) {
@@ -288,7 +246,7 @@ const Utils = {
             input.style.borderColor = '#ef4444';
             input.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
         } else {
-            errorElement.textContent = '✓ ' + resultado.mensaje + ' (' + resultado.prefijo + ')';
+            errorElement.textContent = '✓ ' + resultado.mensaje;
             errorElement.style.color = '#22c55e';
             input.classList.remove('field-error');
             input.classList.add('field-success');
@@ -298,17 +256,11 @@ const Utils = {
     },
 
     formatearTelefonoOrden(input) {
-        // Solo permitir números
         let valor = input.value.replace(/\D/g, '');
-        
-        // Limitar a 11 dígitos (máximo para Venezuela)
         if (valor.length > 11) {
             valor = valor.substring(0, 11);
         }
-        
         input.value = valor;
-        
-        // Validar en tiempo real después de formatear
         this.validarTelefonoOrdenEnTiempoReal(input);
     }
 };
@@ -335,6 +287,9 @@ function closeModal(id) {
     }
     const modal = document.getElementById(id);
     if (modal) {
+        if (modal.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
         modal.setAttribute("hidden", "");
         modal.setAttribute("aria-hidden", "true");
     }
@@ -355,11 +310,8 @@ let datosOrdenPendiente = null;
 function getDomElements() {
     return {
         tablaOrdenes: document.getElementById("tabla-ordenes"),
-        tablaOrdenesEstadoBody: document.getElementById("modal-ordenes-estado-body"),
-        modalOrdenesEstadoSubtitle: document.getElementById("modal-ordenes-estado-subtitle"),
         statPendientes: document.getElementById("stat-pendientes"),
         statAsignadas: document.getElementById("stat-asignadas"),
-        // statRevisadas: document.getElementById("stat-revisadas"), // ELIMINADO
         formOrden: document.getElementById("form-orden-servicio"),
         btnVerificarEquipo: document.getElementById("btn-verificar-equipo"),
         btnVerificarCliente: document.getElementById("btn-verificar-cliente"),
@@ -379,20 +331,7 @@ function getDomElements() {
         inputFotos: document.getElementById("input-fotos-orden"),
         previewFotos: document.getElementById("preview-fotos"),
         formRevisionInicial: document.getElementById("form-revision-inicial"),
-        btnConfirmarRevision: document.getElementById("btn-confirmar-revision"),
-        revisionObservaciones: document.getElementById("revision-observaciones"),
         clienteTipo: document.getElementById("cliente-tipo"),
-        clienteCedula: document.getElementById("cliente-cedula"),
-        clienteNombre: document.getElementById("cliente-nombre"),
-        clienteApellido: document.getElementById("cliente-apellido"),
-        clienteRif: document.getElementById("cliente-rif"),
-        clienteRazonSocial: document.getElementById("cliente-razon-social"),
-        clienteCelular: document.getElementById("cliente-celular"),
-        clienteCelularJuridico: document.getElementById("cliente-celular-juridico"),
-        clienteCorreo: document.getElementById("cliente-correo"),
-        clienteCorreoJuridico: document.getElementById("cliente-correo-juridico"),
-        clienteDireccion: document.getElementById("cliente-direccion"),
-        clienteDireccionJuridico: document.getElementById("cliente-direccion-juridico"),
         camposNatural: document.getElementById("cliente-campos-natural"),
         camposJuridico: document.getElementById("cliente-campos-juridico"),
         revisionOrdenNumero: document.getElementById("revision-orden-numero"),
@@ -402,7 +341,7 @@ function getDomElements() {
 }
 
 // ============================================
-// 6. FUNCIONES DE RENDERIZADO
+// 6. RENDERIZADO
 // ============================================
 function renderTablaOrdenes(ordenesData) {
     const { tablaOrdenes } = getDomElements();
@@ -482,7 +421,7 @@ function renderPreviewFotos(files) {
 }
 
 // ============================================
-// 7. FUNCIONES DE CARGA DE DATOS
+// 7. CARGA DE DATOS
 // ============================================
 async function cargarOrdenes() {
     try {
@@ -501,14 +440,21 @@ async function cargarModelos() {
     const { selectModelo } = getDomElements();
     if (!selectModelo) return;
 
+    const valorActual = selectModelo.value;
+
     try {
         const data = await Utils.fetchJson(CONFIG.API.MODELOS);
         const modelos = data.modelos || [];
-        
+
         selectModelo.innerHTML = '<option value="">Seleccione modelo</option>' + modelos.map((modelo) => {
             const label = `${modelo.marca_nombre ?? ""} ${modelo.nombre ?? ""}`.trim();
             return `<option value="${Utils.escapeHtml(modelo.id)}">${Utils.escapeHtml(label)}</option>`;
         }).join("");
+
+        if (valorActual) {
+            const existe = Array.from(selectModelo.options).some(opt => opt.value === valorActual);
+            if (existe) selectModelo.value = valorActual;
+        }
     } catch (error) {
         console.error("Error cargando modelos:", error);
     }
@@ -526,41 +472,7 @@ async function cargarTecnicos() {
 }
 
 // ============================================
-// 7.1 FUNCIONES DE FILTRADO Y BÚSQUEDA
-// ============================================
-
-function filtrarOrdenes() {
-    const { inputBuscar, filtroEstado } = getDomElements();
-    
-    const terminoBusqueda = inputBuscar?.value?.toLowerCase()?.trim() || "";
-    const estadoFiltro = filtroEstado?.value?.toLowerCase()?.trim() || "";
-    
-    let ordenesFiltradas = [...ordenes];
-    
-    if (estadoFiltro) {
-        ordenesFiltradas = ordenesFiltradas.filter((o) => {
-            const estadoOrden = String(o.Estado || "").toLowerCase().trim();
-            return estadoOrden === estadoFiltro;
-        });
-    }
-    
-    if (terminoBusqueda) {
-        ordenesFiltradas = ordenesFiltradas.filter((o) => {
-            const idOrden = String(o.ID_orden || "").toLowerCase();
-            const clienteNombre = (o.Nombre_completo || `${o.Nombre_cliente || ""} ${o.Apellido_cliente || ""}` || o.Razon_social || "").toLowerCase();
-            const equipo = String(o.Equipo || "").toLowerCase();
-            
-            return idOrden.includes(terminoBusqueda) ||
-                   clienteNombre.includes(terminoBusqueda) ||
-                   equipo.includes(terminoBusqueda);
-        });
-    }
-    
-    renderTablaOrdenes(ordenesFiltradas);
-}
-
-// ============================================
-// 8. FUNCIONES DE ACCIÓN
+// 8. ACCIONES
 // ============================================
 function actualizarEstadisticas(ordenesData) {
     const count = (estado) => ordenesData.filter((o) => String(o.Estado || "").toLowerCase() === estado).length;
@@ -598,22 +510,6 @@ function setEquipoStatus(message, isError = false) {
     } else if (message && !message.toLowerCase().includes("no encontrado")) {
         equipoStatus.classList.add("is-success");
     }
-}
-
-function limpiarClienteForm() {
-    setFieldValue("cliente-cedula", "");
-    setFieldValue("cliente-nombre", "");
-    setFieldValue("cliente-apellido", "");
-    setFieldValue("cliente-rif", "");
-    setFieldValue("cliente-razon-social", "");
-    setFieldValue("cliente-celular", "");
-    setFieldValue("cliente-celular-juridico", "");
-    setFieldValue("cliente-correo", "");
-    setFieldValue("cliente-correo-juridico", "");
-    setFieldValue("cliente-direccion", "");
-    setFieldValue("cliente-direccion-juridico", "");
-    setFieldValue("cliente-tipo", "natural");
-    toggleCamposCliente('natural');
 }
 
 function getFieldValue(fieldId) {
@@ -675,10 +571,10 @@ function obtenerSiguienteNumeroTest() {
 }
 
 // ============================================
-// 9. FUNCIÓN PARA ALTERNAR CAMPOS DE CLIENTE
+// 9. TOGGLE CLIENTE
 // ============================================
 function toggleCamposCliente(tipo) {
-    const { camposNatural, camposJuridico, clienteCedula, clienteNombre, clienteApellido, clienteRif, clienteRazonSocial } = getDomElements();
+    const { camposNatural, camposJuridico } = getDomElements();
     
     if (!camposNatural || !camposJuridico) return;
     
@@ -689,45 +585,37 @@ function toggleCamposCliente(tipo) {
     const direccionNatural = document.getElementById('cliente-direccion');
     const direccionJuridico = document.getElementById('cliente-direccion-juridico');
     
-    // Limpiar estilos de validación de RIF
     const rifInput = document.getElementById('cliente-rif');
     if (rifInput) {
         rifInput.classList.remove('field-error', 'field-success');
         rifInput.style.borderColor = '';
         rifInput.style.boxShadow = '';
         const rifError = document.getElementById('cliente-rif-error');
-        if (rifError) {
-            rifError.textContent = '';
-            rifError.style.color = '';
-        }
+        if (rifError) { rifError.textContent = ''; rifError.style.color = ''; }
     }
     
-    // Limpiar estilos de validación de cédula
     const cedulaInput = document.getElementById('cliente-cedula');
     if (cedulaInput) {
         cedulaInput.classList.remove('field-error', 'field-success');
         cedulaInput.style.borderColor = '';
         cedulaInput.style.boxShadow = '';
         const cedulaError = document.getElementById('cliente-cedula-error');
-        if (cedulaError) {
-            cedulaError.textContent = '';
-            cedulaError.style.color = '';
-        }
+        if (cedulaError) { cedulaError.textContent = ''; cedulaError.style.color = ''; }
     }
     
     if (tipo === 'juridico') {
         camposNatural.style.display = 'none';
         camposJuridico.style.display = 'grid';
         
-        if (clienteCedula) { clienteCedula.removeAttribute('required'); clienteCedula.disabled = true; }
-        if (clienteNombre) { clienteNombre.removeAttribute('required'); clienteNombre.disabled = true; }
-        if (clienteApellido) { clienteApellido.removeAttribute('required'); clienteApellido.disabled = true; }
+        if (document.getElementById('cliente-cedula')) { document.getElementById('cliente-cedula').removeAttribute('required'); document.getElementById('cliente-cedula').disabled = true; }
+        if (document.getElementById('cliente-nombre')) { document.getElementById('cliente-nombre').removeAttribute('required'); document.getElementById('cliente-nombre').disabled = true; }
+        if (document.getElementById('cliente-apellido')) { document.getElementById('cliente-apellido').removeAttribute('required'); document.getElementById('cliente-apellido').disabled = true; }
         if (celularNatural) { celularNatural.removeAttribute('required'); celularNatural.disabled = true; }
         if (correoNatural) { correoNatural.disabled = true; }
         if (direccionNatural) { direccionNatural.disabled = true; }
         
-        if (clienteRif) { clienteRif.setAttribute('required', ''); clienteRif.disabled = false; }
-        if (clienteRazonSocial) { clienteRazonSocial.setAttribute('required', ''); clienteRazonSocial.disabled = false; }
+        if (rifInput) { rifInput.setAttribute('required', ''); rifInput.disabled = false; }
+        if (document.getElementById('cliente-razon-social')) { document.getElementById('cliente-razon-social').setAttribute('required', ''); document.getElementById('cliente-razon-social').disabled = false; }
         if (celularJuridico) { celularJuridico.setAttribute('required', ''); celularJuridico.disabled = false; }
         if (correoJuridico) { correoJuridico.disabled = false; }
         if (direccionJuridico) { direccionJuridico.disabled = false; }
@@ -738,15 +626,15 @@ function toggleCamposCliente(tipo) {
         camposNatural.style.display = 'grid';
         camposJuridico.style.display = 'none';
         
-        if (clienteCedula) { clienteCedula.setAttribute('required', ''); clienteCedula.disabled = false; }
-        if (clienteNombre) { clienteNombre.setAttribute('required', ''); clienteNombre.disabled = false; }
-        if (clienteApellido) { clienteApellido.setAttribute('required', ''); clienteApellido.disabled = false; }
+        if (document.getElementById('cliente-cedula')) { document.getElementById('cliente-cedula').setAttribute('required', ''); document.getElementById('cliente-cedula').disabled = false; }
+        if (document.getElementById('cliente-nombre')) { document.getElementById('cliente-nombre').setAttribute('required', ''); document.getElementById('cliente-nombre').disabled = false; }
+        if (document.getElementById('cliente-apellido')) { document.getElementById('cliente-apellido').setAttribute('required', ''); document.getElementById('cliente-apellido').disabled = false; }
         if (celularNatural) { celularNatural.setAttribute('required', ''); celularNatural.disabled = false; }
         if (correoNatural) { correoNatural.disabled = false; }
         if (direccionNatural) { direccionNatural.disabled = false; }
         
-        if (clienteRif) { clienteRif.removeAttribute('required'); clienteRif.disabled = true; }
-        if (clienteRazonSocial) { clienteRazonSocial.removeAttribute('required'); clienteRazonSocial.disabled = true; }
+        if (rifInput) { rifInput.removeAttribute('required'); rifInput.disabled = true; }
+        if (document.getElementById('cliente-razon-social')) { document.getElementById('cliente-razon-social').removeAttribute('required'); document.getElementById('cliente-razon-social').disabled = true; }
         if (celularJuridico) { celularJuridico.removeAttribute('required'); celularJuridico.disabled = true; }
         if (correoJuridico) { correoJuridico.disabled = true; }
         if (direccionJuridico) { direccionJuridico.disabled = true; }
@@ -762,14 +650,11 @@ function toggleCamposCliente(tipo) {
 }
 
 // ============================================
-// 10. VERIFICACIONES DE CLIENTE - CORREGIDAS
+// 10. VERIFICACIONES CLIENTE
 // ============================================
 async function verificarCliente() {
     const tipo = document.getElementById('cliente-tipo')?.value || 'natural';
-    
-    // Limpiar estado anterior
     setClienteStatus("Verificando...", false);
-    
     if (tipo === 'natural') {
         await verificarClienteNatural();
     } else {
@@ -779,15 +664,8 @@ async function verificarCliente() {
 
 async function verificarClienteNatural() {
     const cedula = getFieldValue("cliente-cedula");
-    if (!cedula) {
-        setClienteStatus("Ingresa una cédula para verificar.", true);
-        return;
-    }
-
-    if (cedula.length < 7 || cedula.length > 8) {
-        setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true);
-        return;
-    }
+    if (!cedula) { setClienteStatus("Ingresa una cédula para verificar.", true); return; }
+    if (cedula.length < 7 || cedula.length > 8) { setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true); return; }
 
     try {
         const data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(cedula)}`);
@@ -805,7 +683,6 @@ async function verificarClienteNatural() {
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
         
-        // Marcar el campo cédula como válido
         const cedulaInput = document.getElementById('cliente-cedula');
         if (cedulaInput) {
             cedulaInput.classList.remove('field-error');
@@ -820,7 +697,6 @@ async function verificarClienteNatural() {
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
         
-        // Marcar el campo cédula como inválido
         const cedulaInput = document.getElementById('cliente-cedula');
         if (cedulaInput) {
             cedulaInput.classList.add('field-error');
@@ -833,45 +709,28 @@ async function verificarClienteNatural() {
 
 async function verificarClienteJuridico() {
     const rif = getFieldValue("cliente-rif");
-    if (!rif) {
-        setClienteStatus("Ingresa un RIF para verificar.", true);
-        return;
-    }
+    if (!rif) { setClienteStatus("Ingresa un RIF para verificar.", true); return; }
 
-    // Validación estricta del RIF
     if (!Utils.validarRIF(rif)) {
-        setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9 (solo números después de la letra)", true);
+        setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true);
         const rifInput = document.getElementById('cliente-rif');
         if (rifInput) {
             rifInput.classList.add('field-error');
             rifInput.classList.remove('field-success');
             rifInput.style.borderColor = '#ef4444';
             rifInput.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
-            const errorElement = document.getElementById('cliente-rif-error');
-            if (errorElement) {
-                errorElement.textContent = '✗ Use J-12345678-9 o E-12345678-9 (solo números)';
-                errorElement.style.color = '#ef4444';
-            }
         }
         return;
     }
 
     try {
-        // Guardar el RIF original con guiones
         const rifConGuiones = rif;
-        // Quitar guiones para la búsqueda
         const rifSinGuiones = rif.replace(/-/g, '').toUpperCase();
         
-        console.log(`[DEBUG] Buscando RIF con guiones: ${rifConGuiones}`);
-        console.log(`[DEBUG] Buscando RIF sin guiones: ${rifSinGuiones}`);
-        
-        // Primero intentar buscar con guiones
         let data;
         try {
             data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifConGuiones)}`);
         } catch (e) {
-            // Si no funciona con guiones, intentar sin guiones
-            console.log(`[DEBUG] No encontrado con guiones, intentando sin guiones...`);
             data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifSinGuiones)}`);
         }
         
@@ -883,12 +742,11 @@ async function verificarClienteJuridico() {
         setFieldValue("cliente-correo-juridico", cliente.correo || "");
         setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
         setFieldValue("cliente-tipo", "juridico");
-        setClienteStatus("Empresa verificado correctamente.");
+        setClienteStatus("Empresa verificada correctamente.");
 
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
         
-        // Marcar el campo RIF como válido
         const rifInput = document.getElementById('cliente-rif');
         if (rifInput) {
             rifInput.classList.remove('field-error');
@@ -898,13 +756,11 @@ async function verificarClienteJuridico() {
         }
         
     } catch (error) {
-        console.error("[ERROR] Error verificando empresa:", error);
         clienteActualId = null;
         setClienteStatus("Empresa no encontrada. Regístrala para continuar.", true);
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = false;
         
-        // Marcar el campo RIF como inválido
         const rifInput = document.getElementById('cliente-rif');
         if (rifInput) {
             rifInput.classList.add('field-error');
@@ -916,7 +772,7 @@ async function verificarClienteJuridico() {
 }
 
 // ============================================
-// 11. REGISTRO DE CLIENTE
+// 11. REGISTRAR CLIENTE
 // ============================================
 async function registrarClienteDesdeFormulario() {
     try {
@@ -934,42 +790,30 @@ async function registrarClienteDesdeFormulario() {
             payload.apellido = getFieldValue("cliente-apellido");
 
             if (!payload.cedula || !payload.nombre || !payload.apellido) {
-                setClienteStatus("Cédula, nombre y apellido son obligatorios.", true);
-                return;
+                setClienteStatus("Cédula, nombre y apellido son obligatorios.", true); return;
             }
             if (payload.cedula.length < 7 || payload.cedula.length > 8) {
-                setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true);
-                return;
+                setClienteStatus("La cédula debe tener 7 u 8 dígitos.", true); return;
             }
         } else {
             payload.rif = getFieldValue("cliente-rif");
             payload.razon_social = getFieldValue("cliente-razon-social");
 
             if (!payload.rif || !payload.razon_social) {
-                setClienteStatus("RIF y Razón Social son obligatorios.", true);
-                return;
+                setClienteStatus("RIF y Razón Social son obligatorios.", true); return;
             }
             if (!Utils.validarRIF(payload.rif)) {
-                setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true);
-                return;
+                setClienteStatus("Formato de RIF inválido. Ej: J-12345678-9", true); return;
             }
         }
 
-        if (!payload.celular) {
-            setClienteStatus("El celular es obligatorio.", true);
-            return;
-        }
+        if (!payload.celular) { setClienteStatus("El celular es obligatorio.", true); return; }
 
-        // Validación de teléfono mejorada
         const resultadoTelefono = Utils.validarTelefonoOrden(payload.celular);
-        if (!resultadoTelefono.valido) {
-            setClienteStatus(resultadoTelefono.mensaje, true);
-            return;
-        }
+        if (!resultadoTelefono.valido) { setClienteStatus(resultadoTelefono.mensaje, true); return; }
 
         if (payload.correo && !Utils.isValidEmail(payload.correo)) {
-            setClienteStatus("El correo electrónico no es válido.", true);
-            return;
+            setClienteStatus("El correo electrónico no es válido.", true); return;
         }
 
         const data = await Utils.fetchJson(CONFIG.API.CLIENTES, {
@@ -983,30 +827,18 @@ async function registrarClienteDesdeFormulario() {
         const { btnCrearCliente } = getDomElements();
         if (btnCrearCliente) btnCrearCliente.hidden = true;
     } catch (error) {
-        console.error("Error registrando cliente:", error);
         setClienteStatus(error.message || "No se pudo registrar el cliente.", true);
     }
 }
 
 // ============================================
-// 12. VERIFICACIÓN DE EQUIPO
+// 12. VERIFICACIÓN EQUIPO
 // ============================================
 async function verificarEquipo() {
     const idEquipo = getFieldValue("orden-id-equipo");
-    if (!idEquipo) {
-        setEquipoStatus("Ingresa el IMEI del equipo para verificar.", true);
-        return;
-    }
-
-    if (!/^\d+$/.test(idEquipo)) {
-        setEquipoStatus("El IMEI solo puede contener números.", true);
-        return;
-    }
-
-    if (idEquipo.length !== 15) {
-        setEquipoStatus("El IMEI debe tener exactamente 15 caracteres.", true);
-        return;
-    }
+    if (!idEquipo) { setEquipoStatus("Ingresa el IMEI del equipo para verificar.", true); return; }
+    if (!/^\d+$/.test(idEquipo)) { setEquipoStatus("El IMEI solo puede contener números.", true); return; }
+    if (idEquipo.length !== 15) { setEquipoStatus("El IMEI debe tener exactamente 15 caracteres.", true); return; }
 
     try {
         const data = await Utils.fetchJson(`/api/ordenes-servicio/equipo/${encodeURIComponent(idEquipo)}`);
@@ -1016,51 +848,33 @@ async function verificarEquipo() {
             setEquipoStatus("Equipo encontrado.");
 
             const { selectModelo } = getDomElements();
-            if (equipo.id_modelo && selectModelo) {
-                selectModelo.value = String(equipo.id_modelo);
-            }
-            if (equipo.color) {
-                const colorCapitalizado = Utils.capitalizarPalabras(equipo.color);
-                setFieldValue("orden-color", colorCapitalizado);
-            }
+            if (equipo.id_modelo && selectModelo) selectModelo.value = String(equipo.id_modelo);
+            if (equipo.color) setFieldValue("orden-color", Utils.capitalizarPalabras(equipo.color));
+            
             if (equipo.capacidad) {
                 const capSelect = document.getElementById("orden-capacidad");
-                if (capSelect) {
-                    capSelect.value = equipo.capacidad;
-                }
+                if (capSelect) capSelect.value = equipo.capacidad;
             }
-            if (equipo.patron) {
-                setFieldValue("orden-patron", equipo.patron);
-            }
-            if (equipo.clave) {
-                setFieldValue("orden-clave", equipo.clave);
-            }
+            if (equipo.patron) setFieldValue("orden-patron", equipo.patron);
+            if (equipo.clave) setFieldValue("orden-clave", equipo.clave);
         } else {
             setEquipoStatus("Equipo no encontrado. Se creará al guardar la orden.", true);
         }
     } catch (error) {
-        console.error("Error verificando equipo:", error);
         setEquipoStatus("No se pudo verificar el equipo.", true);
     }
 }
 
 // ============================================
-// 13. MARCAR TODOS LOS TESTS COMO OK O NO FUNCIONA
+// 13. MARCAR TESTS
 // ============================================
-
 function marcarTodosTestsOK() {
-    const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]');
-    radios.forEach(radio => {
-        radio.checked = true;
-    });
+    document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => { radio.checked = true; });
     Utils.showMessage('✅ Todos los componentes marcados como OK');
 }
 
 function marcarTodosTestsFallo() {
-    const radios = document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]');
-    radios.forEach(radio => {
-        radio.checked = true;
-    });
+    document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]').forEach(radio => { radio.checked = true; });
     Utils.showMessage('❌ Todos los componentes marcados como No funciona');
 }
 
@@ -1082,106 +896,48 @@ function recolectarTests() {
         if (radio) {
             const valor = parseInt(radio.value, 10);
             const resultado = valor === 1 ? "Funciona" : "No funciona";
-            testsData.push({
-                nombre: campo,
-                resultado: resultado
-            });
+            testsData.push({ nombre: campo, resultado: resultado });
         }
     });
     
     const observaciones = document.getElementById("revision-observaciones")?.value?.trim() || "";
-    if (observaciones) {
-        testsData.push({
-            nombre: "Observaciones",
-            resultado: observaciones
-        });
-    }
+    if (observaciones) testsData.push({ nombre: "Observaciones", resultado: observaciones });
     
     return testsData;
 }
 
 // ============================================
-// 15. ENVÍO DEL FORMULARIO DE ORDEN
+// 15. SUBMIT ORDEN
 // ============================================
 async function onSubmitOrden(event) {
     event.preventDefault();
     const { formOrden, inputFecha, selectModelo } = getDomElements();
     if (!formOrden) return;
 
-    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
-        const isValid = window.FieldValidator.validateForm(formOrden);
-        if (!isValid) {
-            Utils.showMessage("Por favor, corrige los errores en el formulario.", true);
-            const primerError = formOrden.querySelector('.field-error');
-            if (primerError) {
-                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                primerError.focus();
-            }
-            return;
-        }
-    }
-
     const idEquipo = getFieldValue("orden-id-equipo");
-    if (!idEquipo) {
-        Utils.showMessage("El IMEI del equipo es obligatorio.", true);
-        return;
-    }
-    if (!/^\d+$/.test(idEquipo)) {
-        Utils.showMessage("El IMEI solo puede contener números.", true);
-        return;
-    }
-    if (idEquipo.length !== 15) {
-        Utils.showMessage("El IMEI debe tener exactamente 15 caracteres.", true);
-        return;
-    }
+    if (!idEquipo) { Utils.showMessage("El IMEI del equipo es obligatorio.", true); return; }
+    if (!/^\d+$/.test(idEquipo)) { Utils.showMessage("El IMEI solo puede contener números.", true); return; }
+    if (idEquipo.length !== 15) { Utils.showMessage("El IMEI debe tener exactamente 15 caracteres.", true); return; }
 
     const color = getFieldValue("orden-color");
-    if (color && color.length > 15) {
-        Utils.showMessage("El color no puede exceder los 15 caracteres.", true);
-        return;
-    }
-    if (color && !Utils.soloLetras(color)) {
-        Utils.showMessage("El color solo debe contener letras.", true);
-        return;
-    }
+    if (color && color.length > 15) { Utils.showMessage("El color no puede exceder los 15 caracteres.", true); return; }
+    if (color && !Utils.soloLetras(color)) { Utils.showMessage("El color solo debe contener letras.", true); return; }
 
     const idModelo = selectModelo?.value;
     const modeloCustom = getFieldValue("orden-modelo-custom");
-    if (!idModelo && !modeloCustom) {
-        Utils.showMessage("Debes seleccionar un modelo o escribir uno personalizado.", true);
-        return;
-    }
-
-    if (modeloCustom && modeloCustom.length > 30) {
-        Utils.showMessage("El modelo personalizado no puede exceder 30 caracteres.", true);
-        return;
-    }
-    if (modeloCustom && !/^[a-zA-Z0-9\s\-]+$/.test(modeloCustom)) {
-        Utils.showMessage("El modelo solo puede contener letras, números, espacios y guiones.", true);
-        return;
-    }
+    if (!idModelo && !modeloCustom) { Utils.showMessage("Debes seleccionar un modelo o escribir uno personalizado.", true); return; }
+    if (modeloCustom && modeloCustom.length > 30) { Utils.showMessage("El modelo personalizado no puede exceder 30 caracteres.", true); return; }
+    if (modeloCustom && !/^[a-zA-Z0-9\s\-]+$/.test(modeloCustom)) { Utils.showMessage("El modelo solo puede contener letras, números, espacios y guiones.", true); return; }
 
     const descripcion = getFieldValue("orden-descripcion");
-    if (!descripcion) {
-        Utils.showMessage("La descripción del problema es obligatoria.", true);
-        return;
-    }
-    if (descripcion.length > 300) {
-        Utils.showMessage("La descripción no puede exceder 300 caracteres.", true);
-        return;
-    }
+    if (!descripcion) { Utils.showMessage("La descripción del problema es obligatoria.", true); return; }
+    if (descripcion.length > 300) { Utils.showMessage("La descripción no puede exceder 300 caracteres.", true); return; }
 
     const nota = getFieldValue("orden-nota");
-    if (nota && nota.length > 50) {
-        Utils.showMessage("Las notas no pueden exceder 50 caracteres.", true);
-        return;
-    }
+    if (nota && nota.length > 50) { Utils.showMessage("Las notas no pueden exceder 50 caracteres.", true); return; }
 
     const correo = getFieldValue("correo");
-    if (correo && !Utils.isValidEmail(correo)) {
-        Utils.showMessage("El correo electrónico no es válido.", true);
-        return;
-    }
+    if (correo && !Utils.isValidEmail(correo)) { Utils.showMessage("El correo electrónico no es válido.", true); return; }
 
     const celular = getFieldValue("celular");
     if (celular) {
@@ -1209,57 +965,26 @@ async function onSubmitOrden(event) {
         const nombre = getFieldValue("cliente-nombre");
         const apellido = getFieldValue("cliente-apellido");
 
-        if (!cedula) {
-            Utils.showMessage("La cédula del cliente es obligatoria.", true);
-            return;
-        }
-        if (cedula.length < 7 || cedula.length > 8) {
-            Utils.showMessage("La cédula debe tener 7 u 8 dígitos numéricos.", true);
-            return;
-        }
-        if (nombre && nombre.length > 20) {
-            Utils.showMessage("El nombre no puede exceder los 20 caracteres.", true);
-            return;
-        }
-        if (nombre && !Utils.soloLetras(nombre)) {
-            Utils.showMessage("El nombre solo debe contener letras.", true);
-            return;
-        }
-        if (apellido && apellido.length > 20) {
-            Utils.showMessage("El apellido no puede exceder los 20 caracteres.", true);
-            return;
-        }
-        if (apellido && !Utils.soloLetras(apellido)) {
-            Utils.showMessage("El apellido solo debe contener letras.", true);
-            return;
-        }
+        if (!cedula) { Utils.showMessage("La cédula del cliente es obligatoria.", true); return; }
+        if (cedula.length < 7 || cedula.length > 8) { Utils.showMessage("La cédula debe tener 7 u 8 dígitos numéricos.", true); return; }
+        if (nombre && nombre.length < 3) { Utils.showMessage("El nombre debe tener al menos 3 letras.", true); return; }
+        if (nombre && nombre.length > 20) { Utils.showMessage("El nombre no puede exceder los 20 caracteres.", true); return; }
+        if (nombre && !Utils.soloLetras(nombre)) { Utils.showMessage("El nombre solo debe contener letras.", true); return; }
+        if (apellido && apellido.length < 3) { Utils.showMessage("El apellido debe tener al menos 3 letras.", true); return; }
+        if (apellido && apellido.length > 20) { Utils.showMessage("El apellido no puede exceder los 20 caracteres.", true); return; }
+        if (apellido && !Utils.soloLetras(apellido)) { Utils.showMessage("El apellido solo debe contener letras.", true); return; }
     } else {
         const rif = getFieldValue("cliente-rif");
         const razonSocial = getFieldValue("cliente-razon-social");
 
-        if (!rif) {
-            Utils.showMessage("El RIF es obligatorio para clientes jurídicos.", true);
-            return;
-        }
-        if (!Utils.validarRIF(rif)) {
-            Utils.showMessage("Formato de RIF inválido. Ej: J-12345678-9 (solo números después de la letra)", true);
-            return;
-        }
-        if (!razonSocial) {
-            Utils.showMessage("La Razón Social es obligatoria para clientes jurídicos.", true);
-            return;
-        }
-        if (razonSocial.length > 60) {
-            Utils.showMessage("La Razón Social no puede exceder 60 caracteres.", true);
-            return;
-        }
+        if (!rif) { Utils.showMessage("El RIF es obligatorio para clientes jurídicos.", true); return; }
+        if (!Utils.validarRIF(rif)) { Utils.showMessage("Formato de RIF inválido. Ej: J-12345678-9", true); return; }
+        if (!razonSocial) { Utils.showMessage("La Razón Social es obligatoria para clientes jurídicos.", true); return; }
+        if (razonSocial.length > 60) { Utils.showMessage("La Razón Social no puede exceder 60 caracteres.", true); return; }
     }
 
     const direccion = getFieldValue("direccion");
-    if (direccion && direccion.length > 50) {
-        Utils.showMessage("La dirección no puede exceder los 50 caracteres.", true);
-        return;
-    }
+    if (direccion && direccion.length > 50) { Utils.showMessage("La dirección no puede exceder los 50 caracteres.", true); return; }
 
     if (!clienteId) {
         if (tipoCliente === 'natural') {
@@ -1277,10 +1002,7 @@ async function onSubmitOrden(event) {
                 setFieldValue("cliente-correo", cliente.correo || "");
                 setFieldValue("cliente-direccion", cliente.direccion || "");
             } catch (e) {
-                if (!nombre || !apellido || !celular) {
-                    Utils.showMessage("Para registrar un nuevo cliente, completa nombre, apellido y celular.", true);
-                    return;
-                }
+                if (!nombre || !apellido || !celular) { Utils.showMessage("Para registrar un nuevo cliente, completa nombre, apellido y celular.", true); return; }
                 await registrarClienteDesdeFormulario();
                 clienteId = clienteActualId;
             }
@@ -1291,11 +1013,9 @@ async function onSubmitOrden(event) {
             try {
                 const rifSinGuiones = rif.replace(/-/g, '').toUpperCase();
                 let data;
-                try {
-                    data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rif)}`);
-                } catch (e) {
-                    data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifSinGuiones)}`);
-                }
+                try { data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rif)}`); } 
+                catch (e) { data = await Utils.fetchJson(`${CONFIG.API.CLIENTES}/${encodeURIComponent(rifSinGuiones)}`); }
+                
                 const cliente = data.cliente || data.data || {};
                 clienteId = cliente.id || cliente.rif || rif;
                 setFieldValue("cliente-razon-social", cliente.razon_social || cliente.nombre || "");
@@ -1303,20 +1023,14 @@ async function onSubmitOrden(event) {
                 setFieldValue("cliente-correo-juridico", cliente.correo || "");
                 setFieldValue("cliente-direccion-juridico", cliente.direccion || "");
             } catch (e) {
-                if (!razonSocial || !celular) {
-                    Utils.showMessage("Para registrar una nueva empresa, completa Razón Social y celular.", true);
-                    return;
-                }
+                if (!razonSocial || !celular) { Utils.showMessage("Para registrar una nueva empresa, completa Razón Social y celular.", true); return; }
                 await registrarClienteDesdeFormulario();
                 clienteId = clienteActualId;
             }
         }
     }
 
-    if (!clienteId) {
-        Utils.showMessage("Debes verificar o registrar el cliente primero.", true);
-        return;
-    }
+    if (!clienteId) { Utils.showMessage("Debes verificar o registrar el cliente primero.", true); return; }
 
     const fechaActual = Utils.getFechaActual();
 
@@ -1343,9 +1057,7 @@ async function onSubmitOrden(event) {
     closeModal("modal-nueva-orden");
     
     setTimeout(() => {
-        document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => {
-            radio.checked = true;
-        });
+        document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => { radio.checked = true; });
         const obsTextarea = document.getElementById("revision-observaciones");
         if (obsTextarea) obsTextarea.value = "";
     }, 100);
@@ -1354,46 +1066,88 @@ async function onSubmitOrden(event) {
 }
 
 // ============================================
-// 16. CONFIRMAR REVISIÓN Y GUARDAR ORDEN
+// 15.1 REFRESCAR MODAL NUEVA ORDEN
+// ============================================
+async function refrescarModalNuevaOrden(modeloCustomUsado = null) {
+    const { formOrden, inputFecha, selectModelo, clienteTipo, btnCrearCliente } = getDomElements();
+
+    if (formOrden) formOrden.reset();
+
+    if (inputFecha) inputFecha.value = Utils.getFechaActual();
+
+    clienteActualId = null;
+    setClienteStatus("");
+    if (btnCrearCliente) btnCrearCliente.hidden = true;
+
+    if (clienteTipo) clienteTipo.value = 'natural';
+    toggleCamposCliente('natural');
+
+    if (formOrden) {
+        formOrden.querySelectorAll('.field-error, .field-success').forEach(el => {
+            el.classList.remove('field-error', 'field-success');
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+        });
+
+        formOrden.querySelectorAll('.field-error[id$="-error"]').forEach(el => {
+            el.textContent = '';
+            el.style.color = '';
+        });
+
+        formOrden.querySelectorAll('select').forEach(sel => {
+            if (sel.id !== 'cliente-tipo') sel.selectedIndex = 0;
+        });
+    }
+
+    await cargarModelos();
+
+    if (modeloCustomUsado && selectModelo) {
+        const objetivo = modeloCustomUsado.trim().toLowerCase();
+        const opcion = Array.from(selectModelo.options).find(opt => opt.textContent.trim().toLowerCase().includes(objetivo));
+        if (opcion) selectModelo.value = opcion.value;
+    }
+
+    setEquipoStatus("");
+
+    document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => { radio.checked = true; });
+    const obsTextarea = document.getElementById("revision-observaciones");
+    if (obsTextarea) obsTextarea.value = "";
+}
+
+// ============================================
+// 16. CONFIRMAR REVISION Y GUARDAR
 // ============================================
 async function confirmarRevision(event) {
     event.preventDefault();
-    
+
     const testsData = recolectarTests();
-    
+
     const testCampos = [
         'Botón Power', 'Botón Vol', 'Cornetas', 'Mica', 'LCD', 'Tactil',
         'Wifi', 'Puerto_carga', 'Cámara posterior', 'Cámara delantera', 'Microfono',
         'Flash', 'Botón Silencio', 'Auricular', 'Senal', 'Sensor_proximidad',
         'Face_id', 'Bluetooth', 'Caja', 'Cargador', 'Cable', 'Manuales'
     ];
-    
+
     let todosSeleccionados = true;
     testCampos.forEach((campo) => {
         const radio = document.querySelector(`#modal-revision-inicial input[name="test_${campo}"]:checked`);
-        if (!radio) {
-            todosSeleccionados = false;
-        }
+        if (!radio) todosSeleccionados = false;
     });
-    
-    if (!todosSeleccionados) {
-        Utils.showMessage("Por favor, selecciona el estado de todos los componentes.", true);
-        return;
-    }
-    
-    if (!datosOrdenPendiente) {
-        Utils.showMessage("No hay datos de orden para guardar.", true);
-        return;
-    }
-    
+
+    if (!todosSeleccionados) { Utils.showMessage("Por favor, selecciona el estado de todos los componentes.", true); return; }
+    if (!datosOrdenPendiente) { Utils.showMessage("No hay datos de orden para guardar.", true); return; }
+
     const incluirTests = testsData.length > 0;
-    
+
     const payload = {
         ...datosOrdenPendiente,
         incluir_tests: incluirTests,
         tests: testsData
     };
-    
+
+    const modeloCustomUsado = datosOrdenPendiente.modelo_custom || null;
+
     try {
         await Utils.fetchJson(CONFIG.API.ORDENES_SERVICIO, {
             method: "POST",
@@ -1401,21 +1155,11 @@ async function confirmarRevision(event) {
         });
 
         Utils.showMessage("Orden creada correctamente con revisión inicial registrada.");
-        
+
         datosOrdenPendiente = null;
         closeModal("modal-revision-inicial");
-        
-        const { formOrden, btnCrearCliente } = getDomElements();
-        if (formOrden) formOrden.reset();
-        
-        clienteActualId = null;
-        setClienteStatus("");
-        if (btnCrearCliente) btnCrearCliente.hidden = true;
-        
-        const { inputFecha } = getDomElements();
-        if (inputFecha) {
-            inputFecha.value = Utils.getFechaActual();
-        }
+
+        await refrescarModalNuevaOrden(modeloCustomUsado);
 
         await cargarOrdenes();
     } catch (error) {
@@ -1425,9 +1169,8 @@ async function confirmarRevision(event) {
 }
 
 // ============================================
-// 17. FUNCIONES DE DETALLE DE ORDEN
+// 17. DETALLE ORDEN
 // ============================================
-
 async function abrirDetalleOrden(idOrden) {
     try {
         const data = await Utils.fetchJson(`${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}`);
@@ -1445,13 +1188,10 @@ async function abrirDetalleOrden(idOrden) {
         if (revisionOrdenId) revisionOrdenId.value = String(idOrden);
         if (fotosOrdenId) fotosOrdenId.value = String(idOrden);
 
-        if (revisionOrdenNumero) {
-            revisionOrdenNumero.textContent = String(idOrden);
-        }
+        if (revisionOrdenNumero) revisionOrdenNumero.textContent = String(idOrden);
 
         openModal("modal-detalle-orden");
     } catch (error) {
-        console.error("Error cargando detalle:", error);
         Utils.showMessage(error.message || "No se pudo cargar el detalle de la orden.", true);
     }
 }
@@ -1522,9 +1262,7 @@ function renderFotosOrdenModal(fotos) {
         <div class="fotos-grid">
             ${fotos.map((foto, index) => {
                 let src = foto.Foto_e || foto.foto || foto.url || foto.Foto_orden_servicio || "";
-                if (src && !src.startsWith("/") && !src.startsWith("http")) {
-                    src = `/${src}`;
-                }
+                if (src && !src.startsWith("/") && !src.startsWith("http")) src = `/${src}`;
                 return `
                     <div class="foto-item" data-foto-index="${index}">
                         <div class="foto-thumbnail" onclick="window.open('${Utils.escapeHtml(src)}', '_blank')">
@@ -1549,9 +1287,7 @@ function renderTestsOrdenModal(tests, idOrden) {
     const testsPorNumero = {};
     tests.forEach(test => {
         const num = test.Num_test || test.num_test || '1';
-        if (!testsPorNumero[num]) {
-            testsPorNumero[num] = [];
-        }
+        if (!testsPorNumero[num]) testsPorNumero[num] = [];
         testsPorNumero[num].push(test);
     });
 
@@ -1573,16 +1309,16 @@ function renderTestsOrdenModal(tests, idOrden) {
                         const items = testsPorNumero[num];
                         const cantidad = items.length;
                         const funcionan = items.filter(t => {
-                            const resultado = t.Resultado_test || t.resultado || '';
-                            return resultado.toLowerCase().includes('funciona') || resultado.toLowerCase().includes('ok');
+                            const r = (t.Resultado_test || t.resultado || '').toLowerCase();
+                            return r.includes('funciona') || r.includes('ok');
                         }).length;
                         const noFuncionan = items.filter(t => {
-                            const resultado = t.Resultado_test || t.resultado || '';
-                            return resultado.toLowerCase().includes('no funciona') || resultado.toLowerCase().includes('falla');
+                            const r = (t.Resultado_test || t.resultado || '').toLowerCase();
+                            return r.includes('no funciona') || r.includes('falla');
                         }).length;
                         const observaciones = items.filter(t => {
-                            const nombre = t.Nombre_test || t.nombre || '';
-                            return nombre.toLowerCase().includes('observacion');
+                            const n = (t.Nombre_test || t.nombre || '').toLowerCase();
+                            return n.includes('observacion');
                         }).length;
                         
                         return `
@@ -1618,9 +1354,8 @@ function renderTestsOrdenModal(tests, idOrden) {
 }
 
 // ============================================
-// 17.1 FUNCIÓN PARA VER DETALLE DE TEST
+// 17.1 DETALLE TEST
 // ============================================
-
 async function verDetalleTest(idOrden, numTest) {
     const modalBody = document.getElementById('modal-test-detalle-body');
     if (!modalBody) return;
@@ -1633,13 +1368,9 @@ async function verDetalleTest(idOrden, numTest) {
     `;
 
     const modalTitle = document.querySelector('#modal-test-detalle .ui-modal__title');
-    if (modalTitle) {
-        modalTitle.textContent = `Detalle del test #${numTest} - Orden ${idOrden}`;
-    }
+    if (modalTitle) modalTitle.textContent = `Detalle del test #${numTest} - Orden ${idOrden}`;
 
-    if (window.UiModal && typeof window.UiModal.openById === 'function') {
-        window.UiModal.openById('modal-test-detalle');
-    }
+    if (window.UiModal && typeof window.UiModal.openById === 'function') window.UiModal.openById('modal-test-detalle');
 
     try {
         const data = await Utils.fetchJson(`/api/ordenes-servicio/ordenes/${encodeURIComponent(idOrden)}/test/${encodeURIComponent(numTest)}`);
@@ -1656,11 +1387,8 @@ async function verDetalleTest(idOrden, numTest) {
         
         componentes.forEach((comp) => {
             const nombre = comp.Nombre_test || comp.nombre || comp.test || '';
-            if (nombre.toLowerCase().includes('observacion')) {
-                observaciones.push(comp);
-            } else {
-                componentesFiltrados.push(comp);
-            }
+            if (nombre.toLowerCase().includes('observacion')) observaciones.push(comp);
+            else componentesFiltrados.push(comp);
         });
 
         let html = '<div class="test-detail-grid">';
@@ -1672,25 +1400,14 @@ async function verDetalleTest(idOrden, numTest) {
             let badgeClass = 'test-badge--default';
             let displayResultado = resultado;
             
-            const resultadoLower = resultado.toLowerCase().trim();
+            const rLower = resultado.toLowerCase().trim();
             
-            if (resultadoLower.includes('no funciona') || 
-                resultadoLower.includes('no func') || 
-                resultadoLower === '0' ||
-                resultadoLower === 'falla' ||
-                resultadoLower === 'malo' ||
-                resultadoLower.includes('fallo')) {
+            if (rLower.includes('no funciona') || rLower === '0' || rLower.includes('fallo')) {
                 badgeClass = 'test-badge--danger';
                 displayResultado = '❌ No funciona';
-            } else if (resultadoLower.includes('funciona') || 
-                       resultadoLower.includes('ok') || 
-                       resultadoLower === '1' ||
-                       resultadoLower === 'bueno' ||
-                       resultadoLower.includes('correcto')) {
+            } else if (rLower.includes('funciona') || rLower === '1' || rLower.includes('correcto')) {
                 badgeClass = 'test-badge--success';
                 displayResultado = '✅ Funciona';
-            } else {
-                displayResultado = resultado;
             }
             
             html += `
@@ -1722,22 +1439,18 @@ async function verDetalleTest(idOrden, numTest) {
                 `;
             });
             
-            html += `
-                    </div>
-                </div>
-            `;
+            html += `</div></div>`;
         }
 
         modalBody.innerHTML = html;
 
     } catch (error) {
-        console.error('Error al cargar detalle del test:', error);
         modalBody.innerHTML = `<p class="device-detail__empty error">Error al cargar el detalle: ${Utils.escapeHtml(error.message)}</p>`;
     }
 }
 
 // ============================================
-// 18. FUNCIÓN DE ASIGNACIÓN
+// 18. ASIGNACION
 // ============================================
 async function asignarOrden() {
     const selectOrden = document.getElementById("select-orden-asignar");
@@ -1746,25 +1459,14 @@ async function asignarOrden() {
     const idOrden = selectOrden?.value;
     const idTecnico = selectTecnico?.value;
 
-    if (!idOrden || idOrden === "") {
-        Utils.showMessage("Por favor, selecciona una orden pendiente.", true);
-        return;
-    }
-
-    if (!idTecnico || idTecnico === "") {
-        Utils.showMessage("Por favor, selecciona un técnico.", true);
-        return;
-    }
+    if (!idOrden || idOrden === "") { Utils.showMessage("Por favor, selecciona una orden pendiente.", true); return; }
+    if (!idTecnico || idTecnico === "") { Utils.showMessage("Por favor, selecciona un técnico.", true); return; }
 
     const url = `${CONFIG.API.ORDENES}/${encodeURIComponent(idOrden)}/asignar`;
     const payload = { id_empleado: parseInt(idTecnico, 10) };
 
     try {
-        await Utils.fetchJson(url, {
-            method: "POST",
-            body: JSON.stringify(payload),
-        });
-
+        await Utils.fetchJson(url, { method: "POST", body: JSON.stringify(payload) });
         Utils.showMessage("✅ Orden asignada correctamente.");
         closeModal("modal-asignar-tecnico");
         await cargarOrdenes();
@@ -1773,31 +1475,19 @@ async function asignarOrden() {
         if (selectTecnico) selectTecnico.value = "";
 
     } catch (error) {
-        console.error("Error completo:", error);
         Utils.showMessage(`❌ ${error.message || "No se pudo asignar la orden."}`, true);
     }
 }
 
 // ============================================
-// 19. FUNCIÓN DE REVISIÓN
+// 19. REVISION
 // ============================================
 async function guardarRevision(event) {
     event.preventDefault();
     const { revisionOrdenId, formRevision } = getDomElements();
     const idOrden = revisionOrdenId?.value || ordenActualId;
 
-    if (!idOrden) {
-        Utils.showMessage("Selecciona una orden.", true);
-        return;
-    }
-
-    if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
-        const isValid = window.FieldValidator.validateForm(formRevision);
-        if (!isValid) {
-            Utils.showMessage("Por favor, corrige los errores en el formulario.", true);
-            return;
-        }
-    }
+    if (!idOrden) { Utils.showMessage("Selecciona una orden.", true); return; }
 
     const payload = {};
     const campos = [
@@ -1810,9 +1500,7 @@ async function guardarRevision(event) {
     campos.forEach((campo) => {
         const el = formRevision?.querySelector(`[name="${campo}"]`);
         payload[campo] = (el && el.type === "radio" && el.checked && el.value === "1") ? 1 : 0;
-        if (el && el.type === "radio" && el.checked && el.value === "0") {
-            payload[campo] = 0;
-        }
+        if (el && el.type === "radio" && el.checked && el.value === "0") payload[campo] = 0;
     });
 
     payload.Num_test = obtenerSiguienteNumeroTest();
@@ -1835,7 +1523,7 @@ async function guardarRevision(event) {
 }
 
 // ============================================
-// 20. FUNCIÓN DE FOTOS
+// 20. FOTOS
 // ============================================
 async function guardarFotos(event) {
     event.preventDefault();
@@ -1861,9 +1549,7 @@ async function guardarFotos(event) {
         });
 
         const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.ok === false) {
-            throw new Error(data.message || "No se pudieron guardar las fotos.");
-        }
+        if (!response.ok || data.ok === false) throw new Error(data.message || "No se pudieron guardar las fotos.");
 
         Utils.showMessage("Fotos registradas.");
         formFotos.reset();
@@ -1876,7 +1562,7 @@ async function guardarFotos(event) {
 }
 
 // ============================================
-// 21. EVENTOS DE TABLA
+// 21. TABLA CLICK
 // ============================================
 function onTablaClick(event) {
     const btn = event.target.closest("button[data-action]");
@@ -1886,11 +1572,7 @@ function onTablaClick(event) {
     const id = btn.dataset.id;
     if (!id) return;
 
-    if (action === "ver-detalle") {
-        abrirDetalleOrden(id);
-        return;
-    }
-
+    if (action === "ver-detalle") { abrirDetalleOrden(id); return; }
     if (action === "seleccionar-asignacion") {
         const selectOrden = document.getElementById("select-orden-asignar");
         if (selectOrden) {
@@ -1905,23 +1587,7 @@ function onTablaClick(event) {
 // 22. INICIALIZACIÓN
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
-    const {
-        inputFecha,
-        formOrden,
-        btnVerificarEquipo,
-        btnVerificarCliente,
-        btnCrearCliente,
-        btnAsignarOrden,
-        formRevision,
-        formFotos,
-        inputFotos,
-        tablaOrdenes,
-        formRevisionInicial,
-        btnConfirmarRevision,
-        clienteTipo,
-        inputBuscar,
-        filtroEstado,
-    } = getDomElements();
+    const { inputFecha, formOrden, btnVerificarEquipo, btnVerificarCliente, btnCrearCliente, btnAsignarOrden, formRevision, formFotos, inputFotos, tablaOrdenes, formRevisionInicial, clienteTipo } = getDomElements();
 
     if (inputFecha) {
         const fechaActual = Utils.getFechaActual();
@@ -1939,31 +1605,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     formRevisionInicial?.addEventListener('submit', confirmarRevision);
 
-    if (window.FieldValidator) {
-        setTimeout(() => window.FieldValidator.init(), 100);
-    }
-
-    // ============================================
-    // VALIDACIONES EN TIEMPO REAL
-    // ============================================
-    
-    // IMEI
     const inputImei = document.getElementById("orden-id-equipo");
-    if (inputImei) {
-        inputImei.addEventListener("input", (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 15);
-        });
-    }
+    if (inputImei) inputImei.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 15); });
 
-    // Cédula
     const inputCedula = document.getElementById("cliente-cedula");
-    if (inputCedula) {
-        inputCedula.addEventListener("input", (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-        });
-    }
+    if (inputCedula) inputCedula.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8); });
 
-    // Patrón
     const inputPatron = document.getElementById("orden-patron");
     if (inputPatron) {
         inputPatron.addEventListener("input", (e) => {
@@ -1971,235 +1618,83 @@ document.addEventListener("DOMContentLoaded", () => {
             let numbers = value.replace(/-/g, "").split("");
             let used = new Set();
             let validNumbers = [];
-            for (let num of numbers) {
-                if (num >= "1" && num <= "9" && !used.has(num)) {
-                    validNumbers.push(num);
-                    used.add(num);
-                }
-            }
+            for (let num of numbers) { if (num >= "1" && num <= "9" && !used.has(num)) { validNumbers.push(num); used.add(num); } }
             validNumbers = validNumbers.slice(0, 9);
             e.target.value = validNumbers.join("-");
         });
     }
 
-    // ============================================
-    // VALIDACIÓN DE TELÉFONO EN TIEMPO REAL
-    // ============================================
-
-    // Celular Natural
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {
-        inputCelular.removeEventListener('input', inputCelular._telefonoHandler);
-        inputCelular.removeEventListener('blur', inputCelular._telefonoBlurHandler);
-        
-        inputCelular._telefonoHandler = function() {
-            Utils.formatearTelefonoOrden(this);
-        };
-        
-        inputCelular._telefonoBlurHandler = function() {
-            if (this.value) {
-                Utils.validarTelefonoOrdenEnTiempoReal(this);
-            }
-        };
-        
-        inputCelular.addEventListener('input', inputCelular._telefonoHandler);
-        inputCelular.addEventListener('blur', inputCelular._telefonoBlurHandler);
-        
-        if (inputCelular.value) {
-            setTimeout(() => Utils.validarTelefonoOrdenEnTiempoReal(inputCelular), 100);
-        }
+        inputCelular.addEventListener('input', function() { Utils.formatearTelefonoOrden(this); });
+        inputCelular.addEventListener('blur', function() { if (this.value) Utils.validarTelefonoOrdenEnTiempoReal(this); });
     }
 
-    // Celular Jurídico
     const inputCelularJuridico = document.getElementById("cliente-celular-juridico");
     if (inputCelularJuridico) {
-        inputCelularJuridico.removeEventListener('input', inputCelularJuridico._telefonoHandler);
-        inputCelularJuridico.removeEventListener('blur', inputCelularJuridico._telefonoBlurHandler);
-        
-        inputCelularJuridico._telefonoHandler = function() {
-            Utils.formatearTelefonoOrden(this);
-        };
-        
-        inputCelularJuridico._telefonoBlurHandler = function() {
-            if (this.value) {
-                Utils.validarTelefonoOrdenEnTiempoReal(this);
-            }
-        };
-        
-        inputCelularJuridico.addEventListener('input', inputCelularJuridico._telefonoHandler);
-        inputCelularJuridico.addEventListener('blur', inputCelularJuridico._telefonoBlurHandler);
-        
-        if (inputCelularJuridico.value) {
-            setTimeout(() => Utils.validarTelefonoOrdenEnTiempoReal(inputCelularJuridico), 100);
-        }
+        inputCelularJuridico.addEventListener('input', function() { Utils.formatearTelefonoOrden(this); });
+        inputCelularJuridico.addEventListener('blur', function() { if (this.value) Utils.validarTelefonoOrdenEnTiempoReal(this); });
     }
 
-    // Clave
     const inputClave = document.getElementById("orden-clave");
-    if (inputClave) {
-        inputClave.addEventListener("input", (e) => {
-            e.target.value = e.target.value.replace(/\s/g, "").slice(0, 30);
-        });
-    }
+    if (inputClave) inputClave.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\s/g, "").slice(0, 30); });
 
-    // ============================================
-    // RIF - FORMATEO AUTOMÁTICO Y VALIDACIÓN ESTRICTA - CORREGIDO
-    // ============================================
     const inputRif = document.getElementById("cliente-rif");
     if (inputRif) {
-        // Remover event listeners previos
-        inputRif.removeEventListener('input', inputRif._rifHandler);
-        inputRif.removeEventListener('blur', inputRif._rifBlurHandler);
-        
-        inputRif._rifHandler = function(e) {
+        inputRif.addEventListener('input', function() {
             let value = this.value;
-            
-            // Eliminar cualquier carácter que no sea letra (solo la primera) o número
             let cleanValue = '';
             let hasLetter = false;
             
             for (let i = 0; i < value.length; i++) {
                 const char = value[i];
-                // Solo permitir letras (J o E) al inicio
                 if (i === 0 && /[A-Za-z]/.test(char)) {
-                    // Solo permitir J o E
-                    if (char.toUpperCase() === 'J' || char.toUpperCase() === 'E') {
-                        cleanValue += char.toUpperCase();
-                        hasLetter = true;
-                    } else {
-                        // Forzar a J si no es J o E
-                        cleanValue += 'J';
-                        hasLetter = true;
-                    }
-                }
-                // Permitir números en el resto
-                else if (/\d/.test(char)) {
+                    if (['J', 'E'].includes(char.toUpperCase())) { cleanValue += char.toUpperCase(); hasLetter = true; }
+                    else { cleanValue += 'J'; hasLetter = true; }
+                } else if (/\d/.test(char)) {
                     cleanValue += char;
-                }
-                // Permitir guiones en posiciones específicas
-                else if (char === '-') {
-                    // Solo permitir guiones si hay al menos una letra al inicio
-                    if (hasLetter || cleanValue.length > 0) {
-                        cleanValue += char;
-                    }
+                } else if (char === '-') {
+                    if (hasLetter || cleanValue.length > 0) cleanValue += char;
                 }
             }
             
-            // Si no hay letra al inicio, agregar J
-            if (cleanValue.length === 0) {
-                cleanValue = 'J';
-            } else if (!/^[JE]/.test(cleanValue)) {
-                // Si el primer carácter no es J o E, forzar J al inicio
-                cleanValue = 'J' + cleanValue;
-            }
+            if (cleanValue.length === 0) cleanValue = 'J';
+            else if (!/^[JE]/.test(cleanValue)) cleanValue = 'J' + cleanValue;
+            if (cleanValue.length > 12) cleanValue = cleanValue.substring(0, 12);
             
-            // Limitar la longitud
-            if (cleanValue.length > 12) {
-                cleanValue = cleanValue.substring(0, 12);
-            }
-            
-            // Aplicar el formato correcto automáticamente
-            let formatted = cleanValue;
-            
-            // Si hay letra al inicio
-            if (/^[JE]/.test(formatted)) {
-                const letra = formatted.charAt(0);
-                let resto = formatted.substring(1);
+            if (/^[JE]/.test(cleanValue)) {
+                const letra = cleanValue.charAt(0);
+                let resto = cleanValue.substring(1).replace(/-/g, '').replace(/\D/g, '');
+                if (resto.length > 9) resto = resto.substring(0, 9);
                 
-                // Eliminar guiones del resto para trabajar con números puros
-                resto = resto.replace(/-/g, '');
-                
-                // Solo permitir números en el resto
-                resto = resto.replace(/\D/g, '');
-                
-                // Limitar a 9 dígitos (8 + 1 verificador)
-                if (resto.length > 9) {
-                    resto = resto.substring(0, 9);
-                }
-                
-                // Reconstruir con el formato correcto
                 let resultado = letra;
-                
                 if (resto.length > 0) {
                     resultado += '-';
-                    if (resto.length <= 8) {
-                        resultado += resto;
-                    } else {
-                        // Si hay más de 8 dígitos, separar con guión
-                        resultado += resto.substring(0, 8) + '-' + resto.substring(8);
-                    }
+                    if (resto.length <= 8) resultado += resto;
+                    else resultado += resto.substring(0, 8) + '-' + resto.substring(8);
                 }
                 
-                // Si el resultado es diferente al valor actual, actualizar
                 if (this.value !== resultado) {
-                    // Guardar la posición del cursor
                     const cursorPos = this.selectionStart;
                     this.value = resultado;
-                    
-                    // Ajustar la posición del cursor
-                    let newPos = cursorPos;
-                    if (newPos > this.value.length) {
-                        newPos = this.value.length;
-                    }
-                    
-                    // Saltar guiones automáticamente
-                    if (this.value.charAt(newPos) === '-') {
-                        newPos++;
-                    }
-                    
-                    try {
-                        this.setSelectionRange(newPos, newPos);
-                    } catch (e) {
-                        // Ignorar errores de selección
-                    }
-                    
-                    // Validar automáticamente
+                    let newPos = cursorPos > this.value.length ? this.value.length : cursorPos;
+                    if (this.value.charAt(newPos) === '-') newPos++;
+                    try { this.setSelectionRange(newPos, newPos); } catch (e) {}
                     Utils.validarRIFEnTiempoReal(this);
                 }
             } else {
-                // Si no comienza con J o E, forzar J
                 this.value = 'J' + this.value.replace(/[^0-9]/g, '');
             }
-        };
-        
-        inputRif._rifBlurHandler = function() {
-            if (this.value) {
-                // Validar al perder el foco
-                Utils.validarRIFEnTiempoReal(this);
-                
-                // Si el formato es inválido, mostrar mensaje
-                const resultado = Utils.validarRIF(this.value);
-                if (!resultado) {
-                    const errorElement = document.getElementById('cliente-rif-error');
-                    if (errorElement) {
-                        errorElement.textContent = '✗ Formato inválido. Use J-12345678-9 o E-12345678-9';
-                        errorElement.style.color = '#ef4444';
-                    }
-                    this.classList.add('field-error');
-                    this.classList.remove('field-success');
-                    this.style.borderColor = '#ef4444';
-                    this.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
-                }
-            }
-        };
-        
-        inputRif.addEventListener('input', inputRif._rifHandler);
-        inputRif.addEventListener('blur', inputRif._rifBlurHandler);
+        });
+        inputRif.addEventListener('blur', function() { if (this.value) Utils.validarRIFEnTiempoReal(this); });
     }
 
-    // ============================================
-    // CAMPOS CON CAPITALIZACIÓN AUTOMÁTICA
-    // ============================================
-    
     const inputColor = document.getElementById("orden-color");
     if (inputColor) {
         inputColor.addEventListener("input", (e) => {
             let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
-            if (value.length > 15) {
-                value = value.slice(0, 15);
-            }
-            value = Utils.capitalizarPalabras(value);
-            e.target.value = value;
+            if (value.length > 15) value = value.slice(0, 15);
+            e.target.value = Utils.capitalizarPalabras(value);
         });
     }
 
@@ -2207,11 +1702,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputModeloCustom) {
         inputModeloCustom.addEventListener("input", (e) => {
             let value = e.target.value.replace(/[^a-zA-Z0-9\s\-]/g, "");
-            if (value.length > 30) {
-                value = value.slice(0, 30);
-            }
-            value = Utils.capitalizarPalabras(value);
-            e.target.value = value;
+            if (value.length > 30) value = value.slice(0, 30);
+            e.target.value = Utils.capitalizarPalabras(value);
         });
     }
 
@@ -2219,11 +1711,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputNombre) {
         inputNombre.addEventListener("input", (e) => {
             let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
-            if (value.length > 20) {
-                value = value.slice(0, 20);
-            }
-            value = Utils.capitalizarPalabras(value);
-            e.target.value = value;
+            if (value.length > 20) value = value.slice(0, 20);
+            e.target.value = Utils.capitalizarPalabras(value);
         });
     }
 
@@ -2231,11 +1720,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputApellido) {
         inputApellido.addEventListener("input", (e) => {
             let value = e.target.value.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, "");
-            if (value.length > 20) {
-                value = value.slice(0, 20);
-            }
-            value = Utils.capitalizarPalabras(value);
-            e.target.value = value;
+            if (value.length > 20) value = value.slice(0, 20);
+            e.target.value = Utils.capitalizarPalabras(value);
         });
     }
 
@@ -2243,35 +1729,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputRazonSocial) {
         inputRazonSocial.addEventListener("input", (e) => {
             let value = e.target.value.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s\.\-&]/g, "");
-            if (value.length > 60) {
-                value = value.slice(0, 60);
-            }
-            value = Utils.capitalizarPalabras(value);
-            e.target.value = value;
+            if (value.length > 60) value = value.slice(0, 60);
+            e.target.value = Utils.capitalizarPalabras(value);
         });
     }
 
     const inputDireccion = document.getElementById("cliente-direccion");
-    if (inputDireccion) {
-        inputDireccion.addEventListener("input", (e) => {
-            if (e.target.value.length > 50) {
-                e.target.value = e.target.value.slice(0, 50);
-            }
-        });
-    }
+    if (inputDireccion) inputDireccion.addEventListener("input", (e) => { if (e.target.value.length > 50) e.target.value = e.target.value.slice(0, 50); });
 
     const inputDireccionJuridico = document.getElementById("cliente-direccion-juridico");
-    if (inputDireccionJuridico) {
-        inputDireccionJuridico.addEventListener("input", (e) => {
-            if (e.target.value.length > 50) {
-                e.target.value = e.target.value.slice(0, 50);
-            }
-        });
-    }
+    if (inputDireccionJuridico) inputDireccionJuridico.addEventListener("input", (e) => { if (e.target.value.length > 50) e.target.value = e.target.value.slice(0, 50); });
 
-    // ============================================
-    // TIPO DE CLIENTE - TOGGLE DE CAMPOS
-    // ============================================
     if (clienteTipo) {
         clienteTipo.addEventListener('change', (e) => {
             toggleCamposCliente(e.target.value);
@@ -2283,49 +1751,22 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleCamposCliente(clienteTipo.value);
     }
 
-    // ============================================
-    // FILTROS Y BÚSQUEDA
-    // ============================================
-
-    if (inputBuscar) {
-        inputBuscar.addEventListener("input", filtrarOrdenes);
-        inputBuscar.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                filtrarOrdenes();
-            }
-        });
-    }
-
-    if (filtroEstado) {
-        filtroEstado.addEventListener("change", filtrarOrdenes);
-    }
-
-    // ============================================
-    // EVENTOS DE BOTONES
-    // ============================================
     btnVerificarEquipo?.addEventListener("click", verificarEquipo);
     btnVerificarCliente?.addEventListener("click", verificarCliente);
     btnCrearCliente?.addEventListener("click", registrarClienteDesdeFormulario);
     formOrden?.addEventListener("submit", onSubmitOrden);
 
-    if (btnAsignarOrden) {
-        btnAsignarOrden.addEventListener("click", asignarOrden);
-    }
+    if (btnAsignarOrden) btnAsignarOrden.addEventListener("click", asignarOrden);
 
     formRevision?.addEventListener("submit", guardarRevision);
     formFotos?.addEventListener("submit", guardarFotos);
     inputFotos?.addEventListener("change", () => renderPreviewFotos(inputFotos.files));
     tablaOrdenes?.addEventListener("click", onTablaClick);
 
-    document.getElementById("btn-asignar-tecnico")?.addEventListener("click", () => {
-        openModal("modal-asignar-tecnico");
-    });
+    document.getElementById("btn-asignar-tecnico")?.addEventListener("click", () => { openModal("modal-asignar-tecnico"); });
 
     document.getElementById("btn-nueva-orden")?.addEventListener("click", () => {
-        if (inputFecha) {
-            inputFecha.value = Utils.getFechaActual();
-        }
+        if (inputFecha) inputFecha.value = Utils.getFechaActual();
         clienteActualId = null;
         setClienteStatus("");
         const { btnCrearCliente } = getDomElements();
@@ -2336,14 +1777,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ============================================
-    // CARGA INICIAL DE DATOS
-    // ============================================
-    Promise.all([
-        cargarModelos(),
-        cargarTecnicos(),
-        cargarOrdenes(),
-    ]).catch((error) => {
+    Promise.all([ cargarModelos(), cargarTecnicos(), cargarOrdenes() ]).catch((error) => {
         console.error("Error en la inicialización:", error);
     });
 });

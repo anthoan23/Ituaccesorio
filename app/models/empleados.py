@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from flask import jsonify
-from app.utils.validators import validar_numero, validar_texto, validar_texto_numero, validar_email
+from app.utils.validators import (
+    validar_celular_venezolano,
+    validar_email,
+    validar_numero,
+    validar_texto,
+    validar_texto_numero,
+)
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 
@@ -147,7 +153,7 @@ class Empleados():
         """Obtiene un empleado por su cédula (usa el atributo id_empleado)"""
         cedula = self.id_empleado.strip()
 
-        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        validar_cedula = validar_numero(cedula, 6, 8, "Cédula")
         if validar_cedula:
             return validar_cedula
             
@@ -239,7 +245,7 @@ class Empleados():
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
 
-        validar_cedula = validar_numero(cedula, 6, 9, "Cédula")
+        validar_cedula = validar_numero(cedula, 6, 8, "Cédula")
         if validar_cedula:
             return validar_cedula
         
@@ -247,15 +253,15 @@ class Empleados():
         if validar_cargo_id:
             return validar_cargo_id
         
-        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        validar_nombre = validar_texto(nombre, 3, 15, "Nombre")
         if validar_nombre:
             return validar_nombre
         
-        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        validar_apellido = validar_texto(apellido, 3, 15, "Apellido")
         if validar_apellido:
             return validar_apellido
         
-        validar_celular = validar_numero(celular, 9, 15, "Celular")
+        validar_celular = validar_celular_venezolano(celular, "Celular")
         if validar_celular:
             return validar_celular
     
@@ -330,7 +336,7 @@ class Empleados():
         direccion = self.direccion_empleado.strip()
         especialidades = self.especialidades
 
-        validar_cedula = validar_numero(id_empleado, 6, 9, "Cédula")
+        validar_cedula = validar_numero(id_empleado, 6, 8, "Cédula")
         if validar_cedula:
             return validar_cedula
 
@@ -338,19 +344,19 @@ class Empleados():
         if validar_cargo_id:
             return validar_cargo_id
         
-        validar_empleado_id = validar_texto_numero(id_empleado, 6, 9, "ID del Empleado")
+        validar_empleado_id = validar_texto_numero(id_empleado, 6, 8, "ID del Empleado")
         if validar_empleado_id:
             return validar_empleado_id
         
-        validar_nombre = validar_texto(nombre, 3, 30, "Nombre")
+        validar_nombre = validar_texto(nombre, 3, 15, "Nombre")
         if validar_nombre:
             return validar_nombre
         
-        validar_apellido = validar_texto(apellido, 3, 30, "Apellido")
+        validar_apellido = validar_texto(apellido, 3, 15, "Apellido")
         if validar_apellido:
             return validar_apellido
         
-        validar_celular = validar_numero(celular, 10, 10, "Celular")
+        validar_celular = validar_celular_venezolano(celular, "Celular")
         if validar_celular:
             return validar_celular
     
@@ -431,7 +437,7 @@ class Empleados():
         """Elimina un empleado usando el atributo id_empleado"""
         id_empleado = self.id_empleado.strip()
 
-        validar_empleado_id = validar_numero(id_empleado, 6, 9, "ID del Empleado")
+        validar_empleado_id = validar_numero(id_empleado, 6, 8, "ID del Empleado")
         if validar_empleado_id:
             return validar_empleado_id
 

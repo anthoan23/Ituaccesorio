@@ -2,7 +2,7 @@
 import pytest
 
 from app.models.empleados import Empleados
-from tests.helpers import cierra_recursos, sin_sentencia, ultima_sentencia
+from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 MENSAJE_ERROR_CONEXION = (
     "No se pudo conectar con la base de datos. "
@@ -11,20 +11,18 @@ MENSAJE_ERROR_CONEXION = (
 
 # ==================== Datos de frontera ====================
 CEDULA_MINIMA = "123456"  # 6 dígitos (mínimo)
-CEDULA_MAXIMA = "123456789"  # 9 dígitos (máximo)
+CEDULA_MAXIMA = "12345678"  # 8 dígitos (máximo)
 
 CARGO_MINIMO = "1"  # 1 carácter (mínimo)
 CARGO_MAXIMO = "1234567890"  # 10 caracteres (máximo)
 
 NOMBRE_MINIMO = "Ana"  # 3 caracteres (mínimo)
-NOMBRE_MAXIMO = "N" * 30  # 30 caracteres (máximo)
+NOMBRE_MAXIMO = "N" * 15  # 15 caracteres (máximo)
 
 APELLIDO_MINIMO = "Paz"  # 3 caracteres (mínimo)
-APELLIDO_MAXIMO = "A" * 30  # 30 caracteres (máximo)
+APELLIDO_MAXIMO = "A" * 15  # 15 caracteres (máximo)
 
-CELULAR_MINIMO_AGREGAR = "123456789"  # 9 dígitos (mínimo al agregar)
-CELULAR_MAXIMO_AGREGAR = "1" * 15  # 15 dígitos (máximo al agregar)
-CELULAR_ACTUALIZAR = "1234567890"  # 10 dígitos (exactos al actualizar)
+CELULAR = "04141234567"  # 11 dígitos con prefijo válido
 
 CORREO_VALIDO = "ana.perez@mail.com"
 CORREO_MAXIMO = "u" * 41 + "@mail.com"  # 50 caracteres (máximo)
@@ -37,7 +35,7 @@ DATOS_VALIDOS = {
     "id_cargo": CARGO_MINIMO,
     "nombre_empleado": NOMBRE_MINIMO,
     "apellido_empleado": APELLIDO_MINIMO,
-    "celular_empleado": CELULAR_ACTUALIZAR,
+    "celular_empleado": CELULAR,
     "correo_empleado": CORREO_VALIDO,
     "direccion_empleado": DIRECCION_MINIMA,
 }
@@ -188,7 +186,7 @@ class TestConsultarEmpleado:
             "cedula": CEDULA_MINIMA,
             "nombre": "Ana",
             "apellido": "Pérez",
-            "celular": CELULAR_ACTUALIZAR,
+            "celular": CELULAR,
             "correo": CORREO_VALIDO,
             "direccion": DIRECCION_MINIMA,
             "cargo_id": "1",
@@ -224,8 +222,8 @@ class TestConsultarEmpleado:
                 id="demasiado-corta",
             ),
             pytest.param(
-                "1234567890",
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                "123456789",
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="demasiado-larga",
             ),
             pytest.param(
@@ -365,7 +363,7 @@ class TestAgregarEmpleado:
             CARGO_MINIMO,
             NOMBRE_MINIMO,
             APELLIDO_MINIMO,
-            CELULAR_ACTUALIZAR,
+            CELULAR,
             CORREO_VALIDO,
             DIRECCION_MINIMA,
         )
@@ -402,7 +400,7 @@ class TestAgregarEmpleado:
         cursor.fetchone.return_value = None
 
         resultado = Empleados(
-            **datos(celular_empleado=CELULAR_MINIMO_AGREGAR)
+            **datos(celular_empleado=CELULAR)
         ).agregar_empleado()
 
         assert resultado == "Empleado agregado exitosamente."
@@ -411,7 +409,7 @@ class TestAgregarEmpleado:
             CARGO_MINIMO,
             NOMBRE_MINIMO,
             APELLIDO_MINIMO,
-            CELULAR_MINIMO_AGREGAR,
+            CELULAR,
             CORREO_VALIDO,
             DIRECCION_MINIMA,
         )
@@ -427,7 +425,7 @@ class TestAgregarEmpleado:
                 id_cargo=CARGO_MAXIMO,
                 nombre_empleado=NOMBRE_MAXIMO,
                 apellido_empleado=APELLIDO_MAXIMO,
-                celular_empleado=CELULAR_MAXIMO_AGREGAR,
+                celular_empleado=CELULAR,
                 correo_empleado=CORREO_MAXIMO,
                 direccion_empleado=DIRECCION_MAXIMA,
             )
@@ -439,7 +437,7 @@ class TestAgregarEmpleado:
             CARGO_MAXIMO,
             NOMBRE_MAXIMO,
             APELLIDO_MAXIMO,
-            CELULAR_MAXIMO_AGREGAR,
+            CELULAR,
             CORREO_MAXIMO,
             DIRECCION_MAXIMA,
         )
@@ -459,8 +457,8 @@ class TestAgregarEmpleado:
                 id="demasiado-corta",
             ),
             pytest.param(
-                "1234567890",
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                "123456789",
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="demasiado-larga",
             ),
             pytest.param(
@@ -524,8 +522,8 @@ class TestAgregarEmpleado:
                 id="nombre-demasiado-corto",
             ),
             pytest.param(
-                "N" * 31,
-                "El campo Nombre no puede tener más de 30 caracteres.",
+                "N" * 16,
+                "El campo Nombre no puede tener más de 15 caracteres.",
                 id="nombre-demasiado-largo",
             ),
             pytest.param(
@@ -560,8 +558,8 @@ class TestAgregarEmpleado:
                 id="apellido-demasiado-corto",
             ),
             pytest.param(
-                "A" * 31,
-                "El campo Apellido no puede tener más de 30 caracteres.",
+                "A" * 16,
+                "El campo Apellido no puede tener más de 15 caracteres.",
                 id="apellido-demasiado-largo",
             ),
             pytest.param(
@@ -591,14 +589,20 @@ class TestAgregarEmpleado:
                 id="vacio",
             ),
             pytest.param(
-                "12345678",
-                "El campo Celular debe tener al menos 9 dígitos.",
+                "0414123456",
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="demasiado-corto",
             ),
             pytest.param(
-                "1234567890123456",
-                "El campo Celular no puede tener más de 15 dígitos.",
+                "041412345678",
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="demasiado-largo",
+            ),
+            pytest.param(
+                "03121234567",
+                "El campo Celular debe comenzar con un prefijo válido: "
+                "0412, 0414, 0416, 0422, 0424 o 0426.",
+                id="prefijo-invalido",
             ),
             pytest.param(
                 "0412abc123",
@@ -735,7 +739,7 @@ class TestActualizarEmpleado:
             CARGO_MINIMO,
             NOMBRE_MINIMO,
             APELLIDO_MINIMO,
-            CELULAR_ACTUALIZAR,
+            CELULAR,
             CORREO_VALIDO,
             DIRECCION_MINIMA,
             CEDULA_MINIMA,
@@ -807,7 +811,7 @@ class TestActualizarEmpleado:
             CARGO_MAXIMO,
             NOMBRE_MAXIMO,
             APELLIDO_MAXIMO,
-            CELULAR_ACTUALIZAR,
+            CELULAR,
             CORREO_MAXIMO,
             DIRECCION_MAXIMA,
             CEDULA_MAXIMA,
@@ -828,8 +832,8 @@ class TestActualizarEmpleado:
                 id="demasiado-corta",
             ),
             pytest.param(
-                "1234567890",
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                "123456789",
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="demasiado-larga",
             ),
             pytest.param(
@@ -893,8 +897,8 @@ class TestActualizarEmpleado:
                 id="nombre-demasiado-corto",
             ),
             pytest.param(
-                "N" * 31,
-                "El campo Nombre no puede tener más de 30 caracteres.",
+                "N" * 16,
+                "El campo Nombre no puede tener más de 15 caracteres.",
                 id="nombre-demasiado-largo",
             ),
             pytest.param(
@@ -929,8 +933,8 @@ class TestActualizarEmpleado:
                 id="apellido-demasiado-corto",
             ),
             pytest.param(
-                "A" * 31,
-                "El campo Apellido no puede tener más de 30 caracteres.",
+                "A" * 16,
+                "El campo Apellido no puede tener más de 15 caracteres.",
                 id="apellido-demasiado-largo",
             ),
             pytest.param(
@@ -955,14 +959,25 @@ class TestActualizarEmpleado:
         "celular, esperado",
         [
             pytest.param(
-                "123456789",
-                "El campo Celular debe tener al menos 10 dígitos.",
+                "",
+                "El campo Celular no puede estar vacío.",
+                id="vacio",
+            ),
+            pytest.param(
+                "0414123456",
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="demasiado-corto",
             ),
             pytest.param(
-                "12345678901",
-                "El campo Celular no puede tener más de 10 dígitos.",
+                "041412345678",
+                "El campo Celular debe tener exactamente 11 dígitos.",
                 id="demasiado-largo",
+            ),
+            pytest.param(
+                "03121234567",
+                "El campo Celular debe comenzar con un prefijo válido: "
+                "0412, 0414, 0416, 0422, 0424 o 0426.",
+                id="prefijo-invalido",
             ),
             pytest.param(
                 "0412abc123",
@@ -1145,12 +1160,12 @@ class TestEliminarEmpleado:
                 id="demasiado-corto",
             ),
             pytest.param(
-                "1234567890",
-                "El campo ID del Empleado no puede tener más de 9 dígitos.",
+                "123456789",
+                "El campo ID del Empleado no puede tener más de 8 dígitos.",
                 id="demasiado-largo",
             ),
             pytest.param(
-                "12345678#",
+                "1234567#",
                 "El campo ID del Empleado solo puede contener números.",
                 id="caracteres-invalidos",
             ),

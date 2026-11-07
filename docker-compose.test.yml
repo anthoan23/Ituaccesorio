@@ -1,0 +1,70 @@
+# Sistema completo en modo prueba:
+# docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml up --build
+# La app queda en http://localhost:5001
+services:
+  web:
+    build: .
+    command: python run.py
+    ports:
+      - "5001:5000"
+    env_file:
+      - .env.test
+    environment:
+      ENTORNO_PRUEBA: "true"
+      FLASK_DEBUG: "1"
+      DB_HOST1: db1_test
+      DB_HOST2: db2_test
+      DB_PORT: 3306
+    volumes:
+      - .:/app
+    depends_on:
+      db1_test:
+        condition: service_healthy
+      db2_test:
+        condition: service_healthy
+
+  db1_test:
+    image: mysql:8.0
+    command: --default-time-zone='-04:00'
+    env_file:
+      - .env.test
+    environment:
+      MYSQL_DATABASE: ${DB_NAME1}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.2:3317:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    volumes:
+      - ./bd/ituaccesoriobd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
+
+  db2_test:
+    image: mysql:8.0
+    command: --default-time-zone='-04:00'
+    env_file:
+      - .env.test
+    environment:
+      MYSQL_DATABASE: ${DB_NAME2}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD2}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.3:3317:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    volumes:
+      - ./bd/seguridad.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z

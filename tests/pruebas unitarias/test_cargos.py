@@ -1,12 +1,13 @@
 """Pruebas unitarias de la clase Cargo (app.models.cargos).
 
-Los fixtures `conexion_falsa` y `conexion_caída` viven en tests/conftest.py
-y se comparten con todos los archivos de prueba.
+Los fixtures `conexion_falsa` y `conexion_caída` viven en
+tests/pruebas unitarias/conftest.py y se comparten con todos los archivos
+de prueba.
 """
 import pytest
 
 from app.models.cargos import Cargo
-from tests.helpers import cierra_recursos, sin_sentencia, ultima_sentencia
+from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 MENSAJE_ERROR_CONEXION = (
     "No se pudo conectar con la base de datos. "

@@ -66,8 +66,6 @@
                 </div>
             </div>
 
-            <!-- Barra de herramientas eliminada -->
-
             <div class="table-wrap" role="region" aria-label="Tabla de clientes">
                 <table class="table">
                     <thead>
@@ -99,7 +97,7 @@
             <label class="field field--full">
                 <span>Tipo de cliente *</span>
                 <div class="select-wrapper">
-                    <select name="tipo_cliente" id="tipo-cliente" required>
+                    <select name="tipo_cliente" id="tipo-cliente" required data-validator="false">
                         <option value="">Seleccione tipo de cliente</option>
                         <option value="natural">Persona Natural</option>
                         <option value="juridico">Persona Jurídica</option>
@@ -119,6 +117,7 @@
                        placeholder="1234567" 
                        required 
                        maxlength="8"
+                       data-validator="false"
                        title="Solo números, 7 u 8 dígitos">
                 <small class="field-hint">Solo números (7 u 8 dígitos)</small>
                 <small class="field-error" id="cedula-error"></small>
@@ -131,6 +130,7 @@
                        placeholder="María" 
                        required 
                        maxlength="20"
+                       data-validator="false"
                        title="Solo letras, espacios, acentos y ñ. Mínimo 3 letras">
                 <small class="field-hint">Solo letras, espacios, acentos y ñ (mínimo 3 letras)</small>
                 <small class="field-error" id="nombre-error"></small>
@@ -143,6 +143,7 @@
                        placeholder="González" 
                        required 
                        maxlength="20"
+                       data-validator="false"
                        title="Solo letras, espacios, acentos y ñ. Mínimo 3 letras">
                 <small class="field-hint">Solo letras, espacios, acentos y ñ (mínimo 3 letras)</small>
                 <small class="field-error" id="apellido-error"></small>
@@ -156,6 +157,7 @@
                        placeholder="04141234567" 
                        required 
                        maxlength="11"
+                       data-validator="false"
                        title="Formato: 04141234567 (11 dígitos)">
                 <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422,0251</small>
                 <small class="field-error" id="celular-error"></small>
@@ -167,6 +169,7 @@
                        type="email" 
                        placeholder="cliente@example.com" 
                        maxlength="120"
+                       data-validator="false"
                        title="Correo electrónico válido (máx. 120 caracteres)">
                 <small class="field-hint">ejemplo@dominio.com (máx. 120 caracteres)</small>
             </label>
@@ -177,6 +180,7 @@
                        type="text" 
                        placeholder="Calle Principal #123, Ciudad" 
                        maxlength="40"
+                       data-validator="false"
                        title="Sin caracteres especiales (máx. 40 caracteres)">
                 <small class="field-hint">Sin caracteres especiales (máx. 40 caracteres)</small>
             </label>
@@ -192,6 +196,7 @@
                        placeholder="J-12345678-9" 
                        maxlength="13"
                        data-rif-input
+                       data-validator="false"
                        autocomplete="off"
                        title="Formato: J-12345678-9 o E-12345678-9">
                 <small class="field-hint">Formato: J-12345678-9 o E-12345678-9</small>
@@ -205,6 +210,7 @@
                        type="text" 
                        placeholder="Comercializadora Sol C.A." 
                        maxlength="60"
+                       data-validator="false"
                        title="Permite letras, números, puntos, guiones, espacios y &. Mínimo 3 letras">
                 <small class="field-hint">Permite letras, números, puntos, guiones, espacios y &amp; (mínimo 3 letras)</small>
                 <small class="field-error" id="razon-social-error"></small>
@@ -217,6 +223,7 @@
                        type="tel" 
                        placeholder="04141234567" 
                        maxlength="11"
+                       data-validator="false"
                        title="Formato: 04141234567 (11 dígitos)">
                 <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422,0251</small>
                 <small class="field-error" id="telefono-error"></small>
@@ -228,6 +235,7 @@
                        type="email" 
                        placeholder="contacto@empresa.com" 
                        maxlength="120"
+                       data-validator="false"
                        title="Correo electrónico válido (máx. 120 caracteres)">
                 <small class="field-hint">ejemplo@dominio.com (máx. 120 caracteres)</small>
             </label>
@@ -238,6 +246,7 @@
                        type="text" 
                        placeholder="Zona Industrial, Calle 2" 
                        maxlength="40"
+                       data-validator="false"
                        title="Sin caracteres especiales (máx. 40 caracteres)">
                 <small class="field-hint">Sin caracteres especiales (máx. 40 caracteres)</small>
             </label>
