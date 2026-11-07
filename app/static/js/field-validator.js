@@ -151,28 +151,26 @@
     },
     rif: {
       filter: (value) => {
-        // Permitir solo letras (J/E), números y guiones
-        let filtered = value.replace(/[^A-Za-z0-9\-]/g, '');
+        // Permitir solo J, E o V, números y guiones
+        let filtered = value.replace(/[^JEV0-9\-]/gi, '');
         filtered = filtered.toUpperCase();
         return filtered;
       },
       validate: (value) => {
         // Si está vacío, es válido (no requerido)
         if (!value || value.trim() === '') return true;
-        
-        // Limpiar el valor para verificar
-        const limpio = value.replace(/-/g, '');
-        
-        // Verificar formato: debe comenzar con J o E y tener 10 caracteres (1 letra + 9 dígitos)
-        if (!/^[JE]\d{9}$/.test(limpio)) {
+
+        const limpio = value.replace(/-/g, '').toUpperCase();
+
+        // Verificar formato: debe comenzar con J, E o V y tener 9 dígitos
+        if (!/^[JEV]\d{9}$/.test(limpio)) {
           return false;
         }
-        
-        // Verificar el formato completo con guiones
-        const patronRIF = /^[JE]-\d{8}-\d$/;
-        return patronRIF.test(value);
+
+        const patronRIF = /^[JEV]-\d{8}-\d$/;
+        return patronRIF.test(value.toUpperCase());
       },
-      message: 'Formato inválido. Use J-12345678-9 o E-12345678-9'
+      message: 'Formato inválido. Use J-12345678-9, E-12345678-9 o V-12345678-9'
     },
     telefono: {
       filter: (value) => value.replace(/[^\d\s\-+()]/g, ''),

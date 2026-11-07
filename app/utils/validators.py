@@ -147,7 +147,7 @@ def validar_rif(valor, min_len=8, max_len=15, nombre_campo="RIF"):
     if valor in (None, ""):
         return None
 
-    valor_str = str(valor).strip()
+    valor_str = str(valor).strip().upper()
     if not valor_str:
         return None
 
@@ -157,8 +157,8 @@ def validar_rif(valor, min_len=8, max_len=15, nombre_campo="RIF"):
     if len(valor_str) > max_len:
         return f"El campo {nombre_campo} no puede tener más de {max_len} caracteres."
 
-    if not re.match(r'^[A-Za-z]-?\d{8}-?\d$', valor_str):
-        return f"El campo {nombre_campo} debe tener formato válido. Ejemplo: J-12345678-9."
+    if not re.match(r'^[JEV]-?\d{8}-?\d$', valor_str):
+        return f"El campo {nombre_campo} debe tener formato válido. Ejemplo: J-12345678-9, E-12345678-9 o V-12345678-9."
 
     return None
 

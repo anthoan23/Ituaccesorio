@@ -3,7 +3,7 @@ from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     normalizar_numero_decimal,
-    validar_celular,
+    validar_celular_venezolano,
     validar_direccion_proveedor,
     validar_email,
     validar_limite_credito,
@@ -213,9 +213,10 @@ class Proveedores:
         if error_rif:
             raise ValueError(error_rif)
 
-        error_celular = validar_celular(self.celular, 11, 11, "Teléfono")
-        if error_celular:
-            raise ValueError(error_celular)
+        if self.celular:
+            error_celular = validar_celular_venezolano(self.celular, "Teléfono")
+            if error_celular:
+                raise ValueError(error_celular)
 
         error_correo = validar_email(self.correo) if self.correo else None
         if error_correo:

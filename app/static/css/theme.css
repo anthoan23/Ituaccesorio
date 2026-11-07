@@ -1080,6 +1080,38 @@ body {
     grid-column: 1 / -1;
 }
 
+.field-phone__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.field-phone__controls > select,
+.field-phone__controls > input {
+    flex: 1;
+}
+
+.field-phone__controls > .field-phone__prefix {
+    width: 86px;
+    min-width: 86px;
+    max-width: 86px;
+    padding: 0.78rem 0.35rem 0.78rem 0.3rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+    background-position: calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    color: var(--text-strong);
+}
+
+.field-phone__controls > input {
+    padding: 0.78rem 0.8rem;
+    min-width: 0;
+}
+
 .field input,
 .field select,
 .field textarea,

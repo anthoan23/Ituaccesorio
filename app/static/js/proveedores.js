@@ -10,6 +10,8 @@
     productosCrear: [],
   };
 
+  const PREFIJOS_CELULAR_VENEZOLANO = ['0412', '0414', '0416', '0422', '0424', '0426'];
+
   function getCsrfToken() {
     const input = document.querySelector('input[name="_csrf_token"]');
     return input ? input.value : '';
@@ -539,7 +541,7 @@
 
     const nombreId = modoEdicion ? 'e-nombre' : 'c-nombre';
     const rifId = modoEdicion ? 'e-rif' : 'c-id';
-    const celularId = modoEdicion ? 'e-celular' : 'c-celular';
+    const celularId = modoEdicion ? 'e-celular-sufijo' : 'c-celular-sufijo';
     const correoId = modoEdicion ? 'e-correo' : 'c-correo';
     const limiteId = modoEdicion ? 'e-limite' : 'c-limite';
     const direccionId = modoEdicion ? 'e-direccion' : 'c-direccion';
@@ -552,14 +554,14 @@
       return { valido: false, mensaje: 'El nombre del proveedor debe tener entre 2 y 60 caracteres y solo puede incluir letras, números y espacios.', campoId: nombreId };
     }
 
-    const rif = getFormValue(rifId).trim();
-    if (rif && !/^[A-Za-z]-?\d{8}-?\d$/.test(rif)) {
-      return { valido: false, mensaje: 'El RIF debe tener formato válido: J-12345678-9.', campoId: rifId };
+    const rif = getFormValue(rifId).trim().toUpperCase();
+    if (rif && !/^[JEV]-?\d{8}-?\d$/.test(rif)) {
+      return { valido: false, mensaje: 'El RIF debe tener formato válido: J-12345678-9, E-12345678-9 o V-12345678-9.', campoId: rifId };
     }
 
-    const celular = getFormValue(celularId).trim();
-    if (celular && !/^\d{11}$/.test(celular.replace(/[\s\-+()]/g, ''))) {
-      return { valido: false, mensaje: 'El teléfono debe tener 11 dígitos numéricos.', campoId: celularId };
+    const celular = sincronizarTelefonoProveedor(modoEdicion);
+    if (celular && !/^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(celular)) {
+      return { valido: false, mensaje: 'El teléfono debe comenzar con un prefijo válido y tener 7 dígitos adicionales: 0412, 0414, 0416, 0422, 0424 o 0426.', campoId: celularId };
     }
 
     const correo = getFormValue(correoId).trim();
@@ -586,6 +588,38 @@
     if (el) el.value = value ?? '';
   }
 
+  function obtenerCamposTelefono(modoEdicion = false) {
+    return {
+      prefijo: modoEdicion ? 'e-celular-prefijo' : 'c-celular-prefijo',
+      sufijo: modoEdicion ? 'e-celular-sufijo' : 'c-celular-sufijo',
+      oculto: modoEdicion ? 'e-celular' : 'c-celular',
+    };
+  }
+
+  function normalizarTelefonoProveedor(valor) {
+    return String(valor ?? '').replace(/\D/g, '').slice(0, 11);
+  }
+
+  function sincronizarTelefonoProveedor(modoEdicion = false) {
+    const { prefijo, sufijo, oculto } = obtenerCamposTelefono(modoEdicion);
+    const prefijoValor = getFormValue(prefijo).trim();
+    const sufijoValor = getFormValue(sufijo).replace(/\D/g, '').slice(0, 7);
+    const valor = prefijoValor && sufijoValor ? `${prefijoValor}${sufijoValor}` : (prefijoValor || sufijoValor || '');
+    setValue(oculto, valor);
+    return valor;
+  }
+
+  function cargarTelefonoProveedor(valor, modoEdicion = false) {
+    const { prefijo, sufijo } = obtenerCamposTelefono(modoEdicion);
+    const celular = normalizarTelefonoProveedor(valor);
+    const prefijoSeleccionado = PREFIJOS_CELULAR_VENEZOLANO.find((item) => celular.startsWith(item)) || '';
+    const resto = prefijoSeleccionado ? celular.slice(prefijoSeleccionado.length) : celular.slice(0, 7);
+
+    setValue(prefijo, prefijoSeleccionado);
+    setValue(sufijo, resto);
+    sincronizarTelefonoProveedor(modoEdicion);
+  }
+
   function setText(id, value) {
     const el = $id(id);
     if (el) el.textContent = value ?? '';
@@ -599,9 +633,11 @@
       input.value = '';
       return;
     }
-    if (!['J', 'E'].includes(valor.charAt(0))) {
-      valor = 'J' + valor.substring(1);
-    }
+
+    const letraInicial = valor.charAt(0);
+    const letraValida = ['J', 'E', 'V'].includes(letraInicial) ? letraInicial : 'J';
+    valor = letraValida + valor.slice(1);
+
     const letra = valor.charAt(0);
     let numeros = valor.substring(1);
     numeros = numeros.substring(0, 9);
@@ -618,22 +654,23 @@
   }
 
   function validarRIF(valor) {
-    const patronRIF = /^[JE]-\d{8}-\d$/;
-    if (!patronRIF.test(valor)) {
-      return { valido: false, mensaje: 'El RIF debe tener el formato: J-12345678-9 o E-12345678-9' };
+    const valorNormalizado = String(valor || '').trim().toUpperCase();
+    const patronRIF = /^[JEV]-\d{8}-\d$/;
+    if (!patronRIF.test(valorNormalizado)) {
+      return { valido: false, mensaje: 'El RIF debe tener el formato: J-12345678-9, E-12345678-9 o V-12345678-9' };
     }
-    if (valor.length !== 12) {
+    if (valorNormalizado.length !== 12) {
       return { valido: false, mensaje: 'El RIF debe tener 12 caracteres (ej: J-12345678-9)' };
     }
-    const partes = valor.split('-');
+    const partes = valorNormalizado.split('-');
     if (partes.length !== 3) {
       return { valido: false, mensaje: 'El RIF debe tener el formato: Letra-8dígitos-1dígito' };
     }
     const letraParte = partes[0];
     const numerosParte1 = partes[1];
     const numerosParte2 = partes[2];
-    if (!['J', 'E'].includes(letraParte)) {
-      return { valido: false, mensaje: 'La primera parte debe ser J o E' };
+    if (!['J', 'E', 'V'].includes(letraParte)) {
+      return { valido: false, mensaje: 'La primera parte debe ser J, E o V' };
     }
     if (numerosParte1.length !== 8 || !/^\d{8}$/.test(numerosParte1)) {
       return { valido: false, mensaje: 'Debe tener 8 dígitos después del primer guion' };
@@ -717,7 +754,7 @@
       setValue('e-rif', p.rif || '');
       setValue('e-nombre', p.nombre);
       setValue('e-tipo', p.tipo);
-      setValue('e-celular', p.celular);
+      cargarTelefonoProveedor(p.celular || '', true);
       setValue('e-correo', p.correo);
       setValue('e-direccion', p.direccion);
       setValue('e-limite', p.limite_credito);
@@ -910,6 +947,7 @@
 
   async function crearProveedorFromForm() {
     const rif = getFormValue('c-id').trim();
+    const celular = sincronizarTelefonoProveedor(false);
     
     const productos = state.productosCrear.map((it) => ({
       id_modelo: Number(it.id_modelo),
@@ -920,7 +958,7 @@
       rif: rif || null,
       nombre: getFormValue('c-nombre').trim(),
       tipo: getFormValue('c-tipo') || null,
-      celular: getFormValue('c-celular') || null,
+      celular: celular || null,
       correo: getFormValue('c-correo') || null,
       direccion: getFormValue('c-direccion') || null,
       limite_credito: normalizarLimiteCredito(getFormValue('c-limite')),
@@ -936,13 +974,14 @@
   async function editarProveedorFromForm() {
     const id = getFormValue('e-id-hidden');
     const rif = getFormValue('e-rif').trim();
+    const celular = sincronizarTelefonoProveedor(true);
     
     const payload = {
       id: id ? Number(id) : null,
       rif: rif || null,
       nombre: getFormValue('e-nombre').trim(),
       tipo: getFormValue('e-tipo') || null,
-      celular: getFormValue('e-celular') || null,
+      celular: celular || null,
       correo: getFormValue('e-correo') || null,
       direccion: getFormValue('e-direccion') || null,
       limite_credito: normalizarLimiteCredito(getFormValue('e-limite')),
@@ -1107,6 +1146,11 @@
     const formCrear = $id('form-proveedor-crear');
     const inputCRif = $id('c-id');
     const inputERif = $id('e-rif');
+    const inputCCelularPrefijo = $id('c-celular-prefijo');
+    const inputCCelularSufijo = $id('c-celular-sufijo');
+    const inputECelularPrefijo = $id('e-celular-prefijo');
+    const inputECelularSufijo = $id('e-celular-sufijo');
+
     if (inputCRif) {
       inputCRif.addEventListener('input', () => formatearRIF(inputCRif));
       inputCRif.addEventListener('input', () => validarRIFEnTiempoReal(inputCRif, 'c-rif-error'));
@@ -1115,6 +1159,16 @@
       inputERif.addEventListener('input', () => formatearRIF(inputERif));
       inputERif.addEventListener('input', () => validarRIFEnTiempoReal(inputERif, 'e-rif-error'));
     }
+    inputCCelularPrefijo?.addEventListener('change', () => sincronizarTelefonoProveedor(false));
+    inputCCelularSufijo?.addEventListener('input', () => {
+      inputCCelularSufijo.value = inputCCelularSufijo.value.replace(/\D/g, '').slice(0, 7);
+      sincronizarTelefonoProveedor(false);
+    });
+    inputECelularPrefijo?.addEventListener('change', () => sincronizarTelefonoProveedor(true));
+    inputECelularSufijo?.addEventListener('input', () => {
+      inputECelularSufijo.value = inputECelularSufijo.value.replace(/\D/g, '').slice(0, 7);
+      sincronizarTelefonoProveedor(true);
+    });
     formCrear?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       
