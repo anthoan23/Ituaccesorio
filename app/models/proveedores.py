@@ -2,6 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
+    normalizar_numero_decimal,
     validar_celular,
     validar_direccion_proveedor,
     validar_email,
@@ -197,10 +198,10 @@ class Proveedores:
         if self.limite_credito in (None, ""):
             self.limite_credito = None
         else:
-            try:
-                self.limite_credito = int(self.limite_credito)
-            except (TypeError, ValueError):
+            valor_normalizado = normalizar_numero_decimal(self.limite_credito)
+            if valor_normalizado is None:
                 raise ValueError("El límite de crédito debe ser numérico.")
+            self.limite_credito = valor_normalizado
             if self.limite_credito < 0:
                 raise ValueError("El límite de crédito no puede ser negativo.")
 
@@ -383,7 +384,7 @@ class Proveedores:
                 WHERE ID_proveedor = %s
             """, (self.rif or None, self.nombre, self.tipo or None, self.celular or None,
                   self.correo or None, self.direccion or None,
-                  self.limite_credito or None, self.id_proveedor))
+                  self.limite_credito if self.limite_credito is not None else None, self.id_proveedor))
             db.commit()
             updated = cursor.rowcount > 0
 
@@ -686,7 +687,7 @@ class Proveedores:
                     (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None,
                   self.celular or None, self.correo or None,
-                  self.direccion or None, self.limite_credito or None))
+                  self.direccion or None, self.limite_credito if self.limite_credito is not None else None))
 
             # Insertar productos
             rows = []

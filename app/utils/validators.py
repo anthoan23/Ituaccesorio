@@ -1,4 +1,43 @@
 import re
+from decimal import Decimal, InvalidOperation
+
+
+def normalizar_numero_decimal(valor):
+    if valor in (None, ""):
+        return None
+
+    valor_str = str(valor).strip().replace(" ", "")
+    if not valor_str:
+        return None
+
+    negativo = valor_str.startswith("-")
+    si_positivo = valor_str.startswith("+")
+    if valor_str.startswith(("+", "-")):
+        valor_str = valor_str[1:]
+
+    if "," in valor_str and "." in valor_str:
+        if valor_str.rfind(",") > valor_str.rfind("."):
+            valor_str = valor_str.replace(".", "").replace(",", ".")
+        else:
+            valor_str = valor_str.replace(",", "")
+    elif "," in valor_str:
+        valor_str = valor_str.replace(",", ".")
+    elif "." in valor_str and valor_str.count(".") > 1:
+        valor_str = valor_str.replace(".", "")
+
+    if not re.fullmatch(r"\d+(\.\d+)?", valor_str):
+        return None
+
+    try:
+        numero = Decimal(valor_str)
+    except InvalidOperation:
+        return None
+
+    if negativo:
+        numero = -numero
+
+    return numero
+
 
 def validar_texto(valor, min_len, max_len, nombre_campo):
     if not valor:
@@ -198,14 +237,11 @@ def validar_limite_credito(valor, nombre_campo="Límite de crédito"):
     if valor in (None, ""):
         return None
 
-    valor_str = str(valor).strip()
-    if not valor_str:
-        return None
+    valor_decimal = normalizar_numero_decimal(valor)
+    if valor_decimal is None:
+        return f"El campo {nombre_campo} debe ser un número válido."
 
-    if not re.match(r'^\d+$', valor_str):
-        return f"El campo {nombre_campo} debe ser un número entero válido."
-
-    if int(valor_str) < 0:
+    if valor_decimal < 0:
         return f"El campo {nombre_campo} no puede ser negativo."
 
     return None

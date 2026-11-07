@@ -280,6 +280,36 @@
     return n.toLocaleString('es-VE');
   }
 
+  function normalizarLimiteCredito(valor) {
+    if (valor === null || valor === undefined) return null;
+
+    const texto = String(valor).trim();
+    if (!texto) return null;
+
+    let limpio = texto.replace(/\s+/g, '');
+    const esNegativo = limpio.startsWith('-');
+    if (limpio.startsWith('+') || limpio.startsWith('-')) {
+      limpio = limpio.slice(1);
+    }
+
+    if (limpio.includes(',') && limpio.includes('.')) {
+      if (limpio.lastIndexOf(',') > limpio.lastIndexOf('.')) {
+        limpio = limpio.replace(/\./g, '').replace(',', '.');
+      } else {
+        limpio = limpio.replace(/,/g, '');
+      }
+    } else if (limpio.includes(',')) {
+      limpio = limpio.replace(/,/g, '.');
+    } else if (limpio.includes('.') && limpio.split('.').length > 2) {
+      limpio = limpio.replace(/\./g, '');
+    }
+
+    const numero = Number(limpio);
+    if (!Number.isFinite(numero)) return null;
+
+    return esNegativo ? -numero : numero;
+  }
+
   function normalizeProveedor(p) {
     return {
       id: p?.ID_proveedor ?? p?.id ?? '',
@@ -538,8 +568,9 @@
     }
 
     const limite = getFormValue(limiteId).trim();
-    if (limite && (!/^\d+$/.test(limite) || Number(limite) < 0)) {
-      return { valido: false, mensaje: 'El límite de crédito debe ser un número entero mayor o igual a cero.', campoId: limiteId };
+    const limiteNormalizado = normalizarLimiteCredito(limite);
+    if (limite && (limiteNormalizado === null || limiteNormalizado < 0)) {
+      return { valido: false, mensaje: 'El límite de crédito debe ser un número válido mayor o igual a cero.', campoId: limiteId };
     }
 
     const direccion = getFormValue(direccionId).trim();
@@ -892,7 +923,7 @@
       celular: getFormValue('c-celular') || null,
       correo: getFormValue('c-correo') || null,
       direccion: getFormValue('c-direccion') || null,
-      limite_credito: getFormValue('c-limite') ? Number(getFormValue('c-limite')) : null,
+      limite_credito: normalizarLimiteCredito(getFormValue('c-limite')),
       productos,
     };
 
@@ -914,7 +945,7 @@
       celular: getFormValue('e-celular') || null,
       correo: getFormValue('e-correo') || null,
       direccion: getFormValue('e-direccion') || null,
-      limite_credito: getFormValue('e-limite') ? Number(getFormValue('e-limite')) : null,
+      limite_credito: normalizarLimiteCredito(getFormValue('e-limite')),
     };
 
     await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, {
