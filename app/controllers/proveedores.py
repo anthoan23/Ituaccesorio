@@ -3,15 +3,6 @@ from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.proveedores import Proveedores
 from app.models.productos import Producto
 from app.models.bitacora import Bitacora
-from app.utils.validators import (
-    validar_celular,
-    validar_direccion_proveedor,
-    validar_email,
-    validar_limite_credito,
-    validar_rif,
-    validar_solo_letras_numeros,
-)
-import re
 
 proveedores_blueprint = Blueprint("proveedores", __name__)
 
@@ -53,76 +44,9 @@ def api_crear_proveedor():
     limite_credito = datos.get("limite_credito")
     productos = datos.get("productos")
 
-    error_nombre = validar_solo_letras_numeros(nombre, 2, 60, "Nombre del proveedor")
-    if error_nombre:
-        return jsonify({"success": False, "error": error_nombre}), 400
-
-    error_rif = validar_rif(rif, 8, 15, "RIF")
-    if error_rif:
-        return jsonify({"success": False, "error": error_rif}), 400
-
-    error_celular = validar_celular(celular, 11, 11, "Teléfono")
-    if error_celular:
-        return jsonify({"success": False, "error": error_celular}), 400
-
-    error_correo = validar_email(correo) if correo else None
-    if error_correo:
-        return jsonify({"success": False, "error": error_correo}), 400
-
-    error_direccion = validar_direccion_proveedor(direccion, 100, "Dirección")
-    if error_direccion:
-        return jsonify({"success": False, "error": error_direccion}), 400
-
-    error_limite = validar_limite_credito(limite_credito, "Límite de crédito")
-    if error_limite:
-        return jsonify({"success": False, "error": error_limite}), 400
-
-    try:
-        if limite_credito in (None, ""):
-            limite_val = None
-        else:
-            limite_val = int(limite_credito)
-            if limite_val < 0:
-                return jsonify({"success": False, "error": "El límite de crédito no puede ser negativo."}), 400
-    except Exception:
-        return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
-
-    # Validar productos
-    if productos not in (None, "") and not isinstance(productos, list):
-        return jsonify({"success": False, "error": "Productos debe ser una lista."}), 400
-
-    productos_norm: list[dict] = []
-    for item in (productos or []):
-        if not isinstance(item, dict):
-            return jsonify({"success": False, "error": "Cada producto debe ser un objeto."}), 400
-        if "id_modelo" not in item:
-            return jsonify({"success": False, "error": "id_modelo es obligatorio en productos."}), 400
-        id_modelo_val = str(item.get("id_modelo") or "").strip()
-        if not id_modelo_val:
-            return jsonify({"success": False, "error": "id_modelo es obligatorio en productos."}), 400
-        costo = item.get("costo")
-        try:
-            if costo in (None, ""):
-                costo_val = None
-            else:
-                costo_val = int(costo)
-                if costo_val < 0:
-                    return jsonify({"success": False, "error": f"El costo del producto '{id_modelo_val}' no puede ser negativo."}), 400
-        except Exception:
-            return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
-        
-        # Costo no puede superar límite de crédito
-        if limite_val is not None and costo_val is not None and costo_val > limite_val:
-            return jsonify({
-                "success": False, 
-                "error": f"El costo del producto ID '{id_modelo_val}' ({costo_val} Bs) no puede superar el límite de crédito del proveedor ({limite_val} Bs)."
-            }), 400
-        
-        productos_norm.append({"id_modelo": id_modelo_val, "costo": costo_val})
-
     try:
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
+
         modelo = Proveedores(
             id_proveedor=0,
             rif=rif,
@@ -131,15 +55,15 @@ def api_crear_proveedor():
             celular=celular,
             correo=correo,
             direccion=direccion,
-            limite_credito=limite_val,
+            limite_credito=limite_credito,
             usuario_id=usuario_id
         )
 
-        if productos_norm:
-            new_id = modelo.crear_proveedor_con_productos(productos=productos_norm)
+        if productos not in (None, ""):
+            new_id = modelo.crear_proveedor_con_productos(productos=productos)
         else:
             new_id = modelo.crear_proveedor()
-        
+
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -186,56 +110,9 @@ def api_actualizar_proveedor(id_proveedor: int):
     direccion = str(datos.get("direccion", "")).strip() or None
     limite_credito = datos.get("limite_credito")
 
-    error_nombre = validar_solo_letras_numeros(nombre, 2, 60, "Nombre del proveedor")
-    if error_nombre:
-        return jsonify({"success": False, "error": error_nombre}), 400
-
-    error_rif = validar_rif(rif, 8, 15, "RIF")
-    if error_rif:
-        return jsonify({"success": False, "error": error_rif}), 400
-
-    error_celular = validar_celular(celular, 11, 11, "Teléfono")
-    if error_celular:
-        return jsonify({"success": False, "error": error_celular}), 400
-
-    error_correo = validar_email(correo) if correo else None
-    if error_correo:
-        return jsonify({"success": False, "error": error_correo}), 400
-
-    error_direccion = validar_direccion_proveedor(direccion, 100, "Dirección")
-    if error_direccion:
-        return jsonify({"success": False, "error": error_direccion}), 400
-
-    error_limite = validar_limite_credito(limite_credito, "Límite de crédito")
-    if error_limite:
-        return jsonify({"success": False, "error": error_limite}), 400
-
-    try:
-        if limite_credito in (None, ""):
-            limite_val = None
-        else:
-            limite_val = int(limite_credito)
-            if limite_val < 0:
-                return jsonify({"success": False, "error": "El límite de crédito no puede ser negativo."}), 400
-    except Exception:
-        return jsonify({"success": False, "error": "El límite de crédito debe ser numérico."}), 400
-
-    # Validación: El nuevo límite no puede ser menor que el costo del producto más caro
-    if limite_val is not None:
-        modelo_temp = Proveedores(id_proveedor=id_proveedor)
-        productos = modelo_temp.listar_productos_por_proveedor() or []
-        
-        if productos:
-            costo_maximo = max((p.get("costo") or 0) for p in productos)
-            if limite_val < costo_maximo:
-                return jsonify({
-                    "success": False, 
-                    "error": f"El nuevo límite de crédito ({limite_val} Bs) no puede ser menor que el costo del producto más caro que ya tiene asignado ({costo_maximo} Bs). Reduzca los costos primero o elimine productos."
-                }), 400
-
     try:
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
+
         modelo = Proveedores(
             id_proveedor=id_proveedor,
             rif=rif,
@@ -244,12 +121,12 @@ def api_actualizar_proveedor(id_proveedor: int):
             celular=celular,
             correo=correo,
             direccion=direccion,
-            limite_credito=limite_val,
+            limite_credito=limite_credito,
             usuario_id=usuario_id
         )
-        
+
         ok = modelo.actualizar_proveedor()
-        
+
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400
@@ -332,45 +209,16 @@ def api_listar_productos_proveedor(id_proveedor: int):
 @tiene_permiso('Proveedores', 'modificar')
 def api_upsert_producto_proveedor(id_proveedor: int):
     datos = request.get_json(silent=True) or {}
-    id_modelo = datos.get("id_modelo")
-    costo = datos.get("costo")
-
-    id_modelo_val = str(id_modelo or "").strip()
-    if not id_modelo_val:
-        return jsonify({"success": False, "error": "El modelo es obligatorio."}), 400
-
-    try:
-        if costo in (None, ""):
-            costo_val = None
-        else:
-            costo_val = int(costo)
-            if costo_val < 0:
-                return jsonify({"success": False, "error": "El costo no puede ser negativo."}), 400
-    except Exception:
-        return jsonify({"success": False, "error": "El costo debe ser numérico."}), 400
-
-    # Validación: El costo no puede superar el límite de crédito del proveedor
-    if costo_val is not None:
-        proveedor_modelo = Proveedores(id_proveedor=id_proveedor)
-        proveedor = proveedor_modelo.obtener_proveedor()
-        limite_credito = proveedor.get("limite_credito") if proveedor else None
-        
-        if limite_credito is not None and costo_val > limite_credito:
-            return jsonify({
-                "success": False, 
-                "error": f"El costo del producto ({costo_val} Bs) no puede superar el límite de crédito del proveedor ({limite_credito} Bs)."
-            }), 400
-
     try:
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
-        
+
         modelo = Proveedores(
             id_proveedor=id_proveedor,
             usuario_id=usuario_id
         )
-        
-        ok = modelo.upsert_producto_proveedor(id_modelo=id_modelo_val, costo=costo_val)
-        
+
+        ok = modelo.upsert_producto_proveedor(id_modelo=datos.get("id_modelo"), costo=datos.get("costo"))
+
         return jsonify({"success": True, "updated": bool(ok)})
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 400

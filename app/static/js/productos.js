@@ -45,6 +45,8 @@
   let isCreatingNewBrand = false;
   let isSubmitting = false;
   let searchQuery = "";
+  let currentPage = 1;
+  const PAGE_SIZE = 10;
 
   const MAX = {
     clase: 30,
@@ -504,6 +506,12 @@
     state.modelos = Array.isArray(data.modelos) ? data.modelos : [];
   }
 
+  function getProductoImageUrl(modelo) {
+    const value = modelo?.foto_inventario ?? modelo?.Foto_inventario ?? modelo?.imagen ?? modelo?.foto ?? "";
+    const normalized = String(value || "").trim();
+    return normalized || "";
+  }
+
   function renderTabla(modelos) {
     if (!tabla) return;
     if (!modelos.length) {
@@ -512,10 +520,15 @@
     }
 
     tabla.innerHTML = modelos
-      .map(
-        (m) => `
+      .map((m) => {
+        const imageUrl = getProductoImageUrl(m);
+        const rowImage = imageUrl
+          ? `<img class="product-thumb product-thumb--img" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(m.nombre || "Producto")}" loading="lazy">`
+          : `<span class="product-thumb product-thumb--placeholder" aria-label="Sin imagen">IMG</span>`;
+
+        return `
           <tr data-id="${escapeHtml(m.id ?? "")}">
-            <td><span class="product-thumb" aria-hidden="true"></span></td>
+            <td>${rowImage}</td>
             <td>
               <div class="product-meta">
                 <strong class="product-name">${escapeHtml(m.nombre || "")}</strong>
@@ -535,16 +548,64 @@
               </div>
             </td>
           </tr>
-        `,
-      )
+        `;
+      })
       .join("");
+
+    const imagenes = tabla.querySelectorAll("img.product-thumb--img");
+    imagenes.forEach((img) => {
+      img.addEventListener("error", () => {
+        const placeholder = document.createElement("span");
+        placeholder.className = "product-thumb product-thumb--placeholder";
+        placeholder.setAttribute("aria-label", "Sin imagen");
+        placeholder.textContent = "IMG";
+        img.replaceWith(placeholder);
+      });
+    });
+  }
+
+  function updatePagerInfo(totalItems) {
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    if (currentPage > totalPages) {
+      currentPage = totalPages;
+    }
+
+    const info = document.getElementById("pager-info");
+    if (info) info.textContent = `Página ${currentPage} de ${totalPages}`;
+
+    const anterior = document.getElementById("pager-anterior");
+    const siguiente = document.getElementById("pager-siguiente");
+    if (anterior) anterior.disabled = currentPage <= 1;
+    if (siguiente) siguiente.disabled = currentPage >= totalPages || totalItems === 0;
+  }
+
+  function getModelosFiltrados() {
+    const claseId = fClase ? String(fClase.value || "") : "";
+    const marcaId = fMarca ? String(fMarca.value || "") : "";
+
+    let modelos = [...state.modelos];
+    if (claseId) {
+      modelos = modelos.filter((m) => String(m.id_clase || "") === String(claseId));
+    }
+    if (marcaId) {
+      modelos = modelos.filter((m) => String(m.id_marca || "") === String(marcaId));
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      modelos = modelos.filter((m) =>
+        (m.nombre || "").toLowerCase().includes(q) ||
+        (m.marca_nombre || "").toLowerCase().includes(q) ||
+        String(m.id || "").includes(q)
+      );
+    }
+    return modelos;
   }
 
   function aplicarFiltrosYRender() {
     const claseId = fClase ? String(fClase.value || "") : "";
     const marcaId = fMarca ? String(fMarca.value || "") : "";
 
-    let modelos = state.modelos;
+    let modelos = [...state.modelos];
     if (claseId) {
       modelos = modelos.filter((m) => String(m.id_clase || "") === String(claseId));
     }
@@ -559,7 +620,16 @@
         String(m.id || "").includes(q)
       );
     }
-    renderTabla(modelos);
+
+    currentPage = Math.max(1, currentPage);
+    const totalPages = Math.max(1, Math.ceil(modelos.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const inicio = (currentPage - 1) * PAGE_SIZE;
+    const pagina = modelos.slice(inicio, inicio + PAGE_SIZE);
+
+    renderTabla(pagina);
+    updatePagerInfo(modelos.length);
   }
 
   async function recargarModelosSegunFiltros() {
@@ -567,6 +637,7 @@
     const marcaId = fMarca ? String(fMarca.value || "") : "";
     syncFilterSelects();
     await cargarModelos({ claseId, marcaId });
+    currentPage = 1;
     aplicarFiltrosYRender();
   }
 
@@ -1170,62 +1241,80 @@
     ventana.document.close();
   }
 
-  // ==================== EVENTOS DE REPORTES ====================
-  
-  if (btnReportes) {
-    btnReportes.addEventListener("click", () => {
-      cargarClasesMarcasReporte();
-      limpiarFiltrosReporte();
-      if (reportePreview) reportePreview.style.display = "none";
-      if (btnExportarExcel) btnExportarExcel.disabled = true;
-      if (btnExportarPdf) btnExportarPdf.disabled = true;
-      if (btnImprimir) btnImprimir.disabled = true;
-      abrirModalReportes();
-    });
-  }
-
-  if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
-  if (btnLimpiarFiltrosReporte) btnLimpiarFiltrosReporte.addEventListener("click", limpiarFiltrosReporte);
-  if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarAExcel);
-  if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarAPdf);
-  if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporte);
-
-  // ==================== EVENTOS DE FILTROS ====================
-  
-  if (btnAplicarFiltros) {
-    btnAplicarFiltros.addEventListener("click", () => {
-      if (fClaseSidebar) fClase.value = fClaseSidebar.value;
-      if (fMarcaSidebar) fMarca.value = fMarcaSidebar.value;
-      recargarModelosSegunFiltros();
-    });
-  }
-
-  if (btnLimpiarFiltros) {
-    btnLimpiarFiltros.addEventListener("click", () => {
-      if (fClase) fClase.value = "";
-      if (fMarca) fMarca.value = "";
-      if (fClaseSidebar) fClaseSidebar.value = "";
-      if (fMarcaSidebar) fMarcaSidebar.value = "";
-      if (inputBuscar) inputBuscar.value = "";
-      searchQuery = "";
-      recargarModelosSegunFiltros();
-    });
-  }
-
-  if (inputBuscar) {
-    let timeoutId;
-    inputBuscar.addEventListener("input", (e) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        searchQuery = e.target.value.trim();
-        recargarModelosSegunFiltros();
-      }, 300);
-    });
-  }
-
-  // ==================== INICIALIZACIÓN ====================
-
   async function init() {
+    if (btnReportes) {
+      btnReportes.addEventListener("click", () => {
+        cargarClasesMarcasReporte();
+        limpiarFiltrosReporte();
+        if (reportePreview) reportePreview.style.display = "none";
+        if (btnExportarExcel) btnExportarExcel.disabled = true;
+        if (btnExportarPdf) btnExportarPdf.disabled = true;
+        if (btnImprimir) btnImprimir.disabled = true;
+        abrirModalReportes();
+      });
+    }
+
+    if (btnGenerarReporte) btnGenerarReporte.addEventListener("click", generarReporte);
+    if (btnLimpiarFiltrosReporte) btnLimpiarFiltrosReporte.addEventListener("click", limpiarFiltrosReporte);
+    if (btnExportarExcel) btnExportarExcel.addEventListener("click", exportarAExcel);
+    if (btnExportarPdf) btnExportarPdf.addEventListener("click", exportarAPdf);
+    if (btnImprimir) btnImprimir.addEventListener("click", imprimirReporte);
+
+    if (btnAplicarFiltros) {
+      btnAplicarFiltros.addEventListener("click", () => {
+        if (fClaseSidebar) fClase.value = fClaseSidebar.value;
+        if (fMarcaSidebar) fMarca.value = fMarcaSidebar.value;
+        recargarModelosSegunFiltros();
+      });
+    }
+
+    if (btnLimpiarFiltros) {
+      btnLimpiarFiltros.addEventListener("click", () => {
+        if (fClase) fClase.value = "";
+        if (fMarca) fMarca.value = "";
+        if (fClaseSidebar) fClaseSidebar.value = "";
+        if (fMarcaSidebar) fMarcaSidebar.value = "";
+        if (inputBuscar) inputBuscar.value = "";
+        searchQuery = "";
+        recargarModelosSegunFiltros();
+      });
+    }
+
+    if (inputBuscar) {
+      let timeoutId;
+      inputBuscar.addEventListener("input", (e) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          searchQuery = e.target.value.trim();
+          currentPage = 1;
+          recargarModelosSegunFiltros();
+        }, 300);
+      });
+    }
+
+    const pagerAnterior = document.getElementById("pager-anterior");
+    const pagerSiguiente = document.getElementById("pager-siguiente");
+
+    if (pagerAnterior) {
+      pagerAnterior.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          aplicarFiltrosYRender();
+        }
+      });
+    }
+
+    if (pagerSiguiente) {
+      pagerSiguiente.addEventListener("click", () => {
+        const modelosFiltrados = getModelosFiltrados();
+        const totalPages = Math.max(1, Math.ceil(modelosFiltrados.length / PAGE_SIZE));
+        if (currentPage < totalPages) {
+          currentPage += 1;
+          aplicarFiltrosYRender();
+        }
+      });
+    }
+
     if (btnNuevo) {
       btnNuevo.addEventListener("click", async () => {
         resetFormToCreate();

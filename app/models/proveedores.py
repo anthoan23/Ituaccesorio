@@ -1,6 +1,15 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+from app.utils.validators import (
+    normalizar_numero_decimal,
+    validar_celular_venezolano,
+    validar_direccion_proveedor,
+    validar_email,
+    validar_limite_credito,
+    validar_rif,
+    validar_solo_letras_numeros,
+)
 import mysql.connector
 
 
@@ -178,13 +187,88 @@ class Proveedores:
 
     # ==================== FIN MÉTODO CON STORED PROCEDURE ====================
 
+    def _validar_datos_basicos(self):
+        self.rif = str(self.rif or "").strip() or None
+        self.nombre = str(self.nombre or "").strip()
+        self.tipo = str(self.tipo or "").strip() or None
+        self.celular = str(self.celular or "").strip() or None
+        self.correo = str(self.correo or "").strip() or None
+        self.direccion = str(self.direccion or "").strip() or None
+
+        if self.limite_credito in (None, ""):
+            self.limite_credito = None
+        else:
+            valor_normalizado = normalizar_numero_decimal(self.limite_credito)
+            if valor_normalizado is None:
+                raise ValueError("El límite de crédito debe ser numérico.")
+            self.limite_credito = valor_normalizado
+            if self.limite_credito < 0:
+                raise ValueError("El límite de crédito no puede ser negativo.")
+
+        error_nombre = validar_solo_letras_numeros(self.nombre, 2, 60, "Nombre del proveedor")
+        if error_nombre:
+            raise ValueError(error_nombre)
+
+        error_rif = validar_rif(self.rif, 8, 15, "RIF")
+        if error_rif:
+            raise ValueError(error_rif)
+
+        if self.celular:
+            error_celular = validar_celular_venezolano(self.celular, "Teléfono")
+            if error_celular:
+                raise ValueError(error_celular)
+
+        error_correo = validar_email(self.correo) if self.correo else None
+        if error_correo:
+            raise ValueError(error_correo)
+
+        error_direccion = validar_direccion_proveedor(self.direccion, 100, "Dirección")
+        if error_direccion:
+            raise ValueError(error_direccion)
+
+        error_limite = validar_limite_credito(self.limite_credito, "Límite de crédito")
+        if error_limite:
+            raise ValueError(error_limite)
+
+    def _validar_productos_para_proveedor(self, productos):
+        if productos in (None, ""):
+            return []
+        if not isinstance(productos, list):
+            raise ValueError("Productos debe ser una lista.")
+
+        productos_norm: list[dict] = []
+        for item in productos:
+            if not isinstance(item, dict):
+                raise ValueError("Cada producto debe ser un objeto.")
+            if "id_modelo" not in item:
+                raise ValueError("id_modelo es obligatorio en productos.")
+
+            id_modelo_val = str(item.get("id_modelo") or "").strip()
+            if not id_modelo_val:
+                raise ValueError("id_modelo es obligatorio en productos.")
+
+            costo = item.get("costo")
+            costo_val = None
+            if costo not in (None, ""):
+                try:
+                    costo_val = int(costo)
+                except (TypeError, ValueError):
+                    raise ValueError("El costo debe ser numérico.")
+                if costo_val < 0:
+                    raise ValueError(f"El costo del producto '{id_modelo_val}' no puede ser negativo.")
+
+            if self.limite_credito is not None and costo_val is not None and costo_val > self.limite_credito:
+                raise ValueError(
+                    f"El costo del producto ID '{id_modelo_val}' ({costo_val} Bs) no puede superar el límite de crédito del proveedor ({self.limite_credito} Bs)."
+                )
+
+            productos_norm.append({"id_modelo": id_modelo_val, "costo": costo_val})
+
+        return productos_norm
+
     def crear_proveedor(self) -> int:
         """Crea un nuevo proveedor usando el stored procedure sp_registrar_proveedor."""
-        if not self.nombre:
-            raise ValueError("El nombre del proveedor es obligatorio.")
-
-        if self.limite_credito is not None and self.limite_credito < 0:
-            raise ValueError("El límite de crédito no puede ser negativo.")
+        self._validar_datos_basicos()
 
         db = self._conexion()
         if not db:
@@ -270,16 +354,21 @@ class Proveedores:
         """Actualiza un proveedor existente usando los atributos de la instancia"""
         if self.id_proveedor == 0:
             raise ValueError("ID del proveedor es requerido para actualizar.")
-        if not self.nombre:
-            raise ValueError("El nombre del proveedor es obligatorio.")
-        
-        if self.limite_credito is not None and self.limite_credito < 0:
-            raise ValueError("El límite de crédito no puede ser negativo.")
-        
+        self._validar_datos_basicos()
+
+        if self.limite_credito is not None:
+            productos = self.listar_productos_por_proveedor() or []
+            if productos:
+                costo_maximo = max((p.get("costo") or 0) for p in productos)
+                if self.limite_credito < costo_maximo:
+                    raise ValueError(
+                        f"El nuevo límite de crédito ({self.limite_credito} Bs) no puede ser menor que el costo del producto más caro que ya tiene asignado ({costo_maximo} Bs). Reduzca los costos primero o elimine productos."
+                    )
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        
+
         cursor = None
         try:
             cursor = db.cursor()
@@ -295,11 +384,11 @@ class Proveedores:
                     Limite_credito = %s
                 WHERE ID_proveedor = %s
             """, (self.rif or None, self.nombre, self.tipo or None, self.celular or None,
-                  self.correo or None, self.direccion or None, 
-                  self.limite_credito or None, self.id_proveedor))
+                  self.correo or None, self.direccion or None,
+                  self.limite_credito if self.limite_credito is not None else None, self.id_proveedor))
             db.commit()
             updated = cursor.rowcount > 0
-            
+
             # Registrar en bitácora
             if updated and self.usuario_id:
                 bitacora = Bitacora(
@@ -309,7 +398,7 @@ class Proveedores:
                     modulo_nombre="Proveedores"
                 )
                 bitacora.registrar()
-            
+
             return updated
         except Exception as e:
             if db:
@@ -475,16 +564,30 @@ class Proveedores:
         """Inserta o actualiza un producto para este proveedor"""
         if self.id_proveedor == 0:
             raise ValueError("ID del proveedor es requerido")
+
+        id_modelo = str(id_modelo or "").strip()
         if not id_modelo:
-            raise ValueError("ID del modelo es requerido")
-        
-        if costo is not None and costo < 0:
-            raise ValueError("El costo del producto no puede ser negativo.")
-        
+            raise ValueError("El modelo es obligatorio.")
+
+        if costo not in (None, ""):
+            try:
+                costo = int(costo)
+            except (TypeError, ValueError):
+                raise ValueError("El costo debe ser numérico.")
+            if costo < 0:
+                raise ValueError("El costo no puede ser negativo.")
+
+        proveedor = self.obtener_proveedor()
+        limite_credito = proveedor.get("limite_credito") if proveedor else None
+        if limite_credito is not None and costo is not None and costo > limite_credito:
+            raise ValueError(
+                f"El costo del producto ({costo} Bs) no puede superar el límite de crédito del proveedor ({limite_credito} Bs)."
+            )
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        
+
         cursor = None
         try:
             cursor = db.cursor()
@@ -495,7 +598,7 @@ class Proveedores:
             """, (self.id_proveedor, id_modelo, costo))
             db.commit()
             updated = cursor.rowcount > 0
-            
+
             # Registrar en bitácora
             if updated and self.usuario_id:
                 bitacora = Bitacora(
@@ -505,7 +608,7 @@ class Proveedores:
                     modulo_nombre="Proveedores"
                 )
                 bitacora.registrar()
-            
+
             return updated
         except Exception as e:
             if db:
@@ -561,64 +664,58 @@ class Proveedores:
 
     def crear_proveedor_con_productos(self, productos: list[dict]) -> int:
         """Crea un proveedor con sus productos iniciales en una transacción"""
-        if not self.nombre:
-            raise ValueError("El nombre del proveedor es obligatorio.")
-        
-        if self.limite_credito is not None and self.limite_credito < 0:
-            raise ValueError("El límite de crédito no puede ser negativo.")
-        
+        self._validar_datos_basicos()
+        productos_validos = self._validar_productos_para_proveedor(productos)
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
-        
+
         cursor = None
         try:
             cursor = db.cursor()
-            
+
             # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
-            
+
             # Insertar proveedor
             cursor.execute("""
                 INSERT INTO Proveedor
-                    (ID_proveedor, Rif_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor, 
+                    (ID_proveedor, Rif_proveedor, Nombre_proveedor, Tipo_proveedor, Celular_proveedor,
                      Correo_proveedor, Direccion_proveedor, Limite_credito)
                 VALUES
                     (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None, 
-                  self.celular or None, self.correo or None, 
-                  self.direccion or None, self.limite_credito or None))
-            
+            """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None,
+                  self.celular or None, self.correo or None,
+                  self.direccion or None, self.limite_credito if self.limite_credito is not None else None))
+
             # Insertar productos
             rows = []
-            for item in (productos or []):
-                id_modelo = item.get("id_modelo")
-                costo = item.get("costo")
-                if costo is not None and costo < 0:
-                    raise ValueError(f"El costo del producto '{id_modelo}' no puede ser negativo.")
-                rows.append((self.id_proveedor, str(id_modelo), 
-                            costo if costo in (None, "") else int(costo)))
-            
+            for item in productos_validos:
+                id_modelo = item["id_modelo"]
+                costo = item["costo"]
+                rows.append((self.id_proveedor, str(id_modelo), costo))
+
             if rows:
                 cursor.executemany("""
                     INSERT INTO Suministra (ID_proveedor, ID_producto, Costo_producto)
                     VALUES (%s, %s, %s)
                     ON DUPLICATE KEY UPDATE Costo_producto = VALUES(Costo_producto)
                 """, rows)
-            
+
             db.commit()
-            
+
             # Registrar en bitácora
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Crear proveedor",
-                    descripcion=f"Se creó el proveedor: {self.nombre} - RIF: {self.rif or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos)}",
+                    descripcion=f"Se creó el proveedor: {self.nombre} - RIF: {self.rif or 'N/A'} - Límite crédito: {self.limite_credito or 0} - Productos: {len(productos_validos)}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Proveedores"
                 )
                 bitacora.registrar()
-            
+
             return self.id_proveedor
         except Exception as e:
             if db:

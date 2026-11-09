@@ -2,6 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from decimal import Decimal
 from app.models.bitacora import Bitacora
+from app.utils.validators import validar_nombre_producto, validar_solo_letras, validar_solo_letras_numeros
 import mysql.connector
 
 
@@ -125,9 +126,11 @@ class ClaseProducto:
             db.close()
 
     def registrar_clase(self) -> str:
-        if not self.nombre:
-            raise ValueError("El nombre de la clase es obligatorio.")
-        
+        self.nombre = str(self.nombre or "").strip()
+        error_validacion = validar_solo_letras(self.nombre, 2, 30, "Nombre de la clase")
+        if error_validacion:
+            raise ValueError(error_validacion)
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -252,9 +255,11 @@ class MarcaProducto:
             db.close()
 
     def registrar_marca(self) -> str:
-        if not self.nombre:
-            raise ValueError("El nombre de la marca es obligatorio.")
-        
+        self.nombre = str(self.nombre or "").strip()
+        error_validacion = validar_solo_letras_numeros(self.nombre, 2, 30, "Nombre de la marca")
+        if error_validacion:
+            raise ValueError(error_validacion)
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")
@@ -472,9 +477,28 @@ class Producto:
             cursor.close()
             db.close()
 
+    def _validar_datos_basicos(self):
+        self.nombre = str(self.nombre or "").strip()
+        self.id_clase = str(self.id_clase or "").strip()
+        self.id_marca = str(self.id_marca or "").strip()
+
+        error_nombre = validar_nombre_producto(self.nombre, 2, 50, "Nombre del producto")
+        if error_nombre:
+            raise ValueError(error_nombre)
+
+        if not self.id_marca:
+            raise ValueError("La marca es obligatoria.")
+        if not self.id_clase:
+            raise ValueError("La clase es obligatoria.")
+
+        try:
+            int(self.id_marca)
+            int(self.id_clase)
+        except (TypeError, ValueError):
+            raise ValueError("Los identificadores de clase y marca deben ser numéricos.")
+
     def registrar_producto(self) -> str:
-        if not self.id_clase or not self.id_marca or not self.nombre:
-            raise ValueError("Clase, marca y nombre son obligatorios.")
+        self._validar_datos_basicos()
 
         if len(self.nombre.strip()) > 50:
             raise ValueError("El nombre no puede exceder 50 caracteres.")
@@ -512,37 +536,35 @@ class Producto:
             if cursor.fetchone():
                 raise ValueError(f"Ya existe un producto con el nombre '{self.nombre}' en esta clase y marca.")
 
-            cursor.execute("SELECT COALESCE(MAX(CAST(ID_producto AS UNSIGNED)), 0) + 1 AS next_id FROM Producto")
-            row = cursor.fetchone()
-            siguiente_num = int(row['next_id'] or 1)
-            nuevo_id = str(siguiente_num)
+            # Invocar el stored procedure para registrar el producto con validación y generación de ID.
+            # Con cursor dictionary=True, MySQL Connector devuelve los OUT params como claves "proc_argN".
+            resultado = cursor.callproc(
+                'sp_registrar_producto',
+                (self.id_clase, self.id_marca, self.nombre, self.descripcion or '', None, None, None)
+            )
 
-            cursor.execute("""
-                INSERT INTO Producto (ID_producto, ID_Clase, ID_marca, Nombre_producto, Descripcion)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                nuevo_id,
-                self.id_clase,
-                self.id_marca,
-                self.nombre.strip(),
-                self.descripcion.strip() if self.descripcion else None
-            ))
+            self.id_producto = resultado.get('sp_registrar_producto_arg5')
+            estado = resultado.get('sp_registrar_producto_arg6')
+            mensaje = resultado.get('sp_registrar_producto_arg7')
+
+            if not self.id_producto or estado != 'OK':
+                raise ValueError(mensaje or 'No se pudo registrar el producto.')
 
             db.commit()
-            self.id_producto = nuevo_id
+            id_producto_creado = self.id_producto
 
             try:
                 if self.usuario_id:
                     Bitacora(
                         accion="Crear producto",
-                        descripcion=f"Producto creado: {self.nombre} (ID: {nuevo_id})",
+                        descripcion=f"Producto creado: {self.nombre} (ID: {id_producto_creado})",
                         usuario_id=self.usuario_id,
                         modulo_nombre="Productos"
                     ).registrar()
             except Exception as bit_err:
                 print(f"[WARN] No se pudo registrar en bitacora: {bit_err}")
 
-            return nuevo_id
+            return id_producto_creado
 
         except Exception:
             db.rollback()
@@ -555,9 +577,8 @@ class Producto:
     def actualizar_producto(self) -> bool:
         if not self.id_producto:
             raise ValueError("ID del producto es requerido para actualizar.")
-        if not self.id_clase or not self.id_marca or not self.nombre:
-            raise ValueError("Clase, marca y nombre son obligatorios.")
-        
+        self._validar_datos_basicos()
+
         db = self._conexion()
         if not db:
             raise RuntimeError("No se pudo conectar a la base de datos.")

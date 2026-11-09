@@ -561,7 +561,7 @@ CREATE TABLE `Producto` (
   `ID_producto` varchar(10) NOT NULL,
   `ID_Clase` varchar(10) DEFAULT NULL,
   `ID_marca` varchar(10) DEFAULT NULL,
-  `Nombre_producto` varchar(30) NOT NULL,
+  `Nombre_producto` varchar(50) NOT NULL,
   `Descripcion` varchar(300) DEFAULT NULL,
   PRIMARY KEY (`ID_producto`),
   KEY `ID_Clase` (`ID_Clase`),
@@ -1320,13 +1320,18 @@ BEGIN
     DECLARE v_existe_producto INT DEFAULT 0;
     DECLARE v_siguiente_num INT DEFAULT 0;
     DECLARE v_nuevo_id VARCHAR(10);
+    DECLARE v_sqlstate CHAR(5) DEFAULT '';
+    DECLARE v_sqlmsg TEXT DEFAULT '';
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_sqlmsg = MESSAGE_TEXT;
         ROLLBACK;
         SET p_id_producto = NULL;
         SET p_estado = 'ERROR';
-        SET p_mensaje = 'No se pudo registrar el producto';
+        SET p_mensaje = COALESCE(NULLIF(TRIM(v_sqlmsg), ''), 'No se pudo registrar el producto');
     END;
 
     SET p_id_producto = NULL;

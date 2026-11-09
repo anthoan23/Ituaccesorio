@@ -135,12 +135,31 @@
    PRODUCT THUMB
    ============================================ */
 .product-thumb {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 52px;
     height: 40px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
     background: var(--glass-bg);
+    overflow: hidden;
+    object-fit: cover;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.product-thumb--img {
+    width: 52px;
+    height: 40px;
+    object-fit: cover;
+    background: #f3f4f6;
+}
+
+.product-thumb--placeholder {
+    background: linear-gradient(135deg, rgba(243, 197, 0, 0.14), rgba(59, 130, 246, 0.08));
 }
 
 .product-meta {

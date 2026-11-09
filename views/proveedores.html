@@ -128,14 +128,26 @@
 
         <label class="field">
           <span>Teléfono</span>
-          <input id="c-celular" 
-                 name="celular" 
-                 type="tel" 
-                 placeholder="Ej: 0412-1234567"
-                 maxlength="11"
-                 data-validation-rules="telefono"
-                 title="Formato: 04121234567 (11 dígitos)">
-          <small class="field-hint">11 dígitos (ej: 04121234567)</small>
+          <div class="field-phone__controls">
+            <select id="c-celular-prefijo" class="field-phone__prefix" aria-label="Prefijo del teléfono" title="Prefijo del teléfono">
+              <option value=""> </option>
+              <option value="0412">0412</option>
+              <option value="0414">0414</option>
+              <option value="0416">0416</option>
+              <option value="0422">0422</option>
+              <option value="0424">0424</option>
+              <option value="0426">0426</option>
+            </select>
+            <input id="c-celular-sufijo"
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="7"
+                   placeholder="1234567"
+                   aria-label="Resto del teléfono"
+                   title="Ingresar los 7 dígitos restantes">
+          </div>
+          <input id="c-celular" name="celular" type="hidden" value="">
+          <small class="field-hint">Seleccione un prefijo y complete 7 dígitos (ej: 0414 1234567)</small>
         </label>
 
         <label class="field">
@@ -260,14 +272,26 @@
 
         <label class="field">
           <span>Teléfono</span>
-          <input id="e-celular" 
-                 name="celular" 
-                 type="tel" 
-                 placeholder="Ej: 0412-1234567"
-                 maxlength="11"
-                 data-validation-rules="telefono"
-                 title="Formato: 04121234567 (11 dígitos)">
-          <small class="field-hint">11 dígitos (ej: 04121234567)</small>
+          <div class="field-phone__controls">
+            <select id="e-celular-prefijo" class="field-phone__prefix" aria-label="Prefijo del teléfono" title="Prefijo del teléfono">
+              <option value=""> </option>
+              <option value="0412">0412</option>
+              <option value="0414">0414</option>
+              <option value="0416">0416</option>
+              <option value="0422">0422</option>
+              <option value="0424">0424</option>
+              <option value="0426">0426</option>
+            </select>
+            <input id="e-celular-sufijo"
+                   type="text"
+                   inputmode="numeric"
+                   maxlength="7"
+                   placeholder="1234567"
+                   aria-label="Resto del teléfono"
+                   title="Ingresar los 7 dígitos restantes">
+          </div>
+          <input id="e-celular" name="celular" type="hidden" value="">
+          <small class="field-hint">Seleccione un prefijo y complete 7 dígitos (ej: 0414 1234567)</small>
         </label>
 
         <label class="field field--full">
