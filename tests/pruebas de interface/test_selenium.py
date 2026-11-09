@@ -1,9 +1,6 @@
-import os
 import random
-import traceback
-from datetime import datetime
 
-from selenium import webdriver
+import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -12,19 +9,14 @@ URL_EMPLEADOS = "http://127.0.0.1:5000/empleados"
 TIEMPO_ESPERA = 10
 
 
-def guardar_captura(driver, nombre="error"):
-    os.makedirs("tests/pruebas de interface/evidencia", exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    ruta = os.path.join("tests/pruebas de interface/evidencia", f"{nombre}_{timestamp}.png")
-    try:
-        driver.save_screenshot(ruta)
-        print(f"Captura guardada en: {ruta}")
-    except Exception as e:
-        print(f"No se pudo guardar la captura: {e}")
-    return ruta
+@pytest.fixture(scope="module")
+def cedula():
+    """Cedula aleatoria compartida por las pruebas del flujo CRUD."""
+    return str(random.randint(10000000, 99999999))
 
 
-def crear_empleado(driver, cedula):
+def test_crear_empleado(driver, cedula):
+    driver.get(URL_EMPLEADOS)
     espera = WebDriverWait(driver, TIEMPO_ESPERA)
     espera.until(
         EC.element_to_be_clickable(
@@ -67,7 +59,8 @@ def crear_empleado(driver, cedula):
     print(f"Empleado creado: {cedula}")
 
 
-def modificar_empleado(driver, cedula):
+def test_modificar_empleado(driver, cedula):
+    driver.get(URL_EMPLEADOS)
     espera = WebDriverWait(driver, TIEMPO_ESPERA)
     espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
     fila = espera.until(
@@ -103,7 +96,8 @@ def modificar_empleado(driver, cedula):
     print(f"Empleado modificado: {cedula}")
 
 
-def consultar_empleado(driver, cedula):
+def test_consultar_empleado(driver, cedula):
+    driver.get(URL_EMPLEADOS)
     espera = WebDriverWait(driver, TIEMPO_ESPERA)
     espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
     fila = espera.until(
@@ -124,7 +118,8 @@ def consultar_empleado(driver, cedula):
     print(f"Empleado consultado: {detalle_cedula} - {detalle_nombre}")
 
 
-def eliminar_empleado(driver, cedula):
+def test_eliminar_empleado(driver, cedula):
+    driver.get(URL_EMPLEADOS)
     espera = WebDriverWait(driver, TIEMPO_ESPERA)
     espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
     fila = espera.until(
@@ -147,24 +142,3 @@ def eliminar_empleado(driver, cedula):
     )
     espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
     print(f"Empleado eliminado: {cedula}")
-
-
-def main():
-    driver = webdriver.Firefox()
-    cedula = str(random.randint(10000000, 99999999))
-    try:
-        driver.get(URL_EMPLEADOS)
-        crear_empleado(driver, cedula)
-        modificar_empleado(driver, cedula)
-        consultar_empleado(driver, cedula)
-        eliminar_empleado(driver, cedula)
-    except Exception:
-        guardar_captura(driver, f"error_{cedula}")
-        traceback.print_exc()
-        raise
-    finally:
-        driver.quit()
-
-
-if __name__ == "__main__":
-    main()
