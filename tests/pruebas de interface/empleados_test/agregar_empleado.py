@@ -7,7 +7,7 @@ TIEMPO_ESPERA = 10
 
 # [cedula, nombre, apellido, celular, correo, direccion, cargo]
 DATOS_EMPLEADO = [
-    "12345678",
+    "12345679",
     "Empleado",
     "Prueba",
     "04141234567",

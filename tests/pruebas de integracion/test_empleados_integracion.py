@@ -30,14 +30,20 @@ EMPLEADO = {
 
 CELULAR = "04141234567"
 ID_CARGO_VALIDO = "CRG0000001"
+ID_CARGO_TECNICO = "CRG0000001"
 DESCRIPCION_ESPECIALIDAD = "Especialidad temporal"
 CEDULA_INEXISTENTE = "99999999"
+
+# Cédulas fijas: cada prueba tiene la suya para máximo control de los datos
+# (no se cruzan entre pruebas ni con el seed 12345678).
 CEDULA_AGREGAR = "98765432"
 CEDULA_AGREGAR_ESPECIALIDAD = "98765431"
 CEDULA_ACTUALIZAR = "98765430"
 CEDULA_ACTUALIZAR_ESPECIALIDAD = "98765429"
 CEDULA_ELIMINAR = "98765428"
 CEDULA_ELIMINAR_CAPACITACION = "98765427"
+CEDULA_LISTADO = "98765425"      # test_listar_empleados_por_especialidad
+CEDULA_TECNICO = "98765424"      # test_listar_tecnicos
 
 
 def datos_empleado(**cambios):
@@ -57,23 +63,34 @@ def datos_empleado(**cambios):
 class TestListadosEmpleados:
 
     def test_listar_empleados(self):
-        assert Empleados().listar_empleados() == [
-            {
-                "cedula": EMPLEADO["cedula"],
-                "nombre": EMPLEADO["nombre"],
-                "apellido": EMPLEADO["apellido"],
-                "cargo": EMPLEADO["cargo"],
-            }
-        ]
+        # Aislamiento: se verifica que el empleado del seed esté presente con
+        # sus datos exactos, sin exigir que no existan empleados temporales.
+        fila = next(
+            (
+                empleado
+                for empleado in Empleados().listar_empleados()
+                if empleado["cedula"] == EMPLEADO["cedula"]
+            ),
+            None,
+        )
+        assert fila == {
+            "cedula": EMPLEADO["cedula"],
+            "nombre": EMPLEADO["nombre"],
+            "apellido": EMPLEADO["apellido"],
+            "cargo": EMPLEADO["cargo"],
+        }
 
     def test_listar_cargos(self):
-        assert Empleados().listar_cargos() == CARGOS
+        cargos = Empleados().listar_cargos()
+
+        for cargo_seed in CARGOS:
+            assert cargo_seed in cargos
 
     def test_listar_especialidades(self):
         especialidades = Empleados().listar_especialidades()
+        ids = {especialidad["id"] for especialidad in especialidades}
 
-        assert len(especialidades) == 5
-        assert {especialidad["id"] for especialidad in especialidades} == {
+        assert ids >= {
             "ESP0000001",
             "ESP0000002",
             "ESP0000003",
@@ -82,19 +99,80 @@ class TestListadosEmpleados:
         }
 
     def test_listar_empleados_por_cargo(self):
-        assert Empleados().listar_empleados_por_cargo() == [
-            {"nombre": "Administrador", "cantidad": 1},
-            {"nombre": "Técnico", "cantidad": 0},
-        ]
+        # El seed garantiza 1 administrador; los conteos globales no se
+        # congelan para no depender de otras pruebas.
+        por_cargo = Empleados().listar_empleados_por_cargo()
+
+        administrador = next(
+            (cargo for cargo in por_cargo if cargo["nombre"] == "Administrador"),
+            None,
+        )
+        assert administrador is not None
+        assert administrador["cantidad"] >= 1
+        assert any(cargo["nombre"] == "Técnico" for cargo in por_cargo)
 
     def test_listar_empleados_por_especialidad(self):
-        especialidades = Empleados().listar_empleados_por_especialidad()
+        # Autocontenido: crea su propia especialidad + empleado con esa
+        # especialidad y verifica el conteo de ESA fila.
+        id_especialidad = None
+        cedula_temporal = CEDULA_LISTADO
+        try:
+            resultado = Especialidad(
+                nombre_especialidad="Esp Listado Conteo",
+                descripcion_especialidad=DESCRIPCION_ESPECIALIDAD,
+            ).agregar_especialidad()
+            id_especialidad = Especialidad(
+                nombre_especialidad="Esp Listado Conteo"
+            ).obtener_id_por_nombre()
+            assert resultado == "Especialidad agregada exitosamente."
+            assert id_especialidad is not None
 
-        assert len(especialidades) == 5
-        assert all(especialidad["cantidad"] == 0 for especialidad in especialidades)
+            resultado = Empleados(
+                **datos_empleado(
+                    id_empleado=cedula_temporal,
+                    especialidades=[id_especialidad],
+                )
+            ).agregar_empleado()
+            assert resultado == "Empleado agregado exitosamente."
+
+            por_especialidad = Empleados().listar_empleados_por_especialidad()
+            fila = next(
+                (
+                    especialidad
+                    for especialidad in por_especialidad
+                    if especialidad["nombre"] == "Esp Listado Conteo"
+                ),
+                None,
+            )
+            assert fila is not None
+            assert fila["cantidad"] == 1
+        finally:
+            if Empleados(id_empleado=cedula_temporal).verificar_empleado():
+                Empleados(id_empleado=cedula_temporal).eliminar_empleado()
+            if id_especialidad and Especialidad(
+                id_especialidad
+            ).verificar_especialidad_por_id():
+                Especialidad(id_especialidad).eliminar_especialidad()
 
     def test_listar_tecnicos(self):
-        assert Empleados().listar_tecnicos() == []
+        # Autocontenido: crea un técnico temporal y verifica que aparece.
+        cedula_temporal = CEDULA_TECNICO
+        try:
+            resultado = Empleados(
+                **datos_empleado(
+                    id_empleado=cedula_temporal,
+                    id_cargo=ID_CARGO_TECNICO,
+                )
+            ).agregar_empleado()
+            assert resultado == "Empleado agregado exitosamente."
+
+            tecnicos = Empleados().listar_tecnicos()
+            assert any(
+                tecnico["id"] == int(cedula_temporal) for tecnico in tecnicos
+            )
+        finally:
+            if Empleados(id_empleado=cedula_temporal).verificar_empleado():
+                Empleados(id_empleado=cedula_temporal).eliminar_empleado()
 
 
 class TestConsultarEmpleado:

@@ -28,7 +28,12 @@ CARGO_ELIMINAR = "Cargo Temporal Eliminar"
 class TestListarCargos:
 
     def test_listar_cargos(self):
-        assert Cargo().listar_cargos() == CARGOS
+        # Aislamiento: se verifica que los cargos del seed estén presentes,
+        # sin exigir que la tabla no tenga registros temporales de otras pruebas.
+        cargos = Cargo().listar_cargos()
+
+        for cargo_seed in CARGOS:
+            assert cargo_seed in cargos
 
 
 class TestVerificarCargo:

@@ -251,6 +251,2219 @@
           }
         }
       ]
+    },
+    {
+      "name": "Login",
+      "item": [
+        {
+          "name": "Render web login",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/login"
+          }
+        },
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"admin\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/login"
+          }
+        },
+        {
+          "name": "Registro cliente paso 1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"cliente_api_prueba\",\n  \"cedula\": \"30124556\",\n  \"password\": \"cliente123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/registro/cliente/paso-1"
+          }
+        },
+        {
+          "name": "Registro cliente paso 2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Prueba\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"cliente.api@ituaccesorio.com\",\n  \"direccion\": \"Barquisimeto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/registro/cliente/paso-2"
+          }
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Home (Dashboard)",
+      "item": [
+        {
+          "name": "Render web home",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/"
+          }
+        },
+        {
+          "name": "Render web inventario",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/inventario"
+          }
+        },
+        {
+          "name": "Ingresos vs gastos (7 días)",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ingresos-gastos"
+          }
+        },
+        {
+          "name": "Ventas de hoy",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ventas-hoy"
+          }
+        },
+        {
+          "name": "Órdenes de servicio",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ordenes-servicio"
+          }
+        },
+        {
+          "name": "Reparados del mes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/reparados-mes"
+          }
+        },
+        {
+          "name": "Ingresos mensuales",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ingresos-mensuales"
+          }
+        },
+        {
+          "name": "Productos bajo stock",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/bajo-stock"
+          }
+        },
+        {
+          "name": "Productos sin stock",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/sin-stock"
+          }
+        },
+        {
+          "name": "Actividad reciente",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/actividad-reciente"
+          }
+        },
+        {
+          "name": "Técnicos activos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/tecnicos-activos"
+          }
+        },
+        {
+          "name": "Ventas de la semana",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ventas-semana"
+          }
+        },
+        {
+          "name": "Incremento de reparaciones",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/incremento-reparaciones"
+          }
+        },
+        {
+          "name": "Incremento de ventas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/incremento-ventas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Render web clientes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/clientes"
+          }
+        },
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/clientes"
+          }
+        },
+        {
+          "name": "Consultar cliente",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/clientes/30124556"
+          }
+        },
+        {
+          "name": "Registrar cliente (natural)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"natural\",\n  \"cedula\": \"30124556\",\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Prueba\",\n  \"direccion\": \"Barquisimeto\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"prueba.cliente@ituaccesorio.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes"
+          }
+        },
+        {
+          "name": "Registrar cliente (jurídico)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"juridico\",\n  \"rif\": \"J-40123456-7\",\n  \"razon_social\": \"Empresa Prueba C.A.\",\n  \"direccion\": \"Caracas\",\n  \"celular\": \"0424123456\",\n  \"correo\": \"empresa.api@prueba.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes"
+          }
+        },
+        {
+          "name": "Registrar persona natural",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Id_cliente\": \"30124556\",\n  \"nombre_cliente\": \"Cliente\",\n  \"apellido_cliente\": \"Prueba\",\n  \"direccion_cliente\": \"Barquisimeto\",\n  \"telefono_cliente\": \"0414123456\",\n  \"correo_cliente\": \"natural.api@ituaccesorio.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes/natural"
+          }
+        },
+        {
+          "name": "Actualizar persona natural",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_cliente\": \"Cliente Actualizado\",\n  \"apellido_cliente\": \"Prueba\",\n  \"direccion_cliente\": \"Caracas\",\n  \"telefono_cliente\": \"0414123456\",\n  \"correo_cliente\": \"actualizado.api@ituaccesorio.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes/natural/30124556"
+          }
+        },
+        {
+          "name": "Registrar cliente jurídico",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Id_cliente\": \"J401234567\",\n  \"razon_social\": \"Empresa Prueba C.A.\",\n  \"rif\": \"J-40123456-7\",\n  \"direccion_cliente\": \"Caracas\",\n  \"telefono_cliente\": \"0424123456\",\n  \"correo_cliente\": \"juridico.api@prueba.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes/juridico"
+          }
+        },
+        {
+          "name": "Actualizar cliente jurídico",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razon_social\": \"Empresa Prueba Actualizada C.A.\",\n  \"rif\": \"J-40123456-7\",\n  \"direccion_cliente\": \"Valencia\",\n  \"telefono_cliente\": \"0424123456\",\n  \"correo_cliente\": \"actualizado.juridico@prueba.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/clientes/juridico/J401234567"
+          }
+        },
+        {
+          "name": "Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/clientes/30124556"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Render web usuarios",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/usuarios"
+          }
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/usuarios"
+          }
+        },
+        {
+          "name": "Listar empleados con cuenta",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/usuarios/empleados"
+          }
+        },
+        {
+          "name": "Listar clientes con cuenta",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/usuarios/clientes"
+          }
+        },
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula_personal\": \"30124556\",\n  \"nombre\": \"usuario_prueba_api\",\n  \"password\": \"clave12345\",\n  \"rol_id\": \"2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/usuarios"
+          }
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula_personal\": \"30124556\",\n  \"nombre\": \"usuario_prueba_api_actualizado\",\n  \"password\": \"clave12345\",\n  \"rol_id\": \"2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/usuarios/USR-001"
+          }
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/usuarios/USR-001"
+          }
+        },
+        {
+          "name": "Consultar mi perfil",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/usuarios/mi-perfil"
+          }
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mi Nombre Actualizado\",\n  \"password\": \"nuevaclave123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/usuarios/mi-perfil"
+          }
+        },
+        {
+          "name": "Mis permisos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/usuarios/mis-permisos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles y Módulos",
+      "item": [
+        {
+          "name": "Listar roles",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/roles"
+          }
+        },
+        {
+          "name": "Crear rol",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Rol Prueba API\",\n  \"descripcion\": \"Rol temporal para pruebas automatizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/roles"
+          }
+        },
+        {
+          "name": "Actualizar rol",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Rol Prueba API\",\n  \"descripcion\": \"Descripcion actualizada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/roles/2"
+          }
+        },
+        {
+          "name": "Eliminar rol",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/roles/2"
+          }
+        },
+        {
+          "name": "Listar módulos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/modulos"
+          }
+        },
+        {
+          "name": "Crear módulo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Modulo Prueba API\",\n  \"descripcion\": \"Modulo temporal para pruebas automatizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/modulos"
+          }
+        },
+        {
+          "name": "Actualizar módulo",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Modulo Prueba API\",\n  \"descripcion\": \"Descripcion actualizada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/modulos/1"
+          }
+        },
+        {
+          "name": "Eliminar módulo",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/modulos/1"
+          }
+        },
+        {
+          "name": "Consultar permisos de un rol",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/permisos/rol/2"
+          }
+        },
+        {
+          "name": "Actualizar permisos de un rol",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permisos\": [\n    { \"modulo_id\": 1, \"registrar\": true, \"modificar\": true, \"eliminar\": false }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/permisos/rol/2"
+          }
+        },
+        {
+          "name": "Consultar permiso específico",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/permisos/rol/2/modulo/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        {
+          "name": "Listar inventario",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/inventario"
+          }
+        },
+        {
+          "name": "Listar inventario por modelo",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/inventario?modelo=cargador"
+          }
+        },
+        {
+          "name": "Productos bajo stock",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/inventario/productos/bajo-stock?limite=10"
+          }
+        },
+        {
+          "name": "Productos sin stock",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/inventario/productos/sin-stock"
+          }
+        },
+        {
+          "name": "Reporte de inventario",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": null,\n  \"marca\": null,\n  \"stock_min\": null,\n  \"stock_max\": null,\n  \"q\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/inventario/reportes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Render web productos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/productos"
+          }
+        },
+        {
+          "name": "Listar categorías",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/categorias"
+          }
+        },
+        {
+          "name": "Listar clases",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/clases"
+          }
+        },
+        {
+          "name": "Crear clase",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Clase Prueba API\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos/clases"
+          }
+        },
+        {
+          "name": "Listar marcas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/marcas"
+          }
+        },
+        {
+          "name": "Crear marca",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Marca Prueba API\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos/marcas"
+          }
+        },
+        {
+          "name": "Listar modelos (productos)",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/modelos"
+          }
+        },
+        {
+          "name": "Listar modelos con filtros",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/modelos?marca_id=1&clase_id=1&q=cargador"
+          }
+        },
+        {
+          "name": "Crear modelo (producto)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modelo\": \"Cargador USB-C Prueba API\",\n  \"id_marca\": \"1\",\n  \"id_clase\": \"1\",\n  \"descripcion\": \"Modelo temporal para pruebas automatizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos/modelos"
+          }
+        },
+        {
+          "name": "Actualizar modelo (producto)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cargador USB-C Prueba API\",\n  \"id_marca\": \"1\",\n  \"id_clase\": \"1\",\n  \"descripcion\": \"Descripcion actualizada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos/modelos/1"
+          }
+        },
+        {
+          "name": "Verificar stock del modelo",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/productos/modelos/1/verificar-stock"
+          }
+        },
+        {
+          "name": "Eliminar modelo (producto)",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/productos/modelos/1"
+          }
+        },
+        {
+          "name": "Reporte de productos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clase_id\": null,\n  \"marca_id\": null,\n  \"q\": \"\",\n  \"stock_min\": null,\n  \"stock_max\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos/reportes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proveedores",
+      "item": [
+        {
+          "name": "Render web proveedores",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/proveedores"
+          }
+        },
+        {
+          "name": "Listar proveedores",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores"
+          }
+        },
+        {
+          "name": "Buscar proveedores",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores?q=prueba"
+          }
+        },
+        {
+          "name": "Consultar proveedor",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores/1"
+          }
+        },
+        {
+          "name": "Crear proveedor",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rif\": \"J-40000000-0\",\n  \"nombre\": \"Proveedor Prueba API\",\n  \"tipo\": \"Nacional\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"proveedor.api@prueba.com\",\n  \"direccion\": \"Caracas\",\n  \"limite_credito\": 1000.0,\n  \"productos\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/proveedores"
+          }
+        },
+        {
+          "name": "Actualizar proveedor",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rif\": \"J-40000000-0\",\n  \"nombre\": \"Proveedor Prueba API\",\n  \"tipo\": \"Nacional\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"actualizado.api@prueba.com\",\n  \"direccion\": \"Valencia\",\n  \"limite_credito\": 2000.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/proveedores/1"
+          }
+        },
+        {
+          "name": "Verificar eliminación de proveedor",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores/1/verificar-eliminacion"
+          }
+        },
+        {
+          "name": "Listar productos del proveedor",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores/1/productos"
+          }
+        },
+        {
+          "name": "Asignar producto a proveedor",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_modelo\": \"1\",\n  \"costo\": 15.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/proveedores/1/productos"
+          }
+        },
+        {
+          "name": "Quitar producto del proveedor",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/proveedores/1/productos/1"
+          }
+        },
+        {
+          "name": "Listar modelos para proveedores",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores/modelos"
+          }
+        },
+        {
+          "name": "Tipos de proveedor",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores/tipos"
+          }
+        },
+        {
+          "name": "Reporte de proveedores",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"q\": \"\",\n  \"tipo\": null,\n  \"limite_credito_min\": null,\n  \"limite_credito_max\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/proveedores/reportes"
+          }
+        },
+        {
+          "name": "Eliminar proveedor",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/proveedores/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Órdenes de compra",
+      "item": [
+        {
+          "name": "Render web órdenes de compra",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/ordenes_compra"
+          }
+        },
+        {
+          "name": "Listar órdenes pendientes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_compra"
+          }
+        },
+        {
+          "name": "Listar órdenes entregadas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_compra/entregadas"
+          }
+        },
+        {
+          "name": "Listar empleados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/empleados"
+          }
+        },
+        {
+          "name": "Listar proveedores",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/proveedores"
+          }
+        },
+        {
+          "name": "Consultar productos de un proveedor",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/productos_proveedor/1"
+          }
+        },
+        {
+          "name": "Detalles de una orden",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/detalles_orden/OC0000001"
+          }
+        },
+        {
+          "name": "Agregar orden de compra",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ID_empleado\": 30124556,\n  \"ID_proveedor\": 1,\n  \"productos\": [\n    { \"ID_modelo\": \"1\", \"Cantidad_p\": 2 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes_compra/agregar"
+          }
+        },
+        {
+          "name": "Actualizar orden de compra",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ID_orden_c\": \"OC0000001\",\n  \"ID_empleado\": 30124556,\n  \"ID_proveedor\": 1,\n  \"productos\": [\n    { \"ID_modelo\": \"1\", \"Cantidad_p\": 3 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes_compra/actualizar"
+          }
+        },
+        {
+          "name": "Anular orden de compra",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ID_orden_c\": \"OC0000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes_compra/anular"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Órdenes de entregas",
+      "item": [
+        {
+          "name": "Render web órdenes de entregas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/ordenes_entregas"
+          }
+        },
+        {
+          "name": "Órdenes pendientes de entrega",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/pendientes"
+          }
+        },
+        {
+          "name": "Historial de entregas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/historial"
+          }
+        },
+        {
+          "name": "Productos de la orden",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/OC0000001/productos"
+          }
+        },
+        {
+          "name": "Registrar entrega",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recibido_por\": \"Empleado Receptor\",\n  \"fecha_entrega\": \"2026-11-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/OC0000001/registrar"
+          }
+        },
+        {
+          "name": "Consultar entrega",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/ENT0000001"
+          }
+        },
+        {
+          "name": "Editar entrega",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recibido_por\": \"Empleado Receptor Actualizado\",\n  \"fecha_entrega\": \"2026-11-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/ENT0000001/editar"
+          }
+        },
+        {
+          "name": "Eliminar entrega",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/ordenes_entregas/ENT0000001/eliminar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Órdenes de servicio",
+      "item": [
+        {
+          "name": "Render web órdenes de servicio",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/ordenes-servicio"
+          }
+        },
+        {
+          "name": "Registrar equipo (IMEI)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ID_equipo\": \"356938035643809\",\n  \"Color\": \"Negro\",\n  \"Capacidad\": \"128GB\",\n  \"Clave\": \"1234\",\n  \"Patron\": \"L\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/ordenes-servicio"
+          }
+        },
+        {
+          "name": "Listar técnicos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/tecnicos"
+          }
+        },
+        {
+          "name": "Órdenes de un técnico",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/tecnicos/30124556/ordenes"
+          }
+        },
+        {
+          "name": "Verificar equipo por IMEI",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/equipo/356938035643809"
+          }
+        },
+        {
+          "name": "Listar órdenes de servicio",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes"
+          }
+        },
+        {
+          "name": "Listar órdenes filtradas por estado",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes?estado=Pendiente"
+          }
+        },
+        {
+          "name": "Listar modelos de teléfonos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/modelos"
+          }
+        },
+        {
+          "name": "Crear orden de servicio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cliente\": \"30124556\",\n  \"id_equipo\": \"356938035643809\",\n  \"id_modelo\": \"1\",\n  \"modelo_custom\": \"\",\n  \"color\": \"Negro\",\n  \"capacidad\": \"128GB\",\n  \"descripcion\": \"Pantalla rota\",\n  \"nota\": \"Cliente reporta caída\",\n  \"patron\": \"L\",\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Prueba\",\n  \"celular\": \"0414123456\",\n  \"correo\": \"cliente.api@ituaccesorio.com\",\n  \"direccion\": \"Barquisimeto\",\n  \"tipo\": \"natural\",\n  \"incluir_tests\": false,\n  \"tests\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio"
+          }
+        },
+        {
+          "name": "Detalle de la orden",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001"
+          }
+        },
+        {
+          "name": "Detalle de un test",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001/test/1"
+          }
+        },
+        {
+          "name": "Asignar orden a técnico",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": 30124556\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001/asignar"
+          }
+        },
+        {
+          "name": "Registrar revisión (test)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Num_test\": 1,\n  \"Botón Power\": 1,\n  \"Botón Vol\": 1,\n  \"Cornetas\": 1,\n  \"Mica\": 1,\n  \"LCD\": 0,\n  \"Tactil\": 1,\n  \"Wifi\": 1,\n  \"Puerto_carga\": 1,\n  \"Cámara posterior\": 1,\n  \"Cámara delantera\": 1,\n  \"Microfono\": 1,\n  \"Flash\": 1,\n  \"Botón Silencio\": 1,\n  \"Auricular\": 1,\n  \"Senal\": 1,\n  \"Sensor_proximidad\": 1,\n  \"Face_id\": 1,\n  \"Bluetooth\": 1,\n  \"Observaciones\": \"Revisión inicial de prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001/revision"
+          }
+        },
+        {
+          "name": "Actualizar estado de la orden",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"En proceso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001/estado"
+          }
+        },
+        {
+          "name": "Subir fotos de la orden",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fotos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/taller/ordenes/OS0000001/fotos"
+          }
+        },
+        {
+          "name": "Eliminar orden de servicio",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/ordenes-servicio/ordenes/OS0000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Taller",
+      "item": [
+        {
+          "name": "Render web taller",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/taller"
+          }
+        },
+        {
+          "name": "Órdenes del taller",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/taller/ordenes"
+          }
+        },
+        {
+          "name": "Reparaciones asignadas (técnico actual)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/reparaciones-asignadas"
+          }
+        },
+        {
+          "name": "Consultar orden",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/consultar-ordene"
+          }
+        },
+        {
+          "name": "Consultar test",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\",\n  \"numero_test\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/consultar-test"
+          }
+        },
+        {
+          "name": "Guardar revisión técnica",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\",\n  \"numero_test\": 1,\n  \"componentes_evaluados\": [\n    { \"nombre\": \"Mica\", \"resultado\": \"Funciona\" },\n    { \"nombre\": \"LCD\", \"resultado\": \"No funciona\" }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/guardar-revision"
+          }
+        },
+        {
+          "name": "Asignar orden (técnico actual)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/asignar-orden"
+          }
+        },
+        {
+          "name": "Liberar orden",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/liberar-orden"
+          }
+        },
+        {
+          "name": "Consultar inventario del taller",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/taller/consultar-inventario"
+          }
+        },
+        {
+          "name": "Guardar reparación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_orden\": \"OS0000001\",\n  \"descripcion_reparacion\": \"Cambio de pantalla LCD\",\n  \"repuestos_utilizados\": [\n    { \"id_inventario\": \"INV000001\", \"cantidad\": 1 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/guardar-reparacion"
+          }
+        },
+        {
+          "name": "Registrar fotos de evidencia",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "id_orden", "value": "OS0000001", "type": "text" },
+                { "key": "fotos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/taller/registrar-fotos"
+          }
+        },
+        {
+          "name": "Eliminar foto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_foto\": \"FOS000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller/eliminar-fotos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Taller celular",
+      "item": [
+        {
+          "name": "Crear firma de fotos (token QR)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/taller_celular/crear-token/OS0000001"
+          }
+        },
+        {
+          "name": "Página móvil para subir fotos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/taller_celular/OS0000001?t=FIRMA_AQUI"
+          }
+        },
+        {
+          "name": "Registrar fotos desde el celular",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "id_orden", "value": "OS0000001", "type": "text" },
+                { "key": "t", "value": "FIRMA_AQUI", "type": "text" },
+                { "key": "fotos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/taller_celular/registrar-fotos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas (Catálogo, Carrito y Pagos)",
+      "item": [
+        {
+          "name": "Render web catálogo",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/catalogo"
+          }
+        },
+        {
+          "name": "Productos del catálogo",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/catalogo/productos"
+          }
+        },
+        {
+          "name": "Productos del catálogo con filtros",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/catalogo/productos?clase_id=1&marca_id=1&q=cargador"
+          }
+        },
+        {
+          "name": "Consultar carrito",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/carrito"
+          }
+        },
+        {
+          "name": "Agregar producto al carrito",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"producto_id\": \"INV000001\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/carrito"
+          }
+        },
+        {
+          "name": "Actualizar cantidad del carrito",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"producto_id\": \"INV000001\",\n  \"cantidad\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/carrito"
+          }
+        },
+        {
+          "name": "Eliminar producto del carrito",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/carrito/INV000001"
+          }
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/carrito/vaciar"
+          }
+        },
+        {
+          "name": "Render web pagos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/pagar"
+          }
+        },
+        {
+          "name": "Métodos de pago",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/metodos-pago"
+          }
+        },
+        {
+          "name": "Procesar pago",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "metodo_pago", "value": "pago_movil", "type": "text" },
+                { "key": "referencia", "value": "123456", "type": "text" },
+                { "key": "fecha_pago", "value": "2026-11-15T10:00:00", "type": "text" },
+                { "key": "monto", "value": "25.00", "type": "text" },
+                { "key": "capture", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/procesar-pago"
+          }
+        },
+        {
+          "name": "Ventas de hoy",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/dashboard/ventas-hoy"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entregas",
+      "item": [
+        {
+          "name": "Render web entregas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/entregas"
+          }
+        },
+        {
+          "name": "Listar personal delivery",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/personal-delivery"
+          }
+        },
+        {
+          "name": "Crear personal delivery",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"30124556\",\n  \"nombre\": \"Personal\",\n  \"apellido\": \"Delivery\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/personal-delivery"
+          }
+        },
+        {
+          "name": "Actualizar personal delivery",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Personal Actualizado\",\n  \"apellido\": \"Delivery\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/personal-delivery/30124556"
+          }
+        },
+        {
+          "name": "Eliminar personal delivery",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/personal-delivery/30124556"
+          }
+        },
+        {
+          "name": "Listar entregas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/entregas"
+          }
+        },
+        {
+          "name": "Registrar entrega",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"factura_id\": \"FAC-20261115-ABC123\",\n  \"cedula_delivery\": \"30124556\",\n  \"direccion\": \"Av. Principal, Barquisimeto\",\n  \"estado\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/entregas"
+          }
+        },
+        {
+          "name": "Actualizar entrega",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": \"Nueva dirección, Barquisimeto\",\n  \"estado\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/entregas/ENT0000001"
+          }
+        },
+        {
+          "name": "Eliminar entrega",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/entregas/ENT0000001"
+          }
+        },
+        {
+          "name": "Facturas pendientes de entrega",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/facturas-pendientes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validación de pagos",
+      "item": [
+        {
+          "name": "Render web validar pagos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/admin/validar-pagos"
+          }
+        },
+        {
+          "name": "Pagos pendientes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/pendientes"
+          }
+        },
+        {
+          "name": "Pagos aprobados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/aprobados"
+          }
+        },
+        {
+          "name": "Pagos rechazados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/rechazados"
+          }
+        },
+        {
+          "name": "Detalle de la venta",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/venta/FAC-20261115-ABC123/detalle"
+          }
+        },
+        {
+          "name": "Aprobar pago",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/aprobar/FAC-20261115-ABC123"
+          }
+        },
+        {
+          "name": "Rechazar pago",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Comprobante ilegible\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/rechazar/FAC-20261115-ABC123"
+          }
+        },
+        {
+          "name": "Reporte de pagos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"q\": \"\",\n  \"estado\": null,\n  \"metodo_pago\": null,\n  \"moneda\": null,\n  \"fecha_desde\": null,\n  \"fecha_hasta\": null,\n  \"monto_min\": null,\n  \"monto_max\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/reportes"
+          }
+        },
+        {
+          "name": "Detalle venta para reporte",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/detalle-venta/FAC-20261115-ABC123"
+          }
+        },
+        {
+          "name": "Métodos de pago disponibles",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/metodos-pago"
+          }
+        },
+        {
+          "name": "Monedas disponibles",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/validacion-pagos/monedas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes de ventas",
+      "item": [
+        {
+          "name": "Render web reportes de ventas",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/admin/reportes-ventas"
+          }
+        },
+        {
+          "name": "Listar ventas con filtros",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"q\": \"\",\n  \"estado\": null,\n  \"metodo_pago\": null,\n  \"moneda\": null,\n  \"fecha_desde\": null,\n  \"fecha_hasta\": null,\n  \"monto_min\": null,\n  \"monto_max\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/reportes-ventas/listar"
+          }
+        },
+        {
+          "name": "Detalle de una venta",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/reportes-ventas/detalle/FAC-20261115-ABC123"
+          }
+        },
+        {
+          "name": "Ventas locales",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/reportes-ventas/ventas-locales"
+          }
+        },
+        {
+          "name": "Ventas locales con búsqueda",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/reportes-ventas/ventas-locales?q=prueba&fecha=2026-11-15"
+          }
+        },
+        {
+          "name": "Registrar venta local",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": \"30124556\",\n  \"items\": [\n    { \"producto_id\": \"INV000001\", \"cantidad\": 1 }\n  ],\n  \"metodo_pago\": \"efectivo_usd\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/reportes-ventas/venta-local"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trade-In (público)",
+      "item": [
+        {
+          "name": "Render web trade-in",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/trade-in"
+          }
+        },
+        {
+          "name": "Datos de trade-in",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/trade-in"
+          }
+        },
+        {
+          "name": "Listar equipos",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/trade-in/equipos"
+          }
+        },
+        {
+          "name": "Cotizar equipo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_producto\": 1,\n  \"liberado\": \"si\",\n  \"fallas\": [\"lcd\", \"mica\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/trade-in/cotizar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trade-In empleados",
+      "item": [
+        {
+          "name": "Render web trade-in empleados",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/empleados/tradein"
+          }
+        },
+        {
+          "name": "Listar trade-ins",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein"
+          }
+        },
+        {
+          "name": "Registrar trade-in",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "cliente_id", "value": "30124556", "type": "text" },
+                { "key": "id_producto", "value": "1", "type": "text" },
+                { "key": "valor_pagado", "value": "150.00", "type": "text" },
+                { "key": "id_equipo", "value": "356938035643809", "type": "text" },
+                { "key": "color", "value": "Negro", "type": "text" },
+                { "key": "capacidad", "value": "128GB", "type": "text" },
+                { "key": "clave", "value": "1234", "type": "text" },
+                { "key": "patron", "value": "L", "type": "text" },
+                { "key": "tests", "value": "[{\"nombre\": \"Mica\", \"resultado\": \"Funciona\"}]", "type": "text" },
+                { "key": "fotos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/tradein"
+          }
+        },
+        {
+          "name": "Verificar equipo existente",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/verificar-equipo/356938035643809"
+          }
+        },
+        {
+          "name": "Actualizar trade-in",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "cliente_id", "value": "30124556", "type": "text" },
+                { "key": "id_producto", "value": "1", "type": "text" },
+                { "key": "valor_pagado", "value": "175.00", "type": "text" },
+                { "key": "id_equipo", "value": "356938035643809", "type": "text" },
+                { "key": "color", "value": "Negro", "type": "text" },
+                { "key": "capacidad", "value": "128GB", "type": "text" },
+                { "key": "clave", "value": "1234", "type": "text" },
+                { "key": "patron", "value": "L", "type": "text" },
+                { "key": "tests", "value": "[{\"nombre\": \"Mica\", \"resultado\": \"Funciona\"}]", "type": "text" },
+                { "key": "fotos", "type": "file", "src": [] }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/tradein/TRD000001"
+          }
+        },
+        {
+          "name": "Trade-ins de un cliente",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/cliente/30124556"
+          }
+        },
+        {
+          "name": "Detalle de un trade-in",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/TRD000001/detalle"
+          }
+        },
+        {
+          "name": "Estadísticas de trade-in",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/estadisticas"
+          }
+        },
+        {
+          "name": "Productos disponibles",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/productos"
+          }
+        },
+        {
+          "name": "Buscar clientes",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/clientes?q=prueba"
+          }
+        },
+        {
+          "name": "Catálogo de tests",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/tradein/catalogo-tests"
+          }
+        },
+        {
+          "name": "Eliminar trade-in",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/tradein/TRD000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bitácora",
+      "item": [
+        {
+          "name": "Render web bitácora",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/bitacora"
+          }
+        },
+        {
+          "name": "Registrar actividad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accion\": \"Prueba automatizada\",\n  \"descripcion\": \"Registro creado por la coleccion Postman\",\n  \"modulo_nombre\": \"General\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/bitacora/registrar"
+          }
+        },
+        {
+          "name": "Listar bitácora",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/bitacora/list"
+          }
+        },
+        {
+          "name": "Últimas notificaciones",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/bitacora/ultimas-notificaciones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Backup",
+      "item": [
+        {
+          "name": "Render web backup",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/backup"
+          }
+        },
+        {
+          "name": "Listar backups",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/backup/listar"
+          }
+        },
+        {
+          "name": "Crear backup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_bd\": \"ituaccesorio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/backup/crear"
+          }
+        },
+        {
+          "name": "Descargar backup",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/api/backup/descargar/1"
+          }
+        },
+        {
+          "name": "Subir backup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "archivo", "type": "file", "src": [] },
+                { "key": "tipo_bd", "value": "ituaccesorio", "type": "text" }
+              ]
+            },
+            "url": "http://127.0.0.1:5000/api/backup/subir"
+          }
+        },
+        {
+          "name": "Eliminar backup",
+          "request": {
+            "method": "DELETE",
+            "url": "http://127.0.0.1:5000/api/backup/eliminar/1"
+          }
+        },
+        {
+          "name": "Restaurar backup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/api/backup/restaurar/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones (SSE)",
+      "item": [
+        {
+          "name": "Stream de notificaciones",
+          "request": {
+            "method": "GET",
+            "url": "http://127.0.0.1:5000/notificaciones/stream/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "James (IA)",
+      "item": [
+        {
+          "name": "Recomendar técnico para orden",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ID_orden\": \"OS0000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://127.0.0.1:5000/james"
+          }
+        }
+      ]
     }
   ]
 }
