@@ -2,7 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-URL_EMPLEADOS = "http://127.0.0.1:5000/empleados"
+URL_EMPLEADOS = "http://127.0.0.1:5001/empleados"
 TIEMPO_ESPERA = 10
 
 # [cedula, nombre_nuevo, celular]
