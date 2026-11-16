@@ -38,17 +38,28 @@ def create_app():
         DB_USER=os.getenv('DB_USER', 'user_flask'),
         DB_PASSWORD=os.getenv('DB_PASSWORD', '12345678'),
         DB_PASSWORD2=os.getenv('DB_PASSWORD2', os.getenv('DB_PASSWORD', '12345678')),
+        # La cookie del token CSRF se marca HttpOnly: el frontend lee el token
+        # del input oculto de los formularios, nunca de document.cookie.
+        CSRF_COOKIE_HTTPONLY=True,
     )
     
     # --- SEGURIDAD ---
     csp = {
         'default-src': ["'self'"],
-        'style-src': ["'self'", 'https://fonts.googleapis.com'],
-        'style-src-elem': ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
-        'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'sha256-cAtOZzBPIbdyvoH7Ew+1JU/GFM/683oB4RKnMSb1Pb4='"],
-        'script-src-elem': ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'sha256-cAtOZzBPIbdyvoH7Ew+1JU/GFM/683oB4RKnMSb1Pb4='"],
+        # Directivas sin fallback de default-src (evita la alerta ZAP 10055)
+        'base-uri': ["'self'"],
+        'object-src': ["'none'"],
+        'form-action': ["'self'"],
+        'frame-ancestors': ["'self'"],
+        # Recursos externos activos: reCAPTCHA (google/gstatic/recaptcha).
+        # Fuentes y librerías JS (Manrope, Space Grotesk, Chart.js, qrcode)
+        # se autoalojan en /static/ y ya no necesitan orígenes externos.
+        'style-src': ["'self'"],
+        'style-src-elem': ["'self'"],
+        'script-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'sha256-cAtOZzBPIbdyvoH7Ew+1JU/GFM/683oB4RKnMSb1Pb4='"],
+        'script-src-elem': ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', "'sha256-cAtOZzBPIbdyvoH7Ew+1JU/GFM/683oB4RKnMSb1Pb4='"],
         'img-src': ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net', 'https://images.unsplash.com', 'https://plus.unsplash.com', 'https://picsum.photos'],
-        'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        'font-src': ["'self'", 'data:'],
         'frame-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
         'child-src': ["'self'", 'https://www.google.com', 'https://www.recaptcha.net'],
         'connect-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://www.recaptcha.net'],
