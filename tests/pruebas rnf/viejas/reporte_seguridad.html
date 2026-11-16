@@ -1,0 +1,872 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+    Bandit Report
+</title>
+
+<style>
+
+html * {
+    font-family: "Arial", sans-serif;
+}
+
+pre {
+    font-family: "Monaco", monospace;
+}
+
+.bordered-box {
+    border: 1px solid black;
+    padding-top:.5em;
+    padding-bottom:.5em;
+    padding-left:1em;
+}
+
+.metrics-box {
+    font-size: 1.1em;
+    line-height: 130%;
+}
+
+.metrics-title {
+    font-size: 1.5em;
+    font-weight: 500;
+    margin-bottom: .25em;
+}
+
+.issue-description {
+    font-size: 1.3em;
+    font-weight: 500;
+}
+
+.candidate-issues {
+    margin-left: 2em;
+    border-left: solid 1px; LightGray;
+    padding-left: 5%;
+    margin-top: .2em;
+    margin-bottom: .2em;
+}
+
+.issue-block {
+    border: 1px solid LightGray;
+    padding-left: .5em;
+    padding-top: .5em;
+    padding-bottom: .5em;
+    margin-bottom: .5em;
+}
+
+.issue-sev-high {
+    background-color: Pink;
+}
+
+.issue-sev-medium {
+    background-color: NavajoWhite;
+}
+
+.issue-sev-low {
+    background-color: LightCyan;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="metrics">
+    <div class="metrics-box bordered-box">
+        <div class="metrics-title">
+            Metrics:<br>
+        </div>
+        Total lines of code: <span id="loc">16822</span><br>
+        Total lines skipped (#nosec): <span id="nosec">0</span>
+    </div>
+</div>
+
+
+
+
+<br>
+<div id="results">
+    
+<div id="issue-0">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/controllers/backup.py" target="_blank">./app/controllers/backup.py</a><br>
+    <b>Line number: </b>161<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+160	                # Obtener los datos de la tabla
+161	                cursor.execute(f&quot;SELECT * FROM `{table_name}`&quot;)
+162	                rows = cursor.fetchall()
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-1">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>LOW<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/controllers/backup.py" target="_blank">./app/controllers/backup.py</a><br>
+    <b>Line number: </b>202<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+201	                        
+202	                        file.write(f&quot;INSERT INTO `{table_name}` (`{&#x27;`, `&#x27;.join(columns)}`) VALUES\n&quot;)
+203	                        file.write(f&quot;,\n&quot;.join(values_list))
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-2">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/controllers/backup.py" target="_blank">./app/controllers/backup.py</a><br>
+    <b>Line number: </b>398<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+397	                os.remove(ruta_completa)
+398	            except:
+399	                pass
+400	        return jsonify({
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-3">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/controllers/backup.py" target="_blank">./app/controllers/backup.py</a><br>
+    <b>Line number: </b>408<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+407	                os.remove(ruta_completa)
+408	            except:
+409	                pass
+410	        return jsonify({
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-4">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/bitacora.py" target="_blank">./app/models/bitacora.py</a><br>
+    <b>Line number: </b>90<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+89	                )
+90	            except Exception:
+91	                pass
+92	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-5">
+<div class="issue-block issue-sev-low">
+    <b>blacklist: </b> Standard pseudo-random generators are not suitable for security/cryptographic purposes.<br>
+    <b>Test ID:</b> B311<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/330.html" target="_blank">CWE-330</a><br>
+    <b>File: </b><a href="./app/models/carrito.py" target="_blank">./app/models/carrito.py</a><br>
+    <b>Line number: </b>99<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b311-random" target="_blank">https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b311-random</a><br>
+
+<div class="code">
+<pre>
+98	            import random
+99	            return f&quot;LST{int(time.time())}{random.randint(10, 99)}&quot;
+100	        finally:
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-6">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>LOW<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/catalogo.py" target="_blank">./app/models/catalogo.py</a><br>
+    <b>Line number: </b>52<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+51	            
+52	            query = f&quot;&quot;&quot;
+53	                SELECT
+54	                    e.ID_inventario AS id,
+55	                    p.Nombre_producto AS nombre,
+56	                    COALESCE(ma.Nombre_marca, &#x27;&#x27;) AS marca,
+57	                    COALESCE(cl.Nombre_Clase, &#x27;&#x27;) AS clase,
+58	                    e.Costo_venta AS precio_usd,
+59	                    e.Existencia AS stock,
+60	                    COALESCE((
+61	                        SELECT fi.Foto_inventario
+62	                        FROM Fotos_inventario fi
+63	                        WHERE fi.ID_inventario = e.ID_inventario
+64	                        ORDER BY fi.ID_foto_inventario DESC
+65	                        LIMIT 1
+66	                    ), &#x27;&#x27;) AS imagen,
+67	                    p.ID_producto AS id_producto,
+68	                    p.ID_marca AS id_marca,
+69	                    p.ID_Clase AS id_clase,
+70	                    COALESCE((
+71	                        SELECT SUM(dv.Cantidad_articulo)
+72	                        FROM Detalle_venta dv
+73	                        WHERE dv.ID_inventario = e.ID_inventario
+74	                    ), 0) AS veces_vendido
+75	                FROM Existencias_productos e
+76	                JOIN Producto p ON e.ID_producto = p.ID_producto
+77	                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+78	                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+79	                WHERE {where_sql}
+80	                ORDER BY veces_vendido DESC, cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
+81	            &quot;&quot;&quot;
+82	            
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-7">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/clientes.py" target="_blank">./app/models/clientes.py</a><br>
+    <b>Line number: </b>511<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+510	                    cursor.execute(
+511	                        f&quot;UPDATE Cliente SET {&#x27;, &#x27;.join(updates)} WHERE ID_cliente = %s&quot;,
+512	                        params
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-8">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/clientes.py" target="_blank">./app/models/clientes.py</a><br>
+    <b>Line number: </b>534<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+533	                        cursor.execute(
+534	                            f&quot;UPDATE Persona_natural SET {&#x27;, &#x27;.join(updates)} WHERE ID_cliente = %s&quot;,
+535	                            params
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-9">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/database.py" target="_blank">./app/models/database.py</a><br>
+    <b>Line number: </b>58<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+57	                cursor.close()
+58	        except Exception:
+59	            pass
+60	        try:
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-10">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/database.py" target="_blank">./app/models/database.py</a><br>
+    <b>Line number: </b>63<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+62	                db.close()
+63	        except Exception:
+64	            pass
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-11">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/empleados.py" target="_blank">./app/models/empleados.py</a><br>
+    <b>Line number: </b>303<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+302	                        )
+303	                    except Exception:
+304	                        pass
+305	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-12">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/empleados.py" target="_blank">./app/models/empleados.py</a><br>
+    <b>Line number: </b>403<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+402	                    )
+403	                except Exception:
+404	                    pass
+405	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-13">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/empleados.py" target="_blank">./app/models/empleados.py</a><br>
+    <b>Line number: </b>412<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+411	                        )
+412	                    except Exception:
+413	                        pass
+414	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-14">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>LOW<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/equipo.py" target="_blank">./app/models/equipo.py</a><br>
+    <b>Line number: </b>174<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+173	            params.append(self.ID_equipo)
+174	            query = f&quot;UPDATE Equipo SET {&#x27;, &#x27;.join(updates)} WHERE ID_equipo = %s&quot;
+175	            
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-15">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/ordenes_servicio.py" target="_blank">./app/models/ordenes_servicio.py</a><br>
+    <b>Line number: </b>364<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+363	                    cursor.fetchall()
+364	                except:
+365	                    pass
+366	            
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-16">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/ordenes_servicio.py" target="_blank">./app/models/ordenes_servicio.py</a><br>
+    <b>Line number: </b>390<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+389	                    cursor.fetchall()
+390	                except:
+391	                    pass
+392	            
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-17">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./app/models/ordenes_servicio.py" target="_blank">./app/models/ordenes_servicio.py</a><br>
+    <b>Line number: </b>427<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+426	                    cursor.fetchall()
+427	                except:
+428	                    pass
+429	            
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-18">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/productos.py" target="_blank">./app/models/productos.py</a><br>
+    <b>Line number: </b>353<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+352	
+353	            cursor.execute(f&quot;&quot;&quot;
+354	                SELECT
+355	                    p.ID_producto AS id,
+356	                    p.ID_marca AS id_marca,
+357	                    p.ID_Clase AS id_clase,
+358	                    p.Nombre_producto AS nombre,
+359	                    p.Descripcion AS descripcion,
+360	                    ma.Nombre_marca AS marca_nombre,
+361	                    cl.Nombre_Clase AS clase_nombre
+362	                FROM Producto p
+363	                LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
+364	                LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
+365	                {where_sql}
+366	                ORDER BY CAST(cl.ID_Clase AS UNSIGNED) ASC, CAST(ma.ID_marca AS UNSIGNED) ASC, p.Nombre_producto ASC
+367	            &quot;&quot;&quot;, tuple(params))
+368	            return cursor.fetchall() or []
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-19">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/proveedores.py" target="_blank">./app/models/proveedores.py</a><br>
+    <b>Line number: </b>66<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+65	            
+66	            cursor.execute(f&quot;&quot;&quot;
+67	                SELECT
+68	                    ID_proveedor AS id,
+69	                    Rif_proveedor AS rif,
+70	                    Nombre_proveedor AS nombre,
+71	                    Tipo_proveedor AS tipo,
+72	                    Celular_proveedor AS celular,
+73	                    Correo_proveedor AS correo,
+74	                    Direccion_proveedor AS direccion,
+75	                    Limite_credito AS limite_credito
+76	                FROM Proveedor
+77	                {where_sql}
+78	                ORDER BY Nombre_proveedor ASC
+79	            &quot;&quot;&quot;, tuple(params))
+80	            return cursor.fetchall() or []
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-20">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/reportes_ventas.py" target="_blank">./app/models/reportes_ventas.py</a><br>
+    <b>Line number: </b>229<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+228	
+229	            cursor.execute(f&quot;&quot;&quot;
+230	                SELECT
+231	                    v.ID_factura AS factura_id,
+232	                    v.ID_cliente AS cliente_id,
+233	                    v.Moneda AS venta_moneda,
+234	                    v.Fecha_venta AS fecha_venta,
+235	                    COALESCE(pn.Nombre_cliente, &#x27;&#x27;) AS cliente_nombre,
+236	                    COALESCE(pn.Apellido_cliente, &#x27;&#x27;) AS cliente_apellido,
+237	                    COALESCE(c.Celular_cliente, &#x27;&#x27;) AS cliente_celular,
+238	                    COALESCE(c.Correo_cliente, &#x27;&#x27;) AS cliente_correo,
+239	                    mp.Fecha_pago,
+240	                    mp.Metodo AS metodo_pago,
+241	                    mp.Referencia,
+242	                    mp.Monto AS monto_pagado,
+243	                    mp.Estado_pago AS estado,
+244	                    mp.Aprobado_por,
+245	                    mp.Fecha_aprobacion,
+246	                    mp.Rechazado_por,
+247	                    mp.Fecha_rechazo,
+248	                    mp.Motivo_rechazo,
+249	                    mp.Capture AS capture_image,
+250	                    CASE
+251	                        WHEN mp.Referencia LIKE &#x27;LOCAL-%&#x27; THEN &#x27;Local&#x27;
+252	                        ELSE &#x27;Online&#x27;
+253	                    END AS tipo_venta
+254	                FROM Venta v
+255	                INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
+256	                LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
+257	                LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
+258	                WHERE {where_sql}
+259	                ORDER BY v.Fecha_venta DESC
+260	            &quot;&quot;&quot;, tuple(params))
+261	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-21">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/reportes_ventas.py" target="_blank">./app/models/reportes_ventas.py</a><br>
+    <b>Line number: </b>434<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+433	
+434	            cursor.execute(f&quot;&quot;&quot;
+435	                SELECT
+436	                    v.ID_factura AS factura_id,
+437	                    v.ID_cliente AS cliente_id,
+438	                    v.Moneda,
+439	                    v.Fecha_venta AS fecha_venta,
+440	                    COALESCE(pn.Nombre_cliente, &#x27;&#x27;) AS cliente_nombre,
+441	                    COALESCE(pn.Apellido_cliente, &#x27;&#x27;) AS cliente_apellido,
+442	                    COALESCE(cj.Razon_social, &#x27;&#x27;) AS razon_social,
+443	                    mp.Metodo AS metodo_pago,
+444	                    mp.Referencia,
+445	                    mp.Monto AS monto,
+446	                    mp.Estado_pago AS estado,
+447	                    mp.Fecha_pago,
+448	                    &#x27;Local&#x27; AS tipo_venta
+449	                FROM Venta v
+450	                INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
+451	                LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
+452	                LEFT JOIN Cliente_juridico cj ON v.ID_cliente = cj.ID_cliente
+453	                WHERE {where_sql}
+454	                ORDER BY v.Fecha_venta DESC
+455	                LIMIT 100
+456	            &quot;&quot;&quot;, tuple(params))
+457	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-22">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_default: </b> Possible hardcoded password: ''<br>
+    <b>Test ID:</b> B107<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./app/models/usuarios.py" target="_blank">./app/models/usuarios.py</a><br>
+    <b>Line number: </b>16<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b107_hardcoded_password_default.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b107_hardcoded_password_default.html</a><br>
+
+<div class="code">
+<pre>
+15	class Usuarios:
+16	    def __init__(
+17	        self,
+18	        id: str = &quot;&quot;,
+19	        nombre: str = &quot;&quot;,
+20	        cedula: str = &quot;&quot;,
+21	        password: str = &quot;&quot;,
+22	        rol_id: str = &quot;&quot;,
+23	        foto_perfil: str = &quot;&quot;,
+24	        activo: bool = True,
+25	        fecha_creacion: datetime = None,
+26	        usuario_id: str = None,
+27	    ):
+28	        self.id = id
+29	        self.nombre = nombre
+30	        self.cedula = cedula
+31	        self.password = password
+32	        self.rol_id = rol_id
+33	        self.foto_perfil = foto_perfil
+34	        self.activo = activo
+35	        self.fecha_creacion = fecha_creacion
+36	        self.usuario_id = usuario_id
+37	
+38	        self.__conexion_bd = conectar()
+39	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-23">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>LOW<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/validacion_pagos.py" target="_blank">./app/models/validacion_pagos.py</a><br>
+    <b>Line number: </b>497<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+496	
+497	            query = f&quot;&quot;&quot;
+498	                SELECT
+499	                    v.ID_factura AS factura_id,
+500	                    v.ID_cliente AS cliente_id,
+501	                    v.Moneda AS venta_moneda,
+502	                    v.Fecha_venta AS fecha_venta,
+503	                    COALESCE(pn.Nombre_cliente, &#x27;&#x27;) AS cliente_nombre,
+504	                    COALESCE(pn.Apellido_cliente, &#x27;&#x27;) AS cliente_apellido,
+505	                    COALESCE(c.Celular_cliente, &#x27;&#x27;) AS cliente_celular,
+506	                    mp.Fecha_pago,
+507	                    mp.Metodo AS metodo_pago,
+508	                    mp.Referencia,
+509	                    mp.Monto AS monto_pagado,
+510	                    mp.Estado_pago AS estado,
+511	                    mp.Aprobado_por,
+512	                    mp.Fecha_aprobacion,
+513	                    mp.Rechazado_por,
+514	                    mp.Fecha_rechazo,
+515	                    mp.Motivo_rechazo,
+516	                    mp.Capture AS capture_image
+517	                FROM Venta v
+518	                INNER JOIN Metodo_pago mp ON v.ID_factura = mp.ID_factura
+519	                LEFT JOIN Persona_natural pn ON v.ID_cliente = pn.ID_cliente
+520	                LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
+521	                WHERE {where_sql}
+522	                ORDER BY v.Fecha_venta DESC
+523	            &quot;&quot;&quot;
+524	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-24">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_sql_expressions: </b> Possible SQL injection vector through string-based query construction.<br>
+    <b>Test ID:</b> B608<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>LOW<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank">CWE-89</a><br>
+    <b>File: </b><a href="./app/models/venta.py" target="_blank">./app/models/venta.py</a><br>
+    <b>Line number: </b>318<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html</a><br>
+
+<div class="code">
+<pre>
+317	            placeholders = &quot;, &quot;.join([&quot;%s&quot;] * len(campos))
+318	            query = f&quot;&quot;&quot;
+319	                INSERT INTO Metodo_pago ({&#x27;, &#x27;.join(campos)})
+320	                VALUES ({placeholders})
+321	                ON DUPLICATE KEY UPDATE
+322	                    Moneda = VALUES(Moneda),
+323	                    Fecha_pago = VALUES(Fecha_pago),
+324	                    Metodo = VALUES(Metodo),
+325	                    Referencia = VALUES(Referencia),
+326	                    Monto = VALUES(Monto),
+327	                    Capture = VALUES(Capture),
+328	                    Estado_pago = COALESCE(Estado_pago, &#x27;pendiente&#x27;)
+329	            &quot;&quot;&quot;
+330	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-25">
+<div class="issue-block issue-sev-medium">
+    <b>hardcoded_bind_all_interfaces: </b> Possible binding to all interfaces.<br>
+    <b>Test ID:</b> B104<br>
+    <b>Severity: </b>MEDIUM<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/605.html" target="_blank">CWE-605</a><br>
+    <b>File: </b><a href="./run.py" target="_blank">./run.py</a><br>
+    <b>Line number: </b>8<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b104_hardcoded_bind_all_interfaces.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b104_hardcoded_bind_all_interfaces.html</a><br>
+
+<div class="code">
+<pre>
+7	    debug_mode = os.getenv(&#x27;FLASK_DEBUG&#x27;, &#x27;0&#x27;).lower() in (&#x27;1&#x27;, &#x27;true&#x27;, &#x27;yes&#x27;, &#x27;on&#x27;)
+8	    app.run(host=&#x27;0.0.0.0&#x27;, port=5000, debug=debug_mode)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

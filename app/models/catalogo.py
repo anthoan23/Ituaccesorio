@@ -48,7 +48,8 @@ class CatalogoModel:
                     params.append(f"%{termino_seguro}%")
             
             where_sql = " AND ".join(where)
-            
+
+            # Condiciones fijas del código, valores parametrizados
             query = f"""
                 SELECT
                     e.ID_inventario AS id,
@@ -78,7 +79,7 @@ class CatalogoModel:
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 WHERE {where_sql}
                 ORDER BY veces_vendido DESC, cl.Nombre_Clase ASC, ma.Nombre_marca ASC, p.Nombre_producto ASC
-            """
+            """  # nosec B608
             
             cursor.execute(query, tuple(params))
             resultados = cursor.fetchall()

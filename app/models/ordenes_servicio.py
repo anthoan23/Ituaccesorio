@@ -2,7 +2,10 @@ from __future__ import annotations
 from app.utils.validators import validar_texto_numero
 from app.models.database import conectar
 from datetime import datetime
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 class Orden_servicio():
@@ -361,8 +364,10 @@ class Orden_servicio():
             while cursor.nextset():
                 try:
                     cursor.fetchall()
-                except:
-                    pass
+                except Exception as error:
+                    # Agotar resultados residuales del procedimiento almacenado;
+                    # los errores aquí son esperados y no afectan la operación.
+                    logger.debug("Resultado residual no leído: %s", error)
             
             db.commit()
             return True
@@ -387,8 +392,10 @@ class Orden_servicio():
             while cursor.nextset():
                 try:
                     cursor.fetchall()
-                except:
-                    pass
+                except Exception as error:
+                    # Agotar resultados residuales del procedimiento almacenado;
+                    # los errores aquí son esperados y no afectan la operación.
+                    logger.debug("Resultado residual no leído: %s", error)
             
             db.commit()
             return True
@@ -424,8 +431,10 @@ class Orden_servicio():
             while cursor.nextset():
                 try:
                     cursor.fetchall()
-                except:
-                    pass
+                except Exception as error:
+                    # Agotar resultados residuales del procedimiento almacenado;
+                    # los errores aquí son esperados y no afectan la operación.
+                    logger.debug("Resultado residual no leído: %s", error)
             
             db.commit()
             

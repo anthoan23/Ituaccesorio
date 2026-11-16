@@ -1,7 +1,10 @@
+import logging
 import mysql.connector
 from app.models.database import conectar
 from app.utils.notificaciones_bus import bus_notificaciones
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class Bitacora(conectar):
@@ -87,8 +90,9 @@ class Bitacora(conectar):
                     },
                     autor_id=usuario_id_final,
                 )
-            except Exception:
-                pass
+            except Exception as error:
+                # La notificación en tiempo real no debe tumbar el registro de bitácora
+                logger.debug("No se pudo publicar la notificación de bitácora: %s", error)
 
             return {"success": True}
         except mysql.connector.Error as error:

@@ -171,7 +171,8 @@ class Equipo:
                 return "No hay datos para actualizar."
             
             params.append(self.ID_equipo)
-            query = f"UPDATE Equipo SET {', '.join(updates)} WHERE ID_equipo = %s"
+            # Columnas fijas del código, valores parametrizados
+            query = f"UPDATE Equipo SET {', '.join(updates)} WHERE ID_equipo = %s"  # nosec B608
             
             cursor.execute(query, params)
             db.commit()

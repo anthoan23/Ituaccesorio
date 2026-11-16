@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from flask import jsonify
 from app.utils.validators import (
     validar_celular_venezolano,
@@ -10,6 +12,8 @@ from app.utils.validators import (
 )
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+
+logger = logging.getLogger(__name__)
 
 
 class Empleados():
@@ -300,8 +304,8 @@ class Empleados():
                             "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
                             (esp_id, cedula),
                         )
-                    except Exception:
-                        pass
+                    except Exception as error:
+                        logger.warning("No se pudo registrar la especialidad %s del empleado %s: %s", esp_id, cedula, error)
 
             db.commit()
             
@@ -400,8 +404,8 @@ class Empleados():
                         "DELETE FROM Capacitacion WHERE ID_empleado = %s",
                         (id_empleado,),
                     )
-                except Exception:
-                    pass
+                except Exception as error:
+                    logger.warning("No se pudo eliminar las capacitaciones del empleado %s: %s", id_empleado, error)
 
                 for esp_id in especialidades:
                     try:
@@ -409,8 +413,8 @@ class Empleados():
                             "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
                             (esp_id, id_empleado),
                         )
-                    except Exception:
-                        pass
+                    except Exception as error:
+                        logger.warning("No se pudo registrar la especialidad %s del empleado %s: %s", esp_id, id_empleado, error)
 
             db.commit()
             

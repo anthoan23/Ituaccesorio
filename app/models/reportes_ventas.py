@@ -226,6 +226,7 @@ class ReportesVentasModel:
 
             where_sql = " AND ".join(where_conditions)
 
+            # Condiciones fijas del código, valores parametrizados
             cursor.execute(f"""
                 SELECT
                     v.ID_factura AS factura_id,
@@ -257,7 +258,7 @@ class ReportesVentasModel:
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
                 WHERE {where_sql}
                 ORDER BY v.Fecha_venta DESC
-            """, tuple(params))
+            """, tuple(params))  # nosec B608
 
             ventas = cursor.fetchall()
 
@@ -431,6 +432,7 @@ class ReportesVentasModel:
 
             where_sql = " AND ".join(where_conditions)
 
+            # Condiciones fijas del código, valores parametrizados
             cursor.execute(f"""
                 SELECT
                     v.ID_factura AS factura_id,
@@ -453,7 +455,7 @@ class ReportesVentasModel:
                 WHERE {where_sql}
                 ORDER BY v.Fecha_venta DESC
                 LIMIT 100
-            """, tuple(params))
+            """, tuple(params))  # nosec B608
 
             ventas = cursor.fetchall()
             for v in ventas:

@@ -507,8 +507,9 @@ class Clientes():
                 
                 if updates:
                     params.append(str(cliente_id))
+                    # Columnas fijas del código, valores parametrizados
                     cursor.execute(
-                        f"UPDATE Cliente SET {', '.join(updates)} WHERE ID_cliente = %s",
+                        f"UPDATE Cliente SET {', '.join(updates)} WHERE ID_cliente = %s",  # nosec B608
                         params
                     )
             
@@ -530,8 +531,9 @@ class Clientes():
                     
                     if updates:
                         params.append(str(cliente_id))
+                        # Columnas fijas del código, valores parametrizados
                         cursor.execute(
-                            f"UPDATE Persona_natural SET {', '.join(updates)} WHERE ID_cliente = %s",
+                            f"UPDATE Persona_natural SET {', '.join(updates)} WHERE ID_cliente = %s",  # nosec B608
                             params
                         )
             

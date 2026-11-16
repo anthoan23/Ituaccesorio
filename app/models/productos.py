@@ -350,6 +350,7 @@ class Producto:
 
             where_sql = f"WHERE {' AND '.join(where)}" if where else ""
 
+            # Condiciones fijas del código, valores parametrizados
             cursor.execute(f"""
                 SELECT
                     p.ID_producto AS id,
@@ -364,7 +365,7 @@ class Producto:
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
                 {where_sql}
                 ORDER BY CAST(cl.ID_Clase AS UNSIGNED) ASC, CAST(ma.ID_marca AS UNSIGNED) ASC, p.Nombre_producto ASC
-            """, tuple(params))
+            """, tuple(params))  # nosec B608
             return cursor.fetchall() or []
         finally:
             cursor.close()
