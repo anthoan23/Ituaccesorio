@@ -13,7 +13,8 @@ import traceback
 
 
 class Usuarios:
-    def __init__(
+    # El default "" es un valor inicial del modelo, no una credencial (falso positivo)
+    def __init__(  # nosec B107
         self,
         id: str = "",
         nombre: str = "",

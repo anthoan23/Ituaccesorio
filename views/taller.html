@@ -518,6 +518,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/vendor/qrcode-1.0.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/taller.js') }}"></script>
 {% endblock %}

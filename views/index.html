@@ -4,27 +4,6 @@
 
 {% block head_extra %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        /* Asegurar que el body no tenga márgenes */
-        body {
-            margin: 0;
-            padding: 0;
-            background: #0A0A0A;
-            overflow-x: hidden;
-        }
-        main {
-            background: #0A0A0A;
-            min-height: 100vh;
-            padding: 0;
-            margin: 0;
-        }
-        .page {
-            max-width: 100%;
-            padding: 0;
-            margin: 0;
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -263,6 +242,6 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/vendor/chart.umd-4.6.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

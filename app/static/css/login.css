@@ -160,7 +160,7 @@ body {
 	outline-offset: 3px;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 560px) {
 	.auth-card {
 		padding: 1.5rem;
 		border-radius: 18px;

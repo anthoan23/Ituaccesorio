@@ -290,7 +290,7 @@
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 480px) {
+@media (max-width: 560px) {
 	.notifications__panel {
 		width: min(340px, calc(100vw - 1rem)) !important;
 		right: -10px !important;

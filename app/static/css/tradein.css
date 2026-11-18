@@ -505,7 +505,7 @@
     }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 992px) {
     .hero__actions {
         justify-content: flex-start;
         width: 100%;
@@ -518,7 +518,7 @@
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .tradein-choice-group,
     .tradein-fallas,
     .tradein-result__grid {
@@ -535,7 +535,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
     .tradein-chip strong {
         font-size: 0.85rem;
     }

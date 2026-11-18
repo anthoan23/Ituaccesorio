@@ -318,7 +318,7 @@ class TestRegistrarClase:
     def test_sin_nombre_no_toca_la_bd(self, conexion_falsa, nombre):
         db, cursor = conexion_falsa
 
-        with pytest.raises(ValueError, match="El nombre de la clase es obligatorio."):
+        with pytest.raises(ValueError, match="El campo Nombre de la clase no puede estar vacío."):
             ClaseProducto(nombre=nombre).registrar_clase()
 
         db.cursor.assert_not_called()
@@ -598,7 +598,7 @@ class TestRegistrarMarca:
     def test_sin_nombre_no_toca_la_bd(self, conexion_falsa, nombre):
         db, cursor = conexion_falsa
 
-        with pytest.raises(ValueError, match="El nombre de la marca es obligatorio."):
+        with pytest.raises(ValueError, match="El campo Nombre de la marca no puede estar vacío."):
             MarcaProducto(nombre=nombre).registrar_marca()
 
         db.cursor.assert_not_called()
@@ -1077,8 +1077,13 @@ class TestRegistrarProducto:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
-        # clase existe, marca existe, no duplicado, siguiente id
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        # clase existe, marca existe, no duplicado; el SP devuelve el ID
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         producto = Producto(
             id_clase=ID_CLASE,
@@ -1090,31 +1095,37 @@ class TestRegistrarProducto:
 
         assert resultado == "9"
         assert producto.id_producto == "9"
-        assert "INSERT INTO Producto" in ultima_sentencia(cursor)
-        assert cursor.execute.call_args.args[1] == (
-            "9",
-            ID_CLASE,
-            ID_MARCA,
-            "Funda",
-            "Protector",
+        assert cursor.callproc.call_args.args == (
+            "sp_registrar_producto",
+            (ID_CLASE, ID_MARCA, "Funda", "  Protector  ", None, None, None),
         )
         db.commit.assert_called_once()
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_sin_descripcion_inserta_none(self, conexion_falsa):
+    def test_sin_descripcion_envia_cadena_vacia(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         Producto(
             id_clase=ID_CLASE, id_marca=ID_MARCA, nombre="Funda"
         ).registrar_producto()
 
-        assert cursor.execute.call_args_list[-1].args[1][4] is None
+        assert cursor.callproc.call_args.args[1][3] == ""
 
     def test_valores_minimos(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         resultado = Producto(
             id_clase=ID_CLASE,
@@ -1128,7 +1139,12 @@ class TestRegistrarProducto:
 
     def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         resultado = Producto(
             id_clase=ID_CLASE,
@@ -1138,8 +1154,8 @@ class TestRegistrarProducto:
         ).registrar_producto()
 
         assert resultado == "9"
-        assert cursor.execute.call_args_list[-1].args[1][3] == NOMBRE_PRODUCTO_MAXIMO
-        assert cursor.execute.call_args_list[-1].args[1][4] == DESCRIPCION_MAXIMA
+        assert cursor.callproc.call_args.args[1][2] == NOMBRE_PRODUCTO_MAXIMO
+        assert cursor.callproc.call_args.args[1][3] == DESCRIPCION_MAXIMA
 
     @pytest.mark.parametrize(
         "id_clase, id_marca, nombre, descripcion, esperado",
@@ -1149,7 +1165,7 @@ class TestRegistrarProducto:
                 ID_MARCA,
                 "Funda",
                 None,
-                "Clase, marca y nombre son obligatorios.",
+                "La clase es obligatoria.",
                 id="clase-vacia",
             ),
             pytest.param(
@@ -1157,7 +1173,7 @@ class TestRegistrarProducto:
                 "",
                 "Funda",
                 None,
-                "Clase, marca y nombre son obligatorios.",
+                "La marca es obligatoria.",
                 id="marca-vacia",
             ),
             pytest.param(
@@ -1165,7 +1181,7 @@ class TestRegistrarProducto:
                 ID_MARCA,
                 "",
                 None,
-                "Clase, marca y nombre son obligatorios.",
+                "El campo Nombre del producto no puede estar vacío.",
                 id="nombre-vacio",
             ),
             pytest.param(
@@ -1173,7 +1189,7 @@ class TestRegistrarProducto:
                 ID_MARCA,
                 "P" * 51,
                 None,
-                "El nombre no puede exceder 50 caracteres.",
+                "El campo Nombre del producto no puede tener más de 50 caracteres.",
                 id="nombre-demasiado-largo",
             ),
             pytest.param(
@@ -1257,27 +1273,28 @@ class TestRegistrarProducto:
         sin_sentencia(cursor, "INSERT")
         db.commit.assert_not_called()
 
-    def test_siguiente_id_nulo_usa_uno(self, conexion_falsa):
+    def test_sp_devuelve_id_nulo_falla(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": None}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": None,
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
-        resultado = Producto(
-            id_clase=ID_CLASE, id_marca=ID_MARCA, nombre="Funda"
-        ).registrar_producto()
+        with pytest.raises(ValueError, match="No se pudo registrar el producto."):
+            Producto(
+                id_clase=ID_CLASE, id_marca=ID_MARCA, nombre="Funda"
+            ).registrar_producto()
 
-        assert resultado == "1"
+        db.rollback.assert_called_once()
+        db.commit.assert_not_called()
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
-        # 1ª: clase; 2ª: marca; 3ª: duplicado; 4ª: MAX; 5ª: INSERT que falla
-        cursor.execute.side_effect = [
-            None,
-            None,
-            None,
-            None,
-            Exception("fallo simulado"),
-        ]
+        # 1ª: clase; 2ª: marca; 3ª: duplicado; el callproc falla
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.side_effect = Exception("fallo simulado")
 
         with pytest.raises(Exception, match="fallo simulado"):
             Producto(
@@ -1290,7 +1307,12 @@ class TestRegistrarProducto:
 
     def test_registra_bitacora_con_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         with patch("app.models.productos.Bitacora") as bitacora_cls:
             Producto(
@@ -1310,7 +1332,12 @@ class TestRegistrarProducto:
 
     def test_sin_usuario_no_registra_bitacora(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         with patch("app.models.productos.Bitacora") as bitacora_cls:
             Producto(
@@ -1321,7 +1348,12 @@ class TestRegistrarProducto:
 
     def test_error_de_bitacora_no_impide_el_registro(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,), None, {"next_id": 9}]
+        cursor.fetchone.side_effect = [(1,), (1,), None]
+        cursor.callproc.return_value = {
+            "sp_registrar_producto_arg5": "9",
+            "sp_registrar_producto_arg6": "OK",
+            "sp_registrar_producto_arg7": "",
+        }
 
         with patch(
             "app.models.productos.Bitacora", side_effect=Exception("bitácora caída")
@@ -1399,7 +1431,7 @@ class TestActualizarProducto:
                 "",
                 ID_MARCA,
                 "Funda",
-                "Clase, marca y nombre son obligatorios.",
+                "La clase es obligatoria.",
                 id="clase-vacia",
             ),
             pytest.param(
@@ -1407,7 +1439,7 @@ class TestActualizarProducto:
                 ID_CLASE,
                 "",
                 "Funda",
-                "Clase, marca y nombre son obligatorios.",
+                "La marca es obligatoria.",
                 id="marca-vacia",
             ),
             pytest.param(
@@ -1415,7 +1447,7 @@ class TestActualizarProducto:
                 ID_CLASE,
                 ID_MARCA,
                 "",
-                "Clase, marca y nombre son obligatorios.",
+                "El campo Nombre del producto no puede estar vacío.",
                 id="nombre-vacio",
             ),
         ],

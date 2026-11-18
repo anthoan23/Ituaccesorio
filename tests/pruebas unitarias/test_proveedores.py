@@ -278,7 +278,7 @@ class TestCrearProveedor:
         cierra_recursos(db, cursor)
 
     def test_nombre_vacio(self, conexion_falsa):
-        with pytest.raises(ValueError, match="El nombre del proveedor es obligatorio"):
+        with pytest.raises(ValueError, match="El campo Nombre del proveedor no puede estar vacío"):
             Proveedores(nombre="").crear_proveedor()
 
     def test_limite_negativo(self, conexion_falsa):
@@ -345,6 +345,8 @@ class TestActualizarProveedor:
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
+        # la validación de límite de crédito consulta los productos del proveedor
+        cursor.fetchall.return_value = []
 
         resultado = Proveedores(
             id_proveedor=ID_MAXIMO,
@@ -375,6 +377,7 @@ class TestActualizarProveedor:
     def test_sin_filas_afectadas_devuelve_false(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 0
+        cursor.fetchall.return_value = []
 
         assert Proveedores(
             id_proveedor=ID_MAXIMO, nombre=NOMBRE_MINIMO
@@ -385,7 +388,7 @@ class TestActualizarProveedor:
             Proveedores(nombre=NOMBRE_MINIMO).actualizar_proveedor()
 
     def test_nombre_vacio(self, conexion_falsa):
-        with pytest.raises(ValueError, match="El nombre del proveedor es obligatorio"):
+        with pytest.raises(ValueError, match="El campo Nombre del proveedor no puede estar vacío"):
             Proveedores(id_proveedor=ID_MAXIMO, nombre="").actualizar_proveedor()
 
     def test_limite_negativo(self, conexion_falsa):
@@ -402,7 +405,9 @@ class TestActualizarProveedor:
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.execute.side_effect = Exception("fallo simulado")
+        # 1ª consulta: productos del proveedor (ninguno); 2ª: el UPDATE que falla
+        cursor.fetchall.return_value = []
+        cursor.execute.side_effect = [None, Exception("fallo simulado")]
 
         with pytest.raises(Exception, match="fallo simulado"):
             Proveedores(
@@ -415,6 +420,7 @@ class TestActualizarProveedor:
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
+        cursor.fetchall.return_value = []
 
         with patch("app.models.proveedores.Bitacora") as bitacora:
             Proveedores(
@@ -589,6 +595,8 @@ class TestUpsertProductoProveedor:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
+        # obtener_proveedor() devuelve el proveedor sin límite de crédito
+        cursor.fetchone.return_value = {"limite_credito": None}
         cursor.rowcount = 1
 
         resultado = Proveedores(
@@ -603,6 +611,7 @@ class TestUpsertProductoProveedor:
 
     def test_sin_filas_afectadas_devuelve_false(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = {"limite_credito": None}
         cursor.rowcount = 0
 
         assert Proveedores(
@@ -614,7 +623,7 @@ class TestUpsertProductoProveedor:
             Proveedores().upsert_producto_proveedor(id_modelo="1", costo=10)
 
     def test_id_modelo_vacio(self, conexion_falsa):
-        with pytest.raises(ValueError, match="ID del modelo es requerido"):
+        with pytest.raises(ValueError, match="El modelo es obligatorio"):
             Proveedores(id_proveedor=ID_MAXIMO).upsert_producto_proveedor(costo=10)
 
     def test_costo_negativo(self, conexion_falsa):
@@ -631,7 +640,9 @@ class TestUpsertProductoProveedor:
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.execute.side_effect = Exception("fallo simulado")
+        # obtener_proveedor() consulta (1ª), el INSERT falla (2ª)
+        cursor.fetchone.return_value = {"limite_credito": None}
+        cursor.execute.side_effect = [None, Exception("fallo simulado")]
 
         with pytest.raises(Exception, match="fallo simulado"):
             Proveedores(id_proveedor=ID_MAXIMO).upsert_producto_proveedor(
@@ -704,7 +715,7 @@ class TestCrearProveedorConProductos:
             id_proveedor=ID_MAXIMO,
             rif=RIF_VALIDO,
             nombre=NOMBRE_MINIMO,
-            limite_credito=LIMITE_CERO,
+            limite_credito=LIMITE_MAXIMO,
         ).crear_proveedor_con_productos(
             [{"id_modelo": "1", "costo": 10}, {"id_modelo": "2", "costo": 20}]
         )
@@ -742,7 +753,7 @@ class TestCrearProveedorConProductos:
         assert proveedor.id_proveedor == ID_MAXIMO
 
     def test_nombre_vacio(self, conexion_falsa):
-        with pytest.raises(ValueError, match="El nombre del proveedor es obligatorio"):
+        with pytest.raises(ValueError, match="El campo Nombre del proveedor no puede estar vacío"):
             Proveedores().crear_proveedor_con_productos([])
 
     def test_limite_negativo(self, conexion_falsa):
@@ -759,7 +770,8 @@ class TestCrearProveedorConProductos:
                 id_proveedor=ID_MAXIMO, nombre=NOMBRE_MINIMO
             ).crear_proveedor_con_productos([{"id_modelo": "1", "costo": -1}])
 
-        db.rollback.assert_called_once()
+        # la validación de productos ocurre antes de tocar la base de datos
+        db.rollback.assert_not_called()
         db.commit.assert_not_called()
 
     def test_conexion_caida(self, conexion_caída):

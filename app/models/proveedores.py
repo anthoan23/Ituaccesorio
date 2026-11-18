@@ -62,7 +62,8 @@ class Proveedores:
             if q:
                 where_sql = "WHERE (Nombre_proveedor LIKE %s OR Rif_proveedor LIKE %s OR CAST(ID_proveedor AS CHAR) LIKE %s)"
                 params = [f"%{q}%", f"%{q}%", f"%{q}%"]
-            
+
+            # Condiciones fijas del código, valores parametrizados
             cursor.execute(f"""
                 SELECT
                     ID_proveedor AS id,
@@ -76,7 +77,7 @@ class Proveedores:
                 FROM Proveedor
                 {where_sql}
                 ORDER BY Nombre_proveedor ASC
-            """, tuple(params))
+            """, tuple(params))  # nosec B608
             return cursor.fetchall() or []
         finally:
             cursor.close()

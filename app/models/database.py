@@ -1,9 +1,12 @@
+import logging
 import mysql.connector
 import os
 from dotenv import load_dotenv
 
 # Cargar las variables del archivo .env
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 class conectar:
     # Último error técnico al crear una conexión (lo imprime mostrar_error).
@@ -55,10 +58,10 @@ class conectar:
         try:
             if cursor:
                 cursor.close()
-        except Exception:
-            pass
+        except Exception as error:
+            logger.warning("No se pudo cerrar el cursor: %s", error)
         try:
             if db:
                 db.close()
-        except Exception:
-            pass
+        except Exception as error:
+            logger.warning("No se pudo cerrar la conexión: %s", error)

@@ -789,7 +789,7 @@ textarea:focus {
 }
 
 .venta-local-panel {
-	max-width: 600px;
+	max-width: 560px;
 	width: min(600px, 100%);
 	display: grid;
 	gap: 1rem;
@@ -825,7 +825,7 @@ textarea:focus {
 	}
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
 	.products-hero {
 		flex-direction: column;
 		align-items: stretch;
@@ -1499,7 +1499,7 @@ textarea:focus {
 	}
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
 	.catalog-hero {
 		min-height: 240px;
 		padding: 1.25rem;
@@ -1645,4 +1645,37 @@ textarea:focus {
 .comprobante-nombre {
     display: block;
     color: #666;
+}
+/* ============================================ */
+/* MÓVIL: barra de pago fija inferior (checkout) */
+/* Los botones del panel se convierten en la     */
+/* .barra-accion definida en theme.css §25       */
+/* ============================================ */
+@media (max-width: 768px) {
+	.filters-panel__actions {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 40;
+		justify-content: stretch;
+		gap: 0.6rem;
+		margin: 0;
+		padding: 0.7rem 0.9rem max(0.7rem, env(safe-area-inset-bottom));
+		background: rgba(10, 10, 10, 0.88);
+		-webkit-backdrop-filter: blur(16px);
+		backdrop-filter: blur(16px);
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+	}
+
+	[data-theme="light"] .filters-panel__actions {
+		background: rgba(255, 255, 255, 0.94);
+	}
+
+	.filters-panel__actions .btn {
+		flex: 1;
+		min-height: 44px;
+		justify-content: center;
+	}
 }

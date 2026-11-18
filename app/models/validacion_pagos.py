@@ -494,6 +494,7 @@ class ValidacionPagosModel:
 
             where_sql = " AND ".join(where_conditions)
 
+            # Condiciones fijas del código, valores parametrizados
             query = f"""
                 SELECT
                     v.ID_factura AS factura_id,
@@ -520,7 +521,7 @@ class ValidacionPagosModel:
                 LEFT JOIN Cliente c ON v.ID_cliente = c.ID_cliente
                 WHERE {where_sql}
                 ORDER BY v.Fecha_venta DESC
-            """
+            """  # nosec B608
 
             cursor.execute(query, tuple(params))
             pagos = cursor.fetchall()

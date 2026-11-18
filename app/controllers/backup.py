@@ -2,7 +2,9 @@
 from flask import Blueprint, jsonify, render_template, request, g, current_app, send_file
 import os
 import datetime
+import logging
 import pymysql
+import re
 from werkzeug.utils import secure_filename
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.backup import Backup
@@ -11,6 +13,22 @@ backup_blueprint = Blueprint("backup", __name__)
 
 # Directorio donde se guardarán los backups
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'app', 'bd')
+
+logger = logging.getLogger(__name__)
+
+# Regex estricto para validar identificadores de tabla antes de interpolarlos en SQL
+_RE_IDENTIFICADOR_TABLA = re.compile(r"^[A-Za-z0-9_]+$")
+
+
+def _tabla_segura(nombre):
+    """Valida que el nombre de tabla sea un identificador MySQL normal.
+
+    Los nombres provienen de SHOW TABLES (no de entrada del usuario), pero la
+    validación evita interpolar en SQL cualquier identificador inesperado.
+    """
+    if not _RE_IDENTIFICADOR_TABLA.match(nombre or ""):
+        raise ValueError(f"Nombre de tabla inesperado: {nombre!r}")
+    return nombre
 
 
 @backup_blueprint.route("/backup", methods=["GET"])
@@ -147,6 +165,11 @@ def api_crear_backup():
             
             for table in tables:
                 table_name = table[0]
+                try:
+                    _tabla_segura(table_name)
+                except ValueError as error:
+                    logger.warning("Se omite la tabla con nombre inesperado: %s", error)
+                    continue
                 
                 # Obtener la estructura de la tabla
                 cursor.execute(f"SHOW CREATE TABLE `{table_name}`")
@@ -158,7 +181,8 @@ def api_crear_backup():
                 file.write(f"{create_table};\n\n")
                 
                 # Obtener los datos de la tabla
-                cursor.execute(f"SELECT * FROM `{table_name}`")
+                # Nombre de tabla ya validado por _tabla_segura()
+                cursor.execute(f"SELECT * FROM `{table_name}`")  # nosec B608
                 rows = cursor.fetchall()
                 
                 if rows:
@@ -199,7 +223,8 @@ def api_crear_backup():
                             
                             values_list.append(f"({', '.join(values)})")
                         
-                        file.write(f"INSERT INTO `{table_name}` (`{'`, `'.join(columns)}`) VALUES\n")
+                        # Nombre de tabla ya validado por _tabla_segura()
+                        file.write(f"INSERT INTO `{table_name}` (`{'`, `'.join(columns)}`) VALUES\n")  # nosec B608
                         file.write(f",\n".join(values_list))
                         file.write(";\n\n")
             
@@ -395,8 +420,8 @@ def api_crear_backup():
         if os.path.exists(ruta_completa):
             try:
                 os.remove(ruta_completa)
-            except:
-                pass
+            except Exception as error:
+                logger.warning("No se pudo eliminar el archivo temporal %s: %s", ruta_completa, error)
         return jsonify({
             "success": False,
             "message": f"Error de base de datos: {str(e)}"
@@ -405,8 +430,8 @@ def api_crear_backup():
         if os.path.exists(ruta_completa):
             try:
                 os.remove(ruta_completa)
-            except:
-                pass
+            except Exception as error:
+                logger.warning("No se pudo eliminar el archivo temporal %s: %s", ruta_completa, error)
         return jsonify({
             "success": False,
             "message": f"Error al crear backup: {str(e)}"

@@ -5,7 +5,6 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login_phone.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block navbar %}{% endblock %}
@@ -243,6 +242,5 @@
 	{% if recaptcha_site_key and not is_test_mode %}
 		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 	{% endif %}
-	<script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}

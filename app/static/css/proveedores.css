@@ -199,7 +199,7 @@
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 920px) {
+@media (max-width: 992px) {
     .proveedores-toolbar {
         grid-template-columns: 1fr;
     }
@@ -220,7 +220,7 @@
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .detail-grid {
         grid-template-columns: 1fr;
     }
@@ -245,7 +245,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
     .proveedores-toolbar__actions {
         flex-direction: column;
         width: 100%;

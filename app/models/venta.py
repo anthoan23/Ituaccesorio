@@ -315,6 +315,7 @@ class VentaModel:
                 valores.append(self.estado_pago)
 
             placeholders = ", ".join(["%s"] * len(campos))
+            # Columnas fijas del código, valores parametrizados
             query = f"""
                 INSERT INTO Metodo_pago ({', '.join(campos)})
                 VALUES ({placeholders})
@@ -326,7 +327,7 @@ class VentaModel:
                     Monto = VALUES(Monto),
                     Capture = VALUES(Capture),
                     Estado_pago = COALESCE(Estado_pago, 'pendiente')
-            """
+            """  # nosec B608
 
             cursor.execute(query, valores)
             db.commit()

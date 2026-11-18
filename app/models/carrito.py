@@ -95,8 +95,8 @@ class CarritoModel:
         except Exception as e:
             print(f"Error generando ID: {e}")
             import time
-            import random
-            return f"LST{int(time.time())}{random.randint(10, 99)}"
+            import secrets
+            return f"LST{int(time.time())}{secrets.randbelow(90) + 10}"
         finally:
             cursor.close()
             db.close()

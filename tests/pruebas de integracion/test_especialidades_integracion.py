@@ -46,7 +46,12 @@ CEDULA_EN_USO = "98765426"
 class TestListarEspecialidades:
 
     def test_listar_especialidades(self):
-        assert Especialidad().listar_especialidades() == ESPECIALIDADES
+        # Aislamiento: se verifica que las especialidades del seed estén presentes,
+        # sin exigir que la tabla no tenga registros temporales de otras pruebas.
+        especialidades = Especialidad().listar_especialidades()
+
+        for especialidad_seed in ESPECIALIDADES:
+            assert especialidad_seed in especialidades
 
 
 class TestVerificarEspecialidad:

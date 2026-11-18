@@ -246,7 +246,7 @@
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .stats {
         grid-template-columns: 1fr;
     }
