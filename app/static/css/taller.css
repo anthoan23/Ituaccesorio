@@ -186,7 +186,7 @@
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .photo-preview-grid {
         max-height: 300px;
     }
@@ -638,7 +638,7 @@
 /* ============================================
    TESTS - RESPONSIVE
    ============================================ */
-@media (max-width: 820px) {
+@media (max-width: 768px) {
     .revision-grid {
         grid-template-columns: 1fr;
         gap: 0.5rem;
@@ -667,13 +667,13 @@
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 560px) {
     .test-detail-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
     .revision-column .test-row-item {
         flex-wrap: wrap;
         gap: 0.25rem;

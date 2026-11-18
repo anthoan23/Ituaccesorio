@@ -175,7 +175,7 @@
     }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 992px) {
     .hero__actions {
         justify-content: flex-start;
         width: 100%;
@@ -200,7 +200,7 @@
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .col-id,
     .col-status,
     .col-total {
@@ -216,7 +216,7 @@
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
     .table {
         min-width: 500px;
     }

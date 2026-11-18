@@ -319,7 +319,7 @@ body.ui-modal-open {
     animation: feedback-fade 220ms ease-out;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .ui-form__grid {
         grid-template-columns: 1fr;
     }
@@ -389,4 +389,51 @@ body.ui-modal-open {
 .ui-modal .table__empty,
 .ui-modal .helper {
     color: var(--text-muted) !important;
+}
+/* ============================================ */
+/* MÓVIL: modales como hojas full-screen        */
+/* (escala unificada 768px; especificidad mayor */
+/* para vencer a --sm/--lg cargados después)    */
+/* ============================================ */
+@media (max-width: 768px) {
+    .ui-modal .ui-modal__dialog,
+    .ui-modal .ui-modal__dialog--sm,
+    .ui-modal .ui-modal__dialog--lg {
+        width: 100vw;
+        max-width: 100vw;
+        min-height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ui-modal .ui-modal__header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 0.9rem 1rem;
+        background: var(--bg-primary, #0A0A0A);
+        padding-top: max(0.9rem, env(safe-area-inset-top));
+    }
+
+    .ui-modal .ui-modal__body {
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .ui-modal .ui-modal__footer {
+        position: sticky;
+        bottom: 0;
+        padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+        background: var(--bg-primary, #0A0A0A);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .ui-modal .ui-form__actions .ui-btn {
+        width: 100%;
+        min-height: 44px;
+    }
 }

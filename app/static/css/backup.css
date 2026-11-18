@@ -336,7 +336,7 @@
 /* ============================================
    RESPONSIVE (específico de backup)
    ============================================ */
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .backup-actions__group {
         flex-direction: column;
     }

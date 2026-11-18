@@ -1322,7 +1322,7 @@ body {
 }
 
 .ui-modal__dialog--sm { max-width: 450px; }
-.ui-modal__dialog--md { max-width: 640px; }
+.ui-modal__dialog--md { max-width: 768px; }
 .ui-modal__dialog--lg { max-width: 860px; }
 .ui-modal__dialog--xl { max-width: 1140px; }
 
@@ -2114,7 +2114,14 @@ body {
 
 /* ============================================
    25. RESPONSIVE (unificado)
+   Escala de breakpoints del proyecto:
+   1280 / 1100 / 992 / 768 / 560 / 380
+   (antes había 13 breakpoints heterogéneos)
    ============================================ */
+@media (max-width: 1280px) {
+    .page { width: min(100%, calc(100% - 2rem)); }
+}
+
 @media (max-width: 1100px) {
     .hero,
     .cargos-hero,
@@ -2132,12 +2139,13 @@ body {
     .fotos-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .page {
         width: min(100%, calc(100% - 1rem));
         padding-top: 1rem;
         padding-left: 0.5rem;
         padding-right: 0.5rem;
+        padding-bottom: 4.5rem; /* espacio para .barra-accion si existe */
     }
 
     .hero,
@@ -2150,7 +2158,9 @@ body {
         padding: 1rem;
     }
 
-    .stats { grid-template-columns: 1fr; }
+    /* KPIs / stats: 2 columnas y luego 1 */
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat-card { padding: 0.85rem 0.9rem; }
     .card { padding: 1rem; }
 
     .card__header {
@@ -2158,16 +2168,86 @@ body {
         align-items: stretch;
     }
     .card__actions { justify-content: flex-start; }
+    .card__actions .ui-btn { flex: 1 1 auto; }
 
-    .table { min-width: 640px; }
+    /* --- Tabla → tarjetas (patrón de todo el CRUD) --- */
+    /* Se activa con la clase .tabla--cards que asigna table-tools.js
+       a las tablas registradas cuando el viewport es <= 768px.
+       Los títulos de columna viajan en data-label de cada td. */
+    .table { min-width: 640px; } /* fallback: scroll horizontal */
 
+    .tabla--cards {
+        min-width: 0;
+        display: block;
+        border-collapse: separate;
+    }
+    .tabla--cards thead { display: none; }
+    .tabla--cards tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .tabla--cards tr {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        padding: 0.9rem;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-xl, 18px);
+        background: var(--card);
+        box-shadow: var(--shadow-light);
+    }
+    .tabla--cards tr:hover { background: var(--card); }
+    .tabla--cards td {
+        display: grid;
+        grid-template-columns: minmax(92px, 42%) 1fr;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.2rem 0;
+        border-bottom: 0;
+        text-align: right;
+        font-size: 0.85rem;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .tabla--cards td::before {
+        content: attr(data-label);
+        text-align: left;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        white-space: normal;
+    }
+    /* Celdas sin etiqueta (columnas de solo iconos) van a ancho completo */
+    .tabla--cards td:not([data-label]) {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding-top: 0.4rem;
+        border-top: 1px dashed var(--border-light);
+    }
+    /* Neutralizar anchos fijos por columna definidos en los CSS por página
+       (se cargan después de theme.css, así que usamos mayor especificidad) */
+    .table.tabla--cards tbody td {
+        min-width: 0;
+        max-width: none;
+        white-space: normal;
+        word-break: break-word;
+        text-align: right;
+    }
+    .tabla--cards .row-actions { flex-direction: row; justify-content: flex-end; }
+    .tabla--cards .icon-action { width: 44px; height: 44px; }
+
+    /* --- Controles de tabla apilados --- */
     .table-controls {
         flex-direction: column;
         align-items: stretch;
         gap: 0.5rem;
     }
     .table-controls__search { flex-wrap: wrap; }
-    .table-controls__input { min-width: 100%; }
+    .table-controls__input { min-width: 100%; font-size: 16px; }
     .table-controls__meta {
         flex-direction: column;
         align-items: stretch;
@@ -2175,37 +2255,52 @@ body {
     }
     .table-controls__pager { justify-content: center; flex-wrap: wrap; }
     .table-controls__size { justify-content: center; }
+    .table-controls__select { min-height: 44px; }
 
+    /* --- Modales como hojas full-screen --- */
     .ui-modal__dialog {
-        max-width: 95vw;
-        margin: 0.5rem;
+        max-width: 100vw;
+        width: 100vw;
+        min-height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+        border: none;
     }
-    .ui-modal__body { padding: 1rem; }
+    .ui-modal__body {
+        padding: 1rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
     .ui-modal__header { padding: 0.75rem 1rem; }
     .ui-modal__footer {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
         flex-wrap: wrap;
         justify-content: center;
     }
 
     .ui-form__grid--two { grid-template-columns: 1fr; }
+    .ui-form input,
+    .ui-form select,
+    .ui-form textarea { font-size: 16px; } /* evita zoom automático en iOS */
 
-    .ui-btn { width: 100%; justify-content: center; }
+    .ui-btn { width: 100%; justify-content: center; min-height: 44px; }
     .ui-form__actions { flex-direction: column; }
     .ui-form__actions .ui-btn { width: 100%; justify-content: center; }
 
     .device-detail__grid { grid-template-columns: 1fr; }
     .vista-switcher {
-        flex-direction: column;
+        flex-direction: row;
+        overflow-x: auto;
         gap: 0.25rem;
         padding: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+    .vista-switcher::-webkit-scrollbar { display: none; }
     .vista-switcher__btn {
-        width: 100%;
+        width: auto;
+        min-width: max-content;
         text-align: center;
-        padding: 0.7rem;
-        flex: none;
-        min-width: unset;
+        padding: 0.55rem 0.9rem;
     }
 
     .service-form__grid { grid-template-columns: 1fr; }
@@ -2213,6 +2308,43 @@ body {
     .test-modal-grid { grid-template-columns: 1fr; }
 
     .fotos-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* --- Barra de acción fija inferior (checkout, alta de registros) --- */
+    .barra-accion {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.7rem 0.9rem max(0.7rem, env(safe-area-inset-bottom));
+        background: rgba(10, 10, 10, 0.88);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border-light);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+    }
+    .barra-accion .ui-btn { flex: 1; min-height: 44px; }
+    .barra-accion__total { color: #fff; font-weight: 700; font-size: 1rem; }
+    [data-theme="light"] .barra-accion { background: rgba(255, 255, 255, 0.94); }
+    [data-theme="light"] .barra-accion__total { color: var(--ink); }
+
+    /* Cualquier elemento marcado como tarjeta deslizable inferior */
+    .hoja-inferior {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 45;
+        transform: translateY(0);
+        max-height: 82dvh;
+        overflow-y: auto;
+        border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.55);
+    }
 }
 
 @media (max-width: 560px) {
@@ -2220,13 +2352,16 @@ body {
         flex-direction: column;
         align-items: stretch;
     }
-    .icon-action { width: 100%; }
+    .icon-action { width: 100%; min-height: 44px; }
 
     .table th,
     .table td {
         padding: 0.5rem 0.4rem;
         font-size: 0.8rem;
     }
+
+    /* Targets táctiles de 44px para iconos de acción */
+    .icon-action { min-width: 44px; min-height: 44px; }
 
     .empleado-detalle__grid { grid-template-columns: 1fr; }
     .detalle-item--full { grid-column: 1; }
@@ -2236,13 +2371,21 @@ body {
     .foto-modal-overlay .close-btn {
         top: 10px;
         right: 10px;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         font-size: 22px;
     }
 
     .confirm-modal-actions { flex-direction: column; }
     .confirm-modal-actions .ui-btn { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 380px) {
+    .page { padding-left: 0.35rem; padding-right: 0.35rem; }
+    .stats { grid-template-columns: 1fr; }
+    .card { padding: 0.85rem; }
+    .ui-btn { font-size: 0.85rem; }
+    .barra-accion { gap: 0.5rem; }
 }
 
 /* ============================================

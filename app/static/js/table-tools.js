@@ -3,6 +3,49 @@
   const PAGE_SIZES = [10, 25, 50, 100];
   const DEBOUNCE_DELAY = 300;
   const tableStates = new Map();
+  const mqTablaCards = window.matchMedia("(max-width: 768px)");
+
+  /* ==================== TABLA → TARJETAS (móvil) ====================
+     En <=768px cada tabla registrada se transforma en tarjetas apiladas:
+     - copia el texto de cada columna del thead a data-label del td
+     - agrega la clase .tabla--cards (estilos en theme.css §25)
+     - se puede desactivar por tabla con data-table-cards="false" */
+  function etiquetarCeldas(table) {
+    const thead = table.tHead;
+    const etiquetas = [];
+    if (thead?.rows?.length) {
+      Array.from(thead.rows[0].cells).forEach((th, i) => {
+        const texto = (th.dataset.label || th.textContent || "").trim();
+        etiquetas[i] = texto || null;
+      });
+    }
+    const tbody = table.tBodies?.[0];
+    if (!tbody) return;
+    Array.from(tbody.rows).forEach((row) => {
+      if (!row || row.dataset.tableToolsEmpty === "true") return;
+      Array.from(row.cells).forEach((td, i) => {
+        if (!etiquetas[i]) {
+          td.removeAttribute("data-label");
+        } else {
+          td.setAttribute("data-label", etiquetas[i]);
+        }
+      });
+    });
+  }
+
+  function sincronizarVistaTarjetas(table) {
+    const desactivada = table.dataset.tableCards === "false";
+    table.classList.toggle("tabla--cards", mqTablaCards.matches && !desactivada);
+  }
+
+  function actualizarTablasResponsive() {
+    tableStates.forEach((_, table) => {
+      etiquetarCeldas(table);
+      sincronizarVistaTarjetas(table);
+    });
+  }
+
+  mqTablaCards.addEventListener?.("change", actualizarTablasResponsive);
 
   function initAllTables() {
     document.querySelectorAll("table.table").forEach((table) => {
@@ -252,9 +295,12 @@
 
       updateControls(state, total, startIndex, endIndex);
       state.controls.container.classList.toggle("is-empty", total === 0 && !query);
-      
+
     } finally {
       state.isRefreshing = false;
+      // Re-etiquetar celdas por si las filas se renderizaron de nuevo
+      etiquetarCeldas(table);
+      sincronizarVistaTarjetas(table);
     }
   }
 

@@ -4,7 +4,6 @@
 
 {% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/validacion_pagos.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/field-validator.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -277,6 +276,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/field-validator.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/validacion_pagos.js') }}"></script>
 {% endblock %}

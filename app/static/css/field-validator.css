@@ -331,7 +331,7 @@
 }
 
 /* Móviles muy pequeños */
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .validation-icon {
     right: 4px;
   }
