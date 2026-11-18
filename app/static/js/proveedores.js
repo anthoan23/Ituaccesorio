@@ -405,7 +405,7 @@
 
     if (!Array.isArray(modelos) || modelos.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="5" class="table__empty">No hay modelos.</td></tr>`;
+        <tr><td colspan="5" class="table__empty">No hay modelos que coincidan con los filtros.</td></tr>`;
       return;
     }
 
@@ -415,15 +415,45 @@
       const marca = escapeHtml(m?.marca_nombre ?? m?.N_marca ?? m?.Nombre_marca ?? '');
       const clase = escapeHtml(m?.clase_nombre ?? m?.N_clase ?? m?.Nombre_Clase ?? '');
 
+      // En el modal de creación, marcar los modelos que ya fueron agregados
+      const agregado = prefix === 'cp'
+        ? state.productosCrear.find((it) => String(it.id_modelo) === String(m?.id ?? m?.ID_producto ?? m?.ID_modelo ?? ''))
+        : null;
+      const etiquetaAgregado = agregado ? `Agregado · ${escapeHtml(formatMoney(agregado.costo))} $` : '';
+      const etiquetaBoton = agregado ? 'Actualizar' : 'Agregar';
+
       return `
-        <tr>
-          <td>${nombre}</td>
-          <td>${marca}</td>
-          <td>${clase}</td>
-          <td><input type="number" min="0" step="1" class="table-input table-input--cost" data-id-modelo="${id}" aria-label="Costo ${nombre}"></td>
-          <td><button class="ui-btn ui-btn--primary ui-btn--sm" data-action="agregar-modelo" data-prefix="${prefix}" data-id-modelo="${id}">Agregar</button></td>
+        <tr class="${agregado ? 'is-added' : ''}">
+          <td class="is-left">
+            <span class="catalogo__modelo">${nombre}</span>
+            <small class="catalogo__agregado" data-role="costo-agregado"${agregado ? '' : ' hidden'}>${etiquetaAgregado}</small>
+          </td>
+          <td>${marca || '<span class="catalogo__empty">—</span>'}</td>
+          <td>${clase || '<span class="catalogo__empty">—</span>'}</td>
+          <td>
+            <div class="cost-field">
+              <span class="cost-field__prefix" aria-hidden="true">$</span>
+              <input type="number" min="0" step="1" inputmode="numeric" placeholder="0" class="table-input table-input--cost" data-id-modelo="${id}" aria-label="Costo ${nombre}">
+            </div>
+          </td>
+          <td><button class="ui-btn ui-btn--primary ui-btn--sm" type="button" data-action="agregar-modelo" data-prefix="${prefix}" data-id-modelo="${id}">${etiquetaBoton}</button></td>
         </tr>`;
     }).join('');
+  }
+
+  // Tras agregar: vacía el costo escrito y deja la fila marcada como agregada (sin re-renderizar la tabla)
+  function marcarFilaAgregada(row, costo) {
+    if (!row) return;
+    const input = row.querySelector('input.table-input--cost');
+    if (input) input.value = '';
+    row.classList.add('is-added');
+    const btn = row.querySelector('button[data-action="agregar-modelo"]');
+    if (btn) btn.textContent = 'Actualizar';
+    const chip = row.querySelector('[data-role="costo-agregado"]');
+    if (chip) {
+      chip.textContent = `Agregado · ${formatMoney(costo)} $`;
+      chip.hidden = false;
+    }
   }
 
   async function actualizarTablaSegunFiltros(prefix) {
@@ -443,8 +473,8 @@
       // Si la API no filtró correctamente, aplicar filtro local por nombre de clase/marca
       let filtrados = Array.isArray(modelos) ? modelos : [];
 
-      if ((claseId && String(claseId) !== '') || (claseNombre && claseNombre !== '(Opcional) Selecciona')) {
-        const target = claseNombre && claseNombre !== '(Opcional) Selecciona' ? claseNombre.toLowerCase() : null;
+      if (claseId && String(claseId) !== '') {
+        const target = claseNombre ? claseNombre.toLowerCase() : null;
         if (target) {
           filtrados = filtrados.filter((m) => {
             const mn = (m?.clase_nombre || m?.N_clase || m?.Nombre_Clase || '').toString().toLowerCase();
@@ -453,8 +483,8 @@
         }
       }
 
-      if ((marcaId && String(marcaId) !== '') || (marcaNombre && marcaNombre !== '(Opcional) Selecciona')) {
-        const targetM = marcaNombre && marcaNombre !== '(Opcional) Selecciona' ? marcaNombre.toLowerCase() : null;
+      if (marcaId && String(marcaId) !== '') {
+        const targetM = marcaNombre ? marcaNombre.toLowerCase() : null;
         if (targetM) {
           filtrados = filtrados.filter((m) => {
             const mm = (m?.marca_nombre || m?.N_marca || m?.Nombre_marca || '').toString().toLowerCase();
@@ -486,7 +516,8 @@
 
   function fillSelectClases(selectEl, clases) {
     if (!selectEl) return;
-    const options = [`<option value="">(Opcional) Selecciona</option>`];
+    const placeholder = escapeHtml(selectEl.dataset?.placeholder || '(Opcional) Selecciona');
+    const options = [`<option value="">${placeholder}</option>`];
     for (const c of clases) {
       const id = escapeHtml(c?.id ?? c?.ID_Clase ?? '');
       const nombre = escapeHtml(c?.nombre ?? c?.Nombre_Clase ?? '');
@@ -497,7 +528,8 @@
 
   function fillSelectMarcas(selectEl, marcas) {
     if (!selectEl) return;
-    const options = [`<option value="">(Opcional) Selecciona</option>`];
+    const placeholder = escapeHtml(selectEl.dataset?.placeholder || '(Opcional) Selecciona');
+    const options = [`<option value="">${placeholder}</option>`];
     for (const m of marcas) {
       const id = escapeHtml(m?.id ?? m?.ID_marca ?? '');
       const nombre = escapeHtml(m?.nombre ?? m?.Nombre_marca ?? '');
@@ -859,7 +891,16 @@
       .join('');
   }
 
+  function actualizarContadorAgregados() {
+    const el = $id('cp-agregados-count');
+    if (!el) return;
+    const n = state.productosCrear.length;
+    el.textContent = n === 0 ? 'Ningún producto agregado' : `${n} producto${n === 1 ? '' : 's'} agregado${n === 1 ? '' : 's'}`;
+    el.classList.toggle('has-items', n > 0);
+  }
+
   function renderProductosCrear() {
+    actualizarContadorAgregados();
     const tbody = $id('tabla-proveedor-productos-crear');
     if (!tbody) return;
 
@@ -1381,6 +1422,39 @@
       }
     });
 
+    // Limpiar filtros del catálogo de modelos
+    document.addEventListener('click', (ev) => {
+      const btn = ev.target?.closest?.('button[data-action="limpiar-filtros"][data-prefix]');
+      if (!btn) return;
+      const prefix = btn.getAttribute('data-prefix');
+      const q = $id(`${prefix}-buscar-q`);
+      const clase = $id(`${prefix}-id-clase`);
+      const marca = $id(`${prefix}-id-marca`);
+      if (q) q.value = '';
+      if (clase) clase.value = '';
+      if (marca) marca.value = '';
+      actualizarTablaSegunFiltros(prefix);
+      q?.focus();
+    });
+
+    // Enter en el costo = presionar Agregar de esa fila; Enter en el buscador no envía el formulario
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter') return;
+      const el = ev.target;
+      if (el?.matches?.('input.table-input--cost')) {
+        ev.preventDefault();
+        el.closest('tr')?.querySelector('button[data-action="agregar-modelo"]')?.click();
+      } else if (el?.matches?.('#cp-buscar-q, #ap-buscar-q')) {
+        ev.preventDefault();
+      }
+    });
+
+    // Evitar que la rueda del mouse cambie el costo sin querer
+    document.addEventListener('wheel', (ev) => {
+      const el = ev.target;
+      if (el?.matches?.('input[type="number"]') && document.activeElement === el) el.blur();
+    }, { passive: true });
+
     // Delegation: manejar clicks en botones Agregar dentro de las tablas
     document.addEventListener('click', async (ev) => {
       const btn = ev.target?.closest?.('button[data-action="agregar-modelo"][data-id-modelo][data-prefix]');
@@ -1402,8 +1476,7 @@
           await agregarProductoProveedorFromForm();
           await cargarProductosProveedorEditar(state.currentProveedorId);
           showFeedback('success', 'Producto agregado correctamente.');
-          // refrescar tabla
-          actualizarTablaSegunFiltros('ap');
+          marcarFilaAgregada(row, costo);
         } else {
           // cp: agregar a state.productosCrear
           setValue('cp-costo', costo);
@@ -1411,8 +1484,7 @@
           agregarProductoCrearFromForm();
           renderProductosCrear();
           showFeedback('success', 'Producto agregado al proveedor inicial.');
-          // refrescar tabla
-          actualizarTablaSegunFiltros('cp');
+          marcarFilaAgregada(row, costo);
         }
       } catch (e) {
         showFeedback('error', e.message || 'No se pudo agregar el producto.');

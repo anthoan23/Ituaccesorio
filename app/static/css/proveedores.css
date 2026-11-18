@@ -301,3 +301,202 @@
 .table--min {
     min-width: 600px;
 }
+
+
+/* ============================================
+   INPUTS NUMÉRICOS SIN FLECHAS (subir/bajar)
+   Este CSS solo se carga en la página de proveedores.
+   ============================================ */
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* ============================================
+   MODALES "AGREGAR PRODUCTO" (ap / cp)
+   Estructura: ayuda -> filtros -> tabla -> pie
+   ============================================ */
+.catalogo__hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.catalogo__hint strong { color: var(--text-strong); }
+
+/* --- Filtros --- */
+.catalogo-filtros {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: end;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg);
+}
+.catalogo-filtros .field { margin: 0; min-width: 0; }
+.catalogo-filtros__clear {
+    min-height: 3rem;
+    white-space: nowrap;
+}
+
+/* Buscador con ícono de lupa */
+.input-icon { position: relative; display: block; }
+.input-icon__svg {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.input-icon .field__input { padding-left: 2.7rem; }
+
+/* --- Tabla de modelos --- */
+.catalogo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+}
+.catalogo .catalogo__wrap {
+    position: relative;
+    isolation: isolate;
+    order: 2;
+    max-height: min(44vh, 380px);
+    overflow: auto;
+    /* el tema oculta las barras; aquí se necesita ver que hay scroll vertical */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(243, 197, 0, 0.45) transparent;
+    -ms-overflow-style: auto;
+}
+.catalogo .catalogo__wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+.catalogo .catalogo__wrap::-webkit-scrollbar-thumb {
+    background: rgba(243, 197, 0, 0.4);
+    border-radius: 999px;
+}
+
+.catalogo__table {
+    min-width: 640px;
+    table-layout: fixed;
+    /* con "collapse" los th fijos dejan pasar el contenido que scrollea por debajo */
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.catalogo__col-marca,
+.catalogo__col-clase { width: 15%; }
+.catalogo__col-costo { width: 170px; }
+.catalogo__col-accion { width: 130px; }
+
+.catalogo__table th,
+.catalogo__table td {
+    padding: 0.7rem 0.75rem;
+    overflow-wrap: normal;   /* evita cortes tipo "MARC / A" y "Telefon / o" */
+    word-break: normal;
+}
+.catalogo__table th {
+    position: sticky;
+    top: 0;
+    /* por encima de botones/inputs de las filas (el tema les da z-index) */
+    z-index: 20;
+    white-space: nowrap;
+    /* fondo 100% opaco: color sólido + capa de tono encima */
+    background-color: var(--bg-secondary);
+    background-image: linear-gradient(var(--table-header), var(--table-header));
+    background-clip: padding-box;
+    box-shadow: 0 1px 0 var(--border-light), 0 10px 14px -10px rgba(0, 0, 0, 0.55);
+}
+.catalogo__table th.is-left,
+.catalogo__table td.is-left { text-align: left; }
+.catalogo__modelo { overflow-wrap: anywhere; }
+.catalogo__empty { color: var(--text-muted-soft); }
+
+.catalogo__table tbody .ui-btn,
+.catalogo__table tbody .cost-field { z-index: 0; }
+
+/* Etiqueta con el costo ya guardado (aparece bajo el nombre del modelo) */
+.catalogo__agregado {
+    display: inline-flex;
+    margin-top: 0.3rem;
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(243, 197, 0, 0.45);
+    background: rgba(243, 197, 0, 0.12);
+    color: var(--yellow);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+.catalogo__agregado[hidden] { display: none; }
+.catalogo__modelo { display: block; }
+
+/* Modelo ya agregado (modal de creación) */
+.catalogo__table tbody tr.is-added { background: rgba(243, 197, 0, 0.08); }
+.catalogo__table tbody tr.is-added td:first-child { box-shadow: inset 3px 0 0 var(--yellow); }
+
+/* Costo con prefijo de moneda */
+.cost-field { position: relative; max-width: 150px; margin: 0 auto; }
+.cost-field__prefix {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--yellow);
+    font-weight: 800;
+    pointer-events: none;
+}
+.cost-field .table-input {
+    text-align: left;
+    padding: 0.5rem 0.7rem 0.5rem 1.7rem;
+}
+
+/* --- Controles de paginación (los inyecta el componente global de tablas) --- */
+/* El modal ya tiene sus propios filtros: se oculta el segundo "Buscar" para no duplicar. */
+#modal-proveedor-agregar-producto .table-controls__search,
+#modal-proveedor-agregar-producto-crear .table-controls__search { display: none; }
+
+#modal-proveedor-agregar-producto .table-controls,
+#modal-proveedor-agregar-producto-crear .table-controls {
+    order: 3;
+    margin: 0;
+    padding: 0 0.15rem;
+    justify-content: flex-end;
+}
+#modal-proveedor-agregar-producto .table-controls__size select,
+#modal-proveedor-agregar-producto .table-controls__size input,
+#modal-proveedor-agregar-producto-crear .table-controls__size select,
+#modal-proveedor-agregar-producto-crear .table-controls__size input {
+    width: 78px;
+    min-width: 78px;
+}
+
+/* --- Pie del modal --- */
+.ui-form__actions.catalogo-footer {
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.25rem;
+}
+.catalogo-footer__count {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+.catalogo-footer__count.has-items { color: var(--yellow); }
+
+@media (max-width: 920px) {
+    .catalogo-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .catalogo-filtros__search { grid-column: 1 / -1; }
+    .catalogo-filtros__clear { grid-column: 1 / -1; min-height: 2.6rem; }
+}
+@media (max-width: 560px) {
+    .catalogo-filtros { grid-template-columns: 1fr; padding: 0.8rem; }
+    .catalogo__table { min-width: 560px; }
+    .ui-form__actions.catalogo-footer { flex-direction: column-reverse; align-items: stretch; text-align: center; }
+}
