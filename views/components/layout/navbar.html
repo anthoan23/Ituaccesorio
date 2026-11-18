@@ -1,6 +1,5 @@
 {% from 'components/ui/modal.html' import modal %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/notificaciones.css') }}">
 
 <!-- ============================================ -->
 <!-- SIDEBAR (DRAWER) - HOVER EXPAND -->
@@ -11,6 +10,12 @@
             <img src="{{ url_for('static', filename='img/LOGO.png') }}" alt="iTuAccesorio">
         </div>
         <span class="drawer__title">Menú</span>
+        <!-- Botón de cierre: visible solo en móvil con el drawer abierto -->
+        <button class="drawer__close" id="drawer-close-btn" type="button" aria-label="Cerrar menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
     </div>
 
     <div class="drawer__nav-wrapper">
@@ -37,7 +42,7 @@
 
                 {# 1. Empleados #}
                 {% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="false">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -46,7 +51,7 @@
                     </span>
                     <span class="drawer__link-text">Empleados</span>
                 </button>
-                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" hidden>
                     <a class="drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">
                         <span class="drawer__link-text">Lista de empleados</span>
                     </a>
@@ -184,7 +189,7 @@
                 <button class="drawer__link drawer__group-toggle {% if ventas_active %}is-active{% endif %}" 
                         data-nav-group-toggle="ventas-group" 
                         aria-controls="ventas-group" 
-                        aria-expanded="{{ 'true' if ventas_active else 'false' }}">
+                        aria-expanded="false">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -194,7 +199,7 @@
                     </span>
                     <span class="drawer__link-text">Ventas</span>
                 </button>
-                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" {% if not ventas_active %}hidden{% endif %}>
+                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" hidden>
                     <a class="drawer__submenu-link {% if active_page == 'validar_pagos' %}is-active{% endif %}" 
                        href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
                         <span class="drawer__link-text">Validación de Pagos</span>
@@ -279,7 +284,7 @@
                 
                 {% if tiene_empleados or tiene_especialidades or tiene_cargos %}
                 {% set personal_active = active_page in ['empleados', 'especialidades', 'cargos'] %}
-                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="{{ 'true' if personal_active else 'false' }}">
+                <button class="drawer__link drawer__group-toggle {% if personal_active %}is-active{% endif %}" data-nav-group-toggle="personal-group" aria-controls="personal-group" aria-expanded="false">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -288,7 +293,7 @@
                     </span>
                     <span class="drawer__link-text">Empleados</span>
                 </button>
-                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" {% if not personal_active %}hidden{% endif %}>
+                <div class="drawer__submenu" id="personal-group" data-nav-group="personal-group" hidden>
                     {% if tiene_empleados %}
                     <a class="drawer__submenu-link {% if active_page == 'empleados' %}is-active{% endif %}" href="{{ url_for('empleados.pagina_empleados') }}">
                         <span class="drawer__link-text">Lista de empleados</span>
@@ -467,7 +472,7 @@
                 <button class="drawer__link drawer__group-toggle {% if ventas_active %}is-active{% endif %}" 
                         data-nav-group-toggle="ventas-group" 
                         aria-controls="ventas-group" 
-                        aria-expanded="{{ 'true' if ventas_active else 'false' }}">
+                        aria-expanded="false">
                     <span class="drawer__link-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -477,7 +482,7 @@
                     </span>
                     <span class="drawer__link-text">Ventas</span>
                 </button>
-                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" {% if not ventas_active %}hidden{% endif %}>
+                <div class="drawer__submenu" id="ventas-group" data-nav-group="ventas-group" hidden>
                     {% if tiene_permisos and g.user.permisos.get('Ventas', {}).get('consultar', false) %}
                     <a class="drawer__submenu-link {% if active_page == 'validar_pagos' %}is-active{% endif %}" 
                        href="{{ url_for('validacion_pagos.pagina_validar_pagos') }}">
@@ -566,10 +571,20 @@
 </aside>
 
 <!-- ============================================ -->
-<!-- TOPBAR - SIN HAMBURGUESA -->
+<!-- TOPBAR - con hamburguesa solo en móvil -->
 <!-- ============================================ -->
 <header class="topbar">
     <div class="topbar__left">
+        <!-- Botón hamburguesa: oculto en escritorio, visible en <=768px -->
+        <button class="menu-toggle" id="menu-toggle-btn" type="button" aria-label="Abrir menú"
+                aria-expanded="false" aria-controls="main-drawer">
+            <svg class="menu-toggle__icon menu-toggle__icon--menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 6h18M3 12h18M3 18h18"/>
+            </svg>
+            <svg class="menu-toggle__icon menu-toggle__icon--close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
         <a class="brand" href="/" aria-label="Ir al inicio">
             <img class="brand__logo" src="{{ url_for('static', filename='img/LOGO TRAZO BLANCO.png') }}" alt="iTuAccesorio">
         </a>

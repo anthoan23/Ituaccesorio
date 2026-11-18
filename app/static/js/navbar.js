@@ -49,25 +49,31 @@ document.addEventListener("DOMContentLoaded", () => {
 	const drawer = document.getElementById('main-drawer');
 	
 	function openMenu() {
-		if (drawer) drawer.style.transform = 'translateX(0)';
-		if (backdrop) {
-			backdrop.style.opacity = '1';
-			backdrop.style.pointerEvents = 'auto';
+		if (drawer) drawer.classList.add('is-open');
+		if (backdrop) backdrop.classList.add('is-visible');
+		if (menuToggle) {
+			menuToggle.classList.add('is-active');
+			menuToggle.setAttribute('aria-expanded', 'true');
+			menuToggle.setAttribute('aria-label', 'Cerrar menú');
 		}
-		document.body.style.overflow = 'hidden';
+		document.body.classList.add('menu-abierto');
 	}
 	
 	function closeMenu() {
-		if (drawer) drawer.style.transform = '';
-		if (backdrop) {
-			backdrop.style.opacity = '';
-			backdrop.style.pointerEvents = '';
+		if (drawer) drawer.classList.remove('is-open');
+		if (backdrop) backdrop.classList.remove('is-visible');
+		if (menuToggle) {
+			menuToggle.classList.remove('is-active');
+			menuToggle.setAttribute('aria-expanded', 'false');
+			menuToggle.setAttribute('aria-label', 'Abrir menú');
 		}
-		document.body.style.overflow = '';
+		document.body.classList.remove('menu-abierto');
+		// Al cerrar el menú, colapsar todos los submenús desplegables
+		cerrarTodosLosGrupos();
 	}
 	
 	function toggleMenu() {
-		if (drawer && drawer.style.transform === 'translateX(0px)') {
+		if (drawer && drawer.classList.contains('is-open')) {
 			closeMenu();
 		} else {
 			openMenu();
@@ -82,6 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		backdrop.addEventListener('click', closeMenu);
 	}
 	
+	// Botón ✕ dentro del drawer (móvil)
+	const drawerCloseBtn = document.getElementById('drawer-close-btn');
+	if (drawerCloseBtn) {
+		drawerCloseBtn.addEventListener('click', closeMenu);
+	}
+	
 	// Cerrar menú SOLO al hacer click en enlaces de navegación (no en botones de grupo)
 	const drawerLinks = document.querySelectorAll('.drawer__link:not(.drawer__group-toggle)');
 	drawerLinks.forEach(link => {
@@ -89,8 +101,19 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 	
 	// ==================== TOGGLES DE SUBMENÚ ====================
-	
+
 	const groupToggles = document.querySelectorAll("[data-nav-group-toggle]");
+
+	// Colapsar todos los grupos desplegables (se invoca al cerrar el menú)
+	function cerrarTodosLosGrupos() {
+		groupToggles.forEach((toggle) => {
+			const groupId = toggle.getAttribute("data-nav-group-toggle");
+			const group = document.querySelector(`[data-nav-group="${groupId}"]`);
+			toggle.setAttribute("aria-expanded", "false");
+			if (group) group.setAttribute("hidden", "");
+		});
+	}
+
 	groupToggles.forEach((toggle) => {
 		const groupId = toggle.getAttribute("data-nav-group-toggle");
 		const group = document.querySelector(`[data-nav-group="${groupId}"]`);
@@ -108,6 +131,18 @@ document.addEventListener("DOMContentLoaded", () => {
 			sync(group.hasAttribute("hidden"));
 		});
 	});
+
+	// Al salir del cursor del sidebar (escritorio) el drawer se colapsa;
+	// colapsar también los submenús abiertos para la próxima apertura.
+	// Se ignora en pantallas <=768px: allí el cierre lo manejan el ✕,
+	// el backdrop y closeMenu(), y los mouseleave táctiles son sintéticos.
+	if (drawer) {
+		drawer.addEventListener("mouseleave", () => {
+			if (window.innerWidth > 768) {
+				cerrarTodosLosGrupos();
+			}
+		});
+	}
 	
 	// ==================== PERMISOS EN EL NAVBAR ====================
 	
