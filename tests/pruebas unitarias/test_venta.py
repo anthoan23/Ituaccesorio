@@ -673,29 +673,22 @@ class TestObtenerVentasHoy:
             "cantidad_ventas": 3,
             "moneda": "USD",
         }
-        assert "FROM Venta v" in ultima_sentencia(cursor)
+        assert "FROM Metodo_pago mp" in ultima_sentencia(cursor)
 
-    def test_sin_ventas_en_venta_usa_metodo_pago(self, conexion_falsa):
+    def test_sin_ventas_devuelve_valores_por_defecto(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            None,
-            {
-                "total_ventas": "75.25",
-                "cantidad_ventas": 2,
-                "Moneda": "VES",
-            },
-        ]
+        cursor.fetchone.return_value = None
 
         resultado = VentaModel().obtener_ventas_hoy()
 
         assert resultado == {
-            "total_ventas": 75.25,
-            "cantidad_ventas": 2,
-            "moneda": "VES",
+            "total_ventas": 0,
+            "cantidad_ventas": 0,
+            "moneda": "USD",
         }
         sentencias = [llamada.args[0] for llamada in cursor.execute.call_args_list]
-        assert len(sentencias) == 2
-        assert "FROM Metodo_pago mp" in sentencias[1]
+        assert len(sentencias) == 1
+        assert "FROM Metodo_pago mp" in sentencias[0]
 
     def test_sin_datos_devuelve_valores_por_defecto(self, conexion_falsa):
         db, cursor = conexion_falsa

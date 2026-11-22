@@ -1,8 +1,12 @@
+import logging
 from decimal import Decimal
 from typing import Any, cast
 
 from app.models.bitacora import Bitacora
 from app.models.database import conectar
+
+
+logger = logging.getLogger(__name__)
 
 
 class TradeIn(conectar):
@@ -152,7 +156,7 @@ class TradeIn(conectar):
             return 0.00  # Valor por defecto
             
         except Exception as e:
-            print(f"Error al obtener costo de repuesto: {e}")
+            logger.error(f"Error al obtener costo de repuesto: {e}")
             return 0.00
         finally:
             cursor.close()

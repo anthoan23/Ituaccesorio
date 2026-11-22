@@ -104,7 +104,11 @@ class James():
             
         except Exception as e:
             return f"Error al consultar la información: {str(e)}"
-      
+        finally:
+            # Sin este finally, cada consulta dejaba abiertos un cursor y una
+            # conexión MySQL (fuga acumulativa hasta agotar max_connections).
+            cursor.close()
+            db.close()
 
     def consultar_tecnicos_con_especialidades_y_ordenes(self):
         db = self.__conexion.conexion1()

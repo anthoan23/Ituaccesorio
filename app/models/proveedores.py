@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
@@ -10,6 +11,9 @@ from app.utils.validators import (
     validar_texto_numero,
 )
 import mysql.connector
+
+
+logger = logging.getLogger(__name__)
 
 
 class Proveedores:
@@ -172,7 +176,7 @@ class Proveedores:
             }
             
         except mysql.connector.Error as e:
-            print(f"Error en procedure: {e}")
+            logger.error(f"Error en procedure: {e}")
             return {
                 "proveedor": None,
                 "productos": [],
@@ -205,7 +209,7 @@ class Proveedores:
             if self.limite_credito < 0:
                 raise ValueError("El límite de crédito no puede ser negativo.")
 
-        error_nombre = validar_texto_numero(self.nombre, 2, 60, "Nombre del proveedor")
+        error_nombre = validar_texto_numero(self.nombre, 2, 40, "Nombre del proveedor")
         if error_nombre:
             raise ValueError(error_nombre)
 
@@ -222,7 +226,7 @@ class Proveedores:
         if error_correo:
             raise ValueError(error_correo)
 
-        error_direccion = validar_texto_numero(self.direccion, 1, 100, "Dirección",
+        error_direccion = validar_texto_numero(self.direccion, 1, 60, "Dirección",
                                      obligatorio=False, caracteres_extra="-.,#()/")
         if error_direccion:
             raise ValueError(error_direccion)
@@ -252,9 +256,8 @@ class Proveedores:
             costo = item.get("costo")
             costo_val = None
             if costo not in (None, ""):
-                try:
-                    costo_val = int(costo)
-                except (TypeError, ValueError):
+                costo_val = normalizar_numero_decimal(costo)
+                if costo_val is None:
                     raise ValueError("El costo debe ser numérico.")
                 if costo_val < 0:
                     raise ValueError(f"El costo del producto '{id_modelo_val}' no puede ser negativo.")
@@ -481,7 +484,7 @@ class Proveedores:
             
             return False, ""
         except Exception as e:
-            print(f"Error verificando relaciones: {e}")
+            logger.error(f"Error verificando relaciones: {e}")
             return True, "Error al verificar relaciones del proveedor"
         finally:
             cursor.close()
@@ -524,7 +527,7 @@ class Proveedores:
                 "productos": productos or []
             }
         except Exception as e:
-            print(f"Error obteniendo detalle de relaciones: {e}")
+            logger.error(f"Error obteniendo detalle de relaciones: {e}")
             return {}
         finally:
             cursor.close()
@@ -572,9 +575,8 @@ class Proveedores:
             raise ValueError("El modelo es obligatorio.")
 
         if costo not in (None, ""):
-            try:
-                costo = int(costo)
-            except (TypeError, ValueError):
+            costo = normalizar_numero_decimal(costo)
+            if costo is None:
                 raise ValueError("El costo debe ser numérico.")
             if costo < 0:
                 raise ValueError("El costo no puede ser negativo.")
@@ -677,6 +679,25 @@ class Proveedores:
         try:
             cursor = db.cursor()
 
+            # Validación extra del modelo: evitar duplicados (antes esta vía
+            # de creación no chequeaba duplicados, a diferencia de crear_proveedor)
+            cursor.execute("""
+                SELECT 1 FROM Proveedor
+                WHERE LOWER(TRIM(Nombre_proveedor)) = LOWER(TRIM(%s))
+                LIMIT 1
+            """, (self.nombre,))
+            if cursor.fetchone():
+                raise ValueError(f"Ya existe un proveedor con el nombre '{self.nombre}'.")
+
+            if self.rif:
+                cursor.execute("""
+                    SELECT 1 FROM Proveedor
+                    WHERE LOWER(TRIM(Rif_proveedor)) = LOWER(TRIM(%s))
+                    LIMIT 1
+                """, (self.rif,))
+                if cursor.fetchone():
+                    raise ValueError(f"Ya existe un proveedor con el RIF '{self.rif}'.")
+
             # Si no tiene ID o es 0, obtener el siguiente
             if self.id_proveedor == 0:
                 self.id_proveedor = self._siguiente_id()
@@ -690,7 +711,7 @@ class Proveedores:
                     (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (self.id_proveedor, self.rif or None, self.nombre, self.tipo or None,
                   self.celular or None, self.correo or None,
-                  self.direccion or None, self.limite_credito if self.limite_credito is not None else None))
+                  self.direccion or None, self.limite_credito if self.limite_credito is not None else 0))
 
             # Insertar productos
             rows = []

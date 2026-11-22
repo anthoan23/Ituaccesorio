@@ -378,7 +378,7 @@ class TestAgregarPersonal:
             CEDULA_MINIMA, "Ana", "Paz"
         ).agregar_personal()
 
-        assert resultado == "Error al registrar: fallo simulado"
+        assert resultado == "Error al registrar el delivery. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -586,7 +586,7 @@ class TestActualizarPersonal:
             CEDULA_MINIMA, "Ana", "Paz"
         ).actualizar_personal()
 
-        assert resultado == "Error al actualizar: fallo simulado"
+        assert resultado == "Error al actualizar el delivery. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -753,7 +753,7 @@ class TestEliminarPersonal:
 
         resultado = PersonalDeliveryModel(cedula=CEDULA_MINIMA).eliminar_personal()
 
-        assert resultado == "Error al eliminar: fallo simulado"
+        assert resultado == "Error al eliminar el delivery. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 

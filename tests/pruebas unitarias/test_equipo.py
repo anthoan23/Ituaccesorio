@@ -17,8 +17,8 @@ ID_PRODUCTO = "PROD-01"
 
 ID_MAXIMO = "1" * 16  # 16 caracteres (límite real del código)
 
-COLOR_MAXIMO = "C" * 30  # 30 caracteres (máximo al registrar)
-CAPACIDAD_MAXIMA_REGISTRO = "128GB_"  # 6 caracteres (máximo al registrar)
+COLOR_MAXIMO = "C" * 20  # 20 caracteres (varchar(20) en BD)
+CAPACIDAD_MAXIMA_REGISTRO = "128GB_XXX"  # 9 caracteres (unificada con actualizar: varchar(20))
 CAPACIDAD_MAXIMA_ACTUALIZACION = "C" * 20  # 20 caracteres (máximo al actualizar)
 CLAVE_VALIDA = "1234"
 PATRON_MAXIMO = "1-2-3-4-5-6-7-8-9"  # 17 caracteres (máximo)
@@ -230,7 +230,7 @@ class TestRegistrarEquipo:
             pytest.param(
                 "1" * 17,
                 ID_PRODUCTO,
-                "El ID del equipo no puede tener más de 15 caracteres.",
+                "El ID del equipo no puede tener más de 16 caracteres.",
                 id="equipo-demasiado-largo",
             ),
         ],
@@ -253,12 +253,12 @@ class TestRegistrarEquipo:
         [
             pytest.param(
                 {"Color": "C" * 31},
-                "El color no puede tener más de 30 caracteres.",
+                "El color no puede tener más de 20 caracteres.",
                 id="color-demasiado-largo",
             ),
             pytest.param(
-                {"Capacidad": "C" * 7},
-                "La capacidad no puede tener más de 6 caracteres.",
+                {"Capacidad": "C" * 21},
+                "La capacidad no puede tener más de 20 caracteres.",
                 id="capacidad-demasiado-larga",
             ),
             pytest.param(
@@ -304,7 +304,7 @@ class TestRegistrarEquipo:
             ID_equipo=ID_EQUIPO, ID_producto=ID_PRODUCTO
         ).registrar_equipo()
 
-        assert resultado == "Error al registrar el equipo: fallo simulado"
+        assert resultado == "Error al registrar el equipo. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -391,7 +391,7 @@ class TestActualizarEquipo:
         [
             pytest.param(
                 {"Color": "C" * 31},
-                "El color no puede tener más de 30 caracteres.",
+                "El color no puede tener más de 20 caracteres.",
                 id="color-demasiado-largo",
             ),
             pytest.param(
@@ -461,7 +461,7 @@ class TestActualizarEquipo:
             ID_equipo=ID_EQUIPO, Color="Azul"
         ).actualizar_equipo()
 
-        assert resultado == "Error al actualizar el equipo: fallo simulado"
+        assert resultado == "Error al actualizar el equipo. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -547,6 +547,6 @@ class TestEliminarEquipo:
 
         resultado = Equipo(ID_equipo=ID_EQUIPO).eliminar_equipo()
 
-        assert resultado == "Error al eliminar el equipo: fallo simulado"
+        assert resultado == "Error al eliminar el equipo. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()

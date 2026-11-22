@@ -180,7 +180,7 @@ class TestListarClientes:
 
         resultado = Clientes().listar_clientes()
 
-        assert resultado == "Error en consulta: fallo simulado"
+        assert resultado == []
 
     def test_cierra_cursor_y_conexion(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -290,6 +290,7 @@ class TestEliminarCliente:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = ("Ana Pérez",)
         cursor.fetchall.return_value = []
 
@@ -374,7 +375,7 @@ class TestEliminarCliente:
 
         resultado = Clientes(ID_cliente=CEDULA_MINIMA).eliminar_cliente()
 
-        assert resultado == "Error al eliminar cliente: fallo simulado"
+        assert resultado == "Error al eliminar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -816,6 +817,7 @@ class TestCrearCliente:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -1103,12 +1105,13 @@ class TestActualizarDatosCliente:
             celular=TELEFONO_VALIDO,
         )
 
-        assert resultado == "Error al actualizar cliente: fallo simulado"
+        assert resultado == "Error al actualizar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = Clientes(usuario_id="USR-001").actualizar_datos_cliente(
@@ -1312,12 +1315,13 @@ class TestRegistrarPersonaNatural:
 
         resultado = persona().registrar_persona_natural()
 
-        assert resultado == "Error al registrar cliente: fallo simulado"
+        assert resultado == "Error al registrar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -1359,22 +1363,27 @@ class TestActualizarPersonaNatural:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_telefono_opcional_vacio(self, conexion_falsa):
+    def test_telefono_opcional_vacio_no_borra_el_telefono(self, conexion_falsa):
+        """Con el UPDATE dinámico, un campo vacío NO se toca (antes se
+        sobreescribía con None y se perdía el dato)."""
         db, cursor = conexion_falsa
 
         resultado = persona(Telefono_cliente="").actualizar_persona_natural()
 
         assert resultado == "El cliente 'Ana Paz' se actualizó exitosamente."
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        sql_cliente = llamada_con(cursor, "UPDATE Cliente SET").args[0]
+        assert "Celular_cliente" not in sql_cliente
+        assert "Correo_cliente" in sql_cliente  # los campos con valor sí se actualizan
         db.commit.assert_called_once()
 
-    def test_telefono_opcional_none(self, conexion_falsa):
+    def test_telefono_opcional_none_no_borra_el_telefono(self, conexion_falsa):
         db, cursor = conexion_falsa
 
         resultado = persona(Telefono_cliente=None).actualizar_persona_natural()
 
         assert resultado == "El cliente 'Ana Paz' se actualizó exitosamente."
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        sql_cliente = llamada_con(cursor, "UPDATE Cliente SET").args[0]
+        assert "Celular_cliente" not in sql_cliente
 
     def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -1487,12 +1496,13 @@ class TestActualizarPersonaNatural:
 
         resultado = persona().actualizar_persona_natural()
 
-        assert resultado == "Error al actualizar cliente: fallo simulado"
+        assert resultado == "Error al actualizar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = persona(usuario_id="USR-001").actualizar_persona_natural()
@@ -1698,6 +1708,7 @@ class TestRegistrarClienteJuridico:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -1722,6 +1733,7 @@ class TestActualizarClienteJuridico:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         resultado = juridico().actualizar_cliente_juridico()
 
@@ -1746,6 +1758,8 @@ class TestActualizarClienteJuridico:
     def test_telefono_opcional_none(self, conexion_falsa):
         db, cursor = conexion_falsa
 
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
+
         resultado = juridico(
             Telefono_cliente=None
         ).actualizar_cliente_juridico()
@@ -1753,10 +1767,12 @@ class TestActualizarClienteJuridico:
         assert resultado == (
             f"El cliente jurídico '{RAZON_SOCIAL_MINIMA}' se actualizó exitosamente."
         )
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        assert "Celular_cliente" not in llamada_con(cursor, "UPDATE Cliente SET").args[0]
 
     def test_razon_social_maxima(self, conexion_falsa):
         db, cursor = conexion_falsa
+
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         resultado = juridico(
             Razon_social=RAZON_SOCIAL_MAXIMA
@@ -1847,6 +1863,7 @@ class TestActualizarClienteJuridico:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = juridico(

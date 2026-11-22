@@ -1,16 +1,18 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
-    validar_texto_numero,
     validar_decimal,
 )
 from datetime import datetime
-from decimal import Decimal
 from typing import List, Dict, Any, Optional
 import uuid
+
+
+logger = logging.getLogger(__name__)
 
 
 class VentaModel:
@@ -136,6 +138,11 @@ class VentaModel:
             error = validar_numero(cantidad, 1, 10, f"Cantidad del producto #{i+1}")
             if error:
                 return error
+
+            # '0' tiene 1 dígito y pasa validar_numero; sin este check se
+            # insertaba un Detalle_venta con cantidad 0 y Existencia - 0.
+            if int(cantidad) <= 0:
+                return f"La cantidad del producto #{i+1} debe ser mayor que 0."
 
             if producto_id_str in productos_vistos:
                 return f"El producto '{producto_id_str}' aparece múltiples veces en el carrito."
@@ -326,7 +333,18 @@ class VentaModel:
                     Referencia = VALUES(Referencia),
                     Monto = VALUES(Monto),
                     Capture = VALUES(Capture),
-                    Estado_pago = COALESCE(Estado_pago, 'pendiente')
+                    Estado_pago = CASE
+                        WHEN Estado_pago IS NULL OR LOWER(TRIM(Estado_pago)) = 'pendiente'
+                            THEN 'pendiente'
+                        -- Reenvío: si el cliente resubió datos de pago, la
+                        -- solicitud vuelve a pendiente para ser revalidada
+                        -- (antes quedaba congelada en 'rechazado' para siempre).
+                        WHEN Referencia <> VALUES(Referencia)
+                            OR COALESCE(Capture, '') <> COALESCE(VALUES(Capture), '')
+                            OR Monto <> VALUES(Monto)
+                            THEN 'pendiente'
+                        ELSE Estado_pago
+                    END
             """  # nosec B608
 
             cursor.execute(query, valores)
@@ -343,40 +361,25 @@ class VentaModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en guardar_registro_pago: {e}")
+            logger.error(f"Error en guardar_registro_pago: {e}")
             raise
         finally:
             cursor.close()
             db.close()
 
     def obtener_ventas_hoy(self) -> dict:
-        """Obtiene el resumen de ventas del día"""
+        """Obtiene el resumen de ventas del día (monto desde Metodo_pago).
+
+        Antes la primera consulta sumaba sobre `Venta.Monto`, columna que no
+        existe en el esquema → error 1054 → el except devolvía siempre 0 y la
+        consulta correcta (a Metodo_pago) era código muerto inalcanzable.
+        """
         db = self.__conexion_bd.conexion1()
         if not db:
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("""
-                SELECT
-                    COUNT(*) as cantidad_ventas,
-                    COALESCE(SUM(v.Monto), 0) as total_ventas,
-                    v.Moneda
-                FROM Venta v
-                WHERE DATE(v.Fecha_venta) = CURDATE()
-                GROUP BY v.Moneda
-                ORDER BY v.Moneda DESC
-                LIMIT 1
-            """)
-            resultado = cursor.fetchone()
-
-            if resultado:
-                return {
-                    "total_ventas": float(resultado.get("total_ventas", 0)),
-                    "cantidad_ventas": resultado.get("cantidad_ventas", 0),
-                    "moneda": resultado.get("Moneda", "USD")
-                }
-
             cursor.execute("""
                 SELECT
                     COUNT(*) as cantidad_ventas,
@@ -399,7 +402,7 @@ class VentaModel:
 
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
         except Exception as e:
-            print(f"Error en obtener_ventas_hoy: {e}")
+            logger.error(f"Error en obtener_ventas_hoy: {e}")
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
         finally:
             cursor.close()

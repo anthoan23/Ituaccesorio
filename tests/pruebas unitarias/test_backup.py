@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pymysql
 import pytest
 
-from app.models.backup import Backup, obtener_info_backup
+from app.models.backup import Backup
 from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 # ==================== Datos de frontera ====================
@@ -229,16 +229,6 @@ class TestObtenerInfoBackup:
 
     def test_conexion_caida(self, conexion_caída):
         assert Backup().obtener_info_backup(ID_BACKUP) is None
-
-    def test_funcion_de_modulo_delega_en_la_conexion(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = {"id_backup": ID_BACKUP}
-        conexion_bd = MagicMock()
-        conexion_bd.conexion2.return_value = db
-        falso = MagicMock()
-        setattr(falso, "__conexion_bd", conexion_bd)
-
-        assert obtener_info_backup(falso, ID_BACKUP) == {"id_backup": ID_BACKUP}
 
 
 class TestPrepararSqlParaRestaurar:

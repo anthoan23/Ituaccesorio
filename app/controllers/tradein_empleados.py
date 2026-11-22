@@ -128,6 +128,7 @@ def api_actualizar_trade_in(tradein_id):
         usuario_id = _obtener_usuario_id()
         tests_data = request.form.get("tests", "[]")
         fotos = _guardar_fotos()
+        fotos_eliminar = request.form.getlist("fotos_eliminar")
 
         modelo = TradeInEmpleados(
             trade_in_id=tradein_id,
@@ -143,7 +144,8 @@ def api_actualizar_trade_in(tradein_id):
             patron=request.form.get("patron", "").strip() or None
         )
 
-        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests_data)
+        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests_data,
+                                               fotos_eliminar=fotos_eliminar)
 
         if resultado["success"]:
             return jsonify(resultado), 200

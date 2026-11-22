@@ -710,6 +710,7 @@ class TestCrearProveedorConProductos:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados (nuevos checks)
 
         resultado = Proveedores(
             id_proveedor=ID_MAXIMO,
@@ -721,7 +722,10 @@ class TestCrearProveedorConProductos:
         )
 
         assert resultado == ID_MAXIMO
-        assert "INSERT INTO Proveedor" in cursor.execute.call_args_list[0].args[0]
+        assert any(
+            "INSERT INTO Proveedor" in llamada.args[0]
+            for llamada in cursor.execute.call_args_list
+        )
         assert "INSERT INTO Suministra" in cursor.executemany.call_args.args[0]
         assert cursor.executemany.call_args.args[1] == [
             (ID_MAXIMO, "1", 10),
@@ -732,6 +736,7 @@ class TestCrearProveedorConProductos:
 
     def test_sin_productos_no_ejecuta_executemany(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados (nuevos checks)
 
         Proveedores(
             id_proveedor=ID_MAXIMO, nombre=NOMBRE_MINIMO
@@ -742,6 +747,7 @@ class TestCrearProveedorConProductos:
 
     def test_genera_id_si_no_se_indica(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados (nuevos checks)
         proveedor = Proveedores(nombre=NOMBRE_MINIMO)
 
         with patch.object(
@@ -792,6 +798,7 @@ class TestCrearProveedorConProductos:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados (nuevos checks)
 
         with patch("app.models.proveedores.Bitacora") as bitacora:
             Proveedores(

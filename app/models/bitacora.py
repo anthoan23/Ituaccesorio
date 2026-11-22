@@ -2,7 +2,7 @@ import logging
 import mysql.connector
 from app.models.database import conectar
 from app.utils.notificaciones_bus import bus_notificaciones
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -124,19 +124,27 @@ class Bitacora(conectar):
             )
             registros = cursor.fetchall() or []
             
-            # Enriquecer con datos del usuario
+            # Enriquecer con datos del usuario en UNA consulta en lote
+            ids = [r.get('usuario_id') for r in registros
+                   if r.get('usuario_id') and r.get('usuario_id') != 'SYSTEM']
+            usuarios = self._obtener_info_usuarios(list(set(ids)))
             for reg in registros:
-                usuario_info = self._obtener_info_usuario(reg.get('usuario_id'))
+                uid = reg.get('usuario_id')
+                if uid == 'SYSTEM':
+                    reg['usuario_nombre'] = 'Sistema'
+                    reg['usuario_foto'] = None
+                    continue
+                usuario_info = usuarios.get(uid)
                 if usuario_info:
                     reg['usuario_nombre'] = usuario_info.get('nombre')
                     reg['usuario_foto'] = usuario_info.get('foto_perfil')
                 else:
-                    reg['usuario_nombre'] = reg.get('usuario_id')
+                    reg['usuario_nombre'] = uid
                     reg['usuario_foto'] = None
-                    
+    
             return registros
         except mysql.connector.Error as e:
-            print(f"Error al listar bitácora: {e}")
+            logger.error(f"Error al listar bitácora: {e}")
             return []
         finally:
             self.cerrar_conexion(cursor, db)
@@ -159,6 +167,31 @@ class Bitacora(conectar):
             return cursor.fetchone()
         except Exception:
             return None
+        finally:
+            cursor.close()
+            db.close()
+
+    def _obtener_info_usuarios(self, ids_usuarios):
+        """Obtiene nombre y foto de VARIOS usuarios en UNA consulta.
+
+        Reemplaza el N+1 de _obtener_info_usuario: listar 100 registros
+        abría 100 conexiones nuevas a la BD principal.
+        """
+        if not ids_usuarios:
+            return {}
+        db = self.conexion1()
+        if not db:
+            return {}
+        marcadores = ", ".join(["%s"] * len(ids_usuarios))
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                f"SELECT id, nombre, foto_perfil FROM usuario WHERE id IN ({marcadores})",  # nosec B608: marcadores '%s' literales
+                tuple(ids_usuarios)
+            )
+            return {fila["id"]: fila for fila in (cursor.fetchall() or [])}
+        except Exception:
+            return {}
         finally:
             cursor.close()
             db.close()
@@ -187,24 +220,40 @@ class Bitacora(conectar):
             registros = cursor.fetchall() or []
             
             # Enriquecer con datos del usuario y tiempo relativo
-            ahora = datetime.now()
+            ids = [r.get('usuario_id') for r in registros
+                   if r.get('usuario_id') and r.get('usuario_id') != 'SYSTEM']
+            usuarios = self._obtener_info_usuarios(list(set(ids)))
+            
+            # La BD escribe fecha_hora en -04:00; el contenedor Python va en
+            # UTC: sin fijar la zona, un evento de hace segundos mostraba
+            # "hace 4 horas".
+            zona = timezone(timedelta(hours=-4))
+            ahora = datetime.now(tz=zona)
             
             for reg in registros:
-                # Obtener info del usuario
-                usuario_info = self._obtener_info_usuario(reg.get('usuario_id'))
-                if usuario_info:
-                    reg['usuario_nombre'] = usuario_info.get('nombre')
-                    reg['usuario_foto'] = usuario_info.get('foto_perfil')
-                else:
-                    reg['usuario_nombre'] = reg.get('usuario_id')
+                uid = reg.get('usuario_id')
+                if uid == 'SYSTEM':
+                    reg['usuario_nombre'] = 'Sistema'
                     reg['usuario_foto'] = None
+                else:
+                    usuario_info = usuarios.get(uid)
+                    if usuario_info:
+                        reg['usuario_nombre'] = usuario_info.get('nombre')
+                        reg['usuario_foto'] = usuario_info.get('foto_perfil')
+                    else:
+                        reg['usuario_nombre'] = uid
+                        reg['usuario_foto'] = None
                 
                 # Calcular tiempo relativo
                 if reg.get('fecha_hora'):
                     fecha = reg['fecha_hora']
                     if isinstance(fecha, datetime):
+                        if fecha.tzinfo is None:
+                            fecha = fecha.replace(tzinfo=zona)
                         diff = ahora - fecha
-                        if diff.days > 0:
+                        if diff.total_seconds() < 0:
+                            reg['tiempo_relativo'] = 'ahora mismo'
+                        elif diff.days > 0:
                             if diff.days == 1:
                                 reg['tiempo_relativo'] = 'hace 1 día'
                             else:
@@ -224,7 +273,7 @@ class Bitacora(conectar):
             
             return registros
         except Exception as e:
-            print(f"Error en listar_actividad_reciente: {e}")
+            logger.error(f"Error en listar_actividad_reciente: {e}")
             return []
         finally:
             self.cerrar_conexion(cursor, db)

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
@@ -8,6 +9,9 @@ from app.utils.validators import (
     validar_texto_numero,
 )
 import re
+
+
+logger = logging.getLogger(__name__)
 
 
 class Clientes():
@@ -25,6 +29,43 @@ class Clientes():
     # Validaciones: se usan los validadores compartidos de
     # app/utils/validators.py (única fuente de verdad).
     # ============================================
+
+    # ============================================
+    # Validaciones compartidas de persona natural
+    # ============================================
+    def _validar_datos_natural(self, cedula, nombre, apellido, obligar_celular: bool):
+        """Valida los datos de persona natural (usado por registrar y actualizar)."""
+        if not cedula:
+            return "La cédula del cliente no puede estar vacía."
+        if not apellido:
+            return "El apellido del cliente no puede estar vacío."
+        if not nombre:
+            return "El nombre del cliente no puede estar vacío."
+        if not cedula.isdigit():
+            return "La cédula del cliente debe contener solo números."
+        if len(cedula) < 7 or len(cedula) > 8:
+            return "La cédula del cliente debe tener 7 u 8 caracteres."
+
+        # Mínimo 3 letras en el nombre
+        if len(nombre) < 3:
+            return "El nombre del cliente debe tener al menos 3 caracteres."
+        if len(nombre) > 20:
+            return "El nombre del cliente no puede exceder los 20 caracteres."
+
+        if len(apellido) > 20:
+            return "El apellido del cliente no puede exceder los 20 caracteres."
+
+        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular",
+                                   obligatorio=obligar_celular)
+        if error_tel: return error_tel
+
+        error_correo = validar_email(self.Correo_cliente)
+        if error_correo: return error_correo
+
+        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
+                                   obligatorio=False, caracteres_extra="-.,#()/")
+        if error_dir: return error_dir
+        return None
 
     def listar_clientes(self):
         db = self._conexion_bd.conexion1()
@@ -59,7 +100,8 @@ class Clientes():
             )
             return cursor.fetchall()
         except Exception as e:
-            return f"Error en consulta: {e}"
+            logger.error(f"Error en listar_clientes: {e}")
+            return []
         finally:
             cursor.close()
             db.close()
@@ -111,23 +153,19 @@ class Clientes():
             for venta in ventas:
                 factura_id = venta[0]
                 cursor.execute("DELETE FROM Metodo_pago WHERE ID_factura = %s", (factura_id,))
-                db.commit()
                 cursor.execute("DELETE FROM Detalle_venta WHERE ID_factura = %s", (factura_id,))
-                db.commit()
             
             cursor.execute("""
                 DELETE fti FROM Fotos_trade_in fti 
                 INNER JOIN Trade_in t ON fti.ID_Trade_in = t.ID_Trade_in 
                 WHERE t.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE fos FROM Fotos_orden_servicio fos 
                 INNER JOIN Orden_servicio os ON fos.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE tri FROM Test_realizados_interaccion tri 
@@ -135,14 +173,12 @@ class Clientes():
                 INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE trti FROM Test_realizados_trade_in trti 
                 INNER JOIN Trade_in t ON trti.ID_Trade_in = t.ID_Trade_in 
                 WHERE t.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE t FROM Test t 
@@ -151,7 +187,6 @@ class Clientes():
                 INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE t FROM Test t 
@@ -159,42 +194,44 @@ class Clientes():
                 INNER JOIN Trade_in tr ON trti.ID_Trade_in = tr.ID_Trade_in 
                 WHERE tr.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE i FROM Interaccion i 
                 INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE ru FROM Repuestos_usados ru 
                 INNER JOIN Orden_servicio os ON ru.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("""
                 DELETE ps FROM Pago_servicio ps 
                 INNER JOIN Orden_servicio os ON ps.ID_orden_servicio = os.ID_orden_servicio 
                 WHERE os.ID_cliente = %s
             """, (Id_cliente,))
-            db.commit()
             
             cursor.execute("DELETE FROM Lista_compra WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
             cursor.execute("DELETE FROM Trade_in WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
             cursor.execute("DELETE FROM Orden_servicio WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
+            # Entrega depende de Venta (FK sin CASCADE): hay que borrarla ANTES de Venta.
+            # (Antes faltaba este DELETE y cualquier cliente con entregas reventaba
+            # con error 1451 dejando la BD medio borrada.)
+            cursor.execute(
+                """
+                DELETE e FROM Entrega e 
+                INNER JOIN Venta v ON e.ID_factura = v.ID_factura 
+                WHERE v.ID_cliente = %s
+                """,
+                (Id_cliente,)
+            )
             cursor.execute("DELETE FROM Venta WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
             cursor.execute("DELETE FROM Persona_natural WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
             cursor.execute("DELETE FROM Cliente_juridico WHERE ID_cliente = %s", (Id_cliente,))
-            db.commit()
             cursor.execute("DELETE FROM Cliente WHERE ID_cliente = %s", (Id_cliente,))
+            
             db.commit()
             
             if self.usuario_id:
@@ -218,7 +255,7 @@ class Clientes():
                 else:
                     return "No se puede eliminar el cliente porque tiene registros relacionados en otras tablas."
             else:
-                return f"Error al eliminar cliente: {e}"
+                return "Error al eliminar el cliente. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -286,7 +323,7 @@ class Clientes():
             )
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error al obtener cliente por ID: {e}")
+            logger.error(f"Error al obtener cliente por ID: {e}")
             return None
         finally:
             cursor.close()
@@ -391,7 +428,7 @@ class Clientes():
                 "tipo": "desconocido"
             }
         except Exception as e:
-            print(f"Error al obtener datos completos del cliente: {e}")
+            logger.error(f"Error al obtener datos completos del cliente: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -430,7 +467,7 @@ class Clientes():
             )
             return cursor.fetchone() is not None
         except Exception as e:
-            print(f"Error al verificar cliente: {e}")
+            logger.error(f"Error al verificar cliente: {e}")
             return False
         finally:
             cursor.close()
@@ -460,7 +497,7 @@ class Clientes():
             )
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al listar clientes naturales: {e}")
+            logger.error(f"Error al listar clientes naturales: {e}")
             return None
         finally:
             cursor.close()
@@ -537,8 +574,8 @@ class Clientes():
             return "Cliente actualizado exitosamente."
         except Exception as e:
             db.rollback()
-            print(f"Error al actualizar datos del cliente: {e}")
-            return f"Error al actualizar cliente: {e}"
+            logger.error(f"Error al actualizar datos del cliente: {e}")
+            return "Error al actualizar el cliente. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -577,31 +614,9 @@ class Persona_natural(Clientes):
             return "La cédula del cliente no puede estar vacía."
         if not apellido:
             return "El apellido del cliente no puede estar vacío."
-        if not nombre:
-            return "El nombre del cliente no puede estar vacío."
-        if not cedula.isdigit():
-            return "La cédula del cliente debe contener solo números."
-        if len(cedula) < 7 or len(cedula) > 8:
-            return "La cédula del cliente debe tener 7 u 8 caracteres."
-        
-        # NUEVA VALIDACIÓN: Mínimo 3 letras en el nombre
-        if len(nombre) < 3:
-            return "El nombre del cliente debe tener al menos 3 caracteres."
-        if len(nombre) > 20:
-            return "El nombre del cliente no puede exceder los 20 caracteres."
-        
-        if len(apellido) > 20:
-            return "El apellido del cliente no puede exceder los 20 caracteres."
-
-        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=True)
-        if error_tel: return error_tel
-
-        error_correo = validar_email(self.Correo_cliente)
-        if error_correo: return error_correo
-
-        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
-                                   obligatorio=False, caracteres_extra="-.,#()/")
-        if error_dir: return error_dir
+        error = self._validar_datos_natural(cedula, nombre, apellido, obligar_celular=True)
+        if error:
+            return error
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -635,7 +650,7 @@ class Persona_natural(Clientes):
             return f"El cliente '{nombre} {apellido}' se registró exitosamente."
         except Exception as e:
             db.rollback()
-            return f"Error al registrar cliente: {e}"
+            return "Error al registrar el cliente. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -645,36 +660,11 @@ class Persona_natural(Clientes):
         apellido = self.Apellido_cliente.strip() if self.Apellido_cliente else ""
         nombre = self.Nombre_cliente.strip() if self.Nombre_cliente else ""
 
-        # Validaciones en el Modelo
-        if not cedula:
-            return "La cédula del cliente no puede estar vacía."
-        if not apellido:
-            return "El apellido del cliente no puede estar vacío."
-        if not nombre:
-            return "El nombre del cliente no puede estar vacío."
-        if not cedula.isdigit():
-            return "La cédula del cliente debe contener solo números."
-        if len(cedula) < 7 or len(cedula) > 8:
-            return "La cédula del cliente debe tener 7 u 8 caracteres."
-        
-        # NUEVA VALIDACIÓN: Mínimo 3 letras en el nombre
-        if len(nombre) < 3:
-            return "El nombre del cliente debe tener al menos 3 caracteres."
-        if len(nombre) > 20:
-            return "El nombre del cliente no puede exceder los 20 caracteres."
-            
-        if len(apellido) > 20:
-            return "El apellido del cliente no puede exceder los 20 caracteres."
-
-        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=False)
-        if error_tel: return error_tel
-
-        error_correo = validar_email(self.Correo_cliente)
-        if error_correo: return error_correo
-
-        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
-                                   obligatorio=False, caracteres_extra="-.,#()/")
-        if error_dir: return error_dir
+        # Validaciones en el Modelo (helper compartido; celular opcional al
+        # actualizar porque el UPDATE dinámico no toca los campos vacíos)
+        error = self._validar_datos_natural(cedula, nombre, apellido, obligar_celular=False)
+        if error:
+            return error
         
         db = self._conexion_bd.conexion1()
         if not db:
@@ -682,14 +672,36 @@ class Persona_natural(Clientes):
         
         cursor = db.cursor()
         try:
-            cursor.execute(
-                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
-                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, cedula)
-            )
+            # Verificar que el cliente exista (antes un ID inexistente
+            # respondía "exitosamente" sin haber actualizado nada).
+            cursor.execute("SELECT 1 FROM Cliente WHERE ID_cliente = %s", (cedula,))
+            if not cursor.fetchone():
+                return f"El cliente con cédula '{cedula}' no existe."
+
+            # UPDATE dinámico: solo los campos con valor se tocan. Antes se
+            # sobreescribían TODAS las columnas con `or None` y un PUT
+            # parcial borraba celular/correo/dirección.
+            columnas_cliente = []
+            valores_cliente = []
+            for columna, valor in (
+                ("Direccion_cliente", self.Direccion_cliente),
+                ("Celular_cliente", self.Celular_cliente),
+                ("Correo_cliente", self.Correo_cliente),
+            ):
+                if valor is not None and str(valor).strip() != "":
+                    columnas_cliente.append(f"{columna} = %s")
+                    valores_cliente.append(str(valor).strip())
+            if columnas_cliente:
+                cursor.execute(
+                    f"UPDATE Cliente SET {', '.join(columnas_cliente)} WHERE ID_cliente = %s",  # nosec B608: columnas fijas del código
+                    (*valores_cliente, cedula)
+                )
             cursor.execute(
                 "UPDATE Persona_natural SET Nombre_cliente = %s, Apellido_cliente = %s WHERE ID_cliente = %s",
                 (nombre, apellido, cedula)
             )
+            if cursor.rowcount == 0 and not columnas_cliente:
+                return f"No se realizaron cambios en el cliente '{cedula}'."
             db.commit()
             
             if self.usuario_id:
@@ -704,7 +716,7 @@ class Persona_natural(Clientes):
             return f"El cliente '{nombre} {apellido}' se actualizó exitosamente."
         except Exception as e:
             db.rollback()
-            return f"Error al actualizar cliente: {e}"
+            return "Error al actualizar el cliente. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -832,22 +844,46 @@ class Cliente_juridico(Clientes):
 
         cursor = db.cursor()
         try:
-            rif_guardar = rif
-            
+            # PK canónica: la BD puede guardar el RIF con o sin guiones (el
+            # controller normaliza sin guiones, el modelo guarda la forma del
+            # body). Buscar la fila por ambas formas para actualizar la real.
+            rif_sin_guiones = rif.replace("-", "")
             cursor.execute(
-                "UPDATE Cliente SET Direccion_cliente = %s, Celular_cliente = %s, Correo_cliente = %s WHERE ID_cliente = %s",
-                (self.Direccion_cliente or None, self.Celular_cliente or None, self.Correo_cliente or None, rif_guardar)
+                "SELECT ID_cliente FROM Cliente WHERE ID_cliente IN (%s, %s) LIMIT 1",
+                (rif, rif_sin_guiones)
             )
+            fila_existente = cursor.fetchone()
+            if not fila_existente:
+                return f"El cliente jurídico con RIF '{rif}' no existe."
+            rif_real = fila_existente[0]
+
+            # UPDATE dinámico: solo los campos con valor se tocan (antes un
+            # PUT parcial borraba celular/correo/dirección).
+            columnas_cliente = []
+            valores_cliente = []
+            for columna, valor in (
+                ("Direccion_cliente", self.Direccion_cliente),
+                ("Celular_cliente", self.Celular_cliente),
+                ("Correo_cliente", self.Correo_cliente),
+            ):
+                if valor is not None and str(valor).strip() != "":
+                    columnas_cliente.append(f"{columna} = %s")
+                    valores_cliente.append(str(valor).strip())
+            if columnas_cliente:
+                cursor.execute(
+                    f"UPDATE Cliente SET {', '.join(columnas_cliente)} WHERE ID_cliente = %s",  # nosec B608: columnas fijas del código
+                    (*valores_cliente, rif_real)
+                )
             cursor.execute(
                 "UPDATE Cliente_juridico SET Razon_social = %s, Rif_cliente = %s WHERE ID_cliente = %s",
-                (razon_social, rif_guardar, rif_guardar)
+                (razon_social, rif_real, rif_real)
             )
             db.commit()
             
             if self.usuario_id:
                 bitacora = Bitacora(
                     accion="Actualizar cliente jurídico",
-                    descripcion=f"Se actualizó el cliente jurídico: {rif_guardar} - {razon_social}",
+                    descripcion=f"Se actualizó el cliente jurídico: {rif_real} - {razon_social}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Clientes"
                 )

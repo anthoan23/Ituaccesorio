@@ -298,14 +298,14 @@ class Empleados():
             )
 
             if especialidades:
+                # Dentro de la transacción y SIN try/except silenciador: antes
+                # un fallo de FK dejaba al empleado guardado sin sus
+                # especialidades y con mensaje de éxito.
                 for esp_id in especialidades:
-                    try:
-                        cursor.execute(
-                            "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
-                            (esp_id, cedula),
-                        )
-                    except Exception as error:
-                        logger.warning("No se pudo registrar la especialidad %s del empleado %s: %s", esp_id, cedula, error)
+                    cursor.execute(
+                        "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
+                        (esp_id, cedula),
+                    )
 
             db.commit()
             
@@ -321,7 +321,7 @@ class Empleados():
             
             return "Empleado agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar empleado: {e}")
+            logger.error(f"Error al agregar empleado: {e}")
             db.rollback()
             return "Error al agregar empleado."
         finally:
@@ -399,22 +399,20 @@ class Empleados():
             )
 
             if especialidades is not None:
-                try:
-                    cursor.execute(
-                        "DELETE FROM Capacitacion WHERE ID_empleado = %s",
-                        (id_empleado,),
-                    )
-                except Exception as error:
-                    logger.warning("No se pudo eliminar las capacitaciones del empleado %s: %s", id_empleado, error)
+                # DELETE + INSERTs de Capacitacion dentro de la transacción y
+                # sin try/except silenciador: un fallo deja al empleado con
+                # una combinación inconsistente de especialidades y commit de
+                # todos modos. Cualquier fallo hace rollback completo.
+                cursor.execute(
+                    "DELETE FROM Capacitacion WHERE ID_empleado = %s",
+                    (id_empleado,),
+                )
 
                 for esp_id in especialidades:
-                    try:
-                        cursor.execute(
-                            "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
-                            (esp_id, id_empleado),
-                        )
-                    except Exception as error:
-                        logger.warning("No se pudo registrar la especialidad %s del empleado %s: %s", esp_id, id_empleado, error)
+                    cursor.execute(
+                        "INSERT INTO Capacitacion (ID_especialidad, ID_empleado) VALUES (%s, %s)",
+                        (esp_id, id_empleado),
+                    )
 
             db.commit()
             
@@ -430,7 +428,7 @@ class Empleados():
 
             return "Empleado actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar empleado: {e}")
+            logger.error(f"Error al actualizar empleado: {e}")
             db.rollback()
             return "Error al actualizar empleado."
         finally:
@@ -486,7 +484,7 @@ class Empleados():
             
             return "Empleado eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar empleado: {e}")
+            logger.error(f"Error al eliminar empleado: {e}")
             db.rollback()
             return "Error al eliminar empleado."
         finally:

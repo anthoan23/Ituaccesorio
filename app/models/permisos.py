@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.utils.validators import validar_numero
+
+
+logger = logging.getLogger(__name__)
 
 
 class Permiso:
@@ -121,7 +125,7 @@ class Permiso:
             db.commit()
             return "Permiso guardado exitosamente."
         except Exception as e:
-            print(f"Error al guardar permiso: {e}")
+            logger.error(f"Error al guardar permiso: {e}")
             db.rollback()
             return "Error al guardar permiso."
         finally:
@@ -184,8 +188,9 @@ class Permiso:
             return exitosos, errores
         except Exception as e:
             db.rollback()
-            print(f"Error al guardar permisos masivos: {e}")
-            return 0, [str(e)]
+            logger.error(f"Error al guardar permisos masivos: {e}")
+            logger.error(f"Error en permisos masivos: {e}")
+            return 0, ["Error al guardar los permisos. Intente nuevamente."]
         finally:
             cursor.close()
             db.close()
@@ -214,7 +219,7 @@ class Permiso:
             db.commit()
             return "Permiso eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar permiso: {e}")
+            logger.error(f"Error al eliminar permiso: {e}")
             db.rollback()
             return "Error al eliminar permiso."
         finally:

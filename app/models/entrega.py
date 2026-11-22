@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
@@ -8,6 +9,9 @@ from app.utils.validators import (
 )
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+
+
+logger = logging.getLogger(__name__)
 
 
 class EntregaModel:
@@ -187,7 +191,7 @@ class EntregaModel:
 
             return entregas
         except Exception as e:
-            print(f"Error en listar_entregas: {e}")
+            logger.error(f"Error en listar_entregas: {e}")
             return []
         finally:
             cursor.close()
@@ -283,6 +287,12 @@ class EntregaModel:
             if not cursor.fetchone():
                 raise ValueError(f"El delivery con cédula {self.cedula_delivery} no existe")
 
+            # Una factura solo debe tener UNA entrega: sin este check se
+            # podían registrar N entregas para la misma factura.
+            cursor.execute("SELECT 1 FROM Entrega WHERE ID_factura = %s", (self.factura_id,))
+            if cursor.fetchone():
+                raise ValueError(f"La factura {self.factura_id} ya tiene una entrega registrada")
+
             cursor.execute("""
                 INSERT INTO Entrega (ID_entrega, ID_factura, Cedula_delivery, Estado_entrega, Direccion_entrega, Fecha_entrega)
                 VALUES (%s, %s, %s, %s, %s, %s)
@@ -343,8 +353,8 @@ class EntregaModel:
             return "Entrega actualizada exitosamente"
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_entrega: {e}")
-            return f"Error al actualizar: {e}"
+            logger.error(f"Error en actualizar_entrega: {e}")
+            return "Error al actualizar la entrega. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -385,8 +395,8 @@ class EntregaModel:
             return "Entrega eliminada exitosamente"
         except Exception as e:
             db.rollback()
-            print(f"Error en eliminar_entrega: {e}")
-            return f"Error al eliminar: {e}"
+            logger.error(f"Error en eliminar_entrega: {e}")
+            return "Error al eliminar la entrega. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -417,7 +427,7 @@ class EntregaModel:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_facturas_pendientes: {e}")
+            logger.error(f"Error en obtener_facturas_pendientes: {e}")
             return []
         finally:
             cursor.close()

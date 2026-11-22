@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from datetime import datetime
+
+
+logger = logging.getLogger(__name__)
 
 
 class OrdenEntregaModel:
@@ -62,7 +66,7 @@ class OrdenEntregaModel:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error listar_entregas: {e}")
+            logger.error(f"Error listar_entregas: {e}")
             return []
         finally:
             cursor.close()
@@ -92,7 +96,7 @@ class OrdenEntregaModel:
             """, (id_entrega,))
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error obtener_entrega: {e}")
+            logger.error(f"Error obtener_entrega: {e}")
             return None
         finally:
             cursor.close()
@@ -166,11 +170,17 @@ class OrdenEntregaModel:
                 cursor.execute("""
                     SELECT ID_inventario, Existencia FROM Existencias_productos 
                     WHERE ID_producto = %s
+                    ORDER BY Existencia DESC
+                    LIMIT 1
                 """, (id_producto,))
                 inventario_existente = cursor.fetchone()
                 
                 if inventario_existente:
-                    # Ya existe, actualizar stock
+                    # Un producto puede tener VARIAS filas de inventario
+                    # (ID_inventario es la PK; ID_producto NO es único).
+                    # Regla: abastecer a la fila con MAYOR stock — antes
+                    # fetchone() tomaba una fila arbitraria y el resto
+                    # quedaba sin abastecer.
                     id_inventario = inventario_existente[0]
                     
                     # Insertar en Abastece
@@ -226,7 +236,7 @@ class OrdenEntregaModel:
             return True
             
         except Exception as e:
-            print(f"Error registrar_entrega: {e}")
+            logger.error(f"Error registrar_entrega: {e}")
             if db:
                 db.rollback()
             return False
@@ -284,7 +294,7 @@ class OrdenEntregaModel:
             return True
             
         except Exception as e:
-            print(f"Error editar_entrega: {e}")
+            logger.error(f"Error editar_entrega: {e}")
             if db:
                 db.rollback()
             return False
@@ -371,7 +381,7 @@ class OrdenEntregaModel:
             return True
             
         except Exception as e:
-            print(f"Error eliminar_entrega: {e}")
+            logger.error(f"Error eliminar_entrega: {e}")
             if db:
                 db.rollback()
             return False

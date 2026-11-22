@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
+
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogoModel:
@@ -90,7 +94,7 @@ class CatalogoModel:
             
             return resultados
         except Exception as e:
-            print(f"Error en listar_productos_catalogo: {e}")
+            logger.error(f"Error en listar_productos_catalogo: {e}")
             return []
         finally:
             cursor.close()

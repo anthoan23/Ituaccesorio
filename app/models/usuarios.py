@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,9 @@ from app.utils.validators import (
     validar_contraseña,
 )
 import traceback
+
+
+logger = logging.getLogger(__name__)
 
 
 class Usuarios:
@@ -144,7 +148,7 @@ class Usuarios:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"[ERROR] listar_usuarios: {e}")
+            logger.error(f"[ERROR] listar_usuarios: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -168,7 +172,7 @@ class Usuarios:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"[ERROR] listar_empleados: {e}")
+            logger.error(f"[ERROR] listar_empleados: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -193,7 +197,7 @@ class Usuarios:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"[ERROR] listar_clientes: {e}")
+            logger.error(f"[ERROR] listar_clientes: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -216,7 +220,7 @@ class Usuarios:
                 cursor.close()
                 db.close()
         except Exception as e:
-            print(f"[ERROR] verificar_empleado: {e}")
+            logger.error(f"[ERROR] verificar_empleado: {e}")
             traceback.print_exc()
             return False
 
@@ -236,7 +240,7 @@ class Usuarios:
                 cursor.close()
                 db.close()
         except Exception as e:
-            print(f"[ERROR] verificar_cliente: {e}")
+            logger.error(f"[ERROR] verificar_cliente: {e}")
             traceback.print_exc()
             return False
 
@@ -254,7 +258,7 @@ class Usuarios:
             )
             return cursor.fetchone() is not None
         except Exception as e:
-            print(f"[ERROR] verificar_usuario_por_id: {e}")
+            logger.error(f"[ERROR] verificar_usuario_por_id: {e}")
             traceback.print_exc()
             return False
         finally:
@@ -275,7 +279,7 @@ class Usuarios:
             )
             return cursor.fetchone() is not None
         except Exception as e:
-            print(f"[ERROR] verificar_usuario_por_nombre: {e}")
+            logger.error(f"[ERROR] verificar_usuario_por_nombre: {e}")
             traceback.print_exc()
             return False
         finally:
@@ -300,7 +304,7 @@ class Usuarios:
                 )
             return cursor.fetchone() is not None
         except Exception as e:
-            print(f"[ERROR] verificar_cedula_en_uso: {e}")
+            logger.error(f"[ERROR] verificar_cedula_en_uso: {e}")
             traceback.print_exc()
             return False
         finally:
@@ -340,7 +344,7 @@ class Usuarios:
                 cursor.close()
                 db_usuarios.close()
         except Exception as e:
-            print(f"[ERROR] verificar_rol_y_cedula: {e}")
+            logger.error(f"[ERROR] verificar_rol_y_cedula: {e}")
             traceback.print_exc()
             return False
 
@@ -367,23 +371,21 @@ class Usuarios:
 
             cursor = db.cursor()
             try:
-                cursor.execute("SELECT MAX(id) FROM usuario")
-                result = cursor.fetchone()
-                ultimo_id = result[0] if result else None
-
-                if ultimo_id:
-                    try:
-                        numero = int(ultimo_id.split('-')[1]) + 1
-                        nuevo_id = f"USR-{numero:03d}"
-                    except (IndexError, ValueError):
-                        cursor.execute(
-                            "SELECT MAX(CAST(SUBSTRING(id, 5) AS UNSIGNED)) FROM usuario WHERE id LIKE 'USR-%'"
-                        )
-                        result_max = cursor.fetchone()
-                        max_num = result_max[0] if result_max and result_max[0] else 0
-                        nuevo_id = f"USR-{max_num + 1:03d}"
-                else:
-                    nuevo_id = "USR-001"
+                # MAX numérico SIEMPRE: antes se parseaba el MAX(id)
+                # lexicográfico con split('-'), que no fallaba con prefijos
+                # legados (ADM-001) y colisionaba al pasar de USR-999.
+                cursor.execute(
+                    "SELECT MAX(CAST(SUBSTRING(id, 5) AS UNSIGNED)) "
+                    "FROM usuario WHERE id LIKE 'USR-%'"
+                )
+                result_max = cursor.fetchone()
+                max_num = 0
+                if result_max and result_max[0]:
+                    # La BD devuelve int (CAST); si llegara un string tipo
+                    # "USR-007", se extraen sus dígitos.
+                    digitos = "".join(c for c in str(result_max[0]) if c.isdigit())
+                    max_num = int(digitos) if digitos else 0
+                nuevo_id = f"USR-{max_num + 1:03d}"
 
                 password_hash = self._hash_password(self.password)
 
@@ -407,18 +409,18 @@ class Usuarios:
 
                 return "Usuario agregado exitosamente."
             except Exception as e:
-                print(f"[ERROR] Error en INSERT de usuario: {e}")
+                logger.error(f"[ERROR] Error en INSERT de usuario: {e}")
                 traceback.print_exc()
                 db.rollback()
-                return f"Error al agregar usuario: {str(e)}"
+                return "Error al agregar usuario. Intente nuevamente."
             finally:
                 cursor.close()
                 db.close()
 
         except Exception as e:
-            print(f"[ERROR] Error en agregar_usuario: {e}")
+            logger.error(f"[ERROR] Error en agregar_usuario: {e}")
             traceback.print_exc()
-            return f"Error en agregar_usuario: {str(e)}"
+            return "Error inesperado al agregar usuario."
 
     def actualizar_usuario(self) -> str:
         try:
@@ -445,6 +447,16 @@ class Usuarios:
 
             cursor = db.cursor()
             try:
+                # Unicidad de nombre: 'nombre' no tiene UNIQUE en BD y
+                # validar_login filtra por nombre; renombrar a un nombre
+                # existente creaba dos logins homónimos.
+                cursor.execute(
+                    "SELECT id FROM usuario WHERE nombre = %s AND id != %s LIMIT 1",
+                    (self.nombre, usuario_id)
+                )
+                if cursor.fetchone():
+                    return f"El nombre de usuario '{self.nombre}' ya está en uso por otro usuario."
+
                 if self.password:
                     password_hash = self._hash_password(self.password)
                     cursor.execute(
@@ -476,7 +488,7 @@ class Usuarios:
 
                 return "Usuario actualizado exitosamente."
             except Exception as e:
-                print(f"[ERROR] Error al actualizar usuario: {e}")
+                logger.error(f"[ERROR] Error al actualizar usuario: {e}")
                 traceback.print_exc()
                 db.rollback()
                 return "Error al actualizar usuario."
@@ -484,9 +496,9 @@ class Usuarios:
                 cursor.close()
                 db.close()
         except Exception as e:
-            print(f"[ERROR] Error en actualizar_usuario: {e}")
+            logger.error(f"[ERROR] Error en actualizar_usuario: {e}")
             traceback.print_exc()
-            return f"Error en actualizar_usuario: {str(e)}"
+            return "Error inesperado al actualizar usuario."
 
     def eliminar_usuario(self) -> str:
         try:
@@ -538,7 +550,7 @@ class Usuarios:
 
                 return "Usuario eliminado exitosamente."
             except Exception as e:
-                print(f"[ERROR] Error al eliminar usuario: {e}")
+                logger.error(f"[ERROR] Error al eliminar usuario: {e}")
                 traceback.print_exc()
                 db.rollback()
                 return "Error al eliminar usuario. Verifica que no esté en uso."
@@ -546,9 +558,9 @@ class Usuarios:
                 cursor.close()
                 db.close()
         except Exception as e:
-            print(f"[ERROR] Error en eliminar_usuario: {e}")
+            logger.error(f"[ERROR] Error en eliminar_usuario: {e}")
             traceback.print_exc()
-            return f"Error en eliminar_usuario: {str(e)}"
+            return "Error inesperado al eliminar usuario."
 
     def obtener_rol_por_nombre(self, nombre_rol: str = None):
         nombre_buscar = nombre_rol or self.nombre
@@ -565,7 +577,7 @@ class Usuarios:
             )
             return cursor.fetchone()
         except Exception as e:
-            print(f"[ERROR] obtener_rol_por_nombre: {e}")
+            logger.error(f"[ERROR] obtener_rol_por_nombre: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -590,7 +602,7 @@ class Usuarios:
                 return usuario
             return None
         except Exception as e:
-            print(f"[ERROR] validar_login: {e}")
+            logger.error(f"[ERROR] validar_login: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -623,7 +635,7 @@ class Usuarios:
             """, (id_buscar,))
             return cursor.fetchone()
         except Exception as e:
-            print(f"[ERROR] obtener_usuario_por_id: {e}")
+            logger.error(f"[ERROR] obtener_usuario_por_id: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -649,6 +661,15 @@ class Usuarios:
 
             cursor = db.cursor()
             try:
+                # Unicidad de nombre (ver actualizar_usuario): sin UNIQUE en
+                # BD, renombrar a un nombre existente creaba logins homónimos.
+                cursor.execute(
+                    "SELECT id FROM usuario WHERE nombre = %s AND id != %s LIMIT 1",
+                    (self.nombre, usuario_id)
+                )
+                if cursor.fetchone():
+                    return f"El nombre de usuario '{self.nombre}' ya está en uso por otro usuario."
+
                 if self.password:
                     password_hash = self._hash_password(self.password)
                     cursor.execute(
@@ -680,7 +701,7 @@ class Usuarios:
 
                 return "Perfil actualizado exitosamente."
             except Exception as e:
-                print(f"[ERROR] Error al actualizar perfil: {e}")
+                logger.error(f"[ERROR] Error al actualizar perfil: {e}")
                 traceback.print_exc()
                 db.rollback()
                 return "Error al actualizar perfil."
@@ -688,6 +709,6 @@ class Usuarios:
                 cursor.close()
                 db.close()
         except Exception as e:
-            print(f"[ERROR] Error en actualizar_perfil: {e}")
+            logger.error(f"[ERROR] Error en actualizar_perfil: {e}")
             traceback.print_exc()
-            return f"Error en actualizar_perfil: {str(e)}"
+            return "Error inesperado al actualizar el perfil."

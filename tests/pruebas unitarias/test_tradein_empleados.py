@@ -281,7 +281,9 @@ class TestParsearYValidarTests:
 class TestGenerarIdTradeIn:
 
     def test_sin_conexion(self, conexion_caída):
-        assert TradeInEmpleados()._generar_id_trade_in() == "TRD000001"
+        """Sin IDs inventados: sin conexión la generación debe fallar."""
+        with pytest.raises(RuntimeError):
+            TradeInEmpleados()._generar_id_trade_in()
 
     def test_sin_registros_previos(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -303,13 +305,12 @@ class TestGenerarIdTradeIn:
 
         assert TradeInEmpleados()._generar_id_trade_in() == "TRD000001"
 
-    def test_error_de_bd_devuelve_id_con_fecha(self, conexion_falsa):
+    def test_error_de_bd_propaga_error(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.execute.side_effect = Exception("fallo simulado")
 
-        resultado = TradeInEmpleados()._generar_id_trade_in()
-
-        assert re.match(r"^TRD\d{14}$", resultado)
+        with pytest.raises(RuntimeError, match="Error generando ID trade-in"):
+            TradeInEmpleados()._generar_id_trade_in()
 
     def test_no_modifica_la_bd(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -515,7 +516,7 @@ class TestRegistrarTradeIn:
         ]
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             resultado = crear_trade_in().registrar_trade_in(
                 fotos=["/static/foto1.jpg", "/static/foto2.jpg"]
             )
@@ -540,7 +541,7 @@ class TestRegistrarTradeIn:
         ]
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             resultado = crear_trade_in().registrar_trade_in(
                 tests=[
                     {"nombre": "Pantalla", "resultado": "Funciona"},
@@ -577,7 +578,7 @@ class TestRegistrarTradeIn:
         ]
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             resultado = crear_trade_in().registrar_trade_in(tests=[TEST_VALIDO])
 
         assert resultado["tests_registrados"] == 1
@@ -588,7 +589,9 @@ class TestRegistrarTradeIn:
         )
         assert insert_test[0] == "TST000001"
 
-    def test_error_al_registrar_tests_no_aborta(self, conexion_falsa):
+    def test_error_al_registrar_tests_hace_rollback(self, conexion_falsa):
+        """Antes el fallo al insertar tests se tragaba y se commiteaba igual;
+        ahora el error sube, el método hace rollback y devuelve success=False."""
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             None,
@@ -597,19 +600,19 @@ class TestRegistrarTradeIn:
         ]
 
         def ejecutar(sql, params=None):
-            if "SELECT MAX(ID_test)" in sql:
+            if "INSERT INTO Test " in sql:
                 raise Exception("fallo en tests")
             return None
 
         cursor.execute.side_effect = ejecutar
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             resultado = crear_trade_in().registrar_trade_in(tests=[TEST_VALIDO])
 
-        assert resultado["success"] is True
-        assert resultado["tests_registrados"] == 0
-        db.commit.assert_called_once()
+        assert resultado["success"] is False
+        db.rollback.assert_called_once()
+        db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -618,7 +621,7 @@ class TestRegistrarTradeIn:
         with patch("app.models.tradein_empleados.Equipo") as equipo, patch(
             "app.models.tradein_empleados.Bitacora"
         ) as bitacora:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             crear_trade_in(usuario_id="USR-001").registrar_trade_in()
 
         bitacora.return_value.registrar.assert_called_once()
@@ -630,7 +633,7 @@ class TestRegistrarTradeIn:
         with patch("app.models.tradein_empleados.Equipo") as equipo, patch(
             "app.models.tradein_empleados.Bitacora"
         ) as bitacora:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             crear_trade_in().registrar_trade_in()
 
         bitacora.assert_not_called()
@@ -718,7 +721,7 @@ class TestActualizarTradeIn:
         cursor.fetchone.return_value = None
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.registrar_equipo.return_value = "ok"
+            equipo.return_value.registrar_equipo.return_value = "Equipo registrado exitosamente."
             resultado = crear_trade_in().actualizar_trade_in()
 
         assert resultado["success"] is True
@@ -748,7 +751,7 @@ class TestActualizarTradeIn:
         ]
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.actualizar_equipo.return_value = "ok"
+            equipo.return_value.actualizar_equipo.return_value = "Equipo actualizado exitosamente."
             resultado = crear_trade_in().actualizar_trade_in(
                 fotos=["/static/foto1.jpg"]
             )
@@ -769,7 +772,7 @@ class TestActualizarTradeIn:
         ]
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.actualizar_equipo.return_value = "ok"
+            equipo.return_value.actualizar_equipo.return_value = "Equipo actualizado exitosamente."
             resultado = crear_trade_in().actualizar_trade_in(
                 tests=[
                     {"nombre": "Pantalla", "resultado": "Funciona"},
@@ -793,7 +796,7 @@ class TestActualizarTradeIn:
         cursor.fetchone.return_value = (ID_EQUIPO,)
 
         with patch("app.models.tradein_empleados.Equipo") as equipo:
-            equipo.return_value.actualizar_equipo.return_value = "ok"
+            equipo.return_value.actualizar_equipo.return_value = "Equipo actualizado exitosamente."
             crear_trade_in().actualizar_trade_in()
 
         sentencias = [llamada.args[0] for llamada in cursor.execute.call_args_list]
@@ -807,7 +810,7 @@ class TestActualizarTradeIn:
         with patch("app.models.tradein_empleados.Equipo") as equipo, patch(
             "app.models.tradein_empleados.Bitacora"
         ) as bitacora:
-            equipo.return_value.actualizar_equipo.return_value = "ok"
+            equipo.return_value.actualizar_equipo.return_value = "Equipo actualizado exitosamente."
             crear_trade_in(usuario_id="USR-001").actualizar_trade_in()
 
         bitacora.return_value.registrar.assert_called_once()

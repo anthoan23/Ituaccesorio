@@ -1,9 +1,13 @@
 from __future__ import annotations
+import logging
 
 import json
 from app.utils.validators import validar_numero, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+
+
+logger = logging.getLogger(__name__)
 
 
 class Tests():
@@ -23,27 +27,6 @@ class Tests():
 
         self._conexion = conectar()
 
-    def buscar_test(self):
-        id_orden = self.ID_orden
-        db = self._conexion.conexion1()
-        if not db:
-            return None
-        
-        cursor = db.cursor(dictionary=True)
-        try:
-            sql = (
-                "SELECT o.ID_orden, t.*, oe.Costo_reparacion "
-                "FROM revision_orden o JOIN test t ON o.ID_test = t.ID_test "
-                "JOIN orden_e oe ON o.ID_orden = oe.ID_orden_e WHERE o.ID_orden = %s"
-            )
-            cursor.execute(sql, (id_orden,))
-            ordenes = cursor.fetchall()
-        
-            return ordenes
-        
-        finally:
-            cursor.close()
-            db.close()
 
     def listas_tests(self):
         db = self._conexion.conexion1()
@@ -75,7 +58,7 @@ class Tests():
             db.close()
 
     def consultar_test(self):
-        validar_id_orden = validar_texto_numero(self.ID_orden, 1, 10, "ID dela orden")
+        validar_id_orden = validar_texto_numero(self.ID_orden, 1, 10, "ID de la orden")
         if validar_id_orden:
             return validar_id_orden
 
@@ -125,7 +108,7 @@ class Tests():
         try:
             json_tests_string = json.dumps(self.lista_tests, ensure_ascii=False)
         except Exception as e:
-            print(f"Error al serializar el lote de tests a JSON: {e}")
+            logger.error(f"Error al serializar el lote de tests a JSON: {e}")
             return "El formato de la lista de pruebas es incorrecto."
 
         # 3. Establecer conexión con la Base de Datos
@@ -160,7 +143,7 @@ class Tests():
             return "Revisión técnica y pruebas registradas exitosamente."
             
         except Exception as e:
-            print(f"Error al registrar la revisión técnica: {e}")
+            logger.error(f"Error al registrar la revisión técnica: {e}")
             db.rollback()
             return "Error interno al procesar el registro de las pruebas."
             
@@ -202,7 +185,7 @@ class Tests():
             """, (id_orden,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en buscar_test_por_orden: {e}")
+            logger.error(f"Error en buscar_test_por_orden: {e}")
             return []
         finally:
             cursor.close()
@@ -254,7 +237,12 @@ class Tests():
             for i, nombre in enumerate(nombres_tests):
                 idx = i + 2  # +2 porque los primeros 2 son ID_em y Num_test
                 if idx < len(valores) and valores[idx] is not None:
-                    resultado = "Funciona" if int(valores[idx]) == 1 else "No funciona"
+                    # int() protegido: antes un componente no numérico lanzaba
+                    # ValueError y abortaba TODO el registro del test.
+                    try:
+                        resultado = "Funciona" if int(valores[idx]) == 1 else "No funciona"
+                    except (TypeError, ValueError):
+                        resultado = "No funciona"
                     lista_tests.append({
                         "nombre": nombre,
                         "resultado": resultado
@@ -272,15 +260,20 @@ class Tests():
             
             # Si no hay tests que registrar, retornamos False
             if not lista_tests:
-                print("No hay tests para registrar")
+                logger.debug("No hay tests para registrar")
                 return False
             
-            # Insertar cada test individual en la tabla Test
+            # Insertar cada test individual y CAPTURAR su ID al insertar:
+            # la re-selección posterior (SELECT ... WHERE Numero_test = %s
+            # ORDER BY ID_test DESC) era global y con dos técnicos
+            # concurrentes podía enlazar tests de OTRA orden.
+            tests_ids = []
             for test_item in lista_tests:
                 cursor.execute("""
                     INSERT INTO Test (ID_test, Numero_test, Nombre_test, Resultado_test)
                     VALUES (%s, %s, %s, %s)
                 """, (nuevo_id, num_test, test_item['nombre'][:30], test_item['resultado'][:300]))
+                tests_ids.append((nuevo_id,))
                 nuevo_id = f"TST{int(nuevo_id[3:]) + 1:06d}"
             
             # Obtener o crear interacción
@@ -313,16 +306,7 @@ class Tests():
             else:
                 interaccion_id = interaccion[0]
             
-            # Obtener los IDs de los tests recién insertados para la relación
-            cursor.execute("""
-                SELECT ID_test FROM Test 
-                WHERE Numero_test = %s 
-                ORDER BY ID_test DESC
-                LIMIT %s
-            """, (num_test, len(lista_tests)))
-            tests_ids = cursor.fetchall()
-            
-            # Relacionar cada test con la interacción
+            # Relacionar cada test con la interacción (IDs capturados al insertar)
             for test_id_row in tests_ids:
                 cursor.execute("""
                     INSERT INTO Test_realizados_interaccion (ID_interaccion, ID_test)
@@ -333,7 +317,7 @@ class Tests():
             return True
         except Exception as e:
             db.rollback()
-            print(f"Error en registrar_test: {e}")
+            logger.error(f"Error en registrar_test: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -375,7 +359,7 @@ class Tests():
             cursor.execute(sql, (id_orden, num_test))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al obtener test por orden y número: {e}")
+            logger.error(f"Error al obtener test por orden y número: {e}")
             return []
         finally:
             cursor.close()

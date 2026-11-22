@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 from app.utils.validators import validar_texto, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+
+
+logger = logging.getLogger(__name__)
 
 
 class Especialidad():
@@ -75,7 +79,7 @@ class Especialidad():
             
             return "Especialidad agregada exitosamente."
         except Exception as e:
-            print(f"Error al agregar especialidad: {e}")
+            logger.error(f"Error al agregar especialidad: {e}")
             db.rollback()
             return "Error al agregar especialidad."
         finally:
@@ -116,7 +120,7 @@ class Especialidad():
             
             return "Especialidad eliminada exitosamente."
         except Exception as e:
-            print(f"Error al eliminar especialidad: {e}")
+            logger.error(f"Error al eliminar especialidad: {e}")
             db.rollback()
             if hasattr(e, 'errno') and e.errno == 1451:
                 return f"No se puede eliminar la especialidad con ID {especialidad_id} porque está en uso por empleados."
@@ -181,7 +185,7 @@ class Especialidad():
             
             return "Especialidad actualizada exitosamente."
         except Exception as e:
-            print(f"Error al actualizar especialidad: {e}")
+            logger.error(f"Error al actualizar especialidad: {e}")
             db.rollback()
             return "Error al actualizar especialidad."
         finally:

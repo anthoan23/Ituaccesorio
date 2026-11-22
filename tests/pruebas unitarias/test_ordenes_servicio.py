@@ -306,17 +306,17 @@ class TestConsultarOrden:
         [
             pytest.param(
                 "",
-                "El campo ID dela orden no puede estar vacío.",
+                "El campo ID de la orden no puede estar vacío.",
                 id="vacia",
             ),
             pytest.param(
                 "OS000000001",
-                "El campo ID dela orden no puede tener más de 10 caracteres.",
+                "El campo ID de la orden no puede tener más de 10 caracteres.",
                 id="demasiado-larga",
             ),
             pytest.param(
                 "OS#1",
-                "El campo ID dela orden solo puede contener letras, números, "
+                "El campo ID de la orden solo puede contener letras, números, "
                 "acentos y espacios.",
                 id="caracteres-invalidos",
             ),
@@ -633,7 +633,7 @@ class TestRegistrarReparacion:
 
         assert resultado == {
             "success": False,
-            "error": "El campo Desdescripcion  no puede estar vacío.",
+            "error": "El campo Descripción no puede estar vacío.",
         }
         cursor.execute.assert_not_called()
 

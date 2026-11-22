@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
@@ -7,6 +8,9 @@ from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class Rol:
@@ -156,7 +160,7 @@ class Rol:
 
             return "Rol agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar rol: {e}")
+            logger.error(f"Error al agregar rol: {e}")
             db.rollback()
             return "Error al agregar rol."
         finally:
@@ -198,7 +202,7 @@ class Rol:
 
             return "Rol actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar rol: {e}")
+            logger.error(f"Error al actualizar rol: {e}")
             db.rollback()
             return "Error al actualizar rol."
         finally:
@@ -244,7 +248,7 @@ class Rol:
 
             return "Rol eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar rol: {e}")
+            logger.error(f"Error al eliminar rol: {e}")
             db.rollback()
             return "Error al eliminar rol. Verifica que no esté en uso por usuarios."
         finally:

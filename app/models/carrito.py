@@ -1,9 +1,13 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import validar_numero, validar_texto_numero
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
+
+
+logger = logging.getLogger(__name__)
 
 
 class CarritoModel:
@@ -93,7 +97,7 @@ class CarritoModel:
 
             return nuevo_id
         except Exception as e:
-            print(f"Error generando ID: {e}")
+            logger.error(f"Error generando ID: {e}")
             import time
             import secrets
             return f"LST{int(time.time())}{secrets.randbelow(90) + 10}"
@@ -123,7 +127,10 @@ class CarritoModel:
                 }
             return {"oficial": 520.91, "paralelo": 710.12}
         except Exception as e:
-            print(f"Error obteniendo tasas: {e}")
+            # Fallback con tasas FIJAS: sin la tabla Tasas_cambio (ahora
+            # incluida en el seed) la consulta fallaba siempre y las tasas
+            # mostradas quedaban desactualizadas sin ningún aviso.
+            logger.warning("Tasas_cambio no disponible, usando tasas estáticas: %s", e)
             return {"oficial": 520.91, "paralelo": 710.12}
         finally:
             cursor.close()
@@ -229,7 +236,7 @@ class CarritoModel:
                 "tasas": tasas
             }
         except Exception as e:
-            print(f"Error en obtener_carrito: {e}")
+            logger.error(f"Error en obtener_carrito: {e}")
             import traceback
             traceback.print_exc()
             return {"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}
@@ -313,7 +320,7 @@ class CarritoModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en agregar_al_carrito: {e}")
+            logger.error(f"Error en agregar_al_carrito: {e}")
             return {"success": False, "error": "Error al agregar al carrito."}
         finally:
             cursor.close()
@@ -369,7 +376,7 @@ class CarritoModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_cantidad: {e}")
+            logger.error(f"Error en actualizar_cantidad: {e}")
             return {"success": False, "error": "Error al actualizar cantidad."}
         finally:
             cursor.close()

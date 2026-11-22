@@ -1731,3 +1731,4 @@ BEGIN
     SELECT v_trade_in_id AS trade_in_id, 'Trade-in registrado exitosamente' AS mensaje;
 END ;;
 DELIMITER ;
+

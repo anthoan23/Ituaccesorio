@@ -1,16 +1,19 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
     validar_decimal,
-    validar_texto_numero,
 )
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
 import uuid
+
+
+logger = logging.getLogger(__name__)
 
 
 class ReportesVentasModel:
@@ -298,7 +301,7 @@ class ReportesVentasModel:
                 "online": online
             }
         except Exception as e:
-            print(f"Error en obtener_reportes_ventas: {e}")
+            logger.error(f"Error en obtener_reportes_ventas: {e}")
             return {"success": False, "error": str(e), "ventas": [], "total": 0}
         finally:
             cursor.close()
@@ -392,7 +395,7 @@ class ReportesVentasModel:
                 "total_venta": total_venta
             }
         except Exception as e:
-            print(f"Error en obtener_detalle_venta_completo: {e}")
+            logger.error(f"Error en obtener_detalle_venta_completo: {e}")
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -464,7 +467,7 @@ class ReportesVentasModel:
 
             return ventas
         except Exception as e:
-            print(f"Error en obtener_ventas_locales: {e}")
+            logger.error(f"Error en obtener_ventas_locales: {e}")
             return []
         finally:
             cursor.close()
@@ -496,12 +499,12 @@ class ReportesVentasModel:
                 VALUES (%s, %s, %s, %s, %s)
             """, (factura_id, self.empleado_id, cliente_id_str, moneda, fecha_actual))
 
-            total_monto = 0
+            total_monto = Decimal("0")
+            productos_vistos = set()
 
             for item in self.items:
                 inventario_id = str(item.get("producto_id", ""))
                 cantidad = int(item.get("cantidad", 0))
-                precio = float(item.get("precio_usd", 0))
 
                 if not inventario_id:
                     raise ValueError("Producto sin ID válido")
@@ -509,9 +512,32 @@ class ReportesVentasModel:
                 if cantidad <= 0:
                     raise ValueError(f"Cantidad inválida para producto {inventario_id}")
 
-                stock_valido, stock_disponible = self._verificar_stock_disponible(inventario_id, cantidad)
-                if not stock_valido:
-                    raise ValueError(f"Stock insuficiente para producto {inventario_id}. Disponible: {stock_disponible}")
+                if inventario_id in productos_vistos:
+                    raise ValueError(f"Producto duplicado en la venta: {inventario_id}")
+                productos_vistos.add(inventario_id)
+
+                # Stock y costo se leen de la BD con el MISMO cursor de la
+                # transacción: antes el monto salía de 'precio_usd' del request
+                # (sin validar contra la BD) y el stock se verificaba abriendo
+                # una conexión nueva por ítem. Un precio manipulado generaba un
+                # pago 'aprobado' con monto falso.
+                cursor.execute(
+                    "SELECT Existencia, Costo_venta FROM Existencias_productos "
+                    "WHERE ID_inventario = %s",
+                    (inventario_id,)
+                )
+                fila = cursor.fetchone()
+                stock_disponible = int(fila[0] or 0) if fila else 0
+                if cantidad > stock_disponible:
+                    raise ValueError(
+                        f"Stock insuficiente para producto {inventario_id}. "
+                        f"Disponible: {stock_disponible}"
+                    )
+                costo_venta = (
+                    Decimal(str(fila[1]))
+                    if fila and len(fila) > 1 and fila[1] is not None
+                    else Decimal("0")
+                )
 
                 cursor.execute("""
                     INSERT INTO Detalle_venta (ID_inventario, ID_factura, Cantidad_articulo)
@@ -524,7 +550,7 @@ class ReportesVentasModel:
                     WHERE ID_inventario = %s
                 """, (cantidad, inventario_id))
 
-                total_monto += precio * cantidad
+                total_monto += costo_venta * cantidad
 
             cursor.execute("""
                 INSERT INTO Metodo_pago (
@@ -533,7 +559,7 @@ class ReportesVentasModel:
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 factura_id, moneda, fecha_actual, self.metodo_pago,
-                f"LOCAL-{factura_id[-6:]}", total_monto, 'aprobado',
+                f"LOCAL-{factura_id[-6:]}", float(total_monto), 'aprobado',
                 self.empleado_id, fecha_actual
             ))
 
@@ -542,7 +568,7 @@ class ReportesVentasModel:
             if self.usuario_id:
                 Bitacora(
                     accion="Registrar venta local",
-                    descripcion=f"Venta local registrada: {factura_id} - Cliente: {cliente_id_str} - Total: {total_monto} {moneda}",
+                    descripcion=f"Venta local registrada: {factura_id} - Cliente: {cliente_id_str} - Total: {float(total_monto)} {moneda}",
                     usuario_id=self.usuario_id,
                     modulo_nombre="Reportes Ventas"
                 ).registrar()

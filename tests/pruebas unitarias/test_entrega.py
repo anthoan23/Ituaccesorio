@@ -297,7 +297,7 @@ class TestRegistrarEntrega:
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
         # 1ª: MAX(ID_entrega); 2ª: factura; 3ª: delivery
-        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
+        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -334,7 +334,7 @@ class TestRegistrarEntrega:
         """El estado 0 (Pendiente) es válido: el validador antiguo lo
         rechazaba por tratar el entero 0 como vacío."""
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
+        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -353,7 +353,7 @@ class TestRegistrarEntrega:
 
     def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("ENT0000009",), (1,), (1,)]
+        cursor.fetchone.side_effect = [("ENT0000009",), (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -376,7 +376,7 @@ class TestRegistrarEntrega:
 
     def test_factura_minima(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [None, (1,), (1,)]
+        cursor.fetchone.side_effect = [None, (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -639,7 +639,7 @@ class TestRegistrarEntrega:
         self, conexion_falsa
     ):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
+        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -667,7 +667,7 @@ class TestRegistrarEntrega:
         self, conexion_falsa
     ):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
+        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,), None]
 
         with patch("app.models.entrega.datetime") as fecha_cls:
             fecha_cls.now.return_value = FECHA_ENTREGA
@@ -883,7 +883,7 @@ class TestActualizarEntrega:
             estado=ESTADO_VALIDO,
         ).actualizar_entrega()
 
-        assert resultado == "Error al actualizar: fallo simulado"
+        assert resultado == "Error al actualizar la entrega. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
         cierra_recursos(db, cursor)
@@ -1013,7 +1013,7 @@ class TestEliminarEntrega:
 
         resultado = EntregaModel(entrega_id=ENTREGA_ID_MAXIMO).eliminar_entrega()
 
-        assert resultado == "Error al eliminar: fallo simulado"
+        assert resultado == "Error al eliminar la entrega. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
         cierra_recursos(db, cursor)

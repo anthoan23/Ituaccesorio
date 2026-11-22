@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
@@ -6,6 +7,9 @@ from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class Modulo:
@@ -139,7 +143,7 @@ class Modulo:
 
             return "Módulo agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar módulo: {e}")
+            logger.error(f"Error al agregar módulo: {e}")
             db.rollback()
             return "Error al agregar módulo."
         finally:
@@ -181,7 +185,7 @@ class Modulo:
 
             return "Módulo actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar módulo: {e}")
+            logger.error(f"Error al actualizar módulo: {e}")
             db.rollback()
             return "Error al actualizar módulo."
         finally:
@@ -221,7 +225,7 @@ class Modulo:
 
             return "Módulo eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar módulo: {e}")
+            logger.error(f"Error al eliminar módulo: {e}")
             db.rollback()
             return "Error al eliminar módulo. Verifica que no esté en uso por permisos."
         finally:

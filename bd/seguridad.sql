@@ -85,7 +85,9 @@ INSERT INTO `modulo` (`id`, `nombre`, `descripcion`) VALUES
 (13, 'Clientes', 'Gestión de clientes del sistema'),
 (14, 'Usuarios', 'Administración de usuarios y roles'),
 (15, 'Bitácora', 'Registro de actividades del sistema'),
-(16, 'Personal', 'Agrupación de módulos de personal');
+(16, 'Personal', 'Agrupación de módulos de personal'),
+(17, 'Backup', 'Copias de seguridad y restauración'),
+(18, 'Entregas', 'Gestión de entregas a domicilio');
 
 -- ----------------------------------------------------
 -- Table structure for `permiso`
@@ -141,7 +143,8 @@ CREATE TABLE `rol` (
 -- Dumping data for `rol`
 -- ----------------------------------------------------
 INSERT INTO `rol` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'Admin', 'Super administrador con todos los permisos');
+(1, 'Admin', 'Super administrador con todos los permisos'),
+(2, 'Cliente', 'Cliente registrado de la tienda');
 
 -- ----------------------------------------------------
 -- Table structure for `usuario`
