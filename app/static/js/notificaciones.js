@@ -14,19 +14,6 @@
         }
     }
 
-    // Función para guardar notificaciones vistas
-    function guardarNotificacionVista(id) {
-        try {
-            const vistas = getNotificacionesVistas();
-            if (!vistas.includes(id)) {
-                vistas.push(id);
-                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(vistas));
-            }
-        } catch (error) {
-            console.error('Error guardando notificación vista:', error);
-        }
-    }
-
     // Función para verificar si una notificación ya fue vista
     function notificacionYaVista(id) {
         const vistas = getNotificacionesVistas();

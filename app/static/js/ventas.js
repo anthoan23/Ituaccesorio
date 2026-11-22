@@ -4,13 +4,11 @@
   const state = {
     productos: [],
     masVendidos: [],
-    carrito: [],
     filtros: { clase_id: "", marca_id: "", q: "" },
     paginacion: { pagina: 1, por_pagina: 12 },
     tasas: { oficial: 520.91, paralelo: 710.12 },
   };
 
-  let facturaPendiente = null;
   let carritoItems = [];
 
   function getAuthToken() {
@@ -865,7 +863,6 @@ function renderCarritoModal() {
         throw new Error(data.error || "Error al procesar el pago");
       }
 
-      facturaPendiente = data.factura_id;
       mostrarToast("¡Pago registrado! Redirigiendo...", "success");
       window.setTimeout(() => {
         window.location.href = "/catalogo";

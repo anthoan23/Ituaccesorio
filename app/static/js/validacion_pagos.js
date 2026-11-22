@@ -139,12 +139,6 @@
     }
   }
 
-  function cerrarModal(id) {
-    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
-      window.UiModal.closeById(id);
-    }
-  }
-
   // ==================== DETALLE DE FACTURA ====================
   async function cargarDetalleFactura(facturaId, detalleContainer) {
     try {

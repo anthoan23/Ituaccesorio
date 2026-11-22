@@ -1,5 +1,4 @@
 import os
-from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
 from app.utils.helpers import guardar_fotos_evidencias
@@ -9,8 +8,6 @@ from app.models.test import Tests
 from app.models.inventario import Inventario
 
 taller_blueprint = Blueprint("taller", __name__)
-
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
 

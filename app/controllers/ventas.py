@@ -7,9 +7,6 @@ from app.models.venta import VentaModel
 from app.models.clientes import Clientes
 import requests
 import traceback
-import os
-import uuid
-from werkzeug.utils import secure_filename
 from datetime import datetime
 
 ventas_blueprint = Blueprint("ventas", __name__)

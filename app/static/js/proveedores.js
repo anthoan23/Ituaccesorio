@@ -378,13 +378,6 @@
     renderTablaProveedores(state.proveedores);
   }
 
-  async function cargarModelos() {
-    if (state.modelos) return state.modelos;
-    const data = await fetchJson('/api/proveedores/modelos', { method: 'GET' });
-    state.modelos = Array.isArray(data?.modelos) ? data.modelos : Array.isArray(data) ? data : [];
-    return state.modelos;
-  }
-
   async function obtenerModelosFiltro(marcaId = null, claseId = null, q = null) {
     const params = [];
     const parts = [];

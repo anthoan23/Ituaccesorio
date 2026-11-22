@@ -941,12 +941,6 @@
     }
   }
 
-  function cerrarModalReportes() {
-    if (window.UiModal && typeof window.UiModal.closeById === "function") {
-      window.UiModal.closeById("modal-reportes");
-    }
-  }
-
   function cargarClasesMarcasReporte() {
     if (reporteClase) {
       fetchJson("/api/productos/clases", { method: "GET" }).then(data => {

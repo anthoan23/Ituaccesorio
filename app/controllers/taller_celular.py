@@ -1,5 +1,4 @@
 import os
-from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
 from app.utils.helpers import guardar_fotos_evidencias
@@ -8,8 +7,6 @@ from app.utils.jwt_utils import crear_firma_fotos
 from app.models.ordenes_servicio import Orden_servicio
 
 taller_celular_blueprint = Blueprint("taller_celular", __name__)
-
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
 @taller_celular_blueprint.route("/api/taller_celular/crear-token/<id_orden>", methods=["POST"])

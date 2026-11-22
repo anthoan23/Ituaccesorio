@@ -1,6 +1,3 @@
-import os
-import uuid
-
 from flask import Blueprint, jsonify, render_template, request, g, current_app
 from werkzeug.utils import secure_filename
 from app.utils.helpers import guardar_foto_evidencia
