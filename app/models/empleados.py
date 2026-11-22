@@ -269,7 +269,7 @@ class Empleados():
         if validar_celular:
             return validar_celular
     
-        validar_email_ = validar_email(correo)
+        validar_email_ = validar_email(correo, obligatorio=True)
         if validar_email_:
             return validar_email_
         
@@ -364,7 +364,7 @@ class Empleados():
         if validar_celular:
             return validar_celular
     
-        validar_email_ = validar_email(correo)
+        validar_email_ = validar_email(correo, obligatorio=True)
         if validar_email_:
             return validar_email_
         

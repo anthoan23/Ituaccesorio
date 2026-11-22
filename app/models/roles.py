@@ -3,9 +3,9 @@ from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
-    validar_solo_letras,
+    validar_texto,
     validar_numero,
-    validar_sin_caracteres_especiales,
+    validar_texto_numero,
 )
 
 
@@ -32,7 +32,7 @@ class Rol:
 
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
         # rol.nombre varchar(50) UNIQUE
-        error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+        error = validar_texto(nombre, 1, 50, "Nombre")
         if error:
             return error
         self.nombre = nombre
@@ -40,7 +40,7 @@ class Rol:
         descripcion = str(self.descripcion).strip() if self.descripcion else ""
         if descripcion:
             # rol.descripcion text; 255 es política de UI
-            error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+            error = validar_texto_numero(descripcion, 1, 255, "Descripción")
             if error:
                 return error
         self.descripcion = descripcion

@@ -166,7 +166,7 @@ class TestObtenerReportesVentas:
         [
             pytest.param(
                 {"q": "Bus#1"},
-                "El campo Búsqueda no puede contener caracteres especiales.",
+                "El campo Búsqueda solo puede contener letras, números, acentos y espacios.",
                 id="busqueda-caracteres-invalidos",
             ),
             pytest.param(
@@ -306,7 +306,8 @@ class TestObtenerDetalleVentaCompleto:
             ),
             pytest.param(
                 "FAC#1",
-                "El campo Factura solo puede contener letras, números y guiones.",
+                "El campo Factura solo puede contener letras, números (sin "
+                "espacios) y guiones.",
                 id="factura-caracteres-invalidos",
             ),
             pytest.param(

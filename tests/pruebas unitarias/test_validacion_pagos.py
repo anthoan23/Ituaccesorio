@@ -257,7 +257,8 @@ class TestAprobarPago:
             ),
             pytest.param(
                 "FAC#1",
-                "El campo Factura solo puede contener letras, números y guiones.",
+                "El campo Factura solo puede contener letras, números (sin "
+                "espacios) y guiones.",
                 id="factura-caracteres-invalidos",
             ),
             pytest.param(
@@ -493,7 +494,7 @@ class TestRechazarPago:
             ),
             pytest.param(
                 "motivo#1",
-                "El campo Motivo del rechazo no puede contener caracteres especiales.",
+                "El campo Motivo del rechazo solo puede contener letras, números, acentos y espacios.",
                 id="motivo-caracteres-invalidos",
             ),
         ],
@@ -817,7 +818,7 @@ class TestObtenerReportesPagos:
         [
             pytest.param(
                 {"q": "Bus#1"},
-                "El campo Búsqueda no puede contener caracteres especiales.",
+                "El campo Búsqueda solo puede contener letras, números, acentos y espacios.",
                 id="busqueda-invalida",
             ),
             pytest.param(

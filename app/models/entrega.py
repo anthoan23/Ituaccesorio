@@ -2,11 +2,9 @@ from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
+    validar_decimal,
     validar_numero,
     validar_texto_numero,
-    validar_sin_caracteres_especiales,
-    validar_codigo_factura,
-    validar_numero_entero,
 )
 from datetime import datetime
 from typing import Dict, Any, Optional, List
@@ -58,7 +56,8 @@ class EntregaModel:
         if self.estado is None:
             return "El estado es obligatorio."
         # Entrega.Estado_entrega int
-        error = validar_numero_entero(self.estado, "Estado", min_valor=0, max_valor=3)
+        error = validar_decimal(self.estado, "Estado", max_decimales=0,
+                                min_valor=None, max_valor=None)
         if error:
             return error
         try:
@@ -76,7 +75,8 @@ class EntregaModel:
         if not factura_id:
             return "La factura es obligatoria."
         # Entrega.ID_factura varchar(20); formato FAC-YYYYMM-XXXXXX
-        error = validar_codigo_factura(factura_id, 1, 20, "Factura")
+        error = validar_texto_numero(factura_id, 1, 20, "Factura",
+                                     permitir_espacios=False, caracteres_extra="-")
         if error:
             return error
         self.factura_id = factura_id
@@ -94,7 +94,7 @@ class EntregaModel:
         if not direccion:
             return "La dirección es obligatoria."
         # Entrega.Direccion_entrega varchar(60)
-        error = validar_sin_caracteres_especiales(direccion, 1, 60, "Dirección", permitir_espacios=True)
+        error = validar_texto_numero(direccion, 1, 60, "Dirección")
         if error:
             return error
         self.direccion = direccion
@@ -120,7 +120,7 @@ class EntregaModel:
         if not direccion:
             return "La dirección es obligatoria."
         # Entrega.Direccion_entrega varchar(60)
-        error = validar_sin_caracteres_especiales(direccion, 1, 60, "Dirección", permitir_espacios=True)
+        error = validar_texto_numero(direccion, 1, 60, "Dirección")
         if error:
             return error
         self.direccion = direccion

@@ -169,7 +169,7 @@ class TestAgregarModulo:
             ),
             pytest.param(
                 {"descripcion": "Desc @#$"},
-                "El campo Descripción no puede contener caracteres especiales.",
+                "El campo Descripción solo puede contener letras, números, acentos y espacios.",
                 id="descripcion-caracteres-invalidos",
             ),
         ],

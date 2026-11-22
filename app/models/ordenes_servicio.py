@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.utils.validators import validar_texto_numero
+from app.utils.validators import validar_texto_numero, validar_rif
 from app.models.database import conectar
 from datetime import datetime
 import logging
@@ -25,26 +25,8 @@ class Orden_servicio():
         self._conexion = conectar()
 
     # ============================================
-    # MÉTODOS DE VALIDACIÓN (Lógica en el modelo)
-    # ============================================
-    @staticmethod
-    def _validar_email(email):
-        if not email:
-            return None
-        patron = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-        if not re.match(patron, email):
-            return "El correo electrónico no es válido."
-        return None
-
-    @staticmethod
-    def _validar_rif(rif):
-        if not rif:
-            return "El RIF es obligatorio."
-        rif_limpio = rif.replace("-", "").upper()
-        if not re.match(r'^[JE]\d{9}$', rif_limpio):
-            return "El RIF debe tener el formato J-12345678-9 o E-12345678-9."
-        return None
-
+    # Validaciones: se usan los validadores compartidos de
+    # app/utils/validators.py (única fuente de verdad).
     # ============================================
 
     def listar_modelos_telefonos(self) -> list:
@@ -466,7 +448,9 @@ class Orden_servicio():
         if not id_cliente:
             raise Exception("El ID del cliente es obligatorio.")
         
-        id_cliente_val = str(id_cliente).strip()
+        # Normalizar: sin espacios y en mayúsculas (los RIF se guardan canónicos)
+        id_cliente_val = str(id_cliente).strip().upper()
+        id_cliente = id_cliente_val
         
         if tipo_cliente == "natural":
             if not id_cliente_val.isdigit():
@@ -474,7 +458,7 @@ class Orden_servicio():
             if len(id_cliente_val) < 7 or len(id_cliente_val) > 8:
                 raise Exception("La cédula debe tener 7 u 8 dígitos.")
         else:
-            error_rif = self._validar_rif(id_cliente_val)
+            error_rif = validar_rif(id_cliente_val, tipos="JE", obligatorio=True)
             if error_rif:
                 raise Exception(error_rif)
         

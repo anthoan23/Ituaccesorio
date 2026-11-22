@@ -5,8 +5,7 @@ from app.utils.validators import (
     validar_texto_numero,
     validar_numero,
     validar_decimal,
-    validar_sin_caracteres_especiales,
-    validar_codigo_factura,
+    validar_texto_numero,
 )
 from datetime import datetime
 from decimal import Decimal
@@ -83,7 +82,8 @@ class ValidacionPagosModel:
         if not factura_id or not str(factura_id).strip():
             return "El ID de la factura no puede estar vacío."
         # Venta.ID_factura varchar(20); formato FAC-YYYYMM-XXXXXX (con guiones)
-        error = validar_codigo_factura(str(factura_id).strip(), 1, 20, "Factura")
+        error = validar_texto_numero(str(factura_id).strip(), 1, 20, "Factura",
+                             permitir_espacios=False, caracteres_extra="-")
         if error:
             return error
         return None
@@ -101,14 +101,14 @@ class ValidacionPagosModel:
         if not motivo or not str(motivo).strip():
             return "El motivo de rechazo no puede estar vacío."
         # Metodo_pago.Motivo_rechazo varchar(255)
-        error = validar_sin_caracteres_especiales(motivo, 5, 255, "Motivo del rechazo", permitir_espacios=True)
+        error = validar_texto_numero(motivo, 5, 255, "Motivo del rechazo")
         if error:
             return error
         return None
 
     def _validar_filtros_reportes(self, filtros: Dict[str, Any]) -> Optional[str]:
         if filtros.get("q"):
-            error = validar_sin_caracteres_especiales(filtros["q"], 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(filtros["q"], 1, 100, "Búsqueda")
             if error:
                 return error
 

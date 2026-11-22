@@ -4,7 +4,6 @@ from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
 from app.models.venta import VentaModel
 from app.models.clientes import Clientes
-from app.utils.validators import validar_sin_caracteres_especiales
 import requests
 import traceback
 import os

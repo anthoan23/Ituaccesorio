@@ -2,7 +2,7 @@ from __future__ import annotations
 from app.models.database import conectar
 from decimal import Decimal
 from app.models.bitacora import Bitacora
-from app.utils.validators import validar_nombre_producto, validar_solo_letras, validar_solo_letras_numeros
+from app.utils.validators import validar_texto, validar_texto_numero
 import mysql.connector
 
 
@@ -127,7 +127,7 @@ class ClaseProducto:
 
     def registrar_clase(self) -> str:
         self.nombre = str(self.nombre or "").strip()
-        error_validacion = validar_solo_letras(self.nombre, 2, 30, "Nombre de la clase")
+        error_validacion = validar_texto(self.nombre, 2, 30, "Nombre de la clase")
         if error_validacion:
             raise ValueError(error_validacion)
 
@@ -256,7 +256,7 @@ class MarcaProducto:
 
     def registrar_marca(self) -> str:
         self.nombre = str(self.nombre or "").strip()
-        error_validacion = validar_solo_letras_numeros(self.nombre, 2, 30, "Nombre de la marca")
+        error_validacion = validar_texto_numero(self.nombre, 2, 30, "Nombre de la marca")
         if error_validacion:
             raise ValueError(error_validacion)
 
@@ -483,7 +483,7 @@ class Producto:
         self.id_clase = str(self.id_clase or "").strip()
         self.id_marca = str(self.id_marca or "").strip()
 
-        error_nombre = validar_nombre_producto(self.nombre, 2, 50, "Nombre del producto")
+        error_nombre = validar_texto_numero(self.nombre, 2, 50, "Nombre del producto", caracteres_extra="-()")
         if error_nombre:
             raise ValueError(error_nombre)
 

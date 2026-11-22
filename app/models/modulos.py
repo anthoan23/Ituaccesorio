@@ -4,8 +4,7 @@ from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
-    validar_solo_letras_numeros,
-    validar_sin_caracteres_especiales,
+    validar_texto_numero,
 )
 
 
@@ -32,7 +31,7 @@ class Modulo:
 
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
         # modulo.nombre varchar(50) UNIQUE
-        error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
+        error = validar_texto_numero(nombre, 1, 50, "Nombre", permitir_espacios=False)
         if error:
             return error
         self.nombre = nombre
@@ -40,7 +39,7 @@ class Modulo:
         descripcion = str(self.descripcion).strip() if self.descripcion else ""
         if descripcion:
             # modulo.descripcion text; 255 es política de UI
-            error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+            error = validar_texto_numero(descripcion, 1, 255, "Descripción")
             if error:
                 return error
         self.descripcion = descripcion

@@ -5,8 +5,7 @@ from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
     validar_decimal,
-    validar_sin_caracteres_especiales,
-    validar_codigo_factura,
+    validar_texto_numero,
 )
 from datetime import datetime
 from decimal import Decimal
@@ -85,7 +84,7 @@ class ReportesVentasModel:
     def _validar_filtros_reportes(self, filtros: Dict[str, Any]) -> Optional[str]:
         """Valida los filtros de reportes. Devuelve mensaje de error o None."""
         if filtros.get("q"):
-            error = validar_sin_caracteres_especiales(filtros["q"], 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(filtros["q"], 1, 100, "Búsqueda")
             if error:
                 return error
 
@@ -309,7 +308,8 @@ class ReportesVentasModel:
         """Obtiene el detalle completo de una venta incluyendo datos del cliente"""
         if not self.factura_id:
             return {"success": False, "error": "Factura no especificada"}
-        error = validar_codigo_factura(str(self.factura_id).strip(), 1, 20, "Factura")
+        error = validar_texto_numero(str(self.factura_id).strip(), 1, 20, "Factura",
+                                     permitir_espacios=False, caracteres_extra="-")
         if error:
             return {"success": False, "error": error}
 
@@ -401,7 +401,7 @@ class ReportesVentasModel:
     def obtener_ventas_locales(self, busqueda: str = "", fecha: str = None) -> List[Dict[str, Any]]:
         """Obtiene el historial de ventas locales"""
         if busqueda:
-            error = validar_sin_caracteres_especiales(busqueda, 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(busqueda, 1, 100, "Búsqueda")
             if error:
                 return []
         if fecha:

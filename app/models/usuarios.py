@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
-    validar_solo_letras,
+    validar_texto,
     validar_numero,
     validar_contraseña,
 )
@@ -53,7 +53,7 @@ class Usuarios:
         """
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
         # usuario.nombre varchar(50)
-        error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+        error = validar_texto(nombre, 1, 50, "Nombre")
         if error:
             return error
         self.nombre = nombre
@@ -101,7 +101,7 @@ class Usuarios:
 
     def _validar_perfil(self) -> str | None:
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
-        error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+        error = validar_texto(nombre, 1, 50, "Nombre")
         if error:
             return error
         self.nombre = nombre

@@ -171,14 +171,12 @@ class TestValidarDatosTradeIn:
             ),
             pytest.param(
                 {"valor_pagado": "-5"},
-                "El campo Valor pagado debe ser un número decimal válido "
-                "con hasta 2 decimales.",
+                "El campo Valor pagado debe ser mayor o igual a 0.",
                 id="valor-negativo",
             ),
             pytest.param(
                 {"valor_pagado": "1.234"},
-                "El campo Valor pagado debe ser un número decimal válido "
-                "con hasta 2 decimales.",
+                "El campo Valor pagado no puede tener más de 2 decimales.",
                 id="valor-tres-decimales",
             ),
             pytest.param(
@@ -188,14 +186,13 @@ class TestValidarDatosTradeIn:
             ),
             pytest.param(
                 {"color": "Rojo!"},
-                "El campo Color solo puede contener letras, espacios, "
-                "acentos y ñ.",
+                "El campo Color solo puede contener letras, acentos y espacios.",
                 id="color-invalido",
             ),
             pytest.param(
                 {"capacidad": "128-GB"},
-                "El campo Capacidad solo puede contener letras, números "
-                "y espacios.",
+                "El campo Capacidad solo puede contener letras, números, "
+                "acentos y espacios.",
                 id="capacidad-invalida",
             ),
             pytest.param(
@@ -205,7 +202,7 @@ class TestValidarDatosTradeIn:
             ),
             pytest.param(
                 {"patron": "patron#1"},
-                "El campo Patrón no puede contener caracteres especiales.",
+                "El campo Patrón solo puede contener letras, números, acentos y espacios.",
                 id="patron-invalido",
             ),
         ],

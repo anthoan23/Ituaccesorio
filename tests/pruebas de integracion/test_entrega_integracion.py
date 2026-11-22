@@ -207,7 +207,8 @@ class TestRegistrarEntrega:
             ),
             pytest.param(
                 {"factura_id": "con espacios"},
-                "El campo Factura solo puede contener letras, números y guiones.",
+                "El campo Factura solo puede contener letras, números (sin "
+                "espacios) y guiones.",
                 id="factura-invalida",
             ),
             pytest.param(

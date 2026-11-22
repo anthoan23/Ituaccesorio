@@ -781,7 +781,7 @@ class TestAgregarUsuario:
             ),
             pytest.param(
                 {"nombre": "Ana #1"},
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -1051,7 +1051,7 @@ class TestActualizarUsuario:
             ),
             pytest.param(
                 {"nombre": "Ana #1"},
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -1653,7 +1653,7 @@ class TestActualizarPerfil:
             ),
             pytest.param(
                 "Ana #1",
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
         ],

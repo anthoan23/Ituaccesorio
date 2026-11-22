@@ -1,6 +1,12 @@
 from __future__ import annotations
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+from app.utils.validators import (
+    validar_numero,
+    validar_email,
+    validar_rif,
+    validar_texto_numero,
+)
 import re
 
 
@@ -16,28 +22,8 @@ class Clientes():
         self._conexion_bd = conectar()
 
     # ============================================
-    # MÉTODOS DE VALIDACIÓN (Lógica en el modelo)
-    # ============================================
-    @staticmethod
-    def _validar_email(email):
-        if email and not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
-            return "El correo electrónico no es válido."
-        return None
-
-    @staticmethod
-    def _validar_telefono(telefono, obligatorio=True):
-        if obligatorio and not telefono:
-            return "El celular/teléfono es obligatorio."
-        if telefono and not re.match(r"^\d{11}$", telefono):
-            return "El teléfono debe tener exactamente 11 dígitos numéricos."
-        return None
-
-    @staticmethod
-    def _validar_direccion(direccion, max_length=40):
-        if direccion and len(direccion) > max_length:
-            return f"La dirección no puede exceder los {max_length} caracteres."
-        return None
-
+    # Validaciones: se usan los validadores compartidos de
+    # app/utils/validators.py (única fuente de verdad).
     # ============================================
 
     def listar_clientes(self):
@@ -79,7 +65,7 @@ class Clientes():
             db.close()
 
     def eliminar_cliente(self) -> str:
-        Id_cliente = self.ID_cliente.strip()
+        Id_cliente = self.ID_cliente.strip().upper()
 
         if not Id_cliente:
             return "El ID del cliente no puede estar vacío."
@@ -87,9 +73,9 @@ class Clientes():
         es_rif = bool(re.search(r'[A-Za-z-]', Id_cliente))
         
         if es_rif:
-            patron_rif = r'^[JE]-\d{8}-\d$'
-            if not re.match(patron_rif, Id_cliente):
-                return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+            error_rif = validar_rif(Id_cliente, tipos="JE")
+            if error_rif:
+                return error_rif
         else:
             if not Id_cliente.isdigit():
                 return "La cédula del cliente debe contener solo números."
@@ -607,13 +593,14 @@ class Persona_natural(Clientes):
         if len(apellido) > 20:
             return "El apellido del cliente no puede exceder los 20 caracteres."
 
-        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=True)
+        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=True)
         if error_tel: return error_tel
 
-        error_correo = self._validar_email(self.Correo_cliente)
+        error_correo = validar_email(self.Correo_cliente)
         if error_correo: return error_correo
 
-        error_dir = self._validar_direccion(self.Direccion_cliente)
+        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
+                                   obligatorio=False, caracteres_extra="-.,#()/")
         if error_dir: return error_dir
         
         db = self._conexion_bd.conexion1()
@@ -679,13 +666,14 @@ class Persona_natural(Clientes):
         if len(apellido) > 20:
             return "El apellido del cliente no puede exceder los 20 caracteres."
 
-        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=False)
+        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=False)
         if error_tel: return error_tel
 
-        error_correo = self._validar_email(self.Correo_cliente)
+        error_correo = validar_email(self.Correo_cliente)
         if error_correo: return error_correo
 
-        error_dir = self._validar_direccion(self.Direccion_cliente)
+        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
+                                   obligatorio=False, caracteres_extra="-.,#()/")
         if error_dir: return error_dir
         
         db = self._conexion_bd.conexion1()
@@ -749,30 +737,28 @@ class Cliente_juridico(Clientes):
 
     def registrar_cliente_juridico(self) -> str:
         razon_social = self.Razon_social.strip() if self.Razon_social else ""
-        rif = self.Rif_cliente.strip() if self.Rif_cliente else ""
-        
-        # Validaciones en el Modelo
-        patron_rif = r'^[JE]-\d{8}-\d$'
-        if not re.match(patron_rif, rif):
-            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
-        
-        if not razon_social:
-            return "La razón social del cliente no puede estar vacía."
-        
-        patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
-        if not re.match(patron_razon_social, razon_social):
-            return "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
-        
-        if len(razon_social) > 60:
-            return "La razón social del cliente no puede exceder los 60 caracteres."
+        rif = self.Rif_cliente.strip().upper() if self.Rif_cliente else ""
 
-        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=True)
+        # Validaciones en el Modelo (validadores compartidos)
+        error_rif = validar_rif(rif, tipos="JE", obligatorio=True)
+        if error_rif:
+            return error_rif
+
+        error_razon = validar_texto_numero(
+            razon_social, 1, 60, "Razón social del cliente",
+            caracteres_extra=".-&"
+        )
+        if error_razon:
+            return error_razon
+
+        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=True)
         if error_tel: return error_tel
 
-        error_correo = self._validar_email(self.Correo_cliente)
+        error_correo = validar_email(self.Correo_cliente)
         if error_correo: return error_correo
 
-        error_dir = self._validar_direccion(self.Direccion_cliente)
+        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
+                                   obligatorio=False, caracteres_extra="-.,#()/")
         if error_dir: return error_dir
 
         db = self._conexion_bd.conexion1()
@@ -816,30 +802,28 @@ class Cliente_juridico(Clientes):
 
     def actualizar_cliente_juridico(self):
         razon_social = self.Razon_social.strip() if self.Razon_social else ""
-        rif = self.Rif_cliente.strip() if self.Rif_cliente else ""
-        
-        # Validaciones en el Modelo
-        patron_rif = r'^[JE]-\d{8}-\d$'
-        if not re.match(patron_rif, rif):
-            return "El RIF debe tener el formato: J-12345678-9 o E-12345678-9"
+        rif = self.Rif_cliente.strip().upper() if self.Rif_cliente else ""
 
-        if not razon_social:
-            return "La razón social del cliente no puede estar vacía."
-        
-        patron_razon_social = r'^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.\-&]+$'
-        if not re.match(patron_razon_social, razon_social):
-            return "La razón social solo puede contener letras, números, puntos, guiones, espacios y &."
-        
-        if len(razon_social) > 60:
-            return "La razón social del cliente no puede exceder los 60 caracteres."
+        # Validaciones en el Modelo (validadores compartidos)
+        error_rif = validar_rif(rif, tipos="JE", obligatorio=True)
+        if error_rif:
+            return error_rif
+
+        error_razon = validar_texto_numero(
+            razon_social, 1, 60, "Razón social del cliente",
+            caracteres_extra=".-&"
+        )
+        if error_razon:
+            return error_razon
             
-        error_tel = self._validar_telefono(self.Celular_cliente, obligatorio=False)
+        error_tel = validar_numero(self.Celular_cliente, 11, 11, "Celular", obligatorio=False)
         if error_tel: return error_tel
 
-        error_correo = self._validar_email(self.Correo_cliente)
+        error_correo = validar_email(self.Correo_cliente)
         if error_correo: return error_correo
 
-        error_dir = self._validar_direccion(self.Direccion_cliente)
+        error_dir = validar_texto_numero(self.Direccion_cliente, 1, 40, "Dirección",
+                                   obligatorio=False, caracteres_extra="-.,#()/")
         if error_dir: return error_dir
 
         db = self._conexion_bd.conexion1()

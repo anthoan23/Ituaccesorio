@@ -4,11 +4,10 @@ from app.models.bitacora import Bitacora
 from app.utils.validators import (
     normalizar_numero_decimal,
     validar_celular_venezolano,
-    validar_direccion_proveedor,
     validar_email,
-    validar_limite_credito,
+    validar_decimal,
     validar_rif,
-    validar_solo_letras_numeros,
+    validar_texto_numero,
 )
 import mysql.connector
 
@@ -206,7 +205,7 @@ class Proveedores:
             if self.limite_credito < 0:
                 raise ValueError("El límite de crédito no puede ser negativo.")
 
-        error_nombre = validar_solo_letras_numeros(self.nombre, 2, 60, "Nombre del proveedor")
+        error_nombre = validar_texto_numero(self.nombre, 2, 60, "Nombre del proveedor")
         if error_nombre:
             raise ValueError(error_nombre)
 
@@ -219,15 +218,17 @@ class Proveedores:
             if error_celular:
                 raise ValueError(error_celular)
 
-        error_correo = validar_email(self.correo) if self.correo else None
+        error_correo = validar_email(self.correo)
         if error_correo:
             raise ValueError(error_correo)
 
-        error_direccion = validar_direccion_proveedor(self.direccion, 100, "Dirección")
+        error_direccion = validar_texto_numero(self.direccion, 1, 100, "Dirección",
+                                     obligatorio=False, caracteres_extra="-.,#()/")
         if error_direccion:
             raise ValueError(error_direccion)
 
-        error_limite = validar_limite_credito(self.limite_credito, "Límite de crédito")
+        error_limite = validar_decimal(self.limite_credito, "Límite de crédito",
+                                       max_decimales=2, min_valor=0, obligatorio=False)
         if error_limite:
             raise ValueError(error_limite)
 

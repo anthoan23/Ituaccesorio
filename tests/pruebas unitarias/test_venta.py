@@ -550,7 +550,7 @@ class TestGuardarRegistroPago:
             pytest.param(
                 "zelle",
                 {"referencia": "@#$", "monto": "10.00"},
-                "El campo Referencia no puede contener caracteres especiales.",
+                "El campo Referencia solo puede contener letras, números, acentos y espacios.",
                 id="referencia-caracteres-invalidos",
             ),
             pytest.param(
@@ -568,7 +568,7 @@ class TestGuardarRegistroPago:
             pytest.param(
                 "zelle",
                 {"referencia": "123456", "monto": "1.234"},
-                "El campo Monto debe ser un número decimal válido con hasta 2 decimales.",
+                "El campo Monto no puede tener más de 2 decimales.",
                 id="monto-formato-invalido",
             ),
             pytest.param(

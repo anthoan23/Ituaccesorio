@@ -280,7 +280,8 @@ class TestCrearProveedor:
             ),
             pytest.param(
                 {"direccion": "Dirección @#"},
-                "El campo Dirección solo puede contener letras, números, espacios y signos básicos.",
+                "El campo Dirección solo puede contener letras, números, acentos, "
+                "espacios, guiones, puntos, comas, numerales (#), paréntesis y barras (/).",
                 id="direccion-caracteres-invalidos",
             ),
             pytest.param(

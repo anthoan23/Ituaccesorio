@@ -118,7 +118,7 @@ class Tests():
         if validar_orden_id:
             return validar_orden_id
 
-        validar_id_empleado = validar_numero(id_empleado, 6, 9, "Cédula")
+        validar_id_empleado = validar_numero(id_empleado, 6, 8, "Cédula")
         if validar_id_empleado:
             return validar_id_empleado
 

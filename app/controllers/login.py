@@ -10,6 +10,7 @@ from app.utils.jwt_utils import clear_auth_cookies, set_auth_cookies
 from app.models.permisos import Permiso
 from app.models.modulos import Modulo
 from app.models.clientes import Clientes as GestionClientes
+from app.utils.validators import validar_email, validar_numero
 
 login_blueprint = Blueprint("login", __name__)
 
@@ -255,15 +256,17 @@ def registro_cliente_paso_2():
 
         if not celular:
             return jsonify({"success": False, "error": "El número de celular es obligatorio."}), 400
-        
+
+        # El modelo guarda el celular normalizado (sin espacios, guiones, etc.)
         celular_limpio = re.sub(r'[\s\-\(\)\+]', '', celular)
-        if not celular_limpio.isdigit() or len(celular_limpio) < 10:
-            return jsonify({"success": False, "error": "Ingrese un número de teléfono válido (mínimo 10 dígitos)."}), 400
+        error_celular = validar_numero(celular_limpio, 11, 11, "Celular", obligatorio=True)
+        if error_celular:
+            return jsonify({"success": False, "error": error_celular}), 400
 
         if correo:
-            email_pattern = r'^[^\s@]+@([^\s@]+\.)+[^\s@]+$'
-            if not re.match(email_pattern, correo):
-                return jsonify({"success": False, "error": "Ingrese un correo electrónico válido."}), 400
+            error_correo = validar_email(correo)
+            if error_correo:
+                return jsonify({"success": False, "error": error_correo}), 400
 
         modelo_clientes = GestionClientes()
         

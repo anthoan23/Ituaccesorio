@@ -206,7 +206,7 @@ class TestRegistrarClase:
             ),
             pytest.param(
                 "Clase #1",
-                "El campo Nombre de la clase solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre de la clase solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
         ],
@@ -440,7 +440,8 @@ class TestRegistrarProducto:
                 CLASE_TELEFONO,
                 MARCA_SEED,
                 "Producto @",
-                "El campo Nombre del producto solo puede contener letras, números, espacios, guiones y paréntesis.",
+                "El campo Nombre del producto solo puede contener letras, números, acentos, "
+                "espacios, guiones y paréntesis.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(

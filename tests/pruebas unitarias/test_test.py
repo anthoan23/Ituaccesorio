@@ -291,7 +291,7 @@ class TestRegistrarRevisionTest:
             ),
             pytest.param(
                 "1234567890",
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="cedula-demasiado-larga",
             ),
             pytest.param(

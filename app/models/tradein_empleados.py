@@ -6,9 +6,8 @@ from app.models.test import Tests
 from app.utils.validators import (
     validar_texto_numero,
     validar_numero,
-    validar_solo_letras,
-    validar_solo_letras_numeros,
-    validar_sin_caracteres_especiales,
+    validar_texto,
+    validar_texto_numero,
     validar_decimal,
 )
 from datetime import datetime
@@ -108,7 +107,7 @@ class TradeInEmpleados:
         # Color — Equipo.Color varchar(20)
         color = str(self.color).strip() if self.color else None
         if color:
-            error = validar_solo_letras(color, 1, 20, "Color", permitir_espacios=True)
+            error = validar_texto(color, 1, 20, "Color")
             if error:
                 return error
         self.color = color
@@ -116,7 +115,7 @@ class TradeInEmpleados:
         # Capacidad — Equipo.Capacidad varchar(20)
         capacidad = str(self.capacidad).strip() if self.capacidad else None
         if capacidad:
-            error = validar_solo_letras_numeros(capacidad, 1, 20, "Capacidad", permitir_espacios=True)
+            error = validar_texto_numero(capacidad, 1, 20, "Capacidad")
             if error:
                 return error
         self.capacidad = capacidad
@@ -132,7 +131,7 @@ class TradeInEmpleados:
         # Patrón — Equipo.Patron varchar(60); no es solo numérico
         patron = str(self.patron).strip() if self.patron else None
         if patron:
-            error = validar_sin_caracteres_especiales(patron, 1, 60, "Patrón", permitir_espacios=True)
+            error = validar_texto_numero(patron, 1, 60, "Patrón")
             if error:
                 return error
         self.patron = patron
@@ -870,7 +869,7 @@ class TradeInEmpleados:
     def obtener_clientes(self, q: str = None) -> List[Dict[str, Any]]:
         """Obtiene clientes para buscar en el registro"""
         if q:
-            error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(q, 1, 100, "Búsqueda")
             if error:
                 return []
 

@@ -4,7 +4,7 @@ from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
-    validar_sin_caracteres_especiales,
+    validar_texto_numero,
     validar_decimal,
 )
 from datetime import datetime
@@ -157,7 +157,7 @@ class VentaModel:
 
         # Metodo_pago.Referencia varchar(100)
         if referencia:
-            error = validar_sin_caracteres_especiales(referencia, 1, 100, "Referencia", permitir_espacios=True)
+            error = validar_texto_numero(referencia, 1, 100, "Referencia")
             if error:
                 return error
 

@@ -33,18 +33,6 @@ USUARIO_ID = "7"
 FECHA_ENTREGA = datetime(2026, 1, 2, 10, 30)
 
 
-@pytest.fixture
-def validador_estado_sin_regex():
-    """Simula que la validación numérica del estado pasa.
-
-    En la versión actual de `validators.py`, `validar_numero_entero` con
-    `max_decimales=0` compila un patrón inválido y lanza un error de `re`.
-    Para poder probar el flujo propio del modelo se neutraliza esa llamada.
-    """
-    with patch("app.models.entrega.validar_numero_entero", return_value=None):
-        yield
-
-
 def llamada_con(cursor, fragmento):
     """Devuelve la llamada a execute cuya sentencia contiene el fragmento."""
     return next(
@@ -306,7 +294,7 @@ class TestObtenerEntregaPorId:
 
 class TestRegistrarEntrega:
 
-    def test_datos_validos(self, conexion_falsa, validador_estado_sin_regex):
+    def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
         # 1ª: MAX(ID_entrega); 2ª: factura; 3ª: delivery
         cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
@@ -342,7 +330,28 @@ class TestRegistrarEntrega:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_valores_maximos(self, conexion_falsa, validador_estado_sin_regex):
+    def test_estado_cero_pendiente_es_valido(self, conexion_falsa):
+        """El estado 0 (Pendiente) es válido: el validador antiguo lo
+        rechazaba por tratar el entero 0 como vacío."""
+        db, cursor = conexion_falsa
+        cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
+
+        with patch("app.models.entrega.datetime") as fecha_cls:
+            fecha_cls.now.return_value = FECHA_ENTREGA
+            modelo = EntregaModel(
+                factura_id=FACTURA_VALIDA,
+                cedula_delivery=CEDULA_DELIVERY_MINIMA,
+                direccion=DIRECCION_MINIMA,
+                estado=0,
+            )
+            resultado = modelo.registrar_entrega()
+
+        assert resultado == "ENT0000005"
+        assert llamada_con(cursor, "INSERT INTO Entrega").args[1][3] == 0
+        db.commit.assert_called_once()
+        cierra_recursos(db, cursor)
+
+    def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000009",), (1,), (1,)]
 
@@ -365,7 +374,7 @@ class TestRegistrarEntrega:
         )
         db.commit.assert_called_once()
 
-    def test_factura_minima(self, conexion_falsa, validador_estado_sin_regex):
+    def test_factura_minima(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [None, (1,), (1,)]
 
@@ -405,7 +414,8 @@ class TestRegistrarEntrega:
                 CEDULA_DELIVERY_MINIMA,
                 DIRECCION_MINIMA,
                 ESTADO_VALIDO,
-                "El campo Factura solo puede contener letras, números y guiones.",
+                "El campo Factura solo puede contener letras, números (sin "
+                "espacios) y guiones.",
                 id="factura-caracteres-invalidos",
             ),
             pytest.param(
@@ -461,7 +471,7 @@ class TestRegistrarEntrega:
                 CEDULA_DELIVERY_MINIMA,
                 "Calle #1",
                 ESTADO_VALIDO,
-                "El campo Dirección no puede contener caracteres especiales.",
+                "El campo Dirección solo puede contener letras, números, acentos y espacios.",
                 id="direccion-caracteres-invalidos",
             ),
             pytest.param(
@@ -476,9 +486,9 @@ class TestRegistrarEntrega:
                 FACTURA_VALIDA,
                 CEDULA_DELIVERY_MINIMA,
                 DIRECCION_MINIMA,
-                0,
+                "",
                 "El campo Estado no puede estar vacío.",
-                id="estado-cero-entero",
+                id="estado-vacio-string",
             ),
         ],
     )
@@ -522,18 +532,18 @@ class TestRegistrarEntrega:
             ),
             pytest.param(
                 "abc",
-                "El estado debe ser un número entero válido.",
+                "El campo Estado debe ser un número entero válido.",
                 id="no-numerico",
             ),
             pytest.param(
                 "2.5",
-                "El estado debe ser un número entero válido.",
+                "El campo Estado debe ser un número entero válido.",
                 id="con-decimales",
             ),
         ],
     )
     def test_estado_invalido_no_toca_la_bd(
-        self, conexion_falsa, validador_estado_sin_regex, estado, esperado
+        self, conexion_falsa, estado, esperado
     ):
         db, cursor = conexion_falsa
 
@@ -550,7 +560,7 @@ class TestRegistrarEntrega:
         db.commit.assert_not_called()
 
     def test_factura_inexistente(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000001",), None]
@@ -569,7 +579,7 @@ class TestRegistrarEntrega:
         db.commit.assert_not_called()
 
     def test_delivery_inexistente(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000001",), (1,), None]
@@ -589,7 +599,7 @@ class TestRegistrarEntrega:
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
-    def test_conexion_caida(self, conexion_caída, validador_estado_sin_regex):
+    def test_conexion_caida(self, conexion_caída):
         with pytest.raises(
             RuntimeError, match="No se pudo conectar a la base de datos"
         ):
@@ -601,7 +611,7 @@ class TestRegistrarEntrega:
             ).registrar_entrega()
 
     def test_error_de_bd_hace_rollback_y_propaga(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000001",), (1,), (1,)]
@@ -626,7 +636,7 @@ class TestRegistrarEntrega:
         cierra_recursos(db, cursor)
 
     def test_registra_en_bitacora_con_usuario(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
@@ -654,7 +664,7 @@ class TestRegistrarEntrega:
         bitacora_cls.return_value.registrar.assert_called_once_with()
 
     def test_sin_usuario_no_registra_bitacora(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [("ENT0000004",), (1,), (1,)]
@@ -674,7 +684,7 @@ class TestRegistrarEntrega:
 
 class TestActualizarEntrega:
 
-    def test_datos_validos(self, conexion_falsa, validador_estado_sin_regex):
+    def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
 
@@ -694,7 +704,7 @@ class TestActualizarEntrega:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_valores_maximos(self, conexion_falsa, validador_estado_sin_regex):
+    def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
 
@@ -761,7 +771,7 @@ class TestActualizarEntrega:
                 ENTREGA_ID_MAXIMO,
                 "Calle #1",
                 ESTADO_VALIDO,
-                "El campo Dirección no puede contener caracteres especiales.",
+                "El campo Dirección solo puede contener letras, números, acentos y espacios.",
                 id="direccion-caracteres-invalidos",
             ),
             pytest.param(
@@ -774,9 +784,9 @@ class TestActualizarEntrega:
             pytest.param(
                 ENTREGA_ID_MAXIMO,
                 DIRECCION_MINIMA,
-                0,
+                "",
                 "El campo Estado no puede estar vacío.",
-                id="estado-cero-entero",
+                id="estado-vacio-string",
             ),
         ],
     )
@@ -817,13 +827,13 @@ class TestActualizarEntrega:
             ),
             pytest.param(
                 "abc",
-                "El estado debe ser un número entero válido.",
+                "El campo Estado debe ser un número entero válido.",
                 id="no-numerico",
             ),
         ],
     )
     def test_estado_invalido_no_toca_la_bd(
-        self, conexion_falsa, validador_estado_sin_regex, estado, esperado
+        self, conexion_falsa, estado, esperado
     ):
         db, cursor = conexion_falsa
 
@@ -837,7 +847,7 @@ class TestActualizarEntrega:
         cursor.execute.assert_not_called()
         db.commit.assert_not_called()
 
-    def test_entrega_inexistente(self, conexion_falsa, validador_estado_sin_regex):
+    def test_entrega_inexistente(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.rowcount = 0
 
@@ -852,7 +862,7 @@ class TestActualizarEntrega:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_conexion_caida(self, conexion_caída, validador_estado_sin_regex):
+    def test_conexion_caida(self, conexion_caída):
         resultado = EntregaModel(
             entrega_id=ENTREGA_ID_MAXIMO,
             direccion=DIRECCION_MINIMA,
@@ -862,7 +872,7 @@ class TestActualizarEntrega:
         assert resultado == MENSAJE_ERROR_CONEXION
 
     def test_error_de_bd_hace_rollback(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.execute.side_effect = Exception("fallo simulado")
@@ -879,7 +889,7 @@ class TestActualizarEntrega:
         cierra_recursos(db, cursor)
 
     def test_registra_en_bitacora_con_usuario(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
@@ -901,7 +911,7 @@ class TestActualizarEntrega:
         bitacora_cls.return_value.registrar.assert_called_once_with()
 
     def test_sin_usuario_no_registra_bitacora(
-        self, conexion_falsa, validador_estado_sin_regex
+        self, conexion_falsa
     ):
         db, cursor = conexion_falsa
         cursor.rowcount = 1
