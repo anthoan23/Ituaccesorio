@@ -544,11 +544,19 @@ class ReportesVentasModel:
                     VALUES (%s, %s, %s)
                 """, (inventario_id, factura_id, cantidad))
 
+                # Descuento de stock ATÓMICO: la condición va en el WHERE
+                # (y se comprueba rowcount) para que dos ventas simultáneas
+                # no puedan dejar la Existencia en negativo.
                 cursor.execute("""
                     UPDATE Existencias_productos
                     SET Existencia = Existencia - %s
-                    WHERE ID_inventario = %s
-                """, (cantidad, inventario_id))
+                    WHERE ID_inventario = %s AND Existencia >= %s
+                """, (cantidad, inventario_id, cantidad))
+                if cursor.rowcount == 0:
+                    raise ValueError(
+                        f"Stock insuficiente para producto {inventario_id}. "
+                        f"Disponible: {stock_disponible}"
+                    )
 
                 total_monto += costo_venta * cantidad
 

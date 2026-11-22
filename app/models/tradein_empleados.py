@@ -556,6 +556,7 @@ class TradeInEmpleados:
 
                 except Exception as e:
                     logger.error(f"Error al registrar tests: {e}")
+                    raise
 
             db.commit()
 

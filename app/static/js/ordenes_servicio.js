@@ -1265,7 +1265,7 @@ function renderFotosOrdenModal(fotos) {
                 if (src && !src.startsWith("/") && !src.startsWith("http")) src = `/${src}`;
                 return `
                     <div class="foto-item" data-foto-index="${index}">
-                        <div class="foto-thumbnail" onclick="window.open('${Utils.escapeHtml(src)}', '_blank')">
+                        <div class="foto-thumbnail" data-action="abrir-foto" data-url="${Utils.escapeHtml(src)}">
                             <img src="${Utils.escapeHtml(src)}" alt="Foto ${index + 1}" loading="lazy">
                         </div>
                     </div>
@@ -1777,7 +1777,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    Promise.all([ cargarModelos(), cargarTecnicos(), cargarOrdenes() ]).catch((error) => {
+  // Visor de fotos por delegación: los onclick inline quedan bloqueados
+  // por la CSP.
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-action='abrir-foto']");
+    if (el && el.dataset.url) window.open(el.dataset.url, "_blank");
+  });
+
+  Promise.all([ cargarModelos(), cargarTecnicos(), cargarOrdenes() ]).catch((error) => {
         console.error("Error en la inicialización:", error);
     });
 });

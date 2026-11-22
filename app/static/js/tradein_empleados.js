@@ -480,6 +480,9 @@
                 const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
                     headers: { "Authorization": `Bearer ${getAuthToken()}` }
                 });
+                if (!checkResponse.ok) {
+                    throw new Error(`HTTP ${checkResponse.status}`);
+                }
                 const checkData = await checkResponse.json();
                 if (checkData.exists) {
                     if (!confirm(`⚠️ El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${checkData.equipo?.producto_nombre || 'N/A'}\nColor: ${checkData.equipo?.Color || 'N/A'}\nCapacidad: ${checkData.equipo?.Capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`)) {
@@ -487,7 +490,7 @@
                     }
                 }
             } catch (err) {
-                console.log("Equipo nuevo o error:", err);
+                console.warn("No se pudo verificar el equipo; se continúa como nuevo:", err);
             }
             
             // Recopilar tests
@@ -586,7 +589,7 @@
                         <div class="fotos-grid">
                             ${fotos.map(foto => `
                                 <div class="foto-item">
-                                    <img src="${escapeHtml(foto.url)}" alt="Foto del equipo" onclick="window.open('${escapeHtml(foto.url)}', '_blank')">
+                                    <img src="${escapeHtml(foto.url)}" alt="Foto del equipo" data-action="abrir-foto" data-url="${escapeHtml(foto.url)}">
                                 </div>
                             `).join("")}
                         </div>
@@ -784,5 +787,12 @@
         }
     }
     
+    // Visor de fotos por delegación: los onclick inline quedan bloqueados
+    // por la CSP.
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-action='abrir-foto']");
+      if (el && el.dataset.url) window.open(el.dataset.url, "_blank");
+    });
+
     document.addEventListener("DOMContentLoaded", init);
 })();

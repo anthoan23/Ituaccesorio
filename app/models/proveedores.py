@@ -318,7 +318,7 @@ class Proveedores:
             )
 
             cursor.execute(
-                "SELECT @_sp_registrar_proveedor_7 AS id_proveedor, @_sp_registrar_proveedor_8 AS estado, @_sp_registrar_proveedor_9 AS mensaje"
+                "SELECT @_sp_registrar_proveedor_arg8 AS id_proveedor, @_sp_registrar_proveedor_arg9 AS estado, @_sp_registrar_proveedor_arg10 AS mensaje"
             )
             resultado = cursor.fetchone()
 

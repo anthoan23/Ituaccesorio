@@ -471,7 +471,7 @@ class TestEliminarFotoOrdenServicio:
 
         assert resultado == {
             "success": False,
-            "error": "Error al eliminar la foto: fallo simulado",
+            "error": "Error al eliminar la foto. Intente de nuevo.",
         }
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
@@ -718,7 +718,7 @@ class TestRegistrarReparacion:
             Descripcion_reparacion=DESCRIPCION_MINIMA,
         ).registrar_reparacion()
 
-        assert resultado == {"error": "Error en la base de datos: fallo simulado"}
+        assert resultado == {"error": "Error en la base de datos. Intente de nuevo."}
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 

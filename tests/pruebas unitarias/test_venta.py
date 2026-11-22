@@ -86,7 +86,7 @@ class TestCrearVentaDesdeCarrito:
             2,
         )
         update_stock = llamada_con(cursor, "UPDATE Existencias_productos")
-        assert update_stock.args[1] == (2, PRODUCTO_MINIMO)
+        assert update_stock.args[1] == (2, PRODUCTO_MINIMO, 2)
         db.commit.assert_called_once()
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)

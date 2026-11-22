@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Devuelve el JSON solo si la respuesta fue exitosa; en otro caso un
+    // objeto vacío para que las guardas (if data.success) lo ignoren.
+    async function jsonSeguro(resp) {
+        if (!resp || !resp.ok) return {};
+        try {
+            return await resp.json();
+        } catch {
+            return {};
+        }
+    }
+
     // ============================================================
     // 1. FECHA ACTUAL - ya está en el navbar
     // ============================================================
@@ -10,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Ventas Hoy
             const ventasResp = await fetch('/api/dashboard/ventas-hoy');
-            const ventasData = await ventasResp.json();
+            const ventasData = await jsonSeguro(ventasResp);
             if (ventasData.success) {
                 const simbolo = ventasData.simbolo || '$';
                 const kpiVentas = document.getElementById('kpi-ventas-hoy');
@@ -22,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Órdenes Activas
             const ordenesResp = await fetch('/api/dashboard/ordenes-servicio');
-            const ordenesData = await ordenesResp.json();
+            const ordenesData = await jsonSeguro(ordenesResp);
             if (ordenesData.success) {
                 const kpiOrdenes = document.getElementById('kpi-ordenes-activas');
                 if (kpiOrdenes) kpiOrdenes.textContent = ordenesData.total || '0';
@@ -33,19 +45,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Equipos Reparados (endpoint real; antes '24' hardcodeado)
             const reparadosResp = await fetch('/api/dashboard/reparados-mes');
-            const reparadosData = await reparadosResp.json();
+            const reparadosData = await jsonSeguro(reparadosResp);
             const kpiReparados = document.getElementById('kpi-reparados');
             if (kpiReparados) kpiReparados.textContent = reparadosData.total || '0';
 
             // Ingresos Mensuales (endpoint real; antes '$12,450' hardcodeado)
             const ingresosResp = await fetch('/api/dashboard/ingresos-mensuales');
-            const ingresosData = await ingresosResp.json();
+            const ingresosData = await jsonSeguro(ingresosResp);
             const kpiIngresos = document.getElementById('kpi-ingresos');
             if (kpiIngresos) kpiIngresos.textContent = ('$' + Number(ingresosData.total || 0).toLocaleString('es-VE', {maximumFractionDigits: 0}));
 
             // Stock Bajo
             const stockResp = await fetch('/api/dashboard/bajo-stock');
-            const stockData = await stockResp.json();
+            const stockData = await jsonSeguro(stockResp);
             if (stockData.success) {
                 const widgetStock = document.getElementById('widget-stock-bajo');
                 if (widgetStock) widgetStock.textContent = (stockData.productos || []).length || '0';
@@ -53,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Técnicos Activos (endpoint real; antes '4' hardcodeado)
             const tecnicosResp = await fetch('/api/dashboard/tecnicos-activos');
-            const tecnicosData = await tecnicosResp.json();
+            const tecnicosData = await jsonSeguro(tecnicosResp);
             const widgetTecnicos = document.getElementById('widget-tecnicos-activos');
             if (widgetTecnicos) widgetTecnicos.textContent = tecnicosData.total || '0';
 
@@ -72,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const response = await fetch('/api/dashboard/ingresos-gastos');
-            const data = await response.json();
+            const data = await jsonSeguro(response);
 
             const ctx = canvas.getContext('2d');
             const labels = data.success ? (data.etiquetas || ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']) : ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -156,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const response = await fetch('/api/dashboard/actividad-reciente');
-            const data = await response.json();
+            const data = await jsonSeguro(response);
 
             if (data.success && data.actividades && data.actividades.length > 0) {
                 const icons = {
@@ -220,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const response = await fetch('/api/ordenes_compra');
-            const data = await response.json();
+            const data = await jsonSeguro(response);
 
             if (Array.isArray(data) && data.length > 0) {
                 const orders = data.slice(0, 5);
@@ -282,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'same-origin'
             });
 
-            const data = await response.json();
+            const data = await jsonSeguro(response);
 
             if (data.success && data.productos && data.productos.length > 0) {
                 container.innerHTML = data.productos.map(producto => {

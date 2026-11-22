@@ -1,7 +1,7 @@
 import os
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
-from app.utils.helpers import guardar_fotos_evidencias
+from app.utils.helpers import guardar_fotos_evidencias, usuario_attr
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
@@ -39,7 +39,7 @@ def obtener_ordenes_taller():
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
     # Obtener ID del empleado desde g.user
-    usuario_id = g.user.get("cedula")
+    usuario_id = usuario_attr("cedula")
 
     ordenes = Orden_servicio(ID_empleado=usuario_id)
     resultado = ordenes.listar_ordenes_tecnico()
@@ -104,12 +104,12 @@ def consultar_test():
 @tiene_permiso('Taller', 'editar')
 def guardar_revision_tecnica():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
     numero_test = request.json.get("numero_test")
     componentes = request.json.get("componentes_evaluados")
 
     # Obtener usuario actual para bitácora
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    usuario_actual_id = usuario_attr("id")
 
     tests = Tests(
         ID_orden=id_orden,
@@ -140,7 +140,7 @@ def guardar_revision_tecnica():
 @tiene_permiso('Taller', 'editar')
 def asignar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
 
    
     ordenes = Orden_servicio(
@@ -160,7 +160,7 @@ def asignar_orden_tecnico():
 @tiene_permiso('Taller', 'editar')
 def liberar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
 
     ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
     resultado = ordenes.liberar_orden_empleado()
@@ -191,7 +191,7 @@ def registrar_reparacion():
         # Validar campos obligatorios
         id_orden = data.get("id_orden")
         descripcion = data.get("descripcion_reparacion")
-        id_empleado = g.user.get("cedula")
+        id_empleado = usuario_attr("cedula")
 
         # Procesar lista de repuestos (convertir a JSON si es necesario)
         repuestos = data.get("repuestos_utilizados")

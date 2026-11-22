@@ -5,7 +5,7 @@ from app.models.test import Tests
 from app.models.equipo import Equipo
 from app.models.clientes import Clientes, Persona_natural, Cliente_juridico
 from app.models.productos import Producto
-from app.utils.helpers import guardar_foto_evidencia
+from app.utils.helpers import guardar_foto_evidencia, usuario_attr
 from app.utils.decorators import jwt_required, tiene_permiso
 import re
 import os
@@ -418,7 +418,7 @@ def asignar_orden_servicio(id_orden):
 @tiene_permiso('Ordenes de servicio', 'modificar')
 def registrar_test_orden(id_orden):
     datos = request.get_json() or {}
-    empleado_id = g.user.get("cedula")
+    empleado_id = usuario_attr("cedula")
     
     campos = ['ID_em', 'Num_test', 'Botón Power','Botón Vol','Cornetas','Mica','LCD','Tactil','Wifi',
         'Puerto_carga','Cámara posterior','Cámara delantera','Microfono','Flash','Botón Silencio','Auricular',

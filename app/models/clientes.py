@@ -811,7 +811,8 @@ class Cliente_juridico(Clientes):
             return f"El cliente jurídico '{razon_social}' se registró exitosamente."
         except Exception as e:
             db.rollback()
-            return f"Error al registrar cliente jurídico: {e}"
+            logger.error(f"Error al registrar cliente jurídico: {e}")
+            return "Error al registrar cliente jurídico. Intente de nuevo."
         finally:
             cursor.close()
             db.close()
@@ -896,7 +897,8 @@ class Cliente_juridico(Clientes):
             return f"El cliente jurídico '{razon_social}' se actualizó exitosamente."
         except Exception as e:
             db.rollback()
-            return f"Error al actualizar cliente jurídico: {e}"
+            logger.error(f"Error al actualizar cliente jurídico: {e}")
+            return "Error al actualizar cliente jurídico. Intente de nuevo."
         finally:
             cursor.close()
             db.close()

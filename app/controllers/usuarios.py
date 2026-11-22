@@ -209,7 +209,9 @@ def api_actualizar_mi_perfil():
     data = request.get_json(silent=True) or request.form
     nombre = data.get("nombre", "")
     password = data.get("password", "")
-    foto_perfil = _guardar_foto_perfil()
+    foto_perfil, error_foto = _guardar_foto_perfil()
+    if error_foto:
+        return jsonify({"success": False, "error": error_foto}), 400
 
     usuario_model = Usuarios(usuario_id=usuario_id)
     usuario_actual_db = usuario_model.obtener_usuario_por_id(usuario_id)
@@ -364,7 +366,7 @@ def api_actualizar_permisos_rol(rol_id):
         return jsonify({"success": False, "error": "No hay permisos válidos para guardar."}), 400
 
     permiso_model = Permiso()
-    exitosos, errores = permiso_model.guardar_permisos_masivos(rol_id, permisos_data)
+    exitosos, errores = permiso_model.guardar_permisos_masivos(rol_id, permisos)
 
     if errores:
         return jsonify({

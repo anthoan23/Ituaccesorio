@@ -19,6 +19,21 @@ def obtener_usuario_autenticado_id():
     return getattr(usuario, "usuario_id", None) or getattr(usuario, "user_id", None) or getattr(usuario, "id", None)
 
 
+def usuario_attr(nombre_atributo, default=None):
+    """Lee un atributo de g.user de forma segura.
+
+    En producción g.user es un dict (payload JWT); en modo prueba es un
+    SimpleNamespace. Este helper unifica el acceso a ambos sin romper
+    ninguno de los dos modos.
+    """
+    usuario = getattr(g, "user", None)
+    if usuario is None:
+        return default
+    if isinstance(usuario, dict):
+        return usuario.get(nombre_atributo, default)
+    return getattr(usuario, nombre_atributo, default)
+
+
 def obtener_usuario_autenticado_info():
     """Obtiene la información completa del usuario autenticado"""
     usuario = getattr(g, "user", None)

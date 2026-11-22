@@ -290,7 +290,7 @@ class Orden_servicio():
         except Exception as e:
             db.rollback()
             logger.error(f"Error al eliminar la foto: {e}")
-            return {"success": False, "error": f"Error al eliminar la foto: {str(e)}"}
+            return {"success": False, "error": "Error al eliminar la foto. Intente de nuevo."}
         finally:
             cursor.close()
             db.close()
@@ -432,7 +432,7 @@ class Orden_servicio():
         except Exception as e:
             db.rollback()
             logger.error(f"Error al registrar la reparación: {e}")
-            return {"error": f"Error en la base de datos: {str(e)}"}
+            return {"error": "Error en la base de datos. Intente de nuevo."}
         finally:
             cursor.close()
             db.close()

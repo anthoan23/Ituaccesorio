@@ -7,6 +7,17 @@ const formRol = document.getElementById("form-rol");
 const formModulo = document.getElementById("form-modulo");
 
 const toast = document.getElementById("toast");
+
+// Devuelve el JSON solo si la respuesta fue exitosa; en otro caso un
+// objeto vacío para que las guardas (if data.success) lo ignoren.
+async function jsonSeguro(resp) {
+    if (!resp || !resp.ok) return {};
+    try {
+        return await resp.json();
+    } catch {
+        return {};
+    }
+}
 const confirmMessage = document.getElementById("confirmacion-mensaje");
 const confirmActionBtn = document.getElementById("confirmacion-btn");
 const confirmModalId = "modal-confirmacion";
@@ -129,7 +140,7 @@ async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
                 },
                 credentials: 'same-origin'
             });
-            data = await response.json();
+            data = await jsonSeguro(response);
             
             if (data.success && data.clientes) {
                 const options = ['<option value="">Seleccione un cliente...</option>'];
@@ -153,7 +164,7 @@ async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
                 },
                 credentials: 'same-origin'
             });
-            data = await response.json();
+            data = await jsonSeguro(response);
             
             if (data.success && data.empleados) {
                 const options = ['<option value="">Seleccione un empleado...</option>'];
@@ -218,7 +229,7 @@ async function cargarPermisosPorRol(rolId) {
             credentials: 'same-origin'
         });
         
-        const data = await response.json();
+        const data = await jsonSeguro(response);
         
         if (!data.success) {
             throw new Error(data.error || "Error al cargar permisos");
@@ -328,7 +339,7 @@ async function guardarPermisosRol(rolId) {
             body: JSON.stringify({ permisos: permisos })
         });
         
-        const data = await response.json();
+        const data = await jsonSeguro(response);
         
         if (!data.success) {
             throw new Error(data.error || "Error al guardar permisos");
@@ -978,7 +989,7 @@ async function fetchJson(url, options = {}) {
         body: options.body,
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await jsonSeguro(response).catch(() => ({}));
 
     if (!response.ok || data.success === false) {
         throw new Error(data.error || "No se pudo completar la operación.");

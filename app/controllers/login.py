@@ -130,9 +130,9 @@ def validar_login():
         if isinstance(error, (ValueError, TypeError)):
             return jsonify({"success": False, "error": f"Datos inválidos: {str(error)}"}), 400
         if isinstance(error, mysql.connector.Error):
-            return jsonify({"success": False, "error": f"Error de base de datos: {str(error)}"}), 500
+            return jsonify({"success": False, "error": "Error de base de datos. Intente de nuevo."}), 500
         
-        return jsonify({"success": False, "error": f"Ocurrió un error inesperado: {str(error)}"}), 500
+        return jsonify({"success": False, "error": "Ocurrió un error inesperado. Intente de nuevo."}), 500
 
 
 @login_blueprint.route("/api/registro/cliente/paso-1", methods=["POST"])

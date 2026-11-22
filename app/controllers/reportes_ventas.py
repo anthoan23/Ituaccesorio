@@ -85,7 +85,7 @@ def api_listar_ventas_locales():
 
 @reportes_ventas_blueprint.route("/api/reportes-ventas/venta-local", methods=["POST"])
 @jwt_required
-@tiene_permiso('Reportes Ventas', 'crear')
+@tiene_permiso('Reportes Ventas', 'registrar')
 def api_registrar_venta_local():
     try:
         datos = request.get_json(silent=True) or {}

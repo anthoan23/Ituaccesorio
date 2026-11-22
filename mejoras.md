@@ -1036,3 +1036,150 @@ en el JS.
 - **Permisos cruzados de consulta de catálogos** y demás puntos ya listados en §9.
 - XSS bajos restantes (atributos `data-*` con ids/estados de BD ×6), `campos Caja/Cargador/Cable/Manuales` descartados por el backend, spotlight ⌘K decorativo, CSS: badge conflictuado, `theme.css` redefiniciones, `login.css` muerto, Chart.js duplicado, `pagos.css` mínimo, humo faltante (/pagar, catálogo, impresiones).
 
+---
+---
+
+# Auditoría integral del sistema + limpieza de código no usado + remediación de errores
+
+> Fecha: 22/11/2026 · Alcance: **backend Python completo** (26 controllers, 35 models, utils,
+> services), **frontend** (31 JS, 28 templates, 32 CSS) y **config/infraestructura** (fábrica de
+> app, CSP, Dockerfile, los 3 compose, requirements, .gitignore/.dockerignore) — ~52k líneas propias.
+> Método: 3 auditorías en paralelo (backend / frontend / config) + **verificación manual de cada
+> hallazgo crítico antes de arreglar** (los 4 bugs P0 se confirmaron leyendo el código y el esquema;
+> un falso positivo detectado y corregido: `chart.umd.min.js` NO era la misma versión que el vendor,
+> era **v4.4.0** vs v4.6.1). Antes de borrar código "muerto" se hizo grep en **todo el repo
+> incluyendo tests**: varios métodos de modelos marcados muertos por la exploración estaban
+> **cubiertos por la suite** y NO se tocaron (ver §Límites).
+> Línea base: 2379 tests en verde → Estado final: **2379 en verde** (4 asserts actualizados al
+> comportamiento corregido, ver §Remediación).
+> Orden de trabajo: 1) limpieza de código no usado → 2) fixes de errores → 3) documentación.
+
+## Resumen de la sesión
+
+| Fase | Alcance | Resultado |
+|---|---|---|
+| Limpieza | 4 archivos borrados, 1 dependencia, 6 imports, 6 funciones JS, 1 ruta duplicada | −4,4 MB del repo/imagen, cero referencias residuales |
+| Fixes backend | 11 correcciones (5 críticas) | 3 endpoints rotos recuperados + 1 bug de negocio + integridad de stock/TZ/errores |
+| Fixes frontend | 8 correcciones | Botones Imprimir y visores de fotos **recuperados en producción** (CSP), XSS cerrados, conversión de moneda, fetches sin `.ok` |
+| Config | auditada (no remediada salvo flask-cors y .gitignore) | hallazgos listados en §Pendiente |
+
+---
+
+## 1. Limpieza de código no usado (aplicada)
+
+| Elemento eliminado | Motivo verificado |
+|---|---|
+| `app/controllers/buscar_controller.py` | 0 bytes; nunca importado ni registrado (pendiente que lo marcaba en la auditoría de controllers §4 → aplicado) |
+| `app/static/css/login.css` | Ninguna vista lo carga (pendiente §5 del frontend → aplicado) |
+| `app/static/js/chart.umd.min.js` | Duplicado de Chart.js sin versionar — era **v4.4.0**; `empleados.html` ahora carga `vendor/chart.umd-4.6.1.min.js` (pendiente §5 → aplicado; además elimina una inconsistencia de versiones) |
+| `repomix-output.xml` (4,3 MB) | Artefacto generado por repomix, versionado y copiado a la imagen; añadido a `.gitignore` |
+| `flask-cors==4.0.0` (requirements.txt) | **0 imports en todo el repo** + CVEs conocidos en 4.0.0 |
+| Imports: `os`/`uuid`/`secure_filename` en `controllers/ventas.py`; `os`/`uuid` en `controllers/usuarios.py`; `uuid4` + `ALLOWED_IMAGE_EXTENSIONS` en `taller.py` y `taller_celular.py` | Sin uso verificado con límites de palabra (los primeros greps daban falsos positivos: "dat**os.**get") |
+| `cerrarModalReportes()` (`productos.js`), `cerrarModal()` (`validacion_pagos.js`), `cargarModelos()` (`proveedores.js`), `guardarNotificacionVista()` (`notificaciones.js`), `state.carrito` y `facturaPendiente` (`ventas.js`) | Definidas/asignadas y nunca llamadas/leídas (grep global sin exposición por `window.*`) |
+| Ruta duplicada `GET /api/dashboard/actividad-reciente` en `controllers/bitacora.py` | Inalcanzable: `home_blueprint` se registra primero (`app/__init__.py:106` vs `:121`), y Flask gana el primer registro. **Corrige O7**: el doc decía que sobrevivía `bitacora.py`; el orden real de registro hace que sobreviva `home_controller.py` (verificado esta sesión: la ruta sigue ahí) |
+
+**No se borró (y por qué):**
+- `login.py` (`verificar_usuario_existe_*`, `crear_cliente_natural`, `obtener_*_para_sesion`,
+  `obtener_rol_por_id`, `obtener_usuario_por_id`), `clientes.listar_clientes_naturales` /
+  `actualizar_datos_cliente`, `equipo.eliminar_equipo`, `ordenes_servicio.listar_ordenes_servicio`,
+  `permisos.listar_permisos_por_rol` / `guardar_permiso`, la clase `Productos` de compatibilidad y
+  los helpers de `bitacora.py`: **la suite los ejercita** (unitarias e integración). Borrarlos
+  exige borrar también sus tests — decisión aparte (relacionado con §9.5).
+- `app/bd/` (respaldos SQL del 27/09): son datos, no código; no se tocan sin confirmación.
+- `selenium` en requirements: lo usan las pruebas de interface (`tests/pruebas de interface/`).
+- `rol_data` en `controllers/usuarios.py:481,505`: asignación sin lectura PERO con efecto
+  secundario (query a BD); es desperdicio de query, no código muerto puro. Queda para el refactor
+  de contrato de errores (§9.2).
+
+---
+
+## 2. Fixes de errores aplicados
+
+### 2.1 Backend — críticos (endpoints rotos / bug de negocio)
+
+| # | Fix | Efecto |
+|---|---|---|
+| S1 | `controllers/usuarios.py:370`: `permisos_data` → `permisos` (NameError) | `PUT /api/permisos/rol/<id>` devolvía **500 SIEMPRE**; nadie podía editar permisos de un rol. Funciona |
+| S2 | `controllers/usuarios.py:215`: `foto_perfil, error_foto = _guardar_foto_perfil()` + manejo de error 400 (consistente con las otras 2 llamadas) | `PUT /api/usuarios/mi-perfil` devolvía **500 SIEMPRE** (tupla sin desempaquetar viajaba al modelo). Funciona |
+| S3 | `models/proveedores.py:321`: convención de OUT params corregida a `@_sp_registrar_proveedor_arg8/9/10` (1-based, con `_arg`), como ya hacía `productos.py:563-565` | `POST /api/proveedores` leía `@_sp_…_7/8/9` (sin `_arg`) → NULL → `int(None)` → 500. Funciona. **Corrige el §5 de la auditoría de modelos**, que daba la firma de `sp_registrar_proveedor` por ✅ contrastada |
+| S4 | `models/tradein.py:322-327`: el "10% de descuento adicional" ahora **resta** (`-=`), no suma; test actualizado (5 fallas × $10 → costo 45, estimado 455 — antes 55/445) | Las cotizaciones públicas de trade-in con 5+ fallas le quitan menos dinero al cliente (bug de negocio directo, en un endpoint **sin autenticación**) |
+| S5 | `controllers/backup.py`: la restauración con **errores parciales** ahora responde `success: false` + conteo de statements fallidos (el modelo devuelve `errors` y el controller lo ignoraba) | Una restauración a medias ya no se anuncia como éxito: la BD puede quedar en estado mixto (el restore hace commit por lotes de 100 y no es reversible) |
+| S6 | `models/tradein_empleados.py:557`: `raise` tras loggear el fallo de tests | Antes: se borraban los tests viejos, fallaba un INSERT, se tragaba, `commit()` y `success: True` → trade-in **sin pruebas de diagnóstico**. Ahora: rollback completo vía el except del método (lo que el comentario del propio código prometía) |
+
+### 2.2 Backend — integridad de datos
+
+| # | Fix | Efecto |
+|---|---|---|
+| S7 | `models/venta.py` y `models/reportes_ventas.py`: descuento de stock **atómico** — `UPDATE … SET Existencia = Existencia - %s WHERE ID_inventario = %s AND Existencia >= %s` + `if cursor.rowcount == 0: raise ValueError` | Cierra la carrera TOCTOU: dos ventas simultáneas ya no pueden dejar stock negativo (mismo patrón que `validacion_pagos.py:329-331`). El chequeo `rowcount == 0` es compatible con el cursor fake de la suite. Test de `test_venta.py:88` actualizado a la 3-tupla `(2, PRODUCTO_MINIMO, 2)` |
+| S8 | `controllers/reportes_ventas.py:88`: `@tiene_permiso('Reportes Ventas', 'crear')` → `'registrar'` | La tabla `permiso` solo tiene columnas `consultar/registrar/modificar/eliminar` (`bd/seguridad.sql:99-102`): el permiso `'crear'` era **insatisfacible** → registrar venta local devolvía 403 para todo no-admin |
+| S9 | Timezone: `models/venta.py` (2 sitios: crear venta y reenviar pago) y `models/entrega.py` usan `datetime.now(timezone(timedelta(hours=-4)))` (patrón ya existente en `tradein_empleados.py:314`) | El contenedor va en UTC y MySQL escribe en -04:00: las ventas/entregas de 00:00–04:00 se atribuían al día anterior en "ventas hoy" y comparaciones con `CURDATE()` |
+| S10 | Fuga de `str(e)` al cliente → mensajes genéricos + `logger.error` con el detalle: `controllers/login.py:131,135`, `models/clientes.py:814,899`, `models/ordenes_servicio.py:293,435` | Los detalles internos de MySQL/excepciones ya no viajan en la respuesta JSON (amplía T2 a los archivos que faltaban; 4 asserts de tests actualizados) |
+| S11 | Nuevo helper `usuario_attr(nombre, default=None)` en `app/utils/helpers.py` (dict en producción / SimpleNamespace en modo prueba) y aplicado en `controllers/taller.py` (6 sitios) y `controllers/ordenes_servicio.py:421` | `g.user.get(...)` directo lanzaba `AttributeError` en `ENTORNO_PRUEBA=true` (SimpleNamespace sin `.get`). Unifica el acceso dual documentado en AGENTS.md; `ventas.py`/`backup.py`/`validacion_pagos.py`/`reportes_ventas.py` ya estaban cubiertos con `isinstance` |
+
+### 2.3 Frontend — features muertas por CSP (recuperadas)
+
+| # | Fix | Efecto |
+|---|---|---|
+| S12 | Los **5 botones "🖨 Imprimir"** de reportes (`inventario.js`, `productos.js`, `proveedores.js`, `reportes_ventas.js`, `validacion_pagos.js`): `onclick="window.print()"` eliminado del template; tras `ventana.document.close()` se conectan por programación (`btn.addEventListener("click", () => ventana.print())`), igual el `onerror` del logo | El botón Imprimir **no hacía nada en producción** (la ventana `about:blank` hereda la CSP del opener). Recuperado. *Pendiente O8 restante: el bloque `<style>` inline de esas ventanas* |
+| S13 | Visores de fotos/comprobantes (`validacion_pagos.js:351`, `tradein_empleados.js:589`, `ordenes_servicio.js:1268`): `onclick="window.open(...)"` → `data-action="abrir-foto|abrir-comprobante"` + `data-url` + listener delegado en `document` (uno por módulo) | Ver comprobante de pago y fotos de equipo/orden **no funcionaba en producción**. Recuperado |
+| S14 | `ventas.js`: fallback de imágenes del catálogo — `onerror` inline (×2, uno sin guard anti-bucle) → delegación del evento `error` en **fase de captura** con `data-fallback` + marca `fallbackAplicado` (evita bucles); URL unificada en constante `URL_IMAGEN_FALLBACK` (antes duplicada 4×) | El fallback de imagen rota nunca se ejecutaba con CSP activa (y uno podía entrar en bucle de errores). Funciona |
+
+### 2.4 Frontend — datos incorrectos / robustez
+
+| # | Fix | Efecto |
+|---|---|---|
+| S15 | `ventas.js` (`/pagar`): el total USD sale directo de `precio_usd × cantidad` y el Bs se deriva con **una sola tasa**; ítems con `escapeHtml(i.nombre)` | Antes: Bs con tasa paralelo y USD derivado dividiendo con la tasa **oficial** → totales que no cuadran si difieren. También cierra el XSS del nombre del ítem del carrito |
+| S16 | XSS: `escapeHtml` en opciones de método de pago (`ventas.js`: `m.id`/`m.nombre`/`m.moneda`) y helper `escapeHtml` **nuevo** en `tradein.js` aplicado a `etiqueta`, `descripcion`, `advertencias` y mensajes de error (era el único JS sin helper) | Datos de BD crudos en `innerHTML` → escapados |
+| S17 | `fetch` sin `.ok` → helper `jsonSeguro(resp)` (devuelve `{}` si `!resp.ok` o JSON inválido) en `index.js` (10 fetches) y `usuarios.js` (5); `verificar-equipo` en `tradein_empleados.js` ahora lanza en `!ok` y el catch avisa por consola | Un 401/500 con cuerpo no-JSON ya no produce `SyntaxError` silencioso ni KPIs pintados de datos vacíos; las guardas `if (data.success)` existentes siguen decidiendo |
+| S18 | `views/ventas/pagos.html` ahora carga `ventas.js?v=20260606-2` (igual que `catalogo.html`) | Mismo archivo con versiones de caché distintas entre las 2 páginas → posible mezcla de versiones en una misma sesión |
+
+---
+
+## 3. Verificación de la sesión
+
+```bash
+.venv/bin/python -m pytest "tests/pruebas unitarias" -q   # 2379 passed
+# Sintaxis: ast.parse OK en los 13 .py tocados · node --check OK en los 12 .js tocados
+grep -rn "onclick=\|onerror=" app/static/js/*.js   # 0 resultados (fuera de libs .min.js)
+grep -rn "chart.umd.min.js\|login.css\|buscar_controller" views/ app/ tests/   # 0 referencias residuales
+```
+
+Tests actualizados al comportamiento corregido (no a comportamientos viejos):
+- `test_tradein.py`: 5 fallas → `costo_total_repuestos == 45.0`, `monto_estimado == 455.0` (S4).
+- `test_venta.py:88`: args del UPDATE de stock → 3-tupla `(2, PRODUCTO_MINIMO, 2)` (S7).
+- `test_clientes.py` (2 asserts) y `test_ordenes_servicio.py` (2 asserts): mensajes genéricos sin `str(e)` (S10).
+
+## 4. Correcciones a secciones anteriores de este documento
+
+- **§5 auditoría de modelos** ("Firmas de CALL contrastadas… `sp_registrar_proveedor` ✅"): era
+  incorrecto — la lectura de OUT params usaba `@_sp_…_N` sin `_arg` y desfasada; ver S3.
+- **O7/C3** (ruta duplicada `actividad-reciente`): el orden real de registro hace que sobreviva
+  `home_controller.py` (106), no `bitacora.py` (121) — esta sesión se eliminó la copia de
+  `bitacora.py` (la de `home_controller` sigue presente y es la que sirve la ruta).
+
+## 5. Pendiente (no aplicado en esta sesión)
+
+- **Auditoría de config/infra — auditada, sin remediar** (nueva área, no cubierta antes en este doc):
+  1. `SECRET_KEY` con default hardcodeado y `DB_PASSWORD`/`DB_PASSWORD2` con default `'12345678'`
+     (`app/__init__.py:31,39-40`); fallback `'dev-secret'` en `jwt_utils.py:9`. El `.env` real usa
+     secretos débiles (sin `ENTORNO_PRUEBA=true` — ese flag está bien). **Rotar secretos.**
+  2. `docker-compose.prod.yml` **no fuerza `ENTORNO_PRUEBA=false`** en `environment:` → un flag
+     olvidado en `.env` despliega sin Talisman/CSRF/auth y con admin falso.
+  3. `.dockerignore` no excluye `.env.test` → las claves de prueba entran a la imagen de prod vía
+     `COPY . .`; tampoco `repomix-output.xml` (borrado este archivo, pero regenerable), `mejoras.md`
+     ni `.pytest_cache`. `.gitignore` era de 4 líneas (ahora con `repomix-output.xml`).
+  4. `.env Ejemplo` incompleto: sin `GEMINI_API_KEY` la app **ni arranca** (`IAService()` se
+     instancia al importar el blueprint); sin `DB_PASSWORD2` el usuario de db2 se crea sin
+     contraseña; faltan también `RECAPTCHA_*` y `MAIL_*`.
+  5. Servicio `web` sin `healthcheck` en los 3 compose (db1/db2 sí tienen).
+  6. `pytest -q` colecciona las pruebas Selenium (`tests/pruebas de interface/`) que exigen Firefox
+     + app viva en `:5001` → fallan sin navegador. Falta marcador/exclusión en `pytest.ini`.
+  7. Logging sin configurar (nivel/destino) en la fábrica de app.
+- **Del frontend** (siguen en §9, sin cambios): consolidación del carrito navbar↔ventas; IDs DOM
+  inexistentes en búsquedas de clientes/productos (decidir añadir elementos vs borrar JS);
+  `<style>` inline de las ventanas de impresión (O8 restante); sesión expirada global.
+- **Del backend** (siguen en §9): "ventas hoy" mezcla monedas (`LIMIT 1` sobre GROUP BY Moneda) —
+  requiere decisión de negocio (convierte/por moneda); métodos "muertos" con cobertura de tests
+  (§9.5); contrato de errores unificado (§9.2); IDs con MAX+1 bajo lock (§9.3).
+
+

@@ -562,15 +562,27 @@ def api_restaurar_backup(id_backup):
     
     # Ejecutar la restauración
     resultado = backup_model.restaurar_backup(id_backup, db_config)
-    
-    if resultado.get('success'):
+
+    errores_parciales = resultado.get('errors')
+    if resultado.get('success') and not errores_parciales:
         return jsonify({
             "success": True,
             "message": resultado.get('message'),
             "executed": resultado.get('executed', 0)
         }), 200
     else:
+        # Restauración fallida O con errores parciales: los errores se
+        # propagan porque la BD puede quedar en estado mixto (el restore
+        # hace commit por lotes y no es reversible).
+        if errores_parciales:
+            mensaje = (
+                f"{resultado.get('message', 'Restauración incompleta')} "
+                f"Hubo {len(errores_parciales)} statement(s) con error. "
+                "La base de datos pudo quedar en estado inconsistente."
+            )
+        else:
+            mensaje = resultado.get('message', 'Error al restaurar el backup')
         return jsonify({
             "success": False,
-            "message": resultado.get('message', 'Error al restaurar el backup')
+            "message": mensaje
         }), 500

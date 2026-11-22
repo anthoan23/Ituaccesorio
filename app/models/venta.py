@@ -7,7 +7,7 @@ from app.utils.validators import (
     validar_texto_numero,
     validar_decimal,
 )
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 import uuid
 
@@ -232,7 +232,10 @@ class VentaModel:
             raise RuntimeError("Error al conectar a la base de datos.")
 
         factura_id = self._generar_id_factura()
-        fecha_actual = datetime.now()
+        # -04:00: el contenedor va en UTC y MySQL escribe en -04:00 (mismo
+        # desfase corregido en tradein_empleados). Sin esto, las ventas de
+        # 00:00-04:00 locales quedaban atribuidas al día anterior.
+        fecha_actual = datetime.now(timezone(timedelta(hours=-4)))
         moneda = self._obtener_moneda_segun_metodo()
 
         cursor = db.cursor()
@@ -255,11 +258,19 @@ class VentaModel:
                     VALUES (%s, %s, %s)
                 """, (inventario_id, factura_id, cantidad))
 
+                # Descuento de stock ATÓMICO: la condición de stock va en el
+                # WHERE (y se comprueba rowcount) para que dos ventas
+                # simultáneas no puedan dejar la Existencia en negativo.
                 cursor.execute("""
                     UPDATE Existencias_productos
                     SET Existencia = Existencia - %s
-                    WHERE ID_inventario = %s
-                """, (cantidad, inventario_id))
+                    WHERE ID_inventario = %s AND Existencia >= %s
+                """, (cantidad, inventario_id, cantidad))
+                if cursor.rowcount == 0:
+                    raise ValueError(
+                        f"Stock insuficiente para el producto {inventario_id}. "
+                        f"Disponible: {stock_disponible}"
+                    )
 
             db.commit()
 
@@ -303,7 +314,8 @@ class VentaModel:
 
         cursor = db.cursor()
         try:
-            fecha_actual = datetime.now()
+            # -04:00: el contenedor va en UTC y MySQL escribe en -04:00.
+            fecha_actual = datetime.now(timezone(timedelta(hours=-4)))
             moneda = self._obtener_moneda_segun_metodo()
 
             referencia = self.datos_pago.get("referencia", "")

@@ -11,6 +11,10 @@
 
   let carritoItems = [];
 
+  // Imagen de respaldo para productos sin foto. Se aplica por delegación
+  // en el evento 'error': los atributos onerror inline los bloquea la CSP.
+  const URL_IMAGEN_FALLBACK = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+
   function getAuthToken() {
     return (
       localStorage.getItem("access_token") ||
@@ -225,7 +229,7 @@
         const imagenSrc =
           p.imagen && p.imagen.trim()
             ? p.imagen
-            : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+            : URL_IMAGEN_FALLBACK;
         const stockNum = Number(p.stock);
         const avisoStockBajo =
           Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 5
@@ -235,7 +239,7 @@
         return `
                 <div class="producto-card">
                     <div class="producto-imagen">
-                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" data-fallback="${URL_IMAGEN_FALLBACK}">
                     </div>
                     <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
                     <div class="producto-marca">${escapeHtml(p.marca)}</div>
@@ -582,12 +586,12 @@ function renderCarritoModal() {
             const imagenSrc =
                 item.imagen || item.Foto_inventario
                     ? item.imagen || item.Foto_inventario
-                    : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+                    : URL_IMAGEN_FALLBACK;
 
             return `
                 <div class="cart-item" data-producto-id="${inventarioId}">
                     <div class="cart-item-imagen">
-                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(nombre)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(nombre)}" loading="lazy" data-fallback="${URL_IMAGEN_FALLBACK}">
                     </div>
                     <div class="cart-item-info">
                         <div class="cart-item-name">${escapeHtml(nombre)}</div>
@@ -661,7 +665,7 @@ function renderCarritoModal() {
         '<option value="">-- Selecciona --</option>' +
         data.metodos
           .map(
-            (m) => `<option value="${m.id}">${m.nombre} (${m.moneda})</option>`,
+            (m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.nombre)} (${escapeHtml(m.moneda)})</option>`,
           )
           .join("");
     }
@@ -964,28 +968,26 @@ function renderCarritoModal() {
         const resumenContainer = document.getElementById("resumen-carrito");
         if (resumenContainer && carritoData.items?.length) {
           const tasas = carritoData.tasas || state.tasas;
-          const totalBs = carritoData.items.reduce(
-            (sum, i) =>
-              sum +
-              Number(i.precio_usd) *
-                (tasas.paralelo || tasas.oficial) *
-                i.cantidad,
+          const tasaBs = tasas.paralelo || tasas.oficial;
+          // El USD viene directo del precio en USD del producto; el Bs se
+          // calcula a partir de él. Antes el total Bs usaba la tasa paralelo
+          // y el USD se derivaba dividiendo con la tasa oficial: si difieren,
+          // los totales no cuadran.
+          const totalUsd = carritoData.items.reduce(
+            (sum, i) => sum + Number(i.precio_usd) * i.cantidad,
             0,
           );
-          const totalUsd = totalBs / (tasas.oficial || 1);
+          const totalBs = totalUsd * tasaBs;
           resumenContainer.innerHTML = `
                         <div class="resumen-card">
                             <h3>Resumen de compra</h3>
                             <ul>
                                 ${carritoData.items
                                   .map((i) => {
-                                    const bsItem =
-                                      Number(i.precio_usd) *
-                                      (tasas.paralelo || tasas.oficial) *
-                                      i.cantidad;
                                     const usdItem =
-                                      bsItem / (tasas.oficial || 1);
-                                    return `<li>${i.cantidad}x ${i.nombre} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
+                                      Number(i.precio_usd) * i.cantidad;
+                                    const bsItem = usdItem * tasaBs;
+                                    return `<li>${i.cantidad}x ${escapeHtml(i.nombre)} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
                                   })
                                   .join("")}
                             </ul>
@@ -999,6 +1001,21 @@ function renderCarritoModal() {
     }
 
   }
+
+  // Fallback de imágenes por delegación (fase de captura: el evento 'error'
+  // no burbujea). Marca fallbackAplicado para evitar bucles infinitos.
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (
+      img &&
+      img.tagName === "IMG" &&
+      img.dataset.fallback &&
+      !img.dataset.fallbackAplicado
+    ) {
+      img.dataset.fallbackAplicado = "1";
+      img.src = img.dataset.fallback;
+    }
+  }, true);
 
   document.addEventListener("DOMContentLoaded", init);
 })();

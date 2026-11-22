@@ -321,7 +321,7 @@ class TradeIn(conectar):
 
         if len(fallas_validas) >= 5:
             descuento_adicional = costo_total_repuestos * 0.10
-            costo_total_repuestos += descuento_adicional
+            costo_total_repuestos -= descuento_adicional
             advertencias.append(
                 f"Se aplicó un 10% de descuento adicional por múltiples fallas (${descuento_adicional:.2f})."
             )

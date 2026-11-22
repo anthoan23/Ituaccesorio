@@ -1704,7 +1704,7 @@ class TestRegistrarClienteJuridico:
 
         resultado = juridico().registrar_cliente_juridico()
 
-        assert resultado == "Error al registrar cliente jurídico: fallo simulado"
+        assert resultado == "Error al registrar cliente jurídico. Intente de nuevo."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -1858,7 +1858,7 @@ class TestActualizarClienteJuridico:
         resultado = juridico().actualizar_cliente_juridico()
 
         assert resultado == (
-            "Error al actualizar cliente jurídico: fallo simulado"
+            "Error al actualizar cliente jurídico. Intente de nuevo."
         )
         db.rollback.assert_called_once()
         db.commit.assert_not_called()

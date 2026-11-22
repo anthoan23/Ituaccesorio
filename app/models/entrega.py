@@ -7,7 +7,7 @@ from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
 )
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
 
 
@@ -275,7 +275,8 @@ class EntregaModel:
             raise RuntimeError("No se pudo conectar a la base de datos")
 
         entrega_id = self._generar_id_entrega()
-        fecha_entrega = datetime.now()
+        # -04:00: el contenedor va en UTC y MySQL escribe en -04:00.
+        fecha_entrega = datetime.now(timezone(timedelta(hours=-4)))
 
         cursor = db.cursor()
         try:
