@@ -294,7 +294,8 @@ class ValidacionPagosModel:
 
     # ==================== APROBAR / RECHAZAR ====================
 
-    def aprobar_pago(self, factura_id: str = None, empleado_id: str = None) -> Dict[str, Any]:
+    def aprobar_pago(self, factura_id: str = None, empleado_id: str = None,
+                     fecha_pago: str = None) -> Dict[str, Any]:
         factura = factura_id or self.factura_id
         empleado = empleado_id or self.empleado_id
 
@@ -328,15 +329,30 @@ class ValidacionPagosModel:
             # Condición de estado EN el WHERE (atómico): antes la verificación
             # "pendiente" corría en otra conexión y dos empleados aprobando a
             # la vez se sobrescribían Aprobado_por/Fecha_aprobacion.
-            cursor.execute("""
-                UPDATE Metodo_pago
-                SET
-                    Estado_pago = 'aprobado',
-                    Aprobado_por = %s,
-                    Fecha_aprobacion = %s
-                WHERE ID_factura = %s
-                  AND LOWER(TRIM(Estado_pago)) = 'pendiente'
-            """, (empleado, fecha_actual, factura))
+            if fecha_pago:
+                # Fecha_pago viaja en el MISMO UPDATE (antes el controller
+                # hacía 2 UPDATEs: actualizar_fecha_pago + aprobar, con
+                # fallo silencioso en el primero y 2 conexiones).
+                cursor.execute("""
+                    UPDATE Metodo_pago
+                    SET
+                        Estado_pago = 'aprobado',
+                        Aprobado_por = %s,
+                        Fecha_aprobacion = %s,
+                        Fecha_pago = %s
+                    WHERE ID_factura = %s
+                      AND LOWER(TRIM(Estado_pago)) = 'pendiente'
+                """, (empleado, fecha_actual, fecha_pago, factura))
+            else:
+                cursor.execute("""
+                    UPDATE Metodo_pago
+                    SET
+                        Estado_pago = 'aprobado',
+                        Aprobado_por = %s,
+                        Fecha_aprobacion = %s
+                    WHERE ID_factura = %s
+                      AND LOWER(TRIM(Estado_pago)) = 'pendiente'
+                """, (empleado, fecha_actual, factura))
             if cursor.rowcount == 0:
                 db.rollback()
                 return {"success": False, "error": "El pago no está pendiente o ya fue procesado."}

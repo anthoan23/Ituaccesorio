@@ -351,3 +351,12 @@ def validar_decimal(valor, nombre_campo, max_decimales, min_valor, max_valor=Non
             return f"El campo {nombre_campo} no puede tener más de {max_decimales} decimales."
 
     return None
+
+
+def normalizar_celular(valor):
+    """Limpia espacios, guiones, paréntesis y '+' de un teléfono.
+
+    La limpieza vivía en controllers (login.py); ahora el modelo normaliza
+    ANTES de validar, así cualquier llamador puede pasar el dato crudo.
+    """
+    return re.sub(r'[\s\-\(\)\+]', '', str(valor or "")).strip()

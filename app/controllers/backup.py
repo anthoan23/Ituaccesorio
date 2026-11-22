@@ -91,7 +91,7 @@ def api_descargar_backup(id_backup):
 def api_crear_backup():
     """Crea un respaldo de la base de datos seleccionada usando pymysql"""
     data = request.get_json(silent=True) or {}
-    tipo_bd = data.get("tipo_bd", "").strip()
+    tipo_bd = str(data.get("tipo_bd") or "").strip()
     
     if tipo_bd not in ["seguridad", "ituaccesorio"]:
         return jsonify({"success": False, "message": "Tipo de base de datos inválido"}), 400
@@ -126,7 +126,7 @@ def api_crear_backup():
             user=db_user,
             password=db_password,
             database=db_name,
-            port=3306,
+            port=int(current_app.config.get('DB_PORT', 3306)),
             charset='utf8mb4',
             connect_timeout=30
         )
@@ -450,7 +450,7 @@ def api_subir_backup():
     if archivo.filename == '':
         return jsonify({"success": False, "message": "No se seleccionó ningún archivo"}), 400
     
-    tipo_bd = request.form.get("tipo_bd", "").strip()
+    tipo_bd = str(request.form.get("tipo_bd") or "").strip()
     if tipo_bd not in ["seguridad", "ituaccesorio"]:
         return jsonify({"success": False, "message": "Tipo de base de datos inválido"}), 400
     
@@ -536,9 +536,12 @@ def api_restaurar_backup(id_backup):
     if not backup_info:
         return jsonify({"success": False, "message": "No se encontró el backup"}), 404
     
-    # Determinar a qué base de datos pertenece el backup por el nombre
+    # Determinar la BD destino por el PREFIJO estricto del nombre (la
+    # creación nombra los archivos "{tipo_bd}_backup_*.sql"). Antes se usaba
+    # substring ('seg' en cualquier parte) y un backup de la BD principal
+    # llamado "miseguridaditu.sql" se restauraba EN la BD de seguridad.
     nombre_archivo = backup_info.get('nombre', '')
-    if 'seguridad' in nombre_archivo.lower() or 'seg' in nombre_archivo.lower():
+    if nombre_archivo.lower().startswith('seguridad_'):
         # Restaurar en base de datos de seguridad
         db_config = {
             'host': current_app.config.get('DB_HOST2', 'db2'),

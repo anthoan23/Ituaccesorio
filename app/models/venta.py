@@ -158,6 +158,27 @@ class VentaModel:
         self.metodo_pago = metodo
         return None
 
+    # Reglas de pago movidas del controller (ventas.py): fuente única en
+    # el modelo para el catálogo de métodos y sus políticas.
+    # Catálogo completo (lo consume /api/metodos_pago) y sus políticas
+    CATALOGO_METODOS_PAGO = (
+        {"id": "pago_movil", "nombre": "Pago Móvil (Bs)", "moneda": "VES"},
+        {"id": "zelle", "nombre": "Zelle (USD)", "moneda": "USD"},
+        {"id": "binance", "nombre": "Binance (USDT)", "moneda": "USDT"},
+        {"id": "efectivo_bs", "nombre": "Efectivo (Bs)", "moneda": "VES"},
+        {"id": "efectivo_usd", "nombre": "Efectivo (USD)", "moneda": "USD"},
+    )
+    METODOS_PAGO = tuple(m["id"] for m in CATALOGO_METODOS_PAGO)
+    METODOS_PAGO_SIN_CAPTURE = ("efectivo_bs", "efectivo_usd")
+
+    @classmethod
+    def requiere_capture(cls, metodo_pago) -> bool:
+        return str(metodo_pago or "") not in cls.METODOS_PAGO_SIN_CAPTURE
+
+    @classmethod
+    def estado_inicial_para(cls, metodo_pago) -> str:
+        return "aprobado" if str(metodo_pago or "") in cls.METODOS_PAGO_SIN_CAPTURE else "pendiente"
+
     def _validar_datos_pago(self) -> Optional[str]:
         referencia = self.datos_pago.get("referencia", "")
         monto = self.datos_pago.get("monto", None)

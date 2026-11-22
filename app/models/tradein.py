@@ -247,8 +247,17 @@ class TradeIn(conectar):
             cursor.close()
             db.close()
 
-    def calcular_cotizacion(self, id_producto, fallas_seleccionadas) -> dict[str, Any]:
-       
+    def calcular_cotizacion(self, id_producto, fallas_seleccionadas,
+                        liberado: str = "si") -> dict[str, Any]:
+        # Regla de negocio "equipo liberado" movida aquí (antes vivía solo en
+        # el controller y ni siquiera llegaba al modelo).
+        valores_liberado = ("si", "s", "sí", "1", "true", "on", "yes")
+        if str(liberado or "").strip().lower() not in valores_liberado:
+            return {
+                "success": False,
+                "error": "Lo sentimos, el equipo debe estar liberado para calificar.",
+            }
+
         if not id_producto:
             return {
                 "success": False,

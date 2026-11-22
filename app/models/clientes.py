@@ -3,6 +3,7 @@ import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
+    normalizar_celular,
     validar_numero,
     validar_email,
     validar_rif,
@@ -35,6 +36,9 @@ class Clientes():
     # ============================================
     def _validar_datos_natural(self, cedula, nombre, apellido, obligar_celular: bool):
         """Valida los datos de persona natural (usado por registrar y actualizar)."""
+        # Normalización del celular ANTES de validar: el llamador puede pasar
+        # el dato crudo ("0412-123-4567") — la limpieza vive en el modelo.
+        self.Celular_cliente = normalizar_celular(self.Celular_cliente)
         if not cedula:
             return "La cédula del cliente no puede estar vacía."
         if not apellido:
@@ -436,11 +440,13 @@ class Clientes():
             cursor.close()
             db.close()
     
-    def crear_cliente(self, cliente_id: int, nombre: str, apellido: str, celular: str, 
-                      correo: str = None, direccion: str = None) -> bool:
-        if not cliente_id or not nombre or not apellido or not celular:
-            return False
-        
+    def crear_cliente(self, cliente_id: int, nombre: str, apellido: str, celular: str,
+                      correo: str = None, direccion: str = None) -> str:
+        """Registra el perfil de persona natural del registro público.
+
+        Devuelve el MENSAJE del modelo (contiene 'exitosamente' si tuvo éxito),
+        para que el controller pueda mapear el error sin re-validar nada.
+        """
         persona = Persona_natural(
             Cedula_cliente=str(cliente_id),
             Nombre_cliente=nombre,
@@ -450,9 +456,7 @@ class Clientes():
             Direccion_cliente=direccion,
             usuario_id=self.usuario_id
         )
-        
-        resultado = persona.registrar_persona_natural()
-        return "exitosamente" in resultado.lower()
+        return persona.registrar_persona_natural()
     
     def verificar_cliente_existe(self, cliente_id: int) -> bool:
         db = self._conexion_bd.conexion1()

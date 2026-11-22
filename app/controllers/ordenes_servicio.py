@@ -5,6 +5,7 @@ from app.models.test import Tests
 from app.models.equipo import Equipo
 from app.models.clientes import Clientes, Persona_natural, Cliente_juridico
 from app.models.productos import Producto
+from app.utils.helpers import guardar_foto_evidencia
 from app.utils.decorators import jwt_required, tiene_permiso
 import re
 import os
@@ -496,16 +497,13 @@ def subir_fotos_orden(id_orden):
         for archivo in archivos:
             if archivo.filename == '': continue
             
-            extension = os.path.splitext(archivo.filename)[1]
-            nombre_archivo = f"orden_{id_orden}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nuevo_num}{extension}"
-            ruta_destino = os.path.join('app', 'static', 'img', 'evidencias', 'orden_servicio')
-            os.makedirs(ruta_destino, exist_ok=True)
-            
-            ruta_completa = os.path.join(ruta_destino, nombre_archivo)
-            archivo.save(ruta_completa)
+            # Validación y guardado vía el helper único (whitelist + 10 MB)
+            try:
+                ruta_relativa = guardar_foto_evidencia(archivo, "evidencias/orden_servicio")
+            except ValueError as e:
+                return jsonify({"ok": False, "message": str(e)}), 400
             
             id_foto = f"FOS{str(nuevo_num).zfill(6)}"
-            ruta_relativa = f"/static/img/evidencias/orden_servicio/{nombre_archivo}"
             
             modelo.ID_foto_orden_servicio = id_foto
             modelo.Foto_orden_servicio = ruta_relativa

@@ -727,7 +727,9 @@ class TestCrearCliente:
 
         resultado = Clientes().crear_cliente(**datos)
 
-        assert resultado is False
+        # cédula vacía → el validador la reporta; otros campos → su mensaje
+        assert ("no puede estar vací" in resultado
+                or "debe contener solo números" in resultado)
         cursor.execute.assert_not_called()
         db.commit.assert_not_called()
 
@@ -739,7 +741,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Cliente (").args[1] == (
             CEDULA_MINIMA,
             None,
@@ -767,7 +769,7 @@ class TestCrearCliente:
             DIRECCION_VALIDA,
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Cliente (").args[1] == (
             CEDULA_MAXIMA,
             DIRECCION_VALIDA,
@@ -783,7 +785,7 @@ class TestCrearCliente:
             1234567, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Persona_natural").args[1][0] == (
             "1234567"
         )
@@ -796,7 +798,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "existe" in resultado
         sin_sentencia(cursor, "INSERT")
         db.commit.assert_not_called()
 
@@ -812,7 +814,7 @@ class TestCrearCliente:
             correo="ana@mail",
         )
 
-        assert resultado is False
+        assert "correo" in resultado
         cursor.execute.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
@@ -825,7 +827,7 @@ class TestCrearCliente:
                 CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
             )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         bitacora_clase.assert_called_once_with(
             accion="Registrar cliente natural",
             descripcion=(
@@ -842,7 +844,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "Error al conectar" in resultado
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -854,7 +856,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "Error al registrar" in resultado
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 

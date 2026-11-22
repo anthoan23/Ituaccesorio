@@ -1,7 +1,6 @@
 from flask import Blueprint, g, jsonify, render_template, request
 
 from app.models.tradein import TradeIn
-from app.utils.validators import validar_numero, validar_texto
 
 tradein_blueprint = Blueprint("tradein", __name__)
 
@@ -51,32 +50,16 @@ def obtener_tradein_json():
 def cotizar_tradein():
     """API para calcular cotización - acceso público"""
     try:
+        # Validaciones (ID, liberado, formato de fallas) en el modelo
         datos = request.get_json(silent=True) or {}
-        
-        # Validar producto
-        id_producto = datos.get("id_producto")
-        if not id_producto:
-            return jsonify({"success": False, "error": "Debes seleccionar un equipo para cotizar."}), 400
-        
-        error = validar_numero(id_producto, 1, 10, "ID del equipo")
-        if error:
-            return jsonify({"success": False, "error": error}), 400
-        
-        # Validar liberado
-        liberado = str(datos.get("liberado", "")).strip().lower()
-        valores_liberado = ("si", "s", "sí", "1", "true", "on", "yes")
-        if liberado not in valores_liberado:
-            return jsonify({"success": False, "error": "Lo sentimos, el equipo debe estar liberado para calificar."}), 400
-        
-        # Validar fallas
-        fallas = datos.get("fallas") or []
-        if not isinstance(fallas, list):
-            return jsonify({"success": False, "error": "El formato de fallas no es válido."}), 400
-        
         usuario_id = _obtener_usuario_actual()
-        
+
         modelo = TradeIn(usuario_id=usuario_id)
-        resultado = modelo.calcular_cotizacion(id_producto, fallas)
+        resultado = modelo.calcular_cotizacion(
+            datos.get("id_producto"),
+            datos.get("fallas") or [],
+            liberado=datos.get("liberado", ""),
+        )
         estado = 200 if resultado.get("success") else 400
         return jsonify(resultado), estado
         

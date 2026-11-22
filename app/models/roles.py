@@ -167,7 +167,7 @@ class Rol:
             cursor.close()
             db.close()
 
-    def actualizar_rol(self) -> str:
+    def actualizar_rol(self, usuario_actual_rol: str = None) -> str:
         error = self._validar_datos(requiere_id=True)
         if error:
             return error
@@ -176,6 +176,12 @@ class Rol:
             return f"El rol con ID {self.id} no existe."
 
         nombre_actual = self.obtener_rol_por_id()
+
+        # Guard movido del controller: el rol "Admin" solo puede modificarse
+        # por otro admin (aplica cuando el llamador declara su rol).
+        if nombre_actual and (nombre_actual.get("nombre") or "").lower() == "admin":
+            if usuario_actual_rol is not None and (usuario_actual_rol or "").lower() != "admin":
+                return "No se puede modificar el rol Admin."
         if nombre_actual and nombre_actual["nombre"].lower() != self.nombre.lower():
             if self.verificar_rol_por_nombre():
                 return f"El rol '{self.nombre}' ya existe."
@@ -209,7 +215,7 @@ class Rol:
             cursor.close()
             db.close()
 
-    def eliminar_rol(self) -> str:
+    def eliminar_rol(self, usuario_actual_rol: str = None) -> str:
         rol_id = str(self.id).strip() if self.id else ""
         if not rol_id:
             return "El identificador del rol no puede estar vacío."

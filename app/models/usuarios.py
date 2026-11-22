@@ -500,11 +500,16 @@ class Usuarios:
             traceback.print_exc()
             return "Error inesperado al actualizar usuario."
 
-    def eliminar_usuario(self) -> str:
+    def eliminar_usuario(self, usuario_actual_id: str = None, usuario_actual_rol: str = None) -> str:
         try:
             usuario_id = str(self.id).strip() if self.id else ""
             if not usuario_id:
                 return "El identificador del usuario no puede estar vacío."
+
+            # Guard movido del controller: el modelo es la única fuente de
+            # la regla, válida para cualquier llamador.
+            if usuario_actual_id and str(usuario_actual_id) == usuario_id:
+                return "No puedes eliminar tu propio usuario."
 
             if not self.verificar_usuario_por_id():
                 return f"El usuario con identificador {usuario_id} no existe."
@@ -532,8 +537,14 @@ class Usuarios:
                 """, (usuario_id,))
                 usuario_rol = cursor.fetchone()
 
-                if usuario_rol and usuario_rol["rol_nombre"].lower() == "admin" and total_admins <= 1:
-                    return "No se puede eliminar el único administrador del sistema."
+                if usuario_rol and usuario_rol["rol_nombre"].lower() == "admin":
+                    # Guard movido del controller: solo otro admin borra a un
+                    # admin. Solo aplica cuando el llamador declara su rol
+                    # (controller); sin rol se conserva el comportamiento previo.
+                    if usuario_actual_rol is not None and (usuario_actual_rol or "").lower() != "admin":
+                        return "Solo otro admin puede eliminar este usuario."
+                    if total_admins <= 1:
+                        return "No se puede eliminar el único administrador del sistema."
 
                 nombre_usuario = usuario_rol["usuario_nombre"] if usuario_rol else "N/A"
 

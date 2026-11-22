@@ -160,9 +160,16 @@ class Permiso:
                     errores.append(f"Módulo inválido: {modulo_id}")
                     continue
 
-                registrar = permiso.get("registrar", False)
-                modificar = permiso.get("modificar", False)
-                eliminar = permiso.get("eliminar", False)
+                # Normalización de booleanos movida del controller: acepta
+                # bool, "1"/"true"/"on"/"si"/"yes" o 0/"false".
+                def _a_int(valor):
+                    if isinstance(valor, str):
+                        return 1 if valor.lower() in {"1", "true", "on", "si", "yes"} else 0
+                    return 1 if valor else 0
+
+                registrar = _a_int(permiso.get("registrar", False))
+                modificar = _a_int(permiso.get("modificar", False))
+                eliminar = _a_int(permiso.get("eliminar", False))
                 consultar = registrar or modificar or eliminar
 
                 cursor.execute(

@@ -165,7 +165,8 @@ def api_actualizar_entrega(entrega_id):
         modelo = EntregaModel(
             entrega_id=entrega_id,
             direccion=data.get("direccion", "").strip() if isinstance(data.get("direccion"), str) else data.get("direccion"),
-            estado=data.get("estado", 0),
+            # Sin default destructivo: omitir 'estado' ya no lo resetea a 0
+            estado=data.get("estado") if data.get("estado") is not None else 0,
             usuario_id=usuario_id
         )
         mensaje = modelo.actualizar_entrega()

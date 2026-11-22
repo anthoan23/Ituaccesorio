@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, g, redirect, session
+from app.utils.helpers import guardar_foto_evidencia
 from app.utils.decorators import jwt_required, solo_roles
 from app.models.catalogo import CatalogoModel
 from app.models.carrito import CarritoModel
@@ -107,9 +108,8 @@ def api_obtener_carrito():
     try:
         cliente_id = _obtener_cliente_id()
         if not cliente_id:
-            cliente_id = session.get('cliente_id') or request.headers.get('X-Client-ID')
-
-        if not cliente_id:
+            # Sin fallback a headers: 'X-Client-ID' permitía leer el carrito
+            # de cualquier cliente (IDOR). El cliente se deriva SIEMPRE de g.user.
             return jsonify({"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}), 200
 
         carrito_model = CarritoModel(cliente_id=cliente_id)
@@ -287,13 +287,7 @@ def pagina_pagos():
 @jwt_required
 def api_metodos_pago():
     """Obtener métodos de pago disponibles"""
-    metodos = [
-        {"id": "pago_movil", "nombre": "Pago Móvil (Bs)", "moneda": "VES"},
-        {"id": "zelle", "nombre": "Zelle (USD)", "moneda": "USD"},
-        {"id": "binance", "nombre": "Binance (USDT)", "moneda": "USDT"},
-        {"id": "efectivo_bs", "nombre": "Efectivo (Bs)", "moneda": "VES"},
-        {"id": "efectivo_usd", "nombre": "Efectivo (USD)", "moneda": "USD"}
-    ]
+    metodos = VentaModel.CATALOGO_METODOS_PAGO
     return jsonify({"success": True, "metodos": metodos})
 
 
@@ -323,9 +317,9 @@ def api_procesar_pago():
         fecha_pago = request.form.get("fecha_pago")
         monto = request.form.get("monto", None)
 
-        # Validación de captura (requisito de UI/negocio, no de formato)
+        # La regla "métodos sin capture" vive en VentaModel
         capture_file = request.files.get("capture")
-        if metodo_pago not in ("efectivo_bs", "efectivo_usd"):
+        if VentaModel.requiere_capture(metodo_pago):
             if not capture_file or not getattr(capture_file, "filename", ""):
                 return jsonify({"success": False, "error": "Debe subir una captura del comprobante de pago."}), 400
 
@@ -341,24 +335,14 @@ def api_procesar_pago():
 
         # Guardar imagen de captura si existe
         capture_path = None
-        if capture_file and metodo_pago not in ("efectivo_bs", "efectivo_usd"):
+        if capture_file and VentaModel.requiere_capture(metodo_pago):
             try:
-                nombre_seguro = secure_filename(capture_file.filename)
-                _, extension = os.path.splitext(nombre_seguro)
-                extension = extension.lower()
-                nombre_final = f"capture_{uuid.uuid4().hex}{extension}"
+                capture_path = guardar_foto_evidencia(capture_file, "capturas")
+            except ValueError as e:
+                return jsonify({"success": False, "error": str(e)}), 400
 
-                static_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
-                carpeta_destino = os.path.join(static_folder, "img", "capturas")
-                os.makedirs(carpeta_destino, exist_ok=True)
-
-                ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-                capture_file.save(ruta_fisica)
-                capture_path = f"/static/img/capturas/{nombre_final}"
-            except Exception as e:
-                print(f"Error guardando archivo: {e}")
-
-        estado_pago = "pendiente" if metodo_pago not in ("efectivo_bs", "efectivo_usd") else "aprobado"
+        # Regla del estado inicial vive en VentaModel
+        estado_pago = VentaModel.estado_inicial_para(metodo_pago)
 
         # Crear la venta (VentaModel valida cliente/items/método)
         try:

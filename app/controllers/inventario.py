@@ -80,7 +80,7 @@ def api_reportes_inventario():
         "marca": datos.get("marca"),
         "stock_min": datos.get("stock_min"),
         "stock_max": datos.get("stock_max"),
-        "q": datos.get("q", "").strip(),
+        "q": str(datos.get("q") or "").strip(),
     }
     
     inv = Inventario()
@@ -103,9 +103,14 @@ def api_reportes_inventario():
                 continue
         
         stock = item.get("existencia", 0)
-        if filtros["stock_min"] is not None and stock < int(filtros["stock_min"]):
+        try:
+            stock_min = int(filtros.get("stock_min")) if filtros.get("stock_min") is not None else None
+            stock_max = int(filtros.get("stock_max")) if filtros.get("stock_max") is not None else None
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "Los filtros de stock deben ser números."}), 400
+        if stock_min is not None and stock < stock_min:
             continue
-        if filtros["stock_max"] is not None and stock > int(filtros["stock_max"]):
+        if stock_max is not None and stock > stock_max:
             continue
         
         inventario_filtrado.append(item)

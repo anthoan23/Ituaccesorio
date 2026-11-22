@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, make_response, g
 import os
-import re
 import requests
 import traceback
 import mysql.connector
@@ -141,42 +140,25 @@ def registro_cliente_paso_1():
     try:
         datos = request.get_json(silent=True) or {}
         
-        nombre_usuario = datos.get("nombre", "").strip()
-        cedula = datos.get("cedula", "").strip()
-        password = datos.get("password", "").strip()
-
-        if not nombre_usuario:
-            return jsonify({"success": False, "error": "El nombre de usuario es obligatorio."}), 400
-        
-        if not cedula:
-            return jsonify({"success": False, "error": "La cédula es obligatoria."}), 400
-        
-        if not password:
-            return jsonify({"success": False, "error": "La contraseña es obligatoria."}), 400
-
-        if not cedula.isdigit():
-            return jsonify({"success": False, "error": "La cédula debe contener solo números."}), 400
-
-        if len(password) < 6:
-            return jsonify({"success": False, "error": "La contraseña debe tener al menos 6 caracteres."}), 400
+        # Validaciones (formato, duplicados) en Usuarios.agregar_usuario vía
+        # LoginManager.crear_usuario: el controller no valida nada.
+        nombre_usuario = str(datos.get("nombre") or "").strip()
+        cedula = str(datos.get("cedula") or "").strip()
+        password = str(datos.get("password") or "").strip()
 
         login_manager = LoginManager()
 
-        if login_manager.verificar_usuario_existe_por_cedula(cedula):
-            return jsonify({"success": False, "error": "Ya existe un usuario con esta cédula."}), 409
-
-        if login_manager.verificar_usuario_existe_por_nombre(nombre_usuario):
-            return jsonify({"success": False, "error": "El nombre de usuario ya está en uso."}), 409
-
         rol_cliente = login_manager.obtener_rol_cliente()
-        
+
         if not rol_cliente:
             return jsonify({"success": False, "error": "No existe el rol Cliente configurado."}), 500
 
-        usuario_id = login_manager.crear_usuario(nombre_usuario, cedula, password, rol_cliente["id"])
-        
-        if not usuario_id:
-            return jsonify({"success": False, "error": "No se pudo crear la cuenta."}), 500
+        usuario_id, error, es_duplicado = login_manager.crear_usuario(
+            nombre_usuario, cedula, password, rol_cliente["id"]
+        )
+
+        if error:
+            return jsonify({"success": False, "error": error}), (409 if es_duplicado else 400)
 
         # Cargar permisos
         permisos = {}
@@ -245,32 +227,21 @@ def registro_cliente_paso_2():
             return jsonify({"success": False, "error": "No se encontró la cédula."}), 400
 
         datos = request.get_json(silent=True) or {}
-        nombre = datos.get("nombre", "").strip()
-        apellido = datos.get("apellido", "").strip()
-        celular = datos.get("celular", "").strip()
-        correo = datos.get("correo", "").strip()
-        direccion = datos.get("direccion", "").strip()
+        nombre = str(datos.get("nombre") or "").strip()
+        apellido = str(datos.get("apellido") or "").strip()
+        celular = str(datos.get("celular") or "").strip()
+        correo = str(datos.get("correo") or "").strip()
+        direccion = str(datos.get("direccion") or "").strip()
 
-        if not nombre or not apellido:
-            return jsonify({"success": False, "error": "Nombre y apellido son obligatorios."}), 400
-
-        if not celular:
-            return jsonify({"success": False, "error": "El número de celular es obligatorio."}), 400
-
-        # El modelo guarda el celular normalizado (sin espacios, guiones, etc.)
-        celular_limpio = re.sub(r'[\s\-\(\)\+]', '', celular)
-        error_celular = validar_numero(celular_limpio, 11, 11, "Celular", obligatorio=True)
-        if error_celular:
-            return jsonify({"success": False, "error": error_celular}), 400
-
-        if correo:
-            error_correo = validar_email(correo)
-            if error_correo:
-                return jsonify({"success": False, "error": error_correo}), 400
-
+        # Validaciones (obligatoriedad, formato de celular/correo, nombre y
+        # apellido) en el modelo: Clientes.crear_cliente → registrar_persona_natural.
         modelo_clientes = GestionClientes()
         
-        existente = modelo_clientes.obtener_cliente_por_id(int(cedula))
+        try:
+            cedula_int = int(cedula)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "La cédula debe ser numérica."}), 400
+        existente = modelo_clientes.obtener_cliente_por_id(cedula_int)
         if existente:
             # Recargar permisos
             permisos = {}
@@ -305,11 +276,12 @@ def registro_cliente_paso_2():
             resp = make_response(jsonify({"success": True, "message": "Perfil ya completado."}))
             return set_auth_cookies(resp, payload)
 
+        # Dato crudo: el modelo normaliza y valida
         cliente_creado = modelo_clientes.crear_cliente(
             cliente_id=int(cedula),
             nombre=nombre,
             apellido=apellido,
-            celular=celular_limpio,
+            celular=celular,
             correo=correo if correo else None,
             direccion=direccion if direccion else None
         )

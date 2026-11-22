@@ -150,16 +150,8 @@ def api_actualizar_empleado():
         except Exception:
             especialidades = [s.strip() for s in especialidades.split(',') if s.strip()]
 
-    if not id_empleado:
-        return jsonify({"success": False, "error": "El ID del empleado es obligatorio."}), 400
-    
-    if not all([cedula, cargo_id, nombre, apellido]):
-        return jsonify({
-            "success": False,
-            "error": "La cédula, cargo, nombre y apellido son obligatorios.",
-        }), 400
-
-    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    # Obligatoriedad validada por el modelo (actualizar_empleado)
+    usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
 
     empleados_model = Empleados(
         id_empleado=id_empleado,

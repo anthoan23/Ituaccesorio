@@ -29,12 +29,6 @@ def registrar_bitacora_api():
     descripcion = str(payload.get("descripcion") or "").strip()
     modulo_nombre = str(payload.get("modulo_nombre") or "").strip() or None
 
-    if not accion or not descripcion:
-        return jsonify({
-            "success": False,
-            "error": "Los campos 'accion' y 'descripcion' son obligatorios.",
-        }), 400
-
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", "SYSTEM")
 
     bitacora = Bitacora(
@@ -44,6 +38,10 @@ def registrar_bitacora_api():
         modulo_nombre=modulo_nombre
     )
     resultado = bitacora.registrar()
+
+    if resultado.get("warning"):
+        # La obligatoriedad de accion/descripcion la valida el modelo
+        return jsonify({"success": False, "error": resultado["warning"]}), 400
 
     estado = 200 if resultado.get("success") else 500
     return jsonify(resultado), estado

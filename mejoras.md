@@ -679,3 +679,184 @@ Todo `inventario.py`, 4 métodos de `catalogo.py`, 4 de `proveedores.py`, 3 de `
 - `catalogo.py:44`: búsquedas de 1 carácter descartadas en silencio.
 - `clientes.py:31` / `carrito` / `venta` / `tradein`: cédula 6-8 excluye clientes jurídicos
   (RIF) — decidir si es regla de negocio.
+
+---
+
+# Auditoría de controllers (`app/controllers`)
+
+> Fecha: 22/11/2026 · Alcance: los **26 controllers** (~2.700 líneas).
+> Método: lectura 100% + verificación cruzada contra modelos/front/permisos + prueba real de
+> rutas duplicadas con Flask + grep de uso en views/static/tests.
+> **Regla del propietario aplicada como criterio de auditoría: en un controller NO puede haber
+> validaciones** (viven en modelos y `app/utils/validators.py`).
+> Línea base al auditar: 2379 tests en verde — **cobertura de tests de controllers ≈ 0%**
+> (los tests solo cubren modelos), por eso varios 🔴 pasaron inadvertidos.
+> Severidades: 🔴 roto/riesgo real en producción · 🟠 bug real o violación de la regla · 🟡 mejora.
+
+## Resumen por severidad
+
+| Severidad | Cantidad | Distribución |
+|---|---|---|
+| 🔴 Alta | 10 | `home_controller`(4) · `login`(1) · `tradein_empleados`(1) · `james`(1) · `ordenes_entregas`(1) · rutas duplicadas ×2 |
+| 🟠 Media | 58 | validaciones en controller (login, ordenes_compra, taller, taller_celular, tradein, usuarios, ventas, backup, empleados, bitacora) · subidas sin whitelist ×4 · N+1 de reportes · status por substring · respuestas success=True con False |
+| 🟡 Baja | 72 | contratos por substring ×19 · str(e) expuesto ×~40 · helpers g.user duplicados ×30 · print() · dead code · endpoints solo-Postman |
+
+## 1. Errores 🔴 Alta
+
+### C1. `POST /james` sin autenticación alguna (`james.py:9-10`)
+Ni `@jwt_required` ni permiso; expone técnicos/cargos, dispara consultas BD y llamadas a Gemini
+(costo real) sin rate-limit; **muerto en el frontend** (solo colección Postman).
+**Solución aplicada:** `@jwt_required` + `@tiene_permiso('Taller','registrar')`.
+
+### C2. Los 12 endpoints `/api/dashboard/*` y la página `/inventario` sin auth (`home_controller`)
+Sin `@jwt_required` ni permiso: exponen bitácora, montos y stock a cualquiera.
+**Solución aplicada:** `@jwt_required` en los 12 + en la página (permiso fino: pendiente §9).
+
+### C3. Ruta duplicada `/api/dashboard/ventas-hoy` — gana la versión SIN auth
+`home_controller:120` (sin auth) se registra antes que la protegida de `ventas.py:425`
+(probado con Flask: gana el primer registro) → la protegida es dead code.
+**Solución aplicada:** eliminada la duplicada de `home_controller` (sobrevive la de `ventas.py`,
+que usa `VentaModel.obtener_ventas_hoy()`).
+
+### C4. Rutas duplicadas `/api/proveedores` y `/api/empleados` — gana otro módulo
+`ordenes_compra.py:48` y `:39` son **inalcanzables** (gana `proveedores.py:22` y `empleados.py:20`);
+el front de órdenes de compra se valida contra los permisos de OTRO módulo (403 para usuarios
+de compras). **Solución aplicada:** eliminados los 2 endpoints muertos de `ordenes_compra`
+(la dependencia de permisos cruzados queda documentada en §9 — requiere decisión de front/permisos).
+
+### C5. `home_controller:267/281` llama métodos inexistentes del modelo
+`inventario.obtener_productos_bajo_stock/sin_stock` no existen (los reales son
+`listar_productos_bajo_stock/sin_stock`) → esos 2 endpoints del dashboard devuelven 500 SIEMPRE.
+**Solución aplicada:** nombres corregidos.
+
+### C6. `home_controller:44` — `traceback.print_exc()` sin haber importado `traceback`
+`NameError` en el except de `home()` que enmascara el error real.
+**Solución aplicada:** `import traceback` en la cabecera.
+
+### C7. IDOR de carrito (`ventas.py:110`)
+`session['cliente_id']` nunca se setea; el fallback real es el header `X-Client-ID` controlado
+por el cliente → cualquier usuario autenticado puede leer carritos ajenos.
+**Solución aplicada:** eliminado el fallback; el cliente se deriva SIEMPRE de `g.user`.
+
+### C8. Subidas de archivos sin whitelist ni tamaño (stored XSS en `/static`)
+4 sitios aceptan cualquier extensión: `usuarios._guardar_foto_perfil`,
+`ordenes_servicio` (endpoint de fotos), `ventas` (captura de pago), `tradein_empleados._guardar_fotos`.
+**Solución aplicada:** helper único `guardar_foto_evidencia()` en `app/utils/helpers.py`
+(whitelist `ALLOWED_IMAGE_EXTENSIONS` + 10 MB) usado por los 4 + `taller.py`/`taller_celular.py`
+(quedan 1 sola fuente de verdad para subidas).
+
+### C9. Restauración de backup dirigida por substring del nombre del archivo (`backup.py:541`)
+`if 'seguridad' in nombre.lower()` — un backup de la BD principal con "seg" en el nombre se
+restauraría EN la BD de seguridad, destruyéndola.
+**Solución aplicada:** convención estricta de prefijo (`seguridad_`/`ituaccesorio_`) fijada AL
+CREAR el backup y validada al restaurar (sin cambiar el esquema de la tabla `backup`).
+
+### C10. `ordenes_entregas.py:69-74` — fallback `id_empleado = 30124556`
+Si el JWT no trae id numérico, la entrega se atribuye silenciosamente a un empleado fijo
+(rastro de auditoría corrupto). **Solución aplicada:** error 400 "Empleado no identificado".
+
+## 2. Validaciones en controllers → destino (regla del propietario) — 🟠 aplicadas
+
+| Controller | Validación encontrada | Movida a |
+|---|---|---|
+| `login.py:148-169` (paso-1) | obligatorios, `isdigit`, len de password, duplicados ×2 queries | `LoginManager.crear_usuario` (contrato `(id, error, duplicado)`) — el modelo `Usuarios.agregar_usuario` ya valida formato y duplicados |
+| `login.py:260-270` (paso-2) | `re.sub` del celular + `validar_numero` + `validar_email` | `normalizar_celular()` en validators + validación ya existente en `_validar_datos_natural` (modelo) |
+| `ordenes_compra.py:86-218` | pre-validación completa + N+1 de productos (el comentario del código lo admitía) | eliminado del controller; `OrdenCompra` ya valida en transacción (pendiente contrato dict: §9.2) |
+| `taller.py:259-303` y `taller_celular.py:55-127` | fotos: 20 máx, extensiones, 10 MB (duplicados entre sí) | helper `guardar_fotos_evidencias()` en `app/utils/helpers.py` (los controllers quedan passthrough) |
+| `tradein.py:57-74` | ID (duplica al modelo) + regla "liberado" (solo vivía aquí) | `TradeIn.calcular_cotizacion(liberado=…)` — regla movida al modelo |
+| `usuarios.py:164-178` | self-delete y "solo admin borra admin" | `Usuarios.eliminar_usuario` (guard del modelo, controller mapea 403) |
+| `usuarios.py:508-536` | guard rol "Admin" en actualizar/eliminar rol | `Rol.actualizar_rol` / `Rol.eliminar_rol` |
+| `usuarios.py:370-389` | parseo de booleanos de permisos | `Permiso.guardar_permisos_masivos` |
+| `ventas.py:326-330, 361` | captura obligatoria + estado del pago | `VentaModel` (reglas como constantes/métodos del modelo) |
+| `backup.py:96, 458-478` | tipo_bd whitelist, extensión .sql, longitudes de nombre | `Backup` (constantes `BD_PERMITIDAS`) |
+| `empleados.py:153-160`, `bitacora.py:32-36`, `clientes.py:34-36` | guards que duplican al modelo | eliminados (el modelo ya valida; controller mapea) |
+
+**Despacho legítimo (no validación, se conserva):** detección multipart/JSON, RIF vs cédula,
+`_detectar_marca` (IDs de marca hardcodeados pendientes en §9).
+
+## 3. Errores 🟠 restantes aplicados
+
+- `home_controller`: `/api/dashboard/bajo-stock|sin-stock` corregidos (C5) y `traceback` importado (C6).
+- `backup.py`: puerto `3306` hardcodeado → lee `DB_PORT` del entorno; `tipo_bd` normalizado con `str(...)`
+  (500 si llegaba int); destino de restauración por prefijo estricto (C9).
+- `james.py`: `personales` puede ser str de error del modelo → guard isinstance → 503.
+- `ordenes_entregas.py`: `get_json(silent=True)` + id_empleado validado (C10).
+- `cargos.py`/`especialidades.py`/`inventario.py`/`james.py`: `.strip()` e `int()` sobre JSON
+  no-string protegidos (500 HTML → 400 JSON).
+- `validacion_pagos.py`: eliminado el doble UPDATE de `Fecha_pago` (controller llamaba
+  `actualizar_fecha_pago()` + `aprobar_pago()` sobre la misma fila); la fecha viaja al
+  `aprobar_pago` del modelo.
+- `entregas.py`: PUT sin `estado` ya no resetea a 0 (obligatorio o no se toca).
+- `proveedores.py`/`productos.py`: `int()` de filtros protegidos (500 HTML → 400 JSON).
+- Reportes con N+1/filtrado en Python (`proveedores`, `productos`, `inventario`, `home`) →
+  **pendiente §9** (refactor a SQL del modelo).
+- Respuestas `success: True` con resultado `False` (`proveedores`/`productos`) → **pendiente §9**
+  (requiere contrato dict del modelo).
+
+## 4. Errores 🟡 (estado)
+
+**Aplicados:** `getattr(g.user, "id")` sin default → con default (modo prueba); `print()` de
+debug → `logger`/`current_app.logger` en los controllers tocados; dead endpoints solo-Postman
+identificados; `buscar_controller.py` vacío confirmado (borrado pendiente de decisión).
+
+**Pendientes → §9:** contrato por substring ×19 (raíz: los 4 estilos de contrato del modelo —
+misma deuda T3), `str(e)` técnico en ~40 respuestas, N+1 de reportes, duplicación
+login payload ×4, catálogo de tests hardcodeado en `tradein_empleados`, enumeración en
+paso-1 (captcha/rate-limit), `/api/dashboard/actividad-reciente` vs `/bitacora` (permisos
+desincronizados), `notificaciones.js` pidiendo endpoint admin-only, usuario de modo prueba sin
+`cedula` (validacion_pagos inservible en ENTORNO_PRUEBA), respuesta SSE con redirect HTML.
+
+## 5. Cobertura
+
+- Tests de controllers: **0%** (ningún test importa `app.controllers.*`); los 2379 cubren modelos.
+- Endpoints públicos justificados: `/login`, `/logout`, `/api/login` (captcha), `/catalogo`,
+  `/api/catalogo/productos`, `/trade-in` (público por diseño; `cotizar` sin rate-limit: pendiente).
+- `nosec` en controllers: solo `backup.py:185/227`, justificados (tabla validada por regex).
+
+---
+
+## Remediación de controllers aplicada (misma sesión, 22/11/2026)
+
+**Verificación final: 2379 tests en verde · bandit controllers: 0 hallazgos · todos los módulos importan.**
+
+### Aplicado (por hallazgo)
+
+| # | Fix |
+|---|---|
+| C1 | `/james` con `@jwt_required` + `@tiene_permiso('Taller','registrar')`; guard `isinstance` para `personales` (503) |
+| C2 | Los 12 endpoints `/api/dashboard/*` y la página `/inventario` con `@jwt_required` (permiso fino pendiente §9) |
+| C3 | Ruta duplicada `/api/dashboard/ventas-hoy` eliminada de `home_controller` (sobrevive la protegida de `ventas.py`) |
+| C4 | Endpoints muertos `/api/proveedores` y `/api/empleados` eliminados de `ordenes_compra` |
+| C5 | `home_controller` usa los métodos reales (`listar_productos_bajo_stock/sin_stock`) |
+| C6 | `import traceback` en `home_controller` |
+| C7 | IDOR del carrito cerrado (sin `X-Client-ID`; cliente desde `g.user`) |
+| C8 | Helper único `guardar_foto_evidencia()`/`guardar_fotos_evidencias()` en `app/utils/helpers.py` usado por: perfil, fotos de taller, taller_celular, trade-in, captura de pago y fotos de orden |
+| C9 | Restauración de backup por **prefijo estricto** (`seguridad_*`) fijado en la creación |
+| C10 | `ordenes_entregas` sin fallback `30124556` → 401 "Empleado no identificado" |
+| — | Validaciones movidas al modelo según la tabla del §2 (login paso-1/paso-2, ordenes_compra N+1, fotos de taller, tradein "liberado", usuarios self-delete/admin + bools de permisos, ventas capture/estado/catálogo, backup tipo_bd/extensiones, guards duplicados en empleados/bitacora) |
+| — | `LoginManager.crear_usuario` → `(id, error, duplicado)`; `Clientes.crear_cliente` → mensaje del modelo; `normalizar_celular()` en validators |
+| — | `aprobar_pago` recibe `fecha_pago` en un solo UPDATE (eliminado el doble UPDATE del controller) |
+| — | Entregas: PUT sin `estado` ya no resetea a 0 (el registrar conserva su default 0) |
+| — | `Rol.actualizar_rol/eliminar_rol` aceptan `usuario_actual_rol` (guard Admin en el modelo; eliminar Admin ya estaba) |
+| — | `Permiso.guardar_permisos_masivos` normaliza booleanos ("1"/"true"/"si"...) |
+| — | `VentaModel` dueño del catálogo de métodos y de `requiere_capture()`/`estado_inicial_para()` |
+| — | `backup.py`: puerto desde `DB_PORT`, `tipo_bd` normalizado, prints → logger |
+| — | 🟡: `get_json(silent=True)` en `ordenes_entregas`; `.strip()`/`int()` protegidos en `cargos`, `especialidades`, `inventario`, `james`; `ordenes_compra` prints → logger |
+| — | **Fix post-prueba**: el rollback de fotos de `taller.py`/`taller_celular.py` usaba `static_dir`/`carpeta_orden` que el helper había dejado sin definir (`NameError` en runtime) → variables restauradas con `current_app.static_folder`; y en `taller.eliminar_fotos` el prefijo `orden_` de la carpeta no existía → limpieza alineada a `evidencias/taller/{id_orden}`. Prueba funcional del helper: guarda en la ruta correcta y rechaza `.html`, >10 MB y >20 fotos |
+
+### Pendiente → §9 (se suman a lo ya listado)
+
+- **Contrato modelo↔controller** (T3/§9.2): 19+ puntos de substring y modelos bool/string — refactor mayor que resuelve ~8 hallazgos de golpe.
+- **Reportes con N+1/filtrado en Python**: `proveedores`, `productos`, `inventario`, `home` (mover a SQL del modelo).
+- **Respuestas `success: True` con resultado `False`**: `proveedores`/`productos` (requiere dict del modelo).
+- **Duplicación de rutas por permisos**: el front de órdenes de compra consume `/api/proveedores` y `/api/empleados` (permisos cruzados) — decisión de front/permisos (rutas namespaced).
+- **Enumeración en registro paso-1** (captcha/rate-limit), `/api/dashboard/actividad-reciente` sin permiso fino, `notificaciones.js` pidiendo endpoint admin-only, usuario de modo prueba sin `cedula`.
+- **Subida en `taller.py`/`taller_celular`**: siguen validando EN el controller vía helpers de utils (política centralizada, pero la capa podría bajar al modelo); magic bytes sin verificar; límite 20 fotos por request sin tope por orden.
+- **`backup.py`**: mysqldump de ~270 líneas dentro del controller (mover a `Backup.generar_dump()`), splitter por `;`, rutas sin contener.
+- **Duplicación payload de sesión ×4 en `login.py`**, catálogo de 22 tests hardcodeado en `tradein_empleados`, `getattr(g.user, "x")` sin default en sitios restantes, dead endpoints solo-Postman, `buscar_controller.py` vacío (borrar), HTTP 404 vs 400 fino, `/api/dashboard/actividad-reciente` vs `/bitacora`, `validacion_pagos` inservible en modo prueba (usuario sin `cedula`).
+
+### Notas
+
+- **Nada subido al repo** — todo queda en el working tree local (33 archivos modificados).
+- El front de trade-in ya envía `fotos_eliminar` y el perfil del cliente usa el flujo del modelo: probar en `docker-compose up --build`.
+

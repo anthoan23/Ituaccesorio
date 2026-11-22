@@ -3,6 +3,7 @@ import uuid
 
 from flask import Blueprint, jsonify, render_template, request, g, current_app
 from werkzeug.utils import secure_filename
+from app.utils.helpers import guardar_foto_evidencia
 from app.utils.decorators import jwt_required, solo_roles
 from app.models.usuarios import Usuarios
 from app.utils.jwt_utils import set_auth_cookies
@@ -20,21 +21,16 @@ def _obtener_usuario_actual_id():
 
 
 def _guardar_foto_perfil():
-    """Guarda la foto de perfil y devuelve la ruta relativa o None."""
+    """Guarda la foto de perfil vía el helper único (whitelist + 10 MB).
+
+    Devuelve (ruta, error): con error, ruta es None."""
     archivo = request.files.get("foto_perfil")
     if not archivo or not getattr(archivo, "filename", ""):
-        return None
-    nombre_seguro = secure_filename(archivo.filename)
-    _, extension = os.path.splitext(nombre_seguro)
-    extension = extension.lower()[:10]
-    nombre_final = f"{uuid.uuid4().hex}{extension}"
-
-    carpeta_destino = os.path.join(current_app.static_folder, "img", "perfil")
-    os.makedirs(carpeta_destino, exist_ok=True)
-
-    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-    archivo.save(ruta_fisica)
-    return f"/static/img/perfil/{nombre_final}"
+        return None, None
+    try:
+        return guardar_foto_evidencia(archivo, "perfil"), None
+    except ValueError as e:
+        return None, str(e)
 
 
 # ==================== PÁGINAS ====================
@@ -107,7 +103,10 @@ def api_crear_usuario():
     data = request.get_json(silent=True) or request.form
 
     cedula = data.get("cedula_personal") or data.get("cedula", "")
-    foto_perfil = _guardar_foto_perfil() or data.get("foto_perfil_actual")
+    foto_perfil, error_foto = _guardar_foto_perfil()
+    if error_foto:
+        return jsonify({"success": False, "error": error_foto}), 400
+    foto_perfil = foto_perfil or data.get("foto_perfil_actual")
 
     usuario_model = Usuarios(
         nombre=data.get("nombre", ""),
@@ -134,7 +133,10 @@ def api_actualizar_usuario(usuario_id):
     data = request.get_json(silent=True) or request.form
 
     cedula = data.get("cedula_personal") or data.get("cedula", "")
-    foto_perfil = _guardar_foto_perfil() or data.get("foto_perfil_actual")
+    foto_perfil, error_foto = _guardar_foto_perfil()
+    if error_foto:
+        return jsonify({"success": False, "error": error_foto}), 400
+    foto_perfil = foto_perfil or data.get("foto_perfil_actual")
 
     usuario_model = Usuarios(
         id=usuario_id,
@@ -160,25 +162,18 @@ def api_actualizar_usuario(usuario_id):
 @solo_roles(['admin'])
 def api_eliminar_usuario(usuario_id):
     usuario_actual_id = _obtener_usuario_actual_id()
-
-    if usuario_actual_id == usuario_id:
-        return jsonify({"success": False, "error": "No puedes eliminar tu propio usuario."}), 403
-
-    usuario_model_verif = Usuarios()
-    usuario_objetivo = usuario_model_verif.obtener_usuario_por_id(usuario_id)
-
-    if not usuario_objetivo:
-        return jsonify({"success": False, "error": "El usuario no existe."}), 404
-
-    rol_objetivo = (usuario_objetivo.get("rol_nombre") or "").lower()
     usuario_actual_rol = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
-    usuario_actual_rol = (usuario_actual_rol or "").lower()
 
-    if rol_objetivo == "admin" and usuario_actual_rol != "admin":
-        return jsonify({"success": False, "error": "Solo otro admin puede eliminar este usuario."}), 403
-
+    # Guards (self-delete, admin-borra-admin, existencia) en el modelo
     usuario_model = Usuarios(id=usuario_id, usuario_id=usuario_actual_id)
-    mensaje = usuario_model.eliminar_usuario()
+    mensaje = usuario_model.eliminar_usuario(
+        usuario_actual_id=usuario_actual_id,
+        usuario_actual_rol=usuario_actual_rol,
+    )
+    if mensaje == "No puedes eliminar tu propio usuario.":
+        return jsonify({"success": False, "error": mensaje}), 403
+    if mensaje == "Solo otro admin puede eliminar este usuario.":
+        return jsonify({"success": False, "error": mensaje}), 403
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
@@ -367,28 +362,8 @@ def api_actualizar_permisos_rol(rol_id):
     if nombre_rol == "admin" and usuario_rol != "admin":
         return jsonify({"success": False, "error": "No tienes permisos para modificar los permisos del rol Admin."}), 403
 
-    permisos_data = []
-    for permiso in permisos:
-        modulo_id = permiso.get("modulo_id")
-        if modulo_id:
-            registrar = permiso.get("registrar", False)
-            if isinstance(registrar, str):
-                registrar = registrar.lower() in {"1", "true", "on", "si", "yes"}
-            modificar = permiso.get("modificar", False)
-            if isinstance(modificar, str):
-                modificar = modificar.lower() in {"1", "true", "on", "si", "yes"}
-            eliminar = permiso.get("eliminar", False)
-            if isinstance(eliminar, str):
-                eliminar = eliminar.lower() in {"1", "true", "on", "si", "yes"}
-
-            permisos_data.append({
-                "modulo_id": modulo_id,
-                "registrar": 1 if registrar else 0,
-                "modificar": 1 if modificar else 0,
-                "eliminar": 1 if eliminar else 0
-            })
-
-    if not permisos_data:
+    # Normalización de booleanos en el modelo (Permiso.guardar_permisos_masivos)
+    if not permisos or not any(isinstance(p, dict) and p.get("modulo_id") for p in permisos):
         return jsonify({"success": False, "error": "No hay permisos válidos para guardar."}), 400
 
     permiso_model = Permiso()
@@ -505,18 +480,15 @@ def api_actualizar_rol(rol_id):
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
 
-    if rol_data and (rol_data.get("nombre") or "").lower() == "admin":
-        usuario_actual = g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", "")
-        if (usuario_actual or "").lower() != "admin":
-            return jsonify({"success": False, "error": "No se puede modificar el rol Admin."}), 403
-
     rol_model = Rol(
         id=rol_id,
         nombre=data.get("nombre", ""),
         descripcion=data.get("descripcion", ""),
         usuario_id=_obtener_usuario_actual_id()
     )
-    mensaje = rol_model.actualizar_rol()
+    mensaje = rol_model.actualizar_rol(
+        usuario_actual_rol=g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", None)
+    )
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200
@@ -532,11 +504,10 @@ def api_eliminar_rol(rol_id):
     rol_existente = Rol(id=rol_id)
     rol_data = rol_existente.obtener_rol_por_id()
 
-    if rol_data and (rol_data.get("nombre") or "").lower() == "admin":
-        return jsonify({"success": False, "error": "No se puede eliminar el rol Admin."}), 403
-
     rol_model = Rol(id=rol_id, usuario_id=_obtener_usuario_actual_id())
-    mensaje = rol_model.eliminar_rol()
+    mensaje = rol_model.eliminar_rol(
+        usuario_actual_rol=g.user.get("rol_nombre") if isinstance(g.user, dict) else getattr(g.user, "rol_nombre", None)
+    )
 
     if "exitosamente" in mensaje:
         return jsonify({"success": True, "message": mensaje}), 200

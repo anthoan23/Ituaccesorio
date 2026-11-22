@@ -111,8 +111,7 @@ def api_aprobar_pago(factura_id):
             usuario_id=usuario_id
         )
 
-        modelo.actualizar_fecha_pago()
-        resultado = modelo.aprobar_pago()
+        resultado = modelo.aprobar_pago(fecha_pago=data.get("fecha_pago"))
 
         if resultado["success"]:
             return jsonify({"success": True, "mensaje": "Pago aprobado correctamente", "fecha_aprobacion": datetime.now().isoformat()})

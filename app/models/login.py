@@ -70,23 +70,19 @@ class LoginManager:
             traceback.print_exc()
             return False
     
-    def crear_usuario(self, nombre: str, cedula: str, password: str, rol_id: int, foto_perfil: str = None) -> str | None:
+    def crear_usuario(self, nombre: str, cedula: str, password: str, rol_id: int, foto_perfil: str = None):
         """
-        Crea un nuevo usuario usando el modelo Usuarios
-        
-        Args:
-            nombre: Nombre de usuario
-            cedula: Cedula del usuario
-            password: Contrasena en texto plano
-            rol_id: ID del rol
-            foto_perfil: Ruta de la foto de perfil (opcional)
-        
+        Crea un nuevo usuario usando el modelo Usuarios.
+
+        La validación de formato/duplicados vive en Usuarios.agregar_usuario
+        (antes el controller duplicaba los chequeos).
+
         Returns:
-            str: ID generado (ej: 'USR-001'), None si hubo error
+            tuple: (usuario_id | None, error | None, es_duplicado: bool)
         """
         try:
             logger.debug(f"Creando usuario: {nombre}, cedula: {cedula}, rol: {rol_id}")
-            
+
             usuario = Usuarios(
                 nombre=nombre,
                 cedula=str(cedula),
@@ -94,28 +90,26 @@ class LoginManager:
                 rol_id=str(rol_id),
                 foto_perfil=foto_perfil
             )
-            
+
             if usuario.verificar_usuario_por_nombre():
                 logger.debug(f"El nombre de usuario '{nombre}' ya existe.")
-                return None
-            
+                return None, "El nombre de usuario ya está en uso.", True
+
             if usuario.verificar_cedula_en_uso(str(cedula)):
                 logger.debug(f"La cedula '{cedula}' ya esta asignada a otro usuario.")
-                return None
-            
+                return None, "Ya existe un usuario con esta cédula.", True
+
             resultado = usuario.agregar_usuario()
             logger.debug(f"Resultado de agregar_usuario: {resultado}")
-            
+
             if "exitosamente" in resultado.lower():
-                return usuario.id
-            else:
-                logger.error(f"Error al crear usuario: {resultado}")
-                return None
-                
+                return usuario.id, None, False
+            # El mensaje del modelo (validación de formato/campos) sube tal cual
+            return None, resultado, False
+
         except Exception as e:
             logger.error(f"Error en crear_usuario: {e}")
-            traceback.print_exc()
-            return None
+            return None, "No se pudo crear la cuenta. Intente nuevamente.", False
     
     def crear_cliente_natural(self, cedula: str, nombre: str, apellido: str, 
                               celular: str, correo: str = None, direccion: str = None) -> bool:
