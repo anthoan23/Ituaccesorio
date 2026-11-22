@@ -391,19 +391,6 @@ def api_procesar_pago():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@ventas_blueprint.route("/admin/validar-pagos")
-@jwt_required
-@solo_roles(['admin', 'ventas'])
-def pagina_validar_pagos():
-    """Panel de validación de pagos para empleados"""
-    return render_template(
-        "ventas/validacion.html",
-        show_navbar=True,
-        show_notifications=True,
-        active_page="validar_pagos"
-    )
-
-
 # ==================== DASHBOARD ====================
 
 @ventas_blueprint.route("/api/dashboard/ventas-hoy", methods=["GET"])

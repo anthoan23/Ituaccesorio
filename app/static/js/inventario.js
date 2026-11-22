@@ -361,7 +361,7 @@ async function cargarClasesMarcasIniciales() {
 function getStatusLabel(stock) {
   const qty = Number(stock);
   if (qty === 0) return { label: 'Sin stock', class: 'status-out' };
-  if (qty <= 5) return { label: 'Bajo stock', class: 'status-low' };
+  if (qty <= 10) return { label: 'Bajo stock', class: 'status-low' };
   if (qty >= 30) return { label: 'Alto stock', class: 'status-good' };
   return { label: 'Disponible', class: 'status-normal' };
 }
@@ -579,6 +579,7 @@ function imprimirReporteInventario() {
   }
   
   const ventana = window.open("", "_blank");
+  if (!ventana) { mostrarToastReportes("El navegador bloqueó la ventana de impresión. Permite pop-ups e inténtalo de nuevo.", "error"); return; }
   const fecha = new Date().toLocaleString();
   const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
   
@@ -635,7 +636,7 @@ function imprimirReporteInventario() {
           ${reporteDatosActuales.map(p => {
             let stockClass = '';
             if (p.existencia === 0) stockClass = 'status-out';
-            else if (p.existencia <= 5) stockClass = 'status-low';
+            else if (p.existencia <= 10) stockClass = 'status-low';
             else if (p.existencia >= 30) stockClass = 'status-good';
             else stockClass = 'status-normal';
             return `

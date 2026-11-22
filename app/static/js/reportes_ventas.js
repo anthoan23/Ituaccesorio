@@ -534,7 +534,7 @@
       const data = await fetchJson("/api/reportes-ventas/venta-local", {
         method: "POST",
         body: JSON.stringify({
-          cliente_id: parseInt(clienteId),
+          cliente_id: clienteId,
           items: itemsLocal,
           metodo_pago: metodoPago,
         }),
@@ -765,6 +765,7 @@
     }
 
     const ventana = window.open("", "_blank");
+        if (!ventana) { mostrarToast("El navegador bloqueó la ventana de impresión. Permite pop-ups e inténtalo de nuevo.", "error"); return; }
     const fecha = new Date().toLocaleString();
     const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
 

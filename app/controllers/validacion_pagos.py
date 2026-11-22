@@ -111,6 +111,10 @@ def api_aprobar_pago(factura_id):
             usuario_id=usuario_id
         )
 
+        # data estaba sin definir aquí (NameError → 500 SIEMPRE al pulsar
+        # Aprobar; regresión de la remedación de modelos). El JS no envía
+        # fecha_pago: aprobar usa la fecha del servidor.
+        data = request.get_json(silent=True) or {}
         resultado = modelo.aprobar_pago(fecha_pago=data.get("fecha_pago"))
 
         if resultado["success"]:

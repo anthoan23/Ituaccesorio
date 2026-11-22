@@ -137,7 +137,7 @@
         </header>
         <div class="ui-modal__body">
           <div class="confirm-modal__icon">${icono}</div>
-          <p id="confirmacion-modal-mensaje" class="confirm-modal__message confirm-modal__message--center">${mensaje}</p>
+          <p id="confirmacion-modal-mensaje" class="confirm-modal__message confirm-modal__message--center">${escapeHtml(mensaje)}</p>
         </div>
         <div class="ui-modal__footer ui-modal__footer--center">
           ${!soloInformacion && !esExito && !esError ? '<button type="button" class="ui-btn ui-btn--ghost" id="btn-cancelar-confirmacion">Cancelar</button>' : ''}

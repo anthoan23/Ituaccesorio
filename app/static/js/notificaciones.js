@@ -290,21 +290,47 @@
         });
 
         let fuente = null;
-        
-        function conectarSSE() {
+        let reintentos = 0;
+        const MAX_REINTENTOS = 5;
+
+        async function sesionValida() {
+            // jwt_required responde 302->HTML al login si no hay cookie:
+            // EventSource recibiría HTML y moriría en silencio. Verificamos
+            // la sesión con un endpoint JSON antes de abrir el stream.
+            try {
+                const resp = await fetch('/api/usuarios/mis-permisos', { credentials: 'same-origin' });
+                const tipo = resp.headers.get('content-type') || '';
+                return resp.ok && tipo.includes('application/json');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function conectarSSE() {
             if (fuente) {
                 fuente.close();
+                fuente = null;
             }
-            
+
+            // Bucle infinito corregido: check de sesión + máximo 5 reintentos
+            // con backoff (antes: reconexión cada 3 s para siempre, incluso
+            // con la sesión expirada).
+            if (!(await sesionValida())) {
+                console.warn("SSE: sesión no válida, no se conecta.");
+                if (status) status.textContent = "Sesión expirada";
+                return;
+            }
+
             const url = `/notificaciones/stream/${encodeURIComponent(usuarioId)}`;
             console.log("Conectando SSE a:", url);
             fuente = new EventSource(url);
-            
+
             fuente.addEventListener("open", () => {
                 console.log("SSE Conectado");
+                reintentos = 0;
                 if (status) status.textContent = "Conectado";
             });
-            
+
             fuente.addEventListener("bitacora", (event) => {
                 try {
                     const data = JSON.parse(event.data || "{}");
@@ -314,14 +340,22 @@
                     console.error("Error al procesar notificación SSE:", error);
                 }
             });
-            
-            fuente.onerror = (error) => {
-                console.log("SSE Error:", error);
+
+            fuente.onerror = () => {
+                if (fuente) fuente.close();
+                reintentos += 1;
+                if (reintentos > MAX_REINTENTOS) {
+                    console.warn("SSE: máximo de reintentos alcanzado.");
+                    if (status) status.textContent = "Desconectado";
+                    return;
+                }
+                const espera = Math.min(3000 * Math.pow(2, reintentos - 1), 30000);
+                console.log(`SSE Error: reintento ${reintentos}/${MAX_REINTENTOS} en ${espera} ms`);
                 if (status) status.textContent = "Reconectando...";
-                setTimeout(conectarSSE, 3000);
+                setTimeout(conectarSSE, espera);
             };
         }
-        
+
         conectarSSE();
         
         window.addEventListener("beforeunload", () => {

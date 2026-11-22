@@ -299,3 +299,6 @@ select:disabled {
 #campos-juridico {
     display: none;
 }
+
+/* CSP: sin inline styles — el estado inicial del panel jurídico se marca con clase */
+.campos-condicionales--oculto { display: none; }

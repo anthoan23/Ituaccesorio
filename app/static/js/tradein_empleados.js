@@ -565,112 +565,7 @@
         }
     }
 
-    async function abrirModalTests(tradeinId) {
-        try {
-            const data = await fetchJson(`/api/tradein/${tradeinId}/detalle`);
-            const detalle = data.detalle || {};
-            tradeinActual = tradeinId;
-            
-            const infoContainer = document.getElementById("tests-equipo-info");
-            if (infoContainer) {
-                infoContainer.innerHTML = `
-                    <div class="equipo-info-card">
-                        <strong>📱 ${escapeHtml(detalle.producto_nombre || "N/A")}</strong>
-                        ${detalle.marca ? `<span>🏷️ ${escapeHtml(detalle.marca)}</span>` : ''}
-                        ${detalle.imei ? `<span>🔢 IMEI: ${escapeHtml(detalle.imei)}</span>` : ''}
-                        <span>👤 ${escapeHtml(detalle.cliente_nombre)} ${escapeHtml(detalle.cliente_apellido || "")}</span>
-                    </div>
-                `;
-            }
-            
-            const container = document.getElementById("tests-container");
-            if (!container) return;
-            
-            const testsPorCategoria = {};
-            catalogoTests.forEach(test => {
-                if (!testsPorCategoria[test.categoria]) {
-                    testsPorCategoria[test.categoria] = [];
-                }
-                testsPorCategoria[test.categoria].push(test);
-            });
-            
-            let html = "";
-            for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
-                html += `
-                    <div class="test-categoria">
-                        <h4>${escapeHtml(categoria)}</h4>
-                        <div class="test-items">
-                            ${tests.map(test => {
-                                const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
-                                return `
-                                <div class="test-item">
-                                    <span class="test-nombre">${escapeHtml(test.nombre)}</span>
-                                    <div class="test-resultados">
-                                        <label><input type="radio" name="test_${safeName}" value="Funciona"> ✅ Funciona</label>
-                                        <label><input type="radio" name="test_${safeName}" value="No funciona"> ❌ No funciona</label>
-                                    </div>
-                                </div>
-                            `}).join("")}
-                        </div>
-                    </div>
-                `;
-            }
-            container.innerHTML = html || '<p class="empty-pruebas">No hay pruebas configuradas</p>';
-            
-            abrirModal("modal-tests");
-            
-            if (window.FieldValidator) {
-                setTimeout(() => window.FieldValidator.init(), 100);
-            }
-            
-        } catch (err) {
-            mostrarToast(err.message || "Error al cargar datos del trade-in", "error");
-        }
-    }
 
-    async function guardarTests() {
-        if (!tradeinActual) return;
-        
-        const tests = [];
-        document.querySelectorAll("#tests-container .test-item").forEach(item => {
-            const nombre = item.querySelector(".test-nombre")?.textContent || "";
-            const seleccionado = item.querySelector('input[type="radio"]:checked');
-            const resultado = seleccionado ? seleccionado.value : "Pendiente";
-            tests.push({ nombre, resultado });
-        });
-        
-        if (tests.length === 0) {
-            mostrarToast("No hay pruebas para registrar", "error");
-            return;
-        }
-        
-        const btnGuardar = document.getElementById("btn-guardar-tests");
-        if (!btnGuardar) return;
-        
-        const textoOriginal = btnGuardar.textContent;
-        btnGuardar.disabled = true;
-        btnGuardar.textContent = "Guardando...";
-        
-        try {
-            const data = await fetchJson(`/api/tradein/${tradeinActual}/tests`, {
-                method: "POST",
-                body: { tests }
-            });
-            
-            if (data.success) {
-                mostrarToast(data.message || "Pruebas registradas correctamente");
-                cerrarModal("modal-tests");
-                await cargarTradeIns();
-            } else {
-                mostrarToast(data.error || "Error al registrar pruebas", "error");
-            }
-        } catch (err) {
-            mostrarToast(err.message || "Error de conexión", "error");
-        } finally {
-            btnGuardar.disabled = false;
-            btnGuardar.textContent = textoOriginal;
-        }
-    }
 
     // ==================== DETALLE ====================
     async function mostrarDetalle(tradeinId) {
@@ -872,11 +767,6 @@
                 
                 abrirModal("modal-registrar");
             });
-        }
-        
-        const btnGuardarTests = document.getElementById("btn-guardar-tests");
-        if (btnGuardarTests) {
-            btnGuardarTests.addEventListener("click", guardarTests);
         }
         
         // Búsqueda en tabla

@@ -217,45 +217,6 @@ const Utils = {
         return estados[estadoStr] || 'estado-default';
     },
 
-    obtenerIdEmpleadoActual() {
-        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-        if (userStr) {
-            try {
-                const user = JSON.parse(userStr);
-                const id = user.id_empleado || user.ID_empleado || user.empleado_id;
-                if (id) return String(id);
-            } catch(e) {}
-        }
-        
-        const token = this.getAccessToken();
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const id = payload.id_empleado || payload.ID_empleado || payload.empleado_id;
-                if (id) return String(id);
-            } catch(e) {}
-        }
-        
-        // Sin empleado identificado no se puede operar sobre órdenes:
-        // se devuelve null y los flujos que dependen de él se bloquean.
-        console.warn('No se pudo obtener el ID del empleado logueado');
-        return null;
-    }
-};
-
-// --------------------------------
-// 4. GESTOR DE VISTAS
-// --------------------------------
-const ViewManager = {
-    currentView: TALLER_CONFIG.VISTAS.ORDENES,
-    
-    labels: {
-        [TALLER_CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
-        [TALLER_CONFIG.VISTAS.DETALLE]: 'Información de la orden',
-        [TALLER_CONFIG.VISTAS.REVISION]: 'Revisión',
-        [TALLER_CONFIG.VISTAS.REPARACION]: 'Reparación',
-        [TALLER_CONFIG.VISTAS.ASIGNADAS]: 'Reparaciones asignadas'
-    },
 
     activate(targetClass) {
         const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION, 
@@ -1028,18 +989,14 @@ const OrdenesService = {
     async asignarOrden(idOrden, idConfiable = null) {
         if (!validadorOrdenes.validarId(idOrden, 'tomar', idConfiable)) return;
 
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
-            return;
-        }
-
+        // El backend identifica al empleado con la sesión (g.user): el gate
+        // de id_empleado bloqueaba esta acción para TODOS (nadie escribe
+        // 'user' en localStorage ni el JWT trae id_empleado).
         try {
             await Utils.fetchJson(TALLER_CONFIG.API.ASIGNAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    id_orden: idOrden,
-                    id_empleado: idEmpleado
+                    id_orden: idOrden
                 })
             });
             
@@ -1175,15 +1132,8 @@ const RevisionService = {
         const idOrden = document.getElementById('id_orden_servicio_revision')?.value;
         const numeroTest = document.getElementById('numero_test_revision')?.value;
         const observaciones = document.querySelector('textarea[name="observaciones"]')?.value;
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-
         if (!idOrden || !numeroTest) {
             console.warn('Datos de orden incompletos');
-            return;
-        }
-
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
             return;
         }
 
@@ -1211,7 +1161,6 @@ const RevisionService = {
                 method: 'POST',
                 body: JSON.stringify({
                     id_orden: idOrden,
-                    id_empleado: parseInt(idEmpleado),
                     numero_test: parseInt(numeroTest),
                     componentes_evaluados: componentesEvaluados
                 })
@@ -1676,18 +1625,11 @@ const ReparacionesService = {
     async liberarOrden(idOrden, idConfiable = null) {
         if (!validadorReparaciones.validarId(idOrden, 'liberar', idConfiable)) return;
 
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
-            return;
-        }
-
         try {
             await Utils.fetchJson(TALLER_CONFIG.API.LIBERAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    id_orden: idOrden,
-                    id_empleado: idEmpleado
+                    id_orden: idOrden
                 })
             });
             
@@ -1726,8 +1668,6 @@ const ReparacionesService = {
         }
         
         try {
-            const idEmpleado = Utils.obtenerIdEmpleadoActual();
-            
             const payload = {
                 id_orden: ordenId,
                 descripcion_reparacion: reparacionTexto,

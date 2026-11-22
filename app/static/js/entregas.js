@@ -217,14 +217,19 @@ async function cargarFacturasPendientes() {
         select.innerHTML = '<option value="">Seleccione una factura</option>' +
             facturas.map(f => `<option value="${Utils.escapeHtml(f.factura_id)}" data-direccion="${Utils.escapeHtml(f.cliente_direccion || '')}">${Utils.escapeHtml(f.factura_id)} - ${Utils.escapeHtml(f.cliente_nombre)} ${Utils.escapeHtml(f.cliente_apellido || '')}</option>`).join("");
         
-        select.addEventListener("change", () => {
-            const option = select.options[select.selectedIndex];
-            const direccion = option.dataset.direccion;
-            const direccionTextarea = document.querySelector("#form-entrega textarea[name='direccion']");
-            if (direccion && direccionTextarea) {
-                direccionTextarea.value = direccion;
-            }
-        });
+        // Listener delegado una sola vez: antes se re-añadía en cada carga
+        // (init + post-registro + cada apertura del modal) y se acumulaban.
+        if (!select.dataset.listenerDirecciones) {
+            select.dataset.listenerDirecciones = "1";
+            select.addEventListener("change", () => {
+                const option = select.options[select.selectedIndex];
+                const direccion = option.dataset.direccion;
+                const direccionTextarea = document.querySelector("#form-entrega textarea[name='direccion']");
+                if (direccion && direccionTextarea) {
+                    direccionTextarea.value = direccion;
+                }
+            });
+        }
     } catch (error) {
         Utils.mostrarToast(error.message, true);
     }

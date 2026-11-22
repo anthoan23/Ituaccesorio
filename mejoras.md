@@ -860,3 +860,179 @@ desincronizados), `notificaciones.js` pidiendo endpoint admin-only, usuario de m
 - **Nada subido al repo** — todo queda en el working tree local (33 archivos modificados).
 - El front de trade-in ya envía `fotos_eliminar` y el perfil del cliente usa el flujo del modelo: probar en `docker-compose up --build`.
 
+---
+
+# Auditoría de frontend (`views/` + `app/static/`)
+
+> Fecha: 22/11/2026 · Alcance: **31 JS, 28 templates (+components), 32 CSS**, y el cruce de los
+> **136 endpoints consumidos por el JS vs las rutas registradas**.
+> Método: lectura 100% de los JS/templates por agentes + verificación de cada endpoint contra
+> `app/controllers` (con parámetros), shapes de respuesta, permisos por rol, CSP, y grep global
+> de uso (front/tests).
+> Reglas de AGENTS.md aplicadas como criterio: CSP sin inline, JS globales sin duplicar (SSE),
+> guards `if (el)`, validaciones en el backend.
+> Severidades: 🔴 roto para el usuario en producción · 🟠 bug real/violación CSP·permisos · 🟡 mejora.
+> Línea base: 2379 tests (el backend no se toca salvo el hotfix R0).
+
+## Resumen por severidad
+
+| Severidad | Cantidad | Destacados |
+|---|---|---|
+| 🔴 Alta | 15 | Botón Aprobar con 500 SIEMPRE (regresión), gate de sesión en taller.js bloquea 3 acciones, 6 endpoints/navegaciones 404, XSS en productos, bucle infinito SSE, panel jurídico visible por CSP, admin no puede borrar admin desde el front |
+| 🟠 Media | 24 | CSP en ventanas de impresión ×4 módulos, permisos cruzados 403 (4 casos), carrito duplicado, KPIs hardcodeados, sin manejo de sesión expirada, reportes parseInt rompe RIF |
+| 🟡 Baja | 54 | XSS bajos sin escape, dead code, hardcodes (técnico por texto, prefijos, filtro iPhone), duplicaciones (IDs de tests ×3, umbrales de stock ×2 con valores distintos), CSS muerto/conflictuado |
+
+## 1. Errores 🔴 Alta
+
+### F0. `validacion_pagos.py` (controller) — REGRESIÓN: botón "Aprobar" devolvía 500 SIEMPRE
+`api_aprobar_pago` usaba `data.get("fecha_pago")` **sin definir `data`** (introducido en la
+remediación de modelos). `NameError` → 500 en cada clic del botón Aprobar.
+**HOTFIX aplicado (Fase 0):** `data = request.get_json(silent=True) or {}` antes de la llamada
+(el JS no envía fecha_pago: el backend usa la fecha del servidor). Los tests no lo detectaron
+porque cubren el modelo, no el endpoint.
+
+### F1. `taller.js:220-243 (+1031, 1185, 1679)` — gate de sesión bloquea 3 acciones clave
+`Utils.obtenerIdEmpleadoActual()` busca `localStorage/sessionStorage 'user'` y `access_token`
+que **nadie escribe** (auth 100% cookies httponly; el JWT no trae `id_empleado`) → SIEMPRE null
+→ "No se pudo identificar al empleado logueado" y **return**: "Tomar orden", "Guardar revisión"
+y "Liberar orden" bloqueados para TODOS los usuarios (el backend ni siquiera usa ese campo:
+usa `g.user.cedula`).
+**Solución aplicada:** gate eliminado (y el campo muerto del payload fuera).
+
+### F2. `ventas.js:880-1161 + 1288-1338` — 4 endpoints 404 + ~500 líneas dead code
+`/api/admin/pagos-pendientes|aprobar-pago/<id>|rechazar-pago/<id>|ventas-local` no existen en
+ningún controller (las rutas reales son `/api/validacion-pagos/*` y
+`/api/reportes-ventas/venta-local`). Toda la rama `path === '/admin/validar-pagos'` es
+inalcanzable: ese path lo sirve `validacion_pagos.py` (registrado antes) con
+`validacion_pagos.js`. Además `ventas.py:394-408` define la ruta `/admin/validar-pagos`
+huérfana.
+**Solución aplicada:** bloque muerto eliminado (~460 líneas) + ruta huérfana eliminada.
+
+### F3. `productos.js:132-147` — XSS en modal de confirmación
+`mostrarModalConfirmacion` interpola `${mensaje}` **sin `escapeHtml`**; los mensajes incluyen
+nombres de producto de la BD (creables por usuarios con `Productos:registrar`) → script
+ejecutable en la página admin.
+**Solución aplicada:** `escapeHtml(mensaje)`.
+
+### F4. `index.js:338` — navegación a página inexistente
+Botón "Registrar Reparación" del dashboard → `/ordenes_servicio` (underscore) → 404; la ruta
+real es `/ordenes-servicio`. **Solución aplicada:** corregido.
+
+### F5. `notificaciones.js:294-325` — bucle infinito de reconexión SSE
+`jwt_required` sin cookie responde 302→HTML; `EventSource` recibe HTML → `onerror` →
+`setTimeout(conectarSSE, 3000)` **sin límite ni backoff** (y el EventSource nativo además
+reconecta solo: doble maquinaria). Sin aviso de "sesión expirada".
+**Solución aplicada:** check de sesión previo (fetch `credentials:'same-origin'` y validación
+de content-type JSON), límite de 5 reintentos con backoff ×2, cierre de la fuente en `onerror`
+y estado "Sesión expirada" visible.
+
+### F6. `tradein_empleados.js:655 + html:279-294` — endpoint fantasma de tests
+`POST /api/tradein/<id>/tests` no existe en el controller → "Guardar pruebas" del modal da 404
+(las pruebas reales viajan en el multipart del POST/PUT del trade-in).
+**Solución aplicada:** función `guardarTests`, botón y modal muertos eliminados (flujo real
+intacto).
+
+### F7. `clientes.html:190` — CSP bloquea el único `style=` del repo
+`style="display:none"` en `#campos-juridico`: con `style-src 'self'` sin unsafe-inline, el
+atributo se bloquea y el panel de Persona Jurídica queda **VISIBLE de inicio**.
+**Solución aplicada:** clase CSS `.campos-condicionales--oculto` + toggle en `clientes.js`.
+
+### F8. `usuarios.js` — `window.currentUser` nunca inyectado
+El controller pasa `current_user` pero el template no lo inyecta → `currentUserId=""` (guard
+anti-autoeliminación muerto) y `esAdminActual=false` SIEMPRE → un admin que borra a otro admin
+recibe el toast falso "Solo otro admin puede eliminar este usuario." (el modelo sí lo permite).
+**Solución aplicada:** inyección vía `data-*` en `<body>` (sin script inline por CSP) y lectura
+en el JS.
+
+## 2. Errores 🟠 aplicados
+
+| # | Fix |
+|---|---|
+| O1 | `.custom-toast` movida a `theme.css` (faltaba en validacion_pagos/catalogo/inventario: los toasts salían como texto plano) |
+| O2 | `index.js`: KPIs hardcodeados ('24', '$12,450', '4') conectados a los endpoints reales (`reparados-mes`, `ingresos-mensuales`, `tecnicos-activos`) |
+| O3 | `reportes_ventas.js`: `parseInt(clienteId)` → string (los RIF jurídicos daban NaN → venta local imposible para clientes jurídicos) |
+| O4 | `reportes_ventas.js` e `inventario.js`: `window.open` con null-guard (popup-blocker → TypeError sin catch) |
+| O5 | `backup.js`: `window.notify()` (API fantasma) → `window.FeedbackModal.show()` |
+| O6 | `login_phone.html`: `</button>` huérfano eliminado |
+| O7 | Duplicado backend detectado y eliminado: `/api/dashboard/actividad-reciente` estaba en `bitacora.py` Y `home_controller.py` (gana bitacora por orden de registro) |
+| O8 | Ventanas de impresión (4 módulos): `<style>` inline y `onclick` → **pendiente §9** (refactor de 4 archivos con clases+link, mismo patrón) |
+| O9 | `onclick`/`style` inline generados por innerHTML (`ordenes_servicio.js:1268/1329`, `validacion_pagos.js:357`, `ventas.js:240/592`) → **pendiente §9** |
+| O10 | Permisos cruzados 403 (`Clientes` desde Órdenes de servicio, `Productos` desde Proveedores, `/api/clientes` desde Reportes, `/api/proveedores`+`/api/empleados` desde Órdenes de compra) → **pendiente §9** (decisión de rutas namespaced vs permisos) |
+| O11 | Carrito duplicado (navbar.js vs ventas.js + modal muerto en catálogo) → **pendiente §9** (consolidar en navbar) |
+| O12 | Modales muertos de ordenes_servicio (revisión/fotos por orden) → **pendiente §9** (abrir o eliminar UI) |
+| O13 | Manejo de sesión expirada en los helpers `fetchJson` (redirect HTML → JSON falla) → **pendiente §9** (patrón central) |
+
+## 3. Errores 🟡 aplicados
+
+- `clientes.js`: `modoEdicion` muerta eliminada; catch passthrough inútil eliminado.
+- `ordenes_entregas.html`: `#feedback-modal` duplicado (markup muerto inválido) eliminado.
+- `field-validator.js`: regla `capitalizar` implementada (6+ campos la prometían en hints).
+- `usuarios.js`: `state.empleados`/`state.clientes` (2 fetches muertos por recarga) eliminados.
+- `usuarios.js`: `cedula_personal` ya no se corrompe con `String(Number(...))` (ceros a la izquierda).
+- `entregas.js`: listener `change` del select ya no se acumula en cada apertura del modal.
+- `inventario.js`: umbrales de stock unificados (≤10/≥30 en ambos lados).
+- XSS bajos sin escape corregidos: `taller.js:1376` (error.message), `inventario.js:410` (foto), `reportes_ventas.js:268/282/825` y `tradein_empleados.js:139` (ids/estados), `validacion_pagos.js:1021` (estado en impresión), `taller_celular.js:68` (textContent).
+- `taller.js`: hint de caracteres alineado (300), `maxlength` respetado.
+- `productos.js`: doble apertura del modal de registro eliminada (data-open-modal ya lo abre).
+
+## 4. Verificado sano (no tocar)
+
+- 0 URLs hardcodeadas (127.0.0.1/localhost/http) en JS/templates; todo relativo.
+- 0 doble carga de JS globales (no hay doble SSE por include); hash del loader de tema OK con la CSP.
+- 0 templates huérfanos (login_phone ES el login; pagos.html es /pagar; 403/404 usados).
+- Cruce de los 136 endpoints: todo resuelve salvo lo listado (F2/F6/F4) — shapes correctos con
+  los controllers actuales (incluidos los cambios recientes).
+- `navbar.js` (carrito con `if (el)`), `table-tools.js`, `feedback-modal.js`, `modal.js`,
+  `validacion-tabla.js`, `iconos.js`, `login.js`, `tradein.js`, `cargos.js`, `especialidades.js`,
+  `taller_celular.js`, `bitacora.js` — sin problemas funcionales.
+
+## 5. Pendiente → §9 (sumado)
+
+- **O8/O9/O10/O11/O12/O13** tal como se listó arriba (ventanas de impresión CSP, permisos
+  cruzados, carrito consolidado, modales muertos, sesión expirada global).
+- XSS bajos restantes (atributos `data-*` con ids/estados de BD sin escape en 6 puntos).
+- `maxlength`/hints desalineados restantes, filtros hardcodeados (técnico por texto, prefijos,
+  iPhone ×2), `noDuplicadoTabla`, spotlight ⌘K decorativo, CSS: badge conflictuado
+  (notificaciones vs navbar), `theme.css` redefiniciones internas, `login.css` muerto,
+  Chart.js duplicado, `pagos.css` mínimo, coberturas de humo faltantes (/pagar, catálogo público,
+  impresiones).
+
+---
+
+## Remediación de frontend aplicada (misma sesión, 22/11/2026)
+
+**Verificación: 2379 tests en verde · `node --check` OK en los 12 JS tocados · 0 `style="` inline en views (fuera del loader de tema).**
+
+### Aplicado (por hallazgo)
+
+| # | Fix |
+|---|---|
+| F0 | **HOTFIX**: `data` sin definir en `api_aprobar_pago` (500 SIEMPRE en el botón Aprobar — regresión de la remedación de modelos) |
+| F1 | `taller.js`: gates de `id_empleado` eliminados en asignar/guardar-revisión/liberar/guardar-reparación + campo muerto del payload fuera + helper muerto eliminado (el backend usa `g.user.cedula`) |
+| F2 | `ventas.js`: bloque muerto de ~336 líneas (funciones `/api/admin/*` + rama `/admin/validar-pagos`) eliminado; ruta huérfana `/admin/validar-pagos` de `ventas.py` eliminada (la sirve `validacion_pagos.py`) |
+| F3 | `productos.js`: `escapeHtml(mensaje)` en el modal de confirmación (XSS vía nombre de producto de la BD) |
+| F4 | `index.js`: navegación `/ordenes_servicio` → `/ordenes-servicio` (404 del botón "Registrar Reparación") |
+| F5 | `notificaciones.js`: bucle infinito SSE corregido — check de sesión previo (`/api/usuarios/mis-permisos` con credentials), máx 5 reintentos con backoff exponencial (3s→30s), cierre de la fuente en `onerror`, estado "Sesión expirada" visible |
+| F6 | `tradein_empleados`: endpoint fantasma `/api/tradein/<id>/tests` + función `guardarTests` + `abrirModalTests` + bind + modal `modal-tests` del template eliminados (las pruebas reales viajan en el multipart del POST/PUT) |
+| F7 | `clientes.html`: `style="display:none"` → clase `.campos-condicionales--oculto` en `clientes.css` (CSP: el panel jurídico ya no queda visible de inicio); el toggle JS ya usa CSSOM |
+| F8 | `usuarios.html`/`usuarios.js`: sesión inyectada vía `data-user-rol-id`/`data-user-rol` en `base.html` (CSP: sin script inline) — guard anti-autoeliminación vivo y admin puede borrar admin desde el front |
+| O1 | `.custom-toast` movida a `theme.css` (toasts planos en validacion_pagos/catalogo/inventario) |
+| O2 | `index.js`: KPIs '24'/'$12,450'/'4' → endpoints reales (`reparados-mes`, `ingresos-mensuales`, `tecnicos-activos`; shapes verificados) |
+| O3 | `reportes_ventas.js`: `parseInt(clienteId)` → string (los RIF jurídicos ya pueden recibir venta local) |
+| O4 | `window.open` con null-guard en `reportes_ventas.js` e `inventario.js` (popup-blocker) |
+| O5 | `backup.js`: `window.notify()` (fantasma) → `window.FeedbackModal.show({type, title, message})` |
+| O6 | `login_phone.html`: `</button>` huérfano eliminado |
+| O7 | Duplicado backend: `/api/dashboard/actividad-reciente` eliminado de `home_controller` (gana `bitacora.py` por orden de registro) |
+| — | 🟡: `capitalizar` implementada en `field-validator.js`; `state.empleados/clientes` (2 fetches muertos) fuera de `usuarios.js`; listener `change` de `entregas.js` con guard anti-acumulación; `#feedback-modal` duplicado fuera de `ordenes_entregas.html`; umbrales de stock unificados (≤10/≥30) en `inventario.js` |
+
+### Pendiente → §9 (consolidado)
+
+- **CSP en ventanas de impresión** (proveedores, productos, validacion_pagos, reportes_ventas, inventario): `<style>` + `onclick` inline heredan la CSP → refactor a clases + `<link>` + listeners (mismo patrón ×5).
+- **`onclick`/`style` inline generados por innerHTML**: `ordenes_servicio.js:1268/1329`, `validacion_pagos.js:357`, `ventas.js:240/592` (imágenes con fallback) → listeners delegados/clases.
+- **Permisos cruzados 403**: `Clientes` desde Órdenes de servicio, `Productos` desde Proveedores, `/api/clientes` desde Reportes (rol ventas), `/api/proveedores`+`/api/empleados` desde Órdenes de compra → rutas namespaced o relajar permisos (decisión de negocio).
+- **Carrito duplicado** (navbar.js vs ventas.js con modal muerto en catálogo) → consolidar en navbar.
+- **Modales muertos de ordenes_servicio** (revisión/fotos por orden) → abrir o eliminar UI (+ radios "No funciona" pre-marcados si se reactiva).
+- **Sesión expirada global**: patrón central en los helpers `fetchJson` (detectar redirect/HTML → ir a /login).
+- **Permisos cruzados de consulta de catálogos** y demás puntos ya listados en §9.
+- XSS bajos restantes (atributos `data-*` con ids/estados de BD ×6), `campos Caja/Cargador/Cable/Manuales` descartados por el backend, spotlight ⌘K decorativo, CSS: badge conflictuado, `theme.css` redefiniciones, `login.css` muerto, Chart.js duplicado, `pagos.css` mínimo, humo faltante (/pagar, catálogo, impresiones).
+

@@ -19,10 +19,16 @@ const fotoPerfilButton = document.getElementById("btn-foto-perfil");
 const fotoPerfilName = document.getElementById("foto-perfil-name");
 const fotoPerfilPreview = document.getElementById("foto-perfil-preview");
 
+// Sesión inyectada por base.html vía data-* (window.currentUser nunca se
+// definió: el guard anti-autoeliminación estaba muerto y un admin no podía
+// borrar a otro admin desde el front).
+const bodyData = document.body.dataset;
 const currentUser = window.currentUser || {};
-const currentUserId = currentUser?.id == null ? "" : String(currentUser.id);
-const currentUserRolId = currentUser?.rolId ? Number(currentUser.rolId) : null;
-const currentUserRolNombre = String(currentUser?.rolNombre || "").trim().toLowerCase();
+const currentUserId = String(currentUser?.id ?? bodyData.userId ?? "");
+const currentUserRolId = currentUser?.rolId != null
+    ? Number(currentUser.rolId)
+    : (bodyData.userRolId ? Number(bodyData.userRolId) : null);
+const currentUserRolNombre = String(currentUser?.rolNombre ?? bodyData.userRol ?? "").trim().toLowerCase();
 const esAdminActual = currentUserRolId === 1 || currentUserRolNombre === "admin";
 
 const selectUsuarioRol = formUsuario?.querySelector("select[name='rol_id']");
@@ -938,16 +944,15 @@ async function cargarTodo() {
         const [usuarios, roles, modulos, empleados, clientes] = await Promise.all([
             fetchJson("/api/usuarios"),
             fetchJson("/api/roles"),
-            fetchJson("/api/modulos"),
-            fetchJson("/api/usuarios/empleados"),
-            fetchJson("/api/usuarios/clientes").catch(() => ({ clientes: [] }))
+            fetchJson("/api/modulos")
         ]);
+        // Los 2 fetches de empleados/clientes anteriores alimentaban
+        // state.empleados/state.clientes que NADIE leía (los selects de
+        // cédula hacen su propio fetch): fuera, 2 consultas menos por carga.
 
         state.usuarios = usuarios.usuarios || [];
         state.roles = roles.roles || [];
         state.modulos = modulos.modulos || [];
-        state.empleados = empleados.empleados || [];
-        state.clientes = clientes.clientes || [];
 
         renderTodo();
     } catch (error) {

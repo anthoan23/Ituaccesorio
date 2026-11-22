@@ -31,13 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (widgetReparaciones) widgetReparaciones.textContent = ordenesData.total || '0';
             }
 
-            // Equipos Reparados (simulado)
+            // Equipos Reparados (endpoint real; antes '24' hardcodeado)
+            const reparadosResp = await fetch('/api/dashboard/reparados-mes');
+            const reparadosData = await reparadosResp.json();
             const kpiReparados = document.getElementById('kpi-reparados');
-            if (kpiReparados) kpiReparados.textContent = '24';
+            if (kpiReparados) kpiReparados.textContent = reparadosData.total || '0';
 
-            // Ingresos Mensuales (simulado)
+            // Ingresos Mensuales (endpoint real; antes '$12,450' hardcodeado)
+            const ingresosResp = await fetch('/api/dashboard/ingresos-mensuales');
+            const ingresosData = await ingresosResp.json();
             const kpiIngresos = document.getElementById('kpi-ingresos');
-            if (kpiIngresos) kpiIngresos.textContent = '$12,450';
+            if (kpiIngresos) kpiIngresos.textContent = ('$' + Number(ingresosData.total || 0).toLocaleString('es-VE', {maximumFractionDigits: 0}));
 
             // Stock Bajo
             const stockResp = await fetch('/api/dashboard/bajo-stock');
@@ -47,9 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (widgetStock) widgetStock.textContent = (stockData.productos || []).length || '0';
             }
 
-            // Técnicos Activos (simulado)
+            // Técnicos Activos (endpoint real; antes '4' hardcodeado)
+            const tecnicosResp = await fetch('/api/dashboard/tecnicos-activos');
+            const tecnicosData = await tecnicosResp.json();
             const widgetTecnicos = document.getElementById('widget-tecnicos-activos');
-            if (widgetTecnicos) widgetTecnicos.textContent = '4';
+            if (widgetTecnicos) widgetTecnicos.textContent = tecnicosData.total || '0';
 
         } catch (error) {
             console.error('Error cargando KPI:', error);
@@ -335,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
             if (action === 'orden') window.location.href = '/ordenes_compra';
-            else if (action === 'reparacion') window.location.href = '/ordenes_servicio';
+            else if (action === 'reparacion') window.location.href = '/ordenes-servicio';
             else if (action === 'producto') window.location.href = '/productos';
             else if (action === 'cliente') window.location.href = '/clientes';
         });
