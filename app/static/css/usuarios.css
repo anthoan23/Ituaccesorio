@@ -159,11 +159,25 @@
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
-/* Reserva espacio a la derecha para el toggle Y para la palomita de FieldValidator */
 .password-field input {
+    width: 100%;
     padding-right: 6.5rem;
+    height: auto;
+    line-height: normal;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.field > span:first-child {
+    min-height: 1.2em;
+    display: block;
 }
 
 .password-toggle {
