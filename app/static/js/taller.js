@@ -215,17 +215,33 @@ const Utils = {
             'asignada': 'estado-asignada'
         };
         return estados[estadoStr] || 'estado-default';
+    }
+};
+
+// ============================================
+// 4. GESTOR DE VISTAS
+// (restaurado: se había perdido en la remediación de la auditoría
+// de frontend y el taller quedaba sin cargar las órdenes)
+// ============================================
+const ViewManager = {
+    currentView: TALLER_CONFIG.VISTAS.ORDENES,
+
+    labels: {
+        [TALLER_CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
+        [TALLER_CONFIG.VISTAS.DETALLE]: 'Información de la orden',
+        [TALLER_CONFIG.VISTAS.REVISION]: 'Revisión',
+        [TALLER_CONFIG.VISTAS.REPARACION]: 'Reparación',
+        [TALLER_CONFIG.VISTAS.ASIGNADAS]: 'Reparaciones asignadas'
     },
 
-
     activate(targetClass) {
-        const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION, 
+        const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION,
                                  TALLER_CONFIG.VISTAS.REPARACION, TALLER_CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
-        
+
         document.querySelectorAll('.content').forEach(panel => {
             panel.hidden = !panel.classList.contains(targetClass);
         });
-        
+
         const separator = document.getElementById('breadcrumb-separator');
         const section = document.getElementById('breadcrumb-section');
         if (separator) separator.style.display = showBreadcrumb ? 'inline' : 'none';
@@ -233,15 +249,15 @@ const Utils = {
             section.style.display = showBreadcrumb ? 'inline' : 'none';
             section.textContent = showBreadcrumb ? this.labels[targetClass] : '';
         }
-        
+
         document.querySelectorAll('[data-view-target]').forEach(btn => {
             const isActive = btn.getAttribute('data-view-target') === targetClass;
             btn.classList.toggle('is-active', isActive);
             btn.setAttribute('aria-pressed', String(isActive));
         });
-        
+
         this.currentView = targetClass;
-        
+
         if (targetClass === TALLER_CONFIG.VISTAS.ORDENES) {
             OrdenesService.cargar();
         } else if (targetClass === TALLER_CONFIG.VISTAS.ASIGNADAS) {

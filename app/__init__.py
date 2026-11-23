@@ -144,12 +144,19 @@ def create_app():
             g.user = SimpleNamespace(**payload)
         else:
             if IS_TEST_MODE:
-                # Debe imitar el payload real del JWT (login.py usa la clave "id").
+                # Debe imitar el payload real del JWT (login.py usa las claves
+                # "id" y "cedula"): sin "cedula", los endpoints del taller que
+                # hacen usuario_attr("cedula") filtran por NULL y las vistas
+                # del usuario quedan vacías en modo prueba.
                 g.user = SimpleNamespace(
-                    id=999,
+                    id=12345678,
                     username="test_admin",
+                    usuario_nombre="test_admin",
+                    cedula=12345678,
                     rol_id=1,
                     rol_nombre="admin",
+                    foto_perfil=None,
+                    perfil_completo=True,
                     permisos={}
                 )
             else:
