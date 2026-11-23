@@ -161,13 +161,14 @@
     align-items: center;
 }
 
+/* Reserva espacio a la derecha para el toggle Y para la palomita de FieldValidator */
 .password-field input {
-    padding-right: 5rem;
+    padding-right: 6.5rem;
 }
 
 .password-toggle {
     position: absolute;
-    right: 0.65rem;
+    right: 2.25rem; /* deja libre el espacio de la palomita */
     border: 0;
     background: var(--ghost-bg);
     color: var(--ghost-text);
@@ -183,6 +184,11 @@
 .password-toggle:hover {
     background: var(--ghost-hover-bg);
     color: var(--text-strong);
+}
+
+.password-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ============================================
@@ -300,53 +306,12 @@
 }
 
 /* ============================================
-   PERMISO CONSULTAR (automático)
+   SCROLL DE TABLAS
    ============================================ */
-.permiso-consultar {
-    opacity: 0.75;
-    position: relative;
-    cursor: help;
-}
-
-.permiso-consultar .permiso-hint {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    margin-left: 0.25rem;
-    font-weight: normal;
-}
-
-.permiso-consultar input[type="checkbox"]:disabled {
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.permiso-consultar::after {
-    content: "⚡";
-    position: absolute;
-    right: -18px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.7rem;
-    opacity: 0.5;
-}
-
-.permiso-consultar:hover::before {
-    content: "El permiso de consultar se activa automáticamente cuando tienes al menos un permiso activo (Registrar, Modificar o Eliminar)";
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    background: var(--bg);
-    color: var(--text-strong);
-    font-size: 0.7rem;
-    padding: 0.5rem;
-    border-radius: var(--radius-sm);
-    white-space: normal;
-    width: 200px;
-    z-index: 10;
-    pointer-events: none;
-    font-weight: normal;
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-card);
+.table-wrap {
+    overflow-y: auto;
+    max-height: 60vh;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================
@@ -394,17 +359,17 @@
     .stats--grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .admin-toolbar {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .admin-toolbar .ui-btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .permisos-grid {
         grid-template-columns: 1fr;
     }
@@ -414,26 +379,26 @@
     .stats--grid {
         grid-template-columns: 1fr 1fr;
     }
-    
+
     .col-id,
     .col-rol {
         width: auto;
     }
-    
+
     .table {
         min-width: 600px;
     }
-    
+
     .tabs {
         padding: 0.5rem 0.75rem 0;
         overflow-x: auto;
     }
-    
+
     .tab {
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
     }
-    
+
     .tab-panel {
         padding: 1rem;
     }

@@ -1,5 +1,7 @@
 from __future__ import annotations
 import logging
+import requests
+from typing import Dict
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import validar_numero, validar_texto_numero
@@ -104,37 +106,55 @@ class CarritoModel:
         finally:
             cursor.close()
             db.close()
-
+    
     def _obtener_tasas(self) -> Dict[str, float]:
-        """Obtiene las tasas de cambio actuales"""
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            return {"oficial": 520.91, "paralelo": 710.12}
+        """
+        Obtiene las tasas de cambio (oficial y paralelo) desde
+        https://ve.dolarapi.com. No usa la base de datos.
 
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT Tasa_oficial, Tasa_paralelo
-                FROM Tasas_cambio
-                ORDER BY ID_tasa DESC
-                LIMIT 1
-            """)
-            row = cursor.fetchone()
-            if row:
-                return {
-                    "oficial": float(row.get("Tasa_oficial", 520.91)),
-                    "paralelo": float(row.get("Tasa_paralelo", 710.12))
-                }
-            return {"oficial": 520.91, "paralelo": 710.12}
-        except Exception as e:
-            # Fallback con tasas FIJAS: sin la tabla Tasas_cambio (ahora
-            # incluida en el seed) la consulta fallaba siempre y las tasas
-            # mostradas quedaban desactualizadas sin ningún aviso.
-            logger.warning("Tasas_cambio no disponible, usando tasas estáticas: %s", e)
-            return {"oficial": 520.91, "paralelo": 710.12}
-        finally:
-            cursor.close()
-            db.close()
+        - 'oficial' es la tasa por defecto si algo falla.
+        - 'paralelo' también tiene un valor estático de respaldo.
+        """
+        TASAS_FALLBACK = {"oficial": 520.91, "paralelo": 710.12}
+
+        endpoints = {
+            "oficial": "https://ve.dolarapi.com/v1/dolares/oficial",
+            "paralelo": "https://ve.dolarapi.com/v1/dolares/paralelo",
+        }
+
+        tasas: Dict[str, float] = dict(TASAS_FALLBACK)
+
+        for clave, url in endpoints.items():
+            try:
+                respuesta = requests.get(url, timeout=5)
+                respuesta.raise_for_status()
+                data = respuesta.json()
+
+                # La API devuelve 'promedio' como la tasa utilizable.
+                # Si viniera nulo, intentamos 'compra'/'venta' como respaldo.
+                valor = data.get("promedio")
+                if valor is None:
+                    valor = data.get("venta") or data.get("compra")
+
+                if valor is not None:
+                    tasas[clave] = float(valor)
+                else:
+                    logger.warning(
+                        "La API de DolarApi no devolvió un valor utilizable para '%s': %s",
+                        clave, data,
+                    )
+            except (requests.RequestException, ValueError) as e:
+                logger.warning(
+                    "No se pudo obtener la tasa '%s' desde %s (%s). Se usa la tasa estática %.2f",
+                    clave, url, e, TASAS_FALLBACK[clave],
+                )
+            except Exception as e:  # red de seguridad
+                logger.warning(
+                    "Error inesperado al obtener la tasa '%s' (%s). Se usa la estática %.2f",
+                    clave, e, TASAS_FALLBACK[clave],
+                )
+
+        return tasas
 
     # ==================== CONSULTAS ====================
 

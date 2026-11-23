@@ -163,32 +163,32 @@ class TestRegistrarPersonaNatural:
             ),
             pytest.param(
                 {"Telefono_cliente": ""},
-                "El celular/teléfono es obligatorio.",
+                "El campo Celular no puede estar vacío.",
                 id="telefono-vacio",
             ),
             pytest.param(
                 {"Telefono_cliente": "0414123456"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular debe tener al menos 11 dígitos.",
                 id="telefono-demasiado-corto",
             ),
             pytest.param(
                 {"Telefono_cliente": "041412345678"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular no puede tener más de 11 dígitos.",
                 id="telefono-demasiado-largo",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412abc1234"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular solo puede contener números.",
                 id="telefono-no-numerico",
             ),
             pytest.param(
                 {"Correo_cliente": "correo-sin-arroba"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe contener el símbolo @.",
                 id="correo-invalido",
             ),
             pytest.param(
                 {"Direccion_cliente": "D" * 41},
-                "La dirección no puede exceder los 40 caracteres.",
+                "El campo Dirección no puede tener más de 40 caracteres.",
                 id="direccion-demasiado-larga",
             ),
         ],

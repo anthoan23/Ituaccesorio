@@ -82,21 +82,21 @@ function validarFormularioAntesDeEnviar(form, nombreFormulario) {
         console.warn('FieldValidator no disponible');
         return true;
     }
-    
+
     const isValid = window.FieldValidator.validateForm(form);
-    
+
     if (!isValid) {
         mostrarToast(`Por favor, corrige los errores en el formulario de ${nombreFormulario}.`, true);
-        
+
         const primerError = form.querySelector('.field-error');
         if (primerError) {
             primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             primerError.focus();
         }
-        
+
         return false;
     }
-    
+
     return true;
 }
 
@@ -113,23 +113,45 @@ function cerrarModal(id) {
     }
 }
 
+// ==================== HABILITAR/BLOQUEAR FORMULARIO DE USUARIO ====================
+
+function setFormUsuarioHabilitado(habilitado) {
+    if (!formUsuario) return;
+
+    ["nombre", "password"].forEach(name => {
+        const el = formUsuario.querySelector(`[name="${name}"]`);
+        if (el) el.disabled = !habilitado;
+    });
+
+    if (selectUsuarioCedula) selectUsuarioCedula.disabled = !habilitado;
+
+    const btnToggle = formUsuario.querySelector("[data-password-toggle]");
+    if (btnToggle) btnToggle.disabled = !habilitado;
+
+    if (fotoPerfilButton) fotoPerfilButton.disabled = !habilitado;
+
+    if (habilitado && window.FieldValidator) {
+        window.FieldValidator.init();
+    }
+}
+
 // ==================== CARGAR OPCIONES DE CÉDULA POR ROL ====================
 
 async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
     if (!selectUsuarioCedula) return;
-    
+
     if (!rolId) {
         selectUsuarioCedula.innerHTML = '<option value="">Primero seleccione un rol</option>';
         selectUsuarioCedula.disabled = true;
         return;
     }
-    
+
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolCliente = rolSeleccionado && (String(rolSeleccionado.nombre || "").toLowerCase() === "cliente");
-    
+
     selectUsuarioCedula.innerHTML = '<option value="">Cargando...</option>';
     selectUsuarioCedula.disabled = true;
-    
+
     try {
         let data;
         if (esRolCliente) {
@@ -141,7 +163,7 @@ async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
                 credentials: 'same-origin'
             });
             data = await jsonSeguro(response);
-            
+
             if (data.success && data.clientes) {
                 const options = ['<option value="">Seleccione un cliente...</option>'];
                 data.clientes.forEach(cliente => {
@@ -165,7 +187,7 @@ async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
                 credentials: 'same-origin'
             });
             data = await jsonSeguro(response);
-            
+
             if (data.success && data.empleados) {
                 const options = ['<option value="">Seleccione un empleado...</option>'];
                 data.empleados.forEach(empleado => {
@@ -189,26 +211,23 @@ async function cargarOpcionesCedula(rolId, valorSeleccionado = null) {
 
 // ==================== FUNCIONES DE PERMISOS ====================
 
-function actualizarConsultarAutomatico(item) {
-    const checkboxes = item.querySelectorAll('input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]');
-    const consultarCheckbox = item.querySelector('input[data-permiso="consultar"]');
-    
-    if (consultarCheckbox) {
-        const tieneAlgunPermiso = Array.from(checkboxes).some(cb => cb.checked);
-        consultarCheckbox.checked = tieneAlgunPermiso;
-    }
+function calcularConsultarAutomatico(item) {
+    const checkboxes = item.querySelectorAll(
+        'input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]'
+    );
+    return Array.from(checkboxes).some(cb => cb.checked);
 }
 
 async function cargarPermisosPorRol(rolId) {
     const container = document.getElementById("permisos-rol-container");
     const grid = document.getElementById("permisos-grid");
     const btnGuardar = document.getElementById("btn-guardar-permisos");
-    
+
     if (!rolId || !container || !grid) return;
-    
+
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
-    
+
     if (esRolAdmin) {
         grid.innerHTML = `
             <div class="permiso-item disabled">
@@ -219,7 +238,7 @@ async function cargarPermisosPorRol(rolId) {
         container.style.display = "block";
         return;
     }
-    
+
     try {
         const response = await fetch(`/api/permisos/rol/${rolId}`, {
             headers: {
@@ -228,33 +247,28 @@ async function cargarPermisosPorRol(rolId) {
             },
             credentials: 'same-origin'
         });
-        
+
         const data = await jsonSeguro(response);
-        
+
         if (!data.success) {
             throw new Error(data.error || "Error al cargar permisos");
         }
-        
+
         const permisos = data.permisos || [];
-        
+
         if (!permisos.length) {
             grid.innerHTML = '<div class="permiso-item disabled">No hay módulos disponibles para configurar permisos</div>';
             if (btnGuardar) btnGuardar.style.display = "none";
         } else {
             grid.innerHTML = permisos.map(permiso => {
-                const consultarChecked = permiso.consultar || false;
                 const registrarChecked = permiso.registrar || false;
                 const modificarChecked = permiso.modificar || false;
                 const eliminarChecked = permiso.eliminar || false;
-                
+
                 return `
                     <div class="permiso-item" data-modulo-id="${permiso.modulo_id}">
                         <span class="permiso-modulo">${escapeHtml(permiso.modulo_nombre || "Módulo")}</span>
                         <div class="permiso-checkboxes">
-                            <label class="permiso-consultar" title="El permiso de consultar se activa automáticamente cuando tienes al menos un permiso activo">
-                                <input type="checkbox" ${consultarChecked ? 'checked' : ''} disabled data-permiso="consultar">
-                                Consultar <span class="permiso-hint">(automático)</span>
-                            </label>
                             <label>
                                 <input type="checkbox" ${registrarChecked ? 'checked' : ''} data-permiso="registrar">
                                 Registrar
@@ -271,20 +285,18 @@ async function cargarPermisosPorRol(rolId) {
                     </div>
                 `;
             }).join("");
-            
+
             document.querySelectorAll(".permiso-item").forEach(item => {
-                const checkboxes = item.querySelectorAll('input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]');
-                
-                const handleChange = () => actualizarConsultarAutomatico(item);
-                
+                const checkboxes = item.querySelectorAll(
+                    'input[data-permiso="registrar"], input[data-permiso="modificar"], input[data-permiso="eliminar"]'
+                );
+                const handleChange = () => { /* el consultar se calcula al guardar */ };
                 checkboxes.forEach(cb => {
                     cb.removeEventListener('change', handleChange);
                     cb.addEventListener('change', handleChange);
                 });
-                
-                actualizarConsultarAutomatico(item);
             });
-            
+
             if (btnGuardar) btnGuardar.style.display = "flex";
         }
         container.style.display = "block";
@@ -298,18 +310,18 @@ async function cargarPermisosPorRol(rolId) {
 async function guardarPermisosRol(rolId) {
     const rolSeleccionado = state.roles.find(r => String(r.id) === String(rolId));
     const esRolAdmin = rolSeleccionado && (rolSeleccionado.id === 1 || String(rolSeleccionado.nombre || "").toLowerCase() === "admin");
-    
+
     if (esRolAdmin) {
         mostrarToast("No se pueden modificar los permisos del rol Administrador", true);
         return;
     }
-    
+
     const items = document.querySelectorAll(".permiso-item");
     if (!items.length) {
         mostrarToast("No hay permisos para guardar", true);
         return;
     }
-    
+
     const permisos = [];
     items.forEach(item => {
         const moduloId = item.dataset.moduloId;
@@ -317,16 +329,17 @@ async function guardarPermisosRol(rolId) {
             const registrar = item.querySelector('input[data-permiso="registrar"]')?.checked || false;
             const modificar = item.querySelector('input[data-permiso="modificar"]')?.checked || false;
             const eliminar = item.querySelector('input[data-permiso="eliminar"]')?.checked || false;
-            
+
             permisos.push({
                 modulo_id: parseInt(moduloId),
+                consultar: calcularConsultarAutomatico(item),
                 registrar: registrar,
                 modificar: modificar,
                 eliminar: eliminar
             });
         }
     });
-    
+
     try {
         const response = await fetch(`/api/permisos/rol/${rolId}`, {
             method: "PUT",
@@ -338,13 +351,13 @@ async function guardarPermisosRol(rolId) {
             credentials: 'same-origin',
             body: JSON.stringify({ permisos: permisos })
         });
-        
+
         const data = await jsonSeguro(response);
-        
+
         if (!data.success) {
             throw new Error(data.error || "Error al guardar permisos");
         }
-        
+
         mostrarToast("Permisos actualizados correctamente");
         await cargarPermisosPorRol(rolId);
     } catch (error) {
@@ -358,16 +371,17 @@ async function guardarPermisosRol(rolId) {
 function setupRolChangeListener() {
     if (selectUsuarioRol) {
         selectUsuarioRol.removeEventListener("change", window._rolChangeHandler);
-        
+
         window._rolChangeHandler = async (e) => {
             const rolId = e.target.value;
             const container = document.getElementById("permisos-rol-container");
-            const currentCedula = selectUsuarioCedula?.value;
-            
+
             if (rolId) {
+                setFormUsuarioHabilitado(true);
                 await cargarOpcionesCedula(rolId, null);
                 await cargarPermisosPorRol(rolId);
             } else {
+                setFormUsuarioHabilitado(false);
                 if (container) container.style.display = "none";
                 if (selectUsuarioCedula) {
                     selectUsuarioCedula.innerHTML = '<option value="">Primero seleccione un rol</option>';
@@ -375,7 +389,7 @@ function setupRolChangeListener() {
                 }
             }
         };
-        
+
         selectUsuarioRol.addEventListener("change", window._rolChangeHandler);
     }
 }
@@ -384,7 +398,7 @@ function setupGuardarPermisosListener() {
     const btnGuardar = document.getElementById("btn-guardar-permisos");
     if (btnGuardar) {
         btnGuardar.removeEventListener("click", window._guardarPermisosHandler);
-        
+
         window._guardarPermisosHandler = () => {
             const rolId = selectUsuarioRol?.value;
             if (rolId) {
@@ -393,7 +407,7 @@ function setupGuardarPermisosListener() {
                 mostrarToast("Seleccione un rol primero", true);
             }
         };
-        
+
         btnGuardar.addEventListener("click", window._guardarPermisosHandler);
     }
 }
@@ -436,7 +450,12 @@ function setActiveTableTab(key) {
 
     tableTabPanels.forEach(panel => {
         const panelKey = String(panel.dataset.tablePanel || "");
-        panel.hidden = panelKey !== key;
+        const visible = panelKey === key;
+        panel.hidden = !visible;
+        if (visible) {
+            const wrap = panel.querySelector(".table-wrap");
+            if (wrap) void wrap.offsetHeight; // fuerza recálculo de overflow/altura
+        }
     });
 
     syncAdminButtonsWithTab();
@@ -681,7 +700,7 @@ function renderTodo() {
 function bindTableActions(table, items, type) {
     table.querySelectorAll("button[data-action]").forEach(btn => {
         btn.removeEventListener("click", btn._handler);
-        
+
         const handler = async () => {
             const action = btn.dataset.action;
             const id = String(btn.dataset.id || "");
@@ -748,7 +767,7 @@ function bindTableActions(table, items, type) {
                 });
             }
         };
-        
+
         btn._handler = handler;
         btn.addEventListener("click", handler);
     });
@@ -758,7 +777,7 @@ function bindTableActions(table, items, type) {
 
 async function llenarFormularioUsuario(usuario) {
     if (!formUsuario || !usuario) return;
-    
+
     formUsuario.id.value = usuario.id ?? "";
     formUsuario.nombre.value = usuario.nombre ?? "";
     formUsuario.password.required = false;
@@ -766,20 +785,22 @@ async function llenarFormularioUsuario(usuario) {
     formUsuario.password.value = "";
     formUsuario.rol_id.value = usuario.rol_id ?? "";
     formUsuario.foto_perfil_actual.value = usuario.foto_perfil ?? "";
-    
+
     if (selectUsuarioRol && usuario.rol_id) {
         selectUsuarioRol.setAttribute("data-current-value", usuario.rol_id);
     }
-    
+
     if (usuario.rol_id) {
+        setFormUsuarioHabilitado(true);
         await cargarPermisosPorRol(usuario.rol_id);
     }
-    
+
     if (usuario.rol_id && usuario.cedula_personal) {
         await cargarOpcionesCedula(usuario.rol_id, usuario.cedula_personal);
     } else if (usuario.rol_id) {
         await cargarOpcionesCedula(usuario.rol_id, null);
     } else {
+        setFormUsuarioHabilitado(false);
         const container = document.getElementById("permisos-rol-container");
         if (container) container.style.display = "none";
         if (selectUsuarioCedula) {
@@ -787,7 +808,7 @@ async function llenarFormularioUsuario(usuario) {
             selectUsuarioCedula.disabled = true;
         }
     }
-    
+
     if (fotoPerfilName) {
         fotoPerfilName.textContent = usuario.foto_perfil ? usuario.foto_perfil.split("/").pop() : "Ningún archivo seleccionado";
     }
@@ -814,11 +835,11 @@ function llenarFormularioModulo(modulo) {
 function limpiarFormulario(form) {
     if (!form) return;
     form.reset();
-    
+
     if (window.FieldValidator) {
         window.FieldValidator.resetForm(form);
     }
-    
+
     if (form === formUsuario) {
         form.password.required = true;
         form.password.placeholder = "Contraseña";
@@ -838,8 +859,9 @@ function limpiarFormulario(form) {
             selectUsuarioCedula.innerHTML = '<option value="">Seleccione un rol primero</option>';
             selectUsuarioCedula.disabled = true;
         }
+        setFormUsuarioHabilitado(false);
     }
-    
+
     const idField = form.querySelector("input[name='id']");
     if (idField) {
         idField.value = "";
@@ -857,12 +879,12 @@ async function onUsuarioSubmit(event) {
 
     const id = formUsuario.id.value;
     const cedulaPersonal = formUsuario.cedula_personal.value;
-    
+
     if (!cedulaPersonal) {
         mostrarToast("Debe seleccionar una cédula válida.", true);
         return;
     }
-    
+
     const formData = new FormData();
     formData.append("nombre", formUsuario.nombre.value.trim());
     formData.append("cedula_personal", String(Number(cedulaPersonal)));
@@ -884,7 +906,7 @@ async function onUsuarioSubmit(event) {
 
     try {
         await fetchJson(url, { method, body: formData, isMultipart: true });
-        
+
         limpiarFormulario(formUsuario);
         closeAdminModal("usuarios");
         mostrarToast(id ? "Usuario actualizado." : "Usuario creado.");
@@ -952,14 +974,11 @@ async function onModuloSubmit(event) {
 
 async function cargarTodo() {
     try {
-        const [usuarios, roles, modulos, empleados, clientes] = await Promise.all([
+        const [usuarios, roles, modulos] = await Promise.all([
             fetchJson("/api/usuarios"),
             fetchJson("/api/roles"),
             fetchJson("/api/modulos")
         ]);
-        // Los 2 fetches de empleados/clientes anteriores alimentaban
-        // state.empleados/state.clientes que NADIE leía (los selects de
-        // cédula hacen su propio fetch): fuera, 2 consultas menos por carga.
 
         state.usuarios = usuarios.usuarios || [];
         state.roles = roles.roles || [];
@@ -1054,24 +1073,24 @@ function iniciar() {
     formRol?.addEventListener("submit", onRolSubmit);
     formModulo?.addEventListener("submit", onModuloSubmit);
     confirmActionBtn?.addEventListener("click", onConfirmAction);
-    
+
     fotoPerfilButton?.addEventListener("click", () => fotoPerfilInput?.click());
     fotoPerfilInput?.addEventListener("change", () => {
         if (!fotoPerfilName) return;
         const file = fotoPerfilInput.files?.[0];
-        
+
         if (file && !file.type.startsWith('image/')) {
             mostrarToast("Solo se permiten archivos de imagen.", true);
             fotoPerfilInput.value = "";
             return;
         }
-        
+
         if (file && file.size > 2 * 1024 * 1024) {
             mostrarToast("La imagen no puede superar los 2MB.", true);
             fotoPerfilInput.value = "";
             return;
         }
-        
+
         fotoPerfilName.textContent = file ? file.name : "Ningún archivo seleccionado";
         actualizarVistaPreviaFoto(file || null);
     });
@@ -1082,6 +1101,7 @@ function iniciar() {
     setupRolChangeListener();
     setupGuardarPermisosListener();
     setupPasswordToggle();
+    setFormUsuarioHabilitado(false);
 
     document.querySelectorAll("[data-reset-form]").forEach(btn => {
         btn.addEventListener("click", () => {

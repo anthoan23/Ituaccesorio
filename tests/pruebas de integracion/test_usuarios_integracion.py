@@ -1,6 +1,6 @@
 """Pruebas de integración de Usuarios contra MySQL real (BD seguridad)."""
 import random
-
+import uuid
 import pytest
 
 from app.models.usuarios import Usuarios
@@ -12,7 +12,7 @@ USUARIO_ADMIN = "USR-001"
 
 
 def _nombre_usuario_unico() -> str:
-    return f"UsuarioTest{random.randint(100000, 999999)}"
+    return f"UsuarioTest{uuid.uuid4().hex[:6]}"
 
 
 def _cedula_aleatoria() -> str:
