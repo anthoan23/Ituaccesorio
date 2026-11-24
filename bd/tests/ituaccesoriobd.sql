@@ -1799,6 +1799,67 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 (12345678, 'CRG0000002', 'Super', 'Admin', '04140000000', 'admin@ituaccesorio.com', 'Barquisimeto');
 
 -- ------------------------------------------------------------
+-- 2.1. REGISTROS DEDICADOS PARA LAS PRUEBAS CRUD
+--      Cada operación de prueba usa SU PROPIO registro, todos
+--      distintos entre sí, para que las pruebas queden aisladas:
+--
+--      Cargos (test_cargos_integracion):
+--        CRG0000101  Cargo de Consulta       → verificar/consultar
+--        CRG0000102  Cargo a Modificar       → actualizar_cargo
+--        CRG0000103  Cargo a Eliminar        → eliminar_cargo (se consume)
+--        CRG0000104  Cargo con Mismo Nombre  → actualizar manteniendo nombre
+--        CRG0000105  Cargo a Renombrar       → renombre a nombre existente
+--
+--      Especialidades (test_especialidades_integracion):
+--        ESP0000101  Especialidad de Consulta       → consultar
+--        ESP0000102  Especialidad a Modificar       → actualizar
+--        ESP0000103  Especialidad a Eliminar        → eliminar (se consume)
+--        ESP0000104  Especialidad con Mismo Nombre  → actualizar mismo nombre
+--        ESP0000105  Especialidad a Renombrar       → renombre duplicado
+--
+--      Empleados (test_empleados_integracion):
+--        51000001  Empleado De Consulta            → consultar/verificar/listar
+--        51000002  Empleado A Modificar            → actualizar_empleado
+--        51000003  Empleado A Eliminar             → eliminar_empleado (se consume)
+--        51000004  Empleado Con Capacitacion       → especialidades del empleado
+--        51000005  Empleado A Eliminar Capacitacion→ eliminar con capacitación
+--        51000006  Empleado A Modificar Especialidades → actualizar con especialidades
+--
+--      Los registros "se consumen" (CRG0000103, ESP0000103, 51000003,
+--      51000005) desaparecen al correr las pruebas; para restaurarlos,
+--      reinicia el entorno de pruebas (tmpfs recarga este SQL en cada up):
+--        docker compose --env-file .env.test -p ituaccesorio_test \
+--            -f docker-compose.test.yml down -v
+--        docker compose --env-file .env.test -p ituaccesorio_test \
+--            -f docker-compose.test.yml up --build
+-- ------------------------------------------------------------
+INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) VALUES
+('CRG0000101', 'Cargo de Consulta', 'Cargo del seed para pruebas de consulta'),
+('CRG0000102', 'Cargo a Modificar', 'Cargo del seed para pruebas de modificación'),
+('CRG0000103', 'Cargo a Eliminar', 'Cargo del seed para pruebas de eliminación'),
+('CRG0000104', 'Cargo con Mismo Nombre', 'Cargo del seed para actualizar manteniendo el nombre'),
+('CRG0000105', 'Cargo a Renombrar', 'Cargo del seed para probar renombre con nombre existente');
+
+INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) VALUES
+('ESP0000101', 'Especialidad de Consulta', 'Especialidad del seed para pruebas de consulta'),
+('ESP0000102', 'Especialidad a Modificar', 'Especialidad del seed para pruebas de modificación'),
+('ESP0000103', 'Especialidad a Eliminar', 'Especialidad del seed para pruebas de eliminación'),
+('ESP0000104', 'Especialidad con Mismo Nombre', 'Especialidad del seed para actualizar manteniendo el nombre'),
+('ESP0000105', 'Especialidad a Renombrar', 'Especialidad del seed para probar renombre con nombre existente');
+
+INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_empleado`, `Celular_empleado`, `Correo_empleado`, `Direccion_empleado`) VALUES
+(51000001, 'CRG0000001', 'Empleado', 'De Consulta', '04140000011', 'empleado.consulta@ituaccesorio.com', 'Barquisimeto'),
+(51000002, 'CRG0000001', 'Empleado', 'A Modificar', '04140000012', 'empleado.modificar@ituaccesorio.com', 'Barquisimeto'),
+(51000003, 'CRG0000001', 'Empleado', 'A Eliminar', '04140000013', 'empleado.eliminar@ituaccesorio.com', 'Barquisimeto'),
+(51000004, 'CRG0000001', 'Empleado', 'Con Capacitacion', '04140000014', 'empleado.capacitacion@ituaccesorio.com', 'Barquisimeto'),
+(51000005, 'CRG0000001', 'Empleado', 'A Eliminar Capacitacion', '04140000015', 'empleado.eliminar.capacitacion@ituaccesorio.com', 'Barquisimeto'),
+(51000006, 'CRG0000001', 'Empleado', 'A Modificar Especialidades', '04140000016', 'empleado.modificar.especialidades@ituaccesorio.com', 'Barquisimeto');
+
+INSERT INTO `Capacitacion` (`ID_empleado`, `ID_especialidad`, `Nivel_Capacitacion`) VALUES
+(51000004, 'ESP0000002', 'Avanzado'),
+(51000005, 'ESP0000003', 'Basico');
+
+-- ------------------------------------------------------------
 -- 3. DATOS OPERATIVOS (escenario "Seed")
 --    Escenario completo y coherente: cliente natural + jurídico,
 --    productos con stock y foto, venta aprobada con detalle y
