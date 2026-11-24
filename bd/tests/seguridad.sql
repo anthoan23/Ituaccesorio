@@ -273,6 +273,17 @@ INSERT INTO `backup` (`id_usuario`, `estado`, `fecha`, `direccion_bd`, `nombre`)
 ('USR-001', 'completado', '2026-01-15 10:40:00', '/backups/seed_ituaccesoriobd.sql', 'seed_backup');
 
 -- ------------------------------------------------------------
+-- 7. REGISTROS DEDICADOS PARA LOS FLUJOS DE INTEGRACIÓN
+--    (test_roles_permisos, test_usuarios_login, test_backup)
+-- ------------------------------------------------------------
+-- Rol en uso por un usuario (bloquea eliminar_rol por FK usuario_ibfk_1):
+INSERT INTO `rol` (`id`, `nombre`, `descripcion`) VALUES
+(901, 'Rol En Uso', 'Rol del seed para probar eliminación con usuarios');
+
+INSERT INTO `usuario` (`id`, `nombre`, `cedula`, `password`, `rol_id`, `activo`, `fecha_creacion`, `foto_perfil`, `ultima_actualizacion`) VALUES
+('USR-901', 'rol_en_uso_test', 99000002, 'sin_password_test', 901, 1, '2026-02-01 09:00:00', NULL, '2026-02-01 09:00:00');
+
+-- ------------------------------------------------------------
 -- 7. DETERMINISMO DE IDs AUTO-INCREMENTALES
 --    Así, los roles/usuarios temporales de las pruebas siempre
 --    empiezan en el mismo ID en cada corrida.

@@ -1871,6 +1871,76 @@ INSERT INTO `Capacitacion` (`ID_empleado`, `ID_especialidad`, `Nivel_Capacitacio
 (51000008, 'ESP0000106', 'Basico');
 
 -- ------------------------------------------------------------
+-- 2.2. REGISTROS DEDICADOS PARA LOS DEMÁS FLUJOS DE INTEGRACIÓN
+--      (test_inventario, test_carrito, test_validacion_pagos,
+--       test_entregas, test_proveedores, test_ordenes_compra,
+--       test_ordenes_servicio). Zona de IDs 101/9xx de prueba.
+-- ------------------------------------------------------------
+-- Producto con existencia y carrito activo (bloquea eliminar_producto):
+INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`, `Descripcion`) VALUES
+('102', '1', '1', 'Producto En Uso Carrito', 'Producto del seed para pruebas de integración');
+
+INSERT INTO `Existencias_productos` (`ID_inventario`, `ID_producto`, `Existencia`, `Costo_venta`, `ID_categoria`) VALUES
+('INV000101', '102', 5, 50.00, NULL);
+
+INSERT INTO `Lista_compra` (`ID_lista_compra`, `ID_inventario`, `ID_cliente`, `Cantidad_producto`, `Estado_lista_compra`) VALUES
+('LC000101', 'INV000101', 'V40000001', 1, 'carrito');
+
+-- Proveedor con orden de compra pendiente (bloquea eliminar_proveedor):
+INSERT INTO `Proveedor` (`ID_proveedor`, `RIF_proveedor`, `Nombre_proveedor`, `Tipo_proveedor`, `Celular_proveedor`, `Correo_proveedor`, `Direccion_proveedor`, `Limite_credito`) VALUES
+(101, 'J-11111111-1', 'Proveedor De OC', 'Importador', '04160000001', 'proveedor.oc@ituaccesorio.com', 'Barquisimeto', 1000.00);
+
+INSERT INTO `Orden_compra` (`ID_orden_compra`, `ID_empleado`, `ID_proveedor`, `Fecha_orden_compra`, `Estado_orden_compra`, `Factura_compra`) VALUES
+('OC0000101', 12345678, 101, '2026-02-01 09:00:00', 'Pendiente', NULL);
+
+INSERT INTO `Detalle_orden` (`ID_orden_compra`, `ID_producto`, `Cantidad_producto`) VALUES
+('OC0000101', '102', 3);
+
+-- Ventas dedicadas para validación de pagos y entregas:
+INSERT INTO `Venta` (`ID_factura`, `ID_empleado`, `ID_cliente`, `Moneda`, `Fecha_venta`) VALUES
+('FAC-TEST-000002', 12345678, 'V40000001', 'VES', '2026-02-01 10:00:00'),
+('FAC-TEST-000003', 12345678, 'V40000001', 'USD', '2026-02-01 11:00:00'),
+('FAC-TEST-000004', 12345678, 'V40000001', 'USD', '2026-02-01 12:00:00'),
+('FAC-TEST-000005', 12345678, 'V40000001', 'USD', '2026-02-01 13:00:00');
+
+INSERT INTO `Metodo_pago` (`ID_factura`, `Moneda`, `Fecha_pago`, `Capture`, `Estado_pago`, `Metodo`, `Referencia`, `Monto`, `Aprobado_por`, `Fecha_aprobacion`, `Motivo_rechazo`, `Fecha_rechazo`, `Rechazado_por`) VALUES
+('FAC-TEST-000002', 'VES', '2026-02-01 10:05:00', NULL, 'pendiente', 'pago_movil', 'REF-TEST-0002', 100.00, NULL, NULL, NULL, NULL, NULL),
+('FAC-TEST-000003', 'USD', '2026-02-01 11:05:00', NULL, 'pendiente', 'zelle', 'REF-TEST-0003', 60.00, NULL, NULL, NULL, NULL, NULL);
+
+-- Entrega dedicada (bloquea eliminar delivery 51000012):
+INSERT INTO `Entrega` (`ID_entrega`, `ID_factura`, `Cedula_delivery`, `Estado_entrega`, `Direccion_entrega`, `Fecha_entrega`) VALUES
+('ENT0000101', 'FAC-TEST-000005', '51000012', 0, 'Av. Test, Barquisimeto', '2026-02-02 08:00:00');
+
+-- Delivery dedicado para registrar_entrega (test_entregas):
+INSERT INTO `Personal_delivery` (`Cedula_delivery`, `Nombre_delivery`, `Apellido_delivery`) VALUES
+('51000012', 'Delivery', 'De Entrega');
+
+-- Cliente dedicado para las pruebas de carrito:
+-- (cédula numérica de 8 dígitos: los modelos validan el cliente con
+-- validar_numero, que solo acepta 6-8 dígitos).
+INSERT INTO `Cliente` (`ID_cliente`, `Direccion_cliente`, `Celular_cliente`, `Correo_cliente`) VALUES
+('91000001', 'Barquisimeto', '04140000019', 'cliente.carrito@ituaccesorio.com');
+
+INSERT INTO `Persona_natural` (`ID_cliente`, `Apellido_cliente`, `Nombre_cliente`) VALUES
+('91000001', 'De Carrito', 'Cliente');
+
+-- Marca/producto/existencia dedicados para trade-in
+-- (TradeIn.consultar_equipos filtra por marca 'Apple' y clase 'Telefono'):
+INSERT INTO `Marca_producto` (`ID_marca`, `Nombre_marca`) VALUES
+('8', 'Apple');
+
+INSERT INTO `Producto` (`ID_producto`, `ID_Clase`, `ID_marca`, `Nombre_producto`, `Descripcion`) VALUES
+('103', '1', '8', 'Trade-in iPhone Seed', 'Producto del seed para probar trade-in');
+
+INSERT INTO `Existencias_productos` (`ID_inventario`, `ID_producto`, `Existencia`, `Costo_venta`, `ID_categoria`) VALUES
+('INV000102', '103', 1, 200.00, NULL);
+
+-- Orden de servicio dedicada Pendiente (para asignar/liberar/reparación):
+INSERT INTO `Orden_servicio` (`ID_orden_servicio`, `ID_equipo`, `ID_cliente`, `Estado_orden_servicio`, `Descripcion_reparacion`, `Costo_reparacion`, `Nota_orden_servicio`, `Fecha_entrada`, `Fecha_salida`) VALUES
+('OS0000101', 'EQ000000908', 'V40000001', 'Pendiente', NULL, NULL, NULL, '2026-02-02 09:00:00', NULL);
+
+
+-- ------------------------------------------------------------
 -- 3. DATOS OPERATIVOS (escenario "Seed")
 --    Escenario completo y coherente: cliente natural + jurídico,
 --    productos con stock y foto, venta aprobada con detalle y
