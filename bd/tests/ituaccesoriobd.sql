@@ -1499,7 +1499,7 @@ BEGIN
         -- Verificar si ya existe en el inventario
         SELECT Existencia INTO v_existencia_actual
         FROM Existencias_productos
-        WHERE ID_producto = v_id_producto
+        WHERE ID_producto = v_id_producto 
         LIMIT 1;
 
         IF v_existencia_actual IS NOT NULL THEN
@@ -1809,6 +1809,8 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 --        CRG0000103  Cargo a Eliminar        → eliminar_cargo (se consume)
 --        CRG0000104  Cargo con Mismo Nombre  → actualizar manteniendo nombre
 --        CRG0000105  Cargo a Renombrar       → renombre a nombre existente
+--        CRG0000106  Cargo con Empleado      → eliminar con empleado registrado
+--                    (la FK Empleado_ibfk_1 lo impide; NO se consume)
 --
 --      Especialidades (test_especialidades_integracion):
 --        ESP0000101  Especialidad de Consulta       → consultar
@@ -1816,6 +1818,8 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 --        ESP0000103  Especialidad a Eliminar        → eliminar (se consume)
 --        ESP0000104  Especialidad con Mismo Nombre  → actualizar mismo nombre
 --        ESP0000105  Especialidad a Renombrar       → renombre duplicado
+--        ESP0000106  Especialidad con Empleado      → eliminar con empleado
+--                    registrado (la FK Capacitacion_ibfk_2 lo impide; NO se consume)
 --
 --      Empleados (test_empleados_integracion):
 --        51000001  Empleado De Consulta            → consultar/verificar/listar
@@ -1824,6 +1828,8 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 --        51000004  Empleado Con Capacitacion       → especialidades del empleado
 --        51000005  Empleado A Eliminar Capacitacion→ eliminar con capacitación
 --        51000006  Empleado A Modificar Especialidades → actualizar con especialidades
+--        51000007  Empleado De Cargo En Uso  → empleado que usa CRG0000106
+--        51000008  Empleado De Especialidad En Uso → empleado con ESP0000106
 --
 --      Los registros "se consumen" (CRG0000103, ESP0000103, 51000003,
 --      51000005) desaparecen al correr las pruebas; para restaurarlos,
@@ -1838,14 +1844,16 @@ INSERT INTO `Cargo` (`ID_cargo`, `Nombre_cargo`, `Descripcion_cargo`) VALUES
 ('CRG0000102', 'Cargo a Modificar', 'Cargo del seed para pruebas de modificación'),
 ('CRG0000103', 'Cargo a Eliminar', 'Cargo del seed para pruebas de eliminación'),
 ('CRG0000104', 'Cargo con Mismo Nombre', 'Cargo del seed para actualizar manteniendo el nombre'),
-('CRG0000105', 'Cargo a Renombrar', 'Cargo del seed para probar renombre con nombre existente');
+('CRG0000105', 'Cargo a Renombrar', 'Cargo del seed para probar renombre con nombre existente'),
+('CRG0000106', 'Cargo con Empleado', 'Cargo del seed para probar eliminación con empleado registrado');
 
 INSERT INTO `Especialidad` (`ID_especialidad`, `Nombre_especialidad`, `Descripcion_especialidad`) VALUES
 ('ESP0000101', 'Especialidad de Consulta', 'Especialidad del seed para pruebas de consulta'),
 ('ESP0000102', 'Especialidad a Modificar', 'Especialidad del seed para pruebas de modificación'),
 ('ESP0000103', 'Especialidad a Eliminar', 'Especialidad del seed para pruebas de eliminación'),
 ('ESP0000104', 'Especialidad con Mismo Nombre', 'Especialidad del seed para actualizar manteniendo el nombre'),
-('ESP0000105', 'Especialidad a Renombrar', 'Especialidad del seed para probar renombre con nombre existente');
+('ESP0000105', 'Especialidad a Renombrar', 'Especialidad del seed para probar renombre con nombre existente'),
+('ESP0000106', 'Especialidad con Empleado', 'Especialidad del seed para probar eliminación con empleado registrado');
 
 INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_empleado`, `Celular_empleado`, `Correo_empleado`, `Direccion_empleado`) VALUES
 (51000001, 'CRG0000001', 'Empleado', 'De Consulta', '04140000011', 'empleado.consulta@ituaccesorio.com', 'Barquisimeto'),
@@ -1853,11 +1861,14 @@ INSERT INTO `Empleado` (`ID_empleado`, `ID_cargo`, `Nombre_empleado`, `Apellido_
 (51000003, 'CRG0000001', 'Empleado', 'A Eliminar', '04140000013', 'empleado.eliminar@ituaccesorio.com', 'Barquisimeto'),
 (51000004, 'CRG0000001', 'Empleado', 'Con Capacitacion', '04140000014', 'empleado.capacitacion@ituaccesorio.com', 'Barquisimeto'),
 (51000005, 'CRG0000001', 'Empleado', 'A Eliminar Capacitacion', '04140000015', 'empleado.eliminar.capacitacion@ituaccesorio.com', 'Barquisimeto'),
-(51000006, 'CRG0000001', 'Empleado', 'A Modificar Especialidades', '04140000016', 'empleado.modificar.especialidades@ituaccesorio.com', 'Barquisimeto');
+(51000006, 'CRG0000001', 'Empleado', 'A Modificar Especialidades', '04140000016', 'empleado.modificar.especialidades@ituaccesorio.com', 'Barquisimeto'),
+(51000007, 'CRG0000106', 'Empleado', 'De Cargo En Uso', '04140000017', 'empleado.cargo.en.uso@ituaccesorio.com', 'Barquisimeto'),
+(51000008, 'CRG0000001', 'Empleado', 'De Especialidad En Uso', '04140000018', 'empleado.especialidad.en.uso@ituaccesorio.com', 'Barquisimeto');
 
 INSERT INTO `Capacitacion` (`ID_empleado`, `ID_especialidad`, `Nivel_Capacitacion`) VALUES
 (51000004, 'ESP0000002', 'Avanzado'),
-(51000005, 'ESP0000003', 'Basico');
+(51000005, 'ESP0000003', 'Basico'),
+(51000008, 'ESP0000106', 'Basico');
 
 -- ------------------------------------------------------------
 -- 3. DATOS OPERATIVOS (escenario "Seed")
