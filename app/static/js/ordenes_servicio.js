@@ -870,12 +870,12 @@ async function verificarEquipo() {
 // ============================================
 function marcarTodosTestsOK() {
     document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => { radio.checked = true; });
-    Utils.showMessage('✅ Todos los componentes marcados como OK');
+    console.log('✅ Todos los componentes marcados como OK');
 }
 
 function marcarTodosTestsFallo() {
     document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]').forEach(radio => { radio.checked = true; });
-    Utils.showMessage('❌ Todos los componentes marcados como No funciona');
+    console.log('❌ Todos los componentes marcados como No funciona');
 }
 
 // ============================================

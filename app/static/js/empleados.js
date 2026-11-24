@@ -765,7 +765,7 @@ function autoAgregarEspecialidad(event) {
   actualizarListaEspecialidades();
   selectEspecialidad.value = '';
   actualizarHiddenInput();
-  Utils.showMessage(`✓ Especialidad "${especialidadNombre}" agregada`, false);
+  console.log(`✓ Especialidad "${especialidadNombre}" agregada`);
 }
 
 function eliminarEspecialidadSeleccionada(especialidadId) {
@@ -775,7 +775,7 @@ function eliminarEspecialidadSeleccionada(especialidadId) {
   actualizarHiddenInput();
 
   if (especialidadEliminada) {
-    Utils.showMessage(`✓ Especialidad "${especialidadEliminada.nombre}" eliminada`, false);
+    console.log(`✓ Especialidad "${especialidadEliminada.nombre}" eliminada`);
   }
 }
 

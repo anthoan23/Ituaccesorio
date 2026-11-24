@@ -892,6 +892,9 @@ body {
     letter-spacing: 0.04em;
     text-align: center;
     min-width: 30px;
+    /* El código (ID) nunca se parte en varias líneas: si la columna se
+       aprieta, la píldora conserva su ancho completo en una sola línea */
+    white-space: nowrap;
     transition: background 0.2s ease, transform 0.2s ease;
 }
 .chip:hover {

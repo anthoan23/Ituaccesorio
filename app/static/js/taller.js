@@ -471,7 +471,7 @@ const FotosService = {
             this.fotosSeleccionadas.splice(index, 1);
             this.renderizarPrevisualizacion();
             this.actualizarBotonSubir();
-            Utils.showMessage(`📸 "${fotoEliminada.name}" eliminada de la lista`);
+            console.log(`📸 "${fotoEliminada.name}" eliminada de la lista`);
         }
     },
 
@@ -827,10 +827,10 @@ const OrdenesService = {
             
             if (fotos.length > 0) {
                 this.renderizarFotos(fotosContainer, fotos, true);
-                Utils.showMessage(`✅ ${fotos.length} fotos cargadas`);
+                console.log(`✅ ${fotos.length} fotos cargadas`);
             } else {
                 fotosContainer.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden</p>';
-                Utils.showMessage('📸 No hay fotos registradas');
+                console.log('📸 No hay fotos registradas');
             }
         } catch (error) {
             console.error('Error al actualizar fotos:', error);
@@ -1132,14 +1132,14 @@ const RevisionService = {
         document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="Funciona"]').forEach(radio => {
             radio.checked = true;
         });
-        Utils.showMessage('✅ Todos los componentes marcados como OK');
+        console.log('✅ Todos los componentes marcados como OK');
     },
 
     marcarTodosTestsFallo() {
         document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="No funciona"]').forEach(radio => {
             radio.checked = true;
         });
-        Utils.showMessage('❌ Todos los componentes marcados como No funciona');
+        console.log('❌ Todos los componentes marcados como No funciona');
     },
 
     async guardar(event) {
@@ -1432,7 +1432,7 @@ const RepuestosService = {
         if (existente) {
             if (existente.cantidad < stockDisponible) {
                 existente.cantidad++;
-                Utils.showMessage(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
+                console.log(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
             } else {
                 Utils.showMessage(`❌ No hay más stock disponible de "${nombreProducto}"`, true);
                 return;
@@ -1444,7 +1444,7 @@ const RepuestosService = {
                 cantidad: 1,
                 stockMaximo: stockDisponible
             });
-            Utils.showMessage(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
+            console.log(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
         }
 
         this.renderizarRepuestosUsados();
@@ -1542,7 +1542,7 @@ const RepuestosService = {
             this.repuestosSeleccionados[index].cantidad = nuevaCantidad;
             this.renderizarRepuestosUsados();
             this.actualizarContadorTotal();
-            Utils.showMessage(`Cantidad actualizada a ${nuevaCantidad}`);
+            console.log(`Cantidad actualizada a ${nuevaCantidad}`);
         } else {
             const cantidadActual = this.repuestosSeleccionados[index]?.cantidad || 1;
             input.value = cantidadActual;
@@ -1562,7 +1562,7 @@ const RepuestosService = {
         this.repuestosSeleccionados.splice(index, 1);
         this.renderizarRepuestosUsados();
         this.actualizarContadorTotal();
-        Utils.showMessage(`Repuesto "${repuestoEliminado.nombre}" eliminado`);
+        console.log(`Repuesto "${repuestoEliminado.nombre}" eliminado`);
     },
 
     actualizarContadorTotal() {
@@ -1578,7 +1578,7 @@ const RepuestosService = {
         this.repuestosSeleccionados = [];
         this.renderizarRepuestosUsados();
         this.actualizarContadorTotal();
-        Utils.showMessage('Lista de repuestos limpiada');
+        console.log('Lista de repuestos limpiada');
     },
 
     obtenerRepuestos() {

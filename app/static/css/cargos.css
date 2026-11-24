@@ -20,6 +20,41 @@
 }
 
 /* ============================================
+   COLUMNAS DE LA TABLA
+   Reparto estable: una descripción larga se ajusta
+   dentro de su propia columna sin deformar al resto
+   ============================================ */
+
+/* Columna ID (código): ancho fijo, el chip nunca se aplasta */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+    width: 70px;
+    min-width: 70px;
+    white-space: nowrap;
+}
+
+/* Columna Nombre: ancho mínimo garantizado */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+    width: 28%;
+    min-width: 150px;
+}
+
+/* Columna Descripción: absorbe el espacio restante y
+   ajusta el texto en varias líneas dentro de su columna */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    width: 42%;
+    min-width: 200px;
+}
+
+/* Acciones con ancho fijo */
+.table__actions {
+    width: 120px;
+    min-width: 120px;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1100px) {
