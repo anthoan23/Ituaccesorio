@@ -215,7 +215,13 @@
         }
         return filtered;
       },
-      validate: (value) => /^\d+(\.\d{1,2})?$/.test(value),
+      validate: (value) => {
+        // Vacío = válido: los campos opcionales no se bloquean; el obligatorio lo maneja
+        // el atributo required / config.required
+        if (!value || value.trim() === '') return true;
+        // Tolerar el punto final mientras se escribe (ej: "12."), el servidor lo normaliza
+        return /^\d+(\.\d{0,2})?$/.test(value);
+      },
       message: 'Ingrese un número válido (puede incluir hasta 2 decimales)'
     }
   };
@@ -577,12 +583,24 @@
       });
       
       if (wasModified) {
-        const cursorPos = this.field.selectionStart;
-        this.field.value = newValue;
-        const newPos = Math.min(cursorPos, newValue.length);
+        // selectionStart lanza InvalidStateError en inputs no textuales (ej: type=number),
+        // lo que abortaba el filtro y dejaba el valor sucio en el campo. Se lee de forma segura
+        // y solo se restaura el cursor en tipos compatibles.
+        let cursorPos = null;
         const supportedTypes = ['text', 'search', 'tel', 'url', 'password', 'textarea'];
-        if (typeof this.field.setSelectionRange === 'function' && supportedTypes.includes(this.field.type)) {
+        if (supportedTypes.includes(this.field.type)) {
           try {
+            cursorPos = this.field.selectionStart;
+          } catch (e) {
+            cursorPos = null;
+          }
+        }
+
+        this.field.value = newValue;
+
+        if (cursorPos !== null && typeof this.field.setSelectionRange === 'function') {
+          try {
+            const newPos = Math.min(cursorPos, newValue.length);
             this.field.setSelectionRange(newPos, newPos);
           } catch (e) {
             console.warn('No se pudo ajustar la selección del cursor:', e);

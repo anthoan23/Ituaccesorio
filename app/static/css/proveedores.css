@@ -18,17 +18,6 @@
 }
 
 /* ============================================
-   HERO - ACCIONES
-   ============================================ */
-.hero__actions {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-/* ============================================
    TOOLBAR DE PROVEEDORES
    ============================================ */
 .proveedores-toolbar {
@@ -208,12 +197,12 @@
         justify-content: flex-start;
     }
     
-    .hero__actions {
+    .card__header-actions {
+        flex: 1;
         justify-content: flex-start;
-        width: 100%;
     }
-    
-    .hero__actions .ui-btn {
+
+    .card__header-actions .ui-btn {
         flex: 1;
         min-width: 120px;
         justify-content: center;
