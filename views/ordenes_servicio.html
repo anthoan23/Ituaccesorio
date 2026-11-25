@@ -144,6 +144,11 @@
     </form>
   {% endcall %}
 
+  <!-- Modal técnico ideal (James IA) -->
+  {% call modal('modal-james-tecnico', 'Técnico ideal sugerido por James', 'md') %}
+    <div id="modal-james-tecnico-body"></div>
+  {% endcall %}
+
   <!-- Modal Nueva Orden -->
   {% call modal('modal-nueva-orden', 'Nueva orden de servicio', 'lg') %}
     <form class="ui-form" autocomplete="off" id="form-orden-servicio">

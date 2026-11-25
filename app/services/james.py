@@ -82,7 +82,10 @@ class IAService:
                 prompt,
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.2,
-                    max_output_tokens=1024,
+                    # Presupuesto ampliado: Gemini 2.5 gasta tokens de salida en
+                    # "pensamiento" interno antes del JSON; con 1024 la respuesta
+                    # quedaba truncada (finish_reason=MAX_TOKENS) y fallaba el parseo.
+                    max_output_tokens=4096,
                     response_mime_type="application/json"
                 )
             )

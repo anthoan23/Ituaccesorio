@@ -8,7 +8,7 @@ ia_service = IAService()
 
 @james_blueprint.route("/james", methods=["POST"])
 @jwt_required
-@tiene_permiso("Taller", "registrar")
+@tiene_permiso("Órdenes de servicio", "registrar")
 def consultar_informacion_orden():
     data = request.get_json(silent=True) or request.form
     ID_orden = str(data.get("ID_orden") or "").strip()
@@ -31,8 +31,10 @@ def consultar_informacion_orden():
     
     # Verificar si la IA tuvo error
     if decision_ia.get('error', False):
-        # Si falla la IA, usar fallback
+        # Si falla la IA, usar fallback (guardando la causa para depuración)
+        detalle_error_ia = decision_ia.get('message')
         decision_ia = ia_service.determinar_tecnico_ideal_fallback(personales)
+        decision_ia["ia_error"] = detalle_error_ia
     # --------------------
 
     # RETORNAR SOLO LA DECISIÓN DE LA IA
