@@ -1088,3 +1088,119 @@ input.field-success:focus {
         padding: 0.3rem 0.5rem;
     }
 }
+
+/* ============================================
+   TÉCNICO IDEAL - JAMES (IA)
+   ============================================ */
+.icon-action--ia {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(168, 85, 247, 0.08);
+}
+.icon-action--ia svg { color: #a855f7; }
+.icon-action--ia:hover {
+    border-color: rgba(168, 85, 247, 0.6);
+    background: rgba(168, 85, 247, 0.18);
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.2);
+}
+
+.james-carga {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0.5rem;
+    text-align: center;
+}
+
+.james-carga .spinner {
+    width: 30px;
+    height: 30px;
+    margin-right: 0;
+}
+
+.james-carga__texto {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.james-resultado__orden {
+    margin: 0 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.james-resultado__fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.james-resultado__etiqueta {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.james-resultado__valor {
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.james-resultado__razon {
+    margin-top: 0.9rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm, 10px);
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.james-resultado__titulo {
+    margin: 0 0 0.35rem;
+    font-size: 0.8rem;
+}
+
+.james-resultado__texto {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.james-resultado__fallback {
+    margin: 0.5rem 0 0;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.james-resultado__error p {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm, 10px);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    font-size: 0.85rem;
+}
+
+.badge--urgencia-baja {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.badge--urgencia-media {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.badge--urgencia-alta {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}

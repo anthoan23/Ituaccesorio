@@ -8,6 +8,7 @@ const CONFIG = {
         TECNICOS: '/api/ordenes-servicio/tecnicos',
         MODELOS: '/api/ordenes-servicio/modelos',
         CLIENTES: '/api/clientes',
+        JAMES: '/james',
     }
 };
 
@@ -153,6 +154,7 @@ const Utils = {
         const estadoLower = String(estado ?? "").toLowerCase().trim();
         if (estadoLower.includes("pendient")) return "badge--pendiente";
         if (estadoLower.includes("asign")) return "badge--asignada";
+        if (estadoLower.includes("proceso")) return "badge--en-proceso";
         if (estadoLower.includes("revis")) return "badge--revisada";
         if (estadoLower.includes("repar")) return "badge--reparada";
         return "badge--pendiente";
@@ -352,19 +354,14 @@ function renderTablaOrdenes(ordenesData) {
         return;
     }
 
-    const ordenesFiltradas = ordenesData.filter((o) => String(o.Estado || "").toLowerCase() !== "en proceso");
-    
-    if (!ordenesFiltradas.length) {
-        tablaOrdenes.innerHTML = '<tr><td colspan="7" class="table__empty">No hay órdenes registradas.</td></tr>';
-        return;
-    }
-
-    tablaOrdenes.innerHTML = ordenesFiltradas.map((orden) => {
+    tablaOrdenes.innerHTML = ordenesData.map((orden) => {
         const clienteNombre = orden.Nombre_completo || `${orden.Nombre_cliente ?? ""} ${orden.Apellido_cliente ?? ""}`.trim() || orden.Razon_social || "Cliente no especificado";
         const badgeClass = Utils.getEstadoBadgeClass(orden.Estado);
         const estado = String(orden.Estado || "").toLowerCase();
         
         const mostrarAsignar = estado !== "reparada";
+        // James IA: solo disponible para órdenes Pendientes y En proceso
+        const mostrarJames = estado === "pendiente" || estado === "en proceso";
         
         return `
             <tr>
@@ -379,6 +376,9 @@ function renderTablaOrdenes(ordenesData) {
                         <button type="button" class="icon-action icon-action--view" data-action="ver-detalle" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Ver detalles">${Iconos.ojo}</button>
                         ${mostrarAsignar ? `
                             <button type="button" class="icon-action icon-action--edit" data-action="seleccionar-asignacion" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Asignar técnico">${Iconos.asignar}</button>
+                        ` : ''}
+                        ${mostrarJames ? `
+                            <button type="button" class="icon-action icon-action--ia" data-action="james-tecnico" data-id="${Utils.escapeHtml(orden.ID_orden)}" title="Mejor técnico sugerido por James">${Iconos.ia}</button>
                         ` : ''}
                     </div>
                 </td>
@@ -1480,6 +1480,72 @@ async function asignarOrden() {
 }
 
 // ============================================
+// 18.1 TÉCNICO IDEAL (JAMES IA)
+// ============================================
+function renderErrorJames(mensaje) {
+    return `
+        <div class="james-resultado__error">
+            <p>❌ ${Utils.escapeHtml(mensaje)}</p>
+        </div>
+    `;
+}
+
+async function consultarTecnicoIdeal(idOrden) {
+    const modalBody = document.getElementById("modal-james-tecnico-body");
+    if (!modalBody) return;
+
+    openModal("modal-james-tecnico");
+    modalBody.innerHTML = `
+        <div class="james-carga">
+            ${Iconos.spinner}
+            <p class="james-carga__texto">James está analizando la orden <strong>#${Utils.escapeHtml(idOrden)}</strong>…</p>
+        </div>
+    `;
+
+    try {
+        const data = await Utils.fetchJson(CONFIG.API.JAMES, {
+            method: "POST",
+            body: JSON.stringify({ ID_orden: String(idOrden) }),
+        });
+
+        const decision = data?.decision;
+        if (!data?.success || !decision || decision.error) {
+            modalBody.innerHTML = renderErrorJames(decision?.message || data?.message || "James no pudo determinar el mejor técnico para esta orden.");
+            return;
+        }
+
+        const urgencia = String(decision.nivel_urgencia_estimado || "—");
+        const clasesUrgencia = { alto: "badge--urgencia-alta", medio: "badge--urgencia-media", bajo: "badge--urgencia-baja" };
+        const claseUrgencia = clasesUrgencia[urgencia.toLowerCase()] || "badge--asignada";
+
+        modalBody.innerHTML = `
+            <div class="james-resultado">
+                <p class="james-resultado__orden">Orden <span class="chip">#${Utils.escapeHtml(idOrden)}</span></p>
+                <div class="james-resultado__fila">
+                    <span class="james-resultado__etiqueta">Técnico elegido</span>
+                    <span class="james-resultado__valor"><strong>#${Utils.escapeHtml(decision.id_tecnico_elegido)}</strong></span>
+                </div>
+                <div class="james-resultado__fila">
+                    <span class="james-resultado__etiqueta">Nombre / cargo</span>
+                    <span class="james-resultado__valor">${Utils.escapeHtml(decision.nombre_cargo)}</span>
+                </div>
+                <div class="james-resultado__fila">
+                    <span class="james-resultado__etiqueta">Urgencia estimada</span>
+                    <span class="badge ${claseUrgencia}">${Utils.escapeHtml(urgencia)}</span>
+                </div>
+                <div class="james-resultado__razon">
+                    <h4 class="james-resultado__titulo">🤖 Razón de la selección</h4>
+                    <p class="james-resultado__texto">${Utils.escapeHtml(decision.razon_seleccion)}</p>
+                    ${decision.fallback ? '<p class="james-resultado__fallback">James no pudo responder en este momento; se eligió al técnico con menor carga de trabajo.</p>' : ''}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        modalBody.innerHTML = renderErrorJames(error.message || "No se pudo contactar con James.");
+    }
+}
+
+// ============================================
 // 19. REVISION
 // ============================================
 async function guardarRevision(event) {
@@ -1573,6 +1639,7 @@ function onTablaClick(event) {
     if (!id) return;
 
     if (action === "ver-detalle") { abrirDetalleOrden(id); return; }
+    if (action === "james-tecnico") { consultarTecnicoIdeal(id); return; }
     if (action === "seleccionar-asignacion") {
         const selectOrden = document.getElementById("select-orden-asignar");
         if (selectOrden) {

@@ -26,15 +26,6 @@
             <h1 class="hero__title">Órdenes de compra</h1>
             <p class="hero__description">Administra las órdenes de compra a proveedores, desde su registro hasta la recepción de productos.</p>
         </div>
-
-        <div class="hero__actions" aria-label="Acciones">
-            <button id="btn-registrar-entrada" class="ui-btn ui-btn--primary" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                    <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Registrar orden
-            </button>
-        </div>
     </header>
 
     <section class="content ordenes-compra-grid" aria-label="Gestión de órdenes de compra">
@@ -45,6 +36,13 @@
                     <h2 class="card__title">Órdenes de compra pendientes</h2>
                     <p class="card__subtitle">Órdenes registradas y aún sin entregar.</p>
                 </div>
+
+                <button id="btn-registrar-entrada" class="ui-btn ui-btn--primary" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Registrar orden
+                </button>
             </div>
 
             <div class="table-wrap" role="region" aria-label="Tabla de órdenes de compra">
