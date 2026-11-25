@@ -67,7 +67,7 @@ def registrar_equipo():
 
 @ordenes_servicio_blueprint.route("/ordenes-servicio", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def pagina_ordenes_servicio():
     return render_template(
         "ordenes_servicio.html",
@@ -79,7 +79,7 @@ def pagina_ordenes_servicio():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_tecnicos():
     modelo = Empleados()
     tecnicos = modelo.listar_tecnicos()
@@ -90,7 +90,7 @@ def listar_tecnicos():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/tecnicos/<int:id_empleado>/ordenes", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_ordenes_tecnico(id_empleado):
     modelo = OrdenServicio()
     modelo.ID_empleado = id_empleado
@@ -133,7 +133,7 @@ def verificar_equipo(id_equipo):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def listar_ordenes_servicio():
     estado = (request.args.get("estado") or "").strip()
     
@@ -181,7 +181,7 @@ def listar_modelos():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'registrar')
+@tiene_permiso('Órdenes de servicio', 'registrar')
 def crear_orden_servicio():
     datos = request.get_json(silent=True) or {}
     
@@ -344,7 +344,7 @@ def crear_orden_servicio():
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def detalle_orden_servicio(id_orden):
     ordenes = OrdenServicio()
     tests = Tests()
@@ -361,7 +361,7 @@ def detalle_orden_servicio(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/test/<string:num_test>", methods=["GET"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'consultar')
+@tiene_permiso('Órdenes de servicio', 'consultar')
 def detalle_test_orden(id_orden, num_test):
     try:
         tests_model = Tests()
@@ -375,7 +375,7 @@ def detalle_test_orden(id_orden, num_test):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/asignar", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'modificar')
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def asignar_orden_servicio(id_orden):
     datos = request.get_json(silent=True) or {}
     id_empleado = datos.get("id_empleado")
@@ -415,7 +415,7 @@ def asignar_orden_servicio(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/revision", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'modificar')
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def registrar_test_orden(id_orden):
     datos = request.get_json() or {}
     empleado_id = usuario_attr("cedula")
@@ -448,7 +448,7 @@ def registrar_test_orden(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>/estado", methods=["PUT"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'modificar')
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def actualizar_estado_orden(id_orden):
     datos = request.get_json(silent=True) or {}
     nuevo_estado = datos.get("estado", "").strip()
@@ -461,7 +461,7 @@ def actualizar_estado_orden(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/ordenes-servicio/ordenes/<string:id_orden>", methods=["DELETE"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'eliminar')
+@tiene_permiso('Órdenes de servicio', 'eliminar')
 def eliminar_orden_servicio(id_orden):
     if OrdenServicio().eliminar_orden(id_orden):
         return jsonify({"success": True, "message": "Orden eliminada"})
@@ -470,7 +470,7 @@ def eliminar_orden_servicio(id_orden):
 
 @ordenes_servicio_blueprint.route("/api/taller/ordenes/<string:id_orden>/fotos", methods=["POST"])
 @jwt_required
-@tiene_permiso('Ordenes de servicio', 'modificar')
+@tiene_permiso('Órdenes de servicio', 'modificar')
 def subir_fotos_orden(id_orden):
     try:
         archivos = request.files.getlist('fotos')
