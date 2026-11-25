@@ -136,6 +136,11 @@
     // El QR de taller_celular abre su propio modal; no mostrar feedback de éxito
     if (u.includes("/api/taller_celular/crear-token")) return false;
 
+    // "Buscar productos de un proveedor" se implementa como POST pero es una
+    // consulta (lectura): no debe disparar el modal de "Registro realizado".
+    // Se usa al abrir "editar" orden y al buscar productos en el formulario.
+    if (u.includes("/api/productos_proveedor")) return false;
+
     return true;
   }
   

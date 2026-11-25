@@ -551,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (!entregaParaEditar) return;
             
-            const recibidoPor = document.getElementById('editar-recibido-por')?.value.trim();
             const fechaEntrega = document.getElementById('editar-fecha-entrega')?.value;
             const horaEntrega = document.getElementById('editar-hora-entrega')?.value;
             
@@ -563,11 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     mostrarMensaje('Por favor, corrige los errores en el formulario.', true);
                     return;
                 }
-            }
-            
-            if (!recibidoPor) {
-                mostrarMensaje('Debe especificar quién recibió la orden.', true);
-                return;
             }
             
             if (!fechaEntrega) {
@@ -583,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetchJson(`/api/ordenes_entregas/${entregaParaEditar}/editar`, {
                     method: 'PUT',
-                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaHoraEntrega })
+                    body: JSON.stringify({ fecha_entrega: fechaHoraEntrega })
                 });
                 if (response.success) {
                     mostrarMensaje('Entrega actualizada exitosamente.');

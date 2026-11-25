@@ -115,12 +115,10 @@ def api_editar_entrega(id_entrega):
     """Edita los datos de una entrega existente"""
     try:
         data = request.get_json(silent=True) or {}
-        recibido_por = data.get('recibido_por')
         fecha_entrega = data.get('fecha_entrega')
         
-        if not recibido_por:
-            return jsonify({"success": False, "error": "Debe especificar quién recibió la orden"}), 400
-        
+        # "Recibido por" se deriva del empleado (ID_empleado) y no es editable;
+        # solo se permite modificar la fecha/hora de la entrega.
         if not fecha_entrega:
             return jsonify({"success": False, "error": "Debe especificar la fecha de entrega"}), 400
         
@@ -128,7 +126,6 @@ def api_editar_entrega(id_entrega):
         
         entrega = OrdenEntregaModel(
             id_entrega=id_entrega,
-            recibido_por=recibido_por,
             fecha_entrega=fecha_entrega,
             usuario_id=usuario_id
         )

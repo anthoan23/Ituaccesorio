@@ -26,18 +26,19 @@ class OrdenEntregaModel:
         return self.__conexion_bd.conexion1()
     
     def _generar_id_entrega(self) -> str:
-        """Genera un ID único para la entrega"""
+        """Genera un ID único para la entrega (prefijo EI, como el seed)."""
         db = self._conexion()
         if not db:
-            return "ENT0000000"
+            return "EI000000"
         
         cursor = db.cursor()
         try:
             cursor.execute("SELECT MAX(ID_entrega_inventario) FROM Entrega_inventario")
             result = cursor.fetchone()
-            last_id = result[0] if result and result[0] else "ENT0000000"
-            last_num = int(last_id[3:]) if last_id and last_id.startswith("ENT") else 0
-            return f"ENT{str(last_num + 1).zfill(7)}"
+            last_id = result[0] if result and result[0] else "EI000000"
+            # El ID usa prefijo "EI" + 6 dígitos (ej. "EI000901"), no "ENT".
+            last_num = int(last_id[2:]) if last_id and last_id.startswith("EI") else 0
+            return f"EI{str(last_num + 1).zfill(6)}"
         finally:
             cursor.close()
             db.close()
@@ -132,14 +133,17 @@ class OrdenEntregaModel:
             
             id_proveedor = resultado[2]
             
-            # 2. Obtener los detalles de la orden con costo de suministra
+            # 2. Obtener los detalles de la orden con costo de suministra.
+            #    LEFT JOIN: se incluyen TODOS los productos del detalle, incluso
+            #    los que no tienen un costo registrado en Suministra (su costo
+            #    queda en 0). Antes un INNER JOIN los descartaba en silencio.
             cursor.execute("""
                 SELECT 
                     d.ID_producto,
                     d.Cantidad_producto,
                     s.Costo_producto
                 FROM Detalle_orden d
-                JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
+                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = %s
                 WHERE d.ID_orden_compra = %s
             """, (id_proveedor, self.id_orden))
             
@@ -151,11 +155,21 @@ class OrdenEntregaModel:
             id_entrega = self._generar_id_entrega()
             self.id_entrega = id_entrega
             
+            # Fecha de entrega: respeta la fecha elegida por el usuario.
+            # Si solo llega "YYYY-MM-DD" se completa con la hora actual; si no
+            # llega, se usa la fecha/hora actual (antes se ignoraba y usaba NOW()).
+            if self.fecha_entrega:
+                fecha_entrega = str(self.fecha_entrega).strip()
+                if len(fecha_entrega) <= 10:  # solo fecha, sin hora
+                    fecha_entrega = f"{fecha_entrega} {datetime.now().strftime('%H:%M:%S')}"
+            else:
+                fecha_entrega = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
             # 4. Insertar en Entrega_inventario
             cursor.execute("""
                 INSERT INTO Entrega_inventario (ID_entrega_inventario, ID_empleado, ID_orden_compra, Fecha_entrega_inventario)
-                VALUES (%s, %s, %s, NOW())
-            """, (id_entrega, self.id_empleado, self.id_orden))
+                VALUES (%s, %s, %s, %s)
+            """, (id_entrega, self.id_empleado, self.id_orden, fecha_entrega))
             
             # 5. Para cada producto, verificar/crear en Existencias_productos y actualizar stock
             for detalle in detalles:
@@ -269,15 +283,14 @@ class OrdenEntregaModel:
             if not cursor.fetchone():
                 return False
             
-            # Actualizar fecha y recibido_por
+            # Actualizar la fecha de la entrega.
+            # Nota: "Recibido_por" NO es editable aquí: se deriva del empleado
+            # (ID_empleado) en la consulta, no es una columna de Entrega_inventario.
             cursor.execute("""
                 UPDATE Entrega_inventario 
                 SET Fecha_entrega_inventario = %s
                 WHERE ID_entrega_inventario = %s
             """, (self.fecha_entrega, self.id_entrega))
-            
-            # Nota: Recibido_por está en el modelo pero no en la tabla Entrega_inventario
-            # Si quieres almacenarlo, necesitas agregar una columna o usar otra tabla
             
             db.commit()
             

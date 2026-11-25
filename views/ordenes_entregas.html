@@ -174,12 +174,10 @@
             
             <div class="ui-form__grid ui-form__grid--two">
                 <label class="field">
-                    <span>Recibido por <span class="required-indicator">*</span></span>
-                    <input type="text" id="editar-recibido-por" class="form__input" 
-                           placeholder="Nombre de quien recibe" maxlength="20"
-                           data-validation-rules="soloLetrasNumeros,capitalizar"
-                           title="Solo letras, números, espacios, acentos y ñ">
-                    <small class="field-hint">Solo letras, números, espacios (máximo 20 caracteres)</small>
+                    <span>Recibido por</span>
+                    <input type="text" id="editar-recibido-por" class="form__input" readonly
+                           title="Quién recibió la entrega (definido al registrarla)">
+                    <small class="field-hint">Se define al registrar la entrega y no es editable.</small>
                 </label>
                 <label class="field">
                     <span>Fecha de entrega <span class="required-indicator">*</span></span>

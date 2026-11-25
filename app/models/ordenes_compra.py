@@ -197,8 +197,9 @@ class OrdenCompra:
                     COALESCE(s.Costo_producto, 0) as Costo,
                     (d.Cantidad_producto * COALESCE(s.Costo_producto, 0)) as sup_total
                 FROM Detalle_orden d
+                JOIN Orden_compra o ON d.ID_orden_compra = o.ID_orden_compra
                 JOIN Producto p ON d.ID_producto = p.ID_producto
-                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto
+                LEFT JOIN Suministra s ON d.ID_producto = s.ID_producto AND s.ID_proveedor = o.ID_proveedor
                 LEFT JOIN Marca_producto mp ON p.ID_marca = mp.ID_marca
                 LEFT JOIN Clase_producto cp ON p.ID_Clase = cp.ID_Clase
                 WHERE d.ID_orden_compra = %s

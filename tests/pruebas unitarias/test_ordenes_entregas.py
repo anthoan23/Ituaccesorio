@@ -14,7 +14,7 @@ from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 # ==================== Datos de frontera ====================
 ID_ORDEN = "OC0000001"
-ID_ENTREGA = "ENT0000005"
+ID_ENTREGA = "EI000005"
 ID_EMPLEADO = "123456"
 RECIBIDO_POR = "Ana Pérez"
 FECHA_ENTREGA = "2026-01-15 10:30"
@@ -28,33 +28,33 @@ DETALLE_NUEVO = ("2", 3, None)
 class TestGenerarIdEntrega:
 
     def test_sin_conexion_devuelve_id_base(self, conexion_caída):
-        assert OrdenEntregaModel()._generar_id_entrega() == "ENT0000000"
+        assert OrdenEntregaModel()._generar_id_entrega() == "EI000000"
 
     def test_sin_entregas_previas(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = None
 
-        assert OrdenEntregaModel()._generar_id_entrega() == "ENT0000001"
+        assert OrdenEntregaModel()._generar_id_entrega() == "EI000001"
         assert "MAX(ID_entrega_inventario)" in ultima_sentencia(cursor)
         cierra_recursos(db, cursor)
 
     def test_con_entregas_previas_incrementa(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.return_value = ("ENT0000042",)
+        cursor.fetchone.return_value = ("EI000042",)
 
-        assert OrdenEntregaModel()._generar_id_entrega() == "ENT0000043"
+        assert OrdenEntregaModel()._generar_id_entrega() == "EI000043"
 
     def test_ultimo_id_nulo(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = (None,)
 
-        assert OrdenEntregaModel()._generar_id_entrega() == "ENT0000001"
+        assert OrdenEntregaModel()._generar_id_entrega() == "EI000001"
 
     def test_ultimo_id_con_formato_invalido(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = ("ABC",)
 
-        assert OrdenEntregaModel()._generar_id_entrega() == "ENT0000001"
+        assert OrdenEntregaModel()._generar_id_entrega() == "EI000001"
 
     def test_no_modifica_la_bd(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -198,7 +198,7 @@ class TestRegistrarEntrega:
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             (ID_ORDEN, "Pendiente", ID_PROVEEDOR),  # orden
-            ("ENT0000004",),  # _generar_id_entrega
+            ("EI000004",),  # _generar_id_entrega
             ("INV0001", 10),  # inventario existente
         ]
         cursor.fetchall.return_value = [DETALLE_EXISTENTE]
@@ -211,7 +211,7 @@ class TestRegistrarEntrega:
         resultado = entrega.registrar_entrega()
 
         assert resultado is True
-        assert entrega.id_entrega == "ENT0000005"
+        assert entrega.id_entrega == "EI000005"
         sentencias = [llamada.args[0] for llamada in cursor.execute.call_args_list]
         assert any(
             "INSERT INTO Entrega_inventario" in sql for sql in sentencias
@@ -226,7 +226,7 @@ class TestRegistrarEntrega:
             for llamada in cursor.execute.call_args_list
             if "INSERT INTO Abastece" in llamada.args[0]
         )
-        assert abastece == ("ENT0000005", "INV0001", 2)
+        assert abastece == ("EI000005", "INV0001", 2)
         db.commit.assert_called_once()
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
@@ -235,7 +235,7 @@ class TestRegistrarEntrega:
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             (ID_ORDEN, "Pendiente", ID_PROVEEDOR),  # orden
-            ("ENT0000004",),  # _generar_id_entrega
+            ("EI000004",),  # _generar_id_entrega
             None,  # inventario no existe
             (5,),  # MAX(ID_inventario)
         ]
@@ -247,7 +247,7 @@ class TestRegistrarEntrega:
         resultado = entrega.registrar_entrega()
 
         assert resultado is True
-        assert entrega.id_entrega == "ENT0000005"
+        assert entrega.id_entrega == "EI000005"
         inventario = next(
             llamada.args[1]
             for llamada in cursor.execute.call_args_list
@@ -259,14 +259,14 @@ class TestRegistrarEntrega:
             for llamada in cursor.execute.call_args_list
             if "INSERT INTO Abastece" in llamada.args[0]
         )
-        assert abastece == ("ENT0000005", "6", 3)
+        assert abastece == ("EI000005", "6", 3)
         db.commit.assert_called_once()
 
     def test_calcula_costo_venta_con_ganancia(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             (ID_ORDEN, "Pendiente", ID_PROVEEDOR),
-            ("ENT0000004",),
+            ("EI000004",),
             None,
             (0,),
         ]
@@ -287,7 +287,7 @@ class TestRegistrarEntrega:
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             (ID_ORDEN, "Pendiente", ID_PROVEEDOR),
-            ("ENT0000004",),
+            ("EI000004",),
             ("INV0001", 10),
         ]
         cursor.fetchall.return_value = [DETALLE_EXISTENTE]
@@ -306,7 +306,7 @@ class TestRegistrarEntrega:
         db, cursor = conexion_falsa
         cursor.fetchone.side_effect = [
             (ID_ORDEN, "Pendiente", ID_PROVEEDOR),
-            ("ENT0000004",),
+            ("EI000004",),
             ("INV0001", 10),
         ]
         cursor.fetchall.return_value = [DETALLE_EXISTENTE]
