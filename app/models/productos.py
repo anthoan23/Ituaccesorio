@@ -363,7 +363,15 @@ class Producto:
                     p.Nombre_producto AS nombre,
                     p.Descripcion AS descripcion,
                     ma.Nombre_marca AS marca_nombre,
-                    cl.Nombre_Clase AS clase_nombre
+                    cl.Nombre_Clase AS clase_nombre,
+                    COALESCE((
+                        SELECT fi.Foto_inventario
+                        FROM Fotos_inventario fi
+                        JOIN Existencias_productos e2 ON fi.ID_inventario = e2.ID_inventario
+                        WHERE e2.ID_producto = p.ID_producto
+                        ORDER BY fi.ID_foto_inventario DESC
+                        LIMIT 1
+                    ), '') AS foto_inventario
                 FROM Producto p
                 LEFT JOIN Marca_producto ma ON p.ID_marca = ma.ID_marca
                 LEFT JOIN Clase_producto cl ON p.ID_Clase = cl.ID_Clase
@@ -650,6 +658,59 @@ class Producto:
                 bitacora.registrar()
             
             return updated
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            cursor.close()
+            db.close()
+
+    def asignar_foto_producto(self, id_producto: str, ruta_foto: str) -> None:
+        """Vincula una foto al producto insertándola en Fotos_inventario.
+
+        Las fotos viven por existencia (ID_inventario); si el producto aún no
+        tiene existencia se crea una con stock 0 para poder adjuntarle la foto.
+        """
+        if not id_producto or not ruta_foto:
+            raise ValueError("Se requiere el ID del producto y la ruta de la foto.")
+
+        db = self._conexion()
+        if not db:
+            raise RuntimeError("No se pudo conectar a la base de datos.")
+
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "SELECT ID_inventario FROM Existencias_productos "
+                "WHERE ID_producto = %s "
+                "ORDER BY CAST(ID_inventario AS UNSIGNED) ASC LIMIT 1",
+                (id_producto,)
+            )
+            fila = cursor.fetchone()
+            if fila:
+                id_inventario = str(fila[0])
+            else:
+                cursor.execute("SELECT MAX(CAST(ID_inventario AS UNSIGNED)) FROM Existencias_productos")
+                resultado = cursor.fetchone()
+                ultimo = resultado[0] if resultado and resultado[0] else 0
+                id_inventario = str(ultimo + 1)
+                cursor.execute(
+                    "INSERT INTO Existencias_productos (ID_inventario, ID_producto, Existencia, Costo_venta) "
+                    "VALUES (%s, %s, 0, 0)",
+                    (id_inventario, id_producto)
+                )
+
+            cursor.execute("SELECT MAX(CAST(ID_foto_inventario AS UNSIGNED)) FROM Fotos_inventario")
+            resultado = cursor.fetchone()
+            ultimo_foto = resultado[0] if resultado and resultado[0] else 0
+            id_foto = str(ultimo_foto + 1)
+
+            cursor.execute(
+                "INSERT INTO Fotos_inventario (ID_foto_inventario, ID_inventario, Foto_inventario) "
+                "VALUES (%s, %s, %s)",
+                (id_foto, id_inventario, ruta_foto)
+            )
+            db.commit()
         except Exception:
             db.rollback()
             raise

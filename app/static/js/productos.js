@@ -275,11 +275,11 @@
     return data;
   }
 
-  async function fetchFormData(url, formData) {
+  async function fetchFormData(url, formData, method = "POST") {
     const authToken = getAuthToken();
     
     const response = await fetch(url, {
-      method: "POST",
+      method,
       headers: {
         Accept: "application/json",
         ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
@@ -721,10 +721,25 @@
       validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
       if (idModelo) {
-        await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
-          method: "PUT",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
-        });
+        const inputFoto = document.getElementById("p-foto");
+        const archivoFoto = inputFoto?.files?.[0];
+
+        if (archivoFoto) {
+          // Con foto nueva: multipart (el PUT acepta foto_inventario)
+          const formData = new FormData();
+          formData.set("nombre", nombreModelo);
+          formData.set("id_marca", String(finalMarcaId));
+          formData.set("id_clase", String(claseIdFinal));
+          formData.set("descripcion", descripcion || "");
+          formData.append("foto_inventario", archivoFoto);
+
+          await fetchFormData(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, formData, "PUT");
+        } else {
+          await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
+            method: "PUT",
+            body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+          });
+        }
       } else {
         const formData = new FormData(formProducto);
         
