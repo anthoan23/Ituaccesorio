@@ -4,8 +4,9 @@ Los fixtures `conexion_falsa` y `conexion_caída` viven en
 tests/pruebas unitarias/conftest.py y los helpers en
 tests/pruebas unitarias/helpers.py.
 
-TradeIn es un modelo de cálculo: consulta equipos y costos de repuestos,
-pero no escribe en la base de datos (la bitácora se delega a Bitacora).
+TradeIn es un modelo de cálculo: consulta equipos y calcula deducciones
+por porcentaje sobre el precio base, sin escribir en la base de datos
+(la bitácora se delega a Bitacora).
 """
 from decimal import Decimal
 from unittest.mock import patch
@@ -17,7 +18,7 @@ from helpers import cierra_recursos, sin_sentencia, ultima_sentencia
 
 # ==================== Datos de frontera ====================
 ID_PRODUCTO = "INV-01"  # ID de inventario del equipo
-ID_PRODUCTO_BASE = "P001"  # ID del producto base (para buscar repuestos)
+ID_PRODUCTO_BASE = "P001"  # ID del producto base
 PRECIO_BASE = 500.0
 
 FALLA_CONOCIDA = "power"
@@ -36,6 +37,12 @@ def equipo_base(**cambios):
         "ID_producto_base": ID_PRODUCTO_BASE,
     }
     return {**equipo, **cambios}
+
+
+def costo_porcentaje(precio_base: float, clave: str) -> float:
+    """Costo esperado de una falla según DEDUCCIONES_PORCENTAJE."""
+    porcentaje = TradeIn.DEDUCCIONES_PORCENTAJE[clave]
+    return precio_base * (porcentaje / 100.0)
 
 
 class TestObtenerConfigFalla:
@@ -59,10 +66,6 @@ class TestObtenerConfigFalla:
     )
     def test_falla_inexistente(self, clave):
         assert TradeIn()._obtener_config_falla(clave) is None
-
-    def test_todas_las_fallas_tienen_mapeo_de_repuesto(self):
-        for falla in TradeIn.FALLAS_COTIZACION:
-            assert falla["clave"] in TradeIn.MAPEO_FALLA_REPUESTO
 
 
 class TestObtenerDescripcionFalla:
@@ -92,96 +95,15 @@ class TestObtenerDescripcionFalla:
             assert descripcion != descripcion_generica
 
 
-class TestObtenerCostoRepuesto:
+class TestTodasLasFallasTienenPorcentaje:
 
-    def test_costo_desde_suministra(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            {"ID_producto": "REP-01"},
-            {"costo": Decimal("12.50")},
-        ]
+    def test_todas_las_fallas_tienen_porcentaje(self):
+        for falla in TradeIn.FALLAS_COTIZACION:
+            assert falla["clave"] in TradeIn.DEDUCCIONES_PORCENTAJE
 
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 12.5
-        assert isinstance(resultado, float)
-        assert cursor.execute.call_args_list[0].args[1] == ("%boton_power%",)
-        assert cursor.execute.call_args_list[1].args[1] == ("REP-01",)
-        cierra_recursos(db, cursor)
-
-    def test_falla_sin_mapeo_busca_por_su_clave(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            {"ID_producto": "REP-02"},
-            {"costo": Decimal("1.00")},
-        ]
-
-        TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, FALLA_DESCONOCIDA)
-
-        assert cursor.execute.call_args_list[0].args[1] == (f"%{FALLA_DESCONOCIDA}%",)
-
-    def test_sin_repuesto_devuelve_cero(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = None
-
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 0.00
-        assert cursor.execute.call_count == 1
-        cierra_recursos(db, cursor)
-
-    def test_sin_costo_en_suministra_usa_existencia(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            {"ID_producto": "REP-01"},
-            {"costo": None},
-            {"Costo_venta": Decimal("9.99")},
-        ]
-
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 9.99
-        assert "Existencias_productos" in cursor.execute.call_args_list[2].args[0]
-
-    def test_sin_costo_en_existencia_devuelve_cero(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            {"ID_producto": "REP-01"},
-            {"costo": None},
-            {"Costo_venta": None},
-        ]
-
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 0.00
-
-    def test_conexion_caida_devuelve_cero(self, conexion_caída):
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 0.00
-
-    def test_error_de_bd_devuelve_cero(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.execute.side_effect = Exception("fallo simulado")
-
-        resultado = TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        assert resultado == 0.00
-        cierra_recursos(db, cursor)
-
-    def test_no_modifica_la_bd(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            {"ID_producto": "REP-01"},
-            {"costo": Decimal("3.00")},
-        ]
-
-        TradeIn()._obtener_costo_repuesto(ID_PRODUCTO_BASE, "power")
-
-        sin_sentencia(cursor, "INSERT")
-        sin_sentencia(cursor, "UPDATE")
-        sin_sentencia(cursor, "DELETE")
-        db.commit.assert_not_called()
+    def test_porcentajes_son_positivos(self):
+        for clave, porcentaje in TradeIn.DEDUCCIONES_PORCENTAJE.items():
+            assert porcentaje > 0, f"{clave} tiene porcentaje no positivo"
 
 
 class TestConsultarEquipos:
@@ -398,6 +320,28 @@ class TestCalcularCotizacion:
             "error": "Las fallas seleccionadas deben ser una lista.",
         }
 
+    @pytest.mark.parametrize(
+        "liberado",
+        [
+            pytest.param("no", id="no"),
+            pytest.param("", id="vacio"),
+            pytest.param("false", id="false"),
+            pytest.param(None, id="none"),
+        ],
+    )
+    def test_equipo_no_liberado(self, liberado):
+        with patch.object(
+            TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
+        ):
+            resultado = TradeIn().calcular_cotizacion(
+                ID_PRODUCTO, [], liberado=liberado
+            )
+
+        assert resultado == {
+            "success": False,
+            "error": "Lo sentimos, el equipo debe estar liberado para calificar.",
+        }
+
     def test_sin_fallas(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
@@ -416,11 +360,10 @@ class TestCalcularCotizacion:
     def test_una_falla(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=25.0
-        ) as costo_mock:
+        ):
             resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, ["power"])
 
+        costo_esperado = costo_porcentaje(PRECIO_BASE, "power")  # 25.0
         assert resultado["success"] is True
         assert resultado["precio_base"] == 500.0
         assert resultado["costo_total_repuestos"] == 25.0
@@ -430,7 +373,8 @@ class TestCalcularCotizacion:
             {
                 "clave": "power",
                 "etiqueta": "Botón de power",
-                "costo": 25.0,
+                "porcentaje": 5.0,
+                "costo": round(costo_esperado, 2),
                 "descripcion": (
                     "El botón de encendido no responde o funciona "
                     "de manera intermitente."
@@ -438,22 +382,20 @@ class TestCalcularCotizacion:
             }
         ]
         assert resultado["advertencias"] == [
-            "Se aplicó $25.00 por Botón de power."
+            "Se aplicó 5.0% ($25.00) por Botón de power."
         ]
-        costo_mock.assert_called_once_with(ID_PRODUCTO_BASE, "power")
 
     def test_cuatro_fallas_sin_descuento_adicional(self):
         fallas = ["power", "cornetas", "mica", "lcd"]
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
         ):
             resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, fallas)
 
+        # 5 + 4 + 3 + 35 = 47% de 500 = 235.0
         assert resultado["total_fallas"] == 4
-        assert resultado["costo_total_repuestos"] == 40.0
-        assert resultado["monto_estimado"] == 460.0
+        assert resultado["costo_total_repuestos"] == 235.0
+        assert resultado["monto_estimado"] == 265.0
         assert not any(
             "descuento adicional" in advertencia
             for advertencia in resultado["advertencias"]
@@ -463,73 +405,63 @@ class TestCalcularCotizacion:
         fallas = ["power", "cornetas", "mica", "lcd", "tactil"]
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
         ):
             resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, fallas)
 
+        # 5 + 4 + 3 + 35 + 25 = 72% de 500 = 360.0
+        # descuento 10% = 36.0 -> costo 324.0, monto 176.0
         assert resultado["total_fallas"] == 5
-        assert resultado["costo_total_repuestos"] == 45.0
-        assert resultado["monto_estimado"] == 455.0
+        assert resultado["costo_total_repuestos"] == 324.0
+        assert resultado["monto_estimado"] == 176.0
         assert (
             "Se aplicó un 10% de descuento adicional por múltiples fallas "
-            "($5.00)."
+            "($36.00)."
         ) in resultado["advertencias"]
 
     def test_fallas_invalidas_se_ignoran(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
-        ) as costo_mock:
+        ):
             resultado = TradeIn().calcular_cotizacion(
                 ID_PRODUCTO, [FALLA_DESCONOCIDA, "power", None, 123]
             )
 
         assert resultado["total_fallas"] == 1
         assert resultado["detalles_fallas"][0]["clave"] == "power"
-        costo_mock.assert_called_once_with(ID_PRODUCTO_BASE, "power")
+        assert resultado["costo_total_repuestos"] == 25.0
 
     def test_fallas_duplicadas_se_ignoran(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
-        ) as costo_mock:
+        ):
             resultado = TradeIn().calcular_cotizacion(
                 ID_PRODUCTO, ["power", "power", " power "]
             )
 
         assert resultado["total_fallas"] == 1
-        assert resultado["costo_total_repuestos"] == 10.0
-        costo_mock.assert_called_once()
+        assert resultado["costo_total_repuestos"] == 25.0
 
     def test_tuplas_son_aceptadas(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(TradeIn, "_obtener_costo_repuesto", return_value=5.0):
+        ):
             resultado = TradeIn().calcular_cotizacion(
                 ID_PRODUCTO, ("power", "mica")
             )
 
+        # 5 + 3 = 8% de 500 = 40.0
         assert resultado["success"] is True
         assert resultado["total_fallas"] == 2
+        assert resultado["costo_total_repuestos"] == 40.0
 
-    def test_monto_estimado_nunca_es_negativo(self):
-        with patch.object(
-            TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(TradeIn, "_obtener_costo_repuesto", return_value=600.0):
-            resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, ["power"])
 
-        assert resultado["monto_estimado"] == 0
-        assert resultado["costo_total_repuestos"] == 600.0
 
     def test_precio_base_se_redondea(self):
         with patch.object(
             TradeIn,
             "consultar_equipo_por_id",
             return_value=equipo_base(Costo_venta=349.996),
-        ), patch.object(TradeIn, "_obtener_costo_repuesto", return_value=0.0):
+        ):
             resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, [])
 
         assert resultado["precio_base"] == 350.0
@@ -537,8 +469,6 @@ class TestCalcularCotizacion:
     def test_registra_bitacora_con_usuario(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=20.0
         ), patch(
             "app.models.tradein.Bitacora"
         ) as bitacora_clase:
@@ -551,7 +481,7 @@ class TestCalcularCotizacion:
             accion="Cotización Trade-in",
             descripcion=(
                 "Cotización Trade-in | Modelo: iPhone 13 | Base: 500.0 | "
-                "Deducción: 20.0 | Estimado: 480.0 | Fallas: Botón de power"
+                "Deducción: 25.0 | Estimado: 475.0 | Fallas: Botón de power"
             ),
             usuario_id="7",
             modulo_nombre="Trade-in",
@@ -573,8 +503,6 @@ class TestCalcularCotizacion:
     def test_advertencia_de_bitacora_se_agrega(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
         ), patch(
             "app.models.tradein.Bitacora"
         ) as bitacora_clase:
@@ -593,8 +521,6 @@ class TestCalcularCotizacion:
     def test_sin_usuario_no_registra_bitacora(self):
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(
-            TradeIn, "_obtener_costo_repuesto", return_value=10.0
         ), patch(
             "app.models.tradein.Bitacora"
         ) as bitacora_clase:
@@ -606,7 +532,7 @@ class TestCalcularCotizacion:
         db, cursor = conexion_falsa
         with patch.object(
             TradeIn, "consultar_equipo_por_id", return_value=equipo_base()
-        ), patch.object(TradeIn, "_obtener_costo_repuesto", return_value=10.0):
+        ):
             TradeIn().calcular_cotizacion(ID_PRODUCTO, ["power"])
 
         sin_sentencia(cursor, "INSERT")

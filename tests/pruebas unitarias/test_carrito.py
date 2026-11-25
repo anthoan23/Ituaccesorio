@@ -5,8 +5,8 @@ tests/pruebas unitarias/conftest.py y los helpers en
 tests/pruebas unitarias/helpers.py.
 """
 from decimal import Decimal
-from unittest.mock import patch
-
+from unittest.mock import patch, MagicMock
+import requests
 import pytest
 
 from app.models.carrito import CarritoModel
@@ -68,12 +68,13 @@ class TestObtenerCarrito:
                 "Foto_inventario": None,
             },
         ]
-        cursor.fetchone.return_value = {
-            "Tasa_oficial": 520.91,
-            "Tasa_paralelo": 710.12,
-        }
 
-        resultado = CarritoModel(cliente_id=CLIENTE_MINIMO).obtener_carrito()
+        with patch.object(
+            CarritoModel,
+            "_obtener_tasas",
+            return_value={"oficial": 520.91, "paralelo": 710.12},
+        ):
+            resultado = CarritoModel(cliente_id=CLIENTE_MINIMO).obtener_carrito()
 
         assert resultado["total"] == pytest.approx(28.5)
         assert len(resultado["items"]) == 2
@@ -88,22 +89,22 @@ class TestObtenerCarrito:
         assert primer_item["Foto_inventario"] == "cable.jpg"
         assert primer_item["imagen"] == "cable.jpg"
         segundo_item = resultado["items"][1]
-        # Los valores vacíos se normalizan con texto/cero por defecto
         assert segundo_item["Nombre_producto"] == "Producto"
         assert segundo_item["Nombre_marca"] == ""
         assert segundo_item["Foto_inventario"] == ""
         assert segundo_item["Existencia"] == 0
         assert resultado["tasas"] == {"oficial": 520.91, "paralelo": 710.12}
-
+        
     def test_sin_items(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchall.return_value = []
-        cursor.fetchone.return_value = {
-            "Tasa_oficial": 600.0,
-            "Tasa_paralelo": 800.0,
-        }
 
-        resultado = CarritoModel(cliente_id=CLIENTE_MAXIMO).obtener_carrito()
+        with patch.object(
+            CarritoModel,
+            "_obtener_tasas",
+            return_value={"oficial": 600.0, "paralelo": 800.0},
+        ):
+            resultado = CarritoModel(cliente_id=CLIENTE_MAXIMO).obtener_carrito()
 
         assert resultado["items"] == []
         assert resultado["total"] == 0
@@ -137,13 +138,17 @@ class TestObtenerCarrito:
     def test_cierra_cursor_y_conexion(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchall.return_value = []
-        cursor.fetchone.return_value = None
 
-        CarritoModel(cliente_id=CLIENTE_MINIMO).obtener_carrito()
+        with patch.object(
+            CarritoModel,
+            "_obtener_tasas",
+            return_value=TASAS_POR_DEFECTO,
+        ):
+            CarritoModel(cliente_id=CLIENTE_MINIMO).obtener_carrito()
 
-        # Se abren dos cursores (carrito + tasas) y ambos se cierran
-        assert cursor.close.call_count == 2
-        assert db.close.call_count == 2
+        # Solo se abre un cursor (el del carrito); _obtener_tasas ya no usa BD.
+        assert cursor.close.call_count == 1
+        assert db.close.call_count == 1
 
     def test_no_modifica_la_bd(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -819,38 +824,55 @@ class TestGenerarIdListaCompra:
 
 class TestObtenerTasas:
 
-    def test_devuelve_las_tasas_actuales(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = {
-            "Tasa_oficial": "530.50",
-            "Tasa_paralelo": "720.25",
-        }
+    def _mock_respuesta(self, promedio):
+        """Construye un mock de respuesta HTTP de DolarApi."""
+        respuesta = MagicMock()
+        respuesta.raise_for_status.return_value = None
+        respuesta.json.return_value = {"promedio": promedio}
+        return respuesta
 
-        resultado = CarritoModel()._obtener_tasas()
+    def test_devuelve_las_tasas_actuales(self):
+        with patch("app.models.carrito.requests.get") as get_mock:
+            get_mock.side_effect = [
+                self._mock_respuesta(530.50),
+                self._mock_respuesta(720.25),
+            ]
+
+            resultado = CarritoModel()._obtener_tasas()
 
         assert resultado == {"oficial": 530.50, "paralelo": 720.25}
-        assert "FROM Tasas_cambio" in ultima_sentencia(cursor)
+        urls = [llamada.args[0] for llamada in get_mock.call_args_list]
+        assert any("oficial" in url for url in urls)
+        assert any("paralelo" in url for url in urls)
 
-    def test_sin_registro_usa_tasas_por_defecto(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = None
+    def test_sin_valor_utilizable_usa_tasas_por_defecto(self):
+        with patch("app.models.carrito.requests.get") as get_mock:
+            respuesta = MagicMock()
+            respuesta.raise_for_status.return_value = None
+            respuesta.json.return_value = {"promedio": None, "venta": None, "compra": None}
+            get_mock.return_value = respuesta
 
-        assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
+            assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
 
-    def test_conexion_caida(self, conexion_caída):
-        assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
+    def test_error_de_red_usa_tasas_por_defecto(self):
+        with patch("app.models.carrito.requests.get") as get_mock:
+            get_mock.side_effect = requests.RequestException("sin conexión")
 
-    def test_error_de_bd_usa_tasas_por_defecto(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.execute.side_effect = Exception("fallo simulado")
+            assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
 
-        assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
+    def test_error_inesperado_usa_tasas_por_defecto(self):
+        with patch("app.models.carrito.requests.get") as get_mock:
+            get_mock.side_effect = Exception("fallo simulado")
 
-    def test_cierra_cursor_y_conexion(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = None
+            assert CarritoModel()._obtener_tasas() == TASAS_POR_DEFECTO
 
-        CarritoModel()._obtener_tasas()
+    def test_fallback_venta_si_promedio_es_nulo(self):
+        with patch("app.models.carrito.requests.get") as get_mock:
+            respuesta = MagicMock()
+            respuesta.raise_for_status.return_value = None
+            respuesta.json.return_value = {"promedio": None, "venta": 540.0}
+            get_mock.return_value = respuesta
 
-        cursor.close.assert_called_once()
-        db.close.assert_called_once()
+            resultado = CarritoModel()._obtener_tasas()
+
+        assert resultado == {"oficial": 540.0, "paralelo": 540.0}

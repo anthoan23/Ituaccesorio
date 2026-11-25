@@ -673,7 +673,13 @@ class TestObtenerVentasHoy:
             "cantidad_ventas": 3,
             "moneda": "USD",
         }
-        assert "FROM Metodo_pago mp" in ultima_sentencia(cursor)
+        sentencia = ultima_sentencia(cursor)
+        
+        assert "FROM Venta v" in sentencia
+        assert "FROM Metodo_pago" not in sentencia
+        # Rango semiabierto sargable sobre Fecha_venta (no DATE(...) = CURDATE()).
+        assert "v.Fecha_venta >= CURDATE()" in sentencia
+        assert "v.Fecha_venta <  CURDATE() + INTERVAL 1 DAY" in sentencia
 
     def test_sin_ventas_devuelve_valores_por_defecto(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -688,25 +694,14 @@ class TestObtenerVentasHoy:
         }
         sentencias = [llamada.args[0] for llamada in cursor.execute.call_args_list]
         assert len(sentencias) == 1
-        assert "FROM Metodo_pago mp" in sentencias[0]
+        assert "FROM Venta v" in sentencias[0]
+        assert "FROM Metodo_pago" not in sentencias[0]
 
-    def test_sin_datos_devuelve_valores_por_defecto(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = None
-
+    def test_sin_conexion_devuelve_valores_por_defecto(self, conexion_caída):
         resultado = VentaModel().obtener_ventas_hoy()
 
         assert resultado == {
-            "total_ventas": 0,
-            "cantidad_ventas": 0,
-            "moneda": "USD",
-        }
-
-    def test_conexion_caida(self, conexion_caída):
-        resultado = VentaModel().obtener_ventas_hoy()
-
-        assert resultado == {
-            "total_ventas": 0,
+            "total_ventas": 0.0,
             "cantidad_ventas": 0,
             "moneda": "USD",
         }
@@ -718,12 +713,11 @@ class TestObtenerVentasHoy:
         resultado = VentaModel().obtener_ventas_hoy()
 
         assert resultado == {
-            "total_ventas": 0,
+            "total_ventas": 0.0,
             "cantidad_ventas": 0,
             "moneda": "USD",
         }
-        cursor.close.assert_called_once()
-        db.close.assert_called_once()
+        cierra_recursos(db, cursor)
 
     def test_no_modifica_la_bd(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -735,7 +729,6 @@ class TestObtenerVentasHoy:
         sin_sentencia(cursor, "UPDATE")
         sin_sentencia(cursor, "DELETE")
         db.commit.assert_not_called()
-
 
 class TestObtenerMonedaSegunMetodo:
 
