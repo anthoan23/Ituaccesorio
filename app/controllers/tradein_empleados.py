@@ -37,11 +37,14 @@ def _obtener_usuario_id():
     return g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
 
 
-def _guardar_fotos():
+def _guardar_fotos(obligatorio=True):
     """Valida y guarda las fotos vía el helper único (whitelist + 10 MB).
 
     Devuelve (fotos, error): con error, fotos es None."""
-    return guardar_fotos_evidencias(request.files.getlist("fotos"), "evidencias/trade_in")
+    archivos = request.files.getlist("fotos")
+    if not obligatorio and not any(archivo and archivo.filename for archivo in archivos):
+        return [], None
+    return guardar_fotos_evidencias(archivos, "evidencias/trade_in")
 
 
 # ==================== REGISTRAR NUEVO TRADE-IN ====================
@@ -118,7 +121,7 @@ def api_actualizar_trade_in(tradein_id):
 
         usuario_id = _obtener_usuario_id()
         tests_data = request.form.get("tests", "[]")
-        fotos, error_fotos = _guardar_fotos()
+        fotos, error_fotos = _guardar_fotos(obligatorio=False)
         if error_fotos:
             return jsonify({"success": False, "error": error_fotos}), 400
         fotos_eliminar = request.form.getlist("fotos_eliminar")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+import re
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.models.equipo import Equipo
@@ -131,12 +132,20 @@ class TradeInEmpleados:
                 return error
         self.clave = clave
 
-        # Patrón — Equipo.Patron varchar(60); no es solo numérico
+        # Patrón — números del 1 al 9 sin repetir, separados por guiones
         patron = str(self.patron).strip() if self.patron else None
         if patron:
-            error = validar_texto_numero(patron, 1, 60, "Patrón")
-            if error:
-                return error
+            numeros_patron = patron.split("-")
+            if (
+                len(patron) > 17
+                or not re.fullmatch(r"[1-9](?:-[1-9])*", patron)
+                or len(numeros_patron) > 9
+                or len(set(numeros_patron)) != len(numeros_patron)
+            ):
+                return (
+                    "El Patrón debe contener números del 1 al 9 sin repetir, "
+                    "separados por guiones."
+                )
         self.patron = patron
 
         return None

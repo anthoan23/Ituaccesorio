@@ -3,6 +3,7 @@ import os
 import time
 
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -18,7 +19,7 @@ VALOR_PAGADO = "150.00"
 COLOR = "Negro"
 CAPACIDAD = "128GB"
 CLAVE_EQUIPO = "1234"
-PATRON_EQUIPO = "2589"
+PATRON_EQUIPO = "2-5-8-9"
 BUSQUEDA_CLIENTE = "Prueba"  # búsqueda principal del cliente en el modal
 BUSQUEDA_RESPALDO = "an"     # búsqueda amplia (mínimo 2 caracteres) si no hay coincidencias
 TEST_NOMBRE = "Mica"         # prueba del catálogo de /api/tradein/catalogo-tests
@@ -252,7 +253,15 @@ def test_crear_tradein(driver):
     driver.find_element(By.ID, "color").send_keys(COLOR)
     driver.find_element(By.ID, "capacidad").send_keys(CAPACIDAD)
     driver.find_element(By.ID, "clave").send_keys(CLAVE_EQUIPO)
-    driver.find_element(By.ID, "patron").send_keys(PATRON_EQUIPO)
+    puntos_patron = [
+        driver.find_element(By.CSS_SELECTOR, f"#patron-grid [data-punto='{numero}']")
+        for numero in PATRON_EQUIPO.split("-")
+    ]
+    acciones = ActionChains(driver).move_to_element(puntos_patron[0]).click_and_hold()
+    for punto in puntos_patron[1:]:
+        acciones.move_to_element(punto)
+    acciones.release().perform()
+    assert driver.find_element(By.ID, "patron").get_attribute("value") == PATRON_EQUIPO
     driver.find_element(By.ID, "valor-pagado").send_keys(VALOR_PAGADO)
 
     # Pruebas del equipo: marcar el resultado de una prueba del catálogo

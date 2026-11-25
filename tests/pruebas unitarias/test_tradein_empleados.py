@@ -33,7 +33,7 @@ VALOR_MAXIMO = "99999999.99"
 COLOR = "Negro"
 CAPACIDAD = "128GB"
 CLAVE = "1234"
-PATRON = "patron de desbloqueo"
+PATRON = "1-8-5-2-9"
 
 TEST_VALIDO = {"nombre": "Pantalla", "resultado": "Funciona"}
 
@@ -201,9 +201,22 @@ class TestValidarDatosTradeIn:
                 id="clave-no-numerica",
             ),
             pytest.param(
-                {"patron": "patron#1"},
-                "El campo Patrón solo puede contener letras, números, acentos y espacios.",
+                {"patron": "1-8-5-2-8"},
+                "El Patrón debe contener números del 1 al 9 sin repetir, "
+                "separados por guiones.",
                 id="patron-invalido",
+            ),
+            pytest.param(
+                {"patron": "0-8-5"},
+                "El Patrón debe contener números del 1 al 9 sin repetir, "
+                "separados por guiones.",
+                id="patron-fuera-de-rango",
+            ),
+            pytest.param(
+                {"patron": "1--8"},
+                "El Patrón debe contener números del 1 al 9 sin repetir, "
+                "separados por guiones.",
+                id="patron-formato-invalido",
             ),
         ],
     )

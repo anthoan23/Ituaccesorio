@@ -3,6 +3,15 @@
 
     let tradeinActual = null;
     let catalogoTests = [];
+    const ICON_TEST_CHECK = `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>`;
+    const ICON_TEST_X = `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>`;
 
     function getAuthToken() {
         return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || "";
@@ -103,6 +112,58 @@
         if (window.UiModal && typeof window.UiModal.closeById === 'function') {
             window.UiModal.closeById(id);
         }
+    }
+
+    function confirmarConModal({ titulo, mensaje, textoConfirmar, destructiva = false }) {
+        const modalId = "modal-confirmacion-tradein";
+        const modal = document.getElementById(modalId);
+        const tituloEl = document.getElementById(`${modalId}-title`);
+        const mensajeEl = document.getElementById("tradein-confirmacion-mensaje");
+        const confirmarBtn = document.getElementById("tradein-confirmacion-btn");
+
+        if (!modal || !tituloEl || !mensajeEl || !confirmarBtn
+            || !window.UiModal || typeof window.UiModal.openById !== "function") {
+            console.error("No se encontró el modal de confirmación de Trade-In.");
+            return Promise.resolve(false);
+        }
+
+        tituloEl.textContent = titulo;
+        mensajeEl.textContent = mensaje;
+        confirmarBtn.textContent = textoConfirmar;
+        confirmarBtn.classList.toggle("ui-btn--danger", destructiva);
+        confirmarBtn.classList.toggle("ui-btn--primary", !destructiva);
+
+        return new Promise((resolve) => {
+            let resuelta = false;
+
+            const finalizar = (confirmado) => {
+                if (resuelta) return;
+                resuelta = true;
+                modal.removeEventListener("click", manejarClick);
+                document.removeEventListener("keydown", manejarTecla);
+                cerrarModal(modalId);
+                resolve(confirmado);
+            };
+
+            const manejarClick = (event) => {
+                const elemento = event.target;
+                if (!(elemento instanceof Element)) return;
+
+                if (elemento.closest("#tradein-confirmacion-btn")) {
+                    finalizar(true);
+                } else if (elemento.closest("[data-close-modal]") || elemento === modal) {
+                    finalizar(false);
+                }
+            };
+
+            const manejarTecla = (event) => {
+                if (event.key === "Escape") finalizar(false);
+            };
+
+            modal.addEventListener("click", manejarClick);
+            document.addEventListener("keydown", manejarTecla);
+            abrirModal(modalId);
+        });
     }
 
     // ==================== ESTADÍSTICAS ====================
@@ -249,6 +310,206 @@
     const clienteResults = document.getElementById("cliente-results");
     const clienteIdInput = document.getElementById("cliente-id");
 
+    const inputPatron = document.getElementById("patron");
+    const patronGrid = document.getElementById("patron-grid");
+    const patronLineas = document.getElementById("patron-lineas");
+    const patronSecuencia = document.getElementById("patron-secuencia");
+    const patronLimpiar = document.getElementById("patron-limpiar");
+    const puntosPatron = new Map(
+        Array.from({ length: 9 }, (_, index) => {
+            const numero = index + 1;
+            return [numero, {
+                x: 50 + ((numero - 1) % 3) * 100,
+                y: 50 + Math.floor((numero - 1) / 3) * 100,
+            }];
+        })
+    );
+    let secuenciaPatron = [];
+    let dibujandoPatron = false;
+    let pointerPatron = null;
+    let lineaTemporalPatron = null;
+
+    function actualizarSecuenciaPatron() {
+        const valor = secuenciaPatron.join("-");
+        inputPatron.value = valor;
+        patronSecuencia.textContent = valor || "—";
+    }
+
+    function limpiarPatron() {
+        secuenciaPatron = [];
+        dibujandoPatron = false;
+        pointerPatron = null;
+        lineaTemporalPatron = null;
+        patronLineas.replaceChildren();
+        patronGrid.querySelectorAll(".pattern-grid__dot").forEach(punto => {
+            punto.classList.remove("is-active", "is-highlighted");
+        });
+        actualizarSecuenciaPatron();
+    }
+
+    function crearLineaPatron(x1, y1, x2, y2, temporal = false) {
+        const linea = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        linea.setAttribute("x1", x1);
+        linea.setAttribute("y1", y1);
+        linea.setAttribute("x2", x2);
+        linea.setAttribute("y2", y2);
+        if (temporal) linea.classList.add("is-temporary");
+        patronLineas.appendChild(linea);
+        return linea;
+    }
+
+    function unirPuntosPatron(desde, hasta) {
+        const inicio = puntosPatron.get(desde);
+        const final = puntosPatron.get(hasta);
+        const deltaX = final.x - inicio.x;
+        const deltaY = final.y - inicio.y;
+        const distanciaCuadrada = deltaX * deltaX + deltaY * deltaY;
+
+        return Array.from(puntosPatron.entries())
+            .filter(([numero, punto]) => {
+                if (numero === desde || numero === hasta || secuenciaPatron.includes(numero)) {
+                    return false;
+                }
+                const relativoX = punto.x - inicio.x;
+                const relativoY = punto.y - inicio.y;
+                const productoCruzado = relativoX * deltaY - relativoY * deltaX;
+                const posicion = (relativoX * deltaX + relativoY * deltaY) / distanciaCuadrada;
+                return Math.abs(productoCruzado) < 1 && posicion > 0 && posicion < 1;
+            })
+            .sort((a, b) => {
+                const puntoA = puntosPatron.get(a[0]);
+                const puntoB = puntosPatron.get(b[0]);
+                return Math.hypot(puntoA.x - inicio.x, puntoA.y - inicio.y)
+                    - Math.hypot(puntoB.x - inicio.x, puntoB.y - inicio.y);
+            })
+            .map(([numero]) => numero);
+    }
+
+    function agregarPuntoPatron(numero) {
+        if (secuenciaPatron.includes(numero)) return;
+
+        let anterior = secuenciaPatron[secuenciaPatron.length - 1];
+        if (anterior) {
+            unirPuntosPatron(anterior, numero).forEach(intermedio => {
+                anterior = secuenciaPatron[secuenciaPatron.length - 1];
+                secuenciaPatron.push(intermedio);
+                const puntoAnterior = puntosPatron.get(anterior);
+                const puntoIntermedio = puntosPatron.get(intermedio);
+                crearLineaPatron(puntoAnterior.x, puntoAnterior.y, puntoIntermedio.x, puntoIntermedio.y);
+                patronGrid.querySelector(`[data-punto="${intermedio}"]`).classList.add("is-active");
+            });
+
+            anterior = secuenciaPatron[secuenciaPatron.length - 1];
+            const puntoAnterior = puntosPatron.get(anterior);
+            const puntoNuevo = puntosPatron.get(numero);
+            crearLineaPatron(puntoAnterior.x, puntoAnterior.y, puntoNuevo.x, puntoNuevo.y);
+        }
+
+        secuenciaPatron.push(numero);
+        patronGrid.querySelector(`[data-punto="${numero}"]`).classList.add("is-active");
+        actualizarSecuenciaPatron();
+    }
+
+    function obtenerCoordenadasPatron(event) {
+        const rect = patronGrid.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * 300 / rect.width,
+            y: (event.clientY - rect.top) * 300 / rect.height,
+        };
+    }
+
+    function puntoCercanoPatron(x, y) {
+        let puntoCercano = null;
+        let distanciaCercana = 34;
+        puntosPatron.forEach((punto, numero) => {
+            const distancia = Math.hypot(punto.x - x, punto.y - y);
+            if (distancia < distanciaCercana) {
+                puntoCercano = numero;
+                distanciaCercana = distancia;
+            }
+        });
+        return puntoCercano;
+    }
+
+    function finalizarDibujoPatron() {
+        dibujandoPatron = false;
+        pointerPatron = null;
+        if (lineaTemporalPatron) lineaTemporalPatron.remove();
+        lineaTemporalPatron = null;
+    }
+
+    function establecerPatron(valor) {
+        limpiarPatron();
+        if (!valor) return;
+
+        const numeros = String(valor).split("-");
+        const esPatronValido = /^[1-9](?:-[1-9])*$/.test(valor)
+            && numeros.length <= 9
+            && new Set(numeros).size === numeros.length;
+        if (!esPatronValido) {
+            inputPatron.value = valor;
+            patronSecuencia.textContent = valor;
+            return;
+        }
+
+        numeros.forEach(numero => agregarPuntoPatron(Number(numero)));
+    }
+
+    if (patronGrid && inputPatron && patronLineas && patronSecuencia) {
+        patronGrid.addEventListener("pointerdown", event => {
+            if (event.pointerType === "mouse" && event.button !== 0) return;
+            const coordenadas = obtenerCoordenadasPatron(event);
+            const numero = puntoCercanoPatron(coordenadas.x, coordenadas.y);
+            if (!numero) return;
+
+            event.preventDefault();
+            limpiarPatron();
+            dibujandoPatron = true;
+            pointerPatron = event.pointerId;
+            patronGrid.setPointerCapture(event.pointerId);
+            agregarPuntoPatron(numero);
+        });
+
+        patronGrid.addEventListener("pointermove", event => {
+            const puntoResaltado = patronGrid.querySelector(".is-highlighted");
+            if (puntoResaltado) puntoResaltado.classList.remove("is-highlighted");
+
+            const coordenadas = obtenerCoordenadasPatron(event);
+            const numero = puntoCercanoPatron(coordenadas.x, coordenadas.y);
+            if (numero && !secuenciaPatron.includes(numero)) {
+                patronGrid.querySelector(`[data-punto="${numero}"]`).classList.add("is-highlighted");
+            }
+
+            if (!dibujandoPatron || event.pointerId !== pointerPatron) return;
+            event.preventDefault();
+
+            if (numero) {
+                if (!secuenciaPatron.includes(numero)) agregarPuntoPatron(numero);
+                if (lineaTemporalPatron) lineaTemporalPatron.remove();
+                lineaTemporalPatron = null;
+                return;
+            }
+
+            if (secuenciaPatron.length) {
+                if (lineaTemporalPatron) lineaTemporalPatron.remove();
+                const ultimo = puntosPatron.get(secuenciaPatron[secuenciaPatron.length - 1]);
+                lineaTemporalPatron = crearLineaPatron(ultimo.x, ultimo.y, coordenadas.x, coordenadas.y, true);
+            }
+        });
+
+        patronGrid.addEventListener("pointerup", finalizarDibujoPatron);
+        patronGrid.addEventListener("pointercancel", finalizarDibujoPatron);
+        patronGrid.addEventListener("click", event => {
+            if (event.detail !== 0) return;
+            const punto = event.target.closest("[data-punto]");
+            if (punto) agregarPuntoPatron(Number(punto.dataset.punto));
+        });
+    }
+
+    if (patronLimpiar) {
+        patronLimpiar.addEventListener("click", limpiarPatron);
+    }
+
     if (clienteSearch) {
         clienteSearch.addEventListener("input", () => {
             clearTimeout(busquedaTimeout);
@@ -323,45 +584,69 @@
     function cargarTestsEnFormulario(testsExistentes = []) {
     const container = document.getElementById("tests-container-registro");
     if (!container) return;
-    
-    const testsPorCategoria = {};
-    catalogoTests.forEach(test => {
-        if (!testsPorCategoria[test.categoria]) {
-            testsPorCategoria[test.categoria] = [];
-        }
-        testsPorCategoria[test.categoria].push(test);
-    });
-    
-    let html = `
-        <div class="tests-section">
-            <h4>🔧 Pruebas del equipo</h4>
-            <p class="field-hint">Seleccione el resultado de cada prueba para el equipo</p>
-    `;
-    
-    for (const [categoria, tests] of Object.entries(testsPorCategoria)) {
-        html += `
-            <div class="test-categoria">
-                <h5>${escapeHtml(categoria)}</h5>
-                <div class="test-items">
-                    ${tests.map(test => {
-                        const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
-                        const existing = testsExistentes.find(t => t.nombre === test.nombre);
-                        const resultado = existing ? existing.resultado : "";
-                        return `
-                        <div class="test-item">
-                            <span class="test-nombre">${escapeHtml(test.nombre)}</span>
-                            <div class="test-resultados">
-                                <label><input type="radio" name="test_${safeName}" value="Funciona" ${resultado === "Funciona" ? "checked" : ""}> ✅ Funciona</label>
-                                <label><input type="radio" name="test_${safeName}" value="No funciona" ${resultado === "No funciona" ? "checked" : ""}> ❌ No funciona</label>
-                            </div>
-                        </div>
-                    `}).join("")}
+
+    const mitad = Math.ceil(catalogoTests.length / 2);
+    const renderTest = test => {
+        const safeName = test.nombre.replace(/[^a-zA-Z0-9]/g, '_');
+        const existing = testsExistentes.find(t => t.nombre === test.nombre);
+        const resultado = existing ? existing.resultado : "";
+        return `
+            <div class="test-item">
+                <span class="test-nombre">${escapeHtml(test.nombre)}</span>
+                <div class="test-resultados">
+                    <label class="test-resultados__opcion test-resultados__opcion--success">
+                        <input type="radio" name="test_${safeName}" value="Funciona" ${resultado === "Funciona" ? "checked" : ""}>
+                        ${ICON_TEST_CHECK}
+                    </label>
+                    <label class="test-resultados__opcion test-resultados__opcion--danger">
+                        <input type="radio" name="test_${safeName}" value="No funciona" ${resultado === "No funciona" ? "checked" : ""}>
+                        ${ICON_TEST_X}
+                    </label>
                 </div>
             </div>
         `;
-    }
-    html += '</div>';
+    };
+
+    let html = `
+        <div class="tests-section">
+            <div class="tests-section__header">
+                <div>
+                    <h4>🔧 Pruebas del equipo</h4>
+                    <p class="field-hint">Seleccione el resultado de cada prueba para el equipo</p>
+                </div>
+                ${catalogoTests.length ? `
+                    <div class="tests-section__actions">
+                        <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-test-action="aprobar">
+                            ${ICON_TEST_CHECK} Marcar todos como OK
+                        </button>
+                        <button type="button" class="ui-btn ui-btn--ghost ui-btn--sm" data-test-action="reprobar">
+                            ${ICON_TEST_X} Marcar todos como No funciona
+                        </button>
+                    </div>
+                ` : ""}
+            </div>
+            <div class="test-items">
+                <div class="test-column">
+                    ${catalogoTests.slice(0, mitad).map(renderTest).join("")}
+                </div>
+                <div class="test-column">
+                    ${catalogoTests.slice(mitad).map(renderTest).join("")}
+                </div>
+            </div>
+        </div>
+    `;
     container.innerHTML = html;
+
+    container.querySelectorAll("[data-test-action]").forEach(button => {
+        button.addEventListener("click", () => {
+            const resultado = button.dataset.testAction === "aprobar"
+                ? "Funciona"
+                : "No funciona";
+            container.querySelectorAll('input[type="radio"]').forEach(radio => {
+                if (radio.value === resultado) radio.checked = true;
+            });
+        });
+    });
 }
 
     // ==================== ABRIR MODAL EDITAR ====================
@@ -383,7 +668,7 @@
             document.getElementById("color").value = detalle.Color || "";
             document.getElementById("capacidad").value = detalle.Capacidad || "";
             document.getElementById("clave").value = detalle.Clave || "";
-            document.getElementById("patron").value = detalle.Patron || "";
+            establecerPatron(detalle.Patron || "");
             document.getElementById("valor-pagado").value = detalle.valor_pagado || "";
             document.getElementById("observaciones").value = detalle.observaciones || "";
             
@@ -422,6 +707,7 @@
             submitBtn.textContent = 'Actualizar Trade-In';
             submitBtn.dataset.modo = 'editar';
             submitBtn.dataset.id = tradeinId;
+            submitBtn.dataset.imeiOriginal = detalle.imei || "";
             
             abrirModal("modal-registrar");
             
@@ -433,6 +719,7 @@
     // ==================== ENVIAR FORMULARIO ====================
     const formRegistrar = document.getElementById("form-registrar-tradein");
     if (formRegistrar) {
+        formRegistrar.addEventListener("reset", limpiarPatron);
         formRegistrar.addEventListener("submit", async (e) => {
             e.preventDefault();
             
@@ -468,6 +755,11 @@
                 mostrarToast("El IMEI no debe contener espacios", "error");
                 return;
             }
+
+            const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
+            const modoFormulario = btnSubmit.dataset.modo || "registrar";
+            const reutilizaEquipoActual = modoFormulario === "editar"
+                && idEquipo === btnSubmit.dataset.imeiOriginal;
             
             const valorPagado = document.getElementById("valor-pagado")?.value;
             if (!valorPagado || Number(valorPagado) <= 0) {
@@ -475,22 +767,29 @@
                 return;
             }
             
-            // Verificar si el equipo ya existe
-            try {
-                const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
-                    headers: { "Authorization": `Bearer ${getAuthToken()}` }
-                });
-                if (!checkResponse.ok) {
-                    throw new Error(`HTTP ${checkResponse.status}`);
-                }
-                const checkData = await checkResponse.json();
-                if (checkData.exists) {
-                    if (!confirm(`⚠️ El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${checkData.equipo?.producto_nombre || 'N/A'}\nColor: ${checkData.equipo?.Color || 'N/A'}\nCapacidad: ${checkData.equipo?.Capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`)) {
-                        return;
+            if (!reutilizaEquipoActual) {
+                let checkData;
+                try {
+                    const checkResponse = await fetch(`/api/tradein/verificar-equipo/${encodeURIComponent(idEquipo)}`, {
+                        headers: { "Authorization": `Bearer ${getAuthToken()}` }
+                    });
+                    if (!checkResponse.ok) {
+                        throw new Error(`HTTP ${checkResponse.status}`);
                     }
+                    checkData = await checkResponse.json();
+                } catch (err) {
+                    console.warn("No se pudo verificar el equipo; se continúa como nuevo:", err);
                 }
-            } catch (err) {
-                console.warn("No se pudo verificar el equipo; se continúa como nuevo:", err);
+
+                if (checkData?.exists) {
+                    const equipo = checkData.equipo || {};
+                    const continuar = await confirmarConModal({
+                        titulo: "Equipo ya registrado",
+                        mensaje: `El equipo con ID "${idEquipo}" ya está registrado en el sistema.\n\nProducto: ${equipo.producto_nombre || 'N/A'}\nColor: ${equipo.Color || 'N/A'}\nCapacidad: ${equipo.Capacidad || 'N/A'}\n\n¿Desea continuar y reutilizar este equipo?`,
+                        textoConfirmar: "Reutilizar equipo",
+                    });
+                    if (!continuar) return;
+                }
             }
             
             // Recopilar tests
@@ -507,7 +806,6 @@
                 formData.append('tests', JSON.stringify(tests));
             }
             
-            const btnSubmit = formRegistrar.querySelector('button[type="submit"]');
             const textoOriginal = btnSubmit.textContent;
             btnSubmit.disabled = true;
             btnSubmit.textContent = "Guardando...";
@@ -538,6 +836,7 @@
                     // Resetear estado del formulario
                     delete btnSubmit.dataset.modo;
                     delete btnSubmit.dataset.id;
+                    delete btnSubmit.dataset.imeiOriginal;
                     document.querySelector('#modal-registrar .ui-modal__title').textContent = 'Registrar nuevo Trade-In';
                     btnSubmit.textContent = 'Registrar Trade-In';
                     
@@ -712,7 +1011,13 @@
 
     // ==================== ELIMINAR ====================
     async function eliminarTradeIn(tradeinId) {
-        if (!confirm("⚠️ ¿Estás seguro de que deseas eliminar este trade-in?\n\nEsta acción no se puede deshacer.")) return;
+        const confirmar = await confirmarConModal({
+            titulo: "Confirmar eliminación",
+            mensaje: "¿Estás seguro de que deseas eliminar este trade-in?\n\nEsta acción no se puede deshacer.",
+            textoConfirmar: "Eliminar",
+            destructiva: true,
+        });
+        if (!confirmar) return;
         
         try {
             const data = await fetchJson(`/api/tradein/${tradeinId}`, {
@@ -767,6 +1072,7 @@
                 submitBtn.textContent = 'Registrar Trade-In';
                 delete submitBtn.dataset.modo;
                 delete submitBtn.dataset.id;
+                delete submitBtn.dataset.imeiOriginal;
                 
                 abrirModal("modal-registrar");
             });

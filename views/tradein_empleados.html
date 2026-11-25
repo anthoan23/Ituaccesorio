@@ -1,4 +1,5 @@
 {% extends 'components/layout/base.html' %}
+{% from 'components/ui/modal.html' import modal %}
 
 {% block title %}Ituaccesorio - Gestión de Trade-In{% endblock %}
 
@@ -172,21 +173,24 @@
 
           <label class="field">
             <span>Capacidad</span>
-            <input
-              type="text"
+            <select
               id="capacidad"
               name="capacidad"
               class="field__input"
-              placeholder="Ej: 128GB, 256GB..."
-              maxlength="20"
-              data-validation-rules="soloLetrasNumeros"
-              title="Solo letras y números"
-            />
-            <small class="field-hint">Solo letras y números (ej: 128GB)</small>
+            >
+              <option value="">Seleccione una capacidad</option>
+              <option value="16GB">16GB</option>
+              <option value="32GB">32GB</option>
+              <option value="64GB">64GB</option>
+              <option value="128GB">128GB</option>
+              <option value="256GB">256GB</option>
+              <option value="512GB">512GB</option>
+              <option value="1TB">1TB</option>
+            </select>
           </label>
 
           <label class="field">
-            <span>Clave numérica</span>
+            <span>Contraseña</span>
             <input
               type="text"
               id="clave"
@@ -200,20 +204,38 @@
             <small class="field-hint">Solo números</small>
           </label>
 
-          <label class="field">
-            <span>Patrón</span>
-            <input
-              type="text"
-              id="patron"
-              name="patron"
-              class="field__input"
-              placeholder="Patrón de desbloqueo"
-              maxlength="20"
-              data-validation-rules="soloNumeros"
-              title="Solo números"
-            />
-            <small class="field-hint">Solo números</small>
-          </label>
+          <div class="field field--full pattern-field">
+            <span>Patrón (1-9, sin repetir)</span>
+            <p class="field-hint" id="patron-ayuda">Mantenga presionado y arrastre para unir los puntos.</p>
+            <div class="pattern-lock">
+              <div
+                id="patron-grid"
+                class="pattern-grid"
+                role="group"
+                aria-label="Cuadrícula para dibujar el patrón de desbloqueo"
+                aria-describedby="patron-ayuda"
+              >
+                <svg id="patron-lineas" class="pattern-grid__lines" viewBox="0 0 300 300" aria-hidden="true"></svg>
+                <div class="pattern-grid__points">
+                  <button type="button" class="pattern-grid__dot" data-punto="1" aria-label="Punto 1">1</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="2" aria-label="Punto 2">2</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="3" aria-label="Punto 3">3</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="4" aria-label="Punto 4">4</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="5" aria-label="Punto 5">5</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="6" aria-label="Punto 6">6</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="7" aria-label="Punto 7">7</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="8" aria-label="Punto 8">8</button>
+                  <button type="button" class="pattern-grid__dot" data-punto="9" aria-label="Punto 9">9</button>
+                </div>
+              </div>
+              <div class="pattern-lock__controls">
+                <p class="pattern-lock__sequence">Secuencia: <output id="patron-secuencia" aria-live="polite">—</output></p>
+                <button type="button" id="patron-limpiar" class="ui-btn ui-btn--ghost ui-btn--sm">Limpiar</button>
+              </div>
+            </div>
+            <small class="field-hint">El patrón se guarda como una secuencia de números del 1 al 9.</small>
+            <input type="hidden" id="patron" name="patron" value="" />
+          </div>
 
           <label class="field">
             <span>Valor pagado ($) <span class="required-indicator">*</span></span>
@@ -286,6 +308,14 @@
     <div class="ui-modal__body" id="detalle-contenido"></div>
   </div>
 </div>
+
+{% call modal('modal-confirmacion-tradein', 'Confirmar acción', 'sm') %}
+  <p id="tradein-confirmacion-mensaje" class="confirm-text tradein-confirm__message"></p>
+  <div class="ui-form__actions">
+    <button type="button" class="ui-btn ui-btn--ghost" data-close-modal>Cancelar</button>
+    <button id="tradein-confirmacion-btn" type="button" class="ui-btn ui-btn--primary">Confirmar</button>
+  </div>
+{% endcall %}
 {% endblock %}
 
 {% block scripts %}
