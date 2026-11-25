@@ -433,7 +433,7 @@ class TestRegistrarTradeIn:
             CLIENTE_MAXIMO,
             ID_EQUIPO,
         )
-        assert insert[4] == 0
+        assert insert[4] == 1
         assert insert[6] == 100.0
         db.commit.assert_called_once()
         db.rollback.assert_not_called()

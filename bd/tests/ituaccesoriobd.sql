@@ -1622,7 +1622,7 @@ BEGIN
 
     -- 3. Insertar Trade_in
     INSERT INTO Trade_in (ID_Trade_in, ID_empleado, ID_cliente, ID_equipo, Numero_utilizado, Fecha_realizado, cotizacion)
-    VALUES (v_trade_in_id, p_ID_empleado, p_ID_cliente, p_ID_equipo, 0, NOW(), p_Valor_pagado);
+    VALUES (v_trade_in_id, p_ID_empleado, p_ID_cliente, p_ID_equipo, 1, NOW(), p_Valor_pagado);
 
     -- 4. Guardar fotos
     IF p_Json_Fotos IS NOT NULL AND JSON_LENGTH(p_Json_Fotos) > 0 THEN

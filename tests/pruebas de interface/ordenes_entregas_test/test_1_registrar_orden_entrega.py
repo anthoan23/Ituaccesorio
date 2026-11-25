@@ -10,9 +10,6 @@ URL_ORDENES_COMPRA = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstri
 URL_ORDENES_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/ordenes_entregas"
 TIEMPO_ESPERA = 10
 
-# [recibido_por]
-RECIBIDO_POR = "Empleado Receptor"
-
 # Prueba autocontenida: crea por la UI una orden de compra pendiente (ID
 # autogenerado tipo OC000000X, primer empleado + primer proveedor CON
 # productos + primer producto) en /ordenes_compra y despues registra su
@@ -28,6 +25,14 @@ RECIBIDO_POR = "Empleado Receptor"
 # modulo pisa el mensaje generico del interceptor de fetch).
 
 TITULO_ENTREGAS = "Ituaccesorio - Órdenes de Entregas / Recepción"
+
+
+def seleccionar_empleado_receptor(driver, espera):
+    campo = driver.find_element(By.ID, "entrega-recibido-por")
+    espera.until(lambda d: len(Select(campo).options) > 1)
+    select = Select(campo)
+    select.select_by_index(1)
+    return select.first_selected_option.text.rsplit(" (", 1)[0]
 
 
 def crear_orden_compra_ui(driver, espera):
@@ -204,6 +209,7 @@ def test_registrar_orden_entrega(driver):
         for label in driver.find_elements(By.CSS_SELECTOR, "#form-registrar-entrega label.field > span")
     ]
     assert labels == ["Recibido por *", "Fecha de entrega *"]
+    assert driver.find_element(By.ID, "entrega-recibido-por").tag_name == "select"
 
     # La vista previa de productos se llena por fetch
     espera.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#entrega-productos-preview table")))
@@ -225,9 +231,7 @@ def test_registrar_orden_entrega(driver):
         "El texto de 'Registrar entrega' deberia ser oscuro"
     )
 
-    campo_recibido = driver.find_element(By.ID, "entrega-recibido-por")
-    campo_recibido.clear()
-    campo_recibido.send_keys(RECIBIDO_POR)
+    recibido_por = seleccionar_empleado_receptor(driver, espera)
     # La fecha ya viene precargada con el dia actual; se confirma tal cual
     boton_confirmar.click()
     espera.until(EC.invisibility_of_element_located((By.ID, "modal-registrar-entrega")))
@@ -264,7 +268,7 @@ def test_registrar_orden_entrega(driver):
         )
     )
     recibido_mostrado = fila_historial.find_element(By.CSS_SELECTOR, "td:nth-child(6)").text
-    assert recibido_mostrado == RECIBIDO_POR
+    assert recibido_mostrado == recibido_por
 
     # Iconos del historial: ver (azul), editar (amarillo), eliminar (rojo)
     quitar_hover(driver)
@@ -292,5 +296,5 @@ def test_registrar_orden_entrega(driver):
     anular_orden_compra_ui(driver, espera, id_orden)
     print(
         f"Entrega registrada y limpiada: orden {id_orden} (proveedor: {nombre_proveedor}, "
-        f"producto: {nombre_producto}) recibida por {RECIBIDO_POR}; feedback: {mensaje}"
+        f"producto: {nombre_producto}) recibida por {recibido_por}; feedback: {mensaje}"
     )

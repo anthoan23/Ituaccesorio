@@ -7,10 +7,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from helpers import estilo_css, esperar_feedback, quitar_hover
 
 from test_1_registrar_orden_entrega import (
-    RECIBIDO_POR,
     TITULO_ENTREGAS,
     anular_orden_compra_ui,
     crear_orden_compra_ui,
+    seleccionar_empleado_receptor,
 )
 
 URL_ORDENES_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/ordenes_entregas"
@@ -22,8 +22,6 @@ RECIBIDO_EDITADO = "Empleado Receptor Editado"
 # Prueba autocontenida: crea por la UI su propia orden temporal (ID
 # autogenerado tipo OC000000X), registra su entrega en /ordenes_entregas y
 # despues la edita desde el boton "editar" del historial (modal de edicion).
-# El campo "Recibido por" tiene maxlength=20: el navegador recorta el texto
-# tecleado, por eso el valor esperado se lee del propio input.
 # No depende del orden de ejecucion ni muta la semilla. Al final elimina la
 # entrega y anula la orden para dejar la BD como estaba.
 #
@@ -74,9 +72,7 @@ def test_editar_orden_entrega(driver):
     espera.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "#entrega-productos-preview table"))
     )
-    campo_recibido = driver.find_element(By.ID, "entrega-recibido-por")
-    campo_recibido.clear()
-    campo_recibido.send_keys(RECIBIDO_POR)
+    recibido_por = seleccionar_empleado_receptor(driver, espera)
     driver.find_element(By.ID, "btn-confirmar-entrega").click()
     espera.until(EC.invisibility_of_element_located((By.ID, "modal-registrar-entrega")))
     esperar_feedback(
@@ -114,7 +110,7 @@ def test_editar_orden_entrega(driver):
         lambda d: d.find_element(By.ID, "editar-id-orden-entrega").get_attribute("value") == id_orden
     )
     espera.until(
-        lambda d: d.find_element(By.ID, "editar-recibido-por").get_attribute("value") == RECIBIDO_POR
+        lambda d: d.find_element(By.ID, "editar-recibido-por").get_attribute("value") == recibido_por
     )
 
     # --- Boton 'Actualizar entrega': fondo amarillo con texto oscuro ---
@@ -170,6 +166,6 @@ def test_editar_orden_entrega(driver):
     anular_orden_compra_ui(driver, espera, id_orden)
     print(
         f"Entrega editada y limpiada: orden {id_orden} (proveedor: {nombre_proveedor}) "
-        f"recibido por '{RECIBIDO_POR}' -> '{valor_recibido}' (feedback: {mensaje}; "
+        f"recibido por '{recibido_por}' -> '{valor_recibido}' (feedback: {mensaje}; "
         f"aviso editar pendientes: {mensaje_aviso})"
     )

@@ -7,10 +7,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from helpers import esperar_feedback, quitar_hover
 
 from test_1_registrar_orden_entrega import (
-    RECIBIDO_POR,
     TITULO_ENTREGAS,
     anular_orden_compra_ui,
     crear_orden_compra_ui,
+    seleccionar_empleado_receptor,
 )
 
 URL_ORDENES_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/ordenes_entregas"
@@ -50,9 +50,7 @@ def test_consultar_orden_entrega(driver):
     espera.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "#entrega-productos-preview table"))
     )
-    campo_recibido = driver.find_element(By.ID, "entrega-recibido-por")
-    campo_recibido.clear()
-    campo_recibido.send_keys(RECIBIDO_POR)
+    recibido_por = seleccionar_empleado_receptor(driver, espera)
     driver.find_element(By.ID, "btn-confirmar-entrega").click()
     espera.until(EC.invisibility_of_element_located((By.ID, "modal-registrar-entrega")))
     esperar_feedback(
@@ -74,7 +72,7 @@ def test_consultar_orden_entrega(driver):
         )
     )
     recibido_mostrado = fila_historial.find_element(By.CSS_SELECTOR, "td:nth-child(6)").text
-    assert recibido_mostrado == RECIBIDO_POR
+    assert recibido_mostrado == recibido_por
 
     # --- Detalle de la orden desde el icono "ver" del historial ---
     fila_historial.find_element(By.CSS_SELECTOR, "button[data-action='ver-historial']").click()
@@ -124,5 +122,5 @@ def test_consultar_orden_entrega(driver):
     anular_orden_compra_ui(driver, espera, id_orden)
     print(
         f"Entrega consultada y limpiada: orden {id_orden} (proveedor: {nombre_proveedor}, "
-        f"producto: {nombre_producto}, recibida por {RECIBIDO_POR})"
+        f"producto: {nombre_producto}, recibida por {recibido_por})"
     )
