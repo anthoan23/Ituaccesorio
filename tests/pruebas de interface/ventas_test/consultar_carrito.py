@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # runtime. El widget del navbar ([data-cart-toggle] -> [data-cart-panel]) es la
 # vista del carrito accesible por UI: el modal #cart-modal de catalogo.html
 # existe pero su botón de apertura (#cart-toggle) está comentado.
-URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/catalogo"
+URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/catalogo"
 TIEMPO_ESPERA = 10
 
 

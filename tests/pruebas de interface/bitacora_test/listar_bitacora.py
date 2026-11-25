@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-URL_BITACORA = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/bitacora"
+URL_BITACORA = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/bitacora"
 TIEMPO_ESPERA = 10
 
 # Estructura esperada de la tabla de eventos (se pinta server-side con 'registros')
