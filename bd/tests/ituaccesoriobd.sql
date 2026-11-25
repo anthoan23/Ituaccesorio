@@ -1775,8 +1775,8 @@ INSERT INTO `Clase_producto` (`ID_Clase`, `Nombre_Clase`) VALUES
 -- Marca_producto: EXACTAMENTE 7 marcas
 -- (test_catalogo_integracion::TestListarCatalogo asserts len == 7).
 INSERT INTO `Marca_producto` (`ID_marca`, `Nombre_marca`) VALUES
-('1', 'Iphone'),
-('2', 'Iphone'),
+('1', 'Apple'),
+('2', 'Apple'),
 ('3', 'Samsung'),
 ('4', 'Xiaomi'),
 ('5', 'Motorola'),
