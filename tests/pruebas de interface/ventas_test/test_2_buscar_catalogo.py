@@ -1,0 +1,74 @@
+import os
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+# Catálogo de productos: página pública del módulo de ventas
+URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/catalogo"
+TIEMPO_ESPERA = 10
+
+# Texto genérico de búsqueda (debe coincidir con nombres o marcas comunes)
+TEXTO_BUSQUEDA = "a"
+
+
+def test_buscar_catalogo(driver):
+    driver.get(URL_MODULO)
+    espera = WebDriverWait(driver, TIEMPO_ESPERA)
+    espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
+
+    # Esperar a que el fetch cargue los productos reales (sin esqueletos)
+    espera.until(
+        EC.presence_of_element_located(
+            (
+                By.CSS_SELECTOR,
+                "#productos-grid .producto-card:not(.producto-card--skeleton)",
+            )
+        )
+    )
+
+    # --- Buscador desplegable del catálogo ---
+    boton_lupa = driver.find_element(By.ID, "catalog-search-toggle")
+    assert boton_lupa.get_attribute("aria-label") == "Mostrar búsqueda"
+    assert boton_lupa.get_attribute("aria-expanded") == "false"
+    assert driver.find_element(By.ID, "f-texto").get_attribute("placeholder") == (
+        "Buscar producto o marca..."
+    )
+
+    # Abrir el buscador (el box se expande con la clase is-open)
+    boton_lupa.click()
+    espera.until(
+        lambda d: "is-open" in d.find_element(By.ID, "catalog-search-box").get_attribute("class")
+    )
+    assert driver.find_element(By.ID, "catalog-search-toggle").get_attribute(
+        "aria-expanded"
+    ) == "true"
+
+    entrada = espera.until(EC.element_to_be_clickable((By.ID, "f-texto")))
+    entrada.send_keys(TEXTO_BUSQUEDA)
+    # El JS aplica el filtro al presionar Enter (aplicarFiltros -> cargarCatalogo)
+    entrada.send_keys(Keys.ENTER)
+    # Esperar a que el listado se refresque: el estado de carga #catalog-status
+    # se limpia justo después de re-renderizar las tarjetas
+    espera.until(
+        lambda navegador: navegador.find_element(By.ID, "catalog-status").text == ""
+    )
+    tarjetas = driver.find_elements(
+        By.CSS_SELECTOR,
+        "#productos-grid .producto-card:not(.producto-card--skeleton)",
+    )
+    mensaje_vacio = driver.find_elements(
+        By.CSS_SELECTOR, "#productos-grid .catalog-empty"
+    )
+    # Comportamiento visible: tarjetas con resultados o mensaje de sin resultados
+    assert tarjetas or mensaje_vacio
+    if mensaje_vacio:
+        # Texto dinámico del JS cuando no hay coincidencias
+        assert mensaje_vacio[0].text == "No se encontraron productos con esos filtros."
+    contador = driver.find_element(By.ID, "productos-count").text
+    espera.until(EC.invisibility_of_element_located((By.ID, "feedback-modal")))
+    if tarjetas:
+        print(f"Busqueda '{TEXTO_BUSQUEDA}' aplicada: {contador} resultados")
+    else:
+        print("Busqueda aplicada: sin resultados (mensaje visible)")
