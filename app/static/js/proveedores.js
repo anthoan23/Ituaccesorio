@@ -433,7 +433,7 @@
           <td>
             <div class="cost-field">
               <span class="cost-field__prefix" aria-hidden="true">$</span>
-              <input type="number" min="0" step="1" inputmode="numeric" placeholder="0" class="table-input table-input--cost" data-id-modelo="${id}" aria-label="Costo ${nombre}">
+              <input type="text" inputmode="decimal" min="0" placeholder="0" class="table-input table-input--cost" data-id-modelo="${id}" aria-label="Costo ${nombre}">
             </div>
           </td>
           <td><button class="ui-btn ui-btn--primary ui-btn--sm" type="button" data-action="agregar-modelo" data-prefix="${prefix}" data-id-modelo="${id}">${etiquetaBoton}</button></td>
@@ -560,62 +560,6 @@
     return el ? el.value : '';
   }
 
-  function focoCampo(id) {
-    const el = $id(id);
-    if (el) {
-      el.focus({ preventScroll: true });
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
-  function validarDatosProveedorFormulario(form, modoEdicion = false) {
-    if (!form) return { valido: true };
-
-    const nombreId = modoEdicion ? 'e-nombre' : 'c-nombre';
-    const rifId = modoEdicion ? 'e-rif' : 'c-id';
-    const camposTelefono = obtenerCamposTelefono(modoEdicion);
-    const celularId = $id(camposTelefono.sufijo) ? camposTelefono.sufijo : camposTelefono.oculto;
-    const correoId = modoEdicion ? 'e-correo' : 'c-correo';
-    const limiteId = modoEdicion ? 'e-limite' : 'c-limite';
-    const direccionId = modoEdicion ? 'e-direccion' : 'c-direccion';
-
-    const nombre = getFormValue(nombreId).trim();
-    if (!nombre) {
-      return { valido: false, mensaje: 'El nombre del proveedor es obligatorio.', campoId: nombreId };
-    }
-    if (nombre.length < 2 || nombre.length > 60 || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]+$/.test(nombre)) {
-      return { valido: false, mensaje: 'El nombre del proveedor debe tener entre 2 y 60 caracteres y solo puede incluir letras, números y espacios.', campoId: nombreId };
-    }
-
-    const rif = getFormValue(rifId).trim().toUpperCase();
-    if (rif && !/^[JEV]-?\d{8}-?\d$/.test(rif)) {
-      return { valido: false, mensaje: 'El RIF debe tener formato válido: J-12345678-9, E-12345678-9 o V-12345678-9.', campoId: rifId };
-    }
-
-    const celular = sincronizarTelefonoProveedor(modoEdicion);
-    if (celular && !esCelularVenezolanoValido(celular)) {
-      return { valido: false, mensaje: 'El teléfono debe comenzar con un prefijo válido y tener 7 dígitos adicionales: 0412, 0414, 0416, 0422, 0424 o 0426.', campoId: celularId };
-    }
-
-    const correo = getFormValue(correoId).trim();
-    if (correo && !/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(correo)) {
-      return { valido: false, mensaje: 'El correo debe tener formato válido (ejemplo@dominio.com).', campoId: correoId };
-    }
-
-    const limite = getFormValue(limiteId).trim();
-    const limiteNormalizado = normalizarLimiteCredito(limite);
-    if (limite && (limiteNormalizado === null || limiteNormalizado < 0)) {
-      return { valido: false, mensaje: 'El límite de crédito debe ser un número válido mayor o igual a cero.', campoId: limiteId };
-    }
-
-    const direccion = getFormValue(direccionId).trim();
-    if (direccion && !/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-.,#()/]+$/.test(direccion)) {
-      return { valido: false, mensaje: 'La dirección solo puede incluir letras, números y signos básicos.', campoId: direccionId };
-    }
-
-    return { valido: true };
-  }
-
   function setValue(id, value) {
     const el = $id(id);
     if (el) el.value = value ?? '';
@@ -624,10 +568,6 @@
   // ==================== TELÉFONO (prefijo + 7 dígitos, o un único input) ====================
   function normalizarTelefonoProveedor(valor) {
     return String(valor ?? '').replace(/\D/g, '').slice(0, 11);
-  }
-
-  function esCelularVenezolanoValido(valor) {
-    return /^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(String(valor ?? ''));
   }
 
   function obtenerCamposTelefono(modoEdicion = false) {
@@ -670,7 +610,7 @@
     if (el) el.textContent = value ?? '';
   }
 
-  // ==================== VALIDACIÓN/FORMATEO RIF (copiado desde clientes.js) ====================
+  // ==================== VALIDACIÓN/FORMATEO RIF (basado en clientes.js) ====================
   function formatearRIF(input) {
     let valor = input.value.replace(/[^a-zA-Z0-9]/g, '');
     valor = valor.toUpperCase();
@@ -679,75 +619,23 @@
       return;
     }
 
-    const letraInicial = valor.charAt(0);
-    const letraValida = ['J', 'E', 'V'].includes(letraInicial) ? letraInicial : 'J';
-    valor = letraValida + valor.slice(1);
+    // Primera letra: J, E o V (se fuerza J si la inicial no es válida)
+    const primeraEsLetraValida = ['J', 'E', 'V'].includes(valor.charAt(0));
+    const letra = primeraEsLetraValida ? valor.charAt(0) : 'J';
 
-    const letra = valor.charAt(0);
-    let numeros = valor.substring(1);
-    numeros = numeros.substring(0, 9);
+    // Solo dígitos después de la letra (máximo 9): cualquier otra letra se descarta
+    const digitos = (primeraEsLetraValida ? valor.substring(1) : valor).replace(/\D/g, '').substring(0, 9);
+
     let resultado = letra;
-    if (numeros.length > 0) {
+    if (digitos.length > 0) {
       resultado += '-';
-      if (numeros.length <= 8) {
-        resultado += numeros;
+      if (digitos.length <= 8) {
+        resultado += digitos;
       } else {
-        resultado += numeros.substring(0, 8) + '-' + numeros.substring(8);
+        resultado += digitos.substring(0, 8) + '-' + digitos.substring(8);
       }
     }
     input.value = resultado;
-  }
-
-  function validarRIF(valor) {
-    const valorNormalizado = String(valor || '').trim().toUpperCase();
-    const patronRIF = /^[JEV]-\d{8}-\d$/;
-    if (!patronRIF.test(valorNormalizado)) {
-      return { valido: false, mensaje: 'El RIF debe tener el formato: J-12345678-9, E-12345678-9 o V-12345678-9' };
-    }
-    if (valorNormalizado.length !== 12) {
-      return { valido: false, mensaje: 'El RIF debe tener 12 caracteres (ej: J-12345678-9)' };
-    }
-    const partes = valorNormalizado.split('-');
-    if (partes.length !== 3) {
-      return { valido: false, mensaje: 'El RIF debe tener el formato: Letra-8dígitos-1dígito' };
-    }
-    const letraParte = partes[0];
-    const numerosParte1 = partes[1];
-    const numerosParte2 = partes[2];
-    if (!['J', 'E', 'V'].includes(letraParte)) {
-      return { valido: false, mensaje: 'La primera parte debe ser J, E o V' };
-    }
-    if (numerosParte1.length !== 8 || !/^\d{8}$/.test(numerosParte1)) {
-      return { valido: false, mensaje: 'Debe tener 8 dígitos después del primer guion' };
-    }
-    if (numerosParte2.length !== 1 || !/^\d$/.test(numerosParte2)) {
-      return { valido: false, mensaje: 'Debe tener 1 dígito después del segundo guion' };
-    }
-    return { valido: true };
-  }
-
-  function validarRIFEnTiempoReal(input, errorElementId) {
-    const errorElement = $id(errorElementId);
-    if (!errorElement) return;
-    const valor = input.value;
-    if (!valor) {
-      errorElement.textContent = '';
-      errorElement.style.color = '';
-      input.classList.remove('field-error', 'field-success');
-      return;
-    }
-    const resultado = validarRIF(valor);
-    if (!resultado.valido) {
-      errorElement.textContent = resultado.mensaje;
-      errorElement.style.color = '#ef4444';
-      input.classList.add('field-error');
-      input.classList.remove('field-success');
-    } else {
-      errorElement.textContent = '✓ Formato válido';
-      errorElement.style.color = '#22c55e';
-      input.classList.remove('field-error');
-      input.classList.add('field-success');
-    }
   }
 
   // ==================== FUNCIONES CON VALIDACIÓN DE SEGURIDAD ====================
@@ -793,6 +681,8 @@
       state.currentProveedorId = id;
       const data = await fetchJson(`/api/proveedores/${encodeURIComponent(id)}`, { method: 'GET' });
       const p = normalizeProveedor(data?.proveedor ?? data);
+
+      window.FieldValidator?.resetForm?.($id('form-proveedor-editar'));
 
       setValue('e-id-hidden', p.id);
       setValue('e-id', p.id);
@@ -892,7 +782,7 @@
             <td>${marca}</td>
             <td>${clase}</td>
             <td class="col-cost">
-              <input class="table-input" type="number" min="0" step="1" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
+              <input class="table-input" type="text" inputmode="decimal" min="0" value="${escapeHtml(costo)}" data-action="guardar-costo" data-id-modelo="${idModelo}" aria-label="Costo ${modelo}">
             </td>
             <td class="table__actions">
               <div class="row-actions row-actions--center" aria-label="Acciones">
@@ -1200,59 +1090,21 @@
     const formCrear = $id('form-proveedor-crear');
     const inputCRif = $id('c-id');
     const inputERif = $id('e-rif');
-    const inputCCelular = $id('c-celular');
-    const inputECelular = $id('e-celular');
 
+    // El autoformato agrega los guiones DESPUÉS de que el validador global ya evaluó el valor,
+    // dejando un error de formato desactualizado. Se revalida sobre el valor ya formateado.
     if (inputCRif) {
-      inputCRif.addEventListener('input', () => formatearRIF(inputCRif));
-      inputCRif.addEventListener('input', () => validarRIFEnTiempoReal(inputCRif, 'c-rif-error'));
+      inputCRif.addEventListener('input', () => {
+        formatearRIF(inputCRif);
+        window.FieldValidator?.validateField?.(inputCRif);
+      });
     }
     if (inputERif) {
-      inputERif.addEventListener('input', () => formatearRIF(inputERif));
-      inputERif.addEventListener('input', () => validarRIFEnTiempoReal(inputERif, 'e-rif-error'));
+      inputERif.addEventListener('input', () => {
+        formatearRIF(inputERif);
+        window.FieldValidator?.validateField?.(inputERif);
+      });
     }
-
-    [
-      { input: inputCCelular, errorId: 'c-celular-error' },
-      { input: inputECelular, errorId: 'e-celular-error' },
-    ].forEach(({ input, errorId }) => {
-      if (!input) return;
-      input.addEventListener('input', () => {
-        input.value = normalizarTelefonoProveedor(input.value);
-        const error = $id(errorId);
-        if (!error) return;
-        if (!input.value) {
-          error.textContent = '';
-          input.classList.remove('field-error', 'field-success');
-          return;
-        }
-        const valido = /^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(input.value);
-        error.textContent = valido ? '✓ Teléfono válido' : '✗ Formato inválido (11 dígitos)';
-        error.style.color = valido ? '#22c55e' : '#ef4444';
-        input.classList.toggle('field-error', !valido);
-        input.classList.toggle('field-success', valido);
-      });
-    });
-    
-    // Prefijo + sufijo (si el formulario los usa): mantener sincronizado el teléfono completo
-    const actualizarEstadoTelefono = (modoEdicion) => {
-      const valor = sincronizarTelefonoProveedor(modoEdicion);
-      const error = $id(modoEdicion ? 'e-celular-error' : 'c-celular-error');
-      if (!error) return;
-      if (!valor) { error.textContent = ''; return; }
-      const valido = esCelularVenezolanoValido(valor);
-      error.textContent = valido ? '✓ Teléfono válido' : '✗ Formato inválido (11 dígitos)';
-      error.style.color = valido ? '#22c55e' : '#ef4444';
-    };
-    [false, true].forEach((modoEdicion) => {
-      const { prefijo, sufijo } = obtenerCamposTelefono(modoEdicion);
-      $id(prefijo)?.addEventListener('change', () => actualizarEstadoTelefono(modoEdicion));
-      const elSufijo = $id(sufijo);
-      elSufijo?.addEventListener('input', () => {
-        elSufijo.value = elSufijo.value.replace(/\D/g, '').slice(0, 7);
-        actualizarEstadoTelefono(modoEdicion);
-      });
-    });
 
     // Envío del formulario "Registrar proveedor". Sin este listener el navegador hace un POST nativo
     // a la URL de la página (/proveedores, que solo acepta GET) y Flask responde 405 Method Not Allowed.
@@ -1260,13 +1112,6 @@
       ev.preventDefault();
 
       try {
-        const validacionCliente = validarDatosProveedorFormulario(formCrear, false);
-        if (!validacionCliente.valido) {
-          showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
-          if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
-          return;
-        }
-
         if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
           const isValid = window.FieldValidator.validateForm(formCrear);
           if (!isValid) {
@@ -1284,6 +1129,7 @@
         closeModal('modal-proveedor-crear');
         await cargarProveedores((inputTexto?.value || '').trim());
         formCrear.reset();
+        window.FieldValidator?.resetForm?.(formCrear);
         state.productosCrear = [];
         renderProductosCrear();
         showFeedback('success', 'Proveedor creado correctamente.');
@@ -1322,13 +1168,6 @@
     const formEditar = $id('form-proveedor-editar');
     formEditar?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      
-      const validacionCliente = validarDatosProveedorFormulario(formEditar, true);
-      if (!validacionCliente.valido) {
-        showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
-        if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
-        return;
-      }
 
       if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
         const isValid = window.FieldValidator.validateForm(formEditar);
@@ -1499,6 +1338,19 @@
       const el = ev.target;
       if (el?.matches?.('input[type="number"]') && document.activeElement === el) el.blur();
     }, { passive: true });
+
+    // Costos de producto (inputs dinámicos del catálogo/tabla): el validador global no se
+    // adjunta a nodos insertados por innerHTML, así que se limpia la entrada por delegación
+    // reutilizando el filtro de la regla decimal (solo dígitos y un punto, máx 2 decimales).
+    document.addEventListener('input', (ev) => {
+      const el = ev.target;
+      if (!(el instanceof HTMLInputElement)) return;
+      if (!el.matches('input.table-input--cost, input[data-action="guardar-costo"]')) return;
+      const filtro = window.FieldValidator?.getFilterRules?.()?.decimal?.filter;
+      if (typeof filtro !== 'function') return;
+      const limpio = filtro(el.value);
+      if (limpio !== el.value) el.value = limpio;
+    });
 
     // Delegation: manejar clicks en botones Agregar dentro de las tablas
     document.addEventListener('click', async (ev) => {

@@ -25,23 +25,6 @@
       <h1 class="hero__title">Proveedores</h1>
       <p class="hero__description">Vista completa para consultar, registrar y administrar proveedores.</p>
     </div>
-
-    <div class="hero__actions" aria-label="Acciones">
-      <button class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-proveedor-crear">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-        Registrar proveedor
-      </button>
-      <button id="btn-reportes" class="ui-btn ui-btn--ghost" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-          <path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/>
-          <polyline points="15 3 21 3 21 9"/>
-          <line x1="10" y1="14" x2="21" y2="3"/>
-        </svg>
-        Reportes
-      </button>
-    </div>
   </header>
 
   <!-- Contenido principal -->
@@ -51,6 +34,23 @@
         <div class="card__header-left">
           <h2 class="card__title">Proveedores</h2>
           <p class="card__subtitle">Tabla principal de proveedores registrados.</p>
+        </div>
+
+        <div class="card__header-actions" aria-label="Acciones">
+          <button class="ui-btn ui-btn--primary" type="button" data-open-modal="modal-proveedor-crear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Registrar proveedor
+          </button>
+          <button id="btn-reportes" class="ui-btn ui-btn--ghost" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Reportes
+          </button>
         </div>
       </div>
 
@@ -97,8 +97,7 @@
                  inputmode="text" 
                  placeholder="Ej: J-12345678-9"
                  maxlength="15"
-                 data-validation-rules="rif"
-                 title="Formato: J-12345678-9">
+                 data-validation-rules="rif">
           <small id="c-rif-error" class="field-hint">Formato: J-12345678-9 (opcional)</small>
         </label>
 
@@ -109,10 +108,10 @@
                  type="text" 
                  placeholder="Ej: TechImport SRL" 
                  required
+                 minlength="2"
                  maxlength="60"
-                 data-validation-rules="soloLetrasNumeros,capitalizar"
-                 title="Solo letras, números, espacios, acentos y ñ">
-          <small class="field-hint">Solo letras, números, espacios (máximo 60 caracteres)</small>
+                 data-validation-rules="soloLetrasNumeros,capitalizar">
+          <small class="field-hint">Solo letras, números y espacios (entre 2 y 60 caracteres)</small>
         </label>
 
         <label class="field">
@@ -132,11 +131,10 @@
                  id="c-celular"
                  type="tel"
                  placeholder="04141234567"
+                 minlength="11"
                  maxlength="11"
-                 data-validator="false"
-                 title="Formato: 04141234567 (11 dígitos)">
-          <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422</small>
-          <small class="field-error" id="c-celular-error"></small>
+                 data-validation-rules="celularVenezolano">
+          <small class="field-hint">11 dígitos. Prefijos: 0412, 0414, 0416, 0422, 0424 o 0426</small>
         </label>
 
         <label class="field">
@@ -146,8 +144,7 @@
                  type="email" 
                  placeholder="Ej: ventas@proveedor.com"
                  maxlength="120"
-                 data-validation-rules="email"
-                 title="Correo electrónico válido">
+                 data-validation-rules="email">
           <small class="field-hint">ejemplo@dominio.com</small>
         </label>
 
@@ -155,14 +152,13 @@
           <span>Límite de crédito</span>
           <input id="c-limite" 
                  name="limite_credito" 
-                 type="number" 
-                 inputmode="numeric" 
+                 type="text" 
+                 inputmode="decimal" 
                  min="0" 
-                 step="1" 
+                 max="9999999999.99"
                  placeholder="Ej: 50000000"
-                 data-validation-rules="soloNumeros"
-                 title="Solo números enteros positivos">
-          <small class="field-hint">Solo números enteros</small>
+                 data-validation-rules="decimal">
+          <small class="field-hint">Opcional. Número positivo con hasta 2 decimales (Bs.)</small>
         </label>
 
         <label class="field field--full">
@@ -170,10 +166,9 @@
           <textarea id="c-direccion" 
                     name="direccion" 
                     rows="3" 
-                    placeholder="Ej: Zona Franca, Caracas"
+                    placeholder="Ej: Zona Franca Caracas"
                     maxlength="100"
-                    data-validation-rules="sinCaracteresEspeciales"
-                    title="Sin caracteres especiales"></textarea>
+                    data-validation-rules="sinCaracteresEspeciales"></textarea>
           <small class="field-hint">Sin caracteres especiales (máximo 100 caracteres)</small>
         </label>
       </div>
@@ -230,8 +225,7 @@
                  type="text" 
                  placeholder="Ej: J-12345678-9"
                  maxlength="15"
-                 data-validation-rules="rif"
-                 title="Formato: J-12345678-9">
+                 data-validation-rules="rif">
           <small id="e-rif-error" class="field-hint">Formato: J-12345678-9 (opcional)</small>
         </label>
 
@@ -242,10 +236,10 @@
                  type="text" 
                  placeholder="Ej: TechImport SRL" 
                  required
+                 minlength="2"
                  maxlength="60"
-                 data-validation-rules="soloLetrasNumeros,capitalizar"
-                 title="Solo letras, números, espacios, acentos y ñ">
-          <small class="field-hint">Solo letras, números, espacios (máximo 60 caracteres)</small>
+                 data-validation-rules="soloLetrasNumeros,capitalizar">
+          <small class="field-hint">Solo letras, números y espacios (entre 2 y 60 caracteres)</small>
         </label>
 
         <label class="field">
@@ -265,11 +259,10 @@
                  id="e-celular"
                  type="tel"
                  placeholder="04141234567"
+                 minlength="11"
                  maxlength="11"
-                 data-validator="false"
-                 title="Formato: 04141234567 (11 dígitos)">
-          <small class="field-hint">Solo: 0416,0426,0414,0424,0412,0422</small>
-          <small class="field-error" id="e-celular-error"></small>
+                 data-validation-rules="celularVenezolano">
+          <small class="field-hint">11 dígitos. Prefijos: 0412, 0414, 0416, 0422, 0424 o 0426</small>
         </label>
 
         <label class="field field--full">
@@ -279,8 +272,7 @@
                  type="email" 
                  placeholder="Ej: ventas@proveedor.com"
                  maxlength="120"
-                 data-validation-rules="email"
-                 title="Correo electrónico válido">
+                 data-validation-rules="email">
           <small class="field-hint">ejemplo@dominio.com</small>
         </label>
 
@@ -289,10 +281,9 @@
           <textarea id="e-direccion" 
                     name="direccion" 
                     rows="3" 
-                    placeholder="Ej: Zona Franca, Caracas"
+                    placeholder="Ej: Zona Franca Caracas"
                     maxlength="100"
-                    data-validation-rules="sinCaracteresEspeciales"
-                    title="Sin caracteres especiales"></textarea>
+                    data-validation-rules="sinCaracteresEspeciales"></textarea>
           <small class="field-hint">Sin caracteres especiales (máximo 100 caracteres)</small>
         </label>
 
@@ -300,14 +291,13 @@
           <span>Límite de crédito</span>
           <input id="e-limite" 
                  name="limite_credito" 
-                 type="number" 
-                 inputmode="numeric" 
+                 type="text" 
+                 inputmode="decimal" 
                  min="0" 
-                 step="1" 
+                 max="9999999999.99"
                  placeholder="Ej: 50000000"
-                 data-validation-rules="soloNumeros"
-                 title="Solo números enteros positivos">
-          <small class="field-hint">Solo números enteros</small>
+                 data-validation-rules="decimal">
+          <small class="field-hint">Opcional. Número positivo con hasta 2 decimales (Bs.)</small>
         </label>
       </div>
 

@@ -491,6 +491,14 @@ body {
     gap: 0.25rem;
 }
 
+.card__header-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 .card__title {
     margin: 0;
     font-family: var(--font-family-heading);

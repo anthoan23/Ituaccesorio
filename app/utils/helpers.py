@@ -58,24 +58,10 @@ def es_imagen_permitida(nombre_archivo: str) -> bool:
 
 
 def guardar_foto_inventario(archivo):
-    """Guarda una foto de inventario y retorna su ruta"""
+    """Guarda una foto de inventario y retorna su ruta (delega en la fuente única)."""
     if not archivo or not getattr(archivo, "filename", ""):
         return None
-
-    if not es_imagen_permitida(archivo.filename):
-        raise ValueError("La foto debe ser una imagen válida.")
-
-    nombre_seguro = secure_filename(archivo.filename)
-    _, extension = os.path.splitext(nombre_seguro)
-    extension = extension.lower()[:10] or ".jpg"
-    nombre_final = f"{uuid.uuid4().hex}{extension}"
-
-    carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "inventario")
-    os.makedirs(carpeta_destino, exist_ok=True)
-
-    ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-    archivo.save(ruta_fisica)
-    return f"/static/img/evidencias/inventario/{nombre_final}"
+    return guardar_foto_evidencia(archivo, "evidencias/inventario")
 
 # ==================== SUBIDA DE IMÁGENES (fuente única) ====================
 

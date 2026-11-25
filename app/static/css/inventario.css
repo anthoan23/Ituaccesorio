@@ -81,47 +81,48 @@
 }
 
 /* ============================================
-   CHIPS (filtros rápidos)
+   FILTROS RÁPIDOS (estilo .ui-btn de la web)
    ============================================ */
-.chip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.4rem 0.8rem;
-    border-radius: 999px;
-    background: var(--glass-bg);
-    border: 1px solid var(--border-light);
+/* No seleccionados: gris sólido (como el botón "Reportes" de proveedores).
+   Seleccionado: amarillo plano, igual que .ui-btn--primary ("Registrar proveedor"). */
+.hero__chips .chip {
+    padding: 0.55rem 0.95rem;
+    font-size: 0.9rem;
+    border-radius: var(--radius-md);
+    background: #2a2a30;
     color: var(--text-muted);
-    font-weight: 800;
-    font-size: 0.88rem;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+    border: 1px solid var(--border-light);
 }
 
-.chip:hover {
-    transform: translateY(-1px);
-    background: var(--ghost-hover-bg);
-    border-color: rgba(243, 197, 0, 0.4);
+.hero__chips .chip:hover {
+    background: #33333a;
     color: var(--text-strong);
+    border-color: rgba(243, 197, 0, 0.45);
 }
 
-.chip:focus-visible {
-    outline: 3px solid rgba(243, 197, 0, 0.35);
-    outline-offset: 3px;
+[data-theme="light"] .hero__chips .chip {
+    background: #EDEDF2;
+    color: var(--text-muted);
+    border-color: rgba(0, 0, 0, 0.10);
 }
 
-.chip--active {
-    background: linear-gradient(180deg, var(--yellow-soft), var(--yellow));
+[data-theme="light"] .hero__chips .chip:hover {
+    background: #e0e0e6;
+    color: var(--text-strong);
+    border-color: rgba(243, 197, 0, 0.45);
+}
+
+.hero__chips .chip--active {
+    background: var(--yellow);
     color: var(--ink);
-    border-color: rgba(0, 0, 0, 0.08);
-    font-weight: 900;
+    border-color: rgba(243, 197, 0, 0.6);
+    font-weight: 800;
 }
 
-.chip--active:hover {
-    background: linear-gradient(180deg, var(--yellow-soft), var(--yellow));
+.hero__chips .chip--active:hover {
+    background: var(--yellow-soft);
+    border-color: var(--yellow-soft);
     color: var(--ink);
-    transform: translateY(-1px);
 }
 
 /* ============================================
@@ -350,7 +351,7 @@
         justify-content: center;
     }
     
-    .chip {
+    .hero__chips .chip {
         font-size: 0.75rem;
         padding: 0.3rem 0.6rem;
     }
