@@ -573,7 +573,8 @@
 
     const nombreId = modoEdicion ? 'e-nombre' : 'c-nombre';
     const rifId = modoEdicion ? 'e-rif' : 'c-id';
-    const celularId = modoEdicion ? 'e-celular-sufijo' : 'c-celular-sufijo';
+    const camposTelefono = obtenerCamposTelefono(modoEdicion);
+    const celularId = $id(camposTelefono.sufijo) ? camposTelefono.sufijo : camposTelefono.oculto;
     const correoId = modoEdicion ? 'e-correo' : 'c-correo';
     const limiteId = modoEdicion ? 'e-limite' : 'c-limite';
     const direccionId = modoEdicion ? 'e-direccion' : 'c-direccion';
@@ -592,7 +593,7 @@
     }
 
     const celular = sincronizarTelefonoProveedor(modoEdicion);
-    if (celular && !/^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(celular)) {
+    if (celular && !esCelularVenezolanoValido(celular)) {
       return { valido: false, mensaje: 'El teléfono debe comenzar con un prefijo válido y tener 7 dígitos adicionales: 0412, 0414, 0416, 0422, 0424 o 0426.', campoId: celularId };
     }
 
@@ -620,6 +621,15 @@
     if (el) el.value = value ?? '';
   }
 
+  // ==================== TELÉFONO (prefijo + 7 dígitos, o un único input) ====================
+  function normalizarTelefonoProveedor(valor) {
+    return String(valor ?? '').replace(/\D/g, '').slice(0, 11);
+  }
+
+  function esCelularVenezolanoValido(valor) {
+    return /^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(String(valor ?? ''));
+  }
+
   function obtenerCamposTelefono(modoEdicion = false) {
     return {
       prefijo: modoEdicion ? 'e-celular-prefijo' : 'c-celular-prefijo',
@@ -628,12 +638,12 @@
     };
   }
 
-  function normalizarTelefonoProveedor(valor) {
-    return String(valor ?? '').replace(/\D/g, '').slice(0, 11);
-  }
-
+  // Devuelve el teléfono completo. Si el formulario usa prefijo + sufijo los une y los deja en el
+  // input "c-celular"/"e-celular" (oculto); si usa un único input, devuelve su valor tal cual.
   function sincronizarTelefonoProveedor(modoEdicion = false) {
     const { prefijo, sufijo, oculto } = obtenerCamposTelefono(modoEdicion);
+    if (!$id(prefijo) || !$id(sufijo)) return getFormValue(oculto).trim();
+
     const prefijoValor = getFormValue(prefijo).trim();
     const sufijoValor = getFormValue(sufijo).replace(/\D/g, '').slice(0, 7);
     const valor = prefijoValor && sufijoValor ? `${prefijoValor}${sufijoValor}` : (prefijoValor || sufijoValor || '');
@@ -642,14 +652,17 @@
   }
 
   function cargarTelefonoProveedor(valor, modoEdicion = false) {
-    const { prefijo, sufijo } = obtenerCamposTelefono(modoEdicion);
     const celular = normalizarTelefonoProveedor(valor);
-    const prefijoSeleccionado = PREFIJOS_CELULAR_VENEZOLANO.find((item) => celular.startsWith(item)) || '';
-    const resto = prefijoSeleccionado ? celular.slice(prefijoSeleccionado.length) : celular.slice(0, 7);
+    const { prefijo, sufijo, oculto } = obtenerCamposTelefono(modoEdicion);
 
-    setValue(prefijo, prefijoSeleccionado);
-    setValue(sufijo, resto);
-    sincronizarTelefonoProveedor(modoEdicion);
+    if ($id(prefijo) && $id(sufijo)) {
+      const prefijoSeleccionado = PREFIJOS_CELULAR_VENEZOLANO.find((item) => celular.startsWith(item)) || '';
+      setValue(prefijo, prefijoSeleccionado);
+      setValue(sufijo, prefijoSeleccionado ? celular.slice(prefijoSeleccionado.length) : celular.slice(0, 7));
+      sincronizarTelefonoProveedor(modoEdicion);
+    } else {
+      setValue(oculto, celular);
+    }
   }
 
   function setText(id, value) {
@@ -1187,10 +1200,8 @@
     const formCrear = $id('form-proveedor-crear');
     const inputCRif = $id('c-id');
     const inputERif = $id('e-rif');
-    const inputCCelularPrefijo = $id('c-celular-prefijo');
-    const inputCCelularSufijo = $id('c-celular-sufijo');
-    const inputECelularPrefijo = $id('e-celular-prefijo');
-    const inputECelularSufijo = $id('e-celular-sufijo');
+    const inputCCelular = $id('c-celular');
+    const inputECelular = $id('e-celular');
 
     if (inputCRif) {
       inputCRif.addEventListener('input', () => formatearRIF(inputCRif));
@@ -1200,41 +1211,75 @@
       inputERif.addEventListener('input', () => formatearRIF(inputERif));
       inputERif.addEventListener('input', () => validarRIFEnTiempoReal(inputERif, 'e-rif-error'));
     }
-    inputCCelularPrefijo?.addEventListener('change', () => sincronizarTelefonoProveedor(false));
-    inputCCelularSufijo?.addEventListener('input', () => {
-      inputCCelularSufijo.value = inputCCelularSufijo.value.replace(/\D/g, '').slice(0, 7);
-      sincronizarTelefonoProveedor(false);
-    });
-    inputECelularPrefijo?.addEventListener('change', () => sincronizarTelefonoProveedor(true));
-    inputECelularSufijo?.addEventListener('input', () => {
-      inputECelularSufijo.value = inputECelularSufijo.value.replace(/\D/g, '').slice(0, 7);
-      sincronizarTelefonoProveedor(true);
-    });
-    formCrear?.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      
-      const validacionCliente = validarDatosProveedorFormulario(formCrear, false);
-      if (!validacionCliente.valido) {
-        showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
-        if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
-        return;
-      }
 
-      // Validar con FieldValidator
-      if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
-        const isValid = window.FieldValidator.validateForm(formCrear);
-        if (!isValid) {
-          showFeedback('error', 'Por favor, corrige los errores en el formulario.');
-          const primerError = formCrear.querySelector('.field-error');
-          if (primerError) {
-            primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            primerError.focus();
-          }
+    [
+      { input: inputCCelular, errorId: 'c-celular-error' },
+      { input: inputECelular, errorId: 'e-celular-error' },
+    ].forEach(({ input, errorId }) => {
+      if (!input) return;
+      input.addEventListener('input', () => {
+        input.value = normalizarTelefonoProveedor(input.value);
+        const error = $id(errorId);
+        if (!error) return;
+        if (!input.value) {
+          error.textContent = '';
+          input.classList.remove('field-error', 'field-success');
           return;
         }
-      }
-      
+        const valido = /^(0412|0414|0416|0422|0424|0426)\d{7}$/.test(input.value);
+        error.textContent = valido ? '✓ Teléfono válido' : '✗ Formato inválido (11 dígitos)';
+        error.style.color = valido ? '#22c55e' : '#ef4444';
+        input.classList.toggle('field-error', !valido);
+        input.classList.toggle('field-success', valido);
+      });
+    });
+    
+    // Prefijo + sufijo (si el formulario los usa): mantener sincronizado el teléfono completo
+    const actualizarEstadoTelefono = (modoEdicion) => {
+      const valor = sincronizarTelefonoProveedor(modoEdicion);
+      const error = $id(modoEdicion ? 'e-celular-error' : 'c-celular-error');
+      if (!error) return;
+      if (!valor) { error.textContent = ''; return; }
+      const valido = esCelularVenezolanoValido(valor);
+      error.textContent = valido ? '✓ Teléfono válido' : '✗ Formato inválido (11 dígitos)';
+      error.style.color = valido ? '#22c55e' : '#ef4444';
+    };
+    [false, true].forEach((modoEdicion) => {
+      const { prefijo, sufijo } = obtenerCamposTelefono(modoEdicion);
+      $id(prefijo)?.addEventListener('change', () => actualizarEstadoTelefono(modoEdicion));
+      const elSufijo = $id(sufijo);
+      elSufijo?.addEventListener('input', () => {
+        elSufijo.value = elSufijo.value.replace(/\D/g, '').slice(0, 7);
+        actualizarEstadoTelefono(modoEdicion);
+      });
+    });
+
+    // Envío del formulario "Registrar proveedor". Sin este listener el navegador hace un POST nativo
+    // a la URL de la página (/proveedores, que solo acepta GET) y Flask responde 405 Method Not Allowed.
+    formCrear?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+
       try {
+        const validacionCliente = validarDatosProveedorFormulario(formCrear, false);
+        if (!validacionCliente.valido) {
+          showFeedback('error', validacionCliente.mensaje || 'Por favor, corrige los errores en el formulario.');
+          if (validacionCliente.campoId) focoCampo(validacionCliente.campoId);
+          return;
+        }
+
+        if (window.FieldValidator && typeof window.FieldValidator.validateForm === 'function') {
+          const isValid = window.FieldValidator.validateForm(formCrear);
+          if (!isValid) {
+            showFeedback('error', 'Por favor, corrige los errores en el formulario.');
+            const primerError = formCrear.querySelector('.field-error');
+            if (primerError) {
+              primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              primerError.focus();
+            }
+            return;
+          }
+        }
+
         await crearProveedorFromForm();
         closeModal('modal-proveedor-crear');
         await cargarProveedores((inputTexto?.value || '').trim());
@@ -1716,7 +1761,7 @@ async function generarReporteProveedores() {
   if (btnGenerarReporte) {
     btnGenerarReporte.disabled = true;
     btnGenerarReporte.textContent = "Cargando...";
-  }
+ }
   
   try {
     const data = await fetchJsonReportes("/api/proveedores/reportes", {
@@ -1778,6 +1823,7 @@ function exportarProveedoresExcel() {
     "Dirección": p.direccion || "",
     "Límite Crédito": p.limite_credito || 0,
     "Productos": p.total_productos || 0
+ 
   }));
   
   if (typeof XLSX === 'undefined') {
@@ -1967,7 +2013,7 @@ function imprimirReporteProveedores() {
               <td>${escapeHtmlReportes(p.tipo || '-')}</td>
               <td>${escapeHtmlReportes(p.celular || '-')}</td>
               <td>${p.total_productos || 0} productos</td>
-              <td>${p.limite_credito ? Number(p.limite_credito).toLocaleString('es-VE') + ' Bs' : '-'}</td>
+              <td>${p.limite_credito ? Number(p.limite_credito).toLocaleString('es-VE') + ' Bs' : "-"}</td>
             </tr>
           `).join('')}
         </tbody>
