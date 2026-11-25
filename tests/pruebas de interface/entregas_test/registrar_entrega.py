@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 # y al menos un delivery registrado (el creado por crear_personal_delivery.py o
 # cualquiera disponible en el select). En el select se elige la primera opción
 # disponible de factura pendiente y de delivery.
-URL_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/entregas"
+URL_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/entregas"
 TIEMPO_ESPERA = 10
 
 # Dirección de entrega de prueba (el validador filtra '.' y ',', por lo que en

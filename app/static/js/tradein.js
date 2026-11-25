@@ -11,6 +11,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const detallesFallas = document.getElementById("tradein-detalles");
   const mensajes = document.getElementById("tradein-mensajes");
 
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
   function formatMoney(value) {
     const numero = Number(value);
     if (!Number.isFinite(numero)) {
@@ -75,8 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
         detallesFallas.innerHTML = detalles.map((detalle) => `
           <li>
             <div>
-              <strong>${detalle.etiqueta}</strong>
-              <span class="tradein-detalle-descripcion">${detalle.descripcion || ''}</span>
+              <strong>${escapeHtml(detalle.etiqueta)}</strong>
+              <span class="tradein-detalle-descripcion">${escapeHtml(detalle.descripcion || '')}</span>
             </div>
             <strong>${formatMoney(detalle.costo)}</strong>
           </li>
@@ -89,14 +99,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const advertencias = Array.isArray(resultado.advertencias) ? resultado.advertencias : [];
     if (mensajes) {
       mensajes.innerHTML = advertencias.length > 0
-        ? advertencias.map((advertencia) => `<p class="warning">${advertencia}</p>`).join("")
+        ? advertencias.map((advertencia) => `<p class="warning">${escapeHtml(advertencia)}</p>`).join("")
         : '<p class="success">Cotización generada correctamente.</p>';
     }
   }
 
   function renderError(mensaje) {
     if (mensajes) {
-      mensajes.innerHTML = `<p class="error">${mensaje}</p>`;
+      mensajes.innerHTML = `<p class="error">${escapeHtml(mensaje)}</p>`;
     }
     montoEstimado.textContent = "$0.00";
     precioBase.textContent = "$0.00";

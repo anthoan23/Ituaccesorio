@@ -27,13 +27,13 @@ class conectar:
                 database=database
             )
         except mysql.connector.Error as err:
-            print(f"Error al conectar a {database} ({host}): {err}")
+            logger.error(f"Error al conectar a {database} ({host}): {err}")
             self.ultimo_error = err
             return None
 
     def mostrar_error(self) -> str:
         """Muestra el error de conexión por consola y devuelve el mensaje para el usuario."""
-        print(f"Error de conexión a la base de datos: {self.ultimo_error}")
+        logger.error(f"Error de conexión a la base de datos: {self.ultimo_error}")
         return (
             "No se pudo conectar con la base de datos. "
             "Inténtalo de nuevo más tarde o comunícate con los técnicos."

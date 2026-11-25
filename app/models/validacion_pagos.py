@@ -1,17 +1,20 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_texto_numero,
     validar_numero,
     validar_decimal,
-    validar_sin_caracteres_especiales,
-    validar_codigo_factura,
+    validar_texto_numero,
 )
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
 import traceback
+
+
+logger = logging.getLogger(__name__)
 
 
 class ValidacionPagosModel:
@@ -83,7 +86,8 @@ class ValidacionPagosModel:
         if not factura_id or not str(factura_id).strip():
             return "El ID de la factura no puede estar vacío."
         # Venta.ID_factura varchar(20); formato FAC-YYYYMM-XXXXXX (con guiones)
-        error = validar_codigo_factura(str(factura_id).strip(), 1, 20, "Factura")
+        error = validar_texto_numero(str(factura_id).strip(), 1, 20, "Factura",
+                             permitir_espacios=False, caracteres_extra="-")
         if error:
             return error
         return None
@@ -101,14 +105,14 @@ class ValidacionPagosModel:
         if not motivo or not str(motivo).strip():
             return "El motivo de rechazo no puede estar vacío."
         # Metodo_pago.Motivo_rechazo varchar(255)
-        error = validar_sin_caracteres_especiales(motivo, 5, 255, "Motivo del rechazo", permitir_espacios=True)
+        error = validar_texto_numero(motivo, 5, 255, "Motivo del rechazo")
         if error:
             return error
         return None
 
     def _validar_filtros_reportes(self, filtros: Dict[str, Any]) -> Optional[str]:
         if filtros.get("q"):
-            error = validar_sin_caracteres_especiales(filtros["q"], 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(filtros["q"], 1, 100, "Búsqueda")
             if error:
                 return error
 
@@ -194,7 +198,7 @@ class ValidacionPagosModel:
                     pago["Monto"] = float(pago["Monto"])
             return pagos
         except Exception as e:
-            print(f"Error en obtener_pagos_pendientes: {e}")
+            logger.error(f"Error en obtener_pagos_pendientes: {e}")
             traceback.print_exc()
             return []
         finally:
@@ -237,7 +241,7 @@ class ValidacionPagosModel:
                     r["Monto"] = float(r["Monto"])
             return resultados
         except Exception as e:
-            print(f"Error en obtener_pagos_aprobados: {e}")
+            logger.error(f"Error en obtener_pagos_aprobados: {e}")
             traceback.print_exc()
             return []
         finally:
@@ -281,7 +285,7 @@ class ValidacionPagosModel:
                     r["Monto"] = float(r["Monto"])
             return resultados
         except Exception as e:
-            print(f"Error en obtener_pagos_rechazados: {e}")
+            logger.error(f"Error en obtener_pagos_rechazados: {e}")
             traceback.print_exc()
             return []
         finally:
@@ -290,7 +294,8 @@ class ValidacionPagosModel:
 
     # ==================== APROBAR / RECHAZAR ====================
 
-    def aprobar_pago(self, factura_id: str = None, empleado_id: str = None) -> Dict[str, Any]:
+    def aprobar_pago(self, factura_id: str = None, empleado_id: str = None,
+                     fecha_pago: str = None) -> Dict[str, Any]:
         factura = factura_id or self.factura_id
         empleado = empleado_id or self.empleado_id
 
@@ -321,14 +326,36 @@ class ValidacionPagosModel:
         cursor = db.cursor()
         try:
             fecha_actual = datetime.now()
-            cursor.execute("""
-                UPDATE Metodo_pago
-                SET
-                    Estado_pago = 'aprobado',
-                    Aprobado_por = %s,
-                    Fecha_aprobacion = %s
-                WHERE ID_factura = %s
-            """, (empleado, fecha_actual, factura))
+            # Condición de estado EN el WHERE (atómico): antes la verificación
+            # "pendiente" corría en otra conexión y dos empleados aprobando a
+            # la vez se sobrescribían Aprobado_por/Fecha_aprobacion.
+            if fecha_pago:
+                # Fecha_pago viaja en el MISMO UPDATE (antes el controller
+                # hacía 2 UPDATEs: actualizar_fecha_pago + aprobar, con
+                # fallo silencioso en el primero y 2 conexiones).
+                cursor.execute("""
+                    UPDATE Metodo_pago
+                    SET
+                        Estado_pago = 'aprobado',
+                        Aprobado_por = %s,
+                        Fecha_aprobacion = %s,
+                        Fecha_pago = %s
+                    WHERE ID_factura = %s
+                      AND LOWER(TRIM(Estado_pago)) = 'pendiente'
+                """, (empleado, fecha_actual, fecha_pago, factura))
+            else:
+                cursor.execute("""
+                    UPDATE Metodo_pago
+                    SET
+                        Estado_pago = 'aprobado',
+                        Aprobado_por = %s,
+                        Fecha_aprobacion = %s
+                    WHERE ID_factura = %s
+                      AND LOWER(TRIM(Estado_pago)) = 'pendiente'
+                """, (empleado, fecha_actual, factura))
+            if cursor.rowcount == 0:
+                db.rollback()
+                return {"success": False, "error": "El pago no está pendiente o ya fue procesado."}
             db.commit()
 
             if self.usuario_id:
@@ -342,7 +369,7 @@ class ValidacionPagosModel:
             return {"success": True, "message": "Pago aprobado exitosamente."}
         except Exception as e:
             db.rollback()
-            print(f"Error en aprobar_pago: {e}")
+            logger.error(f"Error en aprobar_pago: {e}")
             return {"success": False, "error": f"Error al aprobar pago: {str(e)}"}
         finally:
             cursor.close()
@@ -384,6 +411,7 @@ class ValidacionPagosModel:
         cursor = db.cursor()
         try:
             fecha_actual = datetime.now()
+            # Condición de estado EN el WHERE (atómico), ver aprobar_pago.
             cursor.execute("""
                 UPDATE Metodo_pago
                 SET
@@ -392,7 +420,11 @@ class ValidacionPagosModel:
                     Rechazado_por = %s,
                     Fecha_rechazo = %s
                 WHERE ID_factura = %s
+                  AND LOWER(TRIM(Estado_pago)) = 'pendiente'
             """, (motivo, empleado, fecha_actual, factura))
+            if cursor.rowcount == 0:
+                db.rollback()
+                return {"success": False, "error": "El pago no está pendiente o ya fue procesado."}
             db.commit()
 
             if self.usuario_id:
@@ -406,7 +438,7 @@ class ValidacionPagosModel:
             return {"success": True, "message": "Pago rechazado exitosamente."}
         except Exception as e:
             db.rollback()
-            print(f"Error en rechazar_pago: {e}")
+            logger.error(f"Error en rechazar_pago: {e}")
             return {"success": False, "error": f"Error al rechazar pago: {str(e)}"}
         finally:
             cursor.close()
@@ -451,7 +483,7 @@ class ValidacionPagosModel:
                     item["Cantidad_articulo"] = int(item["Cantidad_articulo"])
             return items
         except Exception as e:
-            print(f"Error en obtener_detalle_venta: {e}")
+            logger.error(f"Error en obtener_detalle_venta: {e}")
             return []
         finally:
             cursor.close()
@@ -539,7 +571,7 @@ class ValidacionPagosModel:
                 "total_monto": total_monto
             }
         except Exception as e:
-            print(f"Error en obtener_reportes_pagos: {e}")
+            logger.error(f"Error en obtener_reportes_pagos: {e}")
             return {"success": False, "error": str(e), "pagos": [], "total": 0}
         finally:
             cursor.close()
@@ -567,7 +599,7 @@ class ValidacionPagosModel:
             """, (datetime.now(), factura))
             db.commit()
         except Exception as e:
-            print(f"Error en actualizar_fecha_pago: {e}")
+            logger.error(f"Error en actualizar_fecha_pago: {e}")
             db.rollback()
         finally:
             cursor.close()

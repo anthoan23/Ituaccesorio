@@ -1,9 +1,15 @@
 from __future__ import annotations
+import logging
+import requests
+from typing import Dict
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import validar_numero, validar_texto_numero
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
+
+
+logger = logging.getLogger(__name__)
 
 
 class CarritoModel:
@@ -93,41 +99,62 @@ class CarritoModel:
 
             return nuevo_id
         except Exception as e:
-            print(f"Error generando ID: {e}")
+            logger.error(f"Error generando ID: {e}")
             import time
             import secrets
             return f"LST{int(time.time())}{secrets.randbelow(90) + 10}"
         finally:
             cursor.close()
             db.close()
-
+    
     def _obtener_tasas(self) -> Dict[str, float]:
-        """Obtiene las tasas de cambio actuales"""
-        db = self.__conexion_bd.conexion1()
-        if not db:
-            return {"oficial": 520.91, "paralelo": 710.12}
+        """
+        Obtiene las tasas de cambio (oficial y paralelo) desde
+        https://ve.dolarapi.com. No usa la base de datos.
 
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT Tasa_oficial, Tasa_paralelo
-                FROM Tasas_cambio
-                ORDER BY ID_tasa DESC
-                LIMIT 1
-            """)
-            row = cursor.fetchone()
-            if row:
-                return {
-                    "oficial": float(row.get("Tasa_oficial", 520.91)),
-                    "paralelo": float(row.get("Tasa_paralelo", 710.12))
-                }
-            return {"oficial": 520.91, "paralelo": 710.12}
-        except Exception as e:
-            print(f"Error obteniendo tasas: {e}")
-            return {"oficial": 520.91, "paralelo": 710.12}
-        finally:
-            cursor.close()
-            db.close()
+        - 'oficial' es la tasa por defecto si algo falla.
+        - 'paralelo' también tiene un valor estático de respaldo.
+        """
+        TASAS_FALLBACK = {"oficial": 520.91, "paralelo": 710.12}
+
+        endpoints = {
+            "oficial": "https://ve.dolarapi.com/v1/dolares/oficial",
+            "paralelo": "https://ve.dolarapi.com/v1/dolares/paralelo",
+        }
+
+        tasas: Dict[str, float] = dict(TASAS_FALLBACK)
+
+        for clave, url in endpoints.items():
+            try:
+                respuesta = requests.get(url, timeout=5)
+                respuesta.raise_for_status()
+                data = respuesta.json()
+
+                # La API devuelve 'promedio' como la tasa utilizable.
+                # Si viniera nulo, intentamos 'compra'/'venta' como respaldo.
+                valor = data.get("promedio")
+                if valor is None:
+                    valor = data.get("venta") or data.get("compra")
+
+                if valor is not None:
+                    tasas[clave] = float(valor)
+                else:
+                    logger.warning(
+                        "La API de DolarApi no devolvió un valor utilizable para '%s': %s",
+                        clave, data,
+                    )
+            except (requests.RequestException, ValueError) as e:
+                logger.warning(
+                    "No se pudo obtener la tasa '%s' desde %s (%s). Se usa la tasa estática %.2f",
+                    clave, url, e, TASAS_FALLBACK[clave],
+                )
+            except Exception as e:  # red de seguridad
+                logger.warning(
+                    "Error inesperado al obtener la tasa '%s' (%s). Se usa la estática %.2f",
+                    clave, e, TASAS_FALLBACK[clave],
+                )
+
+        return tasas
 
     # ==================== CONSULTAS ====================
 
@@ -229,7 +256,7 @@ class CarritoModel:
                 "tasas": tasas
             }
         except Exception as e:
-            print(f"Error en obtener_carrito: {e}")
+            logger.error(f"Error en obtener_carrito: {e}")
             import traceback
             traceback.print_exc()
             return {"items": [], "total": 0, "tasas": {"oficial": 0, "paralelo": 0}}
@@ -313,7 +340,7 @@ class CarritoModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en agregar_al_carrito: {e}")
+            logger.error(f"Error en agregar_al_carrito: {e}")
             return {"success": False, "error": "Error al agregar al carrito."}
         finally:
             cursor.close()
@@ -369,7 +396,7 @@ class CarritoModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_cantidad: {e}")
+            logger.error(f"Error en actualizar_cantidad: {e}")
             return {"success": False, "error": "Error al actualizar cantidad."}
         finally:
             cursor.close()

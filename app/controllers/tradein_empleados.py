@@ -4,6 +4,7 @@ import json
 
 from flask import Blueprint, jsonify, render_template, request, g, current_app
 from werkzeug.utils import secure_filename
+from app.utils.helpers import guardar_fotos_evidencias
 from app.utils.decorators import jwt_required, tiene_permiso, solo_roles
 from app.models.tradein_empleados import TradeInEmpleados
 import traceback
@@ -37,22 +38,10 @@ def _obtener_usuario_id():
 
 
 def _guardar_fotos():
-    fotos = []
-    archivos = request.files.getlist("fotos")
-    for archivo in archivos:
-        if archivo and getattr(archivo, "filename", ""):
-            nombre_seguro = secure_filename(archivo.filename)
-            _, extension = os.path.splitext(nombre_seguro)
-            extension = extension.lower()[:10] or ".jpg"
-            nombre_final = f"tradein_{uuid.uuid4().hex}{extension}"
+    """Valida y guarda las fotos vía el helper único (whitelist + 10 MB).
 
-            carpeta_destino = os.path.join(current_app.static_folder, "img", "evidencias", "trade_in")
-            os.makedirs(carpeta_destino, exist_ok=True)
-
-            ruta_fisica = os.path.join(carpeta_destino, nombre_final)
-            archivo.save(ruta_fisica)
-            fotos.append(f"/static/img/evidencias/trade_in/{nombre_final}")
-    return fotos
+    Devuelve (fotos, error): con error, fotos es None."""
+    return guardar_fotos_evidencias(request.files.getlist("fotos"), "evidencias/trade_in")
 
 
 # ==================== REGISTRAR NUEVO TRADE-IN ====================
@@ -68,7 +57,9 @@ def api_registrar_trade_in():
 
         usuario_id = _obtener_usuario_id()
         tests_data = request.form.get("tests", "[]")
-        fotos = _guardar_fotos()
+        fotos, error_fotos = _guardar_fotos()
+        if error_fotos:
+            return jsonify({"success": False, "error": error_fotos}), 400
 
         modelo = TradeInEmpleados(
             cliente_id=request.form.get("cliente_id", "").strip(),
@@ -127,7 +118,10 @@ def api_actualizar_trade_in(tradein_id):
 
         usuario_id = _obtener_usuario_id()
         tests_data = request.form.get("tests", "[]")
-        fotos = _guardar_fotos()
+        fotos, error_fotos = _guardar_fotos()
+        if error_fotos:
+            return jsonify({"success": False, "error": error_fotos}), 400
+        fotos_eliminar = request.form.getlist("fotos_eliminar")
 
         modelo = TradeInEmpleados(
             trade_in_id=tradein_id,
@@ -143,7 +137,8 @@ def api_actualizar_trade_in(tradein_id):
             patron=request.form.get("patron", "").strip() or None
         )
 
-        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests_data)
+        resultado = modelo.actualizar_trade_in(fotos=fotos, tests=tests_data,
+                                               fotos_eliminar=fotos_eliminar)
 
         if resultado["success"]:
             return jsonify(resultado), 200

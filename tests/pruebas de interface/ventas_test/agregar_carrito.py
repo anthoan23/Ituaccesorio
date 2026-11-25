@@ -11,7 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # Nota: el badge de ventas.js (#cart-count) está comentado en catalogo.html; la
 # confirmación real del JS es el toast ".custom-toast" y el contador del widget
 # del carrito del navbar ([data-cart-count], solo se pinta para clientes).
-URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/catalogo"
+URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/catalogo"
 TIEMPO_ESPERA = 10
 
 

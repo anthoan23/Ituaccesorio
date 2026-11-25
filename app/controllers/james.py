@@ -7,9 +7,11 @@ james_blueprint = Blueprint("james", __name__)
 ia_service = IAService()
 
 @james_blueprint.route("/james", methods=["POST"])
+@jwt_required
+@tiene_permiso("Taller", "registrar")
 def consultar_informacion_orden():
     data = request.get_json(silent=True) or request.form
-    ID_orden = data.get("ID_orden", "").strip()
+    ID_orden = str(data.get("ID_orden") or "").strip()
 
     if not ID_orden:
         return jsonify({"success": False, "message": "El ID de la orden es obligatorio."}), 400
@@ -20,6 +22,9 @@ def consultar_informacion_orden():
 
     if isinstance(resultado, str):
         return jsonify({"success": False, "message": resultado}), 404
+    if isinstance(personales, str):
+        # El modelo devuelve str también para fallos de BD/consultas
+        return jsonify({"success": False, "message": "No se pudo consultar los técnicos."}), 503
 
     # --- LÓGICA DE IA ---
     decision_ia = ia_service.determinar_tecnico_ideal(resultado, personales)

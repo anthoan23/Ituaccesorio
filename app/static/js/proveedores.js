@@ -378,13 +378,6 @@
     renderTablaProveedores(state.proveedores);
   }
 
-  async function cargarModelos() {
-    if (state.modelos) return state.modelos;
-    const data = await fetchJson('/api/proveedores/modelos', { method: 'GET' });
-    state.modelos = Array.isArray(data?.modelos) ? data.modelos : Array.isArray(data) ? data : [];
-    return state.modelos;
-  }
-
   async function obtenerModelosFiltro(marcaId = null, claseId = null, q = null) {
     const params = [];
     const parts = [];
@@ -1997,8 +1990,8 @@ function imprimirReporteProveedores() {
       </style>
     </head>
     <body>
-      <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
-      <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+      <button class="btn-print no-print" type="button">🖨 Imprimir</button>
+      <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio"></div>
       <h1>REPORTE DE PROVEEDORES</h1>
       <div class="info">Generado: ${fecha} • Total proveedores: ${reporteDatosActuales.length}</div>
       ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
@@ -2023,6 +2016,13 @@ function imprimirReporteProveedores() {
     </html>
   `);
   ventana.document.close();
+
+  // Los handlers inline quedan bloqueados por la CSP en la ventana
+  // generada: se conectan por programación.
+  const btnImprimir = ventana.document.querySelector(".btn-print");
+  if (btnImprimir) btnImprimir.addEventListener("click", () => ventana.print());
+  const logoReporte = ventana.document.querySelector(".logo img");
+  if (logoReporte) logoReporte.addEventListener("error", () => { logoReporte.style.display = "none"; });
 }
 
 if (btnReportes) {

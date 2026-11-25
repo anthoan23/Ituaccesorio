@@ -33,8 +33,8 @@ def api_listar_especialidades():
 @tiene_permiso('Especialidades', 'registrar')
 def api_agregar_especialidad():
     data = request.get_json(silent=True) or request.form
-    nueva_especialidad = data.get("nombre_especialidad", "").strip()
-    descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
+    nueva_especialidad = str(data.get("nombre_especialidad") or "").strip()
+    descripcion_especialidad = str(data.get("descripcion_especialidad") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -56,9 +56,9 @@ def api_agregar_especialidad():
 @tiene_permiso('Especialidades', 'modificar')
 def api_actualizar_especialidad():
     data = request.get_json(silent=True) or request.form
-    especialidad_id = data.get("id_especialidad", "").strip()
-    nombre_especialidad = data.get("nombre_especialidad", "").strip()
-    descripcion_especialidad = data.get("descripcion_especialidad", "").strip()
+    especialidad_id = str(data.get("id_especialidad") or "").strip()
+    nombre_especialidad = str(data.get("nombre_especialidad") or "").strip()
+    descripcion_especialidad = str(data.get("descripcion_especialidad") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -81,7 +81,7 @@ def api_actualizar_especialidad():
 @tiene_permiso('Especialidades', 'eliminar')
 def api_eliminar_especialidad():
     data = request.get_json(silent=True) or request.form
-    especialidad_id = data.get("id_especialidad", "").strip()
+    especialidad_id = str(data.get("id_especialidad") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 

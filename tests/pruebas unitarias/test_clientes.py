@@ -180,7 +180,7 @@ class TestListarClientes:
 
         resultado = Clientes().listar_clientes()
 
-        assert resultado == "Error en consulta: fallo simulado"
+        assert resultado == []
 
     def test_cierra_cursor_y_conexion(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -290,6 +290,7 @@ class TestEliminarCliente:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = ("Ana Pérez",)
         cursor.fetchall.return_value = []
 
@@ -324,23 +325,15 @@ class TestEliminarCliente:
             ),
             pytest.param(
                 "J-1234567-9",
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-incompleto",
             ),
             pytest.param(
                 "V-12345678-9",
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-letra-invalida",
-            ),
-            pytest.param(
-                "J123456789",
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
-                id="rif-sin-guiones",
-            ),
-            pytest.param(
-                "j-12345678-9",
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
-                id="rif-en-minusculas",
             ),
             pytest.param(
                 "12345678#",
@@ -382,7 +375,7 @@ class TestEliminarCliente:
 
         resultado = Clientes(ID_cliente=CEDULA_MINIMA).eliminar_cliente()
 
-        assert resultado == "Error al eliminar cliente: fallo simulado"
+        assert resultado == "Error al eliminar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -734,7 +727,9 @@ class TestCrearCliente:
 
         resultado = Clientes().crear_cliente(**datos)
 
-        assert resultado is False
+        # cédula vacía → el validador la reporta; otros campos → su mensaje
+        assert ("no puede estar vací" in resultado
+                or "debe contener solo números" in resultado)
         cursor.execute.assert_not_called()
         db.commit.assert_not_called()
 
@@ -746,7 +741,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Cliente (").args[1] == (
             CEDULA_MINIMA,
             None,
@@ -774,7 +769,7 @@ class TestCrearCliente:
             DIRECCION_VALIDA,
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Cliente (").args[1] == (
             CEDULA_MAXIMA,
             DIRECCION_VALIDA,
@@ -790,7 +785,7 @@ class TestCrearCliente:
             1234567, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         assert llamada_con(cursor, "INSERT INTO Persona_natural").args[1][0] == (
             "1234567"
         )
@@ -803,7 +798,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "existe" in resultado
         sin_sentencia(cursor, "INSERT")
         db.commit.assert_not_called()
 
@@ -819,11 +814,12 @@ class TestCrearCliente:
             correo="ana@mail",
         )
 
-        assert resultado is False
+        assert "correo" in resultado
         cursor.execute.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -831,7 +827,7 @@ class TestCrearCliente:
                 CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
             )
 
-        assert resultado is True
+        assert "exitosamente" in resultado
         bitacora_clase.assert_called_once_with(
             accion="Registrar cliente natural",
             descripcion=(
@@ -848,7 +844,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "Error al conectar" in resultado
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -860,7 +856,7 @@ class TestCrearCliente:
             CEDULA_MINIMA, NOMBRE_MINIMO, APELLIDO_MINIMO, TELEFONO_VALIDO
         )
 
-        assert resultado is False
+        assert "Error al registrar" in resultado
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -1111,12 +1107,13 @@ class TestActualizarDatosCliente:
             celular=TELEFONO_VALIDO,
         )
 
-        assert resultado == "Error al actualizar cliente: fallo simulado"
+        assert resultado == "Error al actualizar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = Clientes(usuario_id="USR-001").actualizar_datos_cliente(
@@ -1246,42 +1243,42 @@ class TestRegistrarPersonaNatural:
             ),
             pytest.param(
                 {"Telefono_cliente": ""},
-                "El celular/teléfono es obligatorio.",
+                "El campo Celular no puede estar vacío.",
                 id="telefono-vacio",
             ),
             pytest.param(
                 {"Telefono_cliente": None},
-                "El celular/teléfono es obligatorio.",
+                "El campo Celular no puede estar vacío.",
                 id="telefono-none",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412123456"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular debe tener al menos 11 dígitos.",
                 id="telefono-demasiado-corto",
             ),
             pytest.param(
                 {"Telefono_cliente": "041212345678"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular no puede tener más de 11 dígitos.",
                 id="telefono-demasiado-largo",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412abc4567"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular solo puede contener números.",
                 id="telefono-no-numerico",
             ),
             pytest.param(
                 {"Correo_cliente": "ana@mail"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe tener un punto en el dominio (después del @).",
                 id="correo-sin-punto",
             ),
             pytest.param(
                 {"Correo_cliente": "anamail.com"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe contener el símbolo @.",
                 id="correo-sin-arroba",
             ),
             pytest.param(
                 {"Direccion_cliente": "D" * 41},
-                "La dirección no puede exceder los 40 caracteres.",
+                "El campo Dirección no puede tener más de 40 caracteres.",
                 id="direccion-demasiado-larga",
             ),
         ],
@@ -1320,12 +1317,13 @@ class TestRegistrarPersonaNatural:
 
         resultado = persona().registrar_persona_natural()
 
-        assert resultado == "Error al registrar cliente: fallo simulado"
+        assert resultado == "Error al registrar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -1367,22 +1365,27 @@ class TestActualizarPersonaNatural:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
-    def test_telefono_opcional_vacio(self, conexion_falsa):
+    def test_telefono_opcional_vacio_no_borra_el_telefono(self, conexion_falsa):
+        """Con el UPDATE dinámico, un campo vacío NO se toca (antes se
+        sobreescribía con None y se perdía el dato)."""
         db, cursor = conexion_falsa
 
         resultado = persona(Telefono_cliente="").actualizar_persona_natural()
 
         assert resultado == "El cliente 'Ana Paz' se actualizó exitosamente."
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        sql_cliente = llamada_con(cursor, "UPDATE Cliente SET").args[0]
+        assert "Celular_cliente" not in sql_cliente
+        assert "Correo_cliente" in sql_cliente  # los campos con valor sí se actualizan
         db.commit.assert_called_once()
 
-    def test_telefono_opcional_none(self, conexion_falsa):
+    def test_telefono_opcional_none_no_borra_el_telefono(self, conexion_falsa):
         db, cursor = conexion_falsa
 
         resultado = persona(Telefono_cliente=None).actualizar_persona_natural()
 
         assert resultado == "El cliente 'Ana Paz' se actualizó exitosamente."
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        sql_cliente = llamada_con(cursor, "UPDATE Cliente SET").args[0]
+        assert "Celular_cliente" not in sql_cliente
 
     def test_valores_maximos(self, conexion_falsa):
         db, cursor = conexion_falsa
@@ -1454,22 +1457,22 @@ class TestActualizarPersonaNatural:
             ),
             pytest.param(
                 {"Telefono_cliente": "0412123456"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular debe tener al menos 11 dígitos.",
                 id="telefono-demasiado-corto",
             ),
             pytest.param(
                 {"Telefono_cliente": "041212345678"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular no puede tener más de 11 dígitos.",
                 id="telefono-demasiado-largo",
             ),
             pytest.param(
                 {"Correo_cliente": "ana@mail"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe tener un punto en el dominio (después del @).",
                 id="correo-invalido",
             ),
             pytest.param(
                 {"Direccion_cliente": "D" * 41},
-                "La dirección no puede exceder los 40 caracteres.",
+                "El campo Dirección no puede tener más de 40 caracteres.",
                 id="direccion-demasiado-larga",
             ),
         ],
@@ -1495,12 +1498,13 @@ class TestActualizarPersonaNatural:
 
         resultado = persona().actualizar_persona_natural()
 
-        assert resultado == "Error al actualizar cliente: fallo simulado"
+        assert resultado == "Error al actualizar el cliente. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = persona(usuario_id="USR-001").actualizar_persona_natural()
@@ -1546,6 +1550,36 @@ class TestRegistrarClienteJuridico:
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
 
+    def test_rif_sin_guiones_se_acepta(self, conexion_falsa):
+        db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None
+
+        resultado = juridico(
+            Rif_cliente="J123456789", Correo_cliente=None, Direccion_cliente=None
+        ).registrar_cliente_juridico()
+
+        assert resultado == (
+            f"El cliente jurídico '{RAZON_SOCIAL_MINIMA}' se registró exitosamente."
+        )
+        assert llamada_con(cursor, "INSERT INTO Cliente (").args[1][0] == "J123456789"
+        db.commit.assert_called_once()
+        cierra_recursos(db, cursor)
+
+    def test_rif_en_minusculas_se_normaliza_a_mayusculas(self, conexion_falsa):
+        db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None
+
+        resultado = juridico(
+            Rif_cliente="j-12345678-9", Correo_cliente=None, Direccion_cliente=None
+        ).registrar_cliente_juridico()
+
+        assert resultado == (
+            f"El cliente jurídico '{RAZON_SOCIAL_MINIMA}' se registró exitosamente."
+        )
+        assert llamada_con(cursor, "INSERT INTO Cliente (").args[1][0] == "J-12345678-9"
+        db.commit.assert_called_once()
+        cierra_recursos(db, cursor)
+
     def test_razon_social_maxima(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = None
@@ -1568,78 +1602,70 @@ class TestRegistrarClienteJuridico:
         [
             pytest.param(
                 {"Rif_cliente": ""},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF no puede estar vacío.",
                 id="rif-vacio",
             ),
             pytest.param(
                 {"Rif_cliente": None},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF no puede estar vacío.",
                 id="rif-none",
             ),
             pytest.param(
                 {"Rif_cliente": "J-1234567-9"},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-incompleto",
             ),
             pytest.param(
                 {"Rif_cliente": "V-12345678-9"},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-letra-invalida",
             ),
             pytest.param(
-                {"Rif_cliente": "J123456789"},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
-                id="rif-sin-guiones",
-            ),
-            pytest.param(
-                {"Rif_cliente": "j-12345678-9"},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
-                id="rif-en-minusculas",
-            ),
-            pytest.param(
                 {"Razon_social": ""},
-                "La razón social del cliente no puede estar vacía.",
+                "El campo Razón social del cliente no puede estar vacío.",
                 id="razon-social-vacia",
             ),
             pytest.param(
                 {"Razon_social": "   "},
-                "La razón social del cliente no puede estar vacía.",
+                "El campo Razón social del cliente no puede estar vacío.",
                 id="razon-social-solo-espacios",
             ),
             pytest.param(
                 {"Razon_social": "Empresa @ C.A."},
-                "La razón social solo puede contener letras, números, puntos, "
-                "guiones, espacios y &.",
+                "El campo Razón social del cliente solo puede contener letras, "
+                "números, acentos, espacios, puntos, guiones y ampersand (&).",
                 id="razon-social-caracteres-invalidos",
             ),
             pytest.param(
                 {"Razon_social": "E" * 61},
-                "La razón social del cliente no puede exceder los 60 caracteres.",
+                "El campo Razón social del cliente no puede tener más de 60 caracteres.",
                 id="razon-social-demasiado-larga",
             ),
             pytest.param(
                 {"Telefono_cliente": ""},
-                "El celular/teléfono es obligatorio.",
+                "El campo Celular no puede estar vacío.",
                 id="telefono-vacio",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412123456"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular debe tener al menos 11 dígitos.",
                 id="telefono-demasiado-corto",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412abc4567"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular solo puede contener números.",
                 id="telefono-no-numerico",
             ),
             pytest.param(
                 {"Correo_cliente": "ana@mail"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe tener un punto en el dominio (después del @).",
                 id="correo-invalido",
             ),
             pytest.param(
                 {"Direccion_cliente": "D" * 41},
-                "La dirección no puede exceder los 40 caracteres.",
+                "El campo Dirección no puede tener más de 40 caracteres.",
                 id="direccion-demasiado-larga",
             ),
         ],
@@ -1678,12 +1704,13 @@ class TestRegistrarClienteJuridico:
 
         resultado = juridico().registrar_cliente_juridico()
 
-        assert resultado == "Error al registrar cliente jurídico: fallo simulado"
+        assert resultado == "Error al registrar cliente jurídico. Intente de nuevo."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
         cursor.fetchone.return_value = None
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
@@ -1708,6 +1735,7 @@ class TestActualizarClienteJuridico:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         resultado = juridico().actualizar_cliente_juridico()
 
@@ -1732,6 +1760,8 @@ class TestActualizarClienteJuridico:
     def test_telefono_opcional_none(self, conexion_falsa):
         db, cursor = conexion_falsa
 
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
+
         resultado = juridico(
             Telefono_cliente=None
         ).actualizar_cliente_juridico()
@@ -1739,10 +1769,12 @@ class TestActualizarClienteJuridico:
         assert resultado == (
             f"El cliente jurídico '{RAZON_SOCIAL_MINIMA}' se actualizó exitosamente."
         )
-        assert llamada_con(cursor, "UPDATE Cliente SET").args[1][1] is None
+        assert "Celular_cliente" not in llamada_con(cursor, "UPDATE Cliente SET").args[0]
 
     def test_razon_social_maxima(self, conexion_falsa):
         db, cursor = conexion_falsa
+
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         resultado = juridico(
             Razon_social=RAZON_SOCIAL_MAXIMA
@@ -1762,43 +1794,44 @@ class TestActualizarClienteJuridico:
         [
             pytest.param(
                 {"Rif_cliente": ""},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF no puede estar vacío.",
                 id="rif-vacio",
             ),
             pytest.param(
                 {"Rif_cliente": "V-12345678-9"},
-                "El RIF debe tener el formato: J-12345678-9 o E-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-letra-invalida",
             ),
             pytest.param(
                 {"Razon_social": ""},
-                "La razón social del cliente no puede estar vacía.",
+                "El campo Razón social del cliente no puede estar vacío.",
                 id="razon-social-vacia",
             ),
             pytest.param(
                 {"Razon_social": "Empresa @ C.A."},
-                "La razón social solo puede contener letras, números, puntos, "
-                "guiones, espacios y &.",
+                "El campo Razón social del cliente solo puede contener letras, "
+                "números, acentos, espacios, puntos, guiones y ampersand (&).",
                 id="razon-social-caracteres-invalidos",
             ),
             pytest.param(
                 {"Razon_social": "E" * 61},
-                "La razón social del cliente no puede exceder los 60 caracteres.",
+                "El campo Razón social del cliente no puede tener más de 60 caracteres.",
                 id="razon-social-demasiado-larga",
             ),
             pytest.param(
                 {"Telefono_cliente": "0412123456"},
-                "El teléfono debe tener exactamente 11 dígitos numéricos.",
+                "El campo Celular debe tener al menos 11 dígitos.",
                 id="telefono-demasiado-corto",
             ),
             pytest.param(
                 {"Correo_cliente": "ana@mail"},
-                "El correo electrónico no es válido.",
+                "El campo correo debe tener un punto en el dominio (después del @).",
                 id="correo-invalido",
             ),
             pytest.param(
                 {"Direccion_cliente": "D" * 41},
-                "La dirección no puede exceder los 40 caracteres.",
+                "El campo Dirección no puede tener más de 40 caracteres.",
                 id="direccion-demasiado-larga",
             ),
         ],
@@ -1825,13 +1858,14 @@ class TestActualizarClienteJuridico:
         resultado = juridico().actualizar_cliente_juridico()
 
         assert resultado == (
-            "Error al actualizar cliente jurídico: fallo simulado"
+            "Error al actualizar cliente jurídico. Intente de nuevo."
         )
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = (RIF_VALIDO,)  # PK existente
 
         with patch("app.models.clientes.Bitacora") as bitacora_clase:
             resultado = juridico(

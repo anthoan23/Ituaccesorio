@@ -1,12 +1,15 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
-    validar_solo_letras_numeros,
-    validar_sin_caracteres_especiales,
+    validar_texto_numero,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class Modulo:
@@ -32,7 +35,7 @@ class Modulo:
 
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
         # modulo.nombre varchar(50) UNIQUE
-        error = validar_solo_letras_numeros(nombre, 1, 50, "Nombre", permitir_espacios=False)
+        error = validar_texto_numero(nombre, 1, 50, "Nombre", permitir_espacios=False)
         if error:
             return error
         self.nombre = nombre
@@ -40,7 +43,7 @@ class Modulo:
         descripcion = str(self.descripcion).strip() if self.descripcion else ""
         if descripcion:
             # modulo.descripcion text; 255 es política de UI
-            error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+            error = validar_texto_numero(descripcion, 1, 255, "Descripción")
             if error:
                 return error
         self.descripcion = descripcion
@@ -140,7 +143,7 @@ class Modulo:
 
             return "Módulo agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar módulo: {e}")
+            logger.error(f"Error al agregar módulo: {e}")
             db.rollback()
             return "Error al agregar módulo."
         finally:
@@ -182,7 +185,7 @@ class Modulo:
 
             return "Módulo actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar módulo: {e}")
+            logger.error(f"Error al actualizar módulo: {e}")
             db.rollback()
             return "Error al actualizar módulo."
         finally:
@@ -222,7 +225,7 @@ class Modulo:
 
             return "Módulo eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar módulo: {e}")
+            logger.error(f"Error al eliminar módulo: {e}")
             db.rollback()
             return "Error al eliminar módulo. Verifica que no esté en uso por permisos."
         finally:

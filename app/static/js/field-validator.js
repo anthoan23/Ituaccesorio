@@ -187,7 +187,8 @@
       validate: (value) => /^\d{6,8}$/.test(value),
       message: 'Ingrese una cédula válida (solo números, 6-8 dígitos)'
     },
-    sinEspacios: {
+    capitalizar: (v) => v.replace(/\p{L}+/gu, (palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase()),
+        sinEspacios: {
       filter: (value) => value.replace(/\s/g, ''),
       validate: (value) => !/\s/.test(value),
       message: 'No se permiten espacios'

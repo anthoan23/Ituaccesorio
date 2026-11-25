@@ -139,12 +139,6 @@
     }
   }
 
-  function cerrarModal(id) {
-    if (window.UiModal && typeof window.UiModal.closeById === 'function') {
-      window.UiModal.closeById(id);
-    }
-  }
-
   // ==================== DETALLE DE FACTURA ====================
   async function cargarDetalleFactura(facturaId, detalleContainer) {
     try {
@@ -354,7 +348,7 @@
         p.capture_image && p.capture_image !== "NULL" && p.capture_image !== ""
           ? `
             <div class="capture-image">
-              <img src="${escapeHtml(p.capture_image)}" alt="Comprobante de pago" onclick="window.open('${escapeHtml(p.capture_image)}', '_blank')" loading="lazy">
+              <img src="${escapeHtml(p.capture_image)}" alt="Comprobante de pago" data-action="abrir-comprobante" data-url="${escapeHtml(p.capture_image)}" loading="lazy">
               <div class="capture-hint">Haz clic para ampliar</div>
             </div>
           `
@@ -1000,8 +994,8 @@
         </style>
       </head>
       <body>
-        <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
-        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+        <button class="btn-print no-print" type="button">🖨 Imprimir</button>
+        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio"></div>
         <h1>REPORTE DE PAGOS</h1>
         <div class="info">Generado: ${fecha} • Total transacciones: ${reporteDatosActualesPagos.length}</div>
         ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
@@ -1029,6 +1023,13 @@
       </html>
     `);
     ventana.document.close();
+
+    // Los handlers inline quedan bloqueados por la CSP en la ventana
+    // generada: se conectan por programación.
+    const btnImprimir = ventana.document.querySelector(".btn-print");
+    if (btnImprimir) btnImprimir.addEventListener("click", () => ventana.print());
+    const logoReporte = ventana.document.querySelector(".logo img");
+    if (logoReporte) logoReporte.addEventListener("error", () => { logoReporte.style.display = "none"; });
   }
 
   // ==================== INICIALIZACIÓN ====================
@@ -1087,6 +1088,13 @@
     // Cargar datos iniciales
     cargarPagosPendientes();
   }
+
+  // Visor de comprobantes por delegación: los onclick inline quedan
+  // bloqueados por la CSP.
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-action='abrir-comprobante']");
+    if (el && el.dataset.url) window.open(el.dataset.url, "_blank");
+  });
 
   document.addEventListener("DOMContentLoaded", init);
 })();

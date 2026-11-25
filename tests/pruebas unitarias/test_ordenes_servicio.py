@@ -48,6 +48,9 @@ def crear_orden_valida(**cambios):
     return Orden_servicio(ID_empleado=ID_EMPLEADO).crear_orden(**datos)
 
 
+from app.utils.validators import validar_email, validar_rif
+
+
 class TestValidarEmail:
 
     @pytest.mark.parametrize(
@@ -59,20 +62,30 @@ class TestValidarEmail:
         ],
     )
     def test_correos_aceptados(self, email):
-        assert Orden_servicio._validar_email(email) is None
+        assert validar_email(email) is None
 
     @pytest.mark.parametrize(
-        "email",
+        "email, esperado",
         [
-            pytest.param("sin-arroba", id="sin-arroba"),
-            pytest.param("dos@@mail.com", id="dos-arroba"),
-            pytest.param("cliente@", id="sin-dominio"),
+            pytest.param(
+                "sin-arroba",
+                "El campo correo debe contener el símbolo @.",
+                id="sin-arroba",
+            ),
+            pytest.param(
+                "dos@@mail.com",
+                "El campo correo debe contener exactamente un símbolo @.",
+                id="dos-arroba",
+            ),
+            pytest.param(
+                "cliente@",
+                "El campo correo debe tener un dominio después del @.",
+                id="sin-dominio",
+            ),
         ],
     )
-    def test_correos_invalidos(self, email):
-        assert Orden_servicio._validar_email(email) == (
-            "El correo electrónico no es válido."
-        )
+    def test_correos_invalidos(self, email, esperado):
+        assert validar_email(email) == esperado
 
 
 class TestValidarRif:
@@ -86,7 +99,7 @@ class TestValidarRif:
         ],
     )
     def test_rif_valido(self, rif):
-        assert Orden_servicio._validar_rif(rif) is None
+        assert validar_rif(rif, tipos="JE") is None
 
     @pytest.mark.parametrize(
         "rif",
@@ -96,20 +109,34 @@ class TestValidarRif:
         ],
     )
     def test_rif_obligatorio(self, rif):
-        assert Orden_servicio._validar_rif(rif) == "El RIF es obligatorio."
+        assert validar_rif(rif, tipos="JE", obligatorio=True) == (
+            "El campo RIF no puede estar vacío."
+        )
 
     @pytest.mark.parametrize(
-        "rif",
+        "rif, esperado",
         [
-            pytest.param("V-12345678-9", id="letra-invalida"),
-            pytest.param("J-1234", id="muy-corto"),
-            pytest.param("J-1234567890", id="muy-largo"),
+            pytest.param(
+                "V-12345678-9",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
+                id="letra-invalida",
+            ),
+            pytest.param(
+                "J-1234",
+                "El campo RIF debe tener al menos 8 caracteres.",
+                id="muy-corto",
+            ),
+            pytest.param(
+                "J-1234567890",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
+                id="muy-largo",
+            ),
         ],
     )
-    def test_rif_con_formato_invalido(self, rif):
-        assert Orden_servicio._validar_rif(rif) == (
-            "El RIF debe tener el formato J-12345678-9 o E-12345678-9."
-        )
+    def test_rif_con_formato_invalido(self, rif, esperado):
+        assert validar_rif(rif, tipos="JE") == esperado
 
 
 class TestListarModelosTelefonos:
@@ -279,17 +306,17 @@ class TestConsultarOrden:
         [
             pytest.param(
                 "",
-                "El campo ID dela orden no puede estar vacío.",
+                "El campo ID de la orden no puede estar vacío.",
                 id="vacia",
             ),
             pytest.param(
                 "OS000000001",
-                "El campo ID dela orden no puede tener más de 10 caracteres.",
+                "El campo ID de la orden no puede tener más de 10 caracteres.",
                 id="demasiado-larga",
             ),
             pytest.param(
                 "OS#1",
-                "El campo ID dela orden solo puede contener letras, números, "
+                "El campo ID de la orden solo puede contener letras, números, "
                 "acentos y espacios.",
                 id="caracteres-invalidos",
             ),
@@ -444,7 +471,7 @@ class TestEliminarFotoOrdenServicio:
 
         assert resultado == {
             "success": False,
-            "error": "Error al eliminar la foto: fallo simulado",
+            "error": "Error al eliminar la foto. Intente de nuevo.",
         }
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
@@ -606,7 +633,7 @@ class TestRegistrarReparacion:
 
         assert resultado == {
             "success": False,
-            "error": "El campo Desdescripcion  no puede estar vacío.",
+            "error": "El campo Descripción no puede estar vacío.",
         }
         cursor.execute.assert_not_called()
 
@@ -691,7 +718,7 @@ class TestRegistrarReparacion:
             Descripcion_reparacion=DESCRIPCION_MINIMA,
         ).registrar_reparacion()
 
-        assert resultado == {"error": "Error en la base de datos: fallo simulado"}
+        assert resultado == {"error": "Error en la base de datos. Intente de nuevo."}
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -723,7 +750,8 @@ class TestCrearOrden:
             ),
             pytest.param(
                 {"id_cliente": "V-12345678-9", "tipo_cliente": "juridico"},
-                "El RIF debe tener el formato J-12345678-9 o E-12345678-9.",
+                "El campo RIF debe tener formato válido. "
+                "Ejemplo: J-12345678-9 o E-12345678-9.",
                 id="rif-invalido",
             ),
             pytest.param(

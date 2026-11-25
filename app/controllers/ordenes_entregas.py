@@ -54,7 +54,7 @@ def api_ordenes_entregas_productos(id_orden):
 @tiene_permiso('Entregas', 'modificar')
 def api_registrar_entrega(id_orden):
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         recibido_por = data.get('recibido_por')
         fecha_entrega = data.get('fecha_entrega')
         
@@ -66,12 +66,12 @@ def api_registrar_entrega(id_orden):
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
         
-        id_empleado = None
-        if usuario_id and str(usuario_id).isdigit():
-            id_empleado = int(usuario_id)
-        else:
-            id_empleado = 30124556
-            print(f"ID de empleado no numérico ('{usuario_id}'), usando valor por defecto: {id_empleado}")
+        # Sin fallback a un empleado fijo: si el token no trae un id
+        # numérico la entrega se rechaza (antes se atribuía silenciosamente
+        # al empleado 30124556, corrompiendo el rastro de auditoría).
+        if not usuario_id or not str(usuario_id).isdigit():
+            return jsonify({"success": False, "error": "Empleado no identificado en el token."}), 401
+        id_empleado = int(usuario_id)
         
         entrega = OrdenEntregaModel(
             id_orden=id_orden,
@@ -114,7 +114,7 @@ def api_obtener_entrega(id_entrega):
 def api_editar_entrega(id_entrega):
     """Edita los datos de una entrega existente"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         recibido_por = data.get('recibido_por')
         fecha_entrega = data.get('fecha_entrega')
         

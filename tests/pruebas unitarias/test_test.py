@@ -24,41 +24,6 @@ CEDULA_MAXIMA = "123456789"  # 9 dígitos (máximo)
 OBSERVACIONES = "Equipo con rayones leves"
 
 
-class TestBuscarTest:
-
-    def test_con_resultados(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        filas = [{"ID_orden": ORDEN_MINIMA, "Nombre_test": "Pantalla"}]
-        cursor.fetchall.return_value = filas
-
-        resultado = ModeloTests(ID_orden=ORDEN_MINIMA).buscar_test()
-
-        assert resultado == filas
-        assert "FROM revision_orden" in ultima_sentencia(cursor)
-        assert cursor.execute.call_args.args[1] == (ORDEN_MINIMA,)
-        cierra_recursos(db, cursor)
-
-    def test_sin_resultados(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchall.return_value = []
-
-        assert ModeloTests(ID_orden=ORDEN_MINIMA).buscar_test() == []
-
-    def test_conexion_caida(self, conexion_caída):
-        assert ModeloTests(ID_orden=ORDEN_MINIMA).buscar_test() is None
-
-    def test_no_modifica_la_bd(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchall.return_value = []
-
-        ModeloTests(ID_orden=ORDEN_MINIMA).buscar_test()
-
-        sin_sentencia(cursor, "INSERT")
-        sin_sentencia(cursor, "UPDATE")
-        sin_sentencia(cursor, "DELETE")
-        db.commit.assert_not_called()
-
-
 class TestListasTests:
 
     def test_con_resultados(self, conexion_falsa):
@@ -125,17 +90,17 @@ class TestConsultarTest:
         [
             pytest.param(
                 "",
-                "El campo ID dela orden no puede estar vacío.",
+                "El campo ID de la orden no puede estar vacío.",
                 id="orden-vacia",
             ),
             pytest.param(
                 "12345678901",
-                "El campo ID dela orden no puede tener más de 10 caracteres.",
+                "El campo ID de la orden no puede tener más de 10 caracteres.",
                 id="orden-demasiado-larga",
             ),
             pytest.param(
                 "12#",
-                "El campo ID dela orden solo puede contener letras, números, acentos y espacios.",
+                "El campo ID de la orden solo puede contener letras, números, acentos y espacios.",
                 id="orden-caracteres-invalidos",
             ),
         ],
@@ -291,7 +256,7 @@ class TestRegistrarRevisionTest:
             ),
             pytest.param(
                 "1234567890",
-                "El campo Cédula no puede tener más de 9 dígitos.",
+                "El campo Cédula no puede tener más de 8 dígitos.",
                 id="cedula-demasiado-larga",
             ),
             pytest.param(

@@ -1,15 +1,17 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
+    validar_decimal,
     validar_numero,
     validar_texto_numero,
-    validar_sin_caracteres_especiales,
-    validar_codigo_factura,
-    validar_numero_entero,
 )
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
+
+
+logger = logging.getLogger(__name__)
 
 
 class EntregaModel:
@@ -58,7 +60,8 @@ class EntregaModel:
         if self.estado is None:
             return "El estado es obligatorio."
         # Entrega.Estado_entrega int
-        error = validar_numero_entero(self.estado, "Estado", min_valor=0, max_valor=3)
+        error = validar_decimal(self.estado, "Estado", max_decimales=0,
+                                min_valor=None, max_valor=None)
         if error:
             return error
         try:
@@ -76,7 +79,8 @@ class EntregaModel:
         if not factura_id:
             return "La factura es obligatoria."
         # Entrega.ID_factura varchar(20); formato FAC-YYYYMM-XXXXXX
-        error = validar_codigo_factura(factura_id, 1, 20, "Factura")
+        error = validar_texto_numero(factura_id, 1, 20, "Factura",
+                                     permitir_espacios=False, caracteres_extra="-")
         if error:
             return error
         self.factura_id = factura_id
@@ -94,7 +98,7 @@ class EntregaModel:
         if not direccion:
             return "La dirección es obligatoria."
         # Entrega.Direccion_entrega varchar(60)
-        error = validar_sin_caracteres_especiales(direccion, 1, 60, "Dirección", permitir_espacios=True)
+        error = validar_texto_numero(direccion, 1, 60, "Dirección")
         if error:
             return error
         self.direccion = direccion
@@ -120,7 +124,7 @@ class EntregaModel:
         if not direccion:
             return "La dirección es obligatoria."
         # Entrega.Direccion_entrega varchar(60)
-        error = validar_sin_caracteres_especiales(direccion, 1, 60, "Dirección", permitir_espacios=True)
+        error = validar_texto_numero(direccion, 1, 60, "Dirección")
         if error:
             return error
         self.direccion = direccion
@@ -187,7 +191,7 @@ class EntregaModel:
 
             return entregas
         except Exception as e:
-            print(f"Error en listar_entregas: {e}")
+            logger.error(f"Error en listar_entregas: {e}")
             return []
         finally:
             cursor.close()
@@ -271,7 +275,8 @@ class EntregaModel:
             raise RuntimeError("No se pudo conectar a la base de datos")
 
         entrega_id = self._generar_id_entrega()
-        fecha_entrega = datetime.now()
+        # -04:00: el contenedor va en UTC y MySQL escribe en -04:00.
+        fecha_entrega = datetime.now(timezone(timedelta(hours=-4)))
 
         cursor = db.cursor()
         try:
@@ -282,6 +287,12 @@ class EntregaModel:
             cursor.execute("SELECT 1 FROM Personal_delivery WHERE Cedula_delivery = %s", (self.cedula_delivery,))
             if not cursor.fetchone():
                 raise ValueError(f"El delivery con cédula {self.cedula_delivery} no existe")
+
+            # Una factura solo debe tener UNA entrega: sin este check se
+            # podían registrar N entregas para la misma factura.
+            cursor.execute("SELECT 1 FROM Entrega WHERE ID_factura = %s", (self.factura_id,))
+            if cursor.fetchone():
+                raise ValueError(f"La factura {self.factura_id} ya tiene una entrega registrada")
 
             cursor.execute("""
                 INSERT INTO Entrega (ID_entrega, ID_factura, Cedula_delivery, Estado_entrega, Direccion_entrega, Fecha_entrega)
@@ -343,8 +354,8 @@ class EntregaModel:
             return "Entrega actualizada exitosamente"
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_entrega: {e}")
-            return f"Error al actualizar: {e}"
+            logger.error(f"Error en actualizar_entrega: {e}")
+            return "Error al actualizar la entrega. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -385,8 +396,8 @@ class EntregaModel:
             return "Entrega eliminada exitosamente"
         except Exception as e:
             db.rollback()
-            print(f"Error en eliminar_entrega: {e}")
-            return f"Error al eliminar: {e}"
+            logger.error(f"Error en eliminar_entrega: {e}")
+            return "Error al eliminar la entrega. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -417,7 +428,7 @@ class EntregaModel:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_facturas_pendientes: {e}")
+            logger.error(f"Error en obtener_facturas_pendientes: {e}")
             return []
         finally:
             cursor.close()

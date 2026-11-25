@@ -1,8 +1,12 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import validar_numero, validar_texto
 from typing import List, Dict, Any, Optional
+
+
+logger = logging.getLogger(__name__)
 
 
 class PersonalDeliveryModel:
@@ -73,7 +77,7 @@ class PersonalDeliveryModel:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en listar_personal: {e}")
+            logger.error(f"Error en listar_personal: {e}")
             return []
         finally:
             cursor.close()
@@ -160,8 +164,8 @@ class PersonalDeliveryModel:
             return "Delivery registrado exitosamente."
         except Exception as e:
             db.rollback()
-            print(f"Error al agregar personal: {e}")
-            return f"Error al registrar: {e}"
+            logger.error(f"Error al agregar personal: {e}")
+            return "Error al registrar el delivery. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -196,8 +200,8 @@ class PersonalDeliveryModel:
             return "Delivery actualizado exitosamente."
         except Exception as e:
             db.rollback()
-            print(f"Error al actualizar personal: {e}")
-            return f"Error al actualizar: {e}"
+            logger.error(f"Error al actualizar personal: {e}")
+            return "Error al actualizar el delivery. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -249,8 +253,8 @@ class PersonalDeliveryModel:
             return "Delivery eliminado exitosamente."
         except Exception as e:
             db.rollback()
-            print(f"Error al eliminar personal: {e}")
-            return f"Error al eliminar: {e}"
+            logger.error(f"Error al eliminar personal: {e}")
+            return "Error al eliminar el delivery. Intente nuevamente."
         finally:
             cursor.close()
             db.close()

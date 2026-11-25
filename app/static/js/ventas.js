@@ -4,14 +4,16 @@
   const state = {
     productos: [],
     masVendidos: [],
-    carrito: [],
     filtros: { clase_id: "", marca_id: "", q: "" },
     paginacion: { pagina: 1, por_pagina: 12 },
     tasas: { oficial: 520.91, paralelo: 710.12 },
   };
 
-  let facturaPendiente = null;
   let carritoItems = [];
+
+  // Imagen de respaldo para productos sin foto. Se aplica por delegación
+  // en el evento 'error': los atributos onerror inline los bloquea la CSP.
+  const URL_IMAGEN_FALLBACK = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
 
   function getAuthToken() {
     return (
@@ -227,7 +229,7 @@
         const imagenSrc =
           p.imagen && p.imagen.trim()
             ? p.imagen
-            : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+            : URL_IMAGEN_FALLBACK;
         const stockNum = Number(p.stock);
         const avisoStockBajo =
           Number.isFinite(stockNum) && stockNum > 0 && stockNum <= 5
@@ -237,7 +239,7 @@
         return `
                 <div class="producto-card">
                     <div class="producto-imagen">
-                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80';">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(p.nombre)}" loading="lazy" decoding="async" data-fallback="${URL_IMAGEN_FALLBACK}">
                     </div>
                     <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
                     <div class="producto-marca">${escapeHtml(p.marca)}</div>
@@ -584,12 +586,12 @@ function renderCarritoModal() {
             const imagenSrc =
                 item.imagen || item.Foto_inventario
                     ? item.imagen || item.Foto_inventario
-                    : "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
+                    : URL_IMAGEN_FALLBACK;
 
             return `
                 <div class="cart-item" data-producto-id="${inventarioId}">
                     <div class="cart-item-imagen">
-                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(nombre)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'">
+                        <img src="${escapeHtml(imagenSrc)}" alt="${escapeHtml(nombre)}" loading="lazy" data-fallback="${URL_IMAGEN_FALLBACK}">
                     </div>
                     <div class="cart-item-info">
                         <div class="cart-item-name">${escapeHtml(nombre)}</div>
@@ -663,7 +665,7 @@ function renderCarritoModal() {
         '<option value="">-- Selecciona --</option>' +
         data.metodos
           .map(
-            (m) => `<option value="${m.id}">${m.nombre} (${m.moneda})</option>`,
+            (m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.nombre)} (${escapeHtml(m.moneda)})</option>`,
           )
           .join("");
     }
@@ -865,7 +867,6 @@ function renderCarritoModal() {
         throw new Error(data.error || "Error al procesar el pago");
       }
 
-      facturaPendiente = data.factura_id;
       mostrarToast("¡Pago registrado! Redirigiendo...", "success");
       window.setTimeout(() => {
         window.location.href = "/catalogo";
@@ -875,290 +876,6 @@ function renderCarritoModal() {
     }
   }
 
-  // ==================== VALIDACIÓN DE PAGOS ====================
-
-  async function cargarPagosPendientes() {
-    try {
-      const data = await fetchJson("/api/admin/pagos-pendientes");
-      renderPagosList(data.pagos, "pendientes");
-    } catch (err) {
-      console.warn("Error cargando pagos pendientes:", err);
-    }
-  }
-
-  function renderPagosList(pagos, tipo) {
-    const container = document.getElementById(`${tipo}-list`);
-    if (!container) return;
-
-    if (!pagos || !pagos.length) {
-      container.innerHTML =
-        '<p class="sin-resultados">No hay pagos en esta lista</p>';
-      return;
-    }
-
-    container.innerHTML = pagos
-      .map(
-        (p) => `
-            <div class="pago-card" data-factura="${p.factura_id}">
-                <div class="info-row"><strong>Factura:</strong> <span>${escapeHtml(p.factura_id)}</span></div>
-                <div class="info-row"><strong>Fecha:</strong> <span>${escapeHtml(p.fecha)}</span></div>
-                <div class="info-row"><strong>Cliente:</strong> <span>${escapeHtml(p.cliente_nombre)} ${escapeHtml(p.cliente_apellido || "")}</span></div>
-                <div class="info-row"><strong>Teléfono:</strong> <span>${escapeHtml(p.cliente_celular || "N/A")}</span></div>
-                <div class="info-row"><strong>Método:</strong> <span>${escapeHtml(p.metodo_pago)}</span></div>
-                ${p.capture ? `<div class="info-row"><strong>Comprobante:</strong> <a href="${p.capture}" target="_blank">Ver imagen</a></div>` : ""}
-                ${
-                  tipo === "pendientes"
-                    ? `
-                    <div class="pago-actions">
-                        <button class="btn btn--yellow btn-aprobar" data-factura="${p.factura_id}">Aprobar</button>
-                        <button class="btn btn--ghost btn-rechazar" data-factura="${p.factura_id}">Rechazar</button>
-                    </div>
-                `
-                    : ""
-                }
-            </div>
-        `,
-      )
-      .join("");
-
-    if (tipo === "pendientes") {
-      document.querySelectorAll(".btn-aprobar").forEach((btn) => {
-        btn.addEventListener("click", () => aprobarPago(btn.dataset.factura));
-      });
-      document.querySelectorAll(".btn-rechazar").forEach((btn) => {
-        btn.addEventListener("click", () =>
-          mostrarModalRechazo(btn.dataset.factura),
-        );
-      });
-    }
-  }
-
-  async function aprobarPago(facturaId) {
-    if (confirm("¿Aprobar este pago?")) {
-      try {
-        await fetchJson(`/api/admin/aprobar-pago/${facturaId}`, {
-          method: "POST",
-        });
-        mostrarToast("Pago aprobado", "success");
-        cargarPagosPendientes();
-      } catch (err) {
-        mostrarToast(err.message, "error");
-      }
-    }
-  }
-
-  let facturaRechazoActual = null;
-
-  function mostrarModalRechazo(facturaId) {
-    facturaRechazoActual = facturaId;
-    const modal = document.getElementById("rechazo-modal");
-    if (modal) {
-      modal.classList.remove("is-hidden");
-      document.getElementById("motivo-rechazo").value = "";
-    }
-  }
-
-  async function confirmarRechazo() {
-    const motivo = document.getElementById("motivo-rechazo")?.value.trim();
-    if (!motivo) {
-      mostrarToast("Debes escribir un motivo", "error");
-      return;
-    }
-
-    try {
-      await fetchJson(`/api/admin/rechazar-pago/${facturaRechazoActual}`, {
-        method: "POST",
-        body: JSON.stringify({ motivo }),
-      });
-      mostrarToast("Pago rechazado", "success");
-      cerrarModalRechazo();
-      cargarPagosPendientes();
-    } catch (err) {
-      mostrarToast(err.message, "error");
-    }
-  }
-
-  function cerrarModalRechazo() {
-    const modal = document.getElementById("rechazo-modal");
-    if (modal) modal.classList.add("is-hidden");
-    facturaRechazoActual = null;
-  }
-
-  // ==================== VENTA LOCAL ====================
-
-  let itemsLocal = [];
-  let clientesMap = {};
-
-  async function cargarProductosParaSelect() {
-    try {
-      const data = await fetchJson("/api/catalogo/productos");
-      const select = document.getElementById("producto-select");
-      if (select) {
-        select.innerHTML =
-          '<option value="">-- Selecciona --</option>' +
-          (data.productos || [])
-            .map(
-              (p) =>
-                `<option value="${p.id}" data-precio="${p.precio_usd}">${p.nombre} - ${formatUSD(p.precio_usd)}</option>`,
-            )
-            .join("");
-      }
-    } catch (err) {
-      console.warn("Error cargando productos:", err);
-    }
-  }
-
-  async function cargarClientesParaDatalist() {
-    try {
-      const data = await fetchJson("/api/clientes");
-      const list = document.getElementById("clientes-list");
-      if (!list) return;
-      clientesMap = {};
-      const clientes = data.clientes || [];
-      list.innerHTML = clientes
-        .map((c) => {
-          const text = `${c.id} - ${c.nombre} ${c.apellido || ""}`.trim();
-          clientesMap[String(c.id)] = c.id;
-          clientesMap[
-            (c.nombre + " " + (c.apellido || "")).trim().toLowerCase()
-          ] = c.id;
-          return `<option value="${escapeHtml(text)}"></option>`;
-        })
-        .join("");
-    } catch (err) {
-      console.warn("Error cargando clientes:", err);
-    }
-  }
-
-  function agregarItemLocal() {
-    const select = document.getElementById("producto-select");
-    const cantidad = parseInt(
-      document.getElementById("cantidad-local")?.value || 1,
-    );
-    const productoId = select?.value;
-
-    if (!productoId) {
-      mostrarToast("Selecciona un producto", "error");
-      return;
-    }
-
-    const option = select.options[select.selectedIndex];
-    const nombre = option.text.split(" - ")[0];
-    const precio = parseFloat(option.dataset.precio);
-
-    const existente = itemsLocal.find((i) => i.producto_id == productoId);
-    if (existente) {
-      existente.cantidad += cantidad;
-    } else {
-      itemsLocal.push({
-        producto_id: parseInt(productoId),
-        nombre,
-        precio_usd: precio,
-        cantidad,
-      });
-    }
-
-    renderItemsLocal();
-    select.value = "";
-    document.getElementById("cantidad-local").value = 1;
-  }
-
-  function renderItemsLocal() {
-    const container = document.getElementById("items-local-list");
-    if (!container) return;
-
-    if (!itemsLocal.length) {
-      container.innerHTML =
-        '<p class="sin-resultados">No hay productos agregados</p>';
-      return;
-    }
-
-    const totalBs = itemsLocal.reduce(
-      (sum, i) =>
-        sum +
-        Number(i.precio_usd) *
-          (state.tasas.paralelo || state.tasas.oficial) *
-          i.cantidad,
-      0,
-    );
-    const totalUsd = totalBs / (state.tasas.oficial || 1);
-
-    container.innerHTML = `
-            <div class="items-local">
-                ${itemsLocal
-                  .map(
-                    (item, idx) => `
-                    <div class="cart-item">
-                        <span>${escapeHtml(item.nombre)} x${item.cantidad}</span>
-                        <span>${formatUSD(Number(item.precio_usd) * item.cantidad)} / ${formatVES(Number(item.precio_usd) * (state.tasas.paralelo || state.tasas.oficial) * item.cantidad)}</span>
-                        <button class="icon-action" data-remove="${idx}" aria-label="Eliminar producto">🗑</button>
-                    </div>
-                `,
-                  )
-                  .join("")}
-                <div class="cart-total">
-                    <strong>Total: ${formatUSD(totalUsd)} / ${formatVES(totalBs)}</strong>
-                </div>
-            </div>
-        `;
-
-    document.querySelectorAll("[data-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.remove);
-        itemsLocal.splice(idx, 1);
-        renderItemsLocal();
-      });
-    });
-  }
-
-  async function registrarVentaLocal(event) {
-    event.preventDefault();
-
-    const clienteInput = document.getElementById("cliente-id")?.value || "";
-    let clienteId = null;
-    const v = String(clienteInput).trim();
-    if (/^\d+$/.test(v)) {
-      clienteId = parseInt(v);
-    } else if (v.includes(" - ")) {
-      const parts = v.split(" - ");
-      if (/^\d+$/.test(parts[0].trim())) clienteId = parseInt(parts[0].trim());
-    } else {
-      const lookup = v.toLowerCase();
-      if (clientesMap[lookup]) clienteId = clientesMap[lookup];
-    }
-    const metodoPago = document.getElementById("metodo-local")?.value;
-
-    if (!clienteId) {
-      mostrarToast(
-        "Cliente no encontrado. Escribe ID o selecciona un cliente válido.",
-        "error",
-      );
-      return;
-    }
-    if (!itemsLocal.length) {
-      mostrarToast("Agrega al menos un producto", "error");
-      return;
-    }
-
-    try {
-      await fetchJson("/api/admin/ventas-local", {
-        method: "POST",
-        body: JSON.stringify({
-          cliente_id: parseInt(clienteId),
-          items: itemsLocal,
-          metodo_pago: metodoPago,
-        }),
-      });
-
-      mostrarToast("Venta registrada exitosamente", "success");
-      itemsLocal = [];
-      renderItemsLocal();
-      closeModal();
-      document.getElementById("form-venta-local")?.reset();
-    } catch (err) {
-      mostrarToast(err.message, "error");
-    }
-  }
 
   function escapeHtml(str) {
     if (!str) return "";
@@ -1251,28 +968,26 @@ function renderCarritoModal() {
         const resumenContainer = document.getElementById("resumen-carrito");
         if (resumenContainer && carritoData.items?.length) {
           const tasas = carritoData.tasas || state.tasas;
-          const totalBs = carritoData.items.reduce(
-            (sum, i) =>
-              sum +
-              Number(i.precio_usd) *
-                (tasas.paralelo || tasas.oficial) *
-                i.cantidad,
+          const tasaBs = tasas.paralelo || tasas.oficial;
+          // El USD viene directo del precio en USD del producto; el Bs se
+          // calcula a partir de él. Antes el total Bs usaba la tasa paralelo
+          // y el USD se derivaba dividiendo con la tasa oficial: si difieren,
+          // los totales no cuadran.
+          const totalUsd = carritoData.items.reduce(
+            (sum, i) => sum + Number(i.precio_usd) * i.cantidad,
             0,
           );
-          const totalUsd = totalBs / (tasas.oficial || 1);
+          const totalBs = totalUsd * tasaBs;
           resumenContainer.innerHTML = `
                         <div class="resumen-card">
                             <h3>Resumen de compra</h3>
                             <ul>
                                 ${carritoData.items
                                   .map((i) => {
-                                    const bsItem =
-                                      Number(i.precio_usd) *
-                                      (tasas.paralelo || tasas.oficial) *
-                                      i.cantidad;
                                     const usdItem =
-                                      bsItem / (tasas.oficial || 1);
-                                    return `<li>${i.cantidad}x ${i.nombre} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
+                                      Number(i.precio_usd) * i.cantidad;
+                                    const bsItem = usdItem * tasaBs;
+                                    return `<li>${i.cantidad}x ${escapeHtml(i.nombre)} - ${formatUSD(usdItem)} / ${formatVES(bsItem)}</li>`;
                                   })
                                   .join("")}
                             </ul>
@@ -1285,58 +1000,22 @@ function renderCarritoModal() {
       }
     }
 
-    if (path === "/admin/validar-pagos") {
-      await cargarProductosParaSelect();
-      await cargarClientesParaDatalist();
-
-      const btnVentaLocal = document.getElementById("btn-venta-local");
-      const ventaLocalModal = document.getElementById("venta-local-modal");
-      const formVentaLocal = document.getElementById("form-venta-local");
-      const btnAgregarProducto = document.getElementById(
-        "agregar-producto-local",
-      );
-
-      if (btnVentaLocal) {
-        btnVentaLocal.addEventListener("click", () => {
-          if (ventaLocalModal) ventaLocalModal.classList.remove("is-hidden");
-        });
-      }
-
-      if (btnAgregarProducto) {
-        btnAgregarProducto.addEventListener("click", () => agregarItemLocal());
-      }
-
-      if (formVentaLocal) {
-        formVentaLocal.addEventListener("submit", registrarVentaLocal);
-      }
-
-      document.querySelectorAll(".tab-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document
-            .querySelectorAll(".tab-btn")
-            .forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-
-          const tab = btn.dataset.tab;
-          document
-            .querySelectorAll(".tab-content")
-            .forEach((content) => content.classList.add("is-hidden"));
-          document.getElementById(`${tab}-tab`)?.classList.remove("is-hidden");
-
-          if (tab === "pendientes") cargarPagosPendientes();
-        });
-      });
-
-      document
-        .getElementById("cancelar-rechazo")
-        ?.addEventListener("click", cerrarModalRechazo);
-      document
-        .getElementById("confirmar-rechazo")
-        ?.addEventListener("click", confirmarRechazo);
-
-      await cargarPagosPendientes();
-    }
   }
+
+  // Fallback de imágenes por delegación (fase de captura: el evento 'error'
+  // no burbujea). Marca fallbackAplicado para evitar bucles infinitos.
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (
+      img &&
+      img.tagName === "IMG" &&
+      img.dataset.fallback &&
+      !img.dataset.fallbackAplicado
+    ) {
+      img.dataset.fallbackAplicado = "1";
+      img.src = img.dataset.fallback;
+    }
+  }, true);
 
   document.addEventListener("DOMContentLoaded", init);
 })();

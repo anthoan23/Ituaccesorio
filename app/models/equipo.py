@@ -1,5 +1,9 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
+
+logger = logging.getLogger(__name__)
+
 
 class Equipo:
     def __init__(self, ID_equipo: str = None, ID_producto: str = None,
@@ -47,7 +51,7 @@ class Equipo:
             """, (self.ID_equipo,))
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error al consultar el equipo: {e}")
+            logger.error(f"Error al consultar el equipo: {e}")
             return None
         finally:
             cursor.close()
@@ -62,7 +66,7 @@ class Equipo:
             return "El ID del producto es obligatorio."
         
         if len(str(self.ID_equipo)) > 16:
-            return "El ID del equipo no puede tener más de 15 caracteres."
+            return "El ID del equipo no puede tener más de 16 caracteres."
         
         db = self._conexion_bd()
         if not db:
@@ -77,12 +81,14 @@ class Equipo:
             
             # Manejar valores None para campos opcionales
             color = self.Color if self.Color else None
-            if color and len(str(color)) > 30:
-                return "El color no puede tener más de 30 caracteres."
+            if color and len(str(color)) > 20:
+                # Color es varchar(20) en BD: con 30 el INSERT reventaba con error 1406.
+                return "El color no puede tener más de 20 caracteres."
             
             capacidad = self.Capacidad if self.Capacidad else None
-            if capacidad and len(str(capacidad)) > 6:
-                return "La capacidad no puede tener más de 6 caracteres."
+            if capacidad and len(str(capacidad)) > 20:
+                # Capacidad es varchar(20) en BD: unificar con actualizar (que ya usaba 20).
+                return "La capacidad no puede tener más de 20 caracteres."
             
             # Clave: convertir a int solo si es un número válido
             clave = None
@@ -107,7 +113,7 @@ class Equipo:
             return f"Equipo {self.ID_equipo} registrado exitosamente."
         except Exception as e:
             db.rollback()
-            return f"Error al registrar el equipo: {e}"
+            return "Error al registrar el equipo. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -138,8 +144,9 @@ class Equipo:
             
             if self.Color is not None:
                 color = self.Color if self.Color else None
-                if color and len(str(color)) > 30:
-                    return "El color no puede tener más de 30 caracteres."
+                if color and len(str(color)) > 20:
+                    # Color es varchar(20) en BD.
+                    return "El color no puede tener más de 20 caracteres."
                 updates.append("Color = %s")
                 params.append(color)
             
@@ -180,7 +187,7 @@ class Equipo:
             return f"Equipo {self.ID_equipo} actualizado correctamente."
         except Exception as e:
             db.rollback()
-            return f"Error al actualizar el equipo: {e}"
+            return "Error al actualizar el equipo. Intente nuevamente."
         finally:
             cursor.close()
             db.close()
@@ -216,7 +223,7 @@ class Equipo:
             return f"Equipo {self.ID_equipo} eliminado correctamente."
         except Exception as e:
             db.rollback()
-            return f"Error al eliminar el equipo: {e}"
+            return "Error al eliminar el equipo. Intente nuevamente."
         finally:
             cursor.close()
             db.close()

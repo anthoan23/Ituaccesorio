@@ -422,8 +422,8 @@ CREATE TABLE `Marca_producto` (
 -- Dumping data for `Marca_producto`
 -- ----------------------------------------------------
 INSERT INTO `Marca_producto` (`ID_marca`, `Nombre_marca`) VALUES
-('1', 'Iphone'),
-('2', 'Iphone'),
+('1', 'Apple'),
+('2', 'Tecno'),
 ('3', 'Samsung'),
 ('4', 'Xiaomi'),
 ('5', 'Motorola'),
@@ -1731,3 +1731,4 @@ BEGIN
     SELECT v_trade_in_id AS trade_in_id, 'Trade-in registrado exitosamente' AS mensaje;
 END ;;
 DELIMITER ;
+

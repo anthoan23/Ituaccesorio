@@ -98,7 +98,11 @@ const Utils = {
     showMessage(message, isError = false) {
         // Usar el sistema de notificaciones si existe
         if (window.notify && typeof window.notify === 'function') {
-            window.notify(message, isError ? 'error' : 'success');
+            window.FeedbackModal.show({
+                type: isError ? "error" : "success",
+                title: isError ? "Error" : "Operación completada",
+                message: message,
+            });
         } else {
             console.info(message);
         }

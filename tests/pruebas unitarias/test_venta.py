@@ -86,7 +86,7 @@ class TestCrearVentaDesdeCarrito:
             2,
         )
         update_stock = llamada_con(cursor, "UPDATE Existencias_productos")
-        assert update_stock.args[1] == (2, PRODUCTO_MINIMO)
+        assert update_stock.args[1] == (2, PRODUCTO_MINIMO, 2)
         db.commit.assert_called_once()
         db.rollback.assert_not_called()
         cierra_recursos(db, cursor)
@@ -550,7 +550,7 @@ class TestGuardarRegistroPago:
             pytest.param(
                 "zelle",
                 {"referencia": "@#$", "monto": "10.00"},
-                "El campo Referencia no puede contener caracteres especiales.",
+                "El campo Referencia solo puede contener letras, números, acentos y espacios.",
                 id="referencia-caracteres-invalidos",
             ),
             pytest.param(
@@ -568,7 +568,7 @@ class TestGuardarRegistroPago:
             pytest.param(
                 "zelle",
                 {"referencia": "123456", "monto": "1.234"},
-                "El campo Monto debe ser un número decimal válido con hasta 2 decimales.",
+                "El campo Monto no puede tener más de 2 decimales.",
                 id="monto-formato-invalido",
             ),
             pytest.param(
@@ -673,29 +673,22 @@ class TestObtenerVentasHoy:
             "cantidad_ventas": 3,
             "moneda": "USD",
         }
-        assert "FROM Venta v" in ultima_sentencia(cursor)
+        assert "FROM Metodo_pago mp" in ultima_sentencia(cursor)
 
-    def test_sin_ventas_en_venta_usa_metodo_pago(self, conexion_falsa):
+    def test_sin_ventas_devuelve_valores_por_defecto(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [
-            None,
-            {
-                "total_ventas": "75.25",
-                "cantidad_ventas": 2,
-                "Moneda": "VES",
-            },
-        ]
+        cursor.fetchone.return_value = None
 
         resultado = VentaModel().obtener_ventas_hoy()
 
         assert resultado == {
-            "total_ventas": 75.25,
-            "cantidad_ventas": 2,
-            "moneda": "VES",
+            "total_ventas": 0,
+            "cantidad_ventas": 0,
+            "moneda": "USD",
         }
         sentencias = [llamada.args[0] for llamada in cursor.execute.call_args_list]
-        assert len(sentencias) == 2
-        assert "FROM Metodo_pago mp" in sentencias[1]
+        assert len(sentencias) == 1
+        assert "FROM Metodo_pago mp" in sentencias[0]
 
     def test_sin_datos_devuelve_valores_por_defecto(self, conexion_falsa):
         db, cursor = conexion_falsa

@@ -2,6 +2,15 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Zona horaria de la app: MySQL corre en -04:00 (compose) y sin esto el
+# contenedor va en UTC → los datetime.now() de Python quedaban 4 h
+# desalineados con las fechas escritas por NOW() de MySQL.
+ENV TZ=America/Caracas
+
+# tzdata es necesario para que la variable TZ tenga efecto
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
 # Instalamos Flask
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

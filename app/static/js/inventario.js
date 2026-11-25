@@ -361,7 +361,7 @@ async function cargarClasesMarcasIniciales() {
 function getStatusLabel(stock) {
   const qty = Number(stock);
   if (qty === 0) return { label: 'Sin stock', class: 'status-out' };
-  if (qty <= 5) return { label: 'Bajo stock', class: 'status-low' };
+  if (qty <= 10) return { label: 'Bajo stock', class: 'status-low' };
   if (qty >= 30) return { label: 'Alto stock', class: 'status-good' };
   return { label: 'Disponible', class: 'status-normal' };
 }
@@ -579,6 +579,7 @@ function imprimirReporteInventario() {
   }
   
   const ventana = window.open("", "_blank");
+  if (!ventana) { mostrarToastReportes("El navegador bloqueó la ventana de impresión. Permite pop-ups e inténtalo de nuevo.", "error"); return; }
   const fecha = new Date().toLocaleString();
   const logoUrl = window.location.origin + '/static/img/LOGO COMPLETO.png';
   
@@ -616,8 +617,8 @@ function imprimirReporteInventario() {
       </style>
     </head>
     <body>
-      <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
-      <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+      <button class="btn-print no-print" type="button">🖨 Imprimir</button>
+      <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio"></div>
       <h1>REPORTE DE INVENTARIO</h1>
       <div class="info">Generado: ${fecha} • Total productos: ${reporteDatosActuales.length}</div>
       ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
@@ -635,7 +636,7 @@ function imprimirReporteInventario() {
           ${reporteDatosActuales.map(p => {
             let stockClass = '';
             if (p.existencia === 0) stockClass = 'status-out';
-            else if (p.existencia <= 5) stockClass = 'status-low';
+            else if (p.existencia <= 10) stockClass = 'status-low';
             else if (p.existencia >= 30) stockClass = 'status-good';
             else stockClass = 'status-normal';
             return `
@@ -655,6 +656,13 @@ function imprimirReporteInventario() {
     </html>
   `);
   ventana.document.close();
+
+  // Los handlers inline (onclick/onerror) quedan bloqueados por la CSP en la
+  // ventana generada: se conectan por programación.
+  const btnImprimir = ventana.document.querySelector(".btn-print");
+  if (btnImprimir) btnImprimir.addEventListener("click", () => ventana.print());
+  const logoReporte = ventana.document.querySelector(".logo img");
+  if (logoReporte) logoReporte.addEventListener("error", () => { logoReporte.style.display = "none"; });
 }
 
 // Eventos de reportes

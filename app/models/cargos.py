@@ -1,8 +1,12 @@
 from __future__ import annotations
+import logging
 
 from app.utils.validators import validar_texto, validar_texto_numero
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+
+
+logger = logging.getLogger(__name__)
 
 
 class Cargo:
@@ -77,7 +81,7 @@ class Cargo:
             
             return "Cargo agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar cargo: {e}")
+            logger.error(f"Error al agregar cargo: {e}")
             db.rollback()
             mensaje = "Error al agregar cargo."
             return mensaje
@@ -120,7 +124,7 @@ class Cargo:
             
             return "Cargo eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar cargo: {e}")
+            logger.error(f"Error al eliminar cargo: {e}")
             db.rollback()
             mensaje = "Error al eliminar cargo. Verifica que no esté en uso por empleados."
             return mensaje
@@ -184,7 +188,7 @@ class Cargo:
             
             return "Cargo actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar cargo: {e}")
+            logger.error(f"Error al actualizar cargo: {e}")
             db.rollback()
             return "Error al actualizar cargo."
         finally:

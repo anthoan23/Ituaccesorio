@@ -1,7 +1,11 @@
+import logging
+
 from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_compra import OrdenCompra
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 ordenes_compra_blueprint = Blueprint('ordenes_compra', __name__)
 
@@ -36,22 +40,6 @@ def api_ordenes_compra_entregadas():
     return jsonify(ordenes)
 
 
-@ordenes_compra_blueprint.route('/api/empleados', methods=['GET'])
-@jwt_required
-@tiene_permiso('Órdenes de compra', 'consultar')
-def api_empleados():
-    orden = OrdenCompra()
-    empleados = orden.listar_empleados()
-    return jsonify(empleados)
-
-
-@ordenes_compra_blueprint.route('/api/proveedores', methods=['GET'])
-@jwt_required
-@tiene_permiso('Órdenes de compra', 'consultar')
-def api_proveedores():
-    orden = OrdenCompra()
-    proveedores = orden.listar_proveedores()
-    return jsonify({"success": True, "proveedores": proveedores})
 
 
 @ordenes_compra_blueprint.route('/api/productos_proveedor/<int:id_proveedor>', methods=['POST'])
@@ -101,7 +89,8 @@ def api_agregar_orden_compra():
         if not productos or len(productos) == 0:
             return jsonify({"success": False, "error": "Debe agregar al menos un producto"}), 400
 
-        # Normalizar productos
+        # Normalizar productos (forma para el modelo; la validación de
+        # cantidades/stock la hace OrdenCompra)
         normalized = []
         for p in productos:
             if isinstance(p, dict):
@@ -111,7 +100,10 @@ def api_agregar_orden_compra():
                 mid, qty = p[0], p[1]
             else:
                 continue
-            normalized.append((str(mid), int(qty)))
+            try:
+                normalized.append((str(mid), int(qty)))
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Cantidad inválida en la lista de productos"}), 400
 
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
 
@@ -128,7 +120,7 @@ def api_agregar_orden_compra():
         else:
             return jsonify({"success": False, "error": "Error al agregar la orden de compra"}), 500
     except Exception as e:
-        print(f"Error en api_agregar_orden_compra: {e}")
+        logger.debug(f"Error en api_agregar_orden_compra: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -186,9 +178,12 @@ def api_actualizar_orden_compra():
             if mid is None or str(mid).strip() == '':
                 return jsonify({"success": False, "error": "ID de producto inválido en la lista"}), 400
             
-            normalized.append((str(mid), int(qty)))
+            try:
+                normalized.append((str(mid), int(qty)))
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Cantidad inválida en la lista de productos"}), 400
 
-        print(f"📋 Datos normalizados: id_orden={id_orden}, id_empleado={id_emp}, id_proveedor={id_prov}, productos={normalized}")
+        logger.debug(f"📋 Datos normalizados: id_orden={id_orden}, id_empleado={id_emp}, id_proveedor={id_prov}, productos={normalized}")
 
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
 
@@ -200,22 +195,14 @@ def api_actualizar_orden_compra():
             return jsonify({"success": False, "error": "Orden no encontrada"}), 404
         
         estado = detalles.get("datos_orden", {}).get("Estado")
-        print(f"📊 Estado de la orden: {estado}")
+        logger.debug(f"📊 Estado de la orden: {estado}")
         
         if estado != "Pendiente":
             return jsonify({"success": False, "error": "Solo se pueden modificar órdenes pendientes"}), 400
 
-        # ✅ VALIDACIÓN: Verificar que los productos existen en la BD
-        # (Esto también se hace en el modelo, pero es bueno tener una pre-validación)
-        try:
-            from app.models.productos import Producto
-            for mid, qty in normalized:
-                prod = Producto(id_producto=mid)
-                if not prod.verificar_producto():
-                    return jsonify({"success": False, "error": f"El producto con ID '{mid}' no existe en el catálogo"}), 400
-        except Exception as e:
-            print(f"❌ Error validando productos: {e}")
-            return jsonify({"success": False, "error": f"Error validando productos: {str(e)}"}), 400
+        # La existencia de los productos la valida OrdenCompra dentro de su
+        # transacción (el N+1 de verificación por producto que había aquí
+        # duplicaba esa validación con una query por producto).
 
         # Actualizar la orden
         orden = OrdenCompra(
@@ -232,7 +219,7 @@ def api_actualizar_orden_compra():
         else:
             return jsonify({"success": False, "error": "Error al actualizar la orden de compra"}), 500
     except Exception as e:
-        print(f"❌ Error en api_actualizar_orden_compra: {e}")
+        logger.debug(f"❌ Error en api_actualizar_orden_compra: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500

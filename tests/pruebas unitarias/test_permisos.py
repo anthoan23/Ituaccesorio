@@ -447,7 +447,7 @@ class TestGuardarPermisosMasivos:
             ROL_ID, [{"modulo_id": "1"}]
         )
 
-        assert resultado == (0, ["fallo simulado"])
+        assert resultado == (0, ["Error al guardar los permisos. Intente nuevamente."])
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 

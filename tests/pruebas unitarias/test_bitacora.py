@@ -375,11 +375,10 @@ class TestListarRecientes:
                 "modulo_nombre": MODULO_NOMBRE,
             }
         ]
-        cursor.fetchall.return_value = registros
-        cursor.fetchone.return_value = {
-            "nombre": "Ana Pérez",
-            "foto_perfil": "/static/ana.png",
-        }
+        cursor.fetchall.side_effect = [
+            registros,
+            [{"id": USUARIO_ID, "nombre": "Ana Pérez", "foto_perfil": "/static/ana.png"}],
+        ]
 
         resultado = Bitacora().listar_recientes()
 
@@ -544,20 +543,19 @@ class TestListarActividadReciente:
 
     def test_enriquece_con_datos_del_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchall.return_value = [
-            {
-                "id": 1,
-                "usuario_id": USUARIO_ID,
-                "accion": ACCION,
-                "descripcion": DESCRIPCION,
-                "fecha_hora": datetime.now(),
-                "modulo_nombre": MODULO_NOMBRE,
-            }
+        cursor.fetchall.side_effect = [
+            [
+                {
+                    "id": 1,
+                    "usuario_id": USUARIO_ID,
+                    "accion": ACCION,
+                    "descripcion": DESCRIPCION,
+                    "fecha_hora": datetime.now(),
+                    "modulo_nombre": MODULO_NOMBRE,
+                }
+            ],
+            [{"id": USUARIO_ID, "nombre": "Ana Pérez", "foto_perfil": "/static/ana.png"}],
         ]
-        cursor.fetchone.return_value = {
-            "nombre": "Ana Pérez",
-            "foto_perfil": "/static/ana.png",
-        }
 
         resultado = Bitacora().listar_actividad_reciente()
 

@@ -44,7 +44,7 @@ services:
       retries: 30
       start_period: 10s
     volumes:
-      - ./bd/ituaccesoriobd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
+      - ./bd/tests/ituaccesoriobd.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
 
   db2_test:
     image: mysql:8.0
@@ -67,4 +67,4 @@ services:
       retries: 30
       start_period: 10s
     volumes:
-      - ./bd/seguridad.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
+      - ./bd/tests/seguridad.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z

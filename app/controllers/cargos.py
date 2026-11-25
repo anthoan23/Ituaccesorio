@@ -33,8 +33,8 @@ def api_listar_cargos():
 @tiene_permiso('Cargos', 'registrar')
 def api_agregar_cargo():
     data = request.get_json(silent=True) or request.form
-    nombre_cargo = data.get("nombre_cargo", "").strip()
-    descripcion_cargo = data.get("descripcion_cargo", "").strip()
+    nombre_cargo = str(data.get("nombre_cargo") or "").strip()
+    descripcion_cargo = str(data.get("descripcion_cargo") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -57,9 +57,9 @@ def api_agregar_cargo():
 @tiene_permiso('Cargos', 'modificar')
 def api_actualizar_cargo():
     data = request.get_json(silent=True) or request.form
-    cargo_id = data.get("id_cargo", "").strip()
-    nombre_cargo = data.get("nombre_cargo", "").strip()
-    descripcion_cargo = data.get("descripcion_cargo", "").strip()
+    cargo_id = str(data.get("id_cargo") or "").strip()
+    nombre_cargo = str(data.get("nombre_cargo") or "").strip()
+    descripcion_cargo = str(data.get("descripcion_cargo") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 
@@ -82,7 +82,7 @@ def api_actualizar_cargo():
 @tiene_permiso('Cargos', 'eliminar')
 def api_eliminar_cargo():
     data = request.get_json(silent=True) or request.form
-    cargo_id = data.get("id_cargo", "").strip()
+    cargo_id = str(data.get("id_cargo") or "").strip()
 
     usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
 

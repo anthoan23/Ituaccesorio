@@ -357,7 +357,7 @@ class TestAgregarRol:
             pytest.param(
                 "Vendedor #1",
                 "",
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -369,7 +369,7 @@ class TestAgregarRol:
             pytest.param(
                 "Vendedor",
                 "Atiende #1",
-                "El campo Descripción no puede contener caracteres especiales.",
+                "El campo Descripción solo puede contener letras, números, acentos y espacios.",
                 id="descripcion-caracteres-invalidos",
             ),
         ],
@@ -558,7 +558,7 @@ class TestActualizarRol:
                 ID_MAXIMO,
                 "Vendedor #1",
                 "",
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -572,7 +572,7 @@ class TestActualizarRol:
                 ID_MAXIMO,
                 "Vendedor",
                 "Atiende #1",
-                "El campo Descripción no puede contener caracteres especiales.",
+                "El campo Descripción solo puede contener letras, números, acentos y espacios.",
                 id="descripcion-caracteres-invalidos",
             ),
         ],

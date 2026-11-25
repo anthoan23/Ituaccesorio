@@ -90,7 +90,7 @@ class TestCrearConexion:
         assert resultado is None
         assert instancia.ultimo_error is error
 
-    def test_error_de_mysql_se_imprime_por_consola(self, monkeypatch, capsys):
+    def test_error_de_mysql_se_registra_en_el_log(self, monkeypatch, caplog):
         monkeypatch.setenv("DB_USER", USUARIO)
         monkeypatch.setenv("DB_PASSWORD", CONTRASENA)
         error = mysql.connector.Error("sin ruta al servidor")
@@ -100,8 +100,7 @@ class TestCrearConexion:
         ):
             conectar()._crear_conexion(HOST, PUERTO, BASE_DATOS)
 
-        salida = capsys.readouterr().out
-        assert f"Error al conectar a {BASE_DATOS} ({HOST}): {error}" in salida
+        assert f"Error al conectar a {BASE_DATOS} ({HOST}): {error}" in caplog.text
 
     def test_conexion_exitosa_no_cambia_ultimo_error(self, monkeypatch):
         monkeypatch.setenv("DB_USER", USUARIO)
@@ -247,21 +246,19 @@ class TestMostrarError:
         assert conectar().mostrar_error() == MENSAJE_ERROR_CONEXION
         capsys.readouterr()
 
-    def test_imprime_el_ultimo_error_tecnico(self, capsys):
+    def test_registra_el_ultimo_error_tecnico(self, caplog):
         instancia = conectar()
         instancia.ultimo_error = "timeout de conexión"
 
         mensaje = instancia.mostrar_error()
 
-        salida = capsys.readouterr().out
         assert mensaje == MENSAJE_ERROR_CONEXION
-        assert "Error de conexión a la base de datos: timeout de conexión" in salida
+        assert "Error de conexión a la base de datos: timeout de conexión" in caplog.text
 
-    def test_imprime_none_cuando_no_hay_error(self, capsys):
+    def test_registra_none_cuando_no_hay_error(self, caplog):
         conectar().mostrar_error()
 
-        salida = capsys.readouterr().out
-        assert "Error de conexión a la base de datos: None" in salida
+        assert "Error de conexión a la base de datos: None" in caplog.text
 
     def test_no_intenta_crear_conexiones(self):
         with patch.object(conectar, "_crear_conexion") as crear_mock, patch(

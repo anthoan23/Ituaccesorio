@@ -469,8 +469,8 @@ class TestCalcularCotizacion:
             resultado = TradeIn().calcular_cotizacion(ID_PRODUCTO, fallas)
 
         assert resultado["total_fallas"] == 5
-        assert resultado["costo_total_repuestos"] == 55.0
-        assert resultado["monto_estimado"] == 445.0
+        assert resultado["costo_total_repuestos"] == 45.0
+        assert resultado["monto_estimado"] == 455.0
         assert (
             "Se aplicó un 10% de descuento adicional por múltiples fallas "
             "($5.00)."

@@ -1,11 +1,15 @@
 # app/models/backup.py
 from __future__ import annotations
+import logging
 import os
 import re
 import datetime
 import pymysql
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
+
+logger = logging.getLogger(__name__)
+
 
 class Backup:
     def __init__(self, id_backup: int = None, id_usuario: str = None, estado: str = None,
@@ -73,7 +77,7 @@ class Backup:
             
             return "Backup registrado exitosamente"
         except Exception as e:
-            print(f"Error al registrar backup: {e}")
+            logger.error(f"Error al registrar backup: {e}")
             db.rollback()
             return f"Error al registrar backup: {str(e)}"
         finally:
@@ -93,7 +97,7 @@ class Backup:
             db.commit()
             return "Estado actualizado exitosamente"
         except Exception as e:
-            print(f"Error al actualizar estado: {e}")
+            logger.error(f"Error al actualizar estado: {e}")
             db.rollback()
             return f"Error al actualizar estado: {str(e)}"
         finally:
@@ -119,7 +123,7 @@ class Backup:
                     try:
                         os.remove(file_path)
                     except Exception as e:
-                        print(f"Error al eliminar archivo: {e}")
+                        logger.error(f"Error al eliminar archivo: {e}")
             
             # Eliminar el registro
             sql = "DELETE FROM backup WHERE id_backup = %s"
@@ -137,7 +141,7 @@ class Backup:
             
             return "Backup eliminado exitosamente"
         except Exception as e:
-            print(f"Error al eliminar backup: {e}")
+            logger.error(f"Error al eliminar backup: {e}")
             db.rollback()
             return f"Error al eliminar backup: {str(e)}"
         finally:
@@ -336,12 +340,16 @@ class Backup:
                     delimiter = parts[1]
                 continue
             
-            # Detectar inicio de procedimiento, función o trigger
-            if line.upper().startswith('CREATE PROCEDURE'):
+            # Detectar inicio de procedimiento, función o trigger.
+            # Regex tolerante: tras remover el DEFINER la línea queda
+            # "CREATE  PROCEDURE" (doble espacio) y startswith() no la
+            # detectaba → el cuerpo del SP se partía en cada ';' interno y
+            # las rutinas no se restauraban.
+            if re.match(r"CREATE\s+PROCEDURE", line, re.IGNORECASE):
                 in_procedure = True
-            elif line.upper().startswith('CREATE FUNCTION'):
+            elif re.match(r"CREATE\s+FUNCTION", line, re.IGNORECASE):
                 in_function = True
-            elif line.upper().startswith('CREATE TRIGGER'):
+            elif re.match(r"CREATE\s+TRIGGER", line, re.IGNORECASE):
                 in_trigger = True
             
             # Agregar línea al statement actual
@@ -379,29 +387,3 @@ class Backup:
                 statements.append(full_statement)
         
         return statements
-    
-# app/models/backup.py - Agregar este método
-
-def obtener_info_backup(self, id_backup: int) -> dict:
-    """Obtiene la información de un backup específico"""
-    db = self.__conexion_bd.conexion2()
-    if not db:
-        return None
-
-    cursor = db.cursor(dictionary=True)
-    try:
-        cursor.execute("""
-            SELECT 
-                id_backup,
-                id_usuario,
-                estado,
-                fecha,
-                direccion_bd,
-                nombre
-            FROM backup 
-            WHERE id_backup = %s
-        """, (id_backup,))
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        db.close()

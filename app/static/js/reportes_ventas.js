@@ -534,7 +534,7 @@
       const data = await fetchJson("/api/reportes-ventas/venta-local", {
         method: "POST",
         body: JSON.stringify({
-          cliente_id: parseInt(clienteId),
+          cliente_id: clienteId,
           items: itemsLocal,
           metodo_pago: metodoPago,
         }),
@@ -765,6 +765,7 @@
     }
 
     const ventana = window.open("", "_blank");
+        if (!ventana) { mostrarToast("El navegador bloqueó la ventana de impresión. Permite pop-ups e inténtalo de nuevo.", "error"); return; }
     const fecha = new Date().toLocaleString();
     const logoUrl = window.location.origin + '/static/img/LOGO TRAZO.png';
 
@@ -804,8 +805,8 @@
         </style>
       </head>
       <body>
-        <button class="btn-print no-print" onclick="window.print()">🖨 Imprimir</button>
-        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio" onerror="this.style.display='none'"></div>
+        <button class="btn-print no-print" type="button">🖨 Imprimir</button>
+        <div class="logo"><img src="${logoUrl}" alt="ItuAccesorio"></div>
         <h1>REPORTE DE VENTAS</h1>
         <div class="info">Generado: ${fecha} • Total ventas: ${reporteDatosActuales.length}</div>
         ${filtrosTexto.length ? `<div class="filters"><strong>Filtros:</strong> ${filtrosTexto.join(" • ")}</div>` : ''}
@@ -832,6 +833,13 @@
       </html>
     `);
     ventana.document.close();
+
+    // Los handlers inline quedan bloqueados por la CSP en la ventana
+    // generada: se conectan por programación.
+    const btnImprimir = ventana.document.querySelector(".btn-print");
+    if (btnImprimir) btnImprimir.addEventListener("click", () => ventana.print());
+    const logoReporte = ventana.document.querySelector(".logo img");
+    if (logoReporte) logoReporte.addEventListener("error", () => { logoReporte.style.display = "none"; });
   }
 
   // ==================== TABS ====================

@@ -1,15 +1,13 @@
 import os
-from uuid import uuid4
 
 from flask import Blueprint, jsonify, render_template, request, current_app, g
+from app.utils.helpers import guardar_fotos_evidencias, usuario_attr
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_servicio import Orden_servicio
 from app.models.test import Tests
 from app.models.inventario import Inventario
 
 taller_blueprint = Blueprint("taller", __name__)
-
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
 
@@ -41,7 +39,7 @@ def obtener_ordenes_taller():
 @tiene_permiso('Taller', 'consultar')
 def obtener_reparaciones_asignadas():
     # Obtener ID del empleado desde g.user
-    usuario_id = g.user.get("cedula")
+    usuario_id = usuario_attr("cedula")
 
     ordenes = Orden_servicio(ID_empleado=usuario_id)
     resultado = ordenes.listar_ordenes_tecnico()
@@ -106,12 +104,12 @@ def consultar_test():
 @tiene_permiso('Taller', 'editar')
 def guardar_revision_tecnica():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
     numero_test = request.json.get("numero_test")
     componentes = request.json.get("componentes_evaluados")
 
     # Obtener usuario actual para bitácora
-    usuario_actual_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id")
+    usuario_actual_id = usuario_attr("id")
 
     tests = Tests(
         ID_orden=id_orden,
@@ -142,7 +140,7 @@ def guardar_revision_tecnica():
 @tiene_permiso('Taller', 'editar')
 def asignar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
 
    
     ordenes = Orden_servicio(
@@ -162,7 +160,7 @@ def asignar_orden_tecnico():
 @tiene_permiso('Taller', 'editar')
 def liberar_orden_tecnico():
     id_orden = request.json.get("id_orden")
-    id_empleado = g.user.get("cedula")
+    id_empleado = usuario_attr("cedula")
 
     ordenes = Orden_servicio(ID_orden_servicio=id_orden, ID_empleado=id_empleado)
     resultado = ordenes.liberar_orden_empleado()
@@ -193,7 +191,7 @@ def registrar_reparacion():
         # Validar campos obligatorios
         id_orden = data.get("id_orden")
         descripcion = data.get("descripcion_reparacion")
-        id_empleado = g.user.get("cedula")
+        id_empleado = usuario_attr("cedula")
 
         # Procesar lista de repuestos (convertir a JSON si es necesario)
         repuestos = data.get("repuestos_utilizados")
@@ -253,70 +251,18 @@ def registrar_fotos():
         if not orden_data:
             return jsonify({"error": "Orden no encontrada"}), 404
         
-        # Obtener los archivos
+        # Validación y guardado centralizados en app/utils/helpers.py
+        # (whitelist de extensiones, 10 MB y máx. 20 fotos por orden)
         files = request.files.getlist('fotos')
-        
-        if not files or len(files) == 0:
-            return jsonify({"error": "No se subieron archivos"}), 400
-        
-        # Limitar a máximo 20 fotos
-        if len(files) > 20:
-            return jsonify({"error": "Máximo 20 fotos permitidas por orden"}), 400
-        
-        # ============================================
-        # 1. CONFIGURAR Y CREAR LAS RUTAS FÍSICAS
-        # ============================================
-        # current_app.root_path apunta a 'Ituaccesorio/app'
-        
-        static_dir = os.path.join(current_app.root_path, 'static')
-        taller_dir = os.path.join(static_dir, 'img', 'evidencias', 'taller')
-        
-        # Crear la carpeta específica para el ID de la orden
-        carpeta_orden = os.path.join(taller_dir, str(id_orden))
-        
-        # os.makedirs con exist_ok=True creará todas las carpetas padre si no existen
-        os.makedirs(carpeta_orden, exist_ok=True)
-        
-        rutas_guardadas = []
-        archivos_guardados = 0
-        
-        for file in files:
-            if file.filename == '':
-                continue
-            
-            # Validar extensión
-            if '.' not in file.filename:
-                continue
-            
-            extension = file.filename.rsplit('.', 1)[1].lower()
-            if extension not in ALLOWED_IMAGE_EXTENSIONS:
-                print(f"⚠️ Extensión no permitida: {extension}")
-                continue
-            
-            # Validar tamaño (máximo 10MB)
-            file.seek(0, os.SEEK_END)
-            file_size = file.tell()
-            file.seek(0)
-            
-            if file_size > 10 * 1024 * 1024:  # 10MB
-                print(f"⚠️ Archivo demasiado grande: {file_size} bytes")
-                continue
-            
-            # Generar nombre único
-            nombre_archivo = f"{uuid4().hex}.{extension}"
-            ruta_completa = os.path.join(carpeta_orden, nombre_archivo)
-            
-            # Guardar archivo físicamente
-            file.save(ruta_completa)
-            print(f"✅ Archivo guardado físicamente en: {ruta_completa}")
-            
-            # RUTA RELATIVA PARA LA BASE DE DATOS (URL web accesible)
-            ruta_relativa = f'/static/img/evidencias/taller/{id_orden}/{nombre_archivo}'
-            rutas_guardadas.append(ruta_relativa)
-            archivos_guardados += 1
-        
-        if archivos_guardados == 0:
-            return jsonify({"error": "No se pudo guardar ningún archivo. Verifica formatos (JPG, PNG, WEBP) y tamaño (máx 10MB)"}), 400
+        rutas_guardadas, error_fotos = guardar_fotos_evidencias(files, f"evidencias/taller/{id_orden}")
+        if error_fotos:
+            return jsonify({"error": error_fotos}), 400
+        archivos_guardados = len(rutas_guardadas)
+
+        # Rutas físicas para el rollback de la limpieza (necesarias si el
+        # registro en BD falla y hay que borrar los archivos subidos)
+        static_dir = current_app.static_folder
+        carpeta_orden = os.path.join(static_dir, 'img', 'evidencias', 'taller', str(id_orden))
         
         # ============================================
         # 2. REGISTRAR EN LA BASE DE DATOS
@@ -403,10 +349,12 @@ def eliminar_fotos():
                     print(f"Error al eliminar archivo físico: {e}")
             
             # Verificar si la carpeta quedó vacía y eliminarla
+            # (la creación guarda en evidencias/taller/{id_orden}: el prefijo
+            # 'orden_' que había aquí nunca existía → la limpieza fallaba)
             if id_orden:
                 try:
                     base_path = os.path.join(current_app.root_path, 'static', 'img', 'evidencias', 'taller')
-                    carpeta_orden = os.path.join(base_path, f'orden_{id_orden}')
+                    carpeta_orden = os.path.join(base_path, str(id_orden))
                     if os.path.exists(carpeta_orden) and not os.listdir(carpeta_orden):
                         os.rmdir(carpeta_orden)
                         print(f"Carpeta eliminada: {carpeta_orden}")

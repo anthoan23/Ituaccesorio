@@ -1,9 +1,13 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from decimal import Decimal
 from app.models.bitacora import Bitacora
-from app.utils.validators import validar_nombre_producto, validar_solo_letras, validar_solo_letras_numeros
+from app.utils.validators import validar_texto, validar_texto_numero
 import mysql.connector
+
+
+logger = logging.getLogger(__name__)
 
 
 class Categoria:
@@ -127,7 +131,7 @@ class ClaseProducto:
 
     def registrar_clase(self) -> str:
         self.nombre = str(self.nombre or "").strip()
-        error_validacion = validar_solo_letras(self.nombre, 2, 30, "Nombre de la clase")
+        error_validacion = validar_texto(self.nombre, 2, 30, "Nombre de la clase")
         if error_validacion:
             raise ValueError(error_validacion)
 
@@ -256,7 +260,7 @@ class MarcaProducto:
 
     def registrar_marca(self) -> str:
         self.nombre = str(self.nombre or "").strip()
-        error_validacion = validar_solo_letras_numeros(self.nombre, 2, 30, "Nombre de la marca")
+        error_validacion = validar_texto_numero(self.nombre, 2, 30, "Nombre de la marca")
         if error_validacion:
             raise ValueError(error_validacion)
 
@@ -424,16 +428,28 @@ class Producto:
         cursor = None
         try:
             cursor = db.cursor(dictionary=True)
-            cursor.callproc('sp_verificar_stock_producto', (self.id_producto, 0, False))
-            cursor.execute("SELECT @_sp_verificar_stock_producto_1 AS stock_total, @_sp_verificar_stock_producto_2 AS tiene_stock")
-            out_params = cursor.fetchone()
-            stock_total = out_params['stock_total'] if out_params else 0
-            tiene_stock = bool(out_params['tiene_stock']) if out_params else False
-            detalle = []
-            for result in cursor.stored_results():
-                rows = result.fetchall()
-                if rows:
-                    detalle = rows
+            # Consulta directa en vez del SP sp_verificar_stock_producto: ese
+            # SP NO existe en el seed (bd/ituaccesoriobd.sql) — solo quedaba
+            # vacío en un respaldo viejo de app/bd/ — así que tras
+            # `down -v && up` el callproc fallaba siempre y el endpoint caía
+            # al fallback silencioso.
+            cursor.execute("""
+                SELECT
+                    COALESCE(SUM(ep.Existencia), 0) AS stock_total,
+                    COALESCE(SUM(ep.Existencia), 0) > 0 AS tiene_stock
+                FROM Existencias_productos ep
+                WHERE ep.ID_producto = %s
+            """, (self.id_producto,))
+            totales = cursor.fetchone() or {}
+            stock_total = totales.get('stock_total', 0)
+            tiene_stock = bool(totales.get('tiene_stock', 0))
+            cursor.execute("""
+                SELECT ID_inventario, Existencia, Costo_venta
+                FROM Existencias_productos
+                WHERE ID_producto = %s
+                ORDER BY Existencia DESC
+            """, (self.id_producto,))
+            detalle = cursor.fetchall() or []
             return {
                 "stock_total": stock_total,
                 "tiene_stock": tiene_stock,
@@ -441,12 +457,12 @@ class Producto:
                 "success": True
             }
         except mysql.connector.Error as e:
-            print(f"Error en procedure: {e}")
+            logger.error(f"Error en procedure: {e}")
             return {
                 "stock_total": 0,
                 "tiene_stock": False,
                 "detalle": [],
-                "error": str(e),
+                "error": "Error al verificar el stock. Intente nuevamente.",
                 "success": False
             }
         finally:
@@ -472,7 +488,7 @@ class Producto:
             row = cursor.fetchone()
             return row['ID_producto'] if row else None
         except Exception as e:
-            print(f"Error al buscar producto existente: {e}")
+            logger.error(f"Error al buscar producto existente: {e}")
             return None
         finally:
             cursor.close()
@@ -483,7 +499,7 @@ class Producto:
         self.id_clase = str(self.id_clase or "").strip()
         self.id_marca = str(self.id_marca or "").strip()
 
-        error_nombre = validar_nombre_producto(self.nombre, 2, 50, "Nombre del producto")
+        error_nombre = validar_texto_numero(self.nombre, 2, 50, "Nombre del producto", caracteres_extra="-()")
         if error_nombre:
             raise ValueError(error_nombre)
 
@@ -563,7 +579,7 @@ class Producto:
                         modulo_nombre="Productos"
                     ).registrar()
             except Exception as bit_err:
-                print(f"[WARN] No se pudo registrar en bitacora: {bit_err}")
+                logger.warning(f"[WARN] No se pudo registrar en bitacora: {bit_err}")
 
             return id_producto_creado
 

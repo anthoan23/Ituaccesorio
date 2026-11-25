@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.utils.validators import validar_texto_numero
+from app.utils.validators import validar_texto_numero, validar_rif
 from app.models.database import conectar
 from datetime import datetime
 import logging
@@ -25,32 +25,14 @@ class Orden_servicio():
         self._conexion = conectar()
 
     # ============================================
-    # MÉTODOS DE VALIDACIÓN (Lógica en el modelo)
-    # ============================================
-    @staticmethod
-    def _validar_email(email):
-        if not email:
-            return None
-        patron = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-        if not re.match(patron, email):
-            return "El correo electrónico no es válido."
-        return None
-
-    @staticmethod
-    def _validar_rif(rif):
-        if not rif:
-            return "El RIF es obligatorio."
-        rif_limpio = rif.replace("-", "").upper()
-        if not re.match(r'^[JE]\d{9}$', rif_limpio):
-            return "El RIF debe tener el formato J-12345678-9 o E-12345678-9."
-        return None
-
+    # Validaciones: se usan los validadores compartidos de
+    # app/utils/validators.py (única fuente de verdad).
     # ============================================
 
     def listar_modelos_telefonos(self) -> list:
         db = self._conexion.conexion1()
         if not db:
-            print("[ERROR] Error al conectar con la base de datos.")
+            logger.error("[ERROR] Error al conectar con la base de datos.")
             return []
         
         cursor = db.cursor(dictionary=True)
@@ -67,10 +49,10 @@ class Orden_servicio():
                 ORDER BY p.Nombre_producto
             """)
             modelos = cursor.fetchall()
-            print(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
+            logger.debug(f"[DEBUG] Modelos de teléfonos encontrados: {len(modelos)}")
             return modelos
         except Exception as e:
-            print(f"[ERROR] Error al listar modelos de teléfonos: {e}")
+            logger.error(f"[ERROR] Error al listar modelos de teléfonos: {e}")
             return []
         finally:
             cursor.close()
@@ -101,7 +83,7 @@ class Orden_servicio():
             )
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al listar órdenes de servicio: {e}")
+            logger.error(f"Error al listar órdenes de servicio: {e}")
             return []
         finally:
             cursor.close()
@@ -140,7 +122,7 @@ class Orden_servicio():
             )
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al listar órdenes de taller: {e}")
+            logger.error(f"Error al listar órdenes de taller: {e}")
             return []
         finally:
             cursor.close()
@@ -169,7 +151,7 @@ class Orden_servicio():
             cursor.execute(sql, (empleado_id,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al listar órdenes de taller: {e}")
+            logger.error(f"Error al listar órdenes de taller: {e}")
             return []
         finally:
             cursor.close()
@@ -178,7 +160,7 @@ class Orden_servicio():
     def consultar_orden(self):
         id_orden = self.ID_orden_servicio
 
-        validar_id_orden = validar_texto_numero(id_orden, 1, 10, "ID dela orden")
+        validar_id_orden = validar_texto_numero(id_orden, 1, 10, "ID de la orden")
         if validar_id_orden:
             return validar_id_orden
 
@@ -221,7 +203,7 @@ class Orden_servicio():
             return orden
             
         except Exception as e:
-            print(f"Error al consultar la orden: {e}")
+            logger.error(f"Error al consultar la orden: {e}")
             return None
         finally:
             cursor.close()
@@ -263,7 +245,7 @@ class Orden_servicio():
             )
             return cursor.fetchone() is not None
         except Exception as e:
-            print(f"Error al verificar foto por ID: {e}")
+            logger.error(f"Error al verificar foto por ID: {e}")
             return False
         finally:
             cursor.close()
@@ -307,8 +289,8 @@ class Orden_servicio():
             }
         except Exception as e:
             db.rollback()
-            print(f"Error al eliminar la foto: {e}")
-            return {"success": False, "error": f"Error al eliminar la foto: {str(e)}"}
+            logger.error(f"Error al eliminar la foto: {e}")
+            return {"success": False, "error": "Error al eliminar la foto. Intente de nuevo."}
         finally:
             cursor.close()
             db.close()
@@ -340,7 +322,7 @@ class Orden_servicio():
             }
         except Exception as e:
             db.rollback()
-            print(f"Error al registrar fotos: {e}")
+            logger.error(f"Error al registrar fotos: {e}")
             error_msg = str(e)
             if "MESSAGE_TEXT" in error_msg:
                 match = re.search(r"MESSAGE_TEXT: (.*?)(?:,|$)", error_msg)
@@ -373,7 +355,7 @@ class Orden_servicio():
             return True
         except Exception as e:
             db.rollback()
-            print(f"Error al asignar la orden al empleado: {e}")
+            logger.error(f"Error al asignar la orden al empleado: {e}")
             return False
         finally:
             cursor.close()
@@ -401,14 +383,14 @@ class Orden_servicio():
             return True
         except Exception as e:
             db.rollback()
-            print(f"Error al liberar la orden del empleado: {e}")
+            logger.error(f"Error al liberar la orden del empleado: {e}")
             return False
         finally:
             cursor.close()
             db.close()
 
     def registrar_reparacion(self):
-        validar_descripcion = validar_texto_numero(self.Descripcion_reparacion, 0, 300, "Desdescripcion ")
+        validar_descripcion = validar_texto_numero(self.Descripcion_reparacion, 1, 300, "Descripción")
         if validar_descripcion:
             return {"success": False, "error": validar_descripcion}
 
@@ -449,8 +431,8 @@ class Orden_servicio():
                 
         except Exception as e:
             db.rollback()
-            print(f"Error al registrar la reparación: {e}")
-            return {"error": f"Error en la base de datos: {str(e)}"}
+            logger.error(f"Error al registrar la reparación: {e}")
+            return {"error": "Error en la base de datos. Intente de nuevo."}
         finally:
             cursor.close()
             db.close()
@@ -466,7 +448,9 @@ class Orden_servicio():
         if not id_cliente:
             raise Exception("El ID del cliente es obligatorio.")
         
-        id_cliente_val = str(id_cliente).strip()
+        # Normalizar: sin espacios y en mayúsculas (los RIF se guardan canónicos)
+        id_cliente_val = str(id_cliente).strip().upper()
+        id_cliente = id_cliente_val
         
         if tipo_cliente == "natural":
             if not id_cliente_val.isdigit():
@@ -474,7 +458,7 @@ class Orden_servicio():
             if len(id_cliente_val) < 7 or len(id_cliente_val) > 8:
                 raise Exception("La cédula debe tener 7 u 8 dígitos.")
         else:
-            error_rif = self._validar_rif(id_cliente_val)
+            error_rif = validar_rif(id_cliente_val, tipos="JE", obligatorio=True)
             if error_rif:
                 raise Exception(error_rif)
         
@@ -592,18 +576,25 @@ class Orden_servicio():
             if ultimo_id is None:
                 siguiente_numero = 1
             else:
-                siguiente_numero = int(ultimo_id[2:]) + 1
+                # int() protegido: un formato inesperado lanzaba ValueError
+                # crudo al usuario.
+                try:
+                    siguiente_numero = int(ultimo_id[2:]) + 1
+                except (ValueError, IndexError):
+                    siguiente_numero = 1
             
             nuevo_id = f"OS{str(siguiente_numero).zfill(7)}"
             
-            # 6. Insertar la orden de servicio
-            fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # 6. Insertar la orden de servicio.
+            # NOW() de MySQL (-04:00) en vez de datetime.now() del contenedor
+            # (UTC): la misma tabla mezclaba dos relojes con 4 h de diferencia.
+            fecha_actual = None  # se envía NOW() en el SQL
             
             sql = """
                 INSERT INTO Orden_servicio 
                 (ID_orden_servicio, ID_equipo, ID_cliente, Estado_orden_servicio, 
                  Descripcion_reparacion, Nota_orden_servicio, Fecha_entrada)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
             """
             cursor.execute(sql, (
                 nuevo_id,
@@ -611,8 +602,7 @@ class Orden_servicio():
                 id_cliente_guardar,
                 'Pendiente',
                 descripcion,
-                nota,
-                fecha_actual
+                nota
             ))
             
             # 7. Registrar la interacción inicial
@@ -623,7 +613,10 @@ class Orden_servicio():
             if ultimo_id_int is None:
                 siguiente_num_int = 1
             else:
-                siguiente_num_int = int(ultimo_id_int[3:]) + 1
+                try:
+                    siguiente_num_int = int(ultimo_id_int[3:]) + 1
+                except (ValueError, IndexError):
+                    siguiente_num_int = 1
             
             nuevo_id_int = f"INT{str(siguiente_num_int).zfill(6)}"
             
@@ -635,12 +628,12 @@ class Orden_servicio():
             # 8. Confirmar la transacción
             db.commit()
             
-            print(f"[MODEL] Orden creada exitosamente: {nuevo_id}")
+            logger.debug(f"[MODEL] Orden creada exitosamente: {nuevo_id}")
             return nuevo_id
             
         except Exception as e:
             db.rollback()
-            print(f"[MODEL] Error al crear orden: {e}")
+            logger.error(f"[MODEL] Error al crear orden: {e}")
             raise e
         finally:
             cursor.close()
@@ -649,7 +642,7 @@ class Orden_servicio():
     def listado_ordenes_servicio(self, estados=None):
         db = self._conexion.conexion1()
         if not db:
-            print("Error al conectar con la base de datos.")
+            logger.error("Error al conectar con la base de datos.")
             return []
         
         cursor = db.cursor(dictionary=True)
@@ -703,7 +696,7 @@ class Orden_servicio():
             return cursor.fetchall()
             
         except Exception as e:
-            print(f"Error al listar órdenes de servicio: {e}")
+            logger.error(f"Error al listar órdenes de servicio: {e}")
             return []
         finally:
             cursor.close()
@@ -761,7 +754,7 @@ class Orden_servicio():
             return cursor.fetchone()
             
         except Exception as e:
-            print(f"Error al obtener detalles de la orden: {e}")
+            logger.error(f"Error al obtener detalles de la orden: {e}")
             return None
         finally:
             cursor.close()
@@ -780,7 +773,7 @@ class Orden_servicio():
             )
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al obtener fotos de la orden: {e}")
+            logger.error(f"Error al obtener fotos de la orden: {e}")
             return []
         finally:
             cursor.close()
@@ -801,7 +794,7 @@ class Orden_servicio():
             return cursor.rowcount > 0
         except Exception as e:
             db.rollback()
-            print(f"Error al actualizar estado: {e}")
+            logger.error(f"Error al actualizar estado: {e}")
             return False
         finally:
             cursor.close()
@@ -824,9 +817,31 @@ class Orden_servicio():
             
             estado = result[0] if isinstance(result, tuple) else result.get('Estado_orden_servicio')
             if estado.lower() != 'pendiente':
-                print(f"No se puede eliminar la orden {id_orden} porque está en estado '{estado}'")
+                logger.debug(f"No se puede eliminar la orden {id_orden} porque está en estado '{estado}'")
                 return False
             
+            # Orden de borrado completa: antes solo se borraban Fotos e
+            # Interaccion, y cualquier orden con repuestos, pagos o tests
+            # fallaba con error 1451 (FK RESTRICT) y devolvía False genérico.
+            cursor.execute(
+                "DELETE ru FROM Repuestos_usados ru "
+                "INNER JOIN Orden_servicio os ON ru.ID_orden_servicio = os.ID_orden_servicio "
+                "WHERE os.ID_orden_servicio = %s", (id_orden,))
+            cursor.execute(
+                "DELETE ps FROM Pago_servicio ps "
+                "INNER JOIN Orden_servicio os ON ps.ID_orden_servicio = os.ID_orden_servicio "
+                "WHERE os.ID_orden_servicio = %s", (id_orden,))
+            cursor.execute(
+                "DELETE tri FROM Test_realizados_interaccion tri "
+                "INNER JOIN Interaccion i ON tri.ID_interaccion = i.ID_interaccion "
+                "INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio "
+                "WHERE os.ID_orden_servicio = %s", (id_orden,))
+            cursor.execute(
+                "DELETE t FROM Test t "
+                "INNER JOIN Test_realizados_interaccion tri ON t.ID_test = tri.ID_test "
+                "INNER JOIN Interaccion i ON tri.ID_interaccion = i.ID_interaccion "
+                "INNER JOIN Orden_servicio os ON i.ID_orden_servicio = os.ID_orden_servicio "
+                "WHERE os.ID_orden_servicio = %s", (id_orden,))
             cursor.execute("DELETE FROM Fotos_orden_servicio WHERE ID_orden_servicio = %s", (id_orden,))
             cursor.execute("DELETE FROM Interaccion WHERE ID_orden_servicio = %s", (id_orden,))
             cursor.execute("DELETE FROM Orden_servicio WHERE ID_orden_servicio = %s", (id_orden,))
@@ -835,7 +850,7 @@ class Orden_servicio():
             return True
         except Exception as e:
             db.rollback()
-            print(f"Error al eliminar la orden: {e}")
+            logger.error(f"Error al eliminar la orden: {e}")
             return False
         finally:
             cursor.close()
@@ -856,7 +871,7 @@ class Orden_servicio():
             return f"Foto registrada exitosamente con ID {self.ID_foto_orden_servicio}"
         except Exception as e:
             db.rollback()
-            print(f"Error al agregar foto: {e}")
+            logger.error(f"Error al agregar foto: {e}")
             return f"Error al registrar la foto: {str(e)}"
         finally:
             cursor.close()
@@ -898,7 +913,7 @@ class Orden_servicio():
             cursor.execute(sql, (empleado_id,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error al listar órdenes del técnico: {e}")
+            logger.error(f"Error al listar órdenes del técnico: {e}")
             return []
         finally:
             cursor.close()

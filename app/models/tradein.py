@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from typing import Any, cast
 
@@ -5,9 +6,12 @@ from app.models.bitacora import Bitacora
 from app.models.database import conectar
 
 
+logger = logging.getLogger(__name__)
+
+
 class TradeIn(conectar):
     """Modelo para cotizaciones de Trade-in (solo cálculo, no guarda en BD)"""
-    
+
     FALLAS_COTIZACION = [
         {"clave": "power", "etiqueta": "Botón de power", "busqueda": "power"},
         {"clave": "cornetas", "etiqueta": "Cornetas", "busqueda": "cornetas"},
@@ -31,29 +35,30 @@ class TradeIn(conectar):
         {"clave": "manuales", "etiqueta": "Manuales", "busqueda": "manual"},
     ]
 
-    # Mapeo de fallas a productos/repuestos en la BD
-    # Esto relaciona cada falla con un producto de repuesto
-    MAPEO_FALLA_REPUESTO = {
-        "power": "boton_power",
-        "cornetas": "corneta",
-        "mica": "mica",
-        "lcd": "pantalla",
-        "tactil": "touch",
-        "botones_laterales": "boton_volumen",
-        "botones_inferiores": "boton_home",
-        "puerto_carga": "puerto_carga",
-        "wifi": "modulo_wifi",
-        "camara_trasera": "camara_trasera",
-        "camara_delantera": "camara_frontal",
-        "flash": "flash",
-        "senal_auricular": "auricular",
-        "microfono": "microfono",
-        "sensor_proximidad": "sensor_prox",
-        "caja": "caja",
-        "cargador": "cargador",
-        "cable": "cable_usb",
-        "audifonos": "audifonos",
-        "manuales": "manuales",
+    # Porcentaje de deducción sobre el precio base del equipo.
+    # Solo aplica a iPhone (Apple / Teléfono), por eso se usa % y no monto fijo:
+    # un LCD de iPhone 7 no vale lo mismo que el de un 15 Pro Max.
+    DEDUCCIONES_PORCENTAJE = {
+        "power": 5.0,
+        "cornetas": 4.0,
+        "mica": 3.0,
+        "lcd": 35.0,
+        "tactil": 25.0,
+        "botones_laterales": 3.0,
+        "botones_inferiores": 3.0,
+        "puerto_carga": 6.0,
+        "wifi": 5.0,
+        "camara_trasera": 10.0,
+        "camara_delantera": 8.0,
+        "flash": 3.0,
+        "senal_auricular": 4.0,
+        "microfono": 3.0,
+        "sensor_proximidad": 4.0,
+        "caja": 2.0,
+        "cargador": 2.0,
+        "cable": 1.0,
+        "audifonos": 1.5,
+        "manuales": 0.5,
     }
 
     def __init__(self, usuario_id: str = None):
@@ -93,71 +98,6 @@ class TradeIn(conectar):
         }
         return descripciones.get(clave_falla, "Esta falla requiere revisión técnica para determinar el costo exacto.")
 
-    def _obtener_costo_repuesto(self, id_producto_equipo: str, falla_clave: str) -> float:
-        """
-        Obtiene el costo de un repuesto desde la base de datos.
-        Busca en Suministra el costo del repuesto relacionado con la falla.
-        """
-        db = self.conexion1()
-        if not db:
-            return 0.00  # Valor por defecto si no hay conexión
-
-        cursor = db.cursor(dictionary=True)
-        try:
-            # Buscar el repuesto relacionado con la falla
-            # Primero, obtener el ID_producto del repuesto basado en el mapeo
-            nombre_repuesto = self.MAPEO_FALLA_REPUESTO.get(falla_clave, falla_clave)
-            
-            # Buscar el producto repuesto
-            query_repuesto = """
-                SELECT ID_producto 
-                FROM Producto 
-                WHERE LOWER(Nombre_producto) LIKE %s 
-                    AND ID_Clase = '7'  -- Clase Repuesto
-                LIMIT 1
-            """
-            cursor.execute(query_repuesto, (f'%{nombre_repuesto}%',))
-            repuesto = cursor.fetchone()
-            
-            if not repuesto:
-                return 0.00  # Valor por defecto si no encuentra el repuesto
-            
-            id_repuesto = repuesto['ID_producto']
-            
-            # Obtener el costo del repuesto desde Suministra (tomar el más bajo)
-            query_costo = """
-                SELECT MIN(Costo_producto) as costo
-                FROM Suministra
-                WHERE ID_producto = %s
-            """
-            cursor.execute(query_costo, (id_repuesto,))
-            resultado = cursor.fetchone()
-            
-            if resultado and resultado['costo'] is not None:
-                return float(resultado['costo'])
-            
-            # Si no tiene costo en Suministra, buscar en Existencias_productos
-            query_existencia = """
-                SELECT Costo_venta
-                FROM Existencias_productos
-                WHERE ID_producto = %s
-                LIMIT 1
-            """
-            cursor.execute(query_existencia, (id_repuesto,))
-            existencia = cursor.fetchone()
-            
-            if existencia and existencia['Costo_venta'] is not None:
-                return float(existencia['Costo_venta'])
-            
-            return 0.00  # Valor por defecto
-            
-        except Exception as e:
-            print(f"Error al obtener costo de repuesto: {e}")
-            return 0.00
-        finally:
-            cursor.close()
-            db.close()
-
     def consultar_equipos(self) -> list[dict[str, Any]]:
         """
         Consulta equipos disponibles para trade-in.
@@ -181,7 +121,7 @@ class TradeIn(conectar):
                 INNER JOIN Producto p ON p.ID_producto = e.ID_producto
                 INNER JOIN Marca_producto m ON m.ID_marca = p.ID_marca
                 INNER JOIN Clase_producto c ON c.ID_Clase = p.ID_Clase
-                WHERE e.Existencia > 0
+                WHERE e.Existencia >= 0
                     AND m.Nombre_marca = 'Apple'
                     AND c.Nombre_Clase = 'Telefono'
                 ORDER BY p.Nombre_producto ASC
@@ -243,8 +183,17 @@ class TradeIn(conectar):
             cursor.close()
             db.close()
 
-    def calcular_cotizacion(self, id_producto, fallas_seleccionadas) -> dict[str, Any]:
-       
+    def calcular_cotizacion(self, id_producto, fallas_seleccionadas,
+                        liberado: str = "si") -> dict[str, Any]:
+        # Regla de negocio "equipo liberado" movida aquí (antes vivía solo en
+        # el controller y ni siquiera llegaba al modelo).
+        valores_liberado = ("si", "s", "sí", "1", "true", "on", "yes")
+        if str(liberado or "").strip().lower() not in valores_liberado:
+            return {
+                "success": False,
+                "error": "Lo sentimos, el equipo debe estar liberado para calificar.",
+            }
+
         if not id_producto:
             return {
                 "success": False,
@@ -262,7 +211,6 @@ class TradeIn(conectar):
 
         nombre_modelo = str(equipo["N_modelo"] or "")
         precio_base = float(equipo["Costo_venta"] or 0)
-        id_producto_base = equipo.get("ID_producto_base", "")
         
         if precio_base <= 0:
             return {
@@ -285,30 +233,38 @@ class TradeIn(conectar):
                 if config and config not in fallas_validas:
                     fallas_validas.append(config)
 
-        # Calcular deducciones con costos reales desde la BD
+        # Calcular deducciones como % del precio base (iPhone)
         detalles_fallas = []
         advertencias = []
         costo_total_repuestos = 0.0
 
         for falla in fallas_validas:
-            # Obtener costo del repuesto desde la base de datos
-            costo = self._obtener_costo_repuesto(id_producto_base, falla["clave"])
+            porcentaje = float(self.DEDUCCIONES_PORCENTAJE.get(falla["clave"], 0.0))
+            costo = precio_base * (porcentaje / 100.0)
             costo_total_repuestos += costo
-            
+
             detalles_fallas.append({
                 "clave": falla["clave"],
                 "etiqueta": falla["etiqueta"],
+                "porcentaje": round(porcentaje, 2),
                 "costo": round(costo, 2),
                 "descripcion": self._obtener_descripcion_falla(falla["clave"]),
             })
-            
+
             advertencias.append(
-                f"Se aplicó ${costo:.2f} por {falla['etiqueta']}."
+                f"Se aplicó {porcentaje:.1f}% (${costo:.2f}) por {falla['etiqueta']}."
+            )
+
+        # Tope de seguridad: la deducción total no puede superar el precio base
+        if costo_total_repuestos > precio_base:
+            costo_total_repuestos = precio_base
+            advertencias.append(
+                "Las deducciones superan el precio base; se ajustaron al 100% del valor."
             )
 
         if len(fallas_validas) >= 5:
             descuento_adicional = costo_total_repuestos * 0.10
-            costo_total_repuestos += descuento_adicional
+            costo_total_repuestos -= descuento_adicional
             advertencias.append(
                 f"Se aplicó un 10% de descuento adicional por múltiples fallas (${descuento_adicional:.2f})."
             )

@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from datetime import datetime
+
+
+logger = logging.getLogger(__name__)
 
 
 class OrdenCompra:
@@ -49,9 +53,7 @@ class OrdenCompra:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error listar_ordenes_pendientes: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.debug(f"Error listar_ordenes_pendientes: {e}")
             return []
         finally:
             cursor.close()
@@ -70,7 +72,7 @@ class OrdenCompra:
                     o.ID_orden_compra as ID_orden_c,
                     p.Nombre_proveedor as N_proveedor,
                     DATE_FORMAT(ei.Fecha_entrega_inventario, '%Y-%m-%d %H:%i') as Fecha_entrega,
-                    ei.Recibido_por,
+                    CONCAT(e.Nombre_empleado, ' ', e.Apellido_empleado) as Recibido_por,
                     COALESCE((
                         SELECT SUM(d2.Cantidad_producto * COALESCE(s2.Costo_producto, 0))
                         FROM Detalle_orden d2
@@ -80,13 +82,14 @@ class OrdenCompra:
                 FROM Orden_compra o
                 JOIN Proveedor p ON o.ID_proveedor = p.ID_proveedor
                 JOIN Entrega_inventario ei ON o.ID_orden_compra = ei.ID_orden_compra
+                LEFT JOIN Empleado e ON ei.ID_empleado = e.ID_empleado
                 WHERE o.Estado_orden_compra = 'Completada'
-                GROUP BY o.ID_orden_compra, p.Nombre_proveedor, ei.Fecha_entrega_inventario, ei.Recibido_por
+                GROUP BY o.ID_orden_compra, p.Nombre_proveedor, ei.Fecha_entrega_inventario, ei.ID_empleado, Recibido_por
                 ORDER BY ei.Fecha_entrega_inventario DESC
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error listar_ordenes_entregadas: {e}")
+            logger.debug(f"Error listar_ordenes_entregadas: {e}")
             return []
         finally:
             cursor.close()
@@ -170,7 +173,7 @@ class OrdenCompra:
                 "productos_orden": productos_orden
             }
         except Exception as e:
-            print(f"Error obtener_detalles_orden: {e}")
+            logger.debug(f"Error obtener_detalles_orden: {e}")
             return None
         finally:
             cursor.close()
@@ -202,7 +205,7 @@ class OrdenCompra:
             """, (id_orden,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error obtener_productos_orden: {e}")
+            logger.debug(f"Error obtener_productos_orden: {e}")
             return []
         finally:
             cursor.close()
@@ -228,7 +231,7 @@ class OrdenCompra:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error listar_proveedores: {e}")
+            logger.debug(f"Error listar_proveedores: {e}")
             return []
         finally:
             cursor.close()
@@ -255,7 +258,7 @@ class OrdenCompra:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error listar_empleados: {e}")
+            logger.debug(f"Error listar_empleados: {e}")
             return []
         finally:
             cursor.close()
@@ -288,7 +291,7 @@ class OrdenCompra:
             """, (id_proveedor,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error obtener_productos_proveedor: {e}")
+            logger.debug(f"Error obtener_productos_proveedor: {e}")
             return []
         finally:
             cursor.close()
@@ -298,6 +301,15 @@ class OrdenCompra:
         """Agrega una nueva orden de compra"""
         if not self.id_empleado or not self.id_proveedor or not self.productos:
             return False
+
+        # Cantidades válidas: antes un qty <= 0 o no numérico se insertaba
+        # tal cual en Detalle_orden.
+        for _mid, qty in self.productos:
+            try:
+                if int(qty) <= 0:
+                    return False
+            except (TypeError, ValueError):
+                return False
 
         db = self._conexion()
         if not db:
@@ -335,10 +347,19 @@ class OrdenCompra:
                 """, (self.id_orden, str(mid), qty))
             
             db.commit()
+
+            if self.usuario_id:
+                Bitacora(
+                    accion="Registrar orden de compra",
+                    descripcion=f"Se registró la orden de compra ID: {self.id_orden}",
+                    usuario_id=self.usuario_id,
+                    modulo_nombre="Órdenes de compra"
+                ).registrar()
+
             return True
             
         except Exception as e:
-            print(f"Error agregar_orden_compra: {e}")
+            logger.debug(f"Error agregar_orden_compra: {e}")
             if db:
                 db.rollback()
             return False
@@ -350,9 +371,9 @@ class OrdenCompra:
 
     def actualizar_orden_compra(self) -> bool:
         """Actualiza una orden de compra existente"""
-        print(f"🔧 actualizar_orden_compra() iniciado para orden: {self.id_orden}")
-        print(f"   Empleado: {self.id_empleado}, Proveedor: {self.id_proveedor}")
-        print(f"   Productos: {self.productos}")
+        logger.debug(f"🔧 actualizar_orden_compra() iniciado para orden: {self.id_orden}")
+        logger.debug(f"   Empleado: {self.id_empleado}, Proveedor: {self.id_proveedor}")
+        logger.debug(f"   Productos: {self.productos}")
         
         if not self.id_orden:
             raise ValueError("ID de orden es requerido para actualizar")
@@ -373,18 +394,18 @@ class OrdenCompra:
                 (self.id_orden,)
             )
             result = cursor.fetchone()
-            print(f"📊 Resultado verificación: {result}")
+            logger.debug(f"📊 Resultado verificación: {result}")
             
             if not result:
-                print(f"❌ Orden {self.id_orden} no encontrada")
+                logger.debug(f"❌ Orden {self.id_orden} no encontrada")
                 return False
             
             if result[1] != 'Pendiente':
-                print(f"❌ La orden {self.id_orden} no está pendiente (estado: {result[1]})")
+                logger.debug(f"❌ La orden {self.id_orden} no está pendiente (estado: {result[1]})")
                 return False
 
             # ✅ VALIDACIÓN: Verificar que todos los productos existan en la tabla Producto
-            print("🔍 Verificando productos...")
+            logger.debug("🔍 Verificando productos...")
             for mid, qty in self.productos:
                 cursor.execute(
                     "SELECT ID_producto FROM Producto WHERE ID_producto = %s",
@@ -392,9 +413,9 @@ class OrdenCompra:
                 )
                 producto_existe = cursor.fetchone()
                 if not producto_existe:
-                    print(f"❌ Producto con ID '{mid}' no existe en la tabla Producto")
+                    logger.debug(f"❌ Producto con ID '{mid}' no existe en la tabla Producto")
                     raise ValueError(f"El producto con ID '{mid}' no existe en el catálogo")
-                print(f"✅ Producto {mid} existe")
+                logger.debug(f"✅ Producto {mid} existe")
 
             # Actualizar empleado y proveedor
             cursor.execute("""
@@ -403,14 +424,14 @@ class OrdenCompra:
                 WHERE ID_orden_compra = %s
             """, (self.id_empleado, self.id_proveedor, self.id_orden))
             
-            print(f"✅ UPDATE Orden_compra afectó {cursor.rowcount} filas")
+            logger.debug(f"✅ UPDATE Orden_compra afectó {cursor.rowcount} filas")
             
             # Eliminar detalles antiguos
             cursor.execute(
                 "DELETE FROM Detalle_orden WHERE ID_orden_compra = %s",
                 (self.id_orden,)
             )
-            print(f"✅ DELETE Detalle_orden afectó {cursor.rowcount} filas")
+            logger.debug(f"✅ DELETE Detalle_orden afectó {cursor.rowcount} filas")
             
             # Insertar nuevos detalles
             for mid, qty in self.productos:
@@ -418,10 +439,10 @@ class OrdenCompra:
                     INSERT INTO Detalle_orden (ID_orden_compra, ID_producto, Cantidad_producto)
                     VALUES (%s, %s, %s)
                 """, (self.id_orden, str(mid), qty))
-                print(f"✅ INSERT Detalle_orden: producto={mid}, cantidad={qty}")
+                logger.debug(f"✅ INSERT Detalle_orden: producto={mid}, cantidad={qty}")
             
             db.commit()
-            print("✅ Transacción completada exitosamente")
+            logger.debug("✅ Transacción completada exitosamente")
             
             # Registrar en bitácora
             if self.usuario_id:
@@ -432,14 +453,12 @@ class OrdenCompra:
                     modulo_nombre="Órdenes de compra"
                 )
                 bitacora.registrar()
-                print("✅ Bitácora registrada")
+                logger.debug("✅ Bitácora registrada")
             
             return True
             
         except Exception as e:
-            print(f"❌ Error actualizar_orden_compra: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.debug(f"❌ Error actualizar_orden_compra: {e}")
             if db:
                 db.rollback()
             return False
@@ -479,7 +498,7 @@ class OrdenCompra:
             
             return anulado
         except Exception as e:
-            print(f"Error anular_orden_compra: {e}")
+            logger.debug(f"Error anular_orden_compra: {e}")
             db.rollback()
             return False
         finally:

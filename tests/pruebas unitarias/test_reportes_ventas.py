@@ -166,7 +166,7 @@ class TestObtenerReportesVentas:
         [
             pytest.param(
                 {"q": "Bus#1"},
-                "El campo Búsqueda no puede contener caracteres especiales.",
+                "El campo Búsqueda solo puede contener letras, números, acentos y espacios.",
                 id="busqueda-caracteres-invalidos",
             ),
             pytest.param(
@@ -306,7 +306,8 @@ class TestObtenerDetalleVentaCompleto:
             ),
             pytest.param(
                 "FAC#1",
-                "El campo Factura solo puede contener letras, números y guiones.",
+                "El campo Factura solo puede contener letras, números (sin "
+                "espacios) y guiones.",
                 id="factura-caracteres-invalidos",
             ),
             pytest.param(
@@ -445,7 +446,7 @@ class TestRegistrarVentaLocal:
 
     def test_datos_validos(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (10,)]
+        cursor.fetchone.side_effect = [(1,), (10, Decimal("10.50"))]
         uuid_parche, datetime_parche = preparar_factura()
 
         try:
@@ -492,7 +493,7 @@ class TestRegistrarVentaLocal:
 
     def test_dos_items_suman_el_total(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (10,), (5,)]
+        cursor.fetchone.side_effect = [(1,), (10, Decimal("10.50")), (5, Decimal("5.00"))]
         uuid_parche, datetime_parche = preparar_factura()
 
         try:
@@ -651,7 +652,7 @@ class TestRegistrarVentaLocal:
 
     def test_stock_insuficiente(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (1,)]
+        cursor.fetchone.side_effect = [(1,), (1, Decimal("10.50"))]
 
         with pytest.raises(ValueError) as excinfo:
             ReportesVentasModel(
@@ -715,7 +716,7 @@ class TestRegistrarVentaLocal:
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.return_value = (1,)
+        cursor.fetchone.side_effect = [(1,), (10, Decimal("10.50"))]
         # 1ª: verificar cliente; 2ª: INSERT de la venta que falla
         cursor.execute.side_effect = [None, Exception("fallo simulado")]
 
@@ -733,7 +734,7 @@ class TestRegistrarVentaLocal:
 
     def test_registra_bitacora_con_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [(1,), (10,)]
+        cursor.fetchone.side_effect = [(1,), (10, Decimal("10.50"))]
         uuid_parche, datetime_parche = preparar_factura()
 
         try:

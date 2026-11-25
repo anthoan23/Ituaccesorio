@@ -10,7 +10,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 # la vista /pagar y las API de pago redirigen/rechazan si el usuario no es un
 # cliente existente; en modo prueba el usuario falso es admin, por lo que esta
 # prueba puede fallar en runtime.
-URL_PAGAR = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/pagar"
+URL_PAGAR = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/pagar"
 TIEMPO_ESPERA = 10
 
 # [metodo, referencia, monto] — pago_movil exige comprobante (capture)

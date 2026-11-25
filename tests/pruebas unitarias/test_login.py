@@ -190,7 +190,7 @@ class TestCrearUsuario:
             usuario.agregar_usuario.return_value = "Usuario agregado exitosamente."
             usuario.id = "USR-001"
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO,
                 CEDULA_VALIDA,
                 PASSWORD_VALIDA,
@@ -198,7 +198,8 @@ class TestCrearUsuario:
                 "perfil.png",
             )
 
-        assert resultado == "USR-001"
+        assert usuario_id == "USR-001"
+        assert error is None and duplicado is False
         usuarios_cls.assert_called_once_with(
             nombre=NOMBRE_USUARIO,
             cedula=CEDULA_VALIDA,
@@ -219,11 +220,12 @@ class TestCrearUsuario:
             usuario.agregar_usuario.return_value = "Usuario agregado exitosamente."
             usuario.id = "USR-002"
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO, CEDULA_VALIDA, PASSWORD_VALIDA, 2
             )
 
-        assert resultado == "USR-002"
+        assert usuario_id == "USR-002"
+        assert error is None and duplicado is False
         usuarios_cls.assert_called_once_with(
             nombre=NOMBRE_USUARIO,
             cedula=CEDULA_VALIDA,
@@ -239,11 +241,12 @@ class TestCrearUsuario:
             usuario = usuarios_cls.return_value
             usuario.verificar_usuario_por_nombre.return_value = True
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO, CEDULA_VALIDA, PASSWORD_VALIDA, 2
             )
 
-        assert resultado is None
+        assert usuario_id is None and duplicado is True
+        assert error == "El nombre de usuario ya está en uso."
         usuario.verificar_cedula_en_uso.assert_not_called()
         usuario.agregar_usuario.assert_not_called()
 
@@ -255,11 +258,12 @@ class TestCrearUsuario:
             usuario.verificar_usuario_por_nombre.return_value = False
             usuario.verificar_cedula_en_uso.return_value = True
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO, CEDULA_VALIDA, PASSWORD_VALIDA, 2
             )
 
-        assert resultado is None
+        assert usuario_id is None and duplicado is True
+        assert error == "Ya existe un usuario con esta cédula."
         usuario.agregar_usuario.assert_not_called()
 
     def test_error_al_agregar_usuario(self, conexion_falsa):
@@ -271,11 +275,12 @@ class TestCrearUsuario:
             usuario.verificar_cedula_en_uso.return_value = False
             usuario.agregar_usuario.return_value = "Error al agregar usuario: x"
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO, CEDULA_VALIDA, PASSWORD_VALIDA, 2
             )
 
-        assert resultado is None
+        assert usuario_id is None and duplicado is False
+        assert error == "Error al agregar usuario: x"
 
     def test_error_inesperado_devuelve_none(self, conexion_falsa):
         gestor = LoginManager()
@@ -284,11 +289,12 @@ class TestCrearUsuario:
             usuario = usuarios_cls.return_value
             usuario.verificar_usuario_por_nombre.side_effect = Exception("fallo")
 
-            resultado = gestor.crear_usuario(
+            usuario_id, error, duplicado = gestor.crear_usuario(
                 NOMBRE_USUARIO, CEDULA_VALIDA, PASSWORD_VALIDA, 2
             )
 
-        assert resultado is None
+        assert usuario_id is None and duplicado is False
+        assert error is not None
 
 
 class TestCrearClienteNatural:

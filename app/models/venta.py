@@ -1,16 +1,18 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
     validar_numero,
     validar_texto_numero,
-    validar_sin_caracteres_especiales,
     validar_decimal,
 )
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 import uuid
+
+
+logger = logging.getLogger(__name__)
 
 
 class VentaModel:
@@ -137,6 +139,11 @@ class VentaModel:
             if error:
                 return error
 
+            # '0' tiene 1 dígito y pasa validar_numero; sin este check se
+            # insertaba un Detalle_venta con cantidad 0 y Existencia - 0.
+            if int(cantidad) <= 0:
+                return f"La cantidad del producto #{i+1} debe ser mayor que 0."
+
             if producto_id_str in productos_vistos:
                 return f"El producto '{producto_id_str}' aparece múltiples veces en el carrito."
             productos_vistos.add(producto_id_str)
@@ -151,13 +158,34 @@ class VentaModel:
         self.metodo_pago = metodo
         return None
 
+    # Reglas de pago movidas del controller (ventas.py): fuente única en
+    # el modelo para el catálogo de métodos y sus políticas.
+    # Catálogo completo (lo consume /api/metodos_pago) y sus políticas
+    CATALOGO_METODOS_PAGO = (
+        {"id": "pago_movil", "nombre": "Pago Móvil (Bs)", "moneda": "VES"},
+        {"id": "zelle", "nombre": "Zelle (USD)", "moneda": "USD"},
+        {"id": "binance", "nombre": "Binance (USDT)", "moneda": "USDT"},
+        {"id": "efectivo_bs", "nombre": "Efectivo (Bs)", "moneda": "VES"},
+        {"id": "efectivo_usd", "nombre": "Efectivo (USD)", "moneda": "USD"},
+    )
+    METODOS_PAGO = tuple(m["id"] for m in CATALOGO_METODOS_PAGO)
+    METODOS_PAGO_SIN_CAPTURE = ("efectivo_bs", "efectivo_usd")
+
+    @classmethod
+    def requiere_capture(cls, metodo_pago) -> bool:
+        return str(metodo_pago or "") not in cls.METODOS_PAGO_SIN_CAPTURE
+
+    @classmethod
+    def estado_inicial_para(cls, metodo_pago) -> str:
+        return "aprobado" if str(metodo_pago or "") in cls.METODOS_PAGO_SIN_CAPTURE else "pendiente"
+
     def _validar_datos_pago(self) -> Optional[str]:
         referencia = self.datos_pago.get("referencia", "")
         monto = self.datos_pago.get("monto", None)
 
         # Metodo_pago.Referencia varchar(100)
         if referencia:
-            error = validar_sin_caracteres_especiales(referencia, 1, 100, "Referencia", permitir_espacios=True)
+            error = validar_texto_numero(referencia, 1, 100, "Referencia")
             if error:
                 return error
 
@@ -204,7 +232,10 @@ class VentaModel:
             raise RuntimeError("Error al conectar a la base de datos.")
 
         factura_id = self._generar_id_factura()
-        fecha_actual = datetime.now()
+        # -04:00: el contenedor va en UTC y MySQL escribe en -04:00 (mismo
+        # desfase corregido en tradein_empleados). Sin esto, las ventas de
+        # 00:00-04:00 locales quedaban atribuidas al día anterior.
+        fecha_actual = datetime.now(timezone(timedelta(hours=-4)))
         moneda = self._obtener_moneda_segun_metodo()
 
         cursor = db.cursor()
@@ -227,11 +258,19 @@ class VentaModel:
                     VALUES (%s, %s, %s)
                 """, (inventario_id, factura_id, cantidad))
 
+                # Descuento de stock ATÓMICO: la condición de stock va en el
+                # WHERE (y se comprueba rowcount) para que dos ventas
+                # simultáneas no puedan dejar la Existencia en negativo.
                 cursor.execute("""
                     UPDATE Existencias_productos
                     SET Existencia = Existencia - %s
-                    WHERE ID_inventario = %s
-                """, (cantidad, inventario_id))
+                    WHERE ID_inventario = %s AND Existencia >= %s
+                """, (cantidad, inventario_id, cantidad))
+                if cursor.rowcount == 0:
+                    raise ValueError(
+                        f"Stock insuficiente para el producto {inventario_id}. "
+                        f"Disponible: {stock_disponible}"
+                    )
 
             db.commit()
 
@@ -275,7 +314,8 @@ class VentaModel:
 
         cursor = db.cursor()
         try:
-            fecha_actual = datetime.now()
+            # -04:00: el contenedor va en UTC y MySQL escribe en -04:00.
+            fecha_actual = datetime.now(timezone(timedelta(hours=-4)))
             moneda = self._obtener_moneda_segun_metodo()
 
             referencia = self.datos_pago.get("referencia", "")
@@ -326,7 +366,18 @@ class VentaModel:
                     Referencia = VALUES(Referencia),
                     Monto = VALUES(Monto),
                     Capture = VALUES(Capture),
-                    Estado_pago = COALESCE(Estado_pago, 'pendiente')
+                    Estado_pago = CASE
+                        WHEN Estado_pago IS NULL OR LOWER(TRIM(Estado_pago)) = 'pendiente'
+                            THEN 'pendiente'
+                        -- Reenvío: si el cliente resubió datos de pago, la
+                        -- solicitud vuelve a pendiente para ser revalidada
+                        -- (antes quedaba congelada en 'rechazado' para siempre).
+                        WHEN Referencia <> VALUES(Referencia)
+                            OR COALESCE(Capture, '') <> COALESCE(VALUES(Capture), '')
+                            OR Monto <> VALUES(Monto)
+                            THEN 'pendiente'
+                        ELSE Estado_pago
+                    END
             """  # nosec B608
 
             cursor.execute(query, valores)
@@ -343,40 +394,25 @@ class VentaModel:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en guardar_registro_pago: {e}")
+            logger.error(f"Error en guardar_registro_pago: {e}")
             raise
         finally:
             cursor.close()
             db.close()
 
     def obtener_ventas_hoy(self) -> dict:
-        """Obtiene el resumen de ventas del día"""
+        """Obtiene el resumen de ventas del día (monto desde Metodo_pago).
+
+        Antes la primera consulta sumaba sobre `Venta.Monto`, columna que no
+        existe en el esquema → error 1054 → el except devolvía siempre 0 y la
+        consulta correcta (a Metodo_pago) era código muerto inalcanzable.
+        """
         db = self.__conexion_bd.conexion1()
         if not db:
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
 
         cursor = db.cursor(dictionary=True)
         try:
-            cursor.execute("""
-                SELECT
-                    COUNT(*) as cantidad_ventas,
-                    COALESCE(SUM(v.Monto), 0) as total_ventas,
-                    v.Moneda
-                FROM Venta v
-                WHERE DATE(v.Fecha_venta) = CURDATE()
-                GROUP BY v.Moneda
-                ORDER BY v.Moneda DESC
-                LIMIT 1
-            """)
-            resultado = cursor.fetchone()
-
-            if resultado:
-                return {
-                    "total_ventas": float(resultado.get("total_ventas", 0)),
-                    "cantidad_ventas": resultado.get("cantidad_ventas", 0),
-                    "moneda": resultado.get("Moneda", "USD")
-                }
-
             cursor.execute("""
                 SELECT
                     COUNT(*) as cantidad_ventas,
@@ -399,7 +435,7 @@ class VentaModel:
 
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
         except Exception as e:
-            print(f"Error en obtener_ventas_hoy: {e}")
+            logger.error(f"Error en obtener_ventas_hoy: {e}")
             return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
         finally:
             cursor.close()

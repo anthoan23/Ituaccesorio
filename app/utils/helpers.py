@@ -19,6 +19,21 @@ def obtener_usuario_autenticado_id():
     return getattr(usuario, "usuario_id", None) or getattr(usuario, "user_id", None) or getattr(usuario, "id", None)
 
 
+def usuario_attr(nombre_atributo, default=None):
+    """Lee un atributo de g.user de forma segura.
+
+    En producción g.user es un dict (payload JWT); en modo prueba es un
+    SimpleNamespace. Este helper unifica el acceso a ambos sin romper
+    ninguno de los dos modos.
+    """
+    usuario = getattr(g, "user", None)
+    if usuario is None:
+        return default
+    if isinstance(usuario, dict):
+        return usuario.get(nombre_atributo, default)
+    return getattr(usuario, nombre_atributo, default)
+
+
 def obtener_usuario_autenticado_info():
     """Obtiene la información completa del usuario autenticado"""
     usuario = getattr(g, "user", None)
@@ -61,3 +76,58 @@ def guardar_foto_inventario(archivo):
     ruta_fisica = os.path.join(carpeta_destino, nombre_final)
     archivo.save(ruta_fisica)
     return f"/static/img/evidencias/inventario/{nombre_final}"
+
+# ==================== SUBIDA DE IMÁGENES (fuente única) ====================
+
+MAX_FOTOS_EVIDENCIAS = 20
+MAX_TAMANO_FOTO_MB = 10
+
+
+def guardar_foto_evidencia(archivo, subcarpeta: str, max_mb: int = MAX_TAMANO_FOTO_MB) -> str:
+    """Valida (extensión + tamaño) y guarda UNA imagen. Devuelve la ruta web.
+
+    Única fuente para TODAS las subidas de imágenes (perfil, evidencias de
+    taller, trade-in, capturas de pago). Lanza ValueError con mensaje amable
+    si el archivo no es válido.
+    """
+    if not archivo or not getattr(archivo, "filename", ""):
+        raise ValueError("El archivo es obligatorio.")
+    if not es_imagen_permitida(archivo.filename):
+        raise ValueError("Solo se permiten imágenes (JPG, PNG, GIF, WEBP).")
+    archivo.seek(0, os.SEEK_END)
+    if archivo.tell() > max_mb * 1024 * 1024:
+        archivo.seek(0)
+        raise ValueError(f"Cada archivo no puede superar los {max_mb} MB.")
+    archivo.seek(0)
+
+    nombre_seguro = secure_filename(archivo.filename)
+    _, extension = os.path.splitext(nombre_seguro)
+    nombre_final = f"{uuid.uuid4().hex}{extension.lower()}"
+
+    carpeta = os.path.join(current_app.static_folder, "img", subcarpeta)
+    os.makedirs(carpeta, exist_ok=True)
+    archivo.save(os.path.join(carpeta, nombre_final))
+    return f"/static/img/{subcarpeta}/{nombre_final}"
+
+
+def guardar_fotos_evidencias(archivos, subcarpeta: str, max_fotos: int = MAX_FOTOS_EVIDENCIAS):
+    """Valida y guarda una LISTA de imágenes. Devuelve (rutas, error).
+
+    Si hay error devuelve (None, mensaje); si todo va bien (rutas, None).
+    """
+    if not archivos or all(not f or not getattr(f, "filename", "") for f in archivos):
+        return None, "No se subieron archivos"
+    if max_fotos and len(archivos) > max_fotos:
+        return None, f"Máximo {max_fotos} fotos permitidas"
+
+    rutas = []
+    for archivo in archivos:
+        if not archivo or not getattr(archivo, "filename", ""):
+            continue
+        try:
+            rutas.append(guardar_foto_evidencia(archivo, subcarpeta))
+        except ValueError as e:
+            return None, str(e)
+    if not rutas:
+        return None, "No se pudo guardar ningún archivo válido."
+    return rutas, None

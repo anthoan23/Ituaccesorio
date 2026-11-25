@@ -892,6 +892,9 @@ body {
     letter-spacing: 0.04em;
     text-align: center;
     min-width: 30px;
+    /* El código (ID) nunca se parte en varias líneas: si la columna se
+       aprieta, la píldora conserva su ancho completo en una sola línea */
+    white-space: nowrap;
     transition: background 0.2s ease, transform 0.2s ease;
 }
 .chip:hover {
@@ -2409,3 +2412,22 @@ body {
 .cell-center { text-align: center; }
 .cell-right { text-align: right; }
 .cell-right-bold { text-align: right; font-weight: 600; }
+
+/* Toast genérico: antes solo existía en ventas.css/tradein_empleados.css y en
+   validacion_pagos/catalogo/inventario los toasts salían como texto plano */
+.custom-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    padding: 14px 20px;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    max-width: 380px;
+}
+
+.custom-toast--success { background: var(--green, #2e7d32); }
+.custom-toast--error { background: var(--red, #c62828); }
+.custom-toast--info { background: var(--blue, #1565c0); }

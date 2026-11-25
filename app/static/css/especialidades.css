@@ -13,6 +13,14 @@
     width: 100%;
 }
 
+/* Columna ID (código): ancho fijo, el chip nunca se aplasta */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+    width: 70px;
+    min-width: 70px;
+    white-space: nowrap;
+}
+
 /* Columnas de nombre y descripción más anchas */
 .table th:nth-child(2),
 .table td:nth-child(2) {
@@ -27,6 +35,7 @@
 /* Acciones con ancho fijo */
 .table__actions {
     width: 120px;
+    min-width: 120px;
 }
 
 /* Para centrar el botón del formulario */

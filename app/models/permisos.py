@@ -1,7 +1,11 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.utils.validators import validar_numero
+
+
+logger = logging.getLogger(__name__)
 
 
 class Permiso:
@@ -121,7 +125,7 @@ class Permiso:
             db.commit()
             return "Permiso guardado exitosamente."
         except Exception as e:
-            print(f"Error al guardar permiso: {e}")
+            logger.error(f"Error al guardar permiso: {e}")
             db.rollback()
             return "Error al guardar permiso."
         finally:
@@ -156,9 +160,16 @@ class Permiso:
                     errores.append(f"Módulo inválido: {modulo_id}")
                     continue
 
-                registrar = permiso.get("registrar", False)
-                modificar = permiso.get("modificar", False)
-                eliminar = permiso.get("eliminar", False)
+                # Normalización de booleanos movida del controller: acepta
+                # bool, "1"/"true"/"on"/"si"/"yes" o 0/"false".
+                def _a_int(valor):
+                    if isinstance(valor, str):
+                        return 1 if valor.lower() in {"1", "true", "on", "si", "yes"} else 0
+                    return 1 if valor else 0
+
+                registrar = _a_int(permiso.get("registrar", False))
+                modificar = _a_int(permiso.get("modificar", False))
+                eliminar = _a_int(permiso.get("eliminar", False))
                 consultar = registrar or modificar or eliminar
 
                 cursor.execute(
@@ -184,8 +195,9 @@ class Permiso:
             return exitosos, errores
         except Exception as e:
             db.rollback()
-            print(f"Error al guardar permisos masivos: {e}")
-            return 0, [str(e)]
+            logger.error(f"Error al guardar permisos masivos: {e}")
+            logger.error(f"Error en permisos masivos: {e}")
+            return 0, ["Error al guardar los permisos. Intente nuevamente."]
         finally:
             cursor.close()
             db.close()
@@ -214,7 +226,7 @@ class Permiso:
             db.commit()
             return "Permiso eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar permiso: {e}")
+            logger.error(f"Error al eliminar permiso: {e}")
             db.rollback()
             return "Error al eliminar permiso."
         finally:

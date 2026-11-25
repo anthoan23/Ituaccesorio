@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.models.equipo import Equipo
@@ -6,14 +7,15 @@ from app.models.test import Tests
 from app.utils.validators import (
     validar_texto_numero,
     validar_numero,
-    validar_solo_letras,
-    validar_solo_letras_numeros,
-    validar_sin_caracteres_especiales,
+    validar_texto,
     validar_decimal,
 )
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 import json
+
+
+logger = logging.getLogger(__name__)
 
 
 class TradeInEmpleados:
@@ -108,7 +110,7 @@ class TradeInEmpleados:
         # Color — Equipo.Color varchar(20)
         color = str(self.color).strip() if self.color else None
         if color:
-            error = validar_solo_letras(color, 1, 20, "Color", permitir_espacios=True)
+            error = validar_texto(color, 1, 20, "Color")
             if error:
                 return error
         self.color = color
@@ -116,7 +118,7 @@ class TradeInEmpleados:
         # Capacidad — Equipo.Capacidad varchar(20)
         capacidad = str(self.capacidad).strip() if self.capacidad else None
         if capacidad:
-            error = validar_solo_letras_numeros(capacidad, 1, 20, "Capacidad", permitir_espacios=True)
+            error = validar_texto_numero(capacidad, 1, 20, "Capacidad")
             if error:
                 return error
         self.capacidad = capacidad
@@ -132,7 +134,7 @@ class TradeInEmpleados:
         # Patrón — Equipo.Patron varchar(60); no es solo numérico
         patron = str(self.patron).strip() if self.patron else None
         if patron:
-            error = validar_sin_caracteres_especiales(patron, 1, 60, "Patrón", permitir_espacios=True)
+            error = validar_texto_numero(patron, 1, 60, "Patrón")
             if error:
                 return error
         self.patron = patron
@@ -179,7 +181,7 @@ class TradeInEmpleados:
         """Genera un nuevo ID para Trade_in (formato TRD000001)"""
         db = self._conexion()
         if not db:
-            return "TRD000001"
+            raise RuntimeError("No se pudo conectar a la base de datos.")
 
         cursor = db.cursor()
         try:
@@ -199,8 +201,11 @@ class TradeInEmpleados:
 
             return f"TRD{str(siguiente).zfill(6)}"
         except Exception as e:
-            print(f"Error generando ID trade-in: {e}")
-            return f"TRD{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            # Sin IDs de emergencia: antes se devolvía un TRD+timestamp de
+            # 17 caracteres (la columna es varchar(10)) o un TRD000001 fijo
+            # que colisionaba con el primer registro. Mejor que la llamada
+            # falle y la transacción haga rollback con error claro.
+            raise RuntimeError(f"Error generando ID trade-in: {e}")
         finally:
             cursor.close()
             db.close()
@@ -229,7 +234,7 @@ class TradeInEmpleados:
 
             return f"FTI{str(siguiente).zfill(7)}"
         except Exception as e:
-            print(f"Error generando ID foto: {e}")
+            logger.error(f"Error generando ID foto: {e}")
             return f"FTI{datetime.now().strftime('%Y%m%d%H%M%S')}"
         finally:
             cursor.close()
@@ -270,8 +275,10 @@ class TradeInEmpleados:
                         Patron=self.patron
                     )
                     resultado = equipo.actualizar_equipo()
-                    if "Error" in resultado and "no se encontró" not in resultado:
-                        print(f"Advertencia al actualizar equipo: {resultado}")
+                    if "exitosamente" not in str(resultado).lower():
+                        # Antes el fallo solo se registraba y seguía con
+                        # success=True sin haber guardado color/capacidad.
+                        return {"success": False, "error": str(resultado)}
                 else:
                     if self.color or self.capacidad or self.clave or self.patron:
                         equipo = Equipo(
@@ -283,8 +290,8 @@ class TradeInEmpleados:
                             Patron=self.patron
                         )
                         resultado = equipo.actualizar_equipo()
-                        if "Error" in resultado and "no se encontró" not in resultado:
-                            print(f"Advertencia al actualizar equipo: {resultado}")
+                        if "exitosamente" not in str(resultado).lower():
+                            return {"success": False, "error": str(resultado)}
             else:
                 equipo = Equipo(
                     ID_equipo=self.id_equipo,
@@ -295,11 +302,16 @@ class TradeInEmpleados:
                     Patron=self.patron
                 )
                 resultado = equipo.registrar_equipo()
-                if "Error" in resultado:
-                    return {"success": False, "error": resultado}
+                if "exitosamente" not in str(resultado).lower():
+                    # Los errores de Equipo no siempre contienen "Error"
+                    # (p. ej. "El color no puede tener más de 20 caracteres."),
+                    # así que se decide por el mensaje de éxito.
+                    return {"success": False, "error": str(resultado)}
 
             self.trade_in_id = self._generar_id_trade_in()
-            fecha_actual = datetime.now()
+            # -04:00: el contenedor va en UTC y MySQL escribe en -04:00
+            # (4 h de desfase en Fecha_realizado).
+            fecha_actual = datetime.now(timezone(timedelta(hours=-4)))
 
             cursor.execute("""
                 INSERT INTO Trade_in (ID_Trade_in, ID_empleado, ID_cliente, ID_equipo, Numero_utilizado, Fecha_realizado, cotizacion)
@@ -315,8 +327,15 @@ class TradeInEmpleados:
             ))
 
             if fotos:
-                for foto_url in fotos:
-                    id_foto = self._generar_id_foto_trade_in()
+                # IDs generados con el MISMO cursor de la transacción: el MAX
+                # tomado en una conexión distinta no ve las fotos sin commit
+                # y generaba IDs duplicados (IntegrityError 1062) al registrar
+                # 2+ fotos.
+                cursor.execute("SELECT MAX(ID_foto_trade_in) FROM Fotos_trade_in")
+                fila = cursor.fetchone()
+                ultimo_num = int(fila[0][3:]) if fila and fila[0] else 0
+                for i, foto_url in enumerate(fotos, start=1):
+                    id_foto = f"FTI{ultimo_num + i:07d}"
                     cursor.execute("""
                         INSERT INTO Fotos_trade_in (ID_foto_trade_in, ID_Trade_in, Foto_trade_in)
                         VALUES (%s, %s, %s)
@@ -324,6 +343,10 @@ class TradeInEmpleados:
 
             tests_registrados = 0
             if tests and len(tests) > 0:
+                # Sin try/except silenciador: si un INSERT de test fallaba
+                # se seguía con db.commit() y success=True (en actualizar ya
+                # se habían borrado los tests previos). Cualquier fallo hace
+                # rollback completo vía el except del método.
                 try:
                     cursor.execute("SELECT MAX(ID_test) FROM Test")
                     row = cursor.fetchone()
@@ -359,9 +382,10 @@ class TradeInEmpleados:
                             tests_registrados += 1
 
                 except Exception as e:
-                    print(f"Error al registrar tests: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    logger.error(f"Error al registrar tests: {e}")
+                    # Relanzar: el except del método hace rollback y devuelve
+                    # el error (antes se tragaba y se commiteaba igual).
+                    raise
 
             db.commit()
 
@@ -384,7 +408,7 @@ class TradeInEmpleados:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en registrar_trade_in: {e}")
+            logger.error(f"Error en registrar_trade_in: {e}")
             import traceback
             traceback.print_exc()
             return {"success": False, "error": str(e)}
@@ -394,7 +418,8 @@ class TradeInEmpleados:
 
     # ==================== ACTUALIZAR TRADE-IN ====================
 
-    def actualizar_trade_in(self, fotos: List[str] = None, tests: List[Dict[str, str]] = None) -> Dict[str, Any]:
+    def actualizar_trade_in(self, fotos: List[str] = None, tests: List[Dict[str, str]] = None,
+                            fotos_eliminar: List[str] = None) -> Dict[str, Any]:
         """Actualiza un trade-in existente"""
 
         error = self._validar_datos_trade_in(requiere_id=True)
@@ -425,7 +450,7 @@ class TradeInEmpleados:
                 )
                 resultado = equipo.actualizar_equipo()
                 if "Error" in resultado and "no se encontró" not in resultado:
-                    print(f"Advertencia al actualizar equipo: {resultado}")
+                    logger.warning(f"Advertencia al actualizar equipo: {resultado}")
             else:
                 equipo = Equipo(
                     ID_equipo=self.id_equipo,
@@ -436,8 +461,11 @@ class TradeInEmpleados:
                     Patron=self.patron
                 )
                 resultado = equipo.registrar_equipo()
-                if "Error" in resultado:
-                    return {"success": False, "error": resultado}
+                if "exitosamente" not in str(resultado).lower():
+                    # Los errores de Equipo no siempre contienen "Error"
+                    # (p. ej. "El color no puede tener más de 20 caracteres."),
+                    # así que se decide por el mensaje de éxito.
+                    return {"success": False, "error": str(resultado)}
 
             cursor.execute("""
                 UPDATE Trade_in
@@ -454,10 +482,27 @@ class TradeInEmpleados:
                 self.trade_in_id
             ))
 
-            cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
+            # Borrado SELECTIVO de fotos: antes se borraban TODAS y solo se
+            # reinsertaban las subidas nuevas (el 'fotos_eliminar' del frontend
+            # nunca se leía), destruyendo el historial al editar sin subir
+            # fotos nuevas. `fotos_eliminar` es la lista de URLs a eliminar;
+            # None conserva el comportamiento antiguo (llamadores sin la nueva API).
+            if fotos_eliminar:
+                marcadores = ", ".join(["%s"] * len(fotos_eliminar))
+                cursor.execute(
+                    f"DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s "
+                    f"AND Foto_trade_in IN ({marcadores})",  # nosec B608: marcadores son '%s' literales, URLs parametrizadas
+                    [self.trade_in_id, *fotos_eliminar],
+                )
+            elif fotos_eliminar is None:
+                cursor.execute("DELETE FROM Fotos_trade_in WHERE ID_Trade_in = %s", (self.trade_in_id,))
             if fotos:
-                for foto_url in fotos:
-                    id_foto = self._generar_id_foto_trade_in()
+                # IDs generados con el MISMO cursor de la transacción (ver registrar).
+                cursor.execute("SELECT MAX(ID_foto_trade_in) FROM Fotos_trade_in")
+                fila = cursor.fetchone()
+                ultimo_num = int(fila[0][3:]) if fila and fila[0] else 0
+                for i, foto_url in enumerate(fotos, start=1):
+                    id_foto = f"FTI{ultimo_num + i:07d}"
                     cursor.execute("""
                         INSERT INTO Fotos_trade_in (ID_foto_trade_in, ID_Trade_in, Foto_trade_in)
                         VALUES (%s, %s, %s)
@@ -471,6 +516,10 @@ class TradeInEmpleados:
 
             tests_registrados = 0
             if tests and len(tests) > 0:
+                # Sin try/except silenciador: si un INSERT de test fallaba
+                # se seguía con db.commit() y success=True (en actualizar ya
+                # se habían borrado los tests previos). Cualquier fallo hace
+                # rollback completo vía el except del método.
                 try:
                     cursor.execute("SELECT MAX(ID_test) FROM Test")
                     row = cursor.fetchone()
@@ -506,7 +555,8 @@ class TradeInEmpleados:
                             tests_registrados += 1
 
                 except Exception as e:
-                    print(f"Error al registrar tests: {e}")
+                    logger.error(f"Error al registrar tests: {e}")
+                    raise
 
             db.commit()
 
@@ -528,7 +578,7 @@ class TradeInEmpleados:
 
         except Exception as e:
             db.rollback()
-            print(f"Error en actualizar_trade_in: {e}")
+            logger.error(f"Error en actualizar_trade_in: {e}")
             import traceback
             traceback.print_exc()
             return {"success": False, "error": str(e)}
@@ -577,7 +627,7 @@ class TradeInEmpleados:
             return {"success": True, "message": "Trade-in eliminado correctamente"}
         except Exception as e:
             db.rollback()
-            print(f"Error en eliminar_trade_in: {e}")
+            logger.error(f"Error en eliminar_trade_in: {e}")
             return {"success": False, "error": str(e)}
         finally:
             cursor.close()
@@ -638,7 +688,7 @@ class TradeInEmpleados:
 
             return resultados
         except Exception as e:
-            print(f"Error en obtener_trade_ins: {e}")
+            logger.error(f"Error en obtener_trade_ins: {e}")
             return []
         finally:
             cursor.close()
@@ -679,7 +729,7 @@ class TradeInEmpleados:
             """, (self.cliente_id,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_trade_ins_por_cliente: {e}")
+            logger.error(f"Error en obtener_trade_ins_por_cliente: {e}")
             return []
         finally:
             cursor.close()
@@ -740,7 +790,7 @@ class TradeInEmpleados:
             """, (self.trade_in_id,))
             return cursor.fetchone() or {}
         except Exception as e:
-            print(f"Error en obtener_detalle_trade_in: {e}")
+            logger.error(f"Error en obtener_detalle_trade_in: {e}")
             return {}
         finally:
             cursor.close()
@@ -766,7 +816,7 @@ class TradeInEmpleados:
             """, (trade_id,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_fotos_trade_in: {e}")
+            logger.error(f"Error en obtener_fotos_trade_in: {e}")
             return []
         finally:
             cursor.close()
@@ -797,7 +847,7 @@ class TradeInEmpleados:
             """, (trade_id,))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_tests_trade_in: {e}")
+            logger.error(f"Error en obtener_tests_trade_in: {e}")
             return []
         finally:
             cursor.close()
@@ -828,7 +878,7 @@ class TradeInEmpleados:
                 "equipos": equipos.get("equipos", 0)
             }
         except Exception as e:
-            print(f"Error en obtener_estadisticas: {e}")
+            logger.error(f"Error en obtener_estadisticas: {e}")
             return {}
         finally:
             cursor.close()
@@ -861,7 +911,7 @@ class TradeInEmpleados:
             """)
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_productos_disponibles: {e}")
+            logger.error(f"Error en obtener_productos_disponibles: {e}")
             return []
         finally:
             cursor.close()
@@ -870,7 +920,7 @@ class TradeInEmpleados:
     def obtener_clientes(self, q: str = None) -> List[Dict[str, Any]]:
         """Obtiene clientes para buscar en el registro"""
         if q:
-            error = validar_sin_caracteres_especiales(q, 1, 100, "Búsqueda", permitir_espacios=True)
+            error = validar_texto_numero(q, 1, 100, "Búsqueda")
             if error:
                 return []
 
@@ -903,7 +953,7 @@ class TradeInEmpleados:
             cursor.execute(query, tuple(params))
             return cursor.fetchall()
         except Exception as e:
-            print(f"Error en obtener_clientes: {e}")
+            logger.error(f"Error en obtener_clientes: {e}")
             return []
         finally:
             cursor.close()
@@ -944,7 +994,7 @@ class TradeInEmpleados:
             """, (self.id_equipo,))
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error en verificar_equipo_existente: {e}")
+            logger.error(f"Error en verificar_equipo_existente: {e}")
             return None
         finally:
             cursor.close()

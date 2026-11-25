@@ -1,12 +1,16 @@
 from __future__ import annotations
+import logging
 
 from app.models.database import conectar
 from app.models.bitacora import Bitacora
 from app.utils.validators import (
-    validar_solo_letras,
+    validar_texto,
     validar_numero,
-    validar_sin_caracteres_especiales,
+    validar_texto_numero,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class Rol:
@@ -32,7 +36,7 @@ class Rol:
 
         nombre = str(self.nombre).strip() if self.nombre is not None else ""
         # rol.nombre varchar(50) UNIQUE
-        error = validar_solo_letras(nombre, 1, 50, "Nombre", permitir_espacios=True)
+        error = validar_texto(nombre, 1, 50, "Nombre")
         if error:
             return error
         self.nombre = nombre
@@ -40,7 +44,7 @@ class Rol:
         descripcion = str(self.descripcion).strip() if self.descripcion else ""
         if descripcion:
             # rol.descripcion text; 255 es política de UI
-            error = validar_sin_caracteres_especiales(descripcion, 1, 255, "Descripción", permitir_espacios=True)
+            error = validar_texto_numero(descripcion, 1, 255, "Descripción")
             if error:
                 return error
         self.descripcion = descripcion
@@ -156,14 +160,14 @@ class Rol:
 
             return "Rol agregado exitosamente."
         except Exception as e:
-            print(f"Error al agregar rol: {e}")
+            logger.error(f"Error al agregar rol: {e}")
             db.rollback()
             return "Error al agregar rol."
         finally:
             cursor.close()
             db.close()
 
-    def actualizar_rol(self) -> str:
+    def actualizar_rol(self, usuario_actual_rol: str = None) -> str:
         error = self._validar_datos(requiere_id=True)
         if error:
             return error
@@ -172,6 +176,12 @@ class Rol:
             return f"El rol con ID {self.id} no existe."
 
         nombre_actual = self.obtener_rol_por_id()
+
+        # Guard movido del controller: el rol "Admin" solo puede modificarse
+        # por otro admin (aplica cuando el llamador declara su rol).
+        if nombre_actual and (nombre_actual.get("nombre") or "").lower() == "admin":
+            if usuario_actual_rol is not None and (usuario_actual_rol or "").lower() != "admin":
+                return "No se puede modificar el rol Admin."
         if nombre_actual and nombre_actual["nombre"].lower() != self.nombre.lower():
             if self.verificar_rol_por_nombre():
                 return f"El rol '{self.nombre}' ya existe."
@@ -198,14 +208,14 @@ class Rol:
 
             return "Rol actualizado exitosamente."
         except Exception as e:
-            print(f"Error al actualizar rol: {e}")
+            logger.error(f"Error al actualizar rol: {e}")
             db.rollback()
             return "Error al actualizar rol."
         finally:
             cursor.close()
             db.close()
 
-    def eliminar_rol(self) -> str:
+    def eliminar_rol(self, usuario_actual_rol: str = None) -> str:
         rol_id = str(self.id).strip() if self.id else ""
         if not rol_id:
             return "El identificador del rol no puede estar vacío."
@@ -244,7 +254,7 @@ class Rol:
 
             return "Rol eliminado exitosamente."
         except Exception as e:
-            print(f"Error al eliminar rol: {e}")
+            logger.error(f"Error al eliminar rol: {e}")
             db.rollback()
             return "Error al eliminar rol. Verifica que no esté en uso por usuarios."
         finally:

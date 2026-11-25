@@ -692,23 +692,24 @@ class TestAgregarUsuario:
         assert resultado == "Usuario agregado exitosamente."
         assert cursor.execute.call_args.args[1][0] == "USR-001"
 
-    def test_genera_id_con_fallback_si_no_es_correlativo(self, conexion_falsa):
+    def test_genera_id_desde_max_numerico(self, conexion_falsa):
+        """El ID sale del MAX numérico (funciona con ids legacy tipo 'USR-007')."""
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("X",), (5,)]
+        cursor.fetchone.side_effect = [("USR-007",)]
 
         with verificaciones_agregar(), hash_fijo():
             resultado = usuario().agregar_usuario()
 
         assert resultado == "Usuario agregado exitosamente."
-        assert cursor.execute.call_args_list[-1].args[1][0] == "USR-006"
+        assert cursor.execute.call_args_list[-1].args[1][0] == "USR-008"
         assert any(
             "MAX(CAST(SUBSTRING(id, 5) AS UNSIGNED))" in llamada.args[0]
             for llamada in cursor.execute.call_args_list
         )
 
-    def test_genera_id_si_el_fallback_no_devuelve_nada(self, conexion_falsa):
+    def test_genera_id_si_el_max_no_devuelve_nada(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.side_effect = [("USR",), (None,)]
+        cursor.fetchone.side_effect = [(None,)]
 
         with verificaciones_agregar(), hash_fijo():
             resultado = usuario().agregar_usuario()
@@ -781,7 +782,7 @@ class TestAgregarUsuario:
             ),
             pytest.param(
                 {"nombre": "Ana #1"},
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -870,7 +871,7 @@ class TestAgregarUsuario:
         with verificaciones_agregar(), hash_fijo():
             resultado = usuario().agregar_usuario()
 
-        assert resultado == "Error al agregar usuario: fallo simulado"
+        assert resultado == "Error al agregar usuario. Intente nuevamente."
         db.rollback.assert_called_once()
         db.commit.assert_not_called()
 
@@ -925,7 +926,7 @@ class TestAgregarUsuario:
         ):
             resultado = usuario().agregar_usuario()
 
-        assert resultado == "Error en agregar_usuario: boom"
+        assert resultado == "Error inesperado al agregar usuario."
         db.rollback.assert_not_called()
 
 
@@ -933,6 +934,7 @@ class TestActualizarUsuario:
 
     def test_datos_validos_sin_password(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar():
             resultado = usuario(password="").actualizar_usuario()
@@ -954,6 +956,7 @@ class TestActualizarUsuario:
 
     def test_datos_validos_con_password(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(), hash_fijo():
             resultado = usuario(password=PASSWORD_MAXIMA).actualizar_usuario()
@@ -972,6 +975,7 @@ class TestActualizarUsuario:
 
     def test_foto_perfil_se_actualiza(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar():
             usuario(foto_perfil=FOTO_PERFIL, password="").actualizar_usuario()
@@ -988,6 +992,7 @@ class TestActualizarUsuario:
     )
     def test_sin_id_devuelve_error(self, conexion_falsa, id_usuario):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = usuario(id=id_usuario).actualizar_usuario()
 
@@ -996,6 +1001,7 @@ class TestActualizarUsuario:
 
     def test_usuario_inexistente(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(por_id=False):
             resultado = usuario().actualizar_usuario()
@@ -1006,6 +1012,7 @@ class TestActualizarUsuario:
 
     def test_cedula_asignada_a_otro_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(cedula=True):
             resultado = usuario().actualizar_usuario()
@@ -1017,6 +1024,7 @@ class TestActualizarUsuario:
 
     def test_rol_no_corresponde_a_la_cedula(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(rol=False):
             resultado = usuario().actualizar_usuario()
@@ -1028,6 +1036,7 @@ class TestActualizarUsuario:
 
     def test_verifica_la_cedula_excluyendo_al_propio_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(), patch.object(
             Usuarios, "verificar_cedula_en_uso", return_value=False
@@ -1051,7 +1060,7 @@ class TestActualizarUsuario:
             ),
             pytest.param(
                 {"nombre": "Ana #1"},
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
             pytest.param(
@@ -1113,6 +1122,7 @@ class TestActualizarUsuario:
     )
     def test_datos_invalidos_no_tocan_la_bd(self, conexion_falsa, cambios, esperado):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = usuario(**cambios).actualizar_usuario()
 
@@ -1128,6 +1138,7 @@ class TestActualizarUsuario:
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar():
             cursor.execute.side_effect = Exception("fallo simulado")
@@ -1139,6 +1150,7 @@ class TestActualizarUsuario:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with verificaciones_actualizar(), patch(
             "app.models.usuarios.Bitacora"
@@ -1161,13 +1173,14 @@ class TestActualizarUsuario:
 
     def test_error_inesperado_devuelve_mensaje(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with patch.object(
             Usuarios, "_validar_datos_usuario", side_effect=Exception("boom")
         ):
             resultado = usuario().actualizar_usuario()
 
-        assert resultado == "Error en actualizar_usuario: boom"
+        assert resultado == "Error inesperado al actualizar usuario."
 
 
 class TestEliminarUsuario:
@@ -1328,7 +1341,7 @@ class TestEliminarUsuario:
         ):
             resultado = usuario().eliminar_usuario()
 
-        assert resultado == "Error en eliminar_usuario: boom"
+        assert resultado == "Error inesperado al eliminar usuario."
 
 
 class TestObtenerRolPorNombre:
@@ -1560,6 +1573,7 @@ class TestActualizarPerfil:
 
     def test_datos_validos_sin_password(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(ID_USUARIO, NOMBRE_MINIMO)
 
@@ -1574,6 +1588,7 @@ class TestActualizarPerfil:
 
     def test_actualiza_foto_perfil(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(
             ID_USUARIO, NOMBRE_MINIMO, foto_perfil=FOTO_PERFIL
@@ -1588,6 +1603,7 @@ class TestActualizarPerfil:
 
     def test_actualiza_password_con_hash(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with hash_fijo():
             resultado = Usuarios().actualizar_perfil(
@@ -1601,6 +1617,7 @@ class TestActualizarPerfil:
 
     def test_guarda_un_hash_real(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         Usuarios().actualizar_perfil(
             ID_USUARIO, NOMBRE_MINIMO, password=PASSWORD_MINIMA
@@ -1612,6 +1629,7 @@ class TestActualizarPerfil:
 
     def test_recorta_el_nombre(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(ID_USUARIO, "  Ana  ")
 
@@ -1627,6 +1645,7 @@ class TestActualizarPerfil:
     )
     def test_sin_id_devuelve_error(self, conexion_falsa, usuario_id):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(usuario_id, NOMBRE_MINIMO)
 
@@ -1653,13 +1672,14 @@ class TestActualizarPerfil:
             ),
             pytest.param(
                 "Ana #1",
-                "El campo Nombre solo puede contener letras, espacios, acentos y ñ.",
+                "El campo Nombre solo puede contener letras, acentos y espacios.",
                 id="nombre-caracteres-invalidos",
             ),
         ],
     )
     def test_nombre_invalido_no_toca_la_bd(self, conexion_falsa, nombre, esperado):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(ID_USUARIO, nombre)
 
@@ -1691,6 +1711,7 @@ class TestActualizarPerfil:
         self, conexion_falsa, password, esperado
     ):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(
             ID_USUARIO, NOMBRE_MINIMO, password=password
@@ -1702,6 +1723,7 @@ class TestActualizarPerfil:
 
     def test_foto_demasiado_larga_no_toca_la_bd(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         resultado = Usuarios().actualizar_perfil(
             ID_USUARIO, NOMBRE_MINIMO, foto_perfil="F" * 101
@@ -1719,6 +1741,7 @@ class TestActualizarPerfil:
 
     def test_error_de_bd_hace_rollback(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
         cursor.execute.side_effect = Exception("fallo simulado")
 
         resultado = Usuarios().actualizar_perfil(ID_USUARIO, NOMBRE_MINIMO)
@@ -1729,6 +1752,7 @@ class TestActualizarPerfil:
 
     def test_registra_bitacora_si_hay_usuario(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with patch("app.models.usuarios.Bitacora") as bitacora_clase:
             resultado = Usuarios(
@@ -1746,10 +1770,11 @@ class TestActualizarPerfil:
 
     def test_error_inesperado_devuelve_mensaje(self, conexion_falsa):
         db, cursor = conexion_falsa
+        cursor.fetchone.return_value = None  # sin duplicados de nombre
 
         with patch.object(
             Usuarios, "_validar_perfil", side_effect=Exception("boom")
         ):
             resultado = Usuarios().actualizar_perfil(ID_USUARIO, NOMBRE_MINIMO)
 
-        assert resultado == "Error en actualizar_perfil: boom"
+        assert resultado == "Error inesperado al actualizar el perfil."

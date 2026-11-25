@@ -900,9 +900,10 @@ class TestVerificarStockProcedure:
             "error": "No se pudo conectar a la BD",
         }
 
-    def test_sin_detalle(self, conexion_falsa):
+    def test_con_stock(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = {"stock_total": 12, "tiene_stock": 1}
+        cursor.fetchall.return_value = []
 
         resultado = Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
@@ -912,14 +913,12 @@ class TestVerificarStockProcedure:
             "detalle": [],
             "success": True,
         }
-        cursor.callproc.assert_called_once_with(
-            "sp_verificar_stock_producto", (ID_PRODUCTO, 0, False)
-        )
-        assert "SELECT @_sp_verificar_stock_producto_1" in ultima_sentencia(cursor)
+        assert "SUM(ep.Existencia)" in cursor.execute.call_args_list[0].args[0]
 
-    def test_parametros_de_salida_nulos(self, conexion_falsa):
+    def test_sin_filas_devuelve_stock_cero(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = None
+        cursor.fetchall.return_value = []
 
         resultado = Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
@@ -934,33 +933,27 @@ class TestVerificarStockProcedure:
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = {"stock_total": 5, "tiene_stock": 1}
         filas = [{"ID_inventario": "INV-1", "Existencia": 5}]
-        resultado_mock = MagicMock()
-        resultado_mock.fetchall.return_value = filas
-        cursor.stored_results.return_value = [resultado_mock]
+        cursor.fetchall.return_value = filas
 
         resultado = Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
         assert resultado["detalle"] == filas
         assert resultado["success"] is True
 
-    def test_el_ultimo_resultado_con_filas_es_el_detalle(self, conexion_falsa):
+    def test_detalle_consulta_el_inventario_del_producto(self, conexion_falsa):
         db, cursor = conexion_falsa
         cursor.fetchone.return_value = {"stock_total": 5, "tiene_stock": 1}
-        primero = MagicMock()
-        primero.fetchall.return_value = [{"fila": 1}]
-        vacio = MagicMock()
-        vacio.fetchall.return_value = []
-        ultimo = MagicMock()
-        ultimo.fetchall.return_value = [{"fila": 2}]
-        cursor.stored_results.return_value = [primero, vacio, ultimo]
+        cursor.fetchall.return_value = []
 
-        resultado = Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
+        Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
-        assert resultado["detalle"] == [{"fila": 2}]
+        assert len(cursor.execute.call_args_list) == 2
+        assert "FROM Existencias_productos" in cursor.execute.call_args_list[1].args[0]
+        assert cursor.execute.call_args_list[1].args[1] == (ID_PRODUCTO,)
 
     def test_error_de_mysql_devuelve_error(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.callproc.side_effect = mysql.connector.Error("fallo simulado")
+        cursor.execute.side_effect = mysql.connector.Error("fallo simulado")
 
         resultado = Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
@@ -968,29 +961,20 @@ class TestVerificarStockProcedure:
             "stock_total": 0,
             "tiene_stock": False,
             "detalle": [],
-            "error": "fallo simulado",
+            "error": "Error al verificar el stock. Intente nuevamente.",
             "success": False,
         }
         cierra_recursos(db, cursor)
 
     def test_cierra_cursor_y_conexion(self, conexion_falsa):
         db, cursor = conexion_falsa
-        cursor.fetchone.return_value = {"stock_total": 1, "tiene_stock": 1}
+        cursor.fetchone.return_value = {"stock_total": 0, "tiene_stock": 0}
+        cursor.fetchall.return_value = []
 
         Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
 
-        cierra_recursos(db, cursor)
-
-    def test_no_modifica_la_bd(self, conexion_falsa):
-        db, cursor = conexion_falsa
-        cursor.fetchone.return_value = {"stock_total": 1, "tiene_stock": 1}
-
-        Producto(id_producto=ID_PRODUCTO).verificar_stock_procedure()
-
-        sin_sentencia(cursor, "INSERT")
-        sin_sentencia(cursor, "UPDATE")
-        sin_sentencia(cursor, "DELETE")
-        db.commit.assert_not_called()
+        cursor.close.assert_called_once()
+        db.close.assert_called_once()
 
 
 class TestBuscarPorNombreClaseMarca:

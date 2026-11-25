@@ -148,8 +148,13 @@ function verificarDuplicadoEnTabla(valor, columna, tablaSelector) {
 // ==================== VALIDACIONES Y RENDERIZADO ====================
 
 function validarNombreEnTiempoReal(input) {
-    const errorElement = document.getElementById('nombre-error');
-    if (!errorElement) return;
+    let errorElement = document.getElementById('nombre-error');
+    if (!errorElement) {
+        errorElement = document.createElement('small');
+        errorElement.className = 'field-error';
+        errorElement.id = 'nombre-error';
+        input.parentElement.appendChild(errorElement);
+    }
     const valor = input.value;
     
     if (!valor) {
@@ -180,8 +185,13 @@ function validarNombreEnTiempoReal(input) {
 }
 
 function validarApellidoEnTiempoReal(input) {
-    const errorElement = document.getElementById('apellido-error');
-    if (!errorElement) return;
+    let errorElement = document.getElementById('apellido-error');
+    if (!errorElement) {
+        errorElement = document.createElement('small');
+        errorElement.className = 'field-error';
+        errorElement.id = 'apellido-error';
+        input.parentElement.appendChild(errorElement);
+    }
     const valor = input.value;
     
     if (!valor) {
@@ -485,18 +495,39 @@ function initCapitalizacionCampos() {
 }
 
 function initValidacionesTiempoReal() {
-    const nom = document.querySelector('input[name="nombre"]');
+    const form = document.getElementById('form-cliente');
+    if (!form) return;
+
+    // --- Nombre: solo letras, espacios, tildes y ñ ---
+    const nom = form.querySelector('input[name="nombre"]');
     if (nom) {
-        nom.addEventListener('input', function() { validarNombreEnTiempoReal(this); });
+        nom.addEventListener('keydown', function(e) {
+            const permitidas = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'];
+            if (permitidas.includes(e.key) || e.ctrlKey || e.metaKey) return;
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(e.key)) e.preventDefault();
+        });
+        nom.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            validarNombreEnTiempoReal(this);
+        });
         nom.addEventListener('blur', function() { if (this.value) validarNombreEnTiempoReal(this); });
     }
-    
-    const ape = document.querySelector('input[name="apellido"]');
+
+    // --- Apellido: solo letras, espacios, tildes y ñ ---
+    const ape = form.querySelector('input[name="apellido"]');
     if (ape) {
-        ape.addEventListener('input', function() { validarApellidoEnTiempoReal(this); });
+        ape.addEventListener('keydown', function(e) {
+            const permitidas = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'];
+            if (permitidas.includes(e.key) || e.ctrlKey || e.metaKey) return;
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(e.key)) e.preventDefault();
+        });
+        ape.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            validarApellidoEnTiempoReal(this);
+        });
         ape.addEventListener('blur', function() { if (this.value) validarApellidoEnTiempoReal(this); });
     }
-    
+
     const rs = document.getElementById('razon-social-input');
     if (rs) {
         rs.addEventListener('input', function() { validarRazonSocialEnTiempoReal(this); });
@@ -673,6 +704,8 @@ function abrirEdicion(id) {
         tipoClienteSelect.classList.remove('field-error', 'field-success');
     }
     toggleCamposPorTipo();
+
+    // --- Cédula: bloqueada al editar (persona natural) ---
     const cedulaInput = document.getElementById('cedula-input');
     if (cedulaInput && tipo === 'natural') {
         cedulaInput.disabled = true;
@@ -680,6 +713,16 @@ function abrirEdicion(id) {
         if (err) { err.textContent = '✓ Edición (no se puede modificar)'; err.style.color = '#60a5fa'; }
         cedulaInput.classList.add('field-success');
     }
+
+    // --- RIF: bloqueado al editar (persona jurídica) ---
+    const rifInput = document.getElementById('rif-input');
+    if (rifInput && tipo === 'juridico') {
+        rifInput.disabled = true;
+        const errRif = document.getElementById('rif-error');
+        if (errRif) { errRif.textContent = '✓ Edición (no se puede modificar)'; errRif.style.color = '#60a5fa'; }
+        rifInput.classList.add('field-success');
+    }
+
     if (tipo === "natural") {
         setFieldValue("cedula", String(cliente.id || ""));
         setFieldValue("nombre", cliente.nombre || "");
@@ -792,6 +835,22 @@ function limpiarFormulario() {
     
     document.querySelectorAll('.field-error').forEach(el => { el.textContent = ''; el.style.color = ''; });
     document.querySelectorAll('.field-error, .field-success').forEach(el => el.classList.remove('field-error', 'field-success'));
+    
+    // Rehabilitar cédula y RIF por si quedaron bloqueados en una edición anterior
+    const cedulaInput = document.getElementById('cedula-input');
+    if (cedulaInput) {
+        cedulaInput.disabled = false;
+        const errCed = document.getElementById('cedula-error');
+        if (errCed) { errCed.textContent = ''; errCed.style.color = ''; }
+        cedulaInput.classList.remove('field-success', 'field-error');
+    }
+    const rifInput = document.getElementById('rif-input');
+    if (rifInput) {
+        rifInput.disabled = false;
+        const errRif = document.getElementById('rif-error');
+        if (errRif) { errRif.textContent = ''; errRif.style.color = ''; }
+        rifInput.classList.remove('field-success', 'field-error');
+    }
     
     const cNat = document.getElementById("campos-natural");
     const cJur = document.getElementById("campos-juridico");

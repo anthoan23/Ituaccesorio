@@ -1,4 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, g, jsonify
+import traceback
+
+from app.utils.decorators import jwt_required
 from app.models.inventario import Inventario
 from app.models.database import conectar
 from datetime import datetime, timedelta
@@ -46,6 +49,7 @@ def home():
 
 
 @home_blueprint.route('/inventario')
+@jwt_required
 def inventario():
     return render_template('inventario.html', show_navbar=True, show_notifications=True, active_page='inventario')
 
@@ -54,6 +58,7 @@ def inventario():
 # 1. INGRESOS VS GASTOS (GRÁFICO PRINCIPAL)
 # ============================================================
 @home_blueprint.route('/api/dashboard/ingresos-gastos', methods=['GET'])
+@jwt_required
 def api_ingresos_gastos():
     """API para el gráfico de Ingresos vs Gastos - últimos 7 días"""
     try:
@@ -117,47 +122,8 @@ def api_ingresos_gastos():
 # ============================================================
 # 2. VENTAS HOY
 # ============================================================
-@home_blueprint.route('/api/dashboard/ventas-hoy', methods=['GET'])
-def api_ventas_hoy():
-    """API para obtener las ventas de hoy"""
-    try:
-        db = conectar()
-        conn = db.conexion1()
-        cursor = conn.cursor(dictionary=True)
-        
-        hoy = datetime.now().strftime('%Y-%m-%d')
-        
-        cursor.execute("""
-            SELECT 
-                COALESCE(SUM(mp.Monto), 0) as total,
-                'VES' as moneda
-            FROM Metodo_pago mp
-            INNER JOIN Venta v ON mp.ID_factura = v.ID_factura
-            WHERE mp.Estado_pago = 'aprobado'
-            AND DATE(v.Fecha_venta) = %s
-        """, (hoy,))
-        
-        result = cursor.fetchone()
-        conn.close()
-        
-        total = float(result['total']) if result else 0
-        
-        return jsonify({
-            "success": True,
-            "total": total,
-            "total_formateado": f"{total:,.2f}",
-            "simbolo": "Bs"
-        })
-        
-    except Exception as e:
-        print(f"Error en api_ventas_hoy: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-# ============================================================
-# 3. ÓRDENES ACTIVAS
-# ============================================================
 @home_blueprint.route('/api/dashboard/ordenes-servicio', methods=['GET'])
+@jwt_required
 def api_ordenes_servicio():
     """API para obtener órdenes de servicio activas"""
     try:
@@ -188,6 +154,7 @@ def api_ordenes_servicio():
 # 4. EQUIPOS REPARADOS (MES)
 # ============================================================
 @home_blueprint.route('/api/dashboard/reparados-mes', methods=['GET'])
+@jwt_required
 def api_reparados_mes():
     """API para obtener equipos reparados en el mes"""
     try:
@@ -221,6 +188,7 @@ def api_reparados_mes():
 # 5. INGRESOS MENSUALES
 # ============================================================
 @home_blueprint.route('/api/dashboard/ingresos-mensuales', methods=['GET'])
+@jwt_required
 def api_ingresos_mensuales():
     """API para obtener ingresos del mes actual"""
     try:
@@ -260,11 +228,12 @@ def api_ingresos_mensuales():
 # 6. PRODUCTOS BAJO STOCK
 # ============================================================
 @home_blueprint.route('/api/dashboard/bajo-stock', methods=['GET'])
+@jwt_required
 def api_bajo_stock():
     """API para obtener productos con bajo stock (<=10)"""
     try:
         inventario = Inventario()
-        productos = inventario.obtener_productos_bajo_stock(limite=10)
+        productos = inventario.listar_productos_bajo_stock(limite=10)
         return jsonify({"success": True, "productos": productos})
     except Exception as e:
         print(f"Error en api_bajo_stock: {e}")
@@ -274,11 +243,12 @@ def api_bajo_stock():
 
 
 @home_blueprint.route('/api/dashboard/sin-stock', methods=['GET'])
+@jwt_required
 def api_sin_stock():
     """API para obtener productos sin stock (=0)"""
     try:
         inventario = Inventario()
-        productos = inventario.obtener_productos_sin_stock()
+        productos = inventario.listar_productos_sin_stock()
         return jsonify({"success": True, "productos": productos})
     except Exception as e:
         print(f"Error en api_sin_stock: {e}")
@@ -289,6 +259,7 @@ def api_sin_stock():
 # 7. ACTIVIDAD RECIENTE
 # ============================================================
 @home_blueprint.route('/api/dashboard/actividad-reciente', methods=['GET'])
+@jwt_required
 def api_actividad_reciente():
     """API para obtener actividad reciente de la bitácora"""
     try:
@@ -344,6 +315,7 @@ def api_actividad_reciente():
 # 8. TÉCNICOS ACTIVOS
 # ============================================================
 @home_blueprint.route('/api/dashboard/tecnicos-activos', methods=['GET'])
+@jwt_required
 def api_tecnicos_activos():
     """API para obtener número de técnicos activos"""
     try:
@@ -374,6 +346,7 @@ def api_tecnicos_activos():
 # 9. VENTAS DE LA SEMANA
 # ============================================================
 @home_blueprint.route('/api/dashboard/ventas-semana', methods=['GET'])
+@jwt_required
 def api_ventas_semana():
     """API para obtener las ventas de la última semana"""
     try:
@@ -414,6 +387,7 @@ def api_ventas_semana():
 # 10. INCREMENTO DE REPARACIONES (SEMANA ACTUAL vs ANTERIOR)
 # ============================================================
 @home_blueprint.route('/api/dashboard/incremento-reparaciones', methods=['GET'])
+@jwt_required
 def api_incremento_reparaciones():
     """API para calcular el incremento de reparaciones esta semana vs la anterior"""
     try:
@@ -474,6 +448,7 @@ def api_incremento_reparaciones():
 # 11. INCREMENTO DE VENTAS (SEMANA ACTUAL vs ANTERIOR)
 # ============================================================
 @home_blueprint.route('/api/dashboard/incremento-ventas', methods=['GET'])
+@jwt_required
 def api_incremento_ventas():
     """API para calcular el incremento de ventas esta semana vs la anterior"""
     try:

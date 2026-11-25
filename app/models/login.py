@@ -1,12 +1,14 @@
 from __future__ import annotations
+import logging
 
-import re
 import traceback
-from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.database import conectar
 from app.models.roles import Rol
 from app.models.usuarios import Usuarios
+
+
+logger = logging.getLogger(__name__)
 
 
 class LoginManager:
@@ -26,7 +28,7 @@ class LoginManager:
         try:
             return self._usuarios_model.validar_login(nombre, password)
         except Exception as e:
-            print(f"Error en validar_usuario: {e}")
+            logger.error(f"Error en validar_usuario: {e}")
             traceback.print_exc()
             return None
     
@@ -40,7 +42,7 @@ class LoginManager:
         try:
             return self._usuarios_model.obtener_rol_por_nombre("Cliente")
         except Exception as e:
-            print(f"Error al obtener rol cliente: {e}")
+            logger.error(f"Error al obtener rol cliente: {e}")
             traceback.print_exc()
             return None
     
@@ -52,7 +54,7 @@ class LoginManager:
         try:
             return self._usuarios_model.verificar_cedula_en_uso(str(cedula))
         except Exception as e:
-            print(f"Error al verificar cedula: {e}")
+            logger.error(f"Error al verificar cedula: {e}")
             traceback.print_exc()
             return False
     
@@ -64,27 +66,23 @@ class LoginManager:
             temp_usuario = Usuarios(nombre=nombre)
             return temp_usuario.verificar_usuario_por_nombre()
         except Exception as e:
-            print(f"Error al verificar nombre de usuario: {e}")
+            logger.error(f"Error al verificar nombre de usuario: {e}")
             traceback.print_exc()
             return False
     
-    def crear_usuario(self, nombre: str, cedula: str, password: str, rol_id: int, foto_perfil: str = None) -> str | None:
+    def crear_usuario(self, nombre: str, cedula: str, password: str, rol_id: int, foto_perfil: str = None):
         """
-        Crea un nuevo usuario usando el modelo Usuarios
-        
-        Args:
-            nombre: Nombre de usuario
-            cedula: Cedula del usuario
-            password: Contrasena en texto plano
-            rol_id: ID del rol
-            foto_perfil: Ruta de la foto de perfil (opcional)
-        
+        Crea un nuevo usuario usando el modelo Usuarios.
+
+        La validación de formato/duplicados vive en Usuarios.agregar_usuario
+        (antes el controller duplicaba los chequeos).
+
         Returns:
-            str: ID generado (ej: 'USR-001'), None si hubo error
+            tuple: (usuario_id | None, error | None, es_duplicado: bool)
         """
         try:
-            print(f"Creando usuario: {nombre}, cedula: {cedula}, rol: {rol_id}")
-            
+            logger.debug(f"Creando usuario: {nombre}, cedula: {cedula}, rol: {rol_id}")
+
             usuario = Usuarios(
                 nombre=nombre,
                 cedula=str(cedula),
@@ -92,28 +90,26 @@ class LoginManager:
                 rol_id=str(rol_id),
                 foto_perfil=foto_perfil
             )
-            
+
             if usuario.verificar_usuario_por_nombre():
-                print(f"El nombre de usuario '{nombre}' ya existe.")
-                return None
-            
+                logger.debug(f"El nombre de usuario '{nombre}' ya existe.")
+                return None, "El nombre de usuario ya está en uso.", True
+
             if usuario.verificar_cedula_en_uso(str(cedula)):
-                print(f"La cedula '{cedula}' ya esta asignada a otro usuario.")
-                return None
-            
+                logger.debug(f"La cedula '{cedula}' ya esta asignada a otro usuario.")
+                return None, "Ya existe un usuario con esta cédula.", True
+
             resultado = usuario.agregar_usuario()
-            print(f"Resultado de agregar_usuario: {resultado}")
-            
+            logger.debug(f"Resultado de agregar_usuario: {resultado}")
+
             if "exitosamente" in resultado.lower():
-                return usuario.id
-            else:
-                print(f"Error al crear usuario: {resultado}")
-                return None
-                
+                return usuario.id, None, False
+            # El mensaje del modelo (validación de formato/campos) sube tal cual
+            return None, resultado, False
+
         except Exception as e:
-            print(f"Error en crear_usuario: {e}")
-            traceback.print_exc()
-            return None
+            logger.error(f"Error en crear_usuario: {e}")
+            return None, "No se pudo crear la cuenta. Intente nuevamente.", False
     
     def crear_cliente_natural(self, cedula: str, nombre: str, apellido: str, 
                               celular: str, correo: str = None, direccion: str = None) -> bool:
@@ -128,7 +124,7 @@ class LoginManager:
         try:
             db = self.__conexion_bd.conexion1()
             if not db:
-                print("Error: No se pudo conectar a la base de datos principal")
+                logger.error("Error: No se pudo conectar a la base de datos principal")
                 return False
             
             cursor = db.cursor()
@@ -147,7 +143,7 @@ class LoginManager:
                     """,
                     (cedula, direccion, celular, correo)
                 )
-                print(f"Cliente insertado: {cedula}")
+                logger.debug(f"Cliente insertado: {cedula}")
             else:
                 cursor.execute(
                     """
@@ -157,7 +153,7 @@ class LoginManager:
                     """,
                     (direccion, celular, correo, cedula)
                 )
-                print(f"Cliente actualizado: {cedula}")
+                logger.debug(f"Cliente actualizado: {cedula}")
             
             cursor.execute(
                 "SELECT 1 FROM Persona_natural WHERE ID_cliente = %s LIMIT 1",
@@ -173,7 +169,7 @@ class LoginManager:
                     """,
                     (cedula, nombre, apellido)
                 )
-                print(f"Persona natural creada: {nombre} {apellido}")
+                logger.debug(f"Persona natural creada: {nombre} {apellido}")
             else:
                 cursor.execute(
                     """
@@ -183,14 +179,14 @@ class LoginManager:
                     """,
                     (nombre, apellido, cedula)
                 )
-                print(f"Persona natural actualizada: {nombre} {apellido}")
+                logger.debug(f"Persona natural actualizada: {nombre} {apellido}")
             
             db.commit()
-            print(f"Cliente natural creado/actualizado exitosamente: {nombre} {apellido}")
+            logger.debug(f"Cliente natural creado/actualizado exitosamente: {nombre} {apellido}")
             return True
             
         except Exception as e:
-            print(f"Error detallado al crear cliente natural: {e}")
+            logger.error(f"Error detallado al crear cliente natural: {e}")
             traceback.print_exc()
             if db:
                 db.rollback()
@@ -210,7 +206,7 @@ class LoginManager:
         try:
             db = self.__conexion_bd.conexion1()
             if not db:
-                print("Error: No se pudo conectar a la base de datos principal")
+                logger.error("Error: No se pudo conectar a la base de datos principal")
                 return False
             
             cursor = db.cursor()
@@ -219,10 +215,10 @@ class LoginManager:
                 (cedula,)
             )
             existe = cursor.fetchone() is not None
-            print(f"Verificando perfil cliente {cedula}: {'Completo' if existe else 'Incompleto'}")
+            logger.debug(f"Verificando perfil cliente {cedula}: {'Completo' if existe else 'Incompleto'}")
             return existe
         except Exception as e:
-            print(f"Error al verificar perfil cliente: {e}")
+            logger.error(f"Error al verificar perfil cliente: {e}")
             traceback.print_exc()
             return False
         finally:
@@ -240,7 +236,7 @@ class LoginManager:
         try:
             db = self.__conexion_bd.conexion1()
             if not db:
-                print("Error: No se pudo conectar a la base de datos principal")
+                logger.error("Error: No se pudo conectar a la base de datos principal")
                 return None
             
             cursor = db.cursor(dictionary=True)
@@ -262,7 +258,7 @@ class LoginManager:
             )
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error al obtener cliente: {e}")
+            logger.error(f"Error al obtener cliente: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -280,7 +276,7 @@ class LoginManager:
         try:
             db = self.__conexion_bd.conexion1()
             if not db:
-                print("Error: No se pudo conectar a la base de datos principal")
+                logger.error("Error: No se pudo conectar a la base de datos principal")
                 return None
             
             cursor = db.cursor(dictionary=True)
@@ -302,7 +298,7 @@ class LoginManager:
             )
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error al obtener empleado: {e}")
+            logger.error(f"Error al obtener empleado: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -331,7 +327,7 @@ class LoginManager:
             )
             return cursor.fetchone()
         except Exception as e:
-            print(f"Error al obtener rol por ID: {e}")
+            logger.error(f"Error al obtener rol por ID: {e}")
             traceback.print_exc()
             return None
         finally:
@@ -348,6 +344,6 @@ class LoginManager:
         try:
             return self._usuarios_model.obtener_usuario_por_id(usuario_id)
         except Exception as e:
-            print(f"Error al obtener usuario por ID: {e}")
+            logger.error(f"Error al obtener usuario por ID: {e}")
             traceback.print_exc()
             return None

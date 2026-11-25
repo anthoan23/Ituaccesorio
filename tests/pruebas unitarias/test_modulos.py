@@ -306,7 +306,7 @@ class TestAgregarModulo:
             pytest.param(
                 "Usuarios",
                 "Gestión #1",
-                "El campo Descripción no puede contener caracteres especiales.",
+                "El campo Descripción solo puede contener letras, números, acentos y espacios.",
                 id="descripcion-caracteres-invalidos",
             ),
         ],
@@ -508,7 +508,7 @@ class TestActualizarModulo:
                 ID_MAXIMO,
                 "Usuarios",
                 "Gestión #1",
-                "El campo Descripción no puede contener caracteres especiales.",
+                "El campo Descripción solo puede contener letras, números, acentos y espacios.",
                 id="descripcion-caracteres-invalidos",
             ),
         ],

@@ -215,40 +215,17 @@ const Utils = {
             'asignada': 'estado-asignada'
         };
         return estados[estadoStr] || 'estado-default';
-    },
-
-    obtenerIdEmpleadoActual() {
-        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-        if (userStr) {
-            try {
-                const user = JSON.parse(userStr);
-                const id = user.id_empleado || user.ID_empleado || user.empleado_id;
-                if (id) return String(id);
-            } catch(e) {}
-        }
-        
-        const token = this.getAccessToken();
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const id = payload.id_empleado || payload.ID_empleado || payload.empleado_id;
-                if (id) return String(id);
-            } catch(e) {}
-        }
-        
-        // Sin empleado identificado no se puede operar sobre órdenes:
-        // se devuelve null y los flujos que dependen de él se bloquean.
-        console.warn('No se pudo obtener el ID del empleado logueado');
-        return null;
     }
 };
 
-// --------------------------------
+// ============================================
 // 4. GESTOR DE VISTAS
-// --------------------------------
+// (restaurado: se había perdido en la remediación de la auditoría
+// de frontend y el taller quedaba sin cargar las órdenes)
+// ============================================
 const ViewManager = {
     currentView: TALLER_CONFIG.VISTAS.ORDENES,
-    
+
     labels: {
         [TALLER_CONFIG.VISTAS.ORDENES]: 'Órdenes de servicio',
         [TALLER_CONFIG.VISTAS.DETALLE]: 'Información de la orden',
@@ -258,13 +235,13 @@ const ViewManager = {
     },
 
     activate(targetClass) {
-        const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION, 
+        const showBreadcrumb = [TALLER_CONFIG.VISTAS.DETALLE, TALLER_CONFIG.VISTAS.REVISION,
                                  TALLER_CONFIG.VISTAS.REPARACION, TALLER_CONFIG.VISTAS.ASIGNADAS].includes(targetClass);
-        
+
         document.querySelectorAll('.content').forEach(panel => {
             panel.hidden = !panel.classList.contains(targetClass);
         });
-        
+
         const separator = document.getElementById('breadcrumb-separator');
         const section = document.getElementById('breadcrumb-section');
         if (separator) separator.style.display = showBreadcrumb ? 'inline' : 'none';
@@ -272,15 +249,15 @@ const ViewManager = {
             section.style.display = showBreadcrumb ? 'inline' : 'none';
             section.textContent = showBreadcrumb ? this.labels[targetClass] : '';
         }
-        
+
         document.querySelectorAll('[data-view-target]').forEach(btn => {
             const isActive = btn.getAttribute('data-view-target') === targetClass;
             btn.classList.toggle('is-active', isActive);
             btn.setAttribute('aria-pressed', String(isActive));
         });
-        
+
         this.currentView = targetClass;
-        
+
         if (targetClass === TALLER_CONFIG.VISTAS.ORDENES) {
             OrdenesService.cargar();
         } else if (targetClass === TALLER_CONFIG.VISTAS.ASIGNADAS) {
@@ -494,7 +471,7 @@ const FotosService = {
             this.fotosSeleccionadas.splice(index, 1);
             this.renderizarPrevisualizacion();
             this.actualizarBotonSubir();
-            Utils.showMessage(`📸 "${fotoEliminada.name}" eliminada de la lista`);
+            console.log(`📸 "${fotoEliminada.name}" eliminada de la lista`);
         }
     },
 
@@ -850,10 +827,10 @@ const OrdenesService = {
             
             if (fotos.length > 0) {
                 this.renderizarFotos(fotosContainer, fotos, true);
-                Utils.showMessage(`✅ ${fotos.length} fotos cargadas`);
+                console.log(`✅ ${fotos.length} fotos cargadas`);
             } else {
                 fotosContainer.innerHTML = '<p class="device-detail__empty">No hay fotos registradas para esta orden</p>';
-                Utils.showMessage('📸 No hay fotos registradas');
+                console.log('📸 No hay fotos registradas');
             }
         } catch (error) {
             console.error('Error al actualizar fotos:', error);
@@ -1028,18 +1005,14 @@ const OrdenesService = {
     async asignarOrden(idOrden, idConfiable = null) {
         if (!validadorOrdenes.validarId(idOrden, 'tomar', idConfiable)) return;
 
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
-            return;
-        }
-
+        // El backend identifica al empleado con la sesión (g.user): el gate
+        // de id_empleado bloqueaba esta acción para TODOS (nadie escribe
+        // 'user' en localStorage ni el JWT trae id_empleado).
         try {
             await Utils.fetchJson(TALLER_CONFIG.API.ASIGNAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    id_orden: idOrden,
-                    id_empleado: idEmpleado
+                    id_orden: idOrden
                 })
             });
             
@@ -1159,14 +1132,14 @@ const RevisionService = {
         document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="Funciona"]').forEach(radio => {
             radio.checked = true;
         });
-        Utils.showMessage('✅ Todos los componentes marcados como OK');
+        console.log('✅ Todos los componentes marcados como OK');
     },
 
     marcarTodosTestsFallo() {
         document.querySelectorAll('#form-revision-tecnica input[type="radio"][value="No funciona"]').forEach(radio => {
             radio.checked = true;
         });
-        Utils.showMessage('❌ Todos los componentes marcados como No funciona');
+        console.log('❌ Todos los componentes marcados como No funciona');
     },
 
     async guardar(event) {
@@ -1175,15 +1148,8 @@ const RevisionService = {
         const idOrden = document.getElementById('id_orden_servicio_revision')?.value;
         const numeroTest = document.getElementById('numero_test_revision')?.value;
         const observaciones = document.querySelector('textarea[name="observaciones"]')?.value;
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-
         if (!idOrden || !numeroTest) {
             console.warn('Datos de orden incompletos');
-            return;
-        }
-
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
             return;
         }
 
@@ -1211,7 +1177,6 @@ const RevisionService = {
                 method: 'POST',
                 body: JSON.stringify({
                     id_orden: idOrden,
-                    id_empleado: parseInt(idEmpleado),
                     numero_test: parseInt(numeroTest),
                     componentes_evaluados: componentesEvaluados
                 })
@@ -1467,7 +1432,7 @@ const RepuestosService = {
         if (existente) {
             if (existente.cantidad < stockDisponible) {
                 existente.cantidad++;
-                Utils.showMessage(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
+                console.log(`📦 Se aumentó la cantidad de "${nombreProducto}" a ${existente.cantidad}`);
             } else {
                 Utils.showMessage(`❌ No hay más stock disponible de "${nombreProducto}"`, true);
                 return;
@@ -1479,7 +1444,7 @@ const RepuestosService = {
                 cantidad: 1,
                 stockMaximo: stockDisponible
             });
-            Utils.showMessage(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
+            console.log(`✅ Repuesto "${nombreProducto}" agregado correctamente`);
         }
 
         this.renderizarRepuestosUsados();
@@ -1577,7 +1542,7 @@ const RepuestosService = {
             this.repuestosSeleccionados[index].cantidad = nuevaCantidad;
             this.renderizarRepuestosUsados();
             this.actualizarContadorTotal();
-            Utils.showMessage(`Cantidad actualizada a ${nuevaCantidad}`);
+            console.log(`Cantidad actualizada a ${nuevaCantidad}`);
         } else {
             const cantidadActual = this.repuestosSeleccionados[index]?.cantidad || 1;
             input.value = cantidadActual;
@@ -1597,7 +1562,7 @@ const RepuestosService = {
         this.repuestosSeleccionados.splice(index, 1);
         this.renderizarRepuestosUsados();
         this.actualizarContadorTotal();
-        Utils.showMessage(`Repuesto "${repuestoEliminado.nombre}" eliminado`);
+        console.log(`Repuesto "${repuestoEliminado.nombre}" eliminado`);
     },
 
     actualizarContadorTotal() {
@@ -1613,7 +1578,7 @@ const RepuestosService = {
         this.repuestosSeleccionados = [];
         this.renderizarRepuestosUsados();
         this.actualizarContadorTotal();
-        Utils.showMessage('Lista de repuestos limpiada');
+        console.log('Lista de repuestos limpiada');
     },
 
     obtenerRepuestos() {
@@ -1676,18 +1641,11 @@ const ReparacionesService = {
     async liberarOrden(idOrden, idConfiable = null) {
         if (!validadorReparaciones.validarId(idOrden, 'liberar', idConfiable)) return;
 
-        const idEmpleado = Utils.obtenerIdEmpleadoActual();
-        if (!idEmpleado) {
-            Utils.showMessage('No se pudo identificar al empleado logueado. Vuelve a iniciar sesión.', true);
-            return;
-        }
-
         try {
             await Utils.fetchJson(TALLER_CONFIG.API.LIBERAR_ORDEN, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    id_orden: idOrden,
-                    id_empleado: idEmpleado
+                    id_orden: idOrden
                 })
             });
             
@@ -1726,8 +1684,6 @@ const ReparacionesService = {
         }
         
         try {
-            const idEmpleado = Utils.obtenerIdEmpleadoActual();
-            
             const payload = {
                 id_orden: ordenId,
                 descripcion_reparacion: reparacionTexto,

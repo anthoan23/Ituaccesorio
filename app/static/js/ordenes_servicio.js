@@ -870,12 +870,12 @@ async function verificarEquipo() {
 // ============================================
 function marcarTodosTestsOK() {
     document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="1"]').forEach(radio => { radio.checked = true; });
-    Utils.showMessage('✅ Todos los componentes marcados como OK');
+    console.log('✅ Todos los componentes marcados como OK');
 }
 
 function marcarTodosTestsFallo() {
     document.querySelectorAll('#modal-revision-inicial input[type="radio"][value="0"]').forEach(radio => { radio.checked = true; });
-    Utils.showMessage('❌ Todos los componentes marcados como No funciona');
+    console.log('❌ Todos los componentes marcados como No funciona');
 }
 
 // ============================================
@@ -1265,7 +1265,7 @@ function renderFotosOrdenModal(fotos) {
                 if (src && !src.startsWith("/") && !src.startsWith("http")) src = `/${src}`;
                 return `
                     <div class="foto-item" data-foto-index="${index}">
-                        <div class="foto-thumbnail" onclick="window.open('${Utils.escapeHtml(src)}', '_blank')">
+                        <div class="foto-thumbnail" data-action="abrir-foto" data-url="${Utils.escapeHtml(src)}">
                             <img src="${Utils.escapeHtml(src)}" alt="Foto ${index + 1}" loading="lazy">
                         </div>
                     </div>
@@ -1777,7 +1777,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    Promise.all([ cargarModelos(), cargarTecnicos(), cargarOrdenes() ]).catch((error) => {
+  // Visor de fotos por delegación: los onclick inline quedan bloqueados
+  // por la CSP.
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-action='abrir-foto']");
+    if (el && el.dataset.url) window.open(el.dataset.url, "_blank");
+  });
+
+  Promise.all([ cargarModelos(), cargarTecnicos(), cargarOrdenes() ]).catch((error) => {
         console.error("Error en la inicialización:", error);
     });
 });

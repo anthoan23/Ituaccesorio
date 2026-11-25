@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-URL_DASHBOARD = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/"
+URL_DASHBOARD = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/"
 TIEMPO_ESPERA = 10
 
 # Se asume ENTORNO_PRUEBA=true: el before_request inyecta un usuario admin

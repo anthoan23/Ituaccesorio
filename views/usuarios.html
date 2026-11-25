@@ -170,44 +170,8 @@
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id">
           <input type="hidden" name="foto_perfil_actual">
-          
+
           <div class="ui-form__grid ui-form__grid--two">
-            <div class="field">
-              <span>Nombre <span class="required-indicator">*</span></span>
-              <input name="nombre" 
-                     type="text" 
-                     placeholder="Nombre completo" 
-                     required 
-                     maxlength="50"
-                     data-validation-rules="soloLetras,capitalizar"
-                     title="Solo letras, espacios, acentos y ñ">
-              <small class="field-hint">Solo letras, espacios, acentos y ñ (máximo 50 caracteres)</small>
-            </div>
-            
-            <div class="field">
-              <span>Cédula personal <span class="required-indicator">*</span></span>
-              <div class="select-wrapper">
-                <select name="cedula_personal" required>
-                  <option value="">Seleccione un rol primero</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="field">
-              <span>Contraseña</span>
-              <div class="password-field">
-                <input name="password" 
-                       type="password" 
-                       placeholder="Dejar vacío para no cambiar" 
-                       minlength="6"
-                       maxlength="50"
-                       data-validation-rules="sinEspacios"
-                       title="Mínimo 6 caracteres, sin espacios">
-                <button class="password-toggle" type="button" data-password-toggle>Mostrar</button>
-              </div>
-              <small class="field-hint">Mínimo 6 caracteres, sin espacios</small>
-            </div>
-            
             <div class="field">
               <span>Rol <span class="required-indicator">*</span></span>
               <div class="select-wrapper">
@@ -215,6 +179,45 @@
                   <option value="">Seleccione...</option>
                 </select>
               </div>
+              <small class="field-hint">Selecciona un rol para habilitar el resto del formulario</small>
+            </div>
+
+            <div class="field">
+              <span>Usuario <span class="required-indicator">*</span></span>
+              <input name="nombre"
+                     type="text"
+                     placeholder="Usuario"
+                     required
+                     maxlength="50"
+                     data-validation-rules="soloLetras,capitalizar"
+                     title="Solo letras, espacios, acentos y ñ"
+                     disabled>
+              <small class="field-hint">Solo letras, espacios, acentos y ñ (máximo 50 caracteres)</small>
+            </div>
+
+            <div class="field">
+              <span>Cédula personal <span class="required-indicator">*</span></span>
+              <div class="select-wrapper">
+                <select name="cedula_personal" required disabled>
+                  <option value="">Seleccione un rol primero</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <span>Contraseña</span>
+              <div class="password-field">
+                <input name="password"
+                       type="password"
+                       placeholder="Dejar vacío para no cambiar"
+                       minlength="6"
+                       maxlength="50"
+                       data-validation-rules="sinEspacios"
+                       title="Mínimo 6 caracteres, sin espacios"
+                       disabled>
+                <button class="password-toggle" type="button" data-password-toggle disabled>Mostrar</button>
+              </div>
+              <small class="field-hint">Mínimo 6 caracteres, sin espacios</small>
             </div>
           </div>
 
@@ -226,17 +229,17 @@
               <button type="button" id="btn-guardar-permisos" class="ui-btn ui-btn--primary ui-btn--sm">Guardar permisos</button>
             </div>
           </div>
-          
+
           <div class="field field--full">
             <span>Foto de perfil</span>
             <input id="foto-perfil-input" name="foto_perfil" type="file" accept="image/*" hidden>
-            <button id="btn-foto-perfil" class="ui-btn ui-btn--ghost ui-btn--sm" type="button">Subir foto</button>
+            <button id="btn-foto-perfil" class="ui-btn ui-btn--ghost ui-btn--sm" type="button" disabled>Subir foto</button>
             <small id="foto-perfil-name" class="field-hint">Ningún archivo seleccionado</small>
             <div class="foto-perfil-preview">
               <img id="foto-perfil-preview" src="{{ url_for('static', filename='img/LOGO.png') }}" alt="Vista previa">
             </div>
           </div>
-          
+
           <div class="ui-form__actions">
             <button class="ui-btn ui-btn--primary" type="submit">Guardar usuario</button>
             <button class="ui-btn ui-btn--ghost" type="button" data-reset-form="usuario">Limpiar</button>
@@ -261,24 +264,24 @@
         <form id="form-rol" class="ui-form" autocomplete="off">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id">
-          
+
           <div class="ui-form__grid ui-form__grid--two">
             <div class="field">
               <span>Nombre <span class="required-indicator">*</span></span>
-              <input name="nombre" 
-                     type="text" 
-                     placeholder="Administrador" 
-                     required 
+              <input name="nombre"
+                     type="text"
+                     placeholder="Administrador"
+                     required
                      maxlength="50"
                      data-validation-rules="soloLetras,capitalizar"
                      title="Solo letras, espacios, acentos y ñ">
               <small class="field-hint">Solo letras, espacios, acentos y ñ (máximo 50 caracteres)</small>
             </div>
-            
+
             <div class="field field--full">
               <span>Descripción</span>
-              <textarea name="descripcion" 
-                        rows="3" 
+              <textarea name="descripcion"
+                        rows="3"
                         placeholder="Descripción del rol"
                         maxlength="255"
                         data-validation-rules="sinCaracteresEspeciales"
@@ -286,7 +289,7 @@
               <small class="field-hint">Sin caracteres especiales (máximo 255 caracteres)</small>
             </div>
           </div>
-          
+
           <div class="ui-form__actions">
             <button class="ui-btn ui-btn--primary" type="submit">Guardar rol</button>
             <button class="ui-btn ui-btn--ghost" type="button" data-reset-form="rol">Limpiar</button>
@@ -311,24 +314,24 @@
         <form id="form-modulo" class="ui-form" autocomplete="off">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id">
-          
+
           <div class="ui-form__grid ui-form__grid--two">
             <div class="field">
               <span>Nombre <span class="required-indicator">*</span></span>
-              <input name="nombre" 
-                     type="text" 
-                     placeholder="Nombre del módulo" 
-                     required 
+              <input name="nombre"
+                     type="text"
+                     placeholder="Nombre del módulo"
+                     required
                      maxlength="50"
                      data-validation-rules="soloLetrasNumeros,sinEspacios"
                      title="Solo letras y números, sin espacios">
               <small class="field-hint">Solo letras y números, sin espacios (máximo 50 caracteres)</small>
             </div>
-            
+
             <div class="field field--full">
               <span>Descripción</span>
-              <textarea name="descripcion" 
-                        rows="3" 
+              <textarea name="descripcion"
+                        rows="3"
                         placeholder="Descripción del módulo"
                         maxlength="255"
                         data-validation-rules="sinCaracteresEspeciales"
@@ -336,7 +339,7 @@
               <small class="field-hint">Sin caracteres especiales (máximo 255 caracteres)</small>
             </div>
           </div>
-          
+
           <div class="ui-form__actions">
             <button class="ui-btn ui-btn--primary" type="submit">Guardar módulo</button>
             <button class="ui-btn ui-btn--ghost" type="button" data-reset-form="modulo">Limpiar</button>
