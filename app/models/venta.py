@@ -401,42 +401,56 @@ class VentaModel:
             db.close()
 
     def obtener_ventas_hoy(self) -> dict:
-        """Obtiene el resumen de ventas del día (monto desde Metodo_pago).
+        """Obtiene el resumen de ventas del día.
 
-        Antes la primera consulta sumaba sobre `Venta.Monto`, columna que no
-        existe en el esquema → error 1054 → el except devolvía siempre 0 y la
-        consulta correcta (a Metodo_pago) era código muerto inalcanzable.
+        Fuente: `Venta` (todas las ventas, con o sin pago registrado), no
+        `Metodo_pago` (que solo tiene filas cuando se llama a
+        guardar_registro_pago y por tanto deja fuera las ventas en efectivo).
+
+        Contrato de retorno (no cambiar: lo consume el front):
+            {"total_ventas": float, "cantidad_ventas": int, "moneda": str}
         """
         db = self.__conexion_bd.conexion1()
         if not db:
-            return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+            return {"total_ventas": 0.0, "cantidad_ventas": 0, "moneda": "USD"}
 
         cursor = db.cursor(dictionary=True)
         try:
+            # Rango semiabierto sobre Fecha_venta (sargable) en lugar de
+            # DATE(Fecha_venta) = CURDATE(). La conexión fija time_zone='-04:00'
+            # (ver database.py), así que CURDATE() coincide con la zona con la
+            # que se inserta Fecha_venta desde Python.
             cursor.execute("""
                 SELECT
-                    COUNT(*) as cantidad_ventas,
-                    COALESCE(SUM(mp.Monto), 0) as total_ventas,
-                    mp.Moneda
-                FROM Metodo_pago mp
-                WHERE DATE(mp.Fecha_pago) = CURDATE()
-                GROUP BY mp.Moneda
-                ORDER BY mp.Moneda DESC
+                    COUNT(*) AS cantidad_ventas,
+                    COALESCE(SUM(
+                        (SELECT COALESCE(SUM(dv.Cantidad_articulo * ep.Precio_venta), 0)
+                        FROM Detalle_venta dv
+                        JOIN Existencias_productos ep
+                        ON ep.ID_inventario = dv.ID_inventario
+                        WHERE dv.ID_factura = v.ID_factura)
+                    ), 0) AS total_ventas,
+                    v.Moneda
+                FROM Venta v
+                WHERE v.Fecha_venta >= CURDATE()
+                AND v.Fecha_venta <  CURDATE() + INTERVAL 1 DAY
+                GROUP BY v.Moneda
+                ORDER BY v.Moneda DESC
                 LIMIT 1
             """)
             resultado = cursor.fetchone()
 
-            if resultado:
+            if resultado and resultado.get("cantidad_ventas"):
                 return {
-                    "total_ventas": float(resultado.get("total_ventas", 0)),
-                    "cantidad_ventas": resultado.get("cantidad_ventas", 0),
-                    "moneda": resultado.get("Moneda", "USD")
+                    "total_ventas": float(resultado.get("total_ventas") or 0.0),
+                    "cantidad_ventas": int(resultado.get("cantidad_ventas") or 0),
+                    "moneda": resultado.get("Moneda") or "USD",
                 }
 
-            return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+            return {"total_ventas": 0.0, "cantidad_ventas": 0, "moneda": "USD"}
         except Exception as e:
             logger.error(f"Error en obtener_ventas_hoy: {e}")
-            return {"total_ventas": 0, "cantidad_ventas": 0, "moneda": "USD"}
+            return {"total_ventas": 0.0, "cantidad_ventas": 0, "moneda": "USD"}
         finally:
             cursor.close()
             db.close()
