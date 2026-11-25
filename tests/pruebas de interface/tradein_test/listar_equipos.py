@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-URL_TRADEIN = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/trade-in"
+URL_TRADEIN = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/trade-in"
 TIEMPO_ESPERA = 10
 
 # PRERREQUISITO: la BD debe tener equipos Apple (marca Apple, clase Telefono y

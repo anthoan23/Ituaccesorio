@@ -11,7 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # ([data-cart-toggle] -> [data-cart-panel]); el botón "Vaciar" (#cart-vaciar)
 # existe solo en el modal #cart-modal de catalogo.html, cuya apertura está
 # comentada en la vista, por lo que no se ejercita en esta prueba.
-URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/catalogo"
+URL_MODULO = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/catalogo"
 TIEMPO_ESPERA = 10
 
 

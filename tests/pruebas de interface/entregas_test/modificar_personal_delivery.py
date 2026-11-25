@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # Módulo de entregas: modificar personal de delivery (pestaña "Personal Delivery")
 # Requiere el registro creado por crear_personal_delivery.py
 # ("Personal Delivery", cédula 30124556).
-URL_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5000').rstrip('/')}/entregas"
+URL_ENTREGAS = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/entregas"
 TIEMPO_ESPERA = 10
 
 # [nombre_actual, nombre_nuevo]
