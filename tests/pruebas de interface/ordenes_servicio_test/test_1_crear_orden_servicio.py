@@ -1,5 +1,6 @@
 import os
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -26,8 +27,8 @@ TIEMPO_ESPERA = 10
 # ----------------------------------------------------------------------
 
 # [imei, modelo_custom, color, capacidad, patron, descripcion]
-# El patron "L" se envia como trazo numerico 1-4-7-8-9 porque el campo
-# solo acepta numeros del 1 al 9 separados por guiones.
+# El patron "L" se dibuja en la cuadricula; se guarda como la secuencia
+# numerica 1-4-7-8-9.
 DATOS_ORDEN = [
     "351111111111199",      # IMEI (15 digitos)
     "Modelo Custom Prueba", # modelo personalizado (se deja el select vacio)
@@ -39,6 +40,18 @@ DATOS_ORDEN = [
 
 # Cliente natural [cedula, nombre, apellido, celular]
 DATOS_CLIENTE = ["65432109", "Cliente", "Prueba", "04141234567"]
+
+
+def dibujar_patron(driver):
+    puntos = [
+        driver.find_element(By.CSS_SELECTOR, f'#orden-patron-grid [data-punto="{numero}"]')
+        for numero in DATOS_ORDEN[4].split("-")
+    ]
+    acciones = ActionChains(driver).move_to_element(puntos[0]).click_and_hold()
+    for punto in puntos[1:]:
+        acciones.move_to_element(punto)
+    acciones.release().perform()
+    assert driver.find_element(By.ID, "orden-patron").get_attribute("value") == DATOS_ORDEN[4]
 
 
 def crear_orden_servicio_ui(driver, espera):
@@ -56,7 +69,7 @@ def crear_orden_servicio_ui(driver, espera):
     driver.find_element(By.ID, "orden-modelo-custom").send_keys(DATOS_ORDEN[1])
     driver.find_element(By.ID, "orden-color").send_keys(DATOS_ORDEN[2])
     Select(driver.find_element(By.ID, "orden-capacidad")).select_by_visible_text(DATOS_ORDEN[3])
-    driver.find_element(By.ID, "orden-patron").send_keys(DATOS_ORDEN[4])
+    dibujar_patron(driver)
     driver.find_element(By.ID, "orden-descripcion").send_keys(DATOS_ORDEN[5])
 
     driver.find_element(By.ID, "cliente-cedula").send_keys(DATOS_CLIENTE[0])
@@ -159,7 +172,7 @@ def test_crear_orden_servicio(driver):
     driver.find_element(By.ID, "orden-modelo-custom").send_keys(DATOS_ORDEN[1])
     driver.find_element(By.ID, "orden-color").send_keys(DATOS_ORDEN[2])
     Select(driver.find_element(By.ID, "orden-capacidad")).select_by_visible_text(DATOS_ORDEN[3])
-    driver.find_element(By.ID, "orden-patron").send_keys(DATOS_ORDEN[4])
+    dibujar_patron(driver)
     driver.find_element(By.ID, "orden-descripcion").send_keys(DATOS_ORDEN[5])
     driver.find_element(By.ID, "cliente-cedula").send_keys(DATOS_CLIENTE[0])
     driver.find_element(By.ID, "cliente-celular").send_keys(DATOS_CLIENTE[3])

@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from helpers import esperar_feedback, quitar_hover
 
-from test_1_crear_orden_servicio import DATOS_CLIENTE, DATOS_ORDEN
+from test_1_crear_orden_servicio import DATOS_CLIENTE, DATOS_ORDEN, dibujar_patron
 
 URL_ORDENES = f"{os.getenv('ITU_URL_BASE', 'http://127.0.0.1:5001').rstrip('/')}/ordenes-servicio"
 TIEMPO_ESPERA = 10
@@ -46,7 +46,7 @@ def test_registrar_revision(driver):
     driver.find_element(By.ID, "orden-modelo-custom").send_keys(DATOS_ORDEN[1])
     driver.find_element(By.ID, "orden-color").send_keys(DATOS_ORDEN[2])
     Select(driver.find_element(By.ID, "orden-capacidad")).select_by_visible_text(DATOS_ORDEN[3])
-    driver.find_element(By.ID, "orden-patron").send_keys(DATOS_ORDEN[4])
+    dibujar_patron(driver)
     driver.find_element(By.ID, "orden-descripcion").send_keys(DATOS_ORDEN[5])
 
     driver.find_element(By.ID, "cliente-cedula").send_keys(DATOS_CLIENTE[0])

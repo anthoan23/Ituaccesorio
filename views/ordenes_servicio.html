@@ -233,7 +233,7 @@
         </label>
       </div>
 
-      <!-- Fecha y Patrón -->
+      <!-- Fecha y Clave -->
       <div class="ui-form__grid ui-form__grid--two">
         <label class="field">
           <span>Fecha de ingreso</span>
@@ -241,33 +241,57 @@
           <small class="field-hint">Fecha automática</small>
         </label>
         <label class="field">
-          <span>Patrón (1-9, sin repetir)</span>
-          <input id="orden-patron" 
-                 name="patron" 
-                 type="text" 
-                 placeholder="Ej: 1-8-5-2-9" 
-                 maxlength="17" 
-                 pattern="[1-9\-]+" 
-                 data-validator="false"
-                 title="Solo números del 1 al 9 y guiones">
-          <small class="field-hint">Números del 1 al 9 separados por guiones</small>
-        </label>
-      </div>
-
-      <!-- Clave -->
-      <div class="ui-form__grid ui-form__grid--two">
-        <label class="field">
           <span>Clave</span>
-          <input id="orden-clave" 
-                 name="clave" 
-                 type="text" 
-                 placeholder="Clave del equipo" 
-                 maxlength="30" 
+          <input id="orden-clave"
+                 name="clave"
+                 type="text"
+                 placeholder="Clave del equipo"
+                 maxlength="30"
                  data-validation-rules="sinEspacios"
                  data-validator="false"
                  title="No se permiten espacios">
           <small class="field-hint">Sin espacios, máximo 30 caracteres</small>
         </label>
+      </div>
+
+      <!-- Patrón -->
+      <div class="ui-form__grid ui-form__grid--two">
+        <div class="field field--full pattern-field">
+          <span>Patrón (1-9, sin repetir)</span>
+          <p class="field-hint" id="orden-patron-ayuda">Mantenga presionado y arrastre para unir los puntos.</p>
+          <div class="pattern-lock">
+            <div
+              id="orden-patron-grid"
+              class="pattern-grid"
+              role="group"
+              aria-label="Cuadrícula para dibujar el patrón de desbloqueo"
+              aria-describedby="orden-patron-ayuda"
+            >
+              <svg id="orden-patron-lineas" class="pattern-grid__lines" viewBox="0 0 300 300" aria-hidden="true"></svg>
+              <div class="pattern-grid__points">
+                <button type="button" class="pattern-grid__dot" data-punto="1" aria-label="Punto 1">1</button>
+                <button type="button" class="pattern-grid__dot" data-punto="2" aria-label="Punto 2">2</button>
+                <button type="button" class="pattern-grid__dot" data-punto="3" aria-label="Punto 3">3</button>
+                <button type="button" class="pattern-grid__dot" data-punto="4" aria-label="Punto 4">4</button>
+                <button type="button" class="pattern-grid__dot" data-punto="5" aria-label="Punto 5">5</button>
+                <button type="button" class="pattern-grid__dot" data-punto="6" aria-label="Punto 6">6</button>
+                <button type="button" class="pattern-grid__dot" data-punto="7" aria-label="Punto 7">7</button>
+                <button type="button" class="pattern-grid__dot" data-punto="8" aria-label="Punto 8">8</button>
+                <button type="button" class="pattern-grid__dot" data-punto="9" aria-label="Punto 9">9</button>
+              </div>
+            </div>
+            <div class="pattern-lock__controls">
+              <p class="pattern-lock__sequence">Secuencia: <output id="orden-patron-secuencia" aria-live="polite">—</output></p>
+              <button type="button" id="orden-patron-limpiar" class="ui-btn ui-btn--ghost ui-btn--sm">Limpiar</button>
+            </div>
+          </div>
+          <input id="orden-patron"
+                 name="patron"
+                 type="hidden"
+                 value=""
+                 data-validator="false">
+          <small class="field-hint">El patrón se guarda como una secuencia de números del 1 al 9.</small>
+        </div>
       </div>
 
       <!-- ============================================ -->

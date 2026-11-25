@@ -563,6 +563,190 @@ function setFieldValue(fieldId, value) {
     if (field && "value" in field) field.value = value;
 }
 
+const puntosPatronOrden = new Map(
+    Array.from({ length: 9 }, (_, index) => {
+        const numero = index + 1;
+        return [numero, {
+            x: 50 + ((numero - 1) % 3) * 100,
+            y: 50 + Math.floor((numero - 1) / 3) * 100,
+        }];
+    })
+);
+let secuenciaPatronOrden = [];
+let dibujandoPatronOrden = false;
+let pointerPatronOrden = null;
+let lineaTemporalPatronOrden = null;
+
+function actualizarSecuenciaPatronOrden() {
+    const valor = secuenciaPatronOrden.join("-");
+    const input = document.getElementById("orden-patron");
+    const secuencia = document.getElementById("orden-patron-secuencia");
+    if (input) input.value = valor;
+    if (secuencia) secuencia.textContent = valor || "—";
+}
+
+function limpiarPatronOrden() {
+    secuenciaPatronOrden = [];
+    dibujandoPatronOrden = false;
+    pointerPatronOrden = null;
+    lineaTemporalPatronOrden = null;
+    document.getElementById("orden-patron-lineas")?.replaceChildren();
+    document.querySelectorAll("#orden-patron-grid .pattern-grid__dot").forEach(punto => {
+        punto.classList.remove("is-active", "is-highlighted");
+    });
+    actualizarSecuenciaPatronOrden();
+}
+
+function crearLineaPatronOrden(x1, y1, x2, y2, temporal = false) {
+    const lineas = document.getElementById("orden-patron-lineas");
+    if (!lineas) return null;
+    const linea = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    linea.setAttribute("x1", x1);
+    linea.setAttribute("y1", y1);
+    linea.setAttribute("x2", x2);
+    linea.setAttribute("y2", y2);
+    if (temporal) linea.classList.add("is-temporary");
+    lineas.appendChild(linea);
+    return linea;
+}
+
+function agregarPuntoPatronOrden(numero) {
+    if (secuenciaPatronOrden.includes(numero)) return;
+
+    let anterior = secuenciaPatronOrden[secuenciaPatronOrden.length - 1];
+    if (anterior) {
+        const inicio = puntosPatronOrden.get(anterior);
+        const final = puntosPatronOrden.get(numero);
+        const deltaX = final.x - inicio.x;
+        const deltaY = final.y - inicio.y;
+        const intermedios = Array.from(puntosPatronOrden.entries())
+            .filter(([punto]) => punto !== anterior && punto !== numero && !secuenciaPatronOrden.includes(punto))
+            .filter(([, coordenadas]) => {
+                const relativoX = coordenadas.x - inicio.x;
+                const relativoY = coordenadas.y - inicio.y;
+                const productoCruzado = relativoX * deltaY - relativoY * deltaX;
+                const posicion = (relativoX * deltaX + relativoY * deltaY) / (deltaX * deltaX + deltaY * deltaY);
+                return Math.abs(productoCruzado) < 1 && posicion > 0 && posicion < 1;
+            })
+            .sort((a, b) => {
+                const puntoA = puntosPatronOrden.get(a[0]);
+                const puntoB = puntosPatronOrden.get(b[0]);
+                return Math.hypot(puntoA.x - inicio.x, puntoA.y - inicio.y)
+                    - Math.hypot(puntoB.x - inicio.x, puntoB.y - inicio.y);
+            })
+            .map(([punto]) => punto);
+
+        intermedios.forEach(intermedio => {
+            anterior = secuenciaPatronOrden[secuenciaPatronOrden.length - 1];
+            const puntoAnterior = puntosPatronOrden.get(anterior);
+            const puntoIntermedio = puntosPatronOrden.get(intermedio);
+            secuenciaPatronOrden.push(intermedio);
+            crearLineaPatronOrden(puntoAnterior.x, puntoAnterior.y, puntoIntermedio.x, puntoIntermedio.y);
+            document.querySelector(`#orden-patron-grid [data-punto="${intermedio}"]`)?.classList.add("is-active");
+        });
+
+        anterior = secuenciaPatronOrden[secuenciaPatronOrden.length - 1];
+        const puntoAnterior = puntosPatronOrden.get(anterior);
+        crearLineaPatronOrden(puntoAnterior.x, puntoAnterior.y, final.x, final.y);
+    }
+
+    secuenciaPatronOrden.push(numero);
+    document.querySelector(`#orden-patron-grid [data-punto="${numero}"]`)?.classList.add("is-active");
+    actualizarSecuenciaPatronOrden();
+}
+
+function establecerPatronOrden(valor) {
+    limpiarPatronOrden();
+    if (!valor) return;
+
+    const patron = String(valor);
+    const numeros = patron.split("-").map(Number);
+    const esValido = /^[1-9](?:-[1-9]){0,8}$/.test(patron)
+        && new Set(numeros).size === numeros.length;
+    if (!esValido) {
+        const input = document.getElementById("orden-patron");
+        const secuencia = document.getElementById("orden-patron-secuencia");
+        if (input) input.value = patron;
+        if (secuencia) secuencia.textContent = patron || "—";
+        return;
+    }
+    numeros.forEach(agregarPuntoPatronOrden);
+}
+
+function inicializarPatronOrden() {
+    const input = document.getElementById("orden-patron");
+    const grid = document.getElementById("orden-patron-grid");
+    if (!input || !grid) return;
+
+    const obtenerCoordenadas = event => {
+        const rect = grid.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * 300 / rect.width,
+            y: (event.clientY - rect.top) * 300 / rect.height,
+        };
+    };
+    const puntoCercano = (x, y) => {
+        let cercano = null;
+        let distanciaCercana = 34;
+        puntosPatronOrden.forEach((punto, numero) => {
+            const distancia = Math.hypot(punto.x - x, punto.y - y);
+            if (distancia < distanciaCercana) {
+                cercano = numero;
+                distanciaCercana = distancia;
+            }
+        });
+        return cercano;
+    };
+    const finalizarDibujo = () => {
+        dibujandoPatronOrden = false;
+        pointerPatronOrden = null;
+        lineaTemporalPatronOrden?.remove();
+        lineaTemporalPatronOrden = null;
+    };
+
+    grid.addEventListener("pointerdown", event => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        const coordenadas = obtenerCoordenadas(event);
+        const numero = puntoCercano(coordenadas.x, coordenadas.y);
+        if (!numero) return;
+
+        event.preventDefault();
+        limpiarPatronOrden();
+        dibujandoPatronOrden = true;
+        pointerPatronOrden = event.pointerId;
+        grid.setPointerCapture(event.pointerId);
+        agregarPuntoPatronOrden(numero);
+    });
+    grid.addEventListener("pointermove", event => {
+        grid.querySelector(".is-highlighted")?.classList.remove("is-highlighted");
+        const coordenadas = obtenerCoordenadas(event);
+        const numero = puntoCercano(coordenadas.x, coordenadas.y);
+        if (numero && !secuenciaPatronOrden.includes(numero)) {
+            grid.querySelector(`[data-punto="${numero}"]`)?.classList.add("is-highlighted");
+        }
+        if (!dibujandoPatronOrden || event.pointerId !== pointerPatronOrden) return;
+        event.preventDefault();
+
+        if (numero) {
+            agregarPuntoPatronOrden(numero);
+            lineaTemporalPatronOrden?.remove();
+            lineaTemporalPatronOrden = null;
+        } else if (secuenciaPatronOrden.length) {
+            lineaTemporalPatronOrden?.remove();
+            const ultimo = puntosPatronOrden.get(secuenciaPatronOrden[secuenciaPatronOrden.length - 1]);
+            lineaTemporalPatronOrden = crearLineaPatronOrden(ultimo.x, ultimo.y, coordenadas.x, coordenadas.y, true);
+        }
+    });
+    grid.addEventListener("pointerup", finalizarDibujo);
+    grid.addEventListener("pointercancel", finalizarDibujo);
+    grid.addEventListener("click", event => {
+        if (event.detail !== 0) return;
+        const punto = event.target.closest("[data-punto]");
+        if (punto) agregarPuntoPatronOrden(Number(punto.dataset.punto));
+    });
+    document.getElementById("orden-patron-limpiar")?.addEventListener("click", limpiarPatronOrden);
+}
+
 function obtenerSiguienteNumeroTest() {
     const numeros = testsOrdenActual
         .map((test) => Number(test.Num_test ?? test.num_test ?? 0))
@@ -855,7 +1039,7 @@ async function verificarEquipo() {
                 const capSelect = document.getElementById("orden-capacidad");
                 if (capSelect) capSelect.value = equipo.capacidad;
             }
-            if (equipo.patron) setFieldValue("orden-patron", equipo.patron);
+            if (equipo.patron) establecerPatronOrden(equipo.patron);
             if (equipo.clave) setFieldValue("orden-clave", equipo.clave);
         } else {
             setEquipoStatus("Equipo no encontrado. Se creará al guardar la orden.", true);
@@ -1678,18 +1862,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputCedula = document.getElementById("cliente-cedula");
     if (inputCedula) inputCedula.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8); });
 
-    const inputPatron = document.getElementById("orden-patron");
-    if (inputPatron) {
-        inputPatron.addEventListener("input", (e) => {
-            let value = e.target.value.replace(/[^0-9-]/g, "");
-            let numbers = value.replace(/-/g, "").split("");
-            let used = new Set();
-            let validNumbers = [];
-            for (let num of numbers) { if (num >= "1" && num <= "9" && !used.has(num)) { validNumbers.push(num); used.add(num); } }
-            validNumbers = validNumbers.slice(0, 9);
-            e.target.value = validNumbers.join("-");
-        });
-    }
+    inicializarPatronOrden();
 
     const inputCelular = document.getElementById("cliente-celular");
     if (inputCelular) {

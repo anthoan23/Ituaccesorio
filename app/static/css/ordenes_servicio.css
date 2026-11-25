@@ -18,6 +18,131 @@
     width: 100%;
 }
 
+/* Selector visual de patrón de desbloqueo */
+.pattern-lock {
+    width: min(100%, 332px);
+    max-width: 332px;
+    padding: 1rem;
+    box-sizing: border-box;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+}
+
+.pattern-grid {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    touch-action: none;
+    user-select: none;
+}
+
+.pattern-grid__lines,
+.pattern-grid__points {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.pattern-grid__lines {
+    z-index: 1;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.pattern-grid__lines line {
+    stroke: var(--green);
+    stroke-width: 6;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.45));
+}
+
+.pattern-grid__lines line.is-temporary {
+    stroke-dasharray: 8 6;
+    opacity: 0.75;
+}
+
+.pattern-grid__points {
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.pattern-grid__dot {
+    align-self: center;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 2px solid var(--border-light);
+    border-radius: 50%;
+    background: var(--input-bg);
+    color: var(--text-strong);
+    font-weight: 700;
+    cursor: crosshair;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pattern-grid__dot.is-highlighted {
+    border-color: var(--green);
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.pattern-grid__dot.is-active {
+    border-color: var(--green);
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.45);
+}
+
+.pattern-grid__dot:focus-visible {
+    outline: 3px solid var(--yellow);
+    outline-offset: 3px;
+}
+
+.pattern-lock__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.pattern-lock__sequence {
+    min-width: 0;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.pattern-lock__sequence output {
+    color: var(--green);
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 560px) {
+    .pattern-lock {
+        padding: 0.75rem;
+    }
+
+    .pattern-grid__dot {
+        width: 42px;
+        height: 42px;
+    }
+}
+
 /* ============================================
    HERO - STATS CON ESTILO ESPECIAL
    ============================================ */
