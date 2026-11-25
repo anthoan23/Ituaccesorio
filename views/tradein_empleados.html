@@ -275,16 +275,35 @@
 
           <label class="field field--full">
             <span>Fotos del equipo</span>
-            <div id="fotos-preview" class="fotos-preview"></div>
-            <input
-              type="file"
-              id="fotos"
-              name="fotos"
-              class="field__input"
-              accept="image/*"
-              multiple
-            />
-            <small class="field-hint">📸 Puede seleccionar múltiples fotos (JPG, PNG)</small>
+
+            <div class="upload-dropzone" id="fotos-dropzone">
+              <input
+                type="file"
+                id="fotos"
+                name="fotos"
+                class="upload-dropzone__input"
+                accept="image/*"
+                multiple
+              />
+
+              <div class="upload-dropzone__body" data-upload-hint>
+                <svg class="upload-dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="9" cy="9" r="2"/>
+                  <path d="M21 15l-5-5-9 9"/>
+                </svg>
+                <p class="upload-dropzone__text">Arrastra las fotos aquí <span class="upload-dropzone__or">o</span></p>
+                <span class="upload-dropzone__btn">Examinar archivos</span>
+                <small class="upload-dropzone__hint">JPG, PNG · puedes subir varias</small>
+              </div>
+
+              <div class="upload-dropzone__preview" data-upload-preview hidden>
+                <div id="fotos-preview" class="fotos-preview"></div>
+                <small class="upload-dropzone__change-hint">Haz clic para agregar o cambiar las fotos</small>
+              </div>
+            </div>
+
+            <small class="field-hint">Puede seleccionar múltiples fotos (JPG, PNG)</small>
           </label>
         </div>
 
