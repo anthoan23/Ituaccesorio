@@ -1401,6 +1401,72 @@
       formProducto.addEventListener("submit", onSubmitProducto);
     }
 
+    // ==================== ZONA DE ARRASTRE PARA LA FOTO ====================
+    const dropzoneFoto = document.getElementById("p-foto-dropzone");
+    if (dropzoneFoto && formProducto) {
+      const inputFoto = document.getElementById("p-foto");
+      const hintEl = dropzoneFoto.querySelector("[data-upload-hint]");
+      const previewEl = dropzoneFoto.querySelector("[data-upload-preview]");
+      const thumbEl = dropzoneFoto.querySelector("[data-upload-thumb]");
+      let objectUrlFoto = null;
+
+      const limpiarPreview = () => {
+        if (objectUrlFoto) {
+          URL.revokeObjectURL(objectUrlFoto);
+          objectUrlFoto = null;
+        }
+        if (previewEl) previewEl.hidden = true;
+        if (hintEl) hintEl.hidden = false;
+      };
+
+      const mostrarPreview = (file) => {
+        if (!previewEl || !thumbEl) return;
+        if (objectUrlFoto) URL.revokeObjectURL(objectUrlFoto);
+        objectUrlFoto = URL.createObjectURL(file);
+        thumbEl.src = objectUrlFoto;
+        if (hintEl) hintEl.hidden = true;
+        previewEl.hidden = false;
+      };
+
+      ["dragenter", "dragover"].forEach((tipo) => {
+        dropzoneFoto.addEventListener(tipo, (e) => {
+          e.preventDefault();
+          dropzoneFoto.classList.add("upload-dropzone--dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((tipo) => {
+        dropzoneFoto.addEventListener(tipo, (e) => {
+          e.preventDefault();
+          dropzoneFoto.classList.remove("upload-dropzone--dragover");
+        });
+      });
+
+      dropzoneFoto.addEventListener("drop", (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          notify("error", "La foto debe ser una imagen (JPG, PNG, GIF).");
+          return;
+        }
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        inputFoto.files = dt.files;
+        mostrarPreview(file);
+      });
+
+      inputFoto?.addEventListener("change", () => {
+        const file = inputFoto.files?.[0];
+        if (file) mostrarPreview(file);
+        else limpiarPreview();
+      });
+
+      // Al limpiar el formulario, ocultar la vista previa
+      formProducto.addEventListener("reset", () => {
+        setTimeout(limpiarPreview, 0);
+      });
+    }
+
     if (btnGuardarClase) {
       btnGuardarClase.addEventListener("click", onGuardarClaseClick);
     }
