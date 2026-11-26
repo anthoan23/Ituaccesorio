@@ -110,7 +110,7 @@ def test_listar_inventario_con_relaciones():
     # El punto del test son las relaciones (JOIN), no el valor exacto del stock,
     # que puede variar si otra prueba o el flujo de abastecimiento lo modifica.
     assert seed["nombre_producto"] == "Seed iPhone 13"
-    assert seed["nombre_marca"] == "Iphone"
+    assert seed["nombre_marca"] == "Apple"
     assert seed["nombre_clase"] == "Telefono"
     assert seed["existencia"] >= 0
 
