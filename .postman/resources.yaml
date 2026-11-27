@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 9634d7e9-025d-47d9-8bb0-981ece7299d2
+
+localResources:
+  collections:
+    - ../tests/pruebas de api/Ituaccesorio.postman_collection.json
