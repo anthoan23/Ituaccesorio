@@ -6,11 +6,11 @@
 pipeline {
     agent {
         node {
-            // Workspace en ruta compartida host/contenedor: el daemon del host
-            // resuelve los bind mounts, así que el checkout debe existir en
-            // /home/anthoan/jenkins_ws en ambos lados (ver docker-compose.jenkins.yml)
+            // Workspace anidado dentro del bind /home/anthoan/jenkins (misma ruta
+            // host/contenedor): el daemon del host resuelve los bind mounts y el
+            // padre del workspace debe ser escribible para crear ws@tmp
             label 'built-in'
-            customWorkspace '/home/anthoan/jenkins_ws'
+            customWorkspace '/home/anthoan/jenkins/ws'
         }
     }
 
