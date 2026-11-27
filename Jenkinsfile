@@ -113,6 +113,8 @@ pipeline {
             sh 'docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml down -v --remove-orphans || true'
         }
         failure {
+            // Notificación en consola (el correo se activa cuando configures SMTP)
+            echo "Pipeline FALLÓ: revisa las etapas en rojo y el log de esta corrida"
             // Correo desactivado hasta configurar SMTP en Jenkins (Manage Jenkins →
             // System → E-mail Notification con contraseña de aplicación de Gmail).
             // Cuando esté listo, descomenta:
