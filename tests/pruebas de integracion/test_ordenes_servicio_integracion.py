@@ -28,7 +28,7 @@ ID_EQUIPO_TEMP = "123456789123456"        # IMEI: crear_orden exige 15 dígitos
 
 # --- Datos ya sembrados en bd/tests/ituaccesoriobd.sql ---
 ID_CLASE_PRODUCTO = "1"       # Clase_producto -> 'Telefono'
-ID_MARCA_PRODUCTO = "1"       # Marca_producto -> 'Iphone'
+ID_MARCA_PRODUCTO = "1"       # Marca_producto -> 'Apple'
 ID_EMPLEADO_TECNICO = 12345678  # Empleado -> 'Super Admin'
 
 # --- Datos de negocio del test ---

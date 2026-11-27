@@ -330,7 +330,7 @@ class TradeInEmpleados:
                 self.empleado_id,
                 self.cliente_id,
                 self.id_equipo,
-                0,
+                1,
                 fecha_actual,
                 self.valor_pagado
             ))

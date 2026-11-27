@@ -1,11 +1,15 @@
 from flask import Blueprint, jsonify, render_template, request, g
 from datetime import datetime
+import logging
 
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.bitacora import Bitacora
 from app.models.productos import ClaseProducto, MarcaProducto, Producto, Categoria
 from app.models.inventario import Inventario
-from app.utils.helpers import guardar_foto_inventario
+from app.utils.helpers import guardar_foto_inventario, es_imagen_permitida
+
+
+logger = logging.getLogger(__name__)
 
 
 productos_blueprint = Blueprint("productos", __name__)
@@ -120,7 +124,11 @@ def api_crear_modelo():
     else:
         datos = request.get_json(silent=True) or {}
         archivo = None
-    
+
+    # Validar la imagen ANTES de crear el producto para no dejarlo sin foto
+    if archivo and archivo.filename and not es_imagen_permitida(archivo.filename):
+        return jsonify({"success": False, "error": "La foto debe ser una imagen válida (JPG, PNG, GIF, WEBP)."}), 400
+
     nombre = str(datos.get("modelo", "")).strip()
     id_marca = str(datos.get("id_marca", "")).strip()
     id_clase = str(datos.get("id_clase", "")).strip()
@@ -135,16 +143,18 @@ def api_crear_modelo():
         descripcion=descripcion,
         usuario_id=usuario_id
     )
-    
+
     try:
         new_id = modelo.registrar_producto()
-        
+
         if archivo and archivo.filename:
             try:
-                guardar_foto_inventario(archivo)
-            except ValueError as e:
-                print(f"Error al guardar foto: {e}")
-        
+                ruta_foto = guardar_foto_inventario(archivo)
+                if ruta_foto:
+                    modelo.asignar_foto_producto(new_id, ruta_foto)
+            except (ValueError, RuntimeError) as e:
+                logger.warning(f"No se pudo vincular la foto del producto {new_id}: {e}")
+
         return jsonify({"success": True, "id": new_id}), 201
     except Exception as error:
         print(f"Error al crear producto: {error}")
@@ -157,8 +167,16 @@ def api_crear_modelo():
 @jwt_required
 @tiene_permiso('Productos', 'modificar')
 def api_actualizar_modelo(id_modelo: str):
-    datos = request.get_json(silent=True) or {}
-    
+    if request.files:
+        datos = request.form.to_dict()
+        archivo = request.files.get("foto_inventario")
+    else:
+        datos = request.get_json(silent=True) or {}
+        archivo = None
+
+    if archivo and archivo.filename and not es_imagen_permitida(archivo.filename):
+        return jsonify({"success": False, "error": "La foto debe ser una imagen válida (JPG, PNG, GIF, WEBP)."}), 400
+
     nombre = str(datos.get("nombre", "")).strip()
     id_marca = str(datos.get("id_marca", "")).strip()
     id_clase = str(datos.get("id_clase", "")).strip()
@@ -174,9 +192,18 @@ def api_actualizar_modelo(id_modelo: str):
         descripcion=descripcion,
         usuario_id=usuario_id
     )
-    
+
     try:
         ok = modelo.actualizar_producto()
+
+        if archivo and archivo.filename:
+            try:
+                ruta_foto = guardar_foto_inventario(archivo)
+                if ruta_foto:
+                    modelo.asignar_foto_producto(id_modelo, ruta_foto)
+            except (ValueError, RuntimeError) as e:
+                logger.warning(f"No se pudo vincular la foto del producto {id_modelo}: {e}")
+
         return jsonify({"success": True, "updated": ok})
     except Exception as error:
         print(f"Error al actualizar producto: {error}")

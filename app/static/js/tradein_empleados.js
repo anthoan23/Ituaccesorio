@@ -560,9 +560,15 @@
     // Preview de fotos
     const fotosInput = document.getElementById("fotos");
     const fotosPreview = document.getElementById("fotos-preview");
+    const zonaFotos = document.getElementById("fotos-dropzone");
+    const hintZona = zonaFotos?.querySelector("[data-upload-hint]");
+    const previewZona = zonaFotos?.querySelector("[data-upload-preview]");
     
     if (fotosInput && fotosPreview) {
         fotosInput.addEventListener("change", () => {
+            const hayArchivos = fotosInput.files && fotosInput.files.length > 0;
+            if (previewZona) previewZona.hidden = !hayArchivos;
+            if (hintZona) hintZona.hidden = !!hayArchivos;
             fotosPreview.innerHTML = "";
             Array.from(fotosInput.files).forEach((file, index) => {
                 const reader = new FileReader();
@@ -578,6 +584,36 @@
                 reader.readAsDataURL(file);
             });
         });
+
+        // Zona de arrastre para las fotos (solo imágenes; reemplaza la selección actual,
+        // igual que elegir de nuevo con el selector nativo)
+        const dropzoneFotos = document.getElementById("fotos-dropzone");
+        if (dropzoneFotos) {
+            ["dragenter", "dragover"].forEach((tipo) => {
+                dropzoneFotos.addEventListener(tipo, (e) => {
+                    e.preventDefault();
+                    dropzoneFotos.classList.add("upload-dropzone--dragover");
+                });
+            });
+
+            ["dragleave", "drop"].forEach((tipo) => {
+                dropzoneFotos.addEventListener(tipo, (e) => {
+                    e.preventDefault();
+                    dropzoneFotos.classList.remove("upload-dropzone--dragover");
+                });
+            });
+
+            dropzoneFotos.addEventListener("drop", (e) => {
+                const archivos = Array.from(e.dataTransfer?.files || [])
+                    .filter((f) => f.type.startsWith("image/"));
+                if (!archivos.length) return;
+
+                const dt = new DataTransfer();
+                archivos.forEach((f) => dt.items.add(f));
+                fotosInput.files = dt.files;
+                fotosInput.dispatchEvent(new Event("change"));
+            });
+        }
     }
 
     // ==================== CARGAR TESTS EN FORMULARIO ====================
@@ -674,6 +710,11 @@
             
             // Mostrar fotos existentes
             const preview = document.getElementById("fotos-preview");
+            const zonaFotosEditar = document.getElementById("fotos-dropzone");
+            if (zonaFotosEditar) {
+                zonaFotosEditar.querySelector("[data-upload-preview]")?.removeAttribute("hidden");
+                zonaFotosEditar.querySelector("[data-upload-hint]")?.setAttribute("hidden", "");
+            }
             if (preview) {
                 preview.innerHTML = fotos.map(foto => `
                     <div class="foto-preview foto-existente">
@@ -1058,6 +1099,11 @@
                 if (form) form.reset();
                 const preview = document.getElementById("fotos-preview");
                 if (preview) preview.innerHTML = "";
+                const zonaFotosReset = document.getElementById("fotos-dropzone");
+                if (zonaFotosReset) {
+                    zonaFotosReset.querySelector("[data-upload-preview]")?.setAttribute("hidden", "");
+                    zonaFotosReset.querySelector("[data-upload-hint]")?.removeAttribute("hidden");
+                }
                 const clienteId = document.getElementById("cliente-id");
                 if (clienteId) clienteId.value = "";
                 const clienteSearchInput = document.getElementById("cliente-search-input");

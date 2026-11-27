@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, g
 from app.utils.decorators import jwt_required, tiene_permiso
 from app.models.ordenes_entregas import OrdenEntregaModel
 from app.models.ordenes_compra import OrdenCompra
+from app.models.empleados import Empleados
 from datetime import datetime
 
 ordenes_entregas_blueprint = Blueprint('ordenes_entregas', __name__)
@@ -39,6 +40,17 @@ def api_ordenes_entregas_historial():
     return jsonify(entregas)
 
 
+@ordenes_entregas_blueprint.route('/api/ordenes_entregas/empleados', methods=['GET'])
+@jwt_required
+@tiene_permiso('Entregas', 'consultar')
+def api_ordenes_entregas_empleados():
+    """Lista empleados disponibles para registrar quién recibe una entrega."""
+    empleados = Empleados().listar_empleados()
+    if isinstance(empleados, str):
+        return jsonify({"success": False, "error": empleados}), 503
+    return jsonify(empleados)
+
+
 @ordenes_entregas_blueprint.route('/api/ordenes_entregas/<string:id_orden>/productos', methods=['GET'])
 @jwt_required
 @tiene_permiso('Entregas', 'consultar')
@@ -55,29 +67,30 @@ def api_ordenes_entregas_productos(id_orden):
 def api_registrar_entrega(id_orden):
     try:
         data = request.get_json(silent=True) or {}
-        recibido_por = data.get('recibido_por')
+        empleado_id = str(data.get('id_empleado') or '').strip()
         fecha_entrega = data.get('fecha_entrega')
         
-        if not recibido_por:
-            return jsonify({"success": False, "error": "Debe especificar quién recibió la orden"}), 400
+        if not empleado_id.isdigit() or not 6 <= len(empleado_id) <= 8:
+            return jsonify({"success": False, "error": "Debe seleccionar un empleado válido para recibir la orden"}), 400
+
+        empleado = Empleados(id_empleado=empleado_id).consultar_empleado()
+        if isinstance(empleado, str):
+            return jsonify({"success": False, "error": empleado}), 503
+        if not empleado:
+            return jsonify({"success": False, "error": "El empleado seleccionado no está registrado"}), 400
+
+        recibido_por = f"{empleado['nombre']} {empleado['apellido']}"
         
         if not fecha_entrega:
             fecha_entrega = datetime.now().strftime("%Y-%m-%d")
         
         usuario_id = g.user.get("id") if isinstance(g.user, dict) else getattr(g.user, "id", None)
         
-        # Sin fallback a un empleado fijo: si el token no trae un id
-        # numérico la entrega se rechaza (antes se atribuía silenciosamente
-        # al empleado 30124556, corrompiendo el rastro de auditoría).
-        if not usuario_id or not str(usuario_id).isdigit():
-            return jsonify({"success": False, "error": "Empleado no identificado en el token."}), 401
-        id_empleado = int(usuario_id)
-        
         entrega = OrdenEntregaModel(
             id_orden=id_orden,
             recibido_por=recibido_por,
             fecha_entrega=fecha_entrega,
-            id_empleado=id_empleado,
+            id_empleado=int(empleado_id),
             usuario_id=usuario_id
         )
         

@@ -974,3 +974,103 @@
 .texto-yellow { color: var(--yellow); }
 .empty-pruebas { text-align: center; padding: 2rem; }
 .detalle-valor { font-size: 1.2rem; font-weight: 900; color: var(--yellow); }
+
+/* ============================================
+   SUBIDA DE FOTOS (examinar + arrastrar y soltar)
+   ============================================ */
+.upload-dropzone {
+    position: relative;
+    display: block;
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--ghost-bg);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: rgba(243, 197, 0, 0.45);
+    background: var(--ghost-hover-bg);
+}
+
+.upload-dropzone--dragover {
+    border-color: var(--yellow);
+    background: rgba(243, 197, 0, 0.12);
+}
+
+/* El input real cubre la zona (invisible): clic nativo = "examinar" */
+.upload-dropzone__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-dropzone__body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.35rem;
+    justify-items: center;
+    pointer-events: none;
+}
+
+.upload-dropzone__icon {
+    color: var(--text-muted);
+}
+
+.upload-dropzone__text {
+    margin: 0;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.upload-dropzone__or {
+    color: var(--text-muted-soft);
+    font-weight: 400;
+}
+
+.upload-dropzone__btn {
+    display: inline-flex;
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(243, 197, 0, 0.45);
+    background: var(--ghost-bg);
+    color: var(--ghost-text);
+    font-weight: 800;
+    font-size: 0.88rem;
+}
+
+.upload-dropzone__hint {
+    color: var(--text-muted-soft);
+    font-size: 0.8rem;
+}
+
+/* Vista previa DENTRO de la zona: centrada, igual que productos */
+.upload-dropzone__preview {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.upload-dropzone__change-hint {
+    color: var(--text-muted-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.upload-dropzone .fotos-preview {
+    justify-content: center;
+    margin-bottom: 0;
+    max-width: 100%;
+}

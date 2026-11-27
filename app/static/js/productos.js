@@ -275,11 +275,11 @@
     return data;
   }
 
-  async function fetchFormData(url, formData) {
+  async function fetchFormData(url, formData, method = "POST") {
     const authToken = getAuthToken();
     
     const response = await fetch(url, {
-      method: "POST",
+      method,
       headers: {
         Accept: "application/json",
         ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
@@ -721,10 +721,25 @@
       validateMaxLen("Descripción", descripcion, MAX.descripcion);
 
       if (idModelo) {
-        await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
-          method: "PUT",
-          body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
-        });
+        const inputFoto = document.getElementById("p-foto");
+        const archivoFoto = inputFoto?.files?.[0];
+
+        if (archivoFoto) {
+          // Con foto nueva: multipart (el PUT acepta foto_inventario)
+          const formData = new FormData();
+          formData.set("nombre", nombreModelo);
+          formData.set("id_marca", String(finalMarcaId));
+          formData.set("id_clase", String(claseIdFinal));
+          formData.set("descripcion", descripcion || "");
+          formData.append("foto_inventario", archivoFoto);
+
+          await fetchFormData(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, formData, "PUT");
+        } else {
+          await fetchJson(`/api/productos/modelos/${encodeURIComponent(idModelo)}`, {
+            method: "PUT",
+            body: JSON.stringify({ nombre: nombreModelo, id_marca: finalMarcaId, id_clase: claseIdFinal, descripcion }),
+          });
+        }
       } else {
         const formData = new FormData(formProducto);
         
@@ -1384,6 +1399,72 @@
 
     if (formProducto) {
       formProducto.addEventListener("submit", onSubmitProducto);
+    }
+
+    // ==================== ZONA DE ARRASTRE PARA LA FOTO ====================
+    const dropzoneFoto = document.getElementById("p-foto-dropzone");
+    if (dropzoneFoto && formProducto) {
+      const inputFoto = document.getElementById("p-foto");
+      const hintEl = dropzoneFoto.querySelector("[data-upload-hint]");
+      const previewEl = dropzoneFoto.querySelector("[data-upload-preview]");
+      const thumbEl = dropzoneFoto.querySelector("[data-upload-thumb]");
+      let objectUrlFoto = null;
+
+      const limpiarPreview = () => {
+        if (objectUrlFoto) {
+          URL.revokeObjectURL(objectUrlFoto);
+          objectUrlFoto = null;
+        }
+        if (previewEl) previewEl.hidden = true;
+        if (hintEl) hintEl.hidden = false;
+      };
+
+      const mostrarPreview = (file) => {
+        if (!previewEl || !thumbEl) return;
+        if (objectUrlFoto) URL.revokeObjectURL(objectUrlFoto);
+        objectUrlFoto = URL.createObjectURL(file);
+        thumbEl.src = objectUrlFoto;
+        if (hintEl) hintEl.hidden = true;
+        previewEl.hidden = false;
+      };
+
+      ["dragenter", "dragover"].forEach((tipo) => {
+        dropzoneFoto.addEventListener(tipo, (e) => {
+          e.preventDefault();
+          dropzoneFoto.classList.add("upload-dropzone--dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((tipo) => {
+        dropzoneFoto.addEventListener(tipo, (e) => {
+          e.preventDefault();
+          dropzoneFoto.classList.remove("upload-dropzone--dragover");
+        });
+      });
+
+      dropzoneFoto.addEventListener("drop", (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          notify("error", "La foto debe ser una imagen (JPG, PNG, GIF).");
+          return;
+        }
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        inputFoto.files = dt.files;
+        mostrarPreview(file);
+      });
+
+      inputFoto?.addEventListener("change", () => {
+        const file = inputFoto.files?.[0];
+        if (file) mostrarPreview(file);
+        else limpiarPreview();
+      });
+
+      // Al limpiar el formulario, ocultar la vista previa
+      formProducto.addEventListener("reset", () => {
+        setTimeout(limpiarPreview, 0);
+      });
     }
 
     if (btnGuardarClase) {

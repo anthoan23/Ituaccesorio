@@ -1,0 +1,23 @@
+# Jenkins CI para Ituaccesorio
+# docker compose -f docker-compose.jenkins.yml up -d --build
+services:
+  jenkins:
+    build: ./jenkins
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # La carpeta PADRE del workspace se monta completa (misma ruta host/contenedor):
+      # así Jenkins puede crear ws@tmp (hermana del workspace) dentro del bind.
+      # CRÍTICO: las rutas de los bind mounts las resuelve el daemon del host,
+      # así que ./bd/tests/... y .:/app de los otros compose solo funcionan si
+      # el checkout existe en el host en la misma ruta que ve el contenedor.
+      - /home/anthoan/jenkins:/home/anthoan/jenkins
+      # Jenkins ejecuta docker compose contra el daemon del host
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID}"   # GID del grupo docker del host (ver Fase 0)
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:

@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ordenParaEntrega = null;
     let entregaParaEditar = null;
     let entregaParaEliminar = null;
+    let empleadosCargados = false;
 
     // CSRF Token
     const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || '';
@@ -128,6 +129,33 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    async function cargarEmpleados() {
+        if (!entregaRecibidoPor || empleadosCargados) return;
+
+        entregaRecibidoPor.disabled = true;
+        entregaRecibidoPor.replaceChildren(new Option('Cargando empleados...', ''));
+        try {
+            const empleados = await fetchJson('/api/ordenes_entregas/empleados');
+            if (!Array.isArray(empleados) || empleados.length === 0) {
+                entregaRecibidoPor.replaceChildren(new Option('No hay empleados registrados', ''));
+                throw new Error('No hay empleados disponibles para recibir la orden.');
+            }
+
+            entregaRecibidoPor.replaceChildren(new Option('Selecciona un empleado', ''));
+            empleados.forEach((empleado) => {
+                const nombre = `${empleado.nombre || ''} ${empleado.apellido || ''}`.trim();
+                entregaRecibidoPor.add(new Option(`${nombre} (${empleado.cedula})`, empleado.cedula));
+            });
+            empleadosCargados = true;
+        } catch (error) {
+            entregaRecibidoPor.replaceChildren(new Option('No se pudieron cargar los empleados', ''));
+            console.error('Error cargando empleados para entrega:', error);
+            mostrarMensaje(error.message || 'No se pudieron cargar los empleados.', true);
+        } finally {
+            entregaRecibidoPor.disabled = false;
+        }
     }
 
     // Cambiar vista
@@ -455,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (entregaRecibidoPor) entregaRecibidoPor.value = '';
                 if (entregaFecha) entregaFecha.value = new Date().toISOString().slice(0, 10);
                 
-                await cargarProductosOrdenParaEntrega(id);
+                await Promise.all([cargarEmpleados(), cargarProductosOrdenParaEntrega(id)]);
                 
                 if (window.UiModal && typeof window.UiModal.openById === 'function') {
                     window.UiModal.openById('modal-registrar-entrega');
@@ -493,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (!ordenParaEntrega) return;
             
-            const recibidoPor = entregaRecibidoPor?.value.trim();
+            const idEmpleado = entregaRecibidoPor?.value;
             const fechaEntrega = entregaFecha?.value;
             
             // Validar con FieldValidator
@@ -506,8 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            if (!recibidoPor) {
-                mostrarMensaje('Debe especificar quién recibe la orden.', true);
+            if (!idEmpleado) {
+                mostrarMensaje('Debe seleccionar quién recibe la orden.', true);
                 return;
             }
             
@@ -522,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetchJson(`/api/ordenes_entregas/${ordenParaEntrega}/registrar`, {
                     method: 'POST',
-                    body: JSON.stringify({ recibido_por: recibidoPor, fecha_entrega: fechaEntrega })
+                    body: JSON.stringify({ id_empleado: idEmpleado, fecha_entrega: fechaEntrega })
                 });
                 if (response.success) {
                     mostrarMensaje('Entrega registrada exitosamente. Stock actualizado.');

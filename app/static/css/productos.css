@@ -21,29 +21,41 @@
 }
 
 /* ============================================
-   HERO - ACCIONES
+   ACCIONES EN LA CABECERA (superior izquierda)
    ============================================ */
-.hero__actions {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    justify-content: flex-end;
+/* La base (flex + gap) viene de .card__header-actions en theme.css;
+   aquí se alinea a la izquierda y los filtros van a la derecha,
+   ambos al mismo nivel vertical. */
+.productos-table-card .card__header {
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.productos-table-card .card__header-actions {
+    justify-content: flex-start;
 }
 
 /* ============================================
-   TOOLBAR DE PRODUCTOS
+   FILTROS RÁPIDOS (cabecera, a la derecha)
    ============================================ */
 .productos-toolbar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+    margin-bottom: 0;
 }
 
 .productos-toolbar__field {
     margin: 0;
+    min-width: 150px;
+    max-width: 190px;
+}
+
+/* Los selects hablan por sí solos (aria-label); sin etiqueta visible
+   quedan a la misma altura que los botones. */
+.productos-toolbar__field > span {
+    display: none;
 }
 
 .productos-toolbar__field input,
@@ -281,20 +293,21 @@
 
 @media (max-width: 992px) {
     .productos-toolbar {
-        grid-template-columns: 1fr;
-    }
-    
-    .hero__actions {
-        justify-content: flex-start;
         width: 100%;
+        justify-content: flex-start;
     }
-    
-    .hero__actions .ui-btn {
+
+    .productos-toolbar__field {
+        flex: 1;
+        max-width: none;
+    }
+
+    .card__header-actions .ui-btn {
         flex: 1;
         min-width: 120px;
         justify-content: center;
     }
-    
+
     .card--filters {
         grid-template-columns: 1fr;
     }
@@ -381,4 +394,108 @@
 
 .table--min {
     min-width: 500px;
+}
+/* ============================================
+   SUBIDA DE FOTO (examinar + arrastrar y soltar)
+   ============================================ */
+.upload-dropzone {
+    position: relative;
+    display: block;
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--ghost-bg);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: rgba(243, 197, 0, 0.45);
+    background: var(--ghost-hover-bg);
+}
+
+.upload-dropzone--dragover {
+    border-color: var(--yellow);
+    background: rgba(243, 197, 0, 0.12);
+}
+
+/* El input real cubre la zona (invisible): clic nativo = "examinar" */
+.upload-dropzone__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-dropzone__body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.35rem;
+    justify-items: center;
+    pointer-events: none;
+}
+
+.upload-dropzone__icon {
+    color: var(--text-muted);
+}
+
+.upload-dropzone__text {
+    margin: 0;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.upload-dropzone__or {
+    color: var(--text-muted-soft);
+    font-weight: 400;
+}
+
+.upload-dropzone__btn {
+    display: inline-flex;
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(243, 197, 0, 0.45);
+    background: var(--ghost-bg);
+    color: var(--ghost-text);
+    font-weight: 800;
+    font-size: 0.88rem;
+}
+
+.upload-dropzone__hint {
+    color: var(--text-muted-soft);
+    font-size: 0.8rem;
+}
+
+.upload-dropzone__preview {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* La imagen subida se ve centrada y en el medio de la zona */
+.upload-dropzone__thumb {
+    display: block;
+    max-width: 100%;
+    max-height: 180px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    margin-inline: auto;
+}
+
+.upload-dropzone__change-hint {
+    color: var(--text-muted-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
 }
