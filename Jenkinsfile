@@ -9,7 +9,6 @@ pipeline {
     options {
         disableConcurrentBuilds()                     // los puertos 3317 no pueden chocar entre builds
         buildDiscarder(logRotator(numToKeepStr: '20'))
-        timestamps()
     }
 
     environment {
