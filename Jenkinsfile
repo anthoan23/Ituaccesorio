@@ -4,7 +4,15 @@
 // La limpieza del entorno de prueba corre SIEMPRE al final, pase o falle.
 
 pipeline {
-    agent any
+    agent {
+        node {
+            // Workspace en ruta compartida host/contenedor: el daemon del host
+            // resuelve los bind mounts, así que el checkout debe existir en
+            // /home/anthoan/jenkins_ws en ambos lados (ver docker-compose.jenkins.yml)
+            label 'built-in'
+            customWorkspace '/home/anthoan/jenkins_ws'
+        }
+    }
 
     options {
         disableConcurrentBuilds()                     // los puertos 3317 no pueden chocar entre builds
