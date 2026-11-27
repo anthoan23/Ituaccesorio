@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Documentación del pipeline CI/CD de Ituaccesorio (Jenkins, declarativo).
+  Fuente de verdad: el archivo Jenkinsfile en la raíz del repo.
+  Si el pipeline cambia, actualiza este XML.
+-->
+<pipeline nombre="Ituaccesorio-CI" tipo="Jenkins-Declarativo" archivo="Jenkinsfile" rama_produccion="main">
+
+  <descripcion>
+    Pipeline que analiza el código con bandit, levanta un entorno de prueba
+    aislado, corre las pruebas (unitarias, integración y humo) y, solo si
+    todas pasan, construye la imagen y despliega producción. La limpieza del
+    entorno de prueba corre siempre al final, pase o falle.
+  </descripcion>
+
+  <infraestructura>
+    <servidor imagen="jenkins/jenkins:lts + CLI de Docker" puerto="8080"
+              compose="docker-compose.jenkins.yml"/>
+    <ejecucion modo="socket-host"
+               detalle="Jenkins (contenedor) usa el Docker del host vía /var/run/docker.sock; el workspace vive en /home/anthoan/jenkins_ws, montado con la misma ruta en host y contenedor para que el daemon resuelva bien los bind mounts"/>
+  </infraestructura>
+
+  <disparadores>
+    <disparador tipo="poll_scm" expresion="H/5 * * * *"
+                descripcion="revisa GitHub cada ~5 minutos; se migrará a webhook cuando haya URL pública"/>
+    <disparador tipo="manual" nombre="Build Now"/>
+  </disparadores>
+
+  <opciones>
+    <opcion nombre="disableConcurrentBuilds"
+            motivo="los builds no pueden solaparse: comparten los puertos 3317 de las BD de prueba"/>
+    <opcion nombre="buildDiscarder" valor="20 builds" motivo="limpieza del historial"/>
+  </opciones>
+
+  <entorno>
+    <variable nombre="PY" valor="python:3.12-slim"
+              descripcion="imagen base de las etapas de prueba, la misma del Dockerfile de la app"/>
+    <variable nombre="WEB_PORT" valor="127.0.0.1:5010"
+              descripcion="puerto de producción; 5000 lo usa el stack de desarrollo y 5001 el de pruebas"/>
+  </entorno>
+
+  <etapas>
+    <etapa id="1" nombre="Análisis estático (bandit)" bloqueante="false">
+      <accion>bandit -r . --exclude ./.git,./.venv -f html -o reporte_bandit.html</accion>
+      <artefacto>reporte_bandit.html, publicado con el plugin HTML Publisher</artefacto>
+      <nota>no bloquea el build (|| true) durante la fase de adopción; puede endurecerse después</nota>
+    </etapa>
+
+    <etapa id="2" nombre="Levantar entorno de prueba" bloqueante="true">
+      <accion>docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml up -d --wait</accion>
+      <detalle>
+        Stack completo de prueba: web en 127.0.0.1:5001, MySQL bd1_test en
+        127.0.0.2:3317 y bd2_test en 127.0.0.3:3317. Los datos viven en tmpfs:
+        cada build arranca con BD limpias sembradas desde bd/tests/*.sql.
+      </detalle>
+    </etapa>
+
+    <etapa id="3" nombre="Correr las pruebas" bloqueante="true">
+      <contenedor base="${PY}" red="host" env_file=".env.test"/>
+      <suite orden="1" nombre="Unitarias" carpeta="tests/pruebas unitarias"
+             reporte="reporte_unitarias.xml" detalle="no tocan BD, todo mockeado"/>
+      <suite orden="2" nombre="Integración" carpeta="tests/pruebas de integracion"
+             reporte="reporte_integracion.xml"
+             detalle="conecta a 127.0.0.2:3317 / 127.0.0.3:3317 (conftest carga .env.test con override)"/>
+      <suite orden="3" nombre="Humo" carpeta="tests/pruebas de humo"
+             reporte="reporte_humo.xml"
+             detalle="pide por HTTP real cada página en 127.0.0.1:5001"/>
+      <excluidas>
+        tests/pruebas de interface: usan Selenium con Firefox, requieren
+        navegador en el contenedor (fase 2 del plan).
+      </excluidas>
+      <reporte_global>junit reporte_*.xml (plugin JUnit, tendencia histórica)</reporte_global>
+    </etapa>
+
+    <etapa id="4" nombre="Construcción de imagen" bloqueante="true"
+           condicion="solo si todas las pruebas pasaron">
+      <accion>docker build -t ituaccesorio:${BUILD_NUMBER} .</accion>
+      <detalle>la versión de la imagen queda asociada al número de build</detalle>
+    </etapa>
+
+    <etapa id="5" nombre="Despliegue en producción" bloqueante="true"
+           condicion="solo en la rama main">
+      <preparacion>el .env real se copia desde la credencial Jenkins env-produccion (no vive en git)</preparacion>
+      <accion>docker compose -f docker-compose.prod.yml -p ituaccesorio_prod up -d --build</accion>
+      <salud>curl http://127.0.0.1:5010/login con 60 s de tolerancia</salud>
+      <datos>volumenes ituaccesorio_prod_db1_data y ituaccesorio_prod_db2_data persistentes; nunca ejecutar down -v sobre este proyecto</datos>
+    </etapa>
+  </etapas>
+
+  <post>
+    <siempre>
+      docker compose --env-file .env.test -p ituaccesorio_test -f
+      docker-compose.test.yml down -v --remove-orphans
+      — elimina el entorno de prueba pase o falle; si las pruebas fallaran y
+      los contenedores quedaran vivos, el siguiente build chocaría con el
+      puerto 3317. Las BD de prueba son tmpfs, no se pierde nada.
+    </siempre>
+    <fallo>
+      notificación por correo (desactivada hasta configurar SMTP en Jenkins
+      con contraseña de aplicación de Gmail; el bloque emailext queda
+      comentado en el Jenkinsfile).
+    </fallo>
+  </post>
+
+  <credenciales>
+    <credencial id="env-produccion" tipo="Secret file"
+                uso=".env real usado por la etapa de despliegue"/>
+  </credenciales>
+
+  <mapa_puertos>
+    <stack nombre="desarrollo" puertos="web 5000, MySQL 3307 y 3308"/>
+    <stack nombre="pruebas-CI" puertos="web 5001, MySQL 127.0.0.2:3317 y 127.0.0.3:3317"/>
+    <stack nombre="produccion" puertos="web 127.0.0.1:5010, BD solo red interna"/>
+    <stack nombre="jenkins" puertos="8080"/>
+  </mapa_puertos>
+
+  <restricciones_notables>
+    <nota>1 worker de Gunicorn en producción: el bus de notificaciones SSE vive en memoria.</nota>
+    <nota>Entorno de prueba con ENTORNO_PRUEBA=true: sin Talisman, CSRF, reCAPTCHA ni decoradores.</nota>
+    <nota>Las pruebas de integración instancian conectar/Cargo/Empleados/Especialidad y limpian sus registros en finally.</nota>
+  </restricciones_notables>
+
+</pipeline>

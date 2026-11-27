@@ -105,11 +105,13 @@ pipeline {
             sh 'docker compose --env-file .env.test -p ituaccesorio_test -f docker-compose.test.yml down -v --remove-orphans || true'
         }
         failure {
-            // Si no configuraste el correo en Jenkins, borra este bloque
-            emailext(
-                subject: "FALLÓ: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Revisa los logs aquí: ${env.BUILD_URL}",
-                to: 'TU_CORREO@gmail.com')
+            // Correo desactivado hasta configurar SMTP en Jenkins (Manage Jenkins →
+            // System → E-mail Notification con contraseña de aplicación de Gmail).
+            // Cuando esté listo, descomenta:
+            // emailext(
+            //     subject: "FALLÓ: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            //     body: "Revisa los logs aquí: ${env.BUILD_URL}",
+            //     to: 'TU_CORREO@gmail.com')
         }
     }
 }
