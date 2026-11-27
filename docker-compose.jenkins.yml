@@ -1,0 +1,17 @@
+# Jenkins CI para Ituaccesorio
+# docker compose -f docker-compose.jenkins.yml up -d --build
+services:
+  jenkins:
+    build: ./jenkins
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # Jenkins ejecuta docker compose contra el daemon del host
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID}"   # GID del grupo docker del host (ver Fase 0)
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:

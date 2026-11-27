@@ -13,7 +13,9 @@ services:
     restart: always
     ports:
       # Con Nginx en el host: solo el loopback alcanza la web, Nginx hace de frente (80/443)
-      - "127.0.0.1:5000:5000"
+      # Puerto configurable: el Jenkinsfile despliega en 127.0.0.1:5010 para no
+      # chocar con el stack de desarrollo (5000) ni el de pruebas (5001).
+      - "${WEB_PORT:-127.0.0.1:5000}:5000"
     env_file:
       - .env
     environment:
